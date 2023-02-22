@@ -1,0 +1,26 @@
+{
+  "name": "@dozer/nextjs-config",
+  "version": "0.1.0",
+  "description": "Dozer Next.js Config",
+  "keywords": [
+    "dozer",
+    "nextjs",
+    "config"
+  ],
+  "homepage": "https://dozer.finance",
+  "repository": {
+    "type": "git",
+    "directory": "packages/config/nextjs"
+  },
+  "license": "MIT",
+  "main": "index.js",
+  "files": [
+    "index.js"
+  ],
+  "devDependencies": {
+    "next": "13.1.1"
+  },
+  "peerDependencies": {
+    "next": "13.1.1"
+  }
+}

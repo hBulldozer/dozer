@@ -1,0 +1,14 @@
+# Visual Studio Code
+.vscode
+
+# Next.js output
+.next
+
+# Compiled output
+dist
+
+# Node modules
+node_modules
+
+# PNPM
+pnpm-lock.yaml

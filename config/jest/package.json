@@ -1,0 +1,23 @@
+{
+  "name": "@dozer/jest-config",
+  "version": "0.1.0",
+  "description": "Dozer Jest Config",
+  "keywords": [
+    "dozer",
+    "jest",
+    "config"
+  ],
+  "homepage": "https://dozer.finance",
+  "repository": {
+    "type": "git",
+    "directory": "packages/config/jest"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "jest-environment-jsdom": "29.3.1"
+  },
+  "devDependencies": {
+    "@dozer/eslint-config": "workspace:*",
+    "@types/node": "^17.0.34"
+  }
+}

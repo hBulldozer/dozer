@@ -1,0 +1,49 @@
+{
+  "name": "@dozer/tailwindcss-config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Dozer Tailwind Config",
+  "keywords": [
+    "dozer",
+    "tailwindcss",
+    "config"
+  ],
+  "homepage": "https://dozer.finance",
+  "repository": {
+    "type": "git",
+    "directory": "packages/config/tailwindcss"
+  },
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "source": "src/index.ts",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
+  },
+  "jest": {
+    "preset": "@dozer/jest-config/node"
+  },
+  "dependencies": {
+    "@tailwindcss/aspect-ratio": "^0.4.0",
+    "@tailwindcss/forms": "^0.5.1",
+    "@tailwindcss/line-clamp": "^0.4.0",
+    "@tailwindcss/typography": "^0.5.2",
+    "tailwindcss": "3.2.4"
+  },
+  "devDependencies": {
+    "@dozer/eslint-config": "workspace:*",
+    "@dozer/jest-config": "workspace:*",
+    "@dozer/prettier-config": "workspace:*",
+    "@dozer/typescript-config": "workspace:*",
+    "tsup": "6.5.0",
+    "typescript": "4.9.4"
+  },
+  "peerDependencies": {
+    "tailwindcss": "3.2.4"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "heybourn.headwind",
+    "bradlc.vscode-tailwindcss",
+    "VisualStudioExptTeam.vscodeintellicode",
+    "mattpocock.ts-error-translator",
+    "bierner.markdown-mermaid"
+  ]
+}

@@ -1,0 +1,25 @@
+# GitHub
+.github
+
+# Visual Studio Code
+.vscode
+
+# Vercel output
+.vercel
+
+# Next.js output
+.next
+
+# Compiled output
+dist
+
+# workers
+**/public/sw.js
+**/public/workbox-*.js
+**/public/worker-*.js
+**/public/sw.js.map
+**/public/workbox-*.js.map
+**/public/worker-*.js.map
+
+# Node modules
+node_modules

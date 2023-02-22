@@ -1,0 +1,40 @@
+{
+  "name": "@dozer/typescript-config",
+  "version": "0.1.0",
+  "description": "Dozer TypeScript Config",
+  "keywords": [
+    "dozer",
+    "typescript",
+    "config"
+  ],
+  "homepage": "https://dozer.finance",
+  "repository": {
+    "type": "git",
+    "directory": "packages/config/typescript"
+  },
+  "license": "MIT",
+  "exports": {
+    "./base.json": "./hardhat.json",
+    "./esm.json": "./esm.json",
+    "./hardhat.json": "./hardhat.json",
+    "./nextjs.json": "./node14.json",
+    "./node14.json": "./node14.json",
+    "./node16.json": "./node16.json",
+    "./node16-strictest-esm.combined.json": "./node16-strictest-esm.combined.json",
+    "./node18.json": "./node18.json",
+    "./node18-strictest-esm.combined.json": "./node18-strictest-esm.combined.json",
+    "./node18-vercel.json": "./node18-vercel.json",
+    "./react-library.json": "./react-library.json"
+  },
+  "files": [
+    "./base.json",
+    "./esm.json",
+    "./hardhat.json",
+    "./nextjs.json",
+    "./node14.json",
+    "./node16.json",
+    "./node18-strictest-esm.combined.json",
+    "./node18-vercel.json",
+    "./react-library.json"
+  ]
+}
