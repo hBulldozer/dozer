@@ -13,6 +13,10 @@
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "ROOT_URL",
+        "SWAP_URL"
+      ],
       "outputs": [
         ".vercel/**/*",
         ".next/**/*",
