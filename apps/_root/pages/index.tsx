@@ -3,7 +3,10 @@ import { Button, Switch } from '@dozer/ui'
 const Home = () => {
   return (
     <>
-      <div>Root</div>
+      <h1 className="text-yellow-500">Root</h1>
+      <Button color="gradient" variant="filled">
+        DOZER PROTOCOL
+      </Button>
     </>
   )
 }

@@ -10,6 +10,7 @@ export const BUTTON_CLASSES: Record<string, string> = {
   'btn-outlined-pink': 'border-pink ring-pink-700 text-pink',
   'btn-outlined-blue': 'border-blue ring-blue-700 text-blue',
   'btn-outlined-purple': 'border-purple ring-purple-700 text-purple',
+  'btn-outlined-yellow': 'border-yellow ring-yellow-700 text-yellow',
   'btn-outlined-gradient':
     'bg-gradient-to-r hover:ring-4 ring-slate-600 ring-purple/30 from-blue to-pink focus:border-blue-700',
   'btn-outlined-gray': 'border-slate-700 ring-slate-700 text-slate-400',
@@ -17,6 +18,7 @@ export const BUTTON_CLASSES: Record<string, string> = {
   'btn-filled-pink': 'bg-pink ring-pink-700',
   'btn-filled-blue': 'bg-blue ring-blue-700',
   'btn-filled-purple': 'bg-purple ring-purple-700',
+  'btn-filled-yellow': 'bg-yellow ring-yellow-700',
   'btn-filled-gradient': 'bg-gradient-to-r hover:ring-4 !ring-pink/20 from-blue-600 to-pink-600 focus:border-blue-700',
   'btn-filled-gray': 'bg-slate-700 ring-slate-600',
   'btn-xs': 'px-2 h-[28px] text-xs',
@@ -28,6 +30,7 @@ export const BUTTON_CLASSES: Record<string, string> = {
   'btn-empty-pink': 'text-pink hover:text-pink-300',
   'btn-empty-blue': 'text-blue hover:text-blue-300',
   'btn-empty-purple': 'text-purple hover:text-purple-300',
+  'btn-empty-yellow': 'text-yellow hover:text-yellow-300',
   'btn-empty-gray': 'text-slate-400 hover:text-slate-200',
 }
 
@@ -39,6 +42,7 @@ export const BUTTON_STYLES: Record<ButtonVariant, Record<ButtonColor, string>> =
     purple: 'btn-outlined-purple',
     gradient: 'btn-outlined-gradient',
     gray: 'btn-outlined-gray',
+    yellow: 'btn-outlined-yellow',
   },
   filled: {
     red: 'btn-filled-red',
@@ -47,6 +51,7 @@ export const BUTTON_STYLES: Record<ButtonVariant, Record<ButtonColor, string>> =
     purple: 'btn-filled-purple',
     gradient: 'btn-filled-gradient',
     gray: 'btn-filled-gray',
+    yellow: 'btn-filled-yellow',
   },
   empty: {
     red: 'btn-empty-red',
@@ -55,6 +60,7 @@ export const BUTTON_STYLES: Record<ButtonVariant, Record<ButtonColor, string>> =
     purple: 'btn-empty-purple',
     gradient: 'btn-empty-gradient',
     gray: 'btn-empty-gray',
+    yellow: 'btn-empty-yellow',
   },
 }
 

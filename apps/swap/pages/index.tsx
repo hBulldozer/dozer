@@ -3,7 +3,7 @@ import { Button, Switch } from '@dozer/ui'
 const Home = () => {
   return (
     <>
-      <div>Swap</div>
+      <h1>Swap</h1>
     </>
   )
 }
