@@ -31,14 +31,14 @@ const nextConfig = {
         source: '/:path*',
         destination: `/:path*`,
       },
-      {
-        source: '/swap',
-        destination: `${SWAP_URL}/swap`,
-      },
-      {
-        source: '/swap/:path*',
-        destination: `${SWAP_URL}/swap/:path*`,
-      },
+      // {
+      //   source: '/swap',
+      //   destination: `${SWAP_URL}/swap`,
+      // },
+      // {
+      //   source: '/swap/:path*',
+      //   destination: `${SWAP_URL}/swap/:path*`,
+      // },
     ]
   },
 }
