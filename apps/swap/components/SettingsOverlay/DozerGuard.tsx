@@ -1,5 +1,5 @@
 import { InformationCircleIcon } from '@heroicons/react/outline'
-import { Switch, Tooltip, Typography } from '@sushiswap/ui'
+import { Switch, Tooltip, Typography } from '@dozer/ui'
 
 import { useSettings } from '../../lib/state/storage'
 
