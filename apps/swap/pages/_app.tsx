@@ -35,7 +35,6 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
   }, [router.events])
   return (
     <>
-      <Head></Head>
       <ThemeProvider>
         <App.Shell>
           <Header />

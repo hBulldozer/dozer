@@ -15,7 +15,7 @@ const Home = () => {
           <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
             <button
               type="button"
-              onClick={console.log('oi')}
+              // onClick={}
               className="group bg-neutral-700 p-0.5 border-2 border-neutral-800 transition-all rounded-full hover:ring-2 hover:ring-neutral-500 cursor-pointer"
             >
               <div className="transition-all rotate-0 group-hover:rotate-180 group-hover:delay-200">
