@@ -8,7 +8,7 @@ import Image from 'next/legacy/image'
 import React, { FC, useState } from 'react'
 import ReactDOM from 'react-dom'
 // import { useAccount, useEnsAvatar, useNetwork } from 'wagmi'
-import useAccount from '@dozer/zustand'
+import {useAccount} from '@dozer/zustand'
 
 import { Wallet } from '..'
 import { Default } from './Default'
@@ -19,12 +19,12 @@ export enum ProfileView {
   Transactions,
 }
 
-interface ProfileProps {
-  notifications: Record<number, string[]>
-  clearNotifications(): void
-}
+// interface ProfileProps {
+//   notifications: Record<number, string[]>
+//   clearNotifications(): void
+// }
 
-export const Profile: FC<ProfileProps> = (notifications,clearNotifications) => {
+export const Profile: FC = () => {
   const { isSm } = useBreakpoint('sm')
   const [view, setView] = useState<ProfileView>(ProfileView.Default)
   // const { chain } = useNetwork()
@@ -50,7 +50,7 @@ export const Profile: FC<ProfileProps> = (notifications,clearNotifications) => {
       <Popover.Panel className="w-full sm:w-[320px] fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-[unset] sm:left-[unset] mt-4 sm:rounded-xl rounded-b-none shadow-md shadow-black/[0.3] bg-slate-900 border border-slate-200/20">
         {view === ProfileView.Default && <Default address={address} setView={setView} />}
         {view === ProfileView.Transactions && (
-          <Transactions setView={setView} notifications={notifications} clearNotifications={clearNotifications} />
+          <Transactions setView={setView}  />
         )}
       </Popover.Panel>
     )
@@ -77,6 +77,7 @@ export const Profile: FC<ProfileProps> = (notifications,clearNotifications) => {
               </Popover.Button>
               
               {!isSm ? ReactDOM.createPortal(panel, document.body):panel}
+              {/* {panel} */}
             </>
           )
         }}

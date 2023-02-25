@@ -2,56 +2,49 @@
   "name": "@dozer/higmi",
   "version": "0.0.0",
   "private": true,
-  "description": "Hahtor Is Gonna Make It",
+  "description": "Dozer Higmi",
   "keywords": [
-    "dozer",
-    "hathor",
-    "wallet",
-    "connectors"
+    "Dozer",
+    "higmi"
   ],
   "license": "MIT",
-  "main": "./dist/index.js",
-  "source": "./src/index.ts",
-  "types": "./dist/index.d.ts",
+  "author": "Dozer",
+  "source": "./index.ts",
   "scripts": {
-    "build": "tsc",
     "check": "tsc --pretty --noEmit",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "dev": "tsc -w",
-    "lint": "TIMING=1 eslint src --fix",
+    "generate": "typechain --target ethers-v5 --out-dir typechain './node_modules/@uniswap/v3-periphery/artifacts/contracts/lens/UniswapInterfaceMulticall.sol/UniswapInterfaceMulticall.json'",
+    "lint": "TIMING=1 eslint . --fix",
     "test": "jest --passWithNoTests"
   },
-  "jest": {
-    "preset": "@dozer/jest-config/node"
-  },
   "dependencies": {
-    "@dozer/zustand": "workspace:*",
-    "@dozer/ui": "workspace:*",
-    "@dozer/hooks": "workspace:*",
-    "@tanstack/react-query": "4.20.4",
     "@headlessui/react": "^1.7.3",
-    "@heroicons/react": "^1.0.6"
+    "@heroicons/react": "^1.0.6",
+    "@dozer/hooks": "workspace:*",
+    "@dozer/zustand": "workspace:*",
+    "@dozer/ui": "workspace:*"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
     "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
-    "@dozer/zustand": "workspace:*",
-    "@types/jest": "^29.2.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "eslint": "8.29.0",
+    "ethers": "5.7.2",
     "next": "13.1.1",
-    "jest": "29.3.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "tailwindcss": "3.2.4",
+    "tsup": "6.5.0",
+    "typechain": "^8.0.0",
     "typescript": "4.9.4"
   },
   "peerDependencies": {
     "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "tailwindcss": "3.2.4"
+    "react-dom": "18.2.0"
+  },
+  "optionalDependencies": {
+    "next": "13.1.1"
   }
 }
