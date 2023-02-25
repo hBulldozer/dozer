@@ -32,7 +32,7 @@ export const Button: ButtonComponent = React.forwardRef(
       as,
       children,
       className,
-      color = 'yellow',
+      color = 'blue',
       size = 'default',
       variant = 'filled',
       startIcon = undefined,
