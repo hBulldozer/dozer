@@ -52,12 +52,12 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
 // have getStaticProps. So article, category and home pages still get SSG.
 // Hopefully we can replace this with getStaticProps once this issue is fixed:
 // https://github.com/vercel/next.js/discussions/10949
-MyApp.getInitialProps = async (ctx: AppContext) => {
-  // Calls page's `getInitialProps` and fills `appProps.pageProps`
-  const appProps = await NextApp.getInitialProps(ctx)
+// MyApp.getInitialProps = async (ctx: AppContext) => {
+//   // Calls page's `getInitialProps` and fills `appProps.pageProps`
+//   const appProps = await NextApp.getInitialProps(ctx)
 
-  // Pass the data to our page via props
-  return { ...appProps }
-}
+//   // Pass the data to our page via props
+//   return { ...appProps }
+// }
 
 export default MyApp
