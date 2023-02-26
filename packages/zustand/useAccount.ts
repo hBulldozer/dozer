@@ -6,16 +6,9 @@ interface AccountState {
     setAddress: (address: string) => void
   }
   
-  export const useAccount = create<AccountState>()(
-    devtools(
-      persist(
+  export const useAccount = create<AccountState>()(    
         (set) => ({
           address: '',
           setAddress: (address) => set((state) => ({ address: address })),
-        }),
-        {
-          name: 'Account-storage',
-        }
-      )
+        })
     )
-  )
