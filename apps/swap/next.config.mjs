@@ -4,7 +4,7 @@ import defaultNextConfig from '@dozer/nextjs-config'
 const nextConfig = {
   ...defaultNextConfig,
   basePath: '/swap',
-  transpilePackages: ['@dozer/ui'],
+  transpilePackages: ['@dozer/ui', '@dozer/higmi'],
   async redirects() {
     return [
       {

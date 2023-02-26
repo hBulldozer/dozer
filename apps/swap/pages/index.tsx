@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from '@heroicons/react/solid'
 import { App, Button, classNames, Container, Link, Typography, Widget } from '@dozer/ui'
-import { Layout } from 'components/Layout'
+import { Layout } from '../components/Layout'
 
 const Home = () => {
   return (
