@@ -13,6 +13,7 @@ import {useAccount} from '@dozer/zustand'
 import { Wallet } from '..'
 import { Default } from './Default'
 import { Transactions } from './Transactions'
+import { Portal } from './Portal'
 
 export enum ProfileView {
   Default,
@@ -76,7 +77,8 @@ export const Profile: FC = () => {
                 />
               </Popover.Button>
               
-              {!isSm ? ReactDOM.createPortal(panel, document.body):panel}
+              {/* {!isSm ? ReactDOM.createPortal(panel, document.body):panel} */}
+              {!isSm ? <Portal>{panel}</Portal>:panel}
               {/* {panel} */}
             </>
           )

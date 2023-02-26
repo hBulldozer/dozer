@@ -11,6 +11,7 @@ const MyDocument = () => {
       </Head>
       <body className="h-screen">
         <Main />
+        <div id="portal" />
         <NextScript />
       </body>
     </Html>
