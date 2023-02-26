@@ -5,7 +5,7 @@ import { ChevronDownIcon } from '@heroicons/react/solid'
 import { useBreakpoint } from '@dozer/hooks'
 import { classNames, DEFAULT_INPUT_UNSTYLED, JazzIcon } from '@dozer/ui'
 import Image from 'next/legacy/image'
-import React, { FC, useState } from 'react'
+import React, { FC, useState, useRef, useEffect,  } from 'react'
 import ReactDOM from 'react-dom'
 // import { useAccount, useEnsAvatar, useNetwork } from 'wagmi'
 import {useAccount} from '@dozer/zustand'
@@ -36,6 +36,14 @@ export const Profile: FC = () => {
   // const { data: avatar } = useEnsAvatar({
   //   address,
   // })
+
+  const ref = useRef<Element | null>(null)
+  const [mounted, setMounted] = useState(false)
+  
+  useEffect(() => {
+    ref.current = document.querySelector<HTMLElement>("#portal")
+    setMounted(true)
+  }, [])
 
   if (!address) {
     return (
@@ -77,9 +85,8 @@ export const Profile: FC = () => {
                 />
               </Popover.Button>
               
-              {/* {!isSm ? ReactDOM.createPortal(panel, document.body):panel} */}
-              {!isSm ? <Portal>{panel}</Portal>:panel}
-              {/* {panel} */}
+              {!isSm ? (mounted && ref.current) ? ReactDOM.createPortal(<div>{panel}</div>, ref.current) : null :panel}                          
+
             </>
           )
         }}

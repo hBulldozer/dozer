@@ -5,7 +5,7 @@ interface PortalProps {
     children: ReactNode
 }
 
-export const Portal = (props: OverlayProps) => {
+export const Portal = (props: PortalProps) => {
   const ref = useRef<Element | null>(null)
   const [mounted, setMounted] = useState(false)
   
