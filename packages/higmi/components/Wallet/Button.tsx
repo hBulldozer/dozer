@@ -11,8 +11,11 @@ import {
   MetamaskIcon,
   TrustWalletIcon,
   WalletConnectIcon,
+  Input,
 } from '@dozer/ui'
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useState } from 'react'
+import { Address } from '@dozer/ui/input/Address'
+import { useAccount } from '@dozer/zustand'
 // import { useConnect } from 'wagmi'
 
 // import { useAutoConnect, useWalletState } from '../../hooks'
@@ -52,6 +55,13 @@ export const Button = <C extends React.ElementType>({
 //     return <></>
 //   }
 
+const [connectAddress, setConnectAddress] = useState<string>('');
+const connect = useAccount((state)=>state.setAddress)
+
+function onChange(x:string){
+  setConnectAddress(x)
+}
+
   return (
     <AppearOnMount enabled={appearOnMount}>
       {(isMounted) => {
@@ -78,18 +88,19 @@ export const Button = <C extends React.ElementType>({
               }
             >
               <Menu.Items className="z-[100]">
+                  <Address id="connect_address" value={connectAddress} onChange={onChange}/>
                 <div>
-                  {isMounted &&                    
+                  {isMounted &&                              
                       <Menu.Item
                         key='htr_connector'
-                        // onClick={() => connect({ connector })}
+                        onClick={() => connect(connectAddress)}
                         className="flex items-center gap-3 group"
                       >
                         <div className="-ml-[6px] group-hover:bg-blue-100 rounded-full group-hover:ring-[5px] group-hover:ring-blue-100">
                           {Icons['Injected'] && Icons['Injected']}
                         </div>{' '}
                         Hathor Wallet
-                      </Menu.Item>
+                      </Menu.Item> 
                     }
                 </div>
               </Menu.Items>

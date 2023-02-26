@@ -29,8 +29,8 @@ export const Profile: FC = () => {
   const { isSm } = useBreakpoint('sm')
   const [view, setView] = useState<ProfileView>(ProfileView.Default)
   // const { chain } = useNetwork()
-  // const { address } = useAccount()
-  const  address  = '0xaddress'
+  const  address  = useAccount((state)=>state.address)
+  // const  address  = '0xaddress'
   // const chainId = chain?.id || ChainId.ETHEREUM
 
   // const { data: avatar } = useEnsAvatar({

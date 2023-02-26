@@ -7,10 +7,11 @@ import React, { Dispatch, FC, SetStateAction, useMemo } from 'react'
 
 // import { usePrices } from '../../../hooks'
 import { ProfileView } from './Profile'
+import { useAccount } from '@dozer/zustand'
 
 interface DefaultProps {
   // chainId: ChainId
-  address: `0x${string}`
+  address: string
   setView: Dispatch<SetStateAction<ProfileView>>
 }
 
@@ -32,7 +33,7 @@ export const Default: FC<DefaultProps> = ({  address, setView }) => {
   //   [_balance, chainId]
   // )
 
-  function disconnect()  {console.log('desconectar')}
+  const disconnect=useAccount((state)=>state.setAddress)
   // useDisconnect()
 
   const balanceAsUsd = 1000
@@ -74,7 +75,7 @@ export const Default: FC<DefaultProps> = ({  address, setView }) => {
             >
               <ExternalLinkIcon width={18} height={18} />
             </IconButton>
-            <IconButton as="button" onClick={() => disconnect()} className="p-0.5" description="Disconnect">
+            <IconButton as="button" onClick={()=>disconnect('')} className="p-0.5" description="Disconnect">
               <LogoutIcon width={18} height={18} />
             </IconButton>
           </div>
