@@ -8,6 +8,8 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { DefaultSeo } from 'next-seo'
 import { useEffect } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import NoSSR from 'react-no-ssr'
 
 import { Header } from '../components'
 
@@ -16,6 +18,8 @@ declare global {
     dataLayer: Record<string, any>[]
   }
 }
+
+const queryClient = new QueryClient()
 
 const MyApp = ({ Component, pageProps }: AppProps) => {
   const router = useRouter()
@@ -35,14 +39,18 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
   }, [router.events])
   return (
     <>
-      <ThemeProvider>
-        <App.Shell>
-          <Header />
-          <Component {...pageProps} />
-          <App.Footer />
-        </App.Shell>
-        <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <App.Shell>
+            <NoSSR>
+              <Header />
+            </NoSSR>
+            <Component {...pageProps} />
+            <App.Footer />
+          </App.Shell>
+          <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
+        </ThemeProvider>
+      </QueryClientProvider>
       <Analytics />
     </>
   )

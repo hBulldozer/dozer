@@ -8,18 +8,18 @@ import React, { FC } from 'react'
 // import { useNotifications } from '../lib/state/storage'
 
 export const Header: FC = () => {
-  const  address  = 'meu endereço'
+  const address = 'meu endereço'
   // const [notifications, { clearNotifications }] = useNotifications(address)
-  
+
   return (
     <App.Header
       withScrollBackground={true}
       appType={AppType.Swap}
       nav={
         <App.NavItemList>
-          <App.NavItem href="https://www.sushi.com/swap" label="Swap" />
-          <App.NavItem href={`https://www.sushi.com/earn`} label="Earn" />
-          {/* <App.NavItem href="https://www.sushi.com/bridge" label="Bridge" /> */}
+          <App.NavItem href="https://dozer.finance/swap" label="Swap" />
+          <App.NavItem href={`https://dozer.finance/earn`} label="Earn" />
+          {/* <App.NavItem href="https://dozer.finance/bridge" label="Bridge" /> */}
           <BuyCrypto address={address} />
         </App.NavItemList>
       }
@@ -27,9 +27,9 @@ export const Header: FC = () => {
       <div className="flex items-center gap-2">
         {/* <NetworkSelector supportedNetworks={SUPPORTED_CHAIN_IDS} /> */}
         <Profile
-          // supportedNetworks={SUPPORTED_CHAIN_IDS}
-          // notifications={notifications}
-          // clearNotifications={clearNotifications}
+        // supportedNetworks={SUPPORTED_CHAIN_IDS}
+        // notifications={notifications}
+        // clearNotifications={clearNotifications}
         />
       </div>
     </App.Header>

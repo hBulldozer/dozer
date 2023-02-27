@@ -22,6 +22,7 @@
     "@heroicons/react": "^1.0.6",
     "@dozer/hooks": "workspace:*",
     "@dozer/zustand": "workspace:*",
+    "@dozer/react-query": "workspace:*",
     "@dozer/ui": "workspace:*"
   },
   "devDependencies": {

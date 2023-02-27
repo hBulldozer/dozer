@@ -8,6 +8,7 @@ import React, { Dispatch, FC, SetStateAction, useMemo } from 'react'
 // import { usePrices } from '../../../hooks'
 import { ProfileView } from './Profile'
 import { useAccount } from '@dozer/zustand'
+import { shortenAddress } from './Utils'
 
 interface DefaultProps {
   // chainId: ChainId
@@ -15,7 +16,9 @@ interface DefaultProps {
   setView: Dispatch<SetStateAction<ProfileView>>
 }
 
-export const Default: FC<DefaultProps> = ({  address, setView }) => {
+export const Default: FC<DefaultProps> = ({ address, setView }) => {
+  const setAddress = useAccount((state) => state.setAddress)
+  const setBalance = useAccount((state) => state.setBalance)
   // const { data: prices } = usePrices({ chainId })
   // const { data: avatar } = useEnsAvatar({
   //   address: address,
@@ -27,13 +30,17 @@ export const Default: FC<DefaultProps> = ({  address, setView }) => {
   //   // chainId,
   // })
 
-  const balance = 100
+  // const balance = 100
+  const balance = useAccount((state) => state.balance)
   // useMemo(
   //   () => Amount.fromRawAmount(Native.onChain(chainId), _balance ? _balance?.value.toString() : '0'),
   //   [_balance, chainId]
   // )
 
-  const disconnect=useAccount((state)=>state.setAddress)
+  function disconnect() {
+    setAddress('')
+    setBalance([])
+  }
   // useDisconnect()
 
   const balanceAsUsd = 1000
@@ -48,8 +55,8 @@ export const Default: FC<DefaultProps> = ({  address, setView }) => {
       <div className="flex flex-col gap-8 p-4">
         <div className="flex justify-between gap-3">
           <Typography variant="sm" weight={600} className="flex items-center gap-1.5 text-slate-50">
-              <JazzIcon diameter={16} address={address} />
-            {address}
+            <JazzIcon diameter={16} address={address} />
+            {shortenAddress(address)}
           </Typography>
           <div className="flex gap-3">
             <BuyCrypto address={address}>
@@ -75,7 +82,7 @@ export const Default: FC<DefaultProps> = ({  address, setView }) => {
             >
               <ExternalLinkIcon width={18} height={18} />
             </IconButton>
-            <IconButton as="button" onClick={()=>disconnect('')} className="p-0.5" description="Disconnect">
+            <IconButton as="button" onClick={() => disconnect()} className="p-0.5" description="Disconnect">
               <LogoutIcon width={18} height={18} />
             </IconButton>
           </div>
@@ -83,7 +90,14 @@ export const Default: FC<DefaultProps> = ({  address, setView }) => {
         <div className="flex flex-col items-center justify-center gap-2">
           <Typography variant="h1" className="whitespace-nowrap">
             {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-            {balance} HTR
+            {balance.length > 0
+              ? balance.map((token) => {
+                  if (token.token_symbol === 'HTR') {
+                    return token.token_balance / 100
+                  }
+                })
+              : 0.0}{' '}
+            HTR
           </Typography>
           <Typography weight={600} className="text-slate-400">
             ${balanceAsUsd?.toFixed(2)}

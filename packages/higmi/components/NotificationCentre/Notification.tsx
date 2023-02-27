@@ -1,15 +1,4 @@
-// import chains, { ChainId } from '@sushiswap/chain'
-// import { Token } from '@sushiswap/currency'
-import {
-  Badge,
-  classNames,
-  Dots,
-  IconButton,
-  Link,
-  Loader,
-  TimeAgo,
-  Typography,
-} from '@dozer/ui'
+import { Badge, classNames, Dots, IconButton, Link, Loader, TimeAgo, Typography } from '@dozer/ui'
 import { Disclosure } from '@headlessui/react'
 import {
   ArrowRightIcon,
@@ -83,23 +72,23 @@ export const Notification: FC<{
         href={notification.href ? notification.href : chains[notification.chainId].getTxUrl(notification.txHash)}
         className="!no-underline"
       > */}
-        <div
-          className={classNames(
-            showExtra ? 'pr-10' : 'pr-4',
-            'relative cursor-pointer flex items-center gap-5 rounded-2xl px-4 py-3'
-          )}
-        >
-          <Badge badgeContent={<DownloadIcon/>}>
-            <div className="p-2 bg-slate-600 rounded-full h-[36px] w-[36px] flex justify-center items-center">
-              {!hideStatus &&
-                (status === 'loading' ? (
-                  <Loader size={18} />
-                ) : status === 'error' ? (
-                  <XIcon width={20} height={20} className="text-red-400" />
-                ) : (
-                  <></>
-                ))}
-              {/* {(status === 'success' || notification.summary.info) && notification.type === 'send' && (
+      <div
+        className={classNames(
+          showExtra ? 'pr-10' : 'pr-4',
+          'relative cursor-pointer flex items-center gap-5 rounded-2xl px-4 py-3'
+        )}
+      >
+        <Badge badgeContent={<DownloadIcon />}>
+          <div className="p-2 bg-slate-600 rounded-full h-[36px] w-[36px] flex justify-center items-center">
+            {!hideStatus &&
+              (status === 'loading' ? (
+                <Loader size={18} />
+              ) : status === 'error' ? (
+                <XIcon width={20} height={20} className="text-red-400" />
+              ) : (
+                <></>
+              ))}
+            {/* {(status === 'success' || notification.summary.info) && notification.type === 'send' && (
                 <ArrowRightIcon width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'stargate' && (
@@ -156,16 +145,14 @@ export const Notification: FC<{
               {(status === 'success' || notification.summary.info) && notification.type === 'claimRewards' && (
                 <CashIcon width={20} height={20} />
               )} */}
-              {(status === 'success' ) && (
-                <CashIcon width={20} height={20} />
-              )}
-            </div>
-          </Badge>
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2">
-              <Typography as="span" variant="sm" weight={500} className="items-center whitespace-normal text-slate-50">
-                notificação
-                {/* {notification.summary.info ? (
+            {status === 'success' && <CashIcon width={20} height={20} />}
+          </div>
+        </Badge>
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <Typography as="span" variant="sm" weight={500} className="items-center whitespace-normal text-slate-50">
+              notificação
+              {/* {notification.summary.info ? (
                   notification.summary.info
                 ) : ['loading'].includes(status) ? (
                   <Dots>{notification.summary.pending}</Dots>
@@ -174,13 +161,13 @@ export const Notification: FC<{
                 ) : (
                   notification.summary.completed
                 )} */}
-              </Typography>
-            </div>
-            <Typography variant="xs" className="text-slate-500">
-              <TimeAgo date={new Date()} />
             </Typography>
           </div>
+          <Typography variant="xs" className="text-slate-500">
+            <TimeAgo date={new Date()} />
+          </Typography>
         </div>
+      </div>
       {/* </Link.External> */}
     </div>
   )
