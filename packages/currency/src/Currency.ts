@@ -2,7 +2,7 @@
 import { JSBI } from '@dozer/math'
 import invariant from 'tiny-invariant'
 
-import { Native } from './Native'
+// import { Native } from './Native'
 import { Token } from './Token'
 
 /**

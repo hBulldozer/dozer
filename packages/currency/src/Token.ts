@@ -1,11 +1,9 @@
 // import { getAddress } from '@ethersproject/address'
 import { JSBI } from '@dozer/math'
-import invariant from 'tiny-invariant'
 
 import { Currency } from './Currency'
-import { Type } from './Type'
 
-// TODO: implement hathor address take ethers from reference
+// TODO: implement hathor uuid take ethers from reference
 export function getUuid(uuid: string): string {
   let result = null
 
@@ -13,6 +11,14 @@ export function getUuid(uuid: string): string {
 
   return result
 }
+// TODO: implement hathor uuid take ethers from reference
+// export function isUuid(uuid: string): boolean {
+//   try {
+//       getUuid(uuid);
+//       return true;
+//   } catch (error) { }
+//   return false;
+// }
 
 /**
  * Represents an HTR token with a unique uuid and some metadata.
