@@ -76,4 +76,9 @@ export class Token extends Currency {
   public get wrapped(): Token {
     return this
   }
+
+  public equals(other: Token): boolean {
+    // return other.isNative && other.chainId === this.chainId
+    return true
+  }
 }

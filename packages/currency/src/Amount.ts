@@ -3,9 +3,8 @@ import invariant from 'tiny-invariant'
 
 import { Share } from './Share'
 import { Token } from './Token'
-import { Type } from './Type'
 
-export class Amount<T extends Type> extends Fraction {
+export class Amount<T extends Token> extends Fraction {
   public readonly currency: T
   public readonly scale: JSBI
   /**
@@ -13,11 +12,11 @@ export class Amount<T extends Type> extends Fraction {
    * @param currency the currency in the amount
    * @param rawAmount the raw token or ether amount
    */
-  public static fromRawAmount<T extends Type>(currency: T, rawAmount: BigintIsh): Amount<T> {
+  public static fromRawAmount<T extends Token>(currency: T, rawAmount: BigintIsh): Amount<T> {
     return new Amount(currency, rawAmount)
   }
 
-  public static fromShare<T extends Type>(
+  public static fromShare<T extends Token>(
     currency: T,
     shares: BigintIsh,
     rebase: { base: JSBI; elastic: JSBI },
@@ -52,7 +51,7 @@ export class Amount<T extends Type> extends Fraction {
    * @param numerator the numerator of the fractional token amount
    * @param denominator the denominator of the fractional token amount
    */
-  public static fromFractionalAmount<T extends Type>(
+  public static fromFractionalAmount<T extends Token>(
     currency: T,
     numerator: BigintIsh,
     denominator: BigintIsh

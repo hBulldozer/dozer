@@ -114,6 +114,7 @@ importers:
 
   apps/swap:
     specifiers:
+      '@dozer/currency': workspace:*
       '@dozer/eslint-config': workspace:*
       '@dozer/higmi': workspace:*
       '@dozer/hooks': workspace:*
@@ -140,6 +141,7 @@ importers:
       tailwindcss: 3.2.4
       typescript: 4.9.4
     dependencies:
+      '@dozer/currency': link:../../packages/currency
       '@dozer/higmi': link:../../packages/higmi
       '@dozer/hooks': link:../../packages/hooks
       '@dozer/ui': link:../../packages/ui
@@ -8211,7 +8213,6 @@ packages:
       prettier: '>=2.2.0'
     dependencies:
       prettier: 2.8.1
-    dev: false
     optional: true
 
   /prettier-plugin-tailwindcss/0.2.1_prettier@2.8.2:

@@ -2,13 +2,13 @@ import { Big, BigintIsh, Fraction, JSBI, MAX_UINT128, Rounding, ZERO } from '@do
 import invariant from 'tiny-invariant'
 
 import { Amount } from './Amount'
-import { Type } from './Type'
+import { Token } from './Token'
 
-export class Share<T extends Type> extends Fraction {
+export class Share<T extends Token> extends Fraction {
   public readonly currency: T
   public readonly scale: JSBI
 
-  public static fromRawShare<T extends Type>(currency: T, rawShare: BigintIsh = 0): Share<T> {
+  public static fromRawShare<T extends Token>(currency: T, rawShare: BigintIsh = 0): Share<T> {
     return new Share(currency, rawShare)
   }
 
@@ -37,7 +37,7 @@ export class Share<T extends Type> extends Fraction {
    * @param numerator the numerator of the fractional token share
    * @param denominator the denominator of the fractional token share
    */
-  public static fromFractionalShare<T extends Type>(
+  public static fromFractionalShare<T extends Token>(
     currency: T,
     numerator: BigintIsh,
     denominator: BigintIsh

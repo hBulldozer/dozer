@@ -52,7 +52,7 @@ export abstract class Currency {
     name?: string
     rebase?: { base: JSBI; elastic: JSBI }
   }) {
-    invariant(decimals >= 0 && decimals < 255 && Number.isInteger(Number(decimals)), 'DECIMALS')
+    // invariant(decimals >= 0 && decimals < 255 && Number.isInteger(Number(decimals)), 'DECIMALS')
 
     this.decimals = Number(decimals)
     this.symbol = symbol

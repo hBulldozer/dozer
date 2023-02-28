@@ -13,7 +13,6 @@ const FILLED = {
   white: 'bg-high-emphesis text-slate-700',
   purple: 'bg-purple-500 bg-opacity-20 text-purple',
   blue: 'bg-blue-500 bg-opacity-20 text-blue',
-  blue: 'bg-blue-500 bg-opacity-20 text-blue',
   green: 'bg-green-500 bg-opacity-20 text-green',
   pink: 'bg-pink-500 bg-opacity-20 text-pink',
   red: 'bg-red-500 bg-opacity-20 text-red',
