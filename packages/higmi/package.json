@@ -21,6 +21,10 @@
     "@headlessui/react": "^1.7.3",
     "@heroicons/react": "^1.0.6",
     "@dozer/hooks": "workspace:*",
+    "@dozer/currency": "workspace:*",
+    "@dozer/format": "workspace:*",
+    "@dozer/math": "workspace:*",
+    "@dozer/chain": "workspace:*",
     "@dozer/zustand": "workspace:*",
     "@dozer/ui": "workspace:*"
   },

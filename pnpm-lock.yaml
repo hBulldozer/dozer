@@ -116,9 +116,11 @@ importers:
     specifiers:
       '@dozer/currency': workspace:*
       '@dozer/eslint-config': workspace:*
+      '@dozer/format': workspace:*
       '@dozer/higmi': workspace:*
       '@dozer/hooks': workspace:*
       '@dozer/jest-config': workspace:*
+      '@dozer/math': workspace:*
       '@dozer/nextjs-config': workspace:*
       '@dozer/prettier-config': workspace:*
       '@dozer/typescript-config': workspace:*
@@ -142,8 +144,10 @@ importers:
       typescript: 4.9.4
     dependencies:
       '@dozer/currency': link:../../packages/currency
+      '@dozer/format': link:../../packages/format
       '@dozer/higmi': link:../../packages/higmi
       '@dozer/hooks': link:../../packages/hooks
+      '@dozer/math': link:../../packages/math
       '@dozer/ui': link:../../packages/ui
       '@dozer/zustand': link:../../packages/zustand
       '@headlessui/react': 1.7.7_biqbaboplfbrettd7655fr4n2y
@@ -354,9 +358,13 @@ importers:
 
   packages/higmi:
     specifiers:
+      '@dozer/chain': workspace:*
+      '@dozer/currency': workspace:*
       '@dozer/eslint-config': workspace:*
+      '@dozer/format': workspace:*
       '@dozer/hooks': workspace:*
       '@dozer/jest-config': workspace:*
+      '@dozer/math': workspace:*
       '@dozer/prettier-config': workspace:*
       '@dozer/typescript-config': workspace:*
       '@dozer/ui': workspace:*
@@ -374,7 +382,11 @@ importers:
       typechain: ^8.0.0
       typescript: 4.9.4
     dependencies:
+      '@dozer/chain': link:../chain
+      '@dozer/currency': link:../currency
+      '@dozer/format': link:../format
       '@dozer/hooks': link:../hooks
+      '@dozer/math': link:../math
       '@dozer/ui': link:../ui
       '@dozer/zustand': link:../zustand
       '@headlessui/react': 1.7.7_biqbaboplfbrettd7655fr4n2y

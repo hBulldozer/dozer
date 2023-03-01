@@ -1,16 +1,16 @@
 import { App, AppType, BuyCrypto } from '@dozer/ui'
-// import { NetworkSelector } from '@dozer/wagmi'
+// import { NetworkSelector } from '@dozer/higmi'
 import { Profile } from '@dozer/higmi/components/Wallet/Profile'
 import React, { FC } from 'react'
-// import { useAccount } from 'wagmi'
+// import { useAccount } from 'higmi'
 
 // import { SUPPORTED_CHAIN_IDS } from '../config'
 // import { useNotifications } from '../lib/state/storage'
 
 export const Header: FC = () => {
-  const  address  = 'meu endereço'
+  const address = 'meu endereço'
   // const [notifications, { clearNotifications }] = useNotifications(address)
-  
+
   return (
     <App.Header
       withScrollBackground={true}
@@ -27,9 +27,9 @@ export const Header: FC = () => {
       <div className="flex items-center gap-2">
         {/* <NetworkSelector supportedNetworks={SUPPORTED_CHAIN_IDS} /> */}
         <Profile
-          // supportedNetworks={SUPPORTED_CHAIN_IDS}
-          // notifications={notifications}
-          // clearNotifications={clearNotifications}
+        // supportedNetworks={SUPPORTED_CHAIN_IDS}
+        // notifications={notifications}
+        // clearNotifications={clearNotifications}
         />
       </div>
     </App.Header>
