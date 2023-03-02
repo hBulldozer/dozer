@@ -1,8 +1,8 @@
-import { AddressZero } from '@ethersproject/constants'
+// import { AddressZero } from '@ethersproject/constants'
 import { SearchIcon } from '@heroicons/react/outline'
 import { XCircleIcon } from '@heroicons/react/solid'
 import chain from '@dozer/chain'
-import { Token, Type } from '@dozer/currency'
+import { Amount, Token, Type } from '@dozer/currency'
 import { FundSource } from '@dozer/hooks'
 import { Fraction } from '@dozer/math'
 import {
@@ -19,16 +19,24 @@ import {
 } from '@dozer/ui'
 import React, { FC, useCallback } from 'react'
 
-import { BalanceMap } from '../../hooks/useBalance/types'
-import { TokenListFilterByQuery } from '../TokenListFilterByQuery'
+// import { BalanceMap } from '../../hooks/useBalance/types'
+// import { TokenListFilterByQuery } from '../TokenListFilterByQuery'
 import { TokenSelectorProps } from './TokenSelector'
-import { TokenSelectorImportRow } from './TokenSelectorImportRow'
+// import { TokenSelectorImportRow } from './TokenSelectorImportRow'
 import { TokenSelectorRow } from './TokenSelectorRow'
+
+export type BalanceMap = Record<string, Record<FundSource, Amount<Type> | undefined>> | undefined
+
+export type TokenBalance = {
+  token_uuid: string
+  token_symbol: string
+  token_balance: number
+}[]
 
 type TokenSelectorOverlay = Omit<TokenSelectorProps, 'variant' | 'tokenMap'> & {
   id: string
   account?: string
-  balancesMap?: BalanceMap
+  balancesMap?: TokenBalance
   tokenMap: Record<string, Token>
   pricesMap?: Record<string, Fraction> | undefined
   fundSource: FundSource
@@ -41,7 +49,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlay> = ({
   open,
   onClose,
   tokenMap,
-  chainId,
+  // chainId,
   onSelect,
   onAddToken,
   balancesMap,
@@ -66,15 +74,16 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlay> = ({
     [onAddToken, onClose, onSelect]
   )
 
+  // <TokenListFilterByQuery
+  //   tokenMap={tokenMap}
+  //   chainId={chainId}
+  //   pricesMap={pricesMap}
+  //   balancesMap={balancesMap}
+  //   fundSource={fundSource}
+  //   includeNative={includeNative}
+  // >
   return (
-    <TokenListFilterByQuery
-      tokenMap={tokenMap}
-      chainId={chainId}
-      pricesMap={pricesMap}
-      balancesMap={balancesMap}
-      fundSource={fundSource}
-      includeNative={includeNative}
-    >
+    <>
       {({ currencies, inputRef, query, onInput, searching, queryToken }) => (
         <SlideIn>
           <SlideIn.FromLeft show={open} onClose={onClose} afterEnter={() => inputRef.current?.focus()}>
@@ -118,13 +127,13 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlay> = ({
               <div className="relative h-full pt-5">
                 <div className="w-full border-t border-slate-200/5" />
                 <div className="absolute inset-0 h-full rounded-t-none bg-slate-800 rounded-xl">
-                  {queryToken[0] && (
+                  {/* {queryToken[0] && (
                     <TokenSelectorImportRow
                       className="!px-4"
                       currencies={queryToken}
                       onImport={() => queryToken[0] && handleImport(queryToken[0])}
                     />
-                  )}
+                  )} */}
                   <Currency.List
                     className="divide-y hide-scrollbar divide-slate-700"
                     currencies={currencies}
@@ -142,14 +151,14 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlay> = ({
                       />
                     )}
                   />
-                  {currencies.length === 0 && !queryToken && chainId && (
+                  {currencies.length === 0 && !queryToken && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="flex flex-col items-center justify-center gap-1">
                         <Typography variant="xs" className="flex italic text-slate-500">
                           No tokens found on
                         </Typography>
                         <Typography variant="xs" weight={500} className="flex gap-1 italic text-slate-500">
-                          <NetworkIcon width={14} height={14} chainId={chainId} /> {chain[chainId].name}
+                          <NetworkIcon width={14} height={14} /> Hathor
                         </Typography>
                       </div>
                     </div>
@@ -160,6 +169,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlay> = ({
           </SlideIn.FromLeft>
         </SlideIn>
       )}
-    </TokenListFilterByQuery>
+      {/* </TokenListFilterByQuery> */}
+    </>
   )
 }

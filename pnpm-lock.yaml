@@ -486,6 +486,8 @@ importers:
 
   packages/ui:
     specifiers:
+      '@dozer/chain': workspace:*
+      '@dozer/currency': workspace:*
       '@dozer/eslint-config': workspace:*
       '@dozer/hooks': workspace:*
       '@dozer/jest-config': workspace:*
@@ -529,6 +531,8 @@ importers:
       use-resize-observer: ^9.0.2
       wagmi: 0.9.1
     dependencies:
+      '@dozer/chain': link:../chain
+      '@dozer/currency': link:../currency
       '@dozer/hooks': link:../hooks
       '@fontsource/inter': 4.5.14
       '@headlessui/react': 1.7.7_biqbaboplfbrettd7655fr4n2y

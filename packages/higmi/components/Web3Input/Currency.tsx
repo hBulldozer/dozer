@@ -5,7 +5,7 @@ import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skel
 import { FC, useCallback, useMemo, useRef, useState } from 'react'
 import { useAccount } from '@dozer/zustand'
 
-import { useBalance, usePrices } from '../../hooks'
+// import { useBalance, usePrices } from '../../hooks'
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
 
 export interface CurrencyInputProps
@@ -48,7 +48,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   const isMounted = useIsMounted()
   const { address } = useAccount()
   const inputRef = useRef<HTMLInputElement>(null)
-  const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
+  const [tokenSelectorOpen, setTokenSelectorOpen] = useState(true)
 
   const focusInput = useCallback(() => {
     if (disabled) return
@@ -145,7 +145,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             onClose={handleClose}
             open={tokenSelectorOpen}
             fundSource={FundSource.WALLET}
-            chainId={chainId}
+            // chainId={chainId}
             currency={currency}
             onSelect={onSelect}
             onAddToken={onAddToken}
@@ -203,12 +203,15 @@ const BalancePanel: FC<BalancePanel> = ({
   loading,
 }) => {
   const isMounted = useIsMounted()
-  const { data: balance, isLoading } = useBalance({
-    chainId,
-    currency,
-    account,
-    enabled: Boolean(currency),
-  })
+  const balance = [
+    {
+      token_uuid: '00',
+      token_symbol: 'HTR',
+      token_balance: 0,
+    },
+  ]
+
+  const isLoading = false
 
   if ((isLoading || loading) && isMounted) {
     return (
@@ -222,11 +225,13 @@ const BalancePanel: FC<BalancePanel> = ({
     <button
       data-testid={`${id}-balance-button`}
       type="button"
-      onClick={() => onChange(balance?.[fundSource]?.greaterThan(0) ? balance[fundSource].toFixed() : '')}
+      onClick={() =>
+        onChange(balance?.[currency.uuid]?.token_balance > 0 ? balance[currency.uuid].token_balance.toString() : '')
+      }
       className="py-1 text-xs text-slate-400 hover:text-slate-300"
       disabled={disableMaxButton}
     >
-      {isMounted && balance ? `Balance: ${balance?.[fundSource]?.toSignificant(6)}` : 'Balance: 0'}
+      {isMounted && balance ? `Balance: ${balance?.[currency.uuid]}` : 'Balance: 0'}
     </button>
   )
 }
@@ -234,9 +239,11 @@ const BalancePanel: FC<BalancePanel> = ({
 type PricePanel = Pick<CurrencyInputProps, 'currency' | 'value' | 'usdPctChange'>
 const PricePanel: FC<PricePanel> = ({ currency, value, usdPctChange }) => {
   const isMounted = useIsMounted()
-  const { data: tokenPrices } = usePrices({ chainId: currency?.chainId })
-  const price = currency ? tokenPrices?.[currency.wrapped.address] : undefined
-  const parsedValue = useMemo(() => tryParseAmount(value, currency), [currency, value])
+  const tokenPrices = {
+    HTR_UUID: 0.008,
+  }
+  const price = currency ? tokenPrices?.HTR_UUID : undefined
+  const parsedValue = useMemo(() => parseFloat(value), [value])
 
   if (!tokenPrices && isMounted)
     return (
@@ -247,7 +254,7 @@ const PricePanel: FC<PricePanel> = ({ currency, value, usdPctChange }) => {
 
   return (
     <Typography variant="xs" weight={400} className="py-1 select-none text-slate-400">
-      {parsedValue && price && isMounted ? `$${parsedValue.multiply(price.asFraction).toFixed(2)}` : '$0.00'}
+      {parsedValue && price && isMounted ? `$${parsedValue * price}` : '$0.00'}
       {usdPctChange && (
         <span
           className={classNames(

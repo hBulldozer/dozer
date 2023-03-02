@@ -2,7 +2,7 @@
 import { Token, Type } from '@dozer/currency'
 import { FundSource, useIsMounted } from '@dozer/hooks'
 import { FC, memo, useMemo } from 'react'
-// import { useAccount } from 'wagmi'
+import { useAccount } from '@dozer/zustand'
 
 // import { useBalances, usePrices } from '../../hooks'
 import { TokenSelectorDialog } from './TokenSelectorDialog'
@@ -13,13 +13,13 @@ export type TokenSelectorProps = {
   variant: 'overlay' | 'dialog'
   currency?: Type
   open: boolean
-  chainId: ChainId | undefined
+  // chainId: ChainId | undefined
   tokenMap: Record<string, Token>
   customTokenMap?: Record<string, Token>
   onClose(): void
   onSelect?(currency: Type): void
   onAddToken?(token: Token): void
-  onRemoveToken?({ chainId, address }: { chainId: ChainId; address: string }): void
+  onRemoveToken?({ uuid }: { uuid: string }): void
   fundSource?: FundSource
   includeNative?: boolean
 }
@@ -29,7 +29,7 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
     id,
     variant,
     tokenMap,
-    chainId,
+    // chainId,
     fundSource = FundSource.WALLET,
     onSelect,
     open,
@@ -52,15 +52,17 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
       return Object.values(_tokenMap)
     }, [_tokenMap])
 
-    const { data: balances } = useBalances({
-      account: address,
-      chainId,
-      currencies: _tokenMapValues,
-      loadBentobox: false,
-      enabled: open,
-    })
+    const balances = [
+      {
+        token_uuid: '00',
+        token_symbol: 'HTR',
+        token_balance: 0,
+      },
+    ]
 
-    const { data: pricesMap } = usePrices({ chainId })
+    const pricesMap = {
+      HTR_UUID: 0.008,
+    }
 
     return useMemo(() => {
       if (!isMounted) return <></>
@@ -74,7 +76,7 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
             balancesMap={balances}
             tokenMap={_tokenMap}
             pricesMap={pricesMap}
-            chainId={chainId}
+            // chainId={chainId}
             fundSource={fundSource}
             onSelect={onSelect}
             includeNative={includeNative}
@@ -91,14 +93,14 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
           balancesMap={balances}
           tokenMap={_tokenMap}
           pricesMap={pricesMap}
-          chainId={chainId}
+          // chainId={chainId}
           fundSource={fundSource}
           onSelect={onSelect}
           includeNative={includeNative}
           {...props}
         />
       )
-    }, [_tokenMap, address, balances, chainId, fundSource, isMounted, onSelect, open, pricesMap, props, variant])
+    }, [_tokenMap, address, balances, fundSource, isMounted, onSelect, open, pricesMap, props, variant])
   },
   (prevProps, nextProps) => {
     return (

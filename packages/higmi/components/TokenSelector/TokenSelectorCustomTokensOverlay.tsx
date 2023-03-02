@@ -1,9 +1,9 @@
 import { ChevronRightIcon, ExternalLinkIcon } from '@heroicons/react/outline'
 import { CurrencyDollarIcon, XCircleIcon } from '@heroicons/react/solid'
-import chain from '@dozer/chain'
+// import chain from '@dozer/chain'
 import { Token, Type } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
-import { Currency, IconButton, NetworkIcon, Overlay, SlideIn, Typography } from '@dozer/ui'
+import { Currency, IconButton, Overlay, SlideIn, Typography } from '@dozer/ui'
 import React, { CSSProperties, FC, useMemo, useState } from 'react'
 
 import { TokenSelectorProps } from './TokenSelector'
@@ -36,12 +36,7 @@ export const TokenSelectorCustomTokenRow: FC<{
           <IconButton onClick={onRemove}>
             <XCircleIcon width={20} height={20} className="text-slate-500" />
           </IconButton>
-          <IconButton
-            as="a"
-            rel="noopener noreffer"
-            target="_blank"
-            href={chain[0].getTokenUrl(currency.uuid)}
-          >
+          <IconButton as="a" rel="noopener noreffer" target="_blank">
             <ExternalLinkIcon width={20} height={20} className="text-blue" />
           </IconButton>
         </div>
@@ -110,8 +105,8 @@ export const TokenSelectorCustomTokensOverlay: FC<TokenSelectorSettingsOverlayPr
                   onRemove={() =>
                     onRemoveToken &&
                     onRemoveToken({
-                      chainId: currency.chainId,
-                      address: currency.wrapped.address,
+                      // chainId: currency.chainId,
+                      uuid: currency.wrapped.uuid,
                     })
                   }
                 />

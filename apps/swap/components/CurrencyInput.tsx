@@ -24,15 +24,15 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   tokenMap,
   onAddToken,
   onRemoveToken,
-  chainId,
+  // chainId,
   inputType,
   tradeType,
   disabled,
   loading = false,
   // isWrap = false,
 }) => {
-  const { trade } = {  }
-  const { data: prices } = usePrices({ chainId })
+  const { trade } = {}
+  // const { data: prices } = usePrices({ chainId })
 
   // If output field and (un)wrapping, set to _value
   let value = inputType === tradeType ? _value : trade ? trade?.outputAmount?.toExact() : ''
@@ -62,7 +62,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
       customTokenMap={customTokenMap}
       onAddToken={onAddToken}
       onRemoveToken={onRemoveToken}
-      chainId={chainId}
+      // chainId={chainId}
       tokenMap={tokenMap}
       loading={loading}
       disabled={disabled}
