@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from '@heroicons/react/solid'
-import { tryParseAmount, Type } from '@dozer/currency'
-import { FundSource, useIsMounted } from '@dozer/hooks'
+import { Type } from '@dozer/currency'
+import { useIsMounted } from '@dozer/hooks'
 import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography } from '@dozer/ui'
 import { FC, useCallback, useMemo, useRef, useState } from 'react'
 import { useAccount } from '@dozer/zustand'
@@ -8,11 +8,7 @@ import { useAccount } from '@dozer/zustand'
 // import { useBalance, usePrices } from '../../hooks'
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
 
-export interface CurrencyInputProps
-  extends Pick<
-    TokenSelectorProps,
-    'onAddToken' | 'onRemoveToken' | 'onSelect' | 'tokenMap' | 'chainId' | 'customTokenMap'
-  > {
+export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect'> {
   id?: string
   value: string
   disabled?: boolean
@@ -21,7 +17,7 @@ export interface CurrencyInputProps
   usdPctChange?: number
   disableMaxButton?: boolean
   className?: string
-  fundSource?: FundSource
+  // fundSource?: FundSource
   loading?: boolean
   includeNative?: boolean
 }
@@ -33,15 +29,15 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   onChange,
   currency,
   onSelect,
-  onAddToken,
-  onRemoveToken,
-  chainId,
-  tokenMap,
-  customTokenMap,
+  // onAddToken,
+  // onRemoveToken,
+  // chainId,
+  // tokenMap,
+  // customTokenMap,
   disableMaxButton = false,
   usdPctChange,
   className,
-  fundSource = FundSource.WALLET,
+  // fundSource = FundSource.WALLET,
   includeNative = true,
   loading,
 }) => {
@@ -103,7 +99,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               <>
                 <div className="w-5 h-5">
                   <UICurrency.Icon
-                    disableLink
+                    // disableLink
                     layout="responsive"
                     currency={currency}
                     width={20}
@@ -129,11 +125,11 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             <BalancePanel
               id={id}
               loading={loading}
-              chainId={chainId}
+              // chainId={chainId}
               account={address}
               onChange={onChange}
               currency={currency}
-              fundSource={fundSource}
+              // fundSource={fundSource}
               disableMaxButton={disableMaxButton}
             />
           </div>
@@ -144,14 +140,14 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             variant="dialog"
             onClose={handleClose}
             open={tokenSelectorOpen}
-            fundSource={FundSource.WALLET}
+            // fundSource={FundSource.WALLET}
             // chainId={chainId}
             currency={currency}
             onSelect={onSelect}
-            onAddToken={onAddToken}
-            onRemoveToken={onRemoveToken}
-            tokenMap={tokenMap}
-            customTokenMap={customTokenMap}
+            // onAddToken={onAddToken}
+            // onRemoveToken={onRemoveToken}
+            // tokenMap={tokenMap}
+            // customTokenMap={customTokenMap}
             includeNative={includeNative}
           />
         )}
@@ -159,24 +155,24 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
     ),
     [
       address,
-      chainId,
+      // chainId,
       className,
       currency,
-      customTokenMap,
+      // customTokenMap,
       disableMaxButton,
       disabled,
       focusInput,
-      fundSource,
+      // fundSource,
       handleClose,
       id,
       includeNative,
       isMounted,
       loading,
-      onAddToken,
+      // onAddToken,
       onChange,
-      onRemoveToken,
+      // onRemoveToken,
       onSelect,
-      tokenMap,
+      // tokenMap,
       tokenSelectorOpen,
       usdPctChange,
       value,
@@ -184,22 +180,19 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   )
 }
 
-type BalancePanel = Pick<
-  CurrencyInputProps,
-  'chainId' | 'onChange' | 'currency' | 'disableMaxButton' | 'fundSource' | 'loading'
-> & {
+type BalancePanel = Pick<CurrencyInputProps, 'onChange' | 'currency' | 'disableMaxButton' | 'loading'> & {
   id?: string
   account: string | undefined
 }
 
 const BalancePanel: FC<BalancePanel> = ({
   id,
-  chainId,
+  // chainId,
   account,
   onChange,
   currency,
   disableMaxButton,
-  fundSource = FundSource.WALLET,
+  // fundSource = FundSource.WALLET,
   loading,
 }) => {
   const isMounted = useIsMounted()
@@ -225,13 +218,11 @@ const BalancePanel: FC<BalancePanel> = ({
     <button
       data-testid={`${id}-balance-button`}
       type="button"
-      onClick={() =>
-        onChange(balance?.[currency.uuid]?.token_balance > 0 ? balance[currency.uuid].token_balance.toString() : '')
-      }
+      onClick={() => onChange('')}
       className="py-1 text-xs text-slate-400 hover:text-slate-300"
       disabled={disableMaxButton}
     >
-      {isMounted && balance ? `Balance: ${balance?.[currency.uuid]}` : 'Balance: 0'}
+      {isMounted && balance ? `Balance: ${balance?.[0]}` : 'Balance: 0'}
     </button>
   )
 }

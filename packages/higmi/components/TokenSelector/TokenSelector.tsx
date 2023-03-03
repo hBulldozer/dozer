@@ -6,7 +6,6 @@ import { useAccount } from '@dozer/zustand'
 
 // import { useBalances, usePrices } from '../../hooks'
 import { TokenSelectorDialog } from './TokenSelectorDialog'
-import { TokenSelectorOverlay } from './TokenSelectorOverlay'
 
 export type TokenSelectorProps = {
   id?: string
@@ -14,13 +13,13 @@ export type TokenSelectorProps = {
   currency?: Type
   open: boolean
   // chainId: ChainId | undefined
-  tokenMap: Record<string, Token>
-  customTokenMap?: Record<string, Token>
+  // tokenMap: Record<string, Token>
+  // customTokenMap?: Record<string, Token>
   onClose(): void
   onSelect?(currency: Type): void
-  onAddToken?(token: Token): void
-  onRemoveToken?({ uuid }: { uuid: string }): void
-  fundSource?: FundSource
+  // onAddToken?(token: Token): void
+  // onRemoveToken?({ uuid }: { uuid: string }): void
+  // fundSource?: FundSource
   includeNative?: boolean
 }
 
@@ -28,29 +27,29 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
   ({
     id,
     variant,
-    tokenMap,
+    // tokenMap,
     // chainId,
-    fundSource = FundSource.WALLET,
+    // fundSource = FundSource.WALLET,
     onSelect,
     open,
-    customTokenMap = {},
+    // customTokenMap = {},
     includeNative,
     ...props
   }) => {
     const { address } = useAccount()
     const isMounted = useIsMounted()
 
-    const _tokenMap: Record<string, Token> = useMemo(
-      () => ({ ...tokenMap, ...customTokenMap }),
-      [tokenMap, customTokenMap]
-    )
+    // const _tokenMap: Record<string, Token> = useMemo(
+    //   () => ({ ...tokenMap, ...customTokenMap }),
+    //   [tokenMap, customTokenMap]
+    // )
 
-    const _tokenMapValues = useMemo(() => {
-      // Optimism token list is dumb, have to remove random weird addresses
-      delete _tokenMap['0x0000000000000000000000000000000000000000']
-      delete _tokenMap['0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000']
-      return Object.values(_tokenMap)
-    }, [_tokenMap])
+    // const _tokenMapValues = useMemo(() => {
+    //   // Optimism token list is dumb, have to remove random weird addresses
+    //   delete _tokenMap['0x0000000000000000000000000000000000000000']
+    //   delete _tokenMap['0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000']
+    //   return Object.values(_tokenMap)
+    // }, [_tokenMap])
 
     const balances = [
       {
@@ -66,50 +65,31 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
 
     return useMemo(() => {
       if (!isMounted) return <></>
-
-      if (variant === 'overlay') {
-        return (
-          <TokenSelectorOverlay
-            id={`${id}-token-selector-overlay`}
-            open={open}
-            account={address}
-            balancesMap={balances}
-            tokenMap={_tokenMap}
-            pricesMap={pricesMap}
-            // chainId={chainId}
-            fundSource={fundSource}
-            onSelect={onSelect}
-            includeNative={includeNative}
-            {...props}
-          />
-        )
-      }
-
       return (
         <TokenSelectorDialog
           id={`${id}-token-selector-dialog`}
           open={open}
           account={address}
           balancesMap={balances}
-          tokenMap={_tokenMap}
+          // tokenMap={_tokenMap}
           pricesMap={pricesMap}
           // chainId={chainId}
-          fundSource={fundSource}
+          // fundSource={fundSource}
           onSelect={onSelect}
           includeNative={includeNative}
           {...props}
         />
       )
-    }, [_tokenMap, address, balances, fundSource, isMounted, onSelect, open, pricesMap, props, variant])
+    }, [address, balances, isMounted, onSelect, open, pricesMap, props, variant])
   },
   (prevProps, nextProps) => {
     return (
       prevProps.variant === nextProps.variant &&
       prevProps.currency === nextProps.currency &&
-      prevProps.open === nextProps.open &&
-      prevProps.tokenMap === nextProps.tokenMap &&
-      prevProps.customTokenMap === nextProps.customTokenMap &&
-      prevProps.fundSource === nextProps.fundSource
+      prevProps.open === nextProps.open
+      // prevProps.tokenMap === nextProps.tokenMap &&
+      // prevProps.customTokenMap === nextProps.customTokenMap
+      // prevProps.fundSource === nextProps.fundSource
     )
   }
 )

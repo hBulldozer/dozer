@@ -1,4 +1,4 @@
-import { AddressZero } from '@ethersproject/constants'
+// import { AddressZero } from '@ethersproject/constants'
 import { Amount, Type } from '@dozer/currency'
 import { FundSource, useInViewport } from '@dozer/hooks'
 import { Fraction, ZERO } from '@dozer/math'
@@ -12,9 +12,9 @@ interface TokenSelectorRow {
   style?: CSSProperties
   className?: string
   onCurrency(currency: Type): void
-  fundSource: FundSource
-  balance?: Record<FundSource, Amount<Type> | undefined>
-  price?: Fraction
+  // fundSource: FundSource
+  balance?: Amount<Type>
+  price?: number
 }
 
 const _TokenSelectorRow: FC<TokenSelectorRow> = ({
@@ -22,7 +22,7 @@ const _TokenSelectorRow: FC<TokenSelectorRow> = ({
   price,
   balance,
   currency,
-  fundSource,
+  // fundSource,
   style,
   className,
   onCurrency,
@@ -34,7 +34,7 @@ const _TokenSelectorRow: FC<TokenSelectorRow> = ({
   const inViewport = useInViewport(ref)
   return (
     <div
-      testdata-id={`${id}-row-${currency.isNative ? AddressZero : currency.wrapped.address.toLowerCase()}`}
+      testdata-id={`${id}-row-${currency.uuid}`}
       onClick={onClick}
       className={classNames(
         className,
@@ -57,13 +57,13 @@ const _TokenSelectorRow: FC<TokenSelectorRow> = ({
           </div>
         </div>
 
-        {balance && balance?.[fundSource]?.greaterThan(ZERO) && (
+        {balance && balance?.greaterThan(ZERO) && (
           <div className="flex flex-col">
             <Typography variant="xs" weight={500} className="text-right text-slate-200">
-              {balance?.[fundSource]?.toSignificant(6)}
+              {balance?.toSignificant(6)}
             </Typography>
             <Typography variant="xxs" className="text-right text-slate-400">
-              {price ? `$${balance[fundSource]?.multiply(price).toFixed(2)}` : '-'}
+              {price ? `$${balance?.multiply(price).toFixed(2)}` : '-'}
             </Typography>
           </div>
         )}

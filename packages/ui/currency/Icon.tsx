@@ -2,8 +2,8 @@
 // import chains, { ChainId } from '@dozer/chain'
 import { Currency } from '@dozer/currency'
 // // import { WrappedTokenInfo } from '@dozer/token-lists'
-// import Image, { ImageProps } from 'next/legacy/image'
-// import { FC, useEffect, useMemo, useState } from 'react'
+import Image, { ImageProps } from 'next/legacy/image'
+import { FC, useEffect, useMemo, useState } from 'react'
 
 import { GradientCircleIcon } from '../icons'
 // import { Link } from '../link'
@@ -23,7 +23,7 @@ export interface IconProps extends Omit<ImageProps, 'src'> {
   // disableLink?: boolean
 }
 
-export const Icon: FC<IconProps> = ({ currency, ...rest }) => {
+export const Icon: FC<IconProps> = ({ ...rest }) => {
   // const [error, setError] = useState(false)
   // const [loading, setLoading] = useState(false)
 

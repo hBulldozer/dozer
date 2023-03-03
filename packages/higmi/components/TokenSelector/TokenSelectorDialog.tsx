@@ -1,10 +1,10 @@
 // import { AddressZero } from '@ethersproject/constants'
 import { SearchIcon } from '@heroicons/react/outline'
 import { XCircleIcon } from '@heroicons/react/solid'
-import chain from '@dozer/chain'
+// import chain from '@dozer/chain'
 import { Amount, Token, Type } from '@dozer/currency'
 import { FundSource, useIsSmScreen } from '@dozer/hooks'
-import { Fraction } from '@dozer/math'
+// import { Fraction } from '@dozer/math'
 import {
   classNames,
   Currency,
@@ -25,21 +25,15 @@ import { TokenSelectorProps } from './TokenSelector'
 import { TokenSelectorRow } from './TokenSelectorRow'
 import { TokenSelectorSettingsOverlay } from './TokenSelectorSettingsOverlay'
 
-export type BalanceMap = Record<string, Record<FundSource, Amount<Type> | undefined>> | undefined
+import { TokenBalance } from '@dozer/currency'
 
-export type TokenBalance = {
-  token_uuid: string
-  token_symbol: string
-  token_balance: number
-}[]
-
-type TokenSelectorDialog = Omit<TokenSelectorProps, 'variant' | 'tokenMap'> & {
+type TokenSelectorDialog = Omit<TokenSelectorProps, 'variant'> & {
   id: string
   account?: string
   balancesMap?: TokenBalance
-  tokenMap: Record<string, Token>
-  pricesMap?: Record<string, Fraction> | undefined
-  fundSource: FundSource
+  // tokenMap: Record<string, Token>
+  pricesMap?: Record<string, number> | undefined
+  // fundSource: FundSource
   includeNative?: boolean
 }
 
@@ -49,18 +43,22 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
   currency,
   open,
   onClose,
-  tokenMap,
-  customTokenMap,
+  // tokenMap,
+  // customTokenMap,
   // chainId,
   onSelect,
-  onAddToken,
-  onRemoveToken,
+  // onAddToken,
+  // onRemoveToken,
   balancesMap,
   pricesMap,
-  fundSource,
+  // fundSource,
   includeNative,
 }) => {
   const isSmallScreen = useIsSmScreen()
+  const currencies = [
+    new Token({ uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' }),
+    new Token({ uuid: '0das23asds123', decimals: 2, name: 'Dozer', symbol: 'DZR' }),
+  ]
 
   const handleSelect = useCallback(
     (currency: Type) => {
@@ -70,14 +68,14 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
     [onClose, onSelect]
   )
 
-  const handleImport = useCallback(
-    (currency: Token) => {
-      onAddToken && onAddToken(currency)
-      onSelect && onSelect(currency)
-      onClose()
-    },
-    [onAddToken, onClose, onSelect]
-  )
+  // const handleImport = useCallback(
+  //   (currency: Token) => {
+  //     onAddToken && onAddToken(currency)
+  //     onSelect && onSelect(currency)
+  //     onClose()
+  //   },
+  //   [onAddToken, onClose, onSelect]
+  // )
 
   return (
     // <TokenListFilterByQuery
@@ -89,21 +87,20 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
     //   includeNative={includeNative}
     // >
     <>
-      {({ currencies, inputRef, query, onInput, searching, queryToken }) => (
-        <Dialog open={open} unmount={false} onClose={onClose} initialFocus={isSmallScreen ? undefined : inputRef}>
-          <Dialog.Content className="!max-w-md overflow-hidden h-[75vh] sm:h-[640px] pb-[116px]">
-            <SlideIn>
-              <Dialog.Header onClose={onClose} title="Select Token">
-                {customTokenMap && (
+      <Dialog open={open} unmount={false} onClose={onClose}>
+        <Dialog.Content className="!max-w-md overflow-hidden h-[75vh] sm:h-[640px] pb-[116px]">
+          <SlideIn>
+            <Dialog.Header onClose={onClose} title="Select Token">
+              {/* {customTokenMap && (
                   <TokenSelectorSettingsOverlay customTokenMap={customTokenMap} onRemoveToken={onRemoveToken} />
-                )}
-              </Dialog.Header>
-              <div
-                className={classNames(
-                  'my-3 mb-5 ring-offset-2 ring-offset-slate-800 flex gap-2 bg-slate-700 pr-3 w-full relative flex items-center justify-between gap-1 rounded-2xl focus-within:ring-2 text-primary ring-blue'
-                )}
-              >
-                <Input.Address
+                )} */}
+            </Dialog.Header>
+            <div
+            // className={classNames(
+            //   'my-3 mb-5 ring-offset-2 ring-offset-slate-800 flex gap-2 bg-slate-700 pr-3 w-full relative flex items-center justify-between gap-1 rounded-2xl focus-within:ring-2 text-primary ring-blue'
+            // )}
+            >
+              {/* <Input.Address
                   id={`${id}-address-input`}
                   testdata-id={`${id}-address-input`}
                   variant="unstyled"
@@ -112,8 +109,8 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                   value={query}
                   onChange={onInput}
                   className={classNames(DEFAULT_INPUT_UNSTYLED, DEFAULT_INPUT_PADDING)}
-                />
-                {searching ? (
+                /> */}
+              {/* {searching ? (
                   <div className="relative left-[-2px]">
                     <Loader size={14} strokeWidth={3} className="animate-spin-slow text-slate-500" />
                   </div>
@@ -130,56 +127,62 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
               </div>
               <div className="relative h-full -ml-6 -mr-6">
                 <Typography className="px-6 pb-1 text-left text-slate-400" variant="xs">
-                  {fundSource === FundSource.WALLET ? 'Wallet' : 'BentoBox'} Balances
-                </Typography>
-                <div className="w-full border-t border-slate-200/5" />
-                <div className="relative h-[calc(100%-32px)] pt-5">
-                  <div className="absolute inset-0 h-full rounded-t-none rounded-xl">
-                    {/* {queryToken[0] && (
+                  {/* {fundSource === FundSource.WALLET ? 'Wallet' : 'BentoBox'} */}
+              {/* Wallet Balances */}
+              {/* </Typography> */}
+              <div
+              // className="w-full border-t border-slate-200/5"
+              />
+              <div
+              // className="relative h-[calc(100%-32px)] pt-5"
+              >
+                <div
+                // className="absolute inset-0 h-full rounded-t-none rounded-xl"
+                >
+                  {/* {queryToken[0] && (
                       <TokenSelectorImportRow
                         className="!px-6"
                         currencies={queryToken}
                         onImport={() => queryToken[0] && handleImport(queryToken[0])}
                       />
                     )} */}
-                    <Currency.List
-                      className="divide-y hide-scrollbar divide-slate-700"
-                      currencies={currencies}
-                      rowRenderer={({ currency, style }) => (
-                        <TokenSelectorRow
-                          id={id}
-                          account={account}
-                          currency={currency}
-                          style={style}
-                          onCurrency={handleSelect}
-                          className="!px-6"
-                          fundSource={fundSource}
-                          balance={balancesMap?.currency.uuid}
-                          price={pricesMap?.[currency.wrapped.address]}
-                        />
-                      )}
-                    />
-                    {currencies.length === 0 && !queryToken && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="flex flex-col items-center justify-center gap-1">
-                          <Typography variant="xs" className="flex italic text-slate-500">
-                            No tokens found on
-                          </Typography>
-                          <Typography variant="xs" weight={500} className="flex gap-1 italic text-slate-500">
-                            {/* <NetworkIcon width={14} height={14} chainId={chainId} /> */}
-                            {/* {chain[chainId].name} */}
-                            Hathor
-                          </Typography>
-                        </div>
-                      </div>
+                  <Currency.List
+                    className="divide-y hide-scrollbar divide-slate-700"
+                    currencies={currencies}
+                    rowRenderer={({ currency, style }) => (
+                      <TokenSelectorRow
+                        id={id}
+                        account={account}
+                        currency={currency}
+                        style={style}
+                        onCurrency={handleSelect}
+                        className="!px-6"
+                        // fundSource={fundSource}
+                        balance={Amount.fromRawAmount(currency, 0)}
+                        price={pricesMap?.[currency.uuid]}
+                      />
                     )}
-                  </div>
+                  />
+                  {currencies.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <Typography variant="xs" className="flex italic text-slate-500">
+                          No tokens found on
+                        </Typography>
+                        <Typography variant="xs" weight={500} className="flex gap-1 italic text-slate-500">
+                          {/* <NetworkIcon width={14} height={14} chainId={chainId} /> */}
+                          {/* {chain[chainId].name} */}
+                          Hathor
+                        </Typography>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </SlideIn>
-          </Dialog.Content>
-        </Dialog>
-      )}
+            </div>
+          </SlideIn>
+        </Dialog.Content>
+      </Dialog>
     </>
   )
 }

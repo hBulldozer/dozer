@@ -1,4 +1,4 @@
-import { Type } from '@dozer/currency'
+import { Type, Token } from '@dozer/currency'
 import React, { CSSProperties, FC, memo, ReactElement, useCallback } from 'react'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { FixedSizeList } from 'react-window'
@@ -10,7 +10,7 @@ interface RendererPayload {
 
 export interface ListProps {
   className?: string
-  currencies: Type[]
+  currencies: Token[]
   rowHeight?: number
   rowRenderer(payload: RendererPayload): ReactElement
   deps?: any[]

@@ -3,14 +3,11 @@ import { IconButton, Overlay, SlideIn } from '@dozer/ui'
 import React, { FC, useState } from 'react'
 
 import { TokenSelectorProps } from './TokenSelector'
-import { TokenSelectorCustomTokensOverlay } from './TokenSelectorCustomTokensOverlay'
+// import { TokenSelectorCustomTokensOverlay } from './TokenSelectorCustomTokensOverlay'
 
-type TokenSelectorSettingsOverlayProps = Pick<TokenSelectorProps, 'customTokenMap' | 'onRemoveToken'>
+type TokenSelectorSettingsOverlayProps = TokenSelectorProps
 
-export const TokenSelectorSettingsOverlay: FC<TokenSelectorSettingsOverlayProps> = ({
-  customTokenMap,
-  onRemoveToken,
-}) => {
+export const TokenSelectorSettingsOverlay: FC<TokenSelectorSettingsOverlayProps> = () => {
   const [open, setOpen] = useState(false)
 
   return (
@@ -26,9 +23,9 @@ export const TokenSelectorSettingsOverlay: FC<TokenSelectorSettingsOverlayProps>
       <SlideIn.FromLeft show={open} onClose={() => setOpen(false)}>
         <Overlay.Content className="!bg-slate-800">
           <Overlay.Header onClose={() => setOpen(false)} title="Settings" />
-          <div className="py-1 px-1">
+          {/* <div className="px-1 py-1">
             <TokenSelectorCustomTokensOverlay customTokenMap={customTokenMap} onRemoveToken={onRemoveToken} />
-          </div>
+          </div> */}
         </Overlay.Content>
       </SlideIn.FromLeft>
     </>

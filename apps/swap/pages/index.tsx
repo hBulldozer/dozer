@@ -1,11 +1,11 @@
 import { ChevronDownIcon } from '@heroicons/react/solid'
 import { App, Button, classNames, Container, Link, Typography, Widget } from '@dozer/ui'
 import { Layout } from '../components/Layout'
-import { TokenSelectorCustomTokenRow, TokenSelectorCustomTokensOverlay } from '@dozer/higmi/components/TokenSelector'
 import { CurrencyInput } from '../components/CurrencyInput'
 import { Token, Type } from '@dozer/currency'
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useIsMounted } from '@dozer/hooks'
+import { TradeType } from '../components/utils/TradeType'
 
 const Home = () => {
   const isMounted = useIsMounted()
@@ -21,10 +21,10 @@ const Home = () => {
   const [input0, setInput0] = useState<string>('')
   const [[token0, token1], setTokens] = useState<[Type | undefined, Type | undefined]>([inputToken, outputToken])
   const [input1, setInput1] = useState<string>('')
-  // const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
+  const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
 
   const onInput0 = useCallback((val: string) => {
-    // setTradeType(TradeType.EXACT_INPUT)
+    setTradeType(TradeType.EXACT_INPUT)
     setInput0(val)
   }, [])
 
@@ -51,9 +51,10 @@ const Home = () => {
   }, [])
 
   const _setToken0 = useCallback((currency: Type) => {
-    setTokens(([prevSrc, prevDst]) => {
-      return prevDst && currency.equals(prevDst) ? [prevDst, prevSrc] : [currency, prevDst]
-    })
+    // setTokens(([prevSrc, prevDst]) => {
+    //   return prevDst && currency.equals(prevDst) ? [prevDst, prevSrc] : [currency, prevDst]
+    // })
+    setTokens([currency, currency])
   }, [])
 
   const _setToken1 = useCallback((currency: Type) => {
@@ -83,8 +84,8 @@ const Home = () => {
             // onRemoveToken={removeCustomToken}
             // chainId={chainId}
             // tokenMap={tokenMap}
-            // inputType={TradeType.EXACT_INPUT}
-            // tradeType={tradeType}
+            inputType={TradeType.EXACT_INPUT}
+            tradeType={tradeType}
             loading={!token0}
           />
           <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
