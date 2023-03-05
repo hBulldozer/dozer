@@ -95,12 +95,12 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                   <TokenSelectorSettingsOverlay customTokenMap={customTokenMap} onRemoveToken={onRemoveToken} />
                 )} */}
             </Dialog.Header>
-            <div
-            // className={classNames(
-            //   'my-3 mb-5 ring-offset-2 ring-offset-slate-800 flex gap-2 bg-slate-700 pr-3 w-full relative flex items-center justify-between gap-1 rounded-2xl focus-within:ring-2 text-primary ring-blue'
-            // )}
-            >
-              {/* <Input.Address
+            {/* <div
+            className={classNames(
+              'my-3 mb-5 ring-offset-2 ring-offset-slate-800 flex gap-2 bg-slate-700 pr-3 w-full relative flex items-center justify-between gap-1 rounded-2xl focus-within:ring-2 text-primary ring-blue'
+            )}
+            > */}
+            {/* <Input.Address
                   id={`${id}-address-input`}
                   testdata-id={`${id}-address-input`}
                   variant="unstyled"
@@ -110,7 +110,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                   onChange={onInput}
                   className={classNames(DEFAULT_INPUT_UNSTYLED, DEFAULT_INPUT_PADDING)}
                 /> */}
-              {/* {searching ? (
+            {/* {searching ? (
                   <div className="relative left-[-2px]">
                     <Loader size={14} strokeWidth={3} className="animate-spin-slow text-slate-500" />
                   </div>
@@ -125,20 +125,14 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                   <SearchIcon className="text-slate-500" strokeWidth={2} width={20} height={20} />
                 )}
               </div>
-              <div className="relative h-full -ml-6 -mr-6">
-                <Typography className="px-6 pb-1 text-left text-slate-400" variant="xs">
-                  {/* {fundSource === FundSource.WALLET ? 'Wallet' : 'BentoBox'} */}
-              {/* Wallet Balances */}
-              {/* </Typography> */}
-              <div
-              // className="w-full border-t border-slate-200/5"
-              />
-              <div
-              // className="relative h-[calc(100%-32px)] pt-5"
-              >
-                <div
-                // className="absolute inset-0 h-full rounded-t-none rounded-xl"
-                >
+              <Typography className="px-6 pb-1 text-left text-slate-400" variant="xs">
+              {/* {fundSource === FundSource.WALLET ? 'Wallet' : 'BentoBox'} */}
+            {/* Wallet Balances */}
+            {/* </Typography> */}
+            <div className="relative h-full -ml-6 -mr-6">
+              <div className="w-full border-t border-slate-200/5" />
+              <div className="relative h-[calc(100%-32px)] pt-5">
+                <div className="absolute inset-0 h-full rounded-t-none rounded-xl">
                   {/* {queryToken[0] && (
                       <TokenSelectorImportRow
                         className="!px-6"
@@ -180,6 +174,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                 </div>
               </div>
             </div>
+            {/* </div> */}
           </SlideIn>
         </Dialog.Content>
       </Dialog>
