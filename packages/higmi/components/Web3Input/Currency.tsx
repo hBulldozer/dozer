@@ -44,7 +44,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   const isMounted = useIsMounted()
   const { address } = useAccount()
   const inputRef = useRef<HTMLInputElement>(null)
-  const [tokenSelectorOpen, setTokenSelectorOpen] = useState(true)
+  const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
 
   const focusInput = useCallback(() => {
     if (disabled) return

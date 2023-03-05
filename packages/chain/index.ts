@@ -1,15 +1,15 @@
 // *TODO Review
 export interface Chain {
   name: string
-  chain: string
+  // chain: string
   icon?: string
   // rpc: string[]
   faucets?: string[]
   infoURL?: string
-  shortName: string
+  // shortName: string
   explorers?: Explorer[]
   title?: string
-  network?: Network
+  // network?: Network
 }
 
 export interface Explorer {
@@ -23,14 +23,25 @@ export enum Network {
   Testnet = 'testnet',
 }
 
+export enum ChainId {
+  HATHOR = 1,
+  HATHOR_TESTNET = 2,
+}
+
+export enum ChainKey {
+  HATHOR = 'hathor',
+  HATHOR_TESTNET = 'hathor-testnet',
+}
+
 const CHAINS = [
   {
     name: 'Hathor',
-    chain: 'Hathor',
+    // chain: 'Hathor',
     // rpc: [''],
     faucets: [],
+    chainId: 1,
     infoURL: 'https://hathor.network',
-    shortName: 'hathor',
+    // shortName: 'hathor',
     explorers: [
       {
         name: 'Hathor Explorer',
@@ -39,12 +50,13 @@ const CHAINS = [
     ],
   },
   {
-    name: 'Hathor',
-    chain: 'Hathor',
+    name: 'Hathor testnet',
+    // chain: 'Hathor',
     // rpc: [''],
     faucets: [],
+    chainId: 2,
     infoURL: 'https://hathor.network',
-    shortName: 'hathor',
+    // shortName: 'hathor',
     explorers: [
       {
         name: 'Hathor TestNet Explorer',
@@ -82,13 +94,10 @@ export class Chain implements Chain {
 }
 
 // Chain Short Name => Chain Id mapping
-export const chainShortNameToChainId = Object.fromEntries(CHAINS.map((data): [string] => [data.shortName]))
-
-// Chain Id => Short Name mapping
-export const chainShortName = Object.fromEntries(CHAINS.map((data): [string] => [data.shortName]))
+export const chainNameToChainId = Object.fromEntries(CHAINS.map((data): [string] => [data.name]))
 
 // Chain Id => Chain Name mapping
-export const chainName = Object.fromEntries(CHAINS.map((data): [string] => [data.name]))
+export const chainName = Object.fromEntries(CHAINS.map((data): [number, string] => [data.chainId, data.name]))
 
 // Chain Id => Chain mapping
 export const chains = Object.fromEntries(CHAINS.map((data): [Chain] => [new Chain(data)]))

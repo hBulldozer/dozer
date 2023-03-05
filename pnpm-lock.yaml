@@ -114,6 +114,7 @@ importers:
 
   apps/swap:
     specifiers:
+      '@dozer/chain': workspace:*
       '@dozer/currency': workspace:*
       '@dozer/eslint-config': workspace:*
       '@dozer/format': workspace:*
@@ -143,6 +144,7 @@ importers:
       tailwindcss: 3.2.4
       typescript: 4.9.4
     dependencies:
+      '@dozer/chain': link:../../packages/chain
       '@dozer/currency': link:../../packages/currency
       '@dozer/format': link:../../packages/format
       '@dozer/higmi': link:../../packages/higmi

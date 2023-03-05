@@ -1,10 +1,10 @@
 import { App, AppType, BuyCrypto } from '@dozer/ui'
-// import { NetworkSelector } from '@dozer/higmi'
+import { NetworkSelector } from '@dozer/higmi'
 import { Profile } from '@dozer/higmi/components/Wallet/Profile'
 import React, { FC } from 'react'
 // import { useAccount } from 'higmi'
 
-// import { SUPPORTED_CHAIN_IDS } from '../config'
+import { SUPPORTED_CHAIN_IDS } from '../config'
 // import { useNotifications } from '../lib/state/storage'
 
 export const Header: FC = () => {
@@ -25,7 +25,7 @@ export const Header: FC = () => {
       }
     >
       <div className="flex items-center gap-2">
-        {/* <NetworkSelector supportedNetworks={SUPPORTED_CHAIN_IDS} /> */}
+        <NetworkSelector supportedNetworks={SUPPORTED_CHAIN_IDS} />
         <Profile
         // supportedNetworks={SUPPORTED_CHAIN_IDS}
         // notifications={notifications}
