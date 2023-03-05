@@ -2,7 +2,7 @@ import { ChevronDownIcon } from '@heroicons/react/solid'
 import { App, Button, classNames, Container, Link, Typography, Widget } from '@dozer/ui'
 import { Layout } from '../components/Layout'
 import { CurrencyInput } from '../components/CurrencyInput'
-import { Token, Type } from '@dozer/currency'
+import { Token } from '@dozer/currency'
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useIsMounted } from '@dozer/hooks'
 import { TradeType } from '../components/utils/TradeType'
@@ -19,7 +19,7 @@ const Home = () => {
   }, [isMounted])
 
   const [input0, setInput0] = useState<string>('')
-  const [[token0, token1], setTokens] = useState<[Type | undefined, Type | undefined]>([inputToken, outputToken])
+  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([inputToken, outputToken])
   const [input1, setInput1] = useState<string>('')
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
 
@@ -50,14 +50,14 @@ const Home = () => {
     setInput1('')
   }, [])
 
-  const _setToken0 = useCallback((currency: Type) => {
+  const _setToken0 = useCallback((currency: Token) => {
     // setTokens(([prevSrc, prevDst]) => {
     //   return prevDst && currency.equals(prevDst) ? [prevDst, prevSrc] : [currency, prevDst]
     // })
     setTokens([currency, currency])
   }, [])
 
-  const _setToken1 = useCallback((currency: Type) => {
+  const _setToken1 = useCallback((currency: Token) => {
     setTokens(([prevSrc, prevDst]) => {
       return prevSrc && currency.equals(prevSrc) ? [prevDst, prevSrc] : [prevSrc, currency]
     })

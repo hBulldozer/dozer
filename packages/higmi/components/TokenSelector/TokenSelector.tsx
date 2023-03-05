@@ -1,5 +1,5 @@
 // import { ChainId } from '@dozer/chain'
-import { Token, Type } from '@dozer/currency'
+import { Token } from '@dozer/currency'
 import { FundSource, useIsMounted } from '@dozer/hooks'
 import { FC, memo, useMemo } from 'react'
 import { useAccount } from '@dozer/zustand'
@@ -10,13 +10,13 @@ import { TokenSelectorDialog } from './TokenSelectorDialog'
 export type TokenSelectorProps = {
   id?: string
   variant: 'overlay' | 'dialog'
-  currency?: Type
+  currency?: Token
   open: boolean
   // chainId: ChainId | undefined
   // tokenMap: Record<string, Token>
   // customTokenMap?: Record<string, Token>
   onClose(): void
-  onSelect?(currency: Type): void
+  onSelect?(currency: Token): void
   // onAddToken?(token: Token): void
   // onRemoveToken?({ uuid }: { uuid: string }): void
   // fundSource?: FundSource

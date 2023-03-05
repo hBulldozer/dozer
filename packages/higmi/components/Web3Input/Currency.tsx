@@ -1,5 +1,5 @@
 import { ChevronDownIcon } from '@heroicons/react/solid'
-import { Type } from '@dozer/currency'
+import { Token } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
 import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography } from '@dozer/ui'
 import { FC, useCallback, useMemo, useRef, useState } from 'react'
@@ -13,7 +13,7 @@ export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect'>
   value: string
   disabled?: boolean
   onChange(value: string): void
-  currency: Type | undefined
+  currency: Token | undefined
   usdPctChange?: number
   disableMaxButton?: boolean
   className?: string

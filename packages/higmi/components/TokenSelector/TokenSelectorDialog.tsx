@@ -2,7 +2,7 @@
 import { SearchIcon } from '@heroicons/react/outline'
 import { XCircleIcon } from '@heroicons/react/solid'
 // import chain from '@dozer/chain'
-import { Amount, Token, Type } from '@dozer/currency'
+import { Amount, Token } from '@dozer/currency'
 import { FundSource, useIsSmScreen } from '@dozer/hooks'
 // import { Fraction } from '@dozer/math'
 import {
@@ -61,7 +61,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
   ]
 
   const handleSelect = useCallback(
-    (currency: Type) => {
+    (currency: Token) => {
       onSelect && onSelect(currency)
       onClose()
     },
