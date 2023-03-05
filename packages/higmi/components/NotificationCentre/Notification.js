@@ -1,6 +1,4 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from 'react/jsx-runtime'
-// import chains, { ChainId } from '@dozer/chain'
-// import { Token } from '@dozer/currency'
 import { Badge, classNames, IconButton, Loader, TimeAgo, Typography } from '@dozer/ui'
 import { Disclosure } from '@headlessui/react'
 import { CashIcon, ChevronDownIcon, DownloadIcon, XIcon } from '@heroicons/react/solid'

@@ -26,6 +26,7 @@
     "@dozer/math": "workspace:*",
     "@dozer/chain": "workspace:*",
     "@dozer/zustand": "workspace:*",
+    "@dozer/react-query": "workspace:*",
     "@dozer/ui": "workspace:*"
   },
   "devDependencies": {

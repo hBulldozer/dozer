@@ -1,5 +1,3 @@
-// import chains, { ChainId } from '@dozer/chain'
-// import { Token } from '@dozer/currency'
 import { Badge, classNames, Dots, IconButton, Link, Loader, TimeAgo, Typography } from '@dozer/ui'
 import { Disclosure } from '@headlessui/react'
 import {

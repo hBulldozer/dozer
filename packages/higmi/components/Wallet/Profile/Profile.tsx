@@ -1,19 +1,17 @@
 import { Popover } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/solid'
-// import { ChainId } from '@dozer/chain'
-// import { shortenAddress } from '@dozer/format'
 import { useBreakpoint } from '@dozer/hooks'
 import { classNames, DEFAULT_INPUT_UNSTYLED, JazzIcon } from '@dozer/ui'
 import Image from 'next/legacy/image'
 import React, { FC, useState, useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
-// import { useAccount, useEnsAvatar, useNetwork } from 'wagmi'
 import { useAccount } from '@dozer/zustand'
 
 import { Wallet } from '..'
 import { Default } from './Default'
 import { Transactions } from './Transactions'
 import { Portal } from './Portal'
+import { shortenAddress } from './Utils'
 
 export enum ProfileView {
   Default,
@@ -69,7 +67,7 @@ export const Profile: FC = () => {
                 )}
               >
                 <JazzIcon diameter={20} address={address} />
-                {address}{' '}
+                {shortenAddress(address)}{' '}
                 <ChevronDownIcon
                   width={20}
                   height={20}
@@ -77,7 +75,8 @@ export const Profile: FC = () => {
                 />
               </Popover.Button>
 
-              {!isSm ? (mounted && ref.current ? ReactDOM.createPortal(<div>{panel}</div>, ref.current) : null) : panel}
+              {/* {!isSm ? (mounted && ref.current) ? ReactDOM.createPortal(<div>{panel}</div>, ref.current) : null :panel} */}
+              {!isSm ? ReactDOM.createPortal(panel, document.body) : panel}
             </>
           )
         }}

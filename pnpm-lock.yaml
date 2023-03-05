@@ -130,9 +130,11 @@ importers:
       '@headlessui/react': ^1.7.3
       '@heroicons/react': ^1.0.0
       '@tailwindcss/typography': ^0.5.2
+      '@tanstack/react-query': 4.20.4
       '@types/node': 17.0.30
       '@types/react': ^18.0.0
       '@types/react-dom': ^18.0.0
+      '@types/react-no-ssr': 1.1.3
       '@vercel/analytics': 0.1.5
       autoprefixer: 10.4.13
       eslint: 8.29.0
@@ -141,6 +143,7 @@ importers:
       postcss: 8.4.21
       react: 18.2.0
       react-dom: 18.2.0
+      react-no-ssr: 1.1.0
       tailwindcss: 3.2.4
       typescript: 4.9.4
     dependencies:
@@ -166,12 +169,15 @@ importers:
       '@dozer/nextjs-config': link:../../config/nextjs
       '@dozer/prettier-config': link:../../config/prettier
       '@dozer/typescript-config': link:../../config/typescript
+      '@tanstack/react-query': 4.20.4_biqbaboplfbrettd7655fr4n2y
       '@types/node': 17.0.30
       '@types/react': 18.0.26
       '@types/react-dom': 18.0.10
+      '@types/react-no-ssr': 1.1.3
       autoprefixer: 10.4.13_postcss@8.4.21
       eslint: 8.29.0
       postcss: 8.4.21
+      react-no-ssr: 1.1.0_react@18.2.0
       tailwindcss: 3.2.4_postcss@8.4.21
       typescript: 4.9.4
 
@@ -231,6 +237,22 @@ importers:
       '@dozer/typescript-config': link:../typescript
       '@types/prettier': 2.7.1
       prettier: 2.8.1
+      tsup: 6.5.0_typescript@4.9.4
+      typescript: 4.9.4
+
+  config/react-query:
+    specifiers:
+      '@dozer/eslint-config': workspace:*
+      '@dozer/jest-config': workspace:*
+      '@dozer/prettier-config': workspace:*
+      '@dozer/typescript-config': workspace:*
+      tsup: 6.5.0
+      typescript: 4.9.4
+    devDependencies:
+      '@dozer/eslint-config': link:../eslint
+      '@dozer/jest-config': link:../jest
+      '@dozer/prettier-config': link:../prettier
+      '@dozer/typescript-config': link:../typescript
       tsup: 6.5.0_typescript@4.9.4
       typescript: 4.9.4
 
@@ -368,6 +390,7 @@ importers:
       '@dozer/jest-config': workspace:*
       '@dozer/math': workspace:*
       '@dozer/prettier-config': workspace:*
+      '@dozer/react-query': workspace:*
       '@dozer/typescript-config': workspace:*
       '@dozer/ui': workspace:*
       '@dozer/zustand': workspace:*
@@ -388,6 +411,7 @@ importers:
       '@dozer/currency': link:../currency
       '@dozer/format': link:../format
       '@dozer/hooks': link:../hooks
+      '@dozer/react-query': link:../react-query
       '@dozer/math': link:../math
       '@dozer/ui': link:../ui
       '@dozer/zustand': link:../zustand
@@ -447,6 +471,43 @@ importers:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       tailwindcss: 3.2.4
+      typescript: 4.9.4
+
+  packages/react-query:
+    specifiers:
+      '@dozer/eslint-config': workspace:*
+      '@dozer/jest-config': workspace:*
+      '@dozer/prettier-config': workspace:*
+      '@dozer/react-query-config': workspace:*
+      '@dozer/typescript-config': workspace:*
+      '@tanstack/react-query': 4.20.4
+      '@tanstack/react-query-devtools': 4.20.4
+      '@tanstack/react-query-persist-client': 4.20.4
+      '@types/react': ^18.0.0
+      '@types/react-dom': ^18.0.0
+      axios: 1.3.4
+      eslint: 8.29.0
+      react: 18.2.0
+      react-dom: 18.2.0
+      tsup: 6.5.0
+      typescript: 4.9.4
+    dependencies:
+      '@tanstack/react-query': 4.20.4_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query-devtools': 4.20.4_fu3ixcwltlssi3ozitelgaebme
+      '@tanstack/react-query-persist-client': 4.20.4_l2azqzttlggxzjcfejyd3icfe4
+    devDependencies:
+      '@dozer/eslint-config': link:../../config/eslint
+      '@dozer/jest-config': link:../../config/jest
+      '@dozer/prettier-config': link:../../config/prettier
+      '@dozer/react-query-config': link:../../config/react-query
+      '@dozer/typescript-config': link:../../config/typescript
+      '@types/react': 18.0.26
+      '@types/react-dom': 18.0.10
+      axios: 1.3.4
+      eslint: 8.29.0
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      tsup: 6.5.0_typescript@4.9.4
       typescript: 4.9.4
 
   packages/math:
@@ -585,6 +646,7 @@ importers:
       '@dozer/eslint-config': workspace:*
       '@dozer/jest-config': workspace:*
       '@dozer/prettier-config': workspace:*
+      '@dozer/react-query': workspace:*
       '@dozer/typescript-config': workspace:*
       '@dozer/ui': workspace:*
       '@types/node': ^18.0.0
@@ -597,6 +659,8 @@ importers:
       react-dom: 18.2.0
       typescript: 4.9.4
       zustand: 4.3.3
+    dependencies:
+      '@dozer/react-query': link:../react-query
     devDependencies:
       '@dozer/eslint-config': link:../../config/eslint
       '@dozer/jest-config': link:../../config/jest
@@ -2508,17 +2572,21 @@ packages:
       tailwindcss: 3.2.4_postcss@8.4.21
     dev: false
 
+  /@tanstack/match-sorter-utils/8.7.6:
+    resolution: {integrity: sha512-2AMpRiA6QivHOUiBpQAVxjiHAA68Ei23ZUMNaRJrN6omWiSFLoYrxGcT6BXtuzp0Jw4h6HZCmGGIM/gbwebO2A==}
+    engines: {node: '>=12'}
+    dependencies:
+      remove-accents: 0.4.2
+    dev: false
+
   /@tanstack/query-core/4.20.4:
     resolution: {integrity: sha512-lhLtGVNJDsJ/DyZXrLzekDEywQqRVykgBqTmkv0La32a/RleILXy6JMLBb7UmS3QCatg/F/0N9/5b0i5j6IKcA==}
-    dev: false
-    optional: true
 
   /@tanstack/query-persist-client-core/4.20.4:
     resolution: {integrity: sha512-MzrRC9esSEpD/kY28Zi4YqkWvuOUmpO67vpgCkQszOLbAHLMeEibId3njXxIZXDPg5fvX3HaAwFS7GheuMuKFg==}
     peerDependencies:
       '@tanstack/query-core': 4.20.4
     dev: false
-    optional: true
 
   /@tanstack/query-sync-storage-persister/4.20.4:
     resolution: {integrity: sha512-+LrpqZDScy9FfyJJGSY6/sMbgi9zHbDCXWOwpKJ2aPfTblk0cAJDjlM7rS49FXZD//edEJehm9SgRhFN2/9pSg==}
@@ -2528,6 +2596,21 @@ packages:
       - '@tanstack/query-core'
     dev: false
     optional: true
+
+  /@tanstack/react-query-devtools/4.20.4_fu3ixcwltlssi3ozitelgaebme:
+    resolution: {integrity: sha512-4e4wOmqAYjLS1RQ7gRBLCk3koCjbOfCMvbxS3CPCAN5+FLBemLAvoYvFJ/i/7DPsIsltGwsnd7YAFFGMzdSx7A==}
+    peerDependencies:
+      '@tanstack/react-query': 4.20.4
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      '@tanstack/match-sorter-utils': 8.7.6
+      '@tanstack/react-query': 4.20.4_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      superjson: 1.12.2
+      use-sync-external-store: 1.2.0_react@18.2.0
+    dev: false
 
   /@tanstack/react-query-persist-client/4.20.4_l2azqzttlggxzjcfejyd3icfe4:
     resolution: {integrity: sha512-fJvYdULQEa+PV7M3WzWNPWiP/VmWflyiISwIzu2/wC6TnsH7CzXwUwy5PvTl89AR26GR0/U5J6f+oS6JhLVJxQ==}
@@ -2539,7 +2622,6 @@ packages:
     transitivePeerDependencies:
       - '@tanstack/query-core'
     dev: false
-    optional: true
 
   /@tanstack/react-query/4.20.4_biqbaboplfbrettd7655fr4n2y:
     resolution: {integrity: sha512-SJRxx13k/csb9lXAJfycgVA1N/yU/h3bvRNWP0+aHMfMjmbyX82FdoAcckDBbOdEyAupvb0byelNHNeypCFSyA==}
@@ -2557,8 +2639,6 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       use-sync-external-store: 1.2.0_react@18.2.0
-    dev: false
-    optional: true
 
   /@tanstack/react-table/8.5.0_biqbaboplfbrettd7655fr4n2y:
     resolution: {integrity: sha512-WXzNd2HzoyQ3Dv2qiWrKJ0andJrxtghddNV1M85uQGyi2lGMpBnh2OLgafPHiVNHj3EseHFv+CED5unuX2Sv5Q==}
@@ -2785,6 +2865,12 @@ packages:
 
   /@types/react-dom/18.0.10:
     resolution: {integrity: sha512-E42GW/JA4Qv15wQdqJq8DL4JhNpB3prJgjgapN3qJT9K2zO5IIAQh4VXvCEDupoqAwnz0cY4RlXeC/ajX5SFHg==}
+    dependencies:
+      '@types/react': 18.0.26
+    dev: true
+
+  /@types/react-no-ssr/1.1.3:
+    resolution: {integrity: sha512-uMR17qGISe0qTTiVFuRfatP+9plEe/Q0beQ47xy0OXatwb3Z2bEj3OW7FC+9PVqCYEsfR4b01LU9tXw2urzBzw==}
     dependencies:
       '@types/react': 18.0.26
     dev: true
@@ -3630,6 +3716,16 @@ packages:
     dev: false
     optional: true
 
+  /axios/1.3.4:
+    resolution: {integrity: sha512-toYm+Bsyl6VC5wSkfkbbNB6ROv7KY93PEBBL6xyDczaIHasAiv4wPqQ/c4RjoQzipxRD2W5g21cOqQulZ7rHwQ==}
+    dependencies:
+      follow-redirects: 1.15.2
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+    dev: true
+
   /axobject-query/2.2.0:
     resolution: {integrity: sha512-Td525n+iPOOyUQIeBfcASuG6uJsDOITl7Mds5gFyerkWiX7qhUTdYUBlSgNMyVqtSJqwpt1kXGLdUt6SykLMRA==}
 
@@ -3739,6 +3835,13 @@ packages:
       '@babel/core': 7.20.7
       babel-plugin-jest-hoist: 29.2.0
       babel-preset-current-node-syntax: 1.0.1_@babel+core@7.20.7
+    dev: true
+
+  /babel-runtime/6.26.0:
+    resolution: {integrity: sha512-ITKNuq2wKlW1fJg9sSW52eepoYgZBggvOAHC0u/CYu/qxQ9EVzThCgR69BnSXLHjy2f7SY5zaQ4yt7H9ZVxY2g==}
+    dependencies:
+      core-js: 2.6.12
+      regenerator-runtime: 0.11.1
     dev: true
 
   /balanced-match/1.0.2:
@@ -4184,6 +4287,13 @@ packages:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
     dev: true
 
+  /copy-anything/3.0.3:
+    resolution: {integrity: sha512-fpW2W/BqEzqPp29QS+MwwfisHCQZtiduTe/m8idFo0xbti9fIZ2WVhAsCv4ggFVH3AgCkVdpoOCtQC6gBrdhjw==}
+    engines: {node: '>=12.13'}
+    dependencies:
+      is-what: 4.1.8
+    dev: false
+
   /copy-to-clipboard/3.3.3:
     resolution: {integrity: sha512-2KV8NhB5JqC3ky0r9PMCAZKbUHSwtEo4CwCs0KXgruG43gX5PMqDEBbVU4OUzw2MuAWUfsuFmWvEKG5QRfSnJA==}
     dependencies:
@@ -4200,6 +4310,12 @@ packages:
   /core-js-pure/3.27.0:
     resolution: {integrity: sha512-fJml7FM6v1HI3Gkg5/Ifc/7Y2qXcJxaDwSROeZGAZfNykSTvUk94WT55TYzJ2lFHK0voSr/d4nOVChLuNCWNpA==}
     requiresBuild: true
+
+  /core-js/2.6.12:
+    resolution: {integrity: sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==}
+    deprecated: core-js@<3.23.3 is no longer maintained and not recommended for usage due to the number of issues. Because of the V8 engine whims, feature detection in old core-js versions could cause a slowdown up to 100x even if nothing is polyfilled. Some versions have web compatibility issues. Please, upgrade your dependencies to the actual version of core-js.
+    requiresBuild: true
+    dev: true
 
   /create-hash/1.2.0:
     resolution: {integrity: sha512-z00bCGNHDG8mHAkP7CtT1qVu+bFQUPjYq/4Iv3C3kWjTFV10zIjfSoeqXo9Asws8gwSHDGj/hl2u4OGIjapeCg==}
@@ -5864,8 +5980,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-    dev: false
-    optional: true
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -5890,7 +6004,6 @@ packages:
       asynckit: 0.4.0
       combined-stream: 1.0.8
       mime-types: 2.1.35
-    dev: false
 
   /fraction.js/4.2.0:
     resolution: {integrity: sha512-MhLuK+2gUcnZe8ZHlaaINnQLl0xRIGRfcGk2yl8xoQAfHrSsL3rYu6FCmBdkdbhc9EPlwyGHewaRsvwRMJtAlA==}
@@ -6450,6 +6563,11 @@ packages:
     resolution: {integrity: sha512-qctsuLZmIQ0+vSSMfoVvyFe2+GSEvnmZ2ezTup1SBse9+twCCeial6EEi3Nc2KFcf6+qz2FBPnjXsk8xhKSaPQ==}
     dependencies:
       call-bind: 1.0.2
+
+  /is-what/4.1.8:
+    resolution: {integrity: sha512-yq8gMao5upkPoGEU9LsB2P+K3Kt8Q3fQFCGyNCWOAnJAMzEXVV9drYb0TXr42TTliLLhKIBvulgAXgtLLnwzGA==}
+    engines: {node: '>=12.13'}
+    dev: false
 
   /is-windows/1.0.2:
     resolution: {integrity: sha512-eXK1UInq2bPmjyX6e3VHIzMLobc4J94i4AWn+Hpq3OU5KkrRC96OAcR3PRJ/pGu6m8TRnBHP9dkXQVsT/COVIA==}
@@ -8277,6 +8395,10 @@ packages:
       object-assign: 4.1.1
       react-is: 16.13.1
 
+  /proxy-from-env/1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+    dev: true
+
   /pseudomap/1.0.2:
     resolution: {integrity: sha512-b/YwNhb8lk1Zz2+bXXpS/LK9OisiZZ1SNsSLxN1x2OXVEhW2Ckr/7mWE5vrC1ZTiJlD9g19jWszTmJsB+oEpFQ==}
     dev: true
@@ -8471,6 +8593,15 @@ packages:
       react-dom: 18.2.0_react@18.2.0
     dev: false
 
+  /react-no-ssr/1.1.0_react@18.2.0:
+    resolution: {integrity: sha512-3td8iPIEFKWXOJ3Ar5xURvZAsv/aIlngJLBH6fP5QC3WhsfuO2pn7WQR0ZlkTE0puWCL0RDEvXtOfAg4qMp+xA==}
+    peerDependencies:
+      react: ^0.14.0 || ^15.0.0
+    dependencies:
+      babel-runtime: 6.26.0
+      react: 18.2.0
+    dev: true
+
   /react-onclickoutside/6.12.2_biqbaboplfbrettd7655fr4n2y:
     resolution: {integrity: sha512-NMXGa223OnsrGVp5dJHkuKxQ4czdLmXSp5jSV9OqiCky9LOpPATn3vLldc+q5fK3gKbEHvr7J1u0yhBh/xYkpA==}
     peerDependencies:
@@ -8635,6 +8766,10 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
+  /regenerator-runtime/0.11.1:
+    resolution: {integrity: sha512-MguG95oij0fC3QV3URf4V2SDYGJhJnJGqvIIgdECeODCT98wSWDAJ94SSuVpYQUoTcGUIL6L4yNB7j1DFFHSBg==}
+    dev: true
+
   /regenerator-runtime/0.13.11:
     resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
 
@@ -8650,6 +8785,10 @@ packages:
     resolution: {integrity: sha512-pq2bWo9mVD43nbts2wGv17XLiNLya+GklZ8kaDLV2Z08gDCsGpnKn9BFMepvWuHCbyVvY7J5o5+BVvoQbmlJLg==}
     engines: {node: '>=8'}
     dev: true
+
+  /remove-accents/0.4.2:
+    resolution: {integrity: sha512-7pXIJqJOq5tFgG1A2Zxti3Ht8jJF337m4sowbuHsW30ZnkQFnDzy9qBNhgzX8ZLW4+UBcXiiR7SwR6pokHsxiA==}
+    dev: false
 
   /require-directory/2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
@@ -9178,6 +9317,13 @@ packages:
       pirates: 4.0.5
       ts-interface-checker: 0.1.13
     dev: true
+
+  /superjson/1.12.2:
+    resolution: {integrity: sha512-ugvUo9/WmvWOjstornQhsN/sR9mnGtWGYeTxFuqLb4AiT4QdUavjGFRALCPKWWnAiUJ4HTpytj5e0t5HoMRkXg==}
+    engines: {node: '>=10'}
+    dependencies:
+      copy-anything: 3.0.3
+    dev: false
 
   /superstruct/0.14.2:
     resolution: {integrity: sha512-nPewA6m9mR3d6k7WkZ8N8zpTWfenFH3q9pA2PkuiZxINr9DKB2+40wEQf0ixn8VaGuJ78AB6iWOtStI+/4FKZQ==}

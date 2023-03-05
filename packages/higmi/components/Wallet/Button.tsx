@@ -1,21 +1,10 @@
 import { ChevronDoubleDownIcon } from '@heroicons/react/outline'
-// import { ChainId } from '@dozer/chain'
-import {
-  AppearOnMount,
-  Button as UIButton,
-  ButtonProps,
-  CoinbaseWalletIcon,
-  GnosisSafeIcon,
-  Loader,
-  Menu,
-  MetamaskIcon,
-  TrustWalletIcon,
-  WalletConnectIcon,
-  Input,
-} from '@dozer/ui'
+import { AppearOnMount, ButtonProps, Menu } from '@dozer/ui'
 import React, { ReactNode, useState } from 'react'
 import { Address } from '@dozer/ui/input/Address'
 import { useAccount } from '@dozer/zustand'
+import { useBalance } from '@dozer/react-query'
+import { useEffect } from 'react'
 // import { useConnect } from 'wagmi'
 
 // import { useAutoConnect, useWalletState } from '../../hooks'
@@ -56,7 +45,34 @@ export const Button = <C extends React.ElementType>({
   //   }
 
   const [connectAddress, setConnectAddress] = useState<string>('')
-  const connect = useAccount((state) => state.setAddress)
+  const setAddress = useAccount((state) => state.setAddress)
+  const setBalance = useAccount((state) => state.setBalance)
+  const balance = useBalance(connectAddress)
+
+  function connect() {
+    setAddress(connectAddress)
+  }
+
+  useEffect(() => {
+    if (connectAddress && balance) {
+      const balance_data = []
+      // console.log(balance.isLoading)
+      // console.log(balance.data)
+      const data = balance.isLoading ? [] : balance.data.tokens_data
+      for (const token in data) {
+        balance_data.push({
+          token_uuid: token,
+          token_symbol: data[token].symbol,
+          token_balance: data[token].received - data[token].spent,
+        })
+      }
+      console.log(data)
+      console.log(balance_data)
+      setBalance(balance_data)
+    } else {
+      setBalance([])
+    }
+  }, [balance.isLoading])
 
   function onChange(x: string) {
     setConnectAddress(x)
@@ -91,11 +107,7 @@ export const Button = <C extends React.ElementType>({
               <Address id="connect_address" value={connectAddress} onChange={onChange} />
               <div>
                 {isMounted && (
-                  <Menu.Item
-                    key="htr_connector"
-                    onClick={() => connect(connectAddress)}
-                    className="flex items-center gap-3 group"
-                  >
+                  <Menu.Item key="htr_connector" onClick={() => connect()} className="flex items-center gap-3 group">
                     <div className="-ml-[6px] group-hover:bg-blue-100 rounded-full group-hover:ring-[5px] group-hover:ring-blue-100">
                       {Icons['Injected'] && Icons['Injected']}
                     </div>{' '}
