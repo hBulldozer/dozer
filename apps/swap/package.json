@@ -19,7 +19,7 @@
     "@dozer/zustand": "workspace:*",
     "@dozer/currency": "workspace:*",
     "@dozer/math": "workspace:*",
-    "@dozer/format": "workspace:*",
+    "@dozer/format": "workspace:*",    
     "@tailwindcss/typography": "^0.5.2",
     "@vercel/analytics": "0.1.5",
     "@headlessui/react": "^1.7.3",

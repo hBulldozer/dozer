@@ -12,11 +12,11 @@ export abstract class Currency {
   /**
    * Returns whether the currency is native to the chain and must be wrapped (e.g. Ether)
    */
-  public abstract readonly isNative: boolean
+  // public abstract readonly isNative: boolean
   /**
    * Returns whether the currency is a token that is usable in Uniswap without wrapping
    */
-  public abstract readonly isToken: boolean
+  // public abstract readonly isToken: boolean
   /**
    * The decimals used in representing currency amounts
    */

@@ -6,6 +6,7 @@ import { Token } from '@dozer/currency'
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useIsMounted } from '@dozer/hooks'
 import { TradeType } from '../components/utils/TradeType'
+import { useNetwork } from '@dozer/zustand'
 
 const Home = () => {
   const isMounted = useIsMounted()
@@ -22,6 +23,8 @@ const Home = () => {
   const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([inputToken, outputToken])
   const [input1, setInput1] = useState<string>('')
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
+
+  const network = useNetwork((state) => state.network)
 
   const onInput0 = useCallback((val: string) => {
     setTradeType(TradeType.EXACT_INPUT)
@@ -82,7 +85,7 @@ const Home = () => {
             // customTokenMap={customTokensMap}
             // onAddToken={addCustomToken}
             // onRemoveToken={removeCustomToken}
-            // chainId={chainId}
+            chainId={network}
             // tokenMap={tokenMap}
             inputType={TradeType.EXACT_INPUT}
             tradeType={tradeType}

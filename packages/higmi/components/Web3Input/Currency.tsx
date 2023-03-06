@@ -8,7 +8,7 @@ import { useAccount } from '@dozer/zustand'
 // import { useBalance, usePrices } from '../../hooks'
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
 
-export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect'> {
+export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' | 'chainId'> {
   id?: string
   value: string
   disabled?: boolean
@@ -31,7 +31,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   onSelect,
   // onAddToken,
   // onRemoveToken,
-  // chainId,
+  chainId,
   // tokenMap,
   // customTokenMap,
   disableMaxButton = false,
@@ -125,7 +125,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             <BalancePanel
               id={id}
               loading={loading}
-              // chainId={chainId}
+              chainId={chainId}
               account={address}
               onChange={onChange}
               currency={currency}
@@ -141,7 +141,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             onClose={handleClose}
             open={tokenSelectorOpen}
             // fundSource={FundSource.WALLET}
-            // chainId={chainId}
+            chainId={chainId}
             currency={currency}
             onSelect={onSelect}
             // onAddToken={onAddToken}
@@ -180,7 +180,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   )
 }
 
-type BalancePanel = Pick<CurrencyInputProps, 'onChange' | 'currency' | 'disableMaxButton' | 'loading'> & {
+type BalancePanel = Pick<CurrencyInputProps, 'onChange' | 'chainId' | 'currency' | 'disableMaxButton' | 'loading'> & {
   id?: string
   account: string | undefined
 }

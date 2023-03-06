@@ -24,7 +24,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   // tokenMap,
   // onAddToken,
   // onRemoveToken,
-  // chainId,
+  chainId,
   inputType,
   tradeType,
   disabled,
@@ -62,7 +62,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
       // customTokenMap={customTokenMap}
       // onAddToken={onAddToken}
       // onRemoveToken={onRemoveToken}
-      // chainId={chainId}
+      chainId={chainId}
       // tokenMap={tokenMap}
       loading={loading}
       disabled={disabled}

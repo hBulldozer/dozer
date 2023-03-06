@@ -1,7 +1,7 @@
 // import { AddressZero } from '@ethersproject/constants'
 import { SearchIcon } from '@heroicons/react/outline'
 import { XCircleIcon } from '@heroicons/react/solid'
-// import chain from '@dozer/chain'
+import chain from '@dozer/chain'
 import { Amount, Token } from '@dozer/currency'
 import { FundSource, useIsSmScreen } from '@dozer/hooks'
 // import { Fraction } from '@dozer/math'
@@ -13,6 +13,7 @@ import {
   Dialog,
   Input,
   Loader,
+  NetworkIcon,
   SlideIn,
   Typography,
 } from '@dozer/ui'
@@ -25,7 +26,7 @@ import { TokenSelectorProps } from './TokenSelector'
 import { TokenSelectorRow } from './TokenSelectorRow'
 import { TokenSelectorSettingsOverlay } from './TokenSelectorSettingsOverlay'
 
-import { TokenBalance } from '@dozer/currency'
+import { TokenBalance, getTokens } from '@dozer/currency'
 
 type TokenSelectorDialog = Omit<TokenSelectorProps, 'variant'> & {
   id: string
@@ -45,7 +46,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
   onClose,
   // tokenMap,
   // customTokenMap,
-  // chainId,
+  chainId,
   onSelect,
   // onAddToken,
   // onRemoveToken,
@@ -55,10 +56,11 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
   includeNative,
 }) => {
   const isSmallScreen = useIsSmScreen()
-  const currencies = [
-    new Token({ uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' }),
-    new Token({ uuid: '0das23asds123', decimals: 2, name: 'Dozer', symbol: 'DZR' }),
-  ]
+  // const currencies = [
+  //   new Token({ uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' }),
+  //   new Token({ uuid: '0das23asds123', decimals: 2, name: 'Dozer', symbol: 'DZR' }),
+  // ]
+  const currencies = getTokens(chainId)
 
   const handleSelect = useCallback(
     (currency: Token) => {
@@ -157,16 +159,16 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                       />
                     )}
                   />
-                  {currencies.length === 0 && (
+                  {currencies.length === 0 && chainId && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="flex flex-col items-center justify-center gap-1">
                         <Typography variant="xs" className="flex italic text-slate-500">
                           No tokens found on
                         </Typography>
                         <Typography variant="xs" weight={500} className="flex gap-1 italic text-slate-500">
-                          {/* <NetworkIcon width={14} height={14} chainId={chainId} /> */}
-                          {/* {chain[chainId].name} */}
-                          Hathor
+                          <NetworkIcon width={14} height={14} chainId={chainId} />
+                          {chain[chainId].name}
+                          {/* Hathor */}
                         </Typography>
                       </div>
                     </div>

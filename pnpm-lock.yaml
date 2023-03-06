@@ -411,8 +411,8 @@ importers:
       '@dozer/currency': link:../currency
       '@dozer/format': link:../format
       '@dozer/hooks': link:../hooks
-      '@dozer/react-query': link:../react-query
       '@dozer/math': link:../math
+      '@dozer/react-query': link:../react-query
       '@dozer/ui': link:../ui
       '@dozer/zustand': link:../zustand
       '@headlessui/react': 1.7.7_biqbaboplfbrettd7655fr4n2y
@@ -473,43 +473,6 @@ importers:
       tailwindcss: 3.2.4
       typescript: 4.9.4
 
-  packages/react-query:
-    specifiers:
-      '@dozer/eslint-config': workspace:*
-      '@dozer/jest-config': workspace:*
-      '@dozer/prettier-config': workspace:*
-      '@dozer/react-query-config': workspace:*
-      '@dozer/typescript-config': workspace:*
-      '@tanstack/react-query': 4.20.4
-      '@tanstack/react-query-devtools': 4.20.4
-      '@tanstack/react-query-persist-client': 4.20.4
-      '@types/react': ^18.0.0
-      '@types/react-dom': ^18.0.0
-      axios: 1.3.4
-      eslint: 8.29.0
-      react: 18.2.0
-      react-dom: 18.2.0
-      tsup: 6.5.0
-      typescript: 4.9.4
-    dependencies:
-      '@tanstack/react-query': 4.20.4_biqbaboplfbrettd7655fr4n2y
-      '@tanstack/react-query-devtools': 4.20.4_fu3ixcwltlssi3ozitelgaebme
-      '@tanstack/react-query-persist-client': 4.20.4_l2azqzttlggxzjcfejyd3icfe4
-    devDependencies:
-      '@dozer/eslint-config': link:../../config/eslint
-      '@dozer/jest-config': link:../../config/jest
-      '@dozer/prettier-config': link:../../config/prettier
-      '@dozer/react-query-config': link:../../config/react-query
-      '@dozer/typescript-config': link:../../config/typescript
-      '@types/react': 18.0.26
-      '@types/react-dom': 18.0.10
-      axios: 1.3.4
-      eslint: 8.29.0
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      tsup: 6.5.0_typescript@4.9.4
-      typescript: 4.9.4
-
   packages/math:
     specifiers:
       '@dozer/eslint-config': workspace:*
@@ -544,6 +507,43 @@ importers:
       '@types/jest': 29.2.5
       eslint: 8.29.0
       jest: 29.3.1
+      tsup: 6.5.0_typescript@4.9.4
+      typescript: 4.9.4
+
+  packages/react-query:
+    specifiers:
+      '@dozer/eslint-config': workspace:*
+      '@dozer/jest-config': workspace:*
+      '@dozer/prettier-config': workspace:*
+      '@dozer/react-query-config': workspace:*
+      '@dozer/typescript-config': workspace:*
+      '@tanstack/react-query': 4.20.4
+      '@tanstack/react-query-devtools': 4.20.4
+      '@tanstack/react-query-persist-client': 4.20.4
+      '@types/react': ^18.0.0
+      '@types/react-dom': ^18.0.0
+      axios: 1.3.4
+      eslint: 8.29.0
+      react: 18.2.0
+      react-dom: 18.2.0
+      tsup: 6.5.0
+      typescript: 4.9.4
+    dependencies:
+      '@tanstack/react-query': 4.20.4_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query-devtools': 4.20.4_fu3ixcwltlssi3ozitelgaebme
+      '@tanstack/react-query-persist-client': 4.20.4_l2azqzttlggxzjcfejyd3icfe4
+    devDependencies:
+      '@dozer/eslint-config': link:../../config/eslint
+      '@dozer/jest-config': link:../../config/jest
+      '@dozer/prettier-config': link:../../config/prettier
+      '@dozer/react-query-config': link:../../config/react-query
+      '@dozer/typescript-config': link:../../config/typescript
+      '@types/react': 18.0.26
+      '@types/react-dom': 18.0.10
+      axios: 1.3.4
+      eslint: 8.29.0
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
       tsup: 6.5.0_typescript@4.9.4
       typescript: 4.9.4
 
@@ -643,6 +643,7 @@ importers:
 
   packages/zustand:
     specifiers:
+      '@dozer/chain': workspace:*
       '@dozer/eslint-config': workspace:*
       '@dozer/jest-config': workspace:*
       '@dozer/prettier-config': workspace:*
@@ -660,6 +661,7 @@ importers:
       typescript: 4.9.4
       zustand: 4.3.3
     dependencies:
+      '@dozer/chain': link:../chain
       '@dozer/react-query': link:../react-query
     devDependencies:
       '@dozer/eslint-config': link:../../config/eslint

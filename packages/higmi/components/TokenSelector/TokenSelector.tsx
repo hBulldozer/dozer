@@ -6,13 +6,14 @@ import { useAccount } from '@dozer/zustand'
 
 // import { useBalances, usePrices } from '../../hooks'
 import { TokenSelectorDialog } from './TokenSelectorDialog'
+import { ChainId } from '@dozer/chain'
 
 export type TokenSelectorProps = {
   id?: string
   variant: 'overlay' | 'dialog'
   currency?: Token
   open: boolean
-  // chainId: ChainId | undefined
+  chainId: ChainId | undefined
   // tokenMap: Record<string, Token>
   // customTokenMap?: Record<string, Token>
   onClose(): void
@@ -28,7 +29,7 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
     id,
     variant,
     // tokenMap,
-    // chainId,
+    chainId,
     // fundSource = FundSource.WALLET,
     onSelect,
     open,
@@ -73,14 +74,14 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
           balancesMap={balances}
           // tokenMap={_tokenMap}
           pricesMap={pricesMap}
-          // chainId={chainId}
+          chainId={chainId}
           // fundSource={fundSource}
           onSelect={onSelect}
           includeNative={includeNative}
           {...props}
         />
       )
-    }, [address, balances, isMounted, onSelect, open, pricesMap, props, variant])
+    }, [address, balances, chainId, isMounted, onSelect, open, pricesMap, props, variant])
   },
   (prevProps, nextProps) => {
     return (
