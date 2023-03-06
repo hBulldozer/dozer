@@ -1,8 +1,10 @@
 import { TradeType } from './utils/TradeType'
-import { ZERO } from '@dozer/math'
+import { Fraction, ZERO } from '@dozer/math'
 import { Web3Input } from '@dozer/higmi'
 import { CurrencyInputProps } from '@dozer/higmi/components/Web3Input/Currency'
 import React, { FC, useMemo } from 'react'
+import { useTrade } from '@dozer/zustand'
+import { usePrices } from '@dozer/react-query'
 
 // import { useTrade } from '../utils/TradeProvider'
 
@@ -31,25 +33,21 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   loading = false,
   // isWrap = false,
 }) => {
-  const trade = {}
-  // const { data: prices } = usePrices({ chainId })
+  const trade = useTrade()
+  const { data: prices } = usePrices()
 
   // If output field and (un)wrapping, set to _value
-  // let value = inputType === tradeType ? _value : trade ? trade?.outputAmount?.toExact() : ''
-  // value = inputType === TradeType.EXACT_OUTPUT ? _value : value
-  const value = _value
+  let value = inputType === tradeType ? _value.toString() : trade ? trade?.outputAmount?.toString() : ''
+  value = value ? value : ''
+  // const value = _value
   // // Usd pct change
-  // const srcTokenPrice = trade?.inputAmount.currency ? prices?.[trade.inputAmount.currency.wrapped.address] : undefined
-  // const dstTokenPrice = trade?.outputAmount.currency ? prices?.[trade.outputAmount.currency.wrapped.address] : undefined
-  // const usdPctChange = useMemo(() => {
-  //   const inputUSD =
-  //     trade?.inputAmount && srcTokenPrice ? trade.inputAmount.multiply(srcTokenPrice.asFraction) : undefined
-  //   const outputUSD =
-  //     trade?.outputAmount && dstTokenPrice ? trade.outputAmount.multiply(dstTokenPrice.asFraction) : undefined
-  //   return inputUSD && outputUSD && inputUSD?.greaterThan(ZERO)
-  //     ? ((Number(outputUSD?.toExact()) - Number(inputUSD?.toExact())) / Number(inputUSD?.toExact())) * 100
-  //     : undefined
-  // }, [dstTokenPrice, srcTokenPrice, trade?.inputAmount, trade?.outputAmount])
+  const srcTokenPrice = trade?.mainCurrency ? prices?.[trade.mainCurrency.uuid] : undefined
+  const dstTokenPrice = trade?.otherCurrency ? prices?.[trade.otherCurrency.uuid] : undefined
+  const usdPctChange = useMemo(() => {
+    const inputUSD = trade?.amountSpecified && srcTokenPrice ? trade.amountSpecified * srcTokenPrice : undefined
+    const outputUSD = trade?.outputAmount && dstTokenPrice ? trade.outputAmount * dstTokenPrice : undefined
+    return inputUSD && outputUSD && inputUSD > 0 ? ((outputUSD - inputUSD) / inputUSD) * 100 : undefined
+  }, [dstTokenPrice, srcTokenPrice, trade?.amountSpecified, trade?.outputAmount])
 
   return (
     <Web3Input.Currency

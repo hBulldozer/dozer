@@ -58,7 +58,7 @@ export const Button = <C extends React.ElementType>({
       const balance_data = []
       // console.log(balance.isLoading)
       // console.log(balance.data)
-      const data = balance.isLoading ? [] : balance.data.tokens_data
+      const data = balance && balance.isLoading ? [] : balance.data.tokens_data
       for (const token in data) {
         balance_data.push({
           token_uuid: token,

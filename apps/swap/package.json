@@ -17,6 +17,7 @@
     "@dozer/ui": "workspace:*",
     "@dozer/higmi": "workspace:*",
     "@dozer/zustand": "workspace:*",
+    "@dozer/react-query": "workspace:*",
     "@dozer/currency": "workspace:*",
     "@dozer/math": "workspace:*",
     "@dozer/format": "workspace:*",    

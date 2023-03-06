@@ -124,6 +124,7 @@ importers:
       '@dozer/math': workspace:*
       '@dozer/nextjs-config': workspace:*
       '@dozer/prettier-config': workspace:*
+      '@dozer/react-query': workspace:*
       '@dozer/typescript-config': workspace:*
       '@dozer/ui': workspace:*
       '@dozer/zustand': workspace:*
@@ -153,6 +154,7 @@ importers:
       '@dozer/higmi': link:../../packages/higmi
       '@dozer/hooks': link:../../packages/hooks
       '@dozer/math': link:../../packages/math
+      '@dozer/react-query': link:../../packages/react-query
       '@dozer/ui': link:../../packages/ui
       '@dozer/zustand': link:../../packages/zustand
       '@headlessui/react': 1.7.7_biqbaboplfbrettd7655fr4n2y
@@ -644,6 +646,7 @@ importers:
   packages/zustand:
     specifiers:
       '@dozer/chain': workspace:*
+      '@dozer/currency': workspace:*
       '@dozer/eslint-config': workspace:*
       '@dozer/jest-config': workspace:*
       '@dozer/prettier-config': workspace:*
@@ -662,6 +665,7 @@ importers:
       zustand: 4.3.3
     dependencies:
       '@dozer/chain': link:../chain
+      '@dozer/currency': link:../currency
       '@dozer/react-query': link:../react-query
     devDependencies:
       '@dozer/eslint-config': link:../../config/eslint

@@ -21,6 +21,13 @@ export function getTokens(chainId: ChainId | undefined): Token[] {
           name: 'Nileswap Token',
           symbol: 'NST',
         }),
+        new Token({
+          chainId: chainId,
+          uuid: '0das2hghfghfg3asasdadasdads123',
+          decimals: 2,
+          name: 'Cathor',
+          symbol: 'CTHOR',
+        }),
       ]
     }
     case ChainId.HATHOR_TESTNET: {
@@ -39,6 +46,13 @@ export function getTokens(chainId: ChainId | undefined): Token[] {
           decimals: 2,
           name: 'Nileswap Token',
           symbol: 'NST',
+        }),
+        new Token({
+          chainId: chainId,
+          uuid: '0das2hghfghfg3asasdadasdads123',
+          decimals: 2,
+          name: 'Cathor',
+          symbol: 'CTHOR',
         }),
       ]
     }
