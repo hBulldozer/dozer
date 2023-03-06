@@ -96,7 +96,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
                 <Skeleton.Circle radius={20} className="bg-white/[0.06]" />
                 <Skeleton.Box className="w-[60px] h-[20px] bg-white/[0.06]" />
               </div>
-            ) : currency?.symbol ? (
+            ) : currency ? (
               <>
                 <div className="w-5 h-5">
                   <UICurrency.Icon

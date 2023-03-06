@@ -1,5 +1,5 @@
 import { ChainId } from '@dozer/chain'
-import { Token } from '@dozer/currency'
+import { Amount, Token } from '@dozer/currency'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 

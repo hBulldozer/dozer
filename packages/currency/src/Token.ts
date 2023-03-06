@@ -82,7 +82,8 @@ export class Token extends Currency {
 
   public equals(other: Token): boolean {
     // return other.isNative && other.chainId === this.chainId
-    return false
+    return this.uuid == other.uuid
+    // return false
   }
 
   public logoURI(): string {

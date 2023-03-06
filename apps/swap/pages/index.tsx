@@ -2,7 +2,7 @@ import { ChevronDownIcon } from '@heroicons/react/solid'
 import { App, Button, classNames, Container, Link, Typography, Widget } from '@dozer/ui'
 import { Layout } from '../components/Layout'
 import { CurrencyInput } from '../components/CurrencyInput'
-import { Token } from '@dozer/currency'
+import { getTokens, Token } from '@dozer/currency'
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useIsMounted } from '@dozer/hooks'
 import { TradeType } from '../components/utils/TradeType'
@@ -12,13 +12,18 @@ import { usePrices } from '@dozer/react-query'
 
 const Home = () => {
   const isMounted = useIsMounted()
+  const network = useNetwork((state) => state.network)
 
   const inputToken = useMemo(() => {
-    return new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 })
+    return getTokens(network).find((obj) => {
+      return obj.symbol == 'DZR'
+    })
   }, [])
 
   const outputToken = useMemo(() => {
-    return new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 })
+    return getTokens(network).find((obj) => {
+      return obj.symbol == 'HTR'
+    })
   }, [])
 
   const [input0, setInput0] = useState<string>('')
@@ -28,8 +33,6 @@ const Home = () => {
   const { outputAmount, setMainCurrencyPrice, setOtherCurrencyPrice, setAmountSpecified, setOutputAmount } = useTrade()
 
   const { data: prices } = usePrices()
-
-  const network = useNetwork((state) => state.network)
 
   const onInput0 = (val: string) => {
     setTradeType(TradeType.EXACT_INPUT)

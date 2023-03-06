@@ -37,7 +37,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   const { data: prices } = usePrices()
 
   // If output field and (un)wrapping, set to _value
-  let value = inputType === tradeType ? _value.toString() : trade ? trade?.outputAmount?.toString() : ''
+  let value = inputType === tradeType ? _value.toString() : trade ? trade?.outputAmount?.toFixed(2).toString() : ''
   value = value ? value : ''
   // const value = _value
   // // Usd pct change
