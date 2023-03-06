@@ -111,7 +111,9 @@ export class Amount<T extends Token> extends Fraction {
   }
 
   public get wrapped(): Amount<Token> {
-    if (this.currency.isToken) return this as Amount<Token>
-    return Amount.fromFractionalAmount(this.currency.wrapped, this.numerator, this.denominator)
+    // if (this.currency.isToken)
+    return this
+    // as Amount<Token>
+    // return Amount.fromFractionalAmount(this.currency.wrapped, this.numerator, this.denominator)
   }
 }

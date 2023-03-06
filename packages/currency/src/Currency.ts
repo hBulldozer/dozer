@@ -1,4 +1,4 @@
-// import { ChainId } from '@dozer/chain'
+import { ChainId } from '@dozer/chain'
 import { JSBI } from '@dozer/math'
 import invariant from 'tiny-invariant'
 
@@ -33,27 +33,33 @@ export abstract class Currency {
    * The rebase
    */
   public readonly rebase?: { base: JSBI; elastic: JSBI }
-
+  /**
+   * The chain ID on which this currency resides
+   */
+  public readonly chainId: ChainId
   /**
    * Constructs an instance of the abstract class `Currency`.
+   * @param chainId Id of the chain
    * @param decimals decimals of the currency
    * @param symbol symbol of the currency
    * @param name of the currency
    * @param rebase of the currency
    */
   protected constructor({
+    chainId,
     decimals,
     symbol,
     name,
     rebase = { base: JSBI.BigInt(1), elastic: JSBI.BigInt(1) },
   }: {
+    chainId: number | string
     decimals: number | string
     symbol?: string
     name?: string
     rebase?: { base: JSBI; elastic: JSBI }
   }) {
     // invariant(decimals >= 0 && decimals < 255 && Number.isInteger(Number(decimals)), 'DECIMALS')
-
+    this.chainId = Number(chainId)
     this.decimals = Number(decimals)
     this.symbol = symbol
     this.name = name

@@ -6,14 +6,40 @@ export function getTokens(chainId: ChainId | undefined): Token[] {
   switch (chainId) {
     case ChainId.HATHOR: {
       return [
-        new Token({ uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' }),
-        new Token({ uuid: '0das23asds123', decimals: 2, name: 'Dozer', symbol: 'DZR' }),
+        new Token({ chainId: chainId, uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' }),
+        new Token({
+          chainId: chainId,
+          uuid: '00b1b246cb512515c5258cb0301afcf83e74eb595dbe655d14e11782db4b70c6',
+          decimals: 2,
+          name: 'Dozer',
+          symbol: 'DZR',
+        }),
+        new Token({
+          chainId: chainId,
+          uuid: '0das23asasdadasdads123',
+          decimals: 2,
+          name: 'Nileswap Token',
+          symbol: 'NST',
+        }),
       ]
     }
     case ChainId.HATHOR_TESTNET: {
       return [
-        new Token({ uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' }),
-        new Token({ uuid: '0das23asds123', decimals: 2, name: 'Dozer', symbol: 'DZR' }),
+        new Token({ chainId: chainId, uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' }),
+        new Token({
+          chainId: chainId,
+          uuid: '00b1b246cb512515c5258cb0301afcf83e74eb595dbe655d14e11782db4b70c6',
+          decimals: 2,
+          name: 'Dozer',
+          symbol: 'DZR',
+        }),
+        new Token({
+          chainId: chainId,
+          uuid: '0das23asasdadasdads123',
+          decimals: 2,
+          name: 'Nileswap Token',
+          symbol: 'NST',
+        }),
       ]
     }
     default:

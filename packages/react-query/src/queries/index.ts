@@ -1,1 +1,2 @@
-export * from './getBalance'
+export * from './useBalance'
+export * from './usePrices'

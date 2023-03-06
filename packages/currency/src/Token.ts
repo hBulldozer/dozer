@@ -9,7 +9,7 @@ export function getUuid(uuid: string): string {
 
   result = 'Hxxxx'
 
-  return result
+  return uuid
 }
 // TODO: implement hathor uuid take ethers from reference
 // export function isUuid(uuid: string): boolean {
@@ -24,8 +24,8 @@ export function getUuid(uuid: string): string {
  * Represents an HTR token with a unique uuid and some metadata.
  */
 export class Token extends Currency {
-  public readonly isNative = false as const
-  public readonly isToken = true as const
+  // public readonly isNative = false as const
+  // public readonly isToken = true as const
 
   /**
    * The  token's UUID
@@ -40,12 +40,14 @@ export class Token extends Currency {
     elastic: JSBI
   }
   public constructor({
+    chainId,
     uuid,
     decimals,
     symbol,
     name,
     rebase = { base: JSBI.BigInt(1), elastic: JSBI.BigInt(1) },
   }: {
+    chainId: number | string
     uuid: string
     decimals: number
     symbol?: string
@@ -53,6 +55,7 @@ export class Token extends Currency {
     rebase?: { base: JSBI; elastic: JSBI }
   }) {
     super({
+      chainId,
       decimals,
       symbol,
       name,
@@ -79,6 +82,10 @@ export class Token extends Currency {
 
   public equals(other: Token): boolean {
     // return other.isNative && other.chainId === this.chainId
-    return true
+    return false
+  }
+
+  public logoURI(): string {
+    return `https://raw.githubusercontent.com/Dozer-Protocol/automatic-exchange-service/main/logos/${this.symbol}.svg`
   }
 }

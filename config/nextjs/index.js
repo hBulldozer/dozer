@@ -8,10 +8,16 @@ const defaultNextConfig = {
   experimental: {
     esmExternals: 'loose',
   },
-  // images: {
-  //   loader: 'cloudinary',
-  //   path: 'https://res.cloudinary.com/dozer-cdn/image/fetch/',
-  // },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 }
 
 module.exports = defaultNextConfig

@@ -7,16 +7,17 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useIsMounted } from '@dozer/hooks'
 import { TradeType } from '../components/utils/TradeType'
 import { useNetwork } from '@dozer/zustand'
+import { ChainId } from '@dozer/chain'
 
 const Home = () => {
   const isMounted = useIsMounted()
 
   const inputToken = useMemo(() => {
-    return new Token({ uuid: '00', decimals: 2 })
+    return new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 })
   }, [isMounted])
 
   const outputToken = useMemo(() => {
-    return new Token({ uuid: '00', decimals: 2 })
+    return new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 })
   }, [isMounted])
 
   const [input0, setInput0] = useState<string>('')

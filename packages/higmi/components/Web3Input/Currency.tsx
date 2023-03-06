@@ -1,12 +1,13 @@
 import { ChevronDownIcon } from '@heroicons/react/solid'
-import { Token } from '@dozer/currency'
+import { Token, TokenBalance } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
 import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography } from '@dozer/ui'
-import { FC, useCallback, useMemo, useRef, useState } from 'react'
-import { useAccount } from '@dozer/zustand'
+import { FC, useCallback, useMemo, useRef, useState, useEffect } from 'react'
+import { AccountState, useAccount } from '@dozer/zustand'
 
 // import { useBalance, usePrices } from '../../hooks'
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
+import { useBalance, usePrices } from '@dozer/react-query'
 
 export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' | 'chainId'> {
   id?: string
@@ -42,7 +43,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   loading,
 }) => {
   const isMounted = useIsMounted()
-  const { address } = useAccount()
+  const account = useAccount()
   const inputRef = useRef<HTMLInputElement>(null)
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
 
@@ -100,7 +101,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
                 <div className="w-5 h-5">
                   <UICurrency.Icon
                     // disableLink
-                    layout="responsive"
+                    // layout="responsive"
                     currency={currency}
                     width={20}
                     height={20}
@@ -126,7 +127,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               id={id}
               loading={loading}
               chainId={chainId}
-              account={address}
+              account={account}
               onChange={onChange}
               currency={currency}
               // fundSource={fundSource}
@@ -154,7 +155,8 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
       </div>
     ),
     [
-      address,
+      // address,
+      account,
       // chainId,
       className,
       currency,
@@ -182,12 +184,12 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
 
 type BalancePanel = Pick<CurrencyInputProps, 'onChange' | 'chainId' | 'currency' | 'disableMaxButton' | 'loading'> & {
   id?: string
-  account: string | undefined
+  account: AccountState
 }
 
 const BalancePanel: FC<BalancePanel> = ({
   id,
-  // chainId,
+  chainId,
   account,
   onChange,
   currency,
@@ -196,23 +198,26 @@ const BalancePanel: FC<BalancePanel> = ({
   loading,
 }) => {
   const isMounted = useIsMounted()
-  const balance = [
-    {
-      token_uuid: '00',
-      token_symbol: 'HTR',
-      token_balance: 0,
-    },
-  ]
+  // const balance = [
+  //   {
+  //     token_uuid: '00',
+  //     token_symbol: 'HTR',
+  //     token_balance: 0,
+  //   },
+  // ]
 
-  const isLoading = false
+  const address = useAccount((state) => state.address)
+  const balance = useAccount((state) => state.balance)
+  const [tokenBalance, setTokenBalance] = useState(0)
 
-  if ((isLoading || loading) && isMounted) {
-    return (
-      <div className="h-[24px] w-[60px] flex items-center">
-        <Skeleton.Box className="bg-white/[0.06] h-[12px] w-full" />
-      </div>
-    )
-  }
+  useEffect(() => {
+    if (currency && balance) {
+      const token = balance.find((obj) => {
+        return obj.token_uuid === currency.uuid
+      })
+      setTokenBalance(token ? token.token_balance / 100 : 0)
+    }
+  }, [currency, balance])
 
   return (
     <button
@@ -222,7 +227,7 @@ const BalancePanel: FC<BalancePanel> = ({
       className="py-1 text-xs text-slate-400 hover:text-slate-300"
       disabled={disableMaxButton}
     >
-      {isMounted && balance ? `Balance: ${balance?.[0]}` : 'Balance: 0'}
+      {isMounted && balance ? `Balance: ${tokenBalance}` : 'Balance: 0'}
     </button>
   )
 }
@@ -230,10 +235,8 @@ const BalancePanel: FC<BalancePanel> = ({
 type PricePanel = Pick<CurrencyInputProps, 'currency' | 'value' | 'usdPctChange'>
 const PricePanel: FC<PricePanel> = ({ currency, value, usdPctChange }) => {
   const isMounted = useIsMounted()
-  const tokenPrices = {
-    HTR_UUID: 0.008,
-  }
-  const price = currency ? tokenPrices?.HTR_UUID : undefined
+  const { data: tokenPrices } = usePrices()
+  const price = currency ? tokenPrices?.[currency.uuid] : undefined
   const parsedValue = useMemo(() => parseFloat(value), [value])
 
   if (!tokenPrices && isMounted)
