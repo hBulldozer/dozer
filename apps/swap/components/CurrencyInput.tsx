@@ -4,6 +4,7 @@ import { CurrencyInputProps } from '@dozer/higmi/components/Web3Input/Currency'
 import React, { FC, useMemo } from 'react'
 import { useTrade } from '@dozer/zustand'
 import { usePrices } from '@dozer/react-query'
+import { ChainId } from '@dozer/chain'
 
 // import { useTrade } from '../utils/TradeProvider'
 
@@ -33,7 +34,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   // isWrap = false,
 }) => {
   const trade = useTrade()
-  const { data: prices } = usePrices(chainId)
+  const { data: prices } = usePrices(chainId ? chainId : ChainId.HATHOR)
 
   // If output field and (un)wrapping, set to _value
   let value = inputType === tradeType ? _value.toString() : trade ? trade?.outputAmount?.toFixed(2).toString() : ''
