@@ -58,21 +58,21 @@ export const Button = <C extends React.ElementType>({
       const balance_data = []
       // console.log(balance.isLoading)
       // console.log(balance.data)
-      const data = balance && balance.isLoading ? [] : balance.data.tokens_data
-      for (const token in data) {
-        balance_data.push({
-          token_uuid: token,
-          token_symbol: data[token].symbol,
-          token_balance: data[token].received - data[token].spent,
-        })
+      if (balance.data && !balance.isLoading) {
+        const data = balance.data.tokens_data
+        for (const token in data) {
+          balance_data.push({
+            token_uuid: token,
+            token_symbol: data[token].symbol,
+            token_balance: data[token].received - data[token].spent,
+          })
+        }
       }
-      console.log(data)
-      console.log(balance_data)
       setBalance(balance_data)
     } else {
       setBalance([])
     }
-  }, [balance.isLoading])
+  }, [balance.isLoading, balance, connectAddress, setBalance])
 
   function onChange(x: string) {
     setConnectAddress(x)

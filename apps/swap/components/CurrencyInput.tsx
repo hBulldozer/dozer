@@ -1,5 +1,4 @@
 import { TradeType } from './utils/TradeType'
-import { Fraction, ZERO } from '@dozer/math'
 import { Web3Input } from '@dozer/higmi'
 import { CurrencyInputProps } from '@dozer/higmi/components/Web3Input/Currency'
 import React, { FC, useMemo } from 'react'
@@ -64,7 +63,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
       // tokenMap={tokenMap}
       loading={loading}
       disabled={disabled}
-      // usdPctChange={inputType === TradeType.EXACT_OUTPUT ? usdPctChange : undefined}
+      usdPctChange={inputType === TradeType.EXACT_OUTPUT ? usdPctChange : undefined}
     />
   )
 }

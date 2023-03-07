@@ -1,13 +1,12 @@
 import { ChevronDownIcon } from '@heroicons/react/solid'
-import { Token, TokenBalance } from '@dozer/currency'
+import { Token } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
 import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography } from '@dozer/ui'
 import { FC, useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { AccountState, useAccount } from '@dozer/zustand'
 
-// import { useBalance, usePrices } from '../../hooks'
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
-import { useBalance, usePrices } from '@dozer/react-query'
+import { usePrices } from '@dozer/react-query'
 
 export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' | 'chainId'> {
   id?: string
@@ -157,7 +156,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
     [
       // address,
       account,
-      // chainId,
+      chainId,
       className,
       currency,
       // customTokenMap,
@@ -189,17 +188,17 @@ type BalancePanel = Pick<CurrencyInputProps, 'onChange' | 'chainId' | 'currency'
 
 const BalancePanel: FC<BalancePanel> = ({
   id,
-  chainId,
-  account,
+  // chainId,
+  // account,
   onChange,
   currency,
   disableMaxButton,
   // fundSource = FundSource.WALLET,
-  loading,
+  // loading,
 }) => {
   const isMounted = useIsMounted()
 
-  const address = useAccount((state) => state.address)
+  // const address = useAccount((state) => state.address)
   const balance = useAccount((state) => state.balance)
   const [tokenBalance, setTokenBalance] = useState(0)
 
