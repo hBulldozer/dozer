@@ -514,6 +514,7 @@ importers:
 
   packages/react-query:
     specifiers:
+      '@dozer/chain': workspace:*
       '@dozer/eslint-config': workspace:*
       '@dozer/jest-config': workspace:*
       '@dozer/prettier-config': workspace:*
@@ -531,6 +532,7 @@ importers:
       tsup: 6.5.0
       typescript: 4.9.4
     dependencies:
+      '@dozer/chain': link:../chain
       '@tanstack/react-query': 4.20.4_biqbaboplfbrettd7655fr4n2y
       '@tanstack/react-query-devtools': 4.20.4_fu3ixcwltlssi3ozitelgaebme
       '@tanstack/react-query-persist-client': 4.20.4_l2azqzttlggxzjcfejyd3icfe4

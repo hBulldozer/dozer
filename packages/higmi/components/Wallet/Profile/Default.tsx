@@ -5,18 +5,19 @@ import { ChevronRightIcon } from '@heroicons/react/solid'
 import Image from 'next/legacy/image'
 import React, { Dispatch, FC, SetStateAction, useMemo } from 'react'
 
-// import { usePrices } from '../../../hooks'
+import { usePrices } from '@dozer/react-query'
 import { ProfileView } from './Profile'
 import { useAccount } from '@dozer/zustand'
 import { shortenAddress } from './Utils'
+import { ChainId } from '@dozer/chain'
 
 interface DefaultProps {
-  // chainId: ChainId
+  chainId: ChainId
   address: string
   setView: Dispatch<SetStateAction<ProfileView>>
 }
 
-export const Default: FC<DefaultProps> = ({ address, setView }) => {
+export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
   const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
   // const { data: prices } = usePrices({ chainId })
@@ -43,12 +44,8 @@ export const Default: FC<DefaultProps> = ({ address, setView }) => {
   }
   // useDisconnect()
 
-  const balanceAsUsd = 1000
-  // useMemo(() => {
-  //   return balance && prices?.[Native.onChain(chainId).wrapped.address]
-  //     ? balance.multiply(prices?.[Native.onChain(chainId).wrapped.address])
-  //     : undefined
-  // }, [balance, chainId, prices])
+  const { data: prices } = usePrices(chainId)
+  const balanceAsUsd = prices ? prices['00'] : 0
 
   return (
     <>

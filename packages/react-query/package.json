@@ -20,7 +20,8 @@
   "dependencies": {
     "@tanstack/react-query": "4.20.4",
     "@tanstack/react-query-devtools": "4.20.4",
-    "@tanstack/react-query-persist-client": "4.20.4"
+    "@tanstack/react-query-persist-client": "4.20.4",
+    "@dozer/chain": "workspace:*"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",

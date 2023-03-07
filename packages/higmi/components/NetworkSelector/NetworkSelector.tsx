@@ -3,6 +3,7 @@ import { ChevronDownIcon, SearchIcon } from '@heroicons/react/solid'
 import { ChainId, chainName } from '@dozer/chain'
 import { classNames, DEFAULT_INPUT_UNSTYLED, NetworkIcon, Typography } from '@dozer/ui'
 import React, { FC, useState } from 'react'
+import { useNetwork } from '@dozer/zustand'
 // import { useNetwork, useSwitchNetwork } from 'wagmi'
 
 interface NetworkSelectorNewProps {
@@ -13,7 +14,7 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
   // const [query, setQuery] = useState('')
   // const { chain } = useNetwork()
   // const { switchNetwork } = useSwitchNetwork()
-  const [network, setNetwork] = useState(ChainId.HATHOR)
+  const { network, setNetwork } = useNetwork()
 
   if (!network) return <></>
 
@@ -35,7 +36,8 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
         {supportedNetworks
           // .filter((el) => (query ? chainName[el].toLowerCase().includes(query.toLowerCase()) : Boolean))
           .map((el) => (
-            <div
+            <Popover.Button
+              as="div"
               onClick={() => {
                 // switchNetwork && switchNetwork(el)
                 setNetwork(el)
@@ -53,7 +55,7 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
               </div>
               {/* {chain?.id === el && <div className="w-2 h-2 mr-1 rounded-full bg-green" />} */}
               {network === el && <div className="w-2 h-2 mr-1 rounded-full bg-green" />}
-            </div>
+            </Popover.Button>
           ))}
       </div>
     </Popover.Panel>

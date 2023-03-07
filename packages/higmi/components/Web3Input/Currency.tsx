@@ -7,6 +7,7 @@ import { AccountState, useAccount } from '@dozer/zustand'
 
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
 import { usePrices } from '@dozer/react-query'
+import { ChainId } from '@dozer/chain'
 
 export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' | 'chainId'> {
   id?: string
@@ -120,7 +121,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
           </button>
         </div>
         <div className="flex flex-row justify-between h-[24px]">
-          <PricePanel value={value} currency={currency} usdPctChange={usdPctChange} />
+          <PricePanel value={value} currency={currency} usdPctChange={usdPctChange} chainId={chainId} />
           <div className="h-6">
             <BalancePanel
               id={id}
@@ -224,12 +225,17 @@ const BalancePanel: FC<BalancePanel> = ({
   )
 }
 
-type PricePanel = Pick<CurrencyInputProps, 'currency' | 'value' | 'usdPctChange'>
-const PricePanel: FC<PricePanel> = ({ currency, value, usdPctChange }) => {
+type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange'>
+const PricePanel: FC<PricePanel> = ({ currency, value, usdPctChange, chainId }) => {
   const isMounted = useIsMounted()
-  const { data: tokenPrices } = usePrices()
+  // const [tokenPrices, setTokenPrices] = useState(usePrices(chainId ? chainId : ChainId.HATHOR))
+  const { data: tokenPrices } = usePrices(chainId ? chainId : ChainId.HATHOR)
   const price = currency ? tokenPrices?.[currency.uuid] : undefined
   const parsedValue = useMemo(() => parseFloat(value), [value])
+
+  // useEffect(() => {
+  //   setTokenPrices(usePrices(chainId ? chainId : ChainId.HATHOR))
+  // }, [chainId])
 
   if (!tokenPrices && isMounted)
     return (

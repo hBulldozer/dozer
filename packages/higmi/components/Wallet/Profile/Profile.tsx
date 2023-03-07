@@ -5,7 +5,7 @@ import { classNames, DEFAULT_INPUT_UNSTYLED, JazzIcon } from '@dozer/ui'
 import Image from 'next/legacy/image'
 import React, { FC, useState, useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
-import { useAccount } from '@dozer/zustand'
+import { useAccount, useNetwork } from '@dozer/zustand'
 
 import { Wallet } from '..'
 import { Default } from './Default'
@@ -26,10 +26,9 @@ export enum ProfileView {
 export const Profile: FC = () => {
   const { isSm } = useBreakpoint('sm')
   const [view, setView] = useState<ProfileView>(ProfileView.Default)
-  // const { chain } = useNetwork()
+  const { network } = useNetwork()
   const address = useAccount((state) => state.address)
-  // const  address  = '0xaddress'
-  // const chainId = chain?.id || ChainId.ETHEREUM
+  const chainId = network
 
   // const { data: avatar } = useEnsAvatar({
   //   address,
@@ -50,7 +49,7 @@ export const Profile: FC = () => {
   if (address) {
     const panel = (
       <Popover.Panel className="w-full sm:w-[320px] fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-[unset] sm:left-[unset] mt-4 sm:rounded-xl rounded-b-none shadow-md shadow-black/[0.3] bg-slate-900 border border-slate-200/20">
-        {view === ProfileView.Default && <Default address={address} setView={setView} />}
+        {view === ProfileView.Default && <Default chainId={chainId} address={address} setView={setView} />}
         {view === ProfileView.Transactions && <Transactions setView={setView} />}
       </Popover.Panel>
     )

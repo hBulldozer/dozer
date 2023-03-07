@@ -32,7 +32,7 @@ const Home = () => {
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
   const { outputAmount, setMainCurrencyPrice, setOtherCurrencyPrice, setAmountSpecified, setOutputAmount } = useTrade()
 
-  const { data: prices } = usePrices()
+  const { data: prices } = usePrices(network)
 
   const onInput0 = (val: string) => {
     setTradeType(TradeType.EXACT_INPUT)
