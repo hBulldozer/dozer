@@ -1,11 +1,18 @@
 import { ChainId } from '@dozer/chain'
-import { Amount, Token } from '@dozer/currency'
+import { Token } from '@dozer/currency'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export enum TradeType {
   EXACT_INPUT,
   EXACT_OUTPUT,
+}
+
+interface PoolType {
+  token1: Token
+  token2: Token
+  token1_balance: number
+  token2_balance: number
 }
 
 interface TradeProps {
@@ -25,11 +32,13 @@ interface TradeProps {
   setMainCurrencyPrice: (mainCurrencyPrice: number) => void
   otherCurrencyPrice: number | undefined
   setOtherCurrencyPrice: (otherCurrencyPrice: number) => void
+  pool: PoolType
+  setPool: () => void
 }
 
 export const useTrade = create<TradeProps>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       chainId: ChainId.HATHOR,
       setChainId: (chainId: number) => set((state) => ({ chainId: chainId })),
       tradeType: TradeType.EXACT_INPUT,
@@ -47,11 +56,30 @@ export const useTrade = create<TradeProps>()(
       setOtherCurrencyPrice: (otherCurrencyPrice: number) =>
         set((state) => ({ otherCurrencyPrice: otherCurrencyPrice })),
       outputAmount: 0,
+      pool: {
+        token1: new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 }),
+        token2: new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 }),
+        token1_balance: 0,
+        token2_balance: 0,
+      },
+      setPool: async () => {
+        const response = await fetch(
+          `https://raw.githubusercontent.com/Dozer-Protocol/automatic-exchange-service/main/assets/${
+            get().chainId
+          }/pools/${get().mainCurrency?.uuid}_${get().otherCurrency?.uuid}`
+        )
+        set({ pool: await response.json() })
+      },
       setOutputAmount: () =>
         set((state) => ({
           outputAmount:
-            state.otherCurrencyPrice && state.mainCurrencyPrice && state.amountSpecified
-              ? state.amountSpecified * (state.otherCurrencyPrice / state.mainCurrencyPrice)
+            // state.otherCurrencyPrice && state.mainCurrencyPrice && state.amountSpecified
+            //   ? state.amountSpecified * (state.otherCurrencyPrice / state.mainCurrencyPrice)
+            //   : 0,
+            state.pool && state.amountSpecified && state.mainCurrency && state.otherCurrency
+              ? state.pool.token1.uuid === state.mainCurrency.uuid
+                ? (state.amountSpecified * state.pool.token1_balance) / state.pool.token2_balance
+                : (state.amountSpecified * state.pool.token2_balance) / state.pool.token1_balance
               : 0,
         })),
     }),

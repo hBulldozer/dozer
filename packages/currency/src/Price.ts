@@ -2,9 +2,9 @@ import { BigintIsh, Fraction, JSBI, Rounding } from '@dozer/math'
 import invariant from 'tiny-invariant'
 
 import { Amount } from './Amount'
-import { Type } from './Type'
+import { Token } from './Token'
 
-export class Price<TBase extends Type, TQuote extends Type> extends Fraction {
+export class Price<TBase extends Token, TQuote extends Token> extends Fraction {
   public readonly baseCurrency: TBase // input i.e. denominator
   public readonly quoteCurrency: TQuote // output i.e. numerator
   public readonly scalar: Fraction // used to adjust the raw fraction w/r/t the decimals of the {base,quote}Token
@@ -57,7 +57,7 @@ export class Price<TBase extends Type, TQuote extends Type> extends Fraction {
    * Multiply the price by another price, returning a new price. The other price must have the same base currency as this price's quote currency
    * @param other the other price
    */
-  public multiply<TOtherQuote extends Type>(other: Price<TQuote, TOtherQuote>): Price<TBase, TOtherQuote> {
+  public multiply<TOtherQuote extends Token>(other: Price<TQuote, TOtherQuote>): Price<TBase, TOtherQuote> {
     invariant(this.quoteCurrency.equals(other.baseCurrency), 'TOKEN')
     const fraction = super.multiply(other)
     return new Price(this.baseCurrency, other.quoteCurrency, fraction.denominator, fraction.numerator)

@@ -21,7 +21,8 @@
   "dependencies": {
     "@dozer/react-query": "workspace:*",
     "@dozer/chain": "workspace:*",
-    "@dozer/currency": "workspace:*"
+    "@dozer/currency": "workspace:*",
+    "@dozer/math": "workspace:*"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",

@@ -651,6 +651,7 @@ importers:
       '@dozer/currency': workspace:*
       '@dozer/eslint-config': workspace:*
       '@dozer/jest-config': workspace:*
+      '@dozer/math': workspace:*
       '@dozer/prettier-config': workspace:*
       '@dozer/react-query': workspace:*
       '@dozer/typescript-config': workspace:*
@@ -668,6 +669,7 @@ importers:
     dependencies:
       '@dozer/chain': link:../chain
       '@dozer/currency': link:../currency
+      '@dozer/math': link:../math
       '@dozer/react-query': link:../react-query
     devDependencies:
       '@dozer/eslint-config': link:../../config/eslint

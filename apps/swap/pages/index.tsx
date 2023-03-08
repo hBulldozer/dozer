@@ -9,6 +9,7 @@ import { TradeType } from '../components/utils/TradeType'
 import { useNetwork, useTrade } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
 import { usePrices } from '@dozer/react-query'
+import { SwapStatsDisclosure } from '../components'
 
 const Home = () => {
   const isMounted = useIsMounted()
@@ -30,7 +31,17 @@ const Home = () => {
   const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([inputToken, outputToken])
   const [input1, setInput1] = useState<string>('')
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
-  const { outputAmount, setMainCurrencyPrice, setOtherCurrencyPrice, setAmountSpecified, setOutputAmount } = useTrade()
+  const {
+    outputAmount,
+    setMainCurrency,
+    setOtherCurrency,
+    setMainCurrencyPrice,
+    setOtherCurrencyPrice,
+    setAmountSpecified,
+    setOutputAmount,
+    setPool,
+    pool,
+  } = useTrade()
 
   const { data: prices } = usePrices(network)
 
@@ -38,8 +49,12 @@ const Home = () => {
     setTradeType(TradeType.EXACT_INPUT)
     setInput0(val)
     setAmountSpecified(Number(val))
+    setMainCurrency(token0 ? token0 : getTokens(network)[0])
+    setOtherCurrency(token1 ? token1 : getTokens(network)[1])
     setMainCurrencyPrice(prices && token0 ? prices[token0.uuid] : 0)
     setOtherCurrencyPrice(prices && token1 ? prices[token1.uuid] : 0)
+    setPool()
+    console.log(pool)
     setOutputAmount()
     setInput1(outputAmount ? outputAmount.toString() : '')
   }
@@ -148,6 +163,7 @@ const Home = () => {
               loading={!token1}
               // isWrap={isWrap}
             />
+            <SwapStatsDisclosure />
           </div>
         </Widget.Content>
       </Widget>
