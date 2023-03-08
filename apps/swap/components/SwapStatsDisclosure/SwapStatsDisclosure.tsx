@@ -95,7 +95,10 @@ export const SwapStatsDisclosure: FC = () => {
                         panel={<div className="grid grid-cols-2 gap-1">{stats}</div>}
                         button={<InformationCircleIcon width={16} height={16} />}
                       />{' '}
-                      {content} {usdPrice && <span className="font-medium text-slate-500">(${usdPrice})</span>}
+                      {content}{' '}
+                      {usdPrice && trade.amountSpecified ? (
+                        <span className="font-medium text-slate-500">(${usdPrice})</span>
+                      ) : null}
                     </div>
                   )}
                 </Rate>
