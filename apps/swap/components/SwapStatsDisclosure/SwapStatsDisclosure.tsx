@@ -20,10 +20,6 @@ export const SwapStatsDisclosure: FC = () => {
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const priceImpactSeverity = useMemo(() => warningSeverity(trade?.priceImpact), [trade?.priceImpact])
 
-  const slippagePercent = useMemo(() => {
-    return new Percent(Math.floor(slippageTolerance * 100), 10_000)
-  }, [slippageTolerance])
-
   const stats = (
     <>
       <Typography variant="sm" className="text-slate-400">
@@ -44,27 +40,11 @@ export const SwapStatsDisclosure: FC = () => {
         Min. Received
       </Typography>
       <Typography variant="sm" weight={500} className="text-right truncate text-slate-400">
-        {/* {trade?.minimumAmountOut(slippagePercent)} {trade?.minimumAmountOut(slippagePercent)?.currency.symbol} */}
+        {trade.outputAmount && slippageTolerance
+          ? (trade?.outputAmount * (1 - slippageTolerance / 100)).toFixed(2)
+          : ''}{' '}
+        {trade.outputAmount && slippageTolerance ? trade?.otherCurrency?.symbol : ''}
       </Typography>
-      {/* <Typography variant="sm" className="text-slate-400">
-        Optimized Route
-      </Typography> */}
-      {/* <Typography
-        onClick={() => setShowRoute((prev) => !prev)}
-        variant="sm"
-        weight={500}
-        className="text-right cursor-pointer text-blue hover:text-blue-400"
-      >
-        {showRoute ? 'Hide' : 'Show'}
-      </Typography>
-      <Dialog open={showRoute} onClose={() => setShowRoute(false)}>
-        <Dialog.Content className="!pb-4">
-          <Dialog.Header border={false} title="Optimized Route" onClose={() => setShowRoute(false)} />
-          <div className="max-h-[400px] overflow-y-auto scroll rounded-xl bg-black/[0.24] p-2 border border-slate-200/10">
-            <Route />
-          </div>
-        </Dialog.Content>
-      </Dialog> */}
     </>
   )
 

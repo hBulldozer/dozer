@@ -9,7 +9,7 @@ import { TradeType } from '../components/utils/TradeType'
 import { useNetwork, useTrade } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
 import { usePrices } from '@dozer/react-query'
-import { SwapStatsDisclosure } from '../components'
+import { SwapStatsDisclosure, SettingsOverlay } from '../components'
 
 const Home = () => {
   const isMounted = useIsMounted()
@@ -120,6 +120,9 @@ const Home = () => {
             <App.NavItemList hideOnMobile={false}>
               <App.NavItem href="https://dozer.finance/swap" label="Swap" />
             </App.NavItemList>
+            <div className="flex justify-end">
+              <SettingsOverlay chainId={network} />
+            </div>
           </div>
           <CurrencyInput
             id={'swap-input-currency0'}
