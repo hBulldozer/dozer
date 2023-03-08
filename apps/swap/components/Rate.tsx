@@ -26,14 +26,24 @@ export const Rate: FC<Rate> = ({ children, token1, token2 }) => {
 
   const content = (
     <>
-      {token1 && token2 && trade.outputAmount && trade.amountSpecified ? (
+      {token1 && token2 && trade.pool?.token1_balance && trade.pool.token2_balance && trade.amountSpecified ? (
         invert ? (
           <>
-            1 {token2?.symbol} = {(trade.outputAmount / trade.amountSpecified).toFixed(2)} {token1?.symbol}
+            1 {token2?.symbol} ={' '}
+            {(
+              (trade.amountSpecified * trade.pool.token2_balance) /
+              (trade.pool.token1_balance + trade.amountSpecified)
+            ).toFixed(2)}{' '}
+            {token1?.symbol}
           </>
         ) : (
           <>
-            1 {token1?.symbol} = {(trade.outputAmount / trade.amountSpecified).toFixed(2)} {token2?.symbol}
+            1 {token1?.symbol} ={' '}
+            {(
+              (trade.amountSpecified * trade.pool.token1_balance) /
+              (trade.pool.token2_balance + trade.amountSpecified)
+            ).toFixed(2)}{' '}
+            {token1?.symbol}
           </>
         )
       ) : (
@@ -61,7 +71,7 @@ export const Rate: FC<Rate> = ({ children, token1, token2 }) => {
       </Typography>
       <Typography variant="xs" className={classNames('cursor-pointer h-[36px] flex items-center ')}>
         <div className="flex items-center h-full gap-1 font-medium" onClick={toggleInvert}>
-          {content} <span className="text-slate-500">(${usdPrice})</span>
+          {content} <span className="text-slate-500">{trade.amountSpecified ? `(${usdPrice})` : null}</span>
         </div>
       </Typography>
     </div>
