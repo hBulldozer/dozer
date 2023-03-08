@@ -22,8 +22,6 @@ interface TradeProps {
   setTradeType: (tradeType: TradeType.EXACT_INPUT | TradeType.EXACT_OUTPUT) => void
   amountSpecified: number | undefined
   setAmountSpecified: (amountSpecified: number) => void
-  outputAmount: number | undefined
-  setOutputAmount: () => void
   mainCurrency: Token | undefined
   setMainCurrency: (mainCurrency: Token) => void
   otherCurrency: Token | undefined
@@ -34,6 +32,10 @@ interface TradeProps {
   setOtherCurrencyPrice: (otherCurrencyPrice: number) => void
   pool: PoolType | undefined
   setPool: () => Promise<boolean>
+  outputAmount: number | undefined
+  setOutputAmount: () => void
+  priceImpact: number
+  setPriceImpact: () => void
 }
 
 export const useTrade = create<TradeProps>()(
@@ -55,7 +57,6 @@ export const useTrade = create<TradeProps>()(
       otherCurrencyPrice: 0,
       setOtherCurrencyPrice: (otherCurrencyPrice: number) =>
         set((state) => ({ otherCurrencyPrice: otherCurrencyPrice })),
-      outputAmount: 0,
       pool: {
         token1: new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 }),
         token2: new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 }),
@@ -67,7 +68,7 @@ export const useTrade = create<TradeProps>()(
           get().chainId
         }/pools_list`
         const list = await fetch(list_url).then((resp) => resp.json())
-        const pool = list.list.find((obj) => {
+        const pool = list.list.find((obj: { tokens: (string | undefined)[] }) => {
           return obj.tokens.indexOf(get().mainCurrency?.uuid) > -1 && obj.tokens.indexOf(get().otherCurrency?.uuid) > -1
         })
         if (!pool) return false
@@ -90,18 +91,57 @@ export const useTrade = create<TradeProps>()(
           return true
         }
       },
-      setOutputAmount: () =>
-        set((state) => ({
-          outputAmount:
-            // state.otherCurrencyPrice && state.mainCurrencyPrice && state.amountSpecified
-            //   ? state.amountSpecified * (state.otherCurrencyPrice / state.mainCurrencyPrice)
-            //   : 0,
-            state.pool && state.amountSpecified && state.mainCurrency && state.otherCurrency
-              ? state.pool.token1.uuid === state.mainCurrency.uuid
-                ? (state.amountSpecified * state.pool.token1_balance) / state.pool.token2_balance
-                : (state.amountSpecified * state.pool.token2_balance) / state.pool.token1_balance
-              : 0,
-        })),
+      outputAmount: 0,
+      setOutputAmount: () => {
+        if (
+          get().pool &&
+          get().pool?.token1 &&
+          get().pool?.token2 &&
+          get().pool?.token1_balance &&
+          get().pool?.token2_balance &&
+          get().mainCurrency &&
+          get().amountSpecified
+        ) {
+          const product = get().pool?.token1_balance * get().pool?.token2_balance
+          const balance =
+            get().pool.token1.uuid === get().mainCurrency.uuid ? get().pool?.token1_balance : get().pool?.token2_balance
+          const balance_other =
+            get().pool.token1.uuid === get().mainCurrency.uuid ? get().pool?.token2_balance : get().pool?.token1_balance
+          const price = balance_other / balance
+          const new_balance = balance + get().amountSpecified
+          const new_balance_other = product / new_balance
+          const amount_received = balance_other - new_balance_other
+          set((state) => ({
+            outputAmount: amount_received,
+          }))
+        } else {
+          set((state) => ({ outputAmount: 0 }))
+        }
+      },
+      priceImpact: 0,
+      setPriceImpact: () => {
+        if (
+          get().pool &&
+          get().pool?.token1 &&
+          get().pool?.token2 &&
+          get().pool?.token1_balance &&
+          get().pool?.token2_balance &&
+          get().mainCurrency &&
+          get().outputAmount
+        ) {
+          const balance =
+            get().pool.token1.uuid === get().mainCurrency.uuid ? get().pool?.token1_balance : get().pool?.token2_balance
+          const balance_other =
+            get().pool.token1.uuid === get().mainCurrency.uuid ? get().pool?.token2_balance : get().pool?.token1_balance
+          const price = balance_other / balance
+          const price_paid = get().outputAmount / get().amountSpecified
+          set((state) => ({
+            priceImpact: ((price_paid - price) / price) * 100,
+          }))
+        } else {
+          set((state) => ({ priceImpact: 0 }))
+        }
+      },
     }),
     {
       name: 'trade-storage',

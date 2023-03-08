@@ -40,7 +40,7 @@ const Home = () => {
     setAmountSpecified,
     setOutputAmount,
     setPool,
-    pool,
+    setPriceImpact,
   } = useTrade()
   const [poolExist, setPoolExist] = useState(true)
 
@@ -79,6 +79,7 @@ const Home = () => {
     setMainCurrency(token0 ? token0 : getTokens(network)[0])
     setOtherCurrency(token1 ? token1 : getTokens(network)[1])
     fetchPool()
+    setPriceImpact()
     if (!poolExist) {
       console.log('não existe')
       setInput0('')

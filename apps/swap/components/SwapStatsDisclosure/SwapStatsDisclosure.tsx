@@ -52,7 +52,7 @@ export const SwapStatsDisclosure: FC = () => {
         onClick={() => setShowRoute((prev) => !prev)}
         variant="sm"
         weight={500}
-        className="cursor-pointer text-blue hover:text-blue-400 text-right"
+        className="text-right cursor-pointer text-blue hover:text-blue-400"
       >
         {showRoute ? 'Hide' : 'Show'}
       </Typography>
