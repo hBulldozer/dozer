@@ -43,7 +43,7 @@ export const Rate: FC<Rate> = ({ children, token1, token2 }) => {
               (trade.amountSpecified * trade.pool.token1_balance) /
               (trade.pool.token2_balance + trade.amountSpecified)
             ).toFixed(2)}{' '}
-            {token1?.symbol}
+            {token2?.symbol}
           </>
         )
       ) : (
