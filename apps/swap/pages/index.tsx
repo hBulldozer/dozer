@@ -42,63 +42,67 @@ const Home = () => {
     setPool,
     pool,
   } = useTrade()
+  const [poolExist, setPoolExist] = useState(true)
 
   const { data: prices } = usePrices(network)
 
-  const onInput0 = (val: string) => {
+  const onInput0 = async (val: string) => {
     setTradeType(TradeType.EXACT_INPUT)
     setInput0(val)
-    setAmountSpecified(Number(val))
-    setMainCurrency(token0 ? token0 : getTokens(network)[0])
-    setOtherCurrency(token1 ? token1 : getTokens(network)[1])
-    setMainCurrencyPrice(prices && token0 ? prices[token0.uuid] : 0)
-    setOtherCurrencyPrice(prices && token1 ? prices[token1.uuid] : 0)
-    setPool()
-    console.log(pool)
-    setOutputAmount()
-    setInput1(outputAmount ? outputAmount.toString() : '')
   }
 
-  const onInput1 = useCallback((val: string) => {
+  const onInput1 = (val: string) => {
     // setTradeType(TradeType.EXACT_OUTPUT)
     setInput1(val)
-  }, [])
+  }
 
-  const switchCurrencies = () => {
+  const switchCurrencies = async () => {
     setTokens(([prevSrc, prevDst]) => [prevDst, prevSrc])
-    setAmountSpecified(Number(input0))
-    setMainCurrencyPrice(prices && token0 ? prices[token0.uuid] : 0)
-    setOtherCurrencyPrice(prices && token1 ? prices[token1.uuid] : 0)
-    setOutputAmount()
-    setInput1(outputAmount ? outputAmount.toString() : '')
   }
 
   const amounts = useMemo(() => [input0], [input0])
 
-  useEffect(() => {
-    setTokens([inputToken, outputToken])
-    // setInput0(initialState.input0)
-    setInput1('')
-  }, [inputToken, outputToken])
+  // useEffect(() => {
+  //   setTokens([inputToken, outputToken])
+  //   // setInput0(initialState.input0)
+  //   setInput1('')
+  // }, [inputToken, outputToken])
 
   useEffect(() => {
-    setAmountSpecified(Number(input0))
-    setMainCurrencyPrice(prices && token0 ? prices[token0.uuid] : 0)
-    setOtherCurrencyPrice(prices && token1 ? prices[token1.uuid] : 0)
-    setOutputAmount()
-    setInput1(outputAmount ? outputAmount.toString() : '')
-  }, [outputAmount, token0, token1])
+    const fetchPool = async () => {
+      if (await setPool()) {
+        setPoolExist(true)
+      } else {
+        setPoolExist(false)
+      }
+    }
+    setMainCurrency(token0 ? token0 : getTokens(network)[0])
+    setOtherCurrency(token1 ? token1 : getTokens(network)[1])
+    fetchPool()
+    if (!poolExist) {
+      console.log('não existe')
+      setInput0('')
+      setAmountSpecified(0)
+      setOutputAmount()
+      // setInput1('')
+    } else {
+      setAmountSpecified(Number(input0))
+      setMainCurrencyPrice(prices && token0 ? prices[token0.uuid] : 0)
+      setOtherCurrencyPrice(prices && token1 ? prices[token1.uuid] : 0)
+      setOutputAmount()
+      // setInput1(outputAmount ? outputAmount.toString() : '')
+    }
+  }, [outputAmount, token0, token1, input0, input1, prices, network, poolExist])
 
-  const onSuccess = useCallback(() => {
-    setInput0('')
-    setInput1('')
-  }, [])
+  // const onSuccess = useCallback(() => {
+  //   setInput0('')
+  //   setInput1('')
+  // }, [])
 
   const _setToken0 = useCallback((currency: Token) => {
     setTokens(([prevSrc, prevDst]) => {
       return prevDst && currency.equals(prevDst) ? [prevDst, prevSrc] : [currency, prevDst]
     })
-    // setTokens([currency, currency])
   }, [])
 
   const _setToken1 = useCallback((currency: Token) => {
@@ -119,7 +123,7 @@ const Home = () => {
           <CurrencyInput
             id={'swap-input-currency0'}
             className="p-3"
-            disabled={token0?.symbol && token1?.symbol ? false : true}
+            disabled={token0?.symbol && token1?.symbol && poolExist ? false : true}
             value={token0?.symbol && token1?.symbol ? input0 : ''}
             onChange={onInput0}
             currency={token0}
@@ -149,7 +153,7 @@ const Home = () => {
               id={'swap-output-currency1'}
               disabled={true}
               className="p-3"
-              value={input1}
+              value={poolExist ? (outputAmount ? outputAmount.toString() : '') : ''}
               onChange={onInput1}
               currency={token1}
               onSelect={_setToken1}

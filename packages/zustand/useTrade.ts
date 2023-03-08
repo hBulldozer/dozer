@@ -1,5 +1,5 @@
 import { ChainId } from '@dozer/chain'
-import { Token } from '@dozer/currency'
+import { Token, getTokens } from '@dozer/currency'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -9,10 +9,10 @@ export enum TradeType {
 }
 
 interface PoolType {
-  token1: Token
-  token2: Token
-  token1_balance: number
-  token2_balance: number
+  token1: Token | undefined
+  token2: Token | undefined
+  token1_balance: number | undefined
+  token2_balance: number | undefined
 }
 
 interface TradeProps {
@@ -32,8 +32,8 @@ interface TradeProps {
   setMainCurrencyPrice: (mainCurrencyPrice: number) => void
   otherCurrencyPrice: number | undefined
   setOtherCurrencyPrice: (otherCurrencyPrice: number) => void
-  pool: PoolType
-  setPool: () => void
+  pool: PoolType | undefined
+  setPool: () => Promise<boolean>
 }
 
 export const useTrade = create<TradeProps>()(
@@ -63,12 +63,32 @@ export const useTrade = create<TradeProps>()(
         token2_balance: 0,
       },
       setPool: async () => {
-        const response = await fetch(
-          `https://raw.githubusercontent.com/Dozer-Protocol/automatic-exchange-service/main/assets/${
+        const list_url = `https://raw.githubusercontent.com/Dozer-Protocol/automatic-exchange-service/main/assets/${
+          get().chainId
+        }/pools_list`
+        const list = await fetch(list_url).then((resp) => resp.json())
+        const pool = list.list.find((obj) => {
+          return obj.tokens.indexOf(get().mainCurrency?.uuid) > -1 && obj.tokens.indexOf(get().otherCurrency?.uuid) > -1
+        })
+        if (!pool) return false
+        else {
+          const url = `https://raw.githubusercontent.com/Dozer-Protocol/automatic-exchange-service/main/assets/${
             get().chainId
-          }/pools/${get().mainCurrency?.uuid}_${get().otherCurrency?.uuid}`
-        )
-        set({ pool: await response.json() })
+          }/pools/${pool.name}`
+          const data = await fetch(url).then((resp) => resp.json())
+          const result = {
+            token1: getTokens(get().chainId).find((obj) => {
+              return obj.uuid === data.token1
+            }),
+            token2: getTokens(get().chainId).find((obj) => {
+              return obj.uuid === data.token2
+            }),
+            token1_balance: Number(data.token1_balance),
+            token2_balance: Number(data.token2_balance),
+          }
+          set({ pool: result })
+          return true
+        }
       },
       setOutputAmount: () =>
         set((state) => ({
