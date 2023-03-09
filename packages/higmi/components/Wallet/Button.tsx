@@ -70,9 +70,9 @@ export const Button = <C extends React.ElementType>({
       }
       setBalance(balance_data)
     } else {
-      setBalance([])
+      // setBalance([])
     }
-  }, [balance.isLoading, balance, connectAddress])
+  }, [balance, connectAddress])
 
   function onChange(x: string) {
     setConnectAddress(x)
