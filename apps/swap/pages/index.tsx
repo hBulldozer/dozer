@@ -3,13 +3,16 @@ import { App, Button, classNames, Container, Link, Typography, Widget } from '@d
 import { Layout } from '../components/Layout'
 import { CurrencyInput } from '../components/CurrencyInput'
 import { getTokens, Token } from '@dozer/currency'
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, FC } from 'react'
 import { useIsMounted } from '@dozer/hooks'
 import { TradeType } from '../components/utils/TradeType'
-import { useNetwork, useTrade } from '@dozer/zustand'
+import { useNetwork, useSettings, useTrade } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
 import { usePrices } from '@dozer/react-query'
 import { SwapStatsDisclosure, SettingsOverlay } from '../components'
+import { Checker } from '@dozer/higmi'
+import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
+import { warningSeverity } from '../components/utils/functions'
 
 const Home = () => {
   const isMounted = useIsMounted()
@@ -61,6 +64,10 @@ const Home = () => {
   }
 
   const amounts = useMemo(() => [input0], [input0])
+
+  const onSuccess = () => {
+    console.log('sucesso')
+  }
 
   // useEffect(() => {
   //   setTokens([inputToken, outputToken])
@@ -172,6 +179,19 @@ const Home = () => {
               // isWrap={isWrap}
             />
             <SwapStatsDisclosure />
+            <div className="p-3 pt-0">
+              <Checker.Connected fullWidth size="md">
+                <Checker.Pool fullWidth size="md" poolExist={poolExist}>
+                  <Checker.Amounts fullWidth size="md" amount={Number(input0)} token={token0}>
+                    <SwapReviewModalLegacy chainId={network} onSuccess={onSuccess}>
+                      {({ setOpen }) => {
+                        return <SwapButton setOpen={setOpen} />
+                      }}
+                    </SwapReviewModalLegacy>
+                  </Checker.Amounts>
+                </Checker.Pool>
+              </Checker.Connected>
+            </div>
           </div>
         </Widget.Content>
       </Widget>
@@ -180,3 +200,48 @@ const Home = () => {
 }
 
 export default Home
+
+const SwapButton: FC<{
+  setOpen(open: boolean): void
+}> = ({ setOpen }) => {
+  const trade = useTrade()
+  const slippageTolerance = useSettings((state) => state.slippageTolerance)
+
+  const priceImpactSeverity = useMemo(() => warningSeverity(trade?.priceImpact), [trade])
+  const priceImpactTooHigh = priceImpactSeverity > 3
+
+  const onClick = useCallback(() => {
+    setOpen(true)
+  }, [setOpen])
+
+  return (
+    <Button
+      testdata-id="swap-button"
+      fullWidth
+      onClick={onClick}
+      disabled={
+        priceImpactTooHigh ||
+        Number(
+          (trade?.outputAmount
+            ? trade.outputAmount
+            : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)
+          ).toFixed(2)
+        ) == 0 ||
+        Boolean(!trade && priceImpactSeverity > 2)
+      }
+      size="md"
+      color={priceImpactTooHigh || priceImpactSeverity > 2 ? 'red' : 'blue'}
+      {...(Boolean(!trade && priceImpactSeverity > 2) && {
+        title: 'Enable expert mode to swap with high price impact',
+      })}
+    >
+      {false
+        ? 'Finding Best Price'
+        : priceImpactTooHigh
+        ? 'High Price Impact'
+        : trade && priceImpactSeverity > 2
+        ? 'Swap Anyway'
+        : 'Swap'}
+    </Button>
+  )
+}
