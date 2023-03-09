@@ -208,7 +208,7 @@ const BalancePanel: FC<BalancePanel> = ({
       const token = balance.find((obj) => {
         return obj.token_uuid === currency.uuid
       })
-      setTokenBalance(token ? token.token_balance / 100 : 0)
+      // setTokenBalance(token ? token.token_balance / 100 : 0)
     }
   }, [currency, balance])
 
