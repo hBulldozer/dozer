@@ -51,7 +51,7 @@ export const SwapStatsDisclosure: FC = () => {
   return (
     <>
       <Transition
-        show={!!trade}
+        show={!!trade.amountSpecified}
         unmount={false}
         className="p-3 !pb-1 transition-[max-height] overflow-hidden"
         enter="duration-300 ease-in-out"

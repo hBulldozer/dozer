@@ -30,19 +30,13 @@ export const Rate: FC<Rate> = ({ children, token1, token2 }) => {
         invert ? (
           <>
             1 {token2?.symbol} ={' '}
-            {(
-              (trade.amountSpecified * trade.pool.token2_balance) /
-              (trade.pool.token1_balance + trade.amountSpecified)
-            ).toFixed(2)}{' '}
+            {(trade.pool.token2_balance / (trade.pool.token1_balance + trade.amountSpecified)).toFixed(2)}{' '}
             {token1?.symbol}
           </>
         ) : (
           <>
             1 {token1?.symbol} ={' '}
-            {(
-              (trade.amountSpecified * trade.pool.token1_balance) /
-              (trade.pool.token2_balance + trade.amountSpecified)
-            ).toFixed(2)}{' '}
+            {(trade.pool.token1_balance / (trade.pool.token2_balance + trade.amountSpecified)).toFixed(2)}{' '}
             {token2?.symbol}
           </>
         )
