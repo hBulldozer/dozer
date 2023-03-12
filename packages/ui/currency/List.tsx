@@ -27,19 +27,19 @@ export const List: FC<ListProps> = memo(
     )
 
     return (
-      <AutoSizer disableWidth>
-        {({ height }: { height: number }) => (
-          <FixedSizeList
-            width="100%"
-            height={height}
-            itemCount={currencies.length}
-            itemSize={rowHeight || 48}
-            className={className}
-          >
-            {Row}
-          </FixedSizeList>
-        )}
-      </AutoSizer>
+      // <AutoSizer disableWidth>
+      //   {({ height }: { height: number }) => (
+      <FixedSizeList
+        width="100%"
+        height={currencies.length * (rowHeight || 48)}
+        itemCount={currencies.length}
+        itemSize={rowHeight || 48}
+        className={className}
+      >
+        {Row}
+      </FixedSizeList>
+      //   )}
+      // </AutoSizer>
     )
   },
   (prevProps, nextProps) =>
