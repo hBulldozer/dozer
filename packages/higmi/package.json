@@ -1,0 +1,55 @@
+{
+  "name": "@dozer/higmi",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Dozer Higmi",
+  "keywords": [
+    "Dozer",
+    "higmi"
+  ],
+  "license": "MIT",
+  "author": "Dozer",
+  "source": "./index.ts",
+  "scripts": {
+    "check": "tsc --pretty --noEmit",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "generate": "typechain --target ethers-v5 --out-dir typechain './node_modules/@uniswap/v3-periphery/artifacts/contracts/lens/UniswapInterfaceMulticall.sol/UniswapInterfaceMulticall.json'",
+    "lint": "TIMING=1 eslint . --fix",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@headlessui/react": "^1.7.3",
+    "@heroicons/react": "^1.0.6",
+    "@dozer/hooks": "workspace:*",
+    "@dozer/currency": "workspace:*",
+    "@dozer/format": "workspace:*",
+    "@dozer/math": "workspace:*",
+    "@dozer/chain": "workspace:*",
+    "@dozer/zustand": "workspace:*",
+    "@dozer/react-query": "workspace:*",
+    "@dozer/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@dozer/eslint-config": "workspace:*",
+    "@dozer/jest-config": "workspace:*",
+    "@dozer/prettier-config": "workspace:*",
+    "@dozer/typescript-config": "workspace:*",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "eslint": "8.29.0",
+    "ethers": "5.7.2",
+    "next": "13.1.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "tsup": "6.5.0",
+    "typechain": "^8.0.0",
+    "typescript": "4.9.4"
+  },
+  "peerDependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "optionalDependencies": {
+    "next": "13.1.1"
+  }
+}

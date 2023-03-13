@@ -11,7 +11,6 @@ import { useEffect } from 'react'
 
 import { Header } from '../components'
 
-
 declare global {
   interface Window {
     dataLayer: Record<string, any>[]
@@ -36,14 +35,13 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
   }, [router.events])
   return (
     <>
-      <Head>
-      </Head>
       <ThemeProvider>
         <App.Shell>
           <Header />
           <Component {...pageProps} />
           <App.Footer />
         </App.Shell>
+        <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
       </ThemeProvider>
       <Analytics />
     </>
