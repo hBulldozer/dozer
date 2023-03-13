@@ -6,6 +6,7 @@ import { AppearOnMount } from '../animation'
 export enum ProgressColor {
   PINK,
   BLUE,
+  YELLOW,
   GRADIENT,
   GREEN,
 }
@@ -20,14 +21,14 @@ interface ProgressBarProps {
 export const ProgressBar: FC<ProgressBarProps> = ({ progress, color, showLabel = true, className }) => {
   let fromColor
   let toColor
-  if (color === ProgressColor.BLUE) {
-    fromColor = 'from-blue-200'
-    toColor = 'to-blue'
+  if (color === ProgressColor.YELLOW) {
+    fromColor = 'from-yellow-200'
+    toColor = 'to-yellow'
   } else if (color === ProgressColor.PINK) {
     fromColor = 'from-pink-200'
     toColor = 'to-pink'
   } else if (color === ProgressColor.GRADIENT) {
-    fromColor = 'from-blue'
+    fromColor = 'from-yellow'
     toColor = 'to-pink'
   } else if (color === ProgressColor.GREEN) {
     fromColor = 'from-green-200'

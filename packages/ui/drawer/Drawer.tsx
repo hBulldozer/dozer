@@ -110,7 +110,7 @@ export const Panel: FC<PanelProps> = ({ children, className }) => {
           />
         </Transition.Child>
         <Transition.Child
-          className="overflow-y-auto scroll w-full sm:w-[380px] bg-slate-800 top-0 bottom-0 absolute px-5 shadow-xl shadow-black/30 border-l border-slate-200/10"
+          className="overflow-y-auto scroll w-full sm:w-[380px] bg-stone-800 top-0 bottom-0 absolute px-5 shadow-xl shadow-black/30 border-l border-stone-200/10"
           enter="transform transition ease-in-out duration-300"
           enterFrom="translate-x-0"
           enterTo="translate-x-[-100%]"

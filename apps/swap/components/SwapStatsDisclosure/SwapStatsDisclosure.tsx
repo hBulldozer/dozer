@@ -22,24 +22,24 @@ export const SwapStatsDisclosure: FC = () => {
 
   const stats = (
     <>
-      <Typography variant="sm" className="text-slate-400">
+      <Typography variant="sm" className="text-stone-400">
         Price Impact
       </Typography>
       <Typography
         variant="sm"
         weight={500}
         className={classNames(
-          priceImpactSeverity === 2 ? 'text-yellow' : priceImpactSeverity > 2 ? 'text-red' : 'text-slate-200',
+          priceImpactSeverity === 2 ? 'text-yellow' : priceImpactSeverity > 2 ? 'text-red' : 'text-stone-200',
           'text-right truncate'
         )}
       >
         {trade?.priceImpact?.toFixed(2)}%
       </Typography>
-      <div className="col-span-2 border-t border-slate-200/5 w-full py-0.5" />
-      <Typography variant="sm" className="text-slate-400">
+      <div className="col-span-2 border-t border-stone-200/5 w-full py-0.5" />
+      <Typography variant="sm" className="text-stone-400">
         Min. Received
       </Typography>
-      <Typography variant="sm" weight={500} className="text-right truncate text-slate-400">
+      <Typography variant="sm" weight={500} className="text-right truncate text-stone-400">
         {trade.outputAmount && slippageTolerance
           ? (trade?.outputAmount * (1 - slippageTolerance / 100)).toFixed(2)
           : ''}{' '}
@@ -68,7 +68,7 @@ export const SwapStatsDisclosure: FC = () => {
                 <Rate token1={mainCurrency} token2={otherCurrency}>
                   {({ content, usdPrice, toggleInvert }) => (
                     <div
-                      className="text-sm text-slate-300 hover:text-slate-50 cursor-pointer flex items-center h-full gap-1 font-semibold tracking-tight h-[36px] flex items-center truncate"
+                      className="text-sm text-stone-300 hover:text-stone-50 cursor-pointer flex items-center h-full gap-1 font-semibold tracking-tight h-[36px] flex items-center truncate"
                       onClick={toggleInvert}
                     >
                       <Tooltip
@@ -77,7 +77,7 @@ export const SwapStatsDisclosure: FC = () => {
                       />{' '}
                       {content}{' '}
                       {usdPrice && trade.amountSpecified ? (
-                        <span className="font-medium text-slate-500">(${usdPrice})</span>
+                        <span className="font-medium text-stone-500">(${usdPrice})</span>
                       ) : null}
                     </div>
                   )}
@@ -106,7 +106,7 @@ export const SwapStatsDisclosure: FC = () => {
               >
                 <Disclosure.Panel
                   as="div"
-                  className="grid grid-cols-2 gap-1 px-4 py-2 mb-4 border border-slate-200/5 rounded-2xl"
+                  className="grid grid-cols-2 gap-1 px-4 py-2 mb-4 border border-stone-200/5 rounded-2xl"
                 >
                   {stats}
                 </Disclosure.Panel>

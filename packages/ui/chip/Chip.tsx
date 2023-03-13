@@ -10,20 +10,22 @@ const SIZE = {
 
 const FILLED = {
   default: 'bg-gray-700 text-white',
-  white: 'bg-high-emphesis text-slate-700',
+  white: 'bg-high-emphesis text-stone-700',
   purple: 'bg-purple-500 bg-opacity-20 text-purple',
   blue: 'bg-blue-500 bg-opacity-20 text-blue',
+  yellow: 'bg-yellow-500 bg-opacity-20 text-yellow',
+  amber: 'bg-amber-500 bg-opacity-20 text-stone-700',
   green: 'bg-green-500 bg-opacity-20 text-green',
   pink: 'bg-pink-500 bg-opacity-20 text-pink',
   red: 'bg-red-500 bg-opacity-20 text-red',
-  gray: 'bg-white bg-opacity-10 text-slate-300',
+  gray: 'bg-white bg-opacity-10 text-stone-300',
 }
 
 const VARIANT = {
   filled: FILLED,
 }
 
-export type ChipColor = 'default' | 'purple' | 'blue' | 'blue' | 'green' | 'white' | 'pink' | 'red' | 'gray'
+export type ChipColor = 'default' | 'purple' | 'blue' | 'yellow' | 'green' | 'white' | 'pink' | 'red' | 'gray' | 'amber'
 export type ChipSize = 'default' | 'sm'
 export type ChipVariant = 'filled'
 
@@ -43,7 +45,7 @@ export interface ChipProps {
 
 export const Chip: FC<ChipProps> = ({
   label,
-  color = 'default',
+  color = 'yellow',
   variant = 'filled',
   size = 'default',
   className = '',
@@ -59,7 +61,7 @@ export const Chip: FC<ChipProps> = ({
       className={classNames(
         VARIANT[variant][color],
         SIZE[size],
-        opaque ? '!bg-opacity-100 !text-slate-900 font-bold' : '',
+        opaque ? '!bg-opacity-100 !text-stone-900 font-bold' : '',
         onClick ? 'pr-1' : 'pr-3',
         'whitespace-nowrap inline-flex rounded-2xl py-0.5 pl-3 font-medium text-xs leading-5 gap-2 items-center justify-center',
         className

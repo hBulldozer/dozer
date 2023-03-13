@@ -22,7 +22,7 @@ export const Loader: FC<LoaderProps> = ({ size = 16 }) => {
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
-        className="text-slate-200"
+        className="text-stone-200"
       />
     </svg>
   )

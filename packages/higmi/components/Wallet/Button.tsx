@@ -85,7 +85,7 @@ export const Button = <C extends React.ElementType>({
         // Awaiting wallet confirmation
         // if (pendingConnection) {
         //   return (
-        //     <UIButton endIcon={<Loader />} variant="filled" color="blue" disabled {...rest}>
+        //     <UIButton endIcon={<Loader />} variant="filled" color="amber" disabled {...rest}>
         //       Authorize Wallet
         //     </UIButton>
         //   )
@@ -108,7 +108,7 @@ export const Button = <C extends React.ElementType>({
               <div>
                 {isMounted && (
                   <Menu.Item key="htr_connector" onClick={() => connect()} className="flex items-center gap-3 group">
-                    <div className="-ml-[6px] group-hover:bg-blue-100 rounded-full group-hover:ring-[5px] group-hover:ring-blue-100">
+                    <div className="-ml-[6px] group-hover:bg-yellow-700 rounded-full group-hover:ring-[1px] group-hover:ring-yellow-100">
                       {Icons['Injected'] && Icons['Injected']}
                     </div>{' '}
                     Hathor Wallet

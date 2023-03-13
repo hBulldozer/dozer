@@ -22,7 +22,7 @@ const SelectButton: FC<SelectButtonProps> = forwardRef(
         ...props,
         ref,
         className: classNames(
-          open ? 'ring-2 ring-offset-2 ring-blue !bg-slate-600' : '',
+          open ? 'ring-2 ring-offset-2 ring-yellow !bg-stone-600' : '',
           'relative w-full pr-10',
           DEFAULT_INPUT_CLASSNAME,
           error ? ERROR_INPUT_CLASSNAME : '',
@@ -33,7 +33,7 @@ const SelectButton: FC<SelectButtonProps> = forwardRef(
         <Typography
           variant="sm"
           weight={children ? 500 : 400}
-          className={classNames(children ? '' : 'text-slate-600', 'block truncate')}
+          className={classNames(children ? '' : 'text-stone-600', 'block truncate')}
         >
           {children}
         </Typography>

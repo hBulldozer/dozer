@@ -21,9 +21,9 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
   // const chainId = chain.id
 
   const panel = (
-    <Popover.Panel className="flex flex-col w-full sm:w-[320px] fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-[unset] sm:left-[unset] mt-4 sm:rounded-xl rounded-b-none shadow-md shadow-black/[0.3] bg-slate-900 border border-slate-200/20">
+    <Popover.Panel className="flex flex-col w-full sm:w-[320px] fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-[unset] sm:left-[unset] mt-4 sm:rounded-xl rounded-b-none shadow-md shadow-black/[0.3] bg-stone-900 border border-stone-200/20">
       {/* <div className="flex items-center gap-2 p-4 pb-3">
-        <SearchIcon width={20} height={20} className="text-slate-500" />
+        <SearchIcon width={20} height={20} className="text-stone-500" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -31,7 +31,7 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
           placeholder="Search networks"
         />
       </div> */}
-      <div className="mx-4 border-b border-slate-200/10" />
+      <div className="mx-4 border-b border-stone-200/10" />
       <div className="p-2 max-h-[300px] scroll">
         {supportedNetworks
           // .filter((el) => (query ? chainName[el].toLowerCase().includes(query.toLowerCase()) : Boolean))
@@ -49,7 +49,7 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
             >
               <div className="flex items-center gap-2">
                 <NetworkIcon type="naked" chainId={el} width={22} height={22} />
-                <Typography variant="sm" weight={500} className="text-slate-50">
+                <Typography variant="sm" weight={500} className="text-stone-50">
                   {chainName[el]}
                 </Typography>
               </div>
@@ -69,7 +69,7 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
             <Popover.Button
               className={classNames(
                 DEFAULT_INPUT_UNSTYLED,
-                'flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] hover:text-white h-[38px] rounded-xl px-2 pl-3 !font-semibold !text-sm text-slate-200'
+                'flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] hover:text-white h-[38px] rounded-xl px-2 pl-3 !font-semibold !text-sm text-stone-200'
               )}
             >
               <NetworkIcon type="naked" chainId={network} width={20} height={20} />

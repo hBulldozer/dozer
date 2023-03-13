@@ -11,14 +11,14 @@ export const SlippageToleranceDisclosure: FC = () => {
   return (
     <Disclosure>
       {({ open }) => (
-        <div className="border-b border-slate-200/5">
+        <div className="border-b border-stone-200/5">
           <Disclosure.Button
             as="div"
             className="relative flex items-center justify-between w-full gap-3 cursor-pointer group rounded-xl"
           >
             <div className="flex items-center justify-center w-5 h-5">
               <svg
-                className="-ml-0.5 text-slate-500"
+                className="-ml-0.5 text-stone-500"
                 width="20"
                 height="12"
                 viewBox="0 0 20 12"
@@ -40,12 +40,12 @@ export const SlippageToleranceDisclosure: FC = () => {
                   button={<InformationCircleIcon width={14} height={14} />}
                   panel={
                     <div className="flex flex-col gap-2 w-80">
-                      <Typography variant="xs" weight={500} className="text-slate-300">
+                      <Typography variant="xs" weight={500} className="text-stone-300">
                         Slippage tolerance is the utmost percentage of slippage a user is willing to execute a trade
                         with; if the actual slippage falls outside of the user-designated range, the transaction will
                         revert.
                       </Typography>
-                      <Typography variant="xs" weight={500} className="text-slate-300">
+                      <Typography variant="xs" weight={500} className="text-stone-300">
                         Slippage is the difference between the expected value of output from a trade and the actual
                         value due to asset volatility and liquidity depth.
                       </Typography>
@@ -54,7 +54,7 @@ export const SlippageToleranceDisclosure: FC = () => {
                 />
               </div>
               <div className="flex gap-1">
-                <Typography variant="sm" weight={500} className="group-hover:text-slate-200 text-slate-400">
+                <Typography variant="sm" weight={500} className="group-hover:text-stone-200 text-stone-400">
                   {`Custom (${slippageTolerance}%)`}
                 </Typography>
                 <div
@@ -63,7 +63,7 @@ export const SlippageToleranceDisclosure: FC = () => {
                     'transition-all w-5 h-5 -mr-1.5 flex items-center delay-300'
                   )}
                 >
-                  <ChevronRightIcon width={16} height={16} className="group-hover:text-slate-200 text-slate-300" />
+                  <ChevronRightIcon width={16} height={16} className="group-hover:text-stone-200 text-stone-300" />
                 </div>
               </div>
             </div>
@@ -80,8 +80,8 @@ export const SlippageToleranceDisclosure: FC = () => {
             leaveTo="transform max-h-0"
           >
             <Disclosure.Panel>
-              <div className="flex flex-col gap-2 px-3 py-2 mt-2 bg-slate-900 rounded-xl">
-                <Typography variant="xs" weight={500} className="flex items-center gap-1 text-slate-300">
+              <div className="flex flex-col gap-2 px-3 py-2 mt-2 bg-stone-900 rounded-xl">
+                <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-300">
                   Custom Slippage
                 </Typography>
                 <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export const SlippageToleranceDisclosure: FC = () => {
                     placeholder="1"
                     className={classNames(DEFAULT_INPUT_UNSTYLED, '')}
                   />
-                  <Typography variant="xs" weight={500} className="text-slate-400">
+                  <Typography variant="xs" weight={500} className="text-stone-400">
                     %
                   </Typography>
                 </div>

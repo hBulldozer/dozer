@@ -43,11 +43,11 @@ export const Paginator: FC<PaginatorProps> = ({
       <div className="flex items-center gap-3">
         <div className="flex items-center">
           <IconButton className={classNames(hasPrev ? '' : 'pointer-events-none opacity-40', 'p-1')} onClick={onPrev}>
-            <ChevronLeftIcon className="text-slate-200" width={20} height={20} />
+            <ChevronLeftIcon className="text-stone-200" width={20} height={20} />
           </IconButton>
         </div>
         {pages ? (
-          <div className="text-base text-slate-200">
+          <div className="text-base text-stone-200">
             <b>{page + 1}</b> of <b>{pages}</b>
           </div>
         ) : (
@@ -58,7 +58,7 @@ export const Paginator: FC<PaginatorProps> = ({
             className={classNames(!hasNext || (!pages && nextDisabled) ? 'pointer-events-none opacity-40' : '', 'p-1')}
             onClick={onNext}
           >
-            <ChevronRightIcon className="text-slate-200" width={20} height={20} />
+            <ChevronRightIcon className="text-stone-200" width={20} height={20} />
           </IconButton>
         </div>
       </div>

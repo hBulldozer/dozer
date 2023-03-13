@@ -10,7 +10,7 @@ const DialogDescription: FC<DialogDescriptionProps> = ({ className, ...props }) 
   return (
     <HeadlessDialog.Description
       {...props}
-      className={classNames(className, 'text-sm text-slate-500 dark:text-slate-400')}
+      className={classNames(className, 'text-sm text-stone-500 dark:text-stone-400')}
     />
   )
 }

@@ -20,14 +20,14 @@ export const Counter = forwardRef<HTMLInputElement, CounterProps>(
           className={classNames(
             DEFAULT_INPUT_CLASSNAME,
             error ? ERROR_INPUT_CLASSNAME : '',
-            'grid grid-cols-12 !p-0 bg-slate-800 h-[44px]',
+            'grid grid-cols-12 !p-0 bg-stone-800 h-[44px]',
             className
           )}
         >
           <button
             className={classNames(
               DEFAULT_INPUT_HOVER_BG,
-              'col-span-3 text-2xl text-slate-300 hover:text-slate-200 h-full w-10 rounded-l-xl cursor-pointer outline-none'
+              'col-span-3 text-2xl text-stone-300 hover:text-stone-200 h-full w-10 rounded-l-xl cursor-pointer outline-none'
             )}
             type="button"
             onClick={() => onChange((Number(value || 0) - step).toString())}
@@ -53,7 +53,7 @@ export const Counter = forwardRef<HTMLInputElement, CounterProps>(
           <button
             className={classNames(
               DEFAULT_INPUT_HOVER_BG,
-              'col-span-3 text-2xl text-slate-300 hover:text-slate-200 h-full w-10 rounded-r-xl cursor-pointer outline-none'
+              'col-span-3 text-2xl text-stone-300 hover:text-stone-200 h-full w-10 rounded-r-xl cursor-pointer outline-none'
             )}
             type="button"
             onClick={() => onChange((Number(value || 0) + step).toString())}

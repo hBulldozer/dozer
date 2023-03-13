@@ -39,14 +39,14 @@ export const Notification: FC<{
     return (
       <div className="flex items-center gap-5 px-4 pr-8 rounded-2xl min-h-[82px] w-full">
         <div>
-          <div className="rounded-full bg-slate-600 h-9 w-9" />
+          <div className="rounded-full bg-stone-600 h-9 w-9" />
         </div>
         <div className="flex flex-col w-full gap-2">
           <div className="flex flex-col w-full gap-1">
-            <div className="bg-slate-500 w-full h-[12px] animate-pulse rounded-full" />
-            <div className="bg-slate-500 w-[60px] h-[12px] animate-pulse rounded-full" />
+            <div className="bg-stone-500 w-full h-[12px] animate-pulse rounded-full" />
+            <div className="bg-stone-500 w-[60px] h-[12px] animate-pulse rounded-full" />
           </div>
-          <div className="bg-slate-600 w-[120px] h-[10px] animate-pulse rounded-full" />
+          <div className="bg-stone-600 w-[120px] h-[10px] animate-pulse rounded-full" />
         </div>
       </div>
     )
@@ -79,7 +79,7 @@ export const Notification: FC<{
         )}
       >
         <Badge badgeContent={<DownloadIcon />}>
-          <div className="p-2 bg-slate-600 rounded-full h-[36px] w-[36px] flex justify-center items-center">
+          <div className="p-2 bg-stone-600 rounded-full h-[36px] w-[36px] flex justify-center items-center">
             {!hideStatus &&
               (status === 'loading' ? (
                 <Loader size={18} />
@@ -150,7 +150,7 @@ export const Notification: FC<{
         </Badge>
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
-            <Typography as="span" variant="sm" weight={500} className="items-center whitespace-normal text-slate-50">
+            <Typography as="span" variant="sm" weight={500} className="items-center whitespace-normal text-stone-50">
               notificação
               {/* {notification.summary.info ? (
                   notification.summary.info
@@ -163,7 +163,7 @@ export const Notification: FC<{
                 )} */}
             </Typography>
           </div>
-          <Typography variant="xs" className="text-slate-500">
+          <Typography variant="xs" className="text-stone-500">
             <TimeAgo date={new Date()} />
           </Typography>
         </div>

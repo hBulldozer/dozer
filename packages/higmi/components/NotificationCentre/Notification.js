@@ -23,7 +23,7 @@ export const Notification = ({ data, showExtra = false, hideStatus = false }) =>
         { className: 'flex items-center gap-5 px-4 pr-8 rounded-2xl min-h-[82px] w-full' },
         {
           children: [
-            _jsx('div', { children: _jsx('div', { className: 'rounded-full bg-slate-600 h-9 w-9' }) }),
+            _jsx('div', { children: _jsx('div', { className: 'rounded-full bg-stone-600 h-9 w-9' }) }),
             _jsxs(
               'div',
               Object.assign(
@@ -36,13 +36,13 @@ export const Notification = ({ data, showExtra = false, hideStatus = false }) =>
                         { className: 'flex flex-col w-full gap-1' },
                         {
                           children: [
-                            _jsx('div', { className: 'bg-slate-500 w-full h-[12px] animate-pulse rounded-full' }),
-                            _jsx('div', { className: 'bg-slate-500 w-[60px] h-[12px] animate-pulse rounded-full' }),
+                            _jsx('div', { className: 'bg-stone-500 w-full h-[12px] animate-pulse rounded-full' }),
+                            _jsx('div', { className: 'bg-stone-500 w-[60px] h-[12px] animate-pulse rounded-full' }),
                           ],
                         }
                       )
                     ),
-                    _jsx('div', { className: 'bg-slate-600 w-[120px] h-[10px] animate-pulse rounded-full' }),
+                    _jsx('div', { className: 'bg-stone-600 w-[120px] h-[10px] animate-pulse rounded-full' }),
                   ],
                 }
               )
@@ -105,7 +105,7 @@ export const Notification = ({ data, showExtra = false, hideStatus = false }) =>
                           Object.assign(
                             {
                               className:
-                                'p-2 bg-slate-600 rounded-full h-[36px] w-[36px] flex justify-center items-center',
+                                'p-2 bg-stone-600 rounded-full h-[36px] w-[36px] flex justify-center items-center',
                             },
                             {
                               children: [
@@ -141,7 +141,7 @@ export const Notification = ({ data, showExtra = false, hideStatus = false }) =>
                                       as: 'span',
                                       variant: 'sm',
                                       weight: 500,
-                                      className: 'items-center whitespace-normal text-slate-50',
+                                      className: 'items-center whitespace-normal text-stone-50',
                                     },
                                     { children: 'notifica\u00E7\u00E3o' }
                                   )
@@ -152,7 +152,7 @@ export const Notification = ({ data, showExtra = false, hideStatus = false }) =>
                           _jsx(
                             Typography,
                             Object.assign(
-                              { variant: 'xs', className: 'text-slate-500' },
+                              { variant: 'xs', className: 'text-stone-500' },
                               { children: _jsx(TimeAgo, { date: new Date() }) }
                             )
                           ),

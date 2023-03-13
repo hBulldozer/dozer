@@ -71,7 +71,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               variant="unstyled"
               disabled={disabled}
               onUserInput={onChange}
-              className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-3xl py-1 text-slate-200 hover:text-slate-100')}
+              className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-3xl py-1 text-stone-200 hover:text-stone-100')}
               value={value}
               readOnly={disabled}
             />
@@ -87,8 +87,8 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             className={classNames(
               onSelect ? 'shadow-md hover:ring-2' : 'cursor-default text-2xl',
               (currency || loading) && onSelect ? 'bg-white bg-opacity-[0.12]' : '',
-              currency || loading ? 'ring-slate-500' : 'bg-blue ring-blue-700',
-              'h-[36px] text-slate-200 hover:text-slate-100 transition-all flex flex-row items-center gap-1 text-xl font-semibold rounded-full px-2 py-1'
+              currency || loading ? 'ring-stone-500' : 'bg-yellow ring-yellow-700',
+              'h-[36px] text-stone-200 hover:text-stone-100 transition-all flex flex-row items-center gap-1 text-xl font-semibold rounded-full px-2 py-1'
             )}
           >
             {loading && !currency ? (
@@ -217,7 +217,7 @@ const BalancePanel: FC<BalancePanel> = ({
       data-testid={`${id}-balance-button`}
       type="button"
       onClick={() => onChange('')}
-      className="py-1 text-xs text-slate-400 hover:text-slate-300"
+      className="py-1 text-xs text-stone-400 hover:text-stone-300"
       disabled={disableMaxButton}
     >
       {isMounted && balance ? `Balance: ${tokenBalance}` : 'Balance: 0'}
@@ -245,7 +245,7 @@ const PricePanel: FC<PricePanel> = ({ currency, value, usdPctChange, chainId }) 
     )
 
   return (
-    <Typography variant="xs" weight={400} className="py-1 select-none text-slate-400">
+    <Typography variant="xs" weight={400} className="py-1 select-none text-stone-400">
       {parsedValue && price && isMounted ? `$${parsedValue * price}` : '$0.00'}
       {usdPctChange && (
         <span
@@ -258,7 +258,7 @@ const PricePanel: FC<PricePanel> = ({ currency, value, usdPctChange, chainId }) 
               ? 'text-red'
               : usdPctChange < -3
               ? 'text-yellow'
-              : 'text-slate-500'
+              : 'text-stone-500'
           )}
         >
           {' '}

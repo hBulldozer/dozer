@@ -35,7 +35,7 @@ export function Header({
   className,
   nav,
   withScrollBackground = false,
-  bgColor = 'bg-slate-900',
+  bgColor = 'bg-stone-900',
   maxWidth = 'full',
   ...props
 }: HeaderProps): JSX.Element {
@@ -68,7 +68,7 @@ export function Header({
         leaveFrom="translate-y-0"
         leaveTo="translate-y-[-100%]"
       >
-        <div className={classNames(bgColor, 'absolute inset-0 border-b pointer-events-none border-slate-200/10')} />
+        <div className={classNames(bgColor, 'absolute inset-0 border-b pointer-events-none border-stone-200/10')} />
       </Transition>
       <Container
         maxWidth={maxWidth}
@@ -80,12 +80,12 @@ export function Header({
               <DozerIcon width="100%" height="100%" className="mr-2 hover:animate-heartbeat" />
             </div>
           </a>
-          <div className="bg-slate-200/10 w-0.5 h-[20px]" />
+          <div className="bg-stone-200/10 w-0.5 h-[20px]" />
           <Select
             button={
               <Listbox.Button
                 type="button"
-                className="flex items-center gap-2 font-semibold hover:text-slate-200 text-slate-300"
+                className="flex items-center gap-2 font-semibold hover:text-stone-200 text-stone-300"
               >
                 <span className="hidden text-sm truncate sm:block">{AppType.Root}</span>
                 <IconButton as="div" className="p-1">
@@ -94,10 +94,10 @@ export function Header({
               </Listbox.Button>
             }
           >
-            <Select.Options className="w-[max-content] !bg-slate-700 -ml-5 mt-5 !max-h-[unset]">
+            <Select.Options className="w-[max-content] !bg-stone-700 -ml-5 mt-5 !max-h-[unset]">
               <div className="grid grid-cols-1 gap-1 px-2 py-2 md:grid-cols-3">
                 <div>
-                  <Typography variant="xs" weight={600} className="hidden px-2 mb-1 uppercase md:block text-slate-400">
+                  <Typography variant="xs" weight={600} className="hidden px-2 mb-1 uppercase md:block text-stone-400">
                     Core
                   </Typography>
                   <Select.Option
@@ -105,10 +105,10 @@ export function Header({
                     href="https://dozer.finance/swap"
                     key={AppType.Swap}
                     value={AppType.Swap}
-                    className="!border-slate-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
                   >
                     {AppType.Swap}
-                    <Typography variant="xs" className="text-slate-400 group-hover:text-blue-100">
+                    <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                       The easiest way to trade
                     </Typography>
                   </Select.Option>
@@ -117,21 +117,21 @@ export function Header({
                     href="https://dozer.finance/earn"
                     key={AppType.Invest}
                     value={AppType.Invest}
-                    className="!border-slate-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
                   >
                     {AppType.Invest}
-                    <Typography variant="xs" className="text-slate-400 group-hover:text-blue-100">
+                    <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                       Earn fees by providing liquidity
                     </Typography>
                   </Select.Option>
                 </div>
                 <div>
-                  <Typography variant="xs" weight={600} className="hidden px-2 mb-1 uppercase md:block text-slate-400">
+                  <Typography variant="xs" weight={600} className="hidden px-2 mb-1 uppercase md:block text-stone-400">
                     Products
                   </Typography>
                 </div>
                 <div>
-                  <Typography variant="xs" weight={600} className="hidden px-2 mb-1 uppercase md:block text-slate-400">
+                  <Typography variant="xs" weight={600} className="hidden px-2 mb-1 uppercase md:block text-stone-400">
                     Links
                   </Typography>
                   <Select.Option
@@ -139,10 +139,10 @@ export function Header({
                     href="https://dozer.finance/blog"
                     key={AppType.Blog}
                     value={AppType.Blog}
-                    className="!border-slate-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
                   >
                     {AppType.Blog}
-                    <Typography variant="xs" className="text-slate-400 group-hover:text-blue-100">
+                    <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                       Stay up to date with Dozer
                     </Typography>
                   </Select.Option>

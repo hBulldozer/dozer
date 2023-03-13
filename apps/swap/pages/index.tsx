@@ -152,14 +152,14 @@ const Home = () => {
             <button
               type="button"
               onClick={switchCurrencies}
-              className="group bg-slate-700 p-0.5 border-2 border-slate-800 transition-all rounded-full hover:ring-2 hover:ring-slate-500 cursor-pointer"
+              className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full hover:ring-2 hover:ring-stone-500 cursor-pointer"
             >
               <div className="transition-all rotate-0 group-hover:rotate-180 group-hover:delay-200">
                 <ChevronDownIcon width={16} height={16} />
               </div>
             </button>
           </div>
-          <div className="bg-slate-800">
+          <div className="bg-stone-800">
             <CurrencyInput
               id={'swap-output-currency1'}
               disabled={true}

@@ -51,7 +51,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
     <>
       <div className="flex flex-col gap-8 p-4">
         <div className="flex justify-between gap-3">
-          <Typography variant="sm" weight={600} className="flex items-center gap-1.5 text-slate-50">
+          <Typography variant="sm" weight={600} className="flex items-center gap-1.5 text-stone-50">
             <JazzIcon diameter={16} address={address} />
             {shortenAddress(address)}
           </Typography>
@@ -96,18 +96,18 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
               : 0.0}{' '}
             HTR
           </Typography>
-          <Typography weight={600} className="text-slate-400">
+          <Typography weight={600} className="text-stone-400">
             ${balanceAsUsd?.toFixed(2)}
           </Typography>
         </div>
       </div>
       <div className="px-2">
-        <div className="w-full h-px mt-3 bg-slate-200/10" />
+        <div className="w-full h-px mt-3 bg-stone-200/10" />
       </div>
       <div className="p-2">
         <button
           onClick={() => setView(ProfileView.Transactions)}
-          className="flex text-sm font-semibold hover:text-slate-50 w-full text-slate-400 justify-between items-center hover:bg-white/[0.04] rounded-xl p-2 pr-1 py-2.5"
+          className="flex text-sm font-semibold hover:text-stone-50 w-full text-stone-400 justify-between items-center hover:bg-white/[0.04] rounded-xl p-2 pr-1 py-2.5"
         >
           Transactions <ChevronRightIcon width={20} height={20} />
         </button>

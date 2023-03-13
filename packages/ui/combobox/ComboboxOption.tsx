@@ -16,8 +16,8 @@ const ComboboxOption: FC<ComboboxOptionProps> = forwardRef(({ className, childre
       {...props}
       className={({ active }: { active: boolean }) =>
         classNames(
-          active ? 'text-blue-100 bg-blue-500 bg-opacity-50' : 'text-high-emphesis',
-          'font-medium text-sm cursor-default Combobox-none relative py-2 pl-4 pr-9 rounded-xl border-[3px] border-slate-800',
+          active ? 'text-yellow-100 bg-yellow-700 bg-opacity-50' : 'text-high-emphesis',
+          'font-medium text-sm cursor-default Combobox-none relative py-2 pl-4 pr-9 rounded-xl border-[3px] border-stone-800',
           className
         )
       }
