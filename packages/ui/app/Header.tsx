@@ -76,8 +76,8 @@ export function Header({
       >
         <div className="flex items-center flex-grow gap-3">
           <a className="flex flex-row items-center gap-1.5" href="/">
-            <div className="w-7 h-7">
-              <DozerIcon width="100%" height="100%" className="mr-2 hover:animate-heartbeat" />
+            <div className="w-9 h-9 hover:animate-heartbeat">
+              <DozerIcon width="100%" height="100%" className="mr-2 " />
             </div>
           </a>
           <div className="bg-stone-200/10 w-0.5 h-[20px]" />

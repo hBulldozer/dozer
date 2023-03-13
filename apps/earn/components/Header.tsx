@@ -1,5 +1,5 @@
 import { App, AppType, BuyCrypto } from '@dozer/ui'
-// import { NetworkSelector } from '@dozer/wagmi'
+import { NetworkSelector } from '@dozer/higmi'
 import { Profile } from '@dozer/higmi/components/Wallet/Profile'
 import React, { FC } from 'react'
 // import { useAccount } from 'wagmi'
@@ -25,7 +25,7 @@ export const Header: FC = () => {
       }
     >
       <div className="flex items-center gap-2">
-        {/* <NetworkSelector supportedNetworks={SUPPORTED_CHAIN_IDS} /> */}
+        <NetworkSelector />
         <Profile
         // supportedNetworks={SUPPORTED_CHAIN_IDS}
         // notifications={notifications}
