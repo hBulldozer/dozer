@@ -20,12 +20,12 @@ const FormRoot: FormRootComponent = ({ header, children, as, ...rest }) => {
   const Component = as || 'form'
 
   return (
-    <Component className="gap-x-10 divide-y divide-slate-800" {...rest}>
+    <Component className="gap-x-10 divide-y divide-stone-800" {...rest}>
       <>
-        <Typography variant="h3" className="text-slate-50 py-6">
+        <Typography variant="h3" className="text-stone-50 py-6">
           {header}
         </Typography>
-        <div className="divide-y divide-slate-800">{children}</div>
+        <div className="divide-y divide-stone-800">{children}</div>
       </>
     </Component>
   )

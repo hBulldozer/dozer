@@ -12,13 +12,13 @@ interface TransactionsProps {
 export const Transactions: FC<TransactionsProps> = ({ setView }) => {
   return (
     <div className="">
-      <div className="grid items-center h-12 grid-cols-3 px-2 border-b border-slate-200/20">
+      <div className="grid items-center h-12 grid-cols-3 px-2 border-b border-stone-200/20">
         <div className="flex items-center">
           <IconButton onClick={() => setView(ProfileView.Default)}>
-            <ChevronLeftIcon width={24} height={24} className="text-slate-400" />
+            <ChevronLeftIcon width={24} height={24} className="text-stone-400" />
           </IconButton>
         </div>
-        <Typography weight={600} className="text-slate-400">
+        <Typography weight={600} className="text-stone-400">
           Transactions
         </Typography>
         <div className="flex items-end justify-end">
@@ -35,7 +35,7 @@ export const Transactions: FC<TransactionsProps> = ({ setView }) => {
               return <NotificationGroup key={index} notifications={notifications} />
             })
         ) : (
-          <Typography variant="sm" className="py-5 text-center text-slate-500">
+          <Typography variant="sm" className="py-5 text-center text-stone-500">
             Your transactions will appear here
           </Typography>
         )} */}

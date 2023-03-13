@@ -58,7 +58,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
           <div
             role="button"
             onClick={onCloseCard}
-            className=" absolute right-[-12px] top-[-12px] z-10 bg-slate-700 p-2 rounded-full flex items-center justify-center hover:bg-slate-600 cursor-pointer"
+            className=" absolute right-[-12px] top-[-12px] z-10 bg-stone-700 p-2 rounded-full flex items-center justify-center hover:bg-stone-600 cursor-pointer"
           >
             <XIcon width={20} height={20} />
           </div>

@@ -21,7 +21,7 @@ export const StepButtons: FC<StepButtonsInterface> = ({ disabled, _index }) => {
       {_index > 0 && (
         <Button
           size="sm"
-          color={_index === steps - 1 ? 'blue' : 'gray'}
+          color={_index === steps - 1 ? 'yellow' : 'gray'}
           variant={_index === steps - 1 ? 'filled' : 'empty'}
           onClick={() => setActiveStep(_index - 1)}
         >

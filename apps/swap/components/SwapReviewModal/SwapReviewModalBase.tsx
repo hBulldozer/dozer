@@ -29,10 +29,10 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
       <Dialog.Content className="max-w-sm !pb-4">
         <Dialog.Header border={false} title="Confirm Swap" onClose={() => setOpen(false)} />
         <div className="!my-0 grid grid-cols-12 items-center">
-          <div className="relative flex flex-col col-span-12 gap-1 p-2 border sm:p-4 rounded-2xl bg-slate-700/40 border-slate-200/5">
+          <div className="relative flex flex-col col-span-12 gap-1 p-2 border sm:p-4 rounded-2xl bg-stone-700/40 border-stone-200/5">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
-                <Typography variant="h3" weight={500} className="truncate text-slate-50">
+                <Typography variant="h3" weight={500} className="truncate text-stone-50">
                   {input0}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
@@ -41,25 +41,25 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
                       <Currency.Icon currency={token1 ? token1 : getTokens(chainId)[0]} width={20} height={20} />
                     </div>
                   )}
-                  <Typography variant="h3" weight={500} className="text-right text-slate-50">
+                  <Typography variant="h3" weight={500} className="text-right text-stone-50">
                     {token1 ? token1.symbol : getTokens(chainId)[0].symbol}
                   </Typography>
                 </div>
               </div>
             </div>
-            <Typography variant="sm" weight={500} className="text-slate-500">
+            <Typography variant="sm" weight={500} className="text-stone-500">
               {value0 ? `$${value0.toFixed(2)}` : '-'}
             </Typography>
           </div>
           <div className="flex items-center justify-center col-span-12 -mt-2.5 -mb-2.5">
-            <div className="p-0.5 bg-slate-700 border-2 border-slate-800 ring-1 ring-slate-200/5 z-10 rounded-full">
-              <ChevronDownIcon width={18} height={18} className="text-slate-200" />
+            <div className="p-0.5 bg-stone-700 border-2 border-stone-800 ring-1 ring-stone-200/5 z-10 rounded-full">
+              <ChevronDownIcon width={18} height={18} className="text-stone-200" />
             </div>
           </div>
-          <div className="flex flex-col col-span-12 gap-1 p-2 border sm:p-4 rounded-2xl bg-slate-700/40 border-slate-200/5">
+          <div className="flex flex-col col-span-12 gap-1 p-2 border sm:p-4 rounded-2xl bg-stone-700/40 border-stone-200/5">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
-                <Typography variant="h3" weight={500} className="truncate text-slate-50">
+                <Typography variant="h3" weight={500} className="truncate text-stone-50">
                   {input1}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
@@ -68,13 +68,13 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
                       <Currency.Icon currency={token2 ? token2 : getTokens(chainId)[0]} width={20} height={20} />
                     </div>
                   )}
-                  <Typography variant="h3" weight={500} className="text-right text-slate-50">
+                  <Typography variant="h3" weight={500} className="text-right text-stone-50">
                     {token2 ? token2?.symbol : getTokens(chainId)[0].symbol}
                   </Typography>
                 </div>
               </div>
             </div>
-            <Typography variant="sm" weight={500} className="text-slate-500">
+            <Typography variant="sm" weight={500} className="text-stone-500">
               {value1 ? `$${value1.toFixed(2)}` : ''}
             </Typography>
           </div>
@@ -87,9 +87,9 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
                 onClick={() => toggleInvert()}
                 variant="sm"
                 weight={600}
-                className="flex items-center gap-1 text-slate-100"
+                className="flex items-center gap-1 text-stone-100"
               >
-                {content} {usdPrice && <span className="font-normal text-slate-300">(${usdPrice})</span>}
+                {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
               </Typography>
             )}
           </Rate>

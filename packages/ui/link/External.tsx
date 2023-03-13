@@ -3,10 +3,10 @@ import React, { FC, HTMLProps, useCallback } from 'react'
 
 const COLOR = {
   primary: 'hover:text-white hover:underline focus:text-white active:text-white',
-  blue: 'text-blue',
+  yellow: 'text-yellow',
 }
 
-export type Color = 'primary' | 'blue'
+export type Color = 'primary' | 'yellow'
 
 export interface ExternalLinkProps extends Omit<HTMLProps<HTMLAnchorElement>, 'as' | 'ref' | 'onClick'> {
   color?: Color

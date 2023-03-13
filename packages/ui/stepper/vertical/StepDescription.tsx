@@ -9,7 +9,7 @@ export interface StepDescriptionInterface extends StepDetails {
 
 export const StepDescription: FC<StepDescriptionInterface> = ({ children }) => {
   return (
-    <Typography variant="sm" className="text-slate-500">
+    <Typography variant="sm" className="text-stone-500">
       {children}
     </Typography>
   )

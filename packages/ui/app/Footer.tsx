@@ -12,7 +12,7 @@ const config: Record<
   Services: {
     Swap: { href: 'https://dozer.finance/swap' },
     Earn: { href: 'https://dozer.finance/earn' },
-    'Borrowing': {
+    Borrowing: {
       href: 'https://dozer.finance',
       target: '_blank',
       rel: 'noopener noreferrer',
@@ -35,7 +35,7 @@ const config: Record<
       rel: 'noopener noreferrer',
     },
   },
-  
+
   Items: [
     {
       Partners: {
@@ -59,7 +59,7 @@ export function Footer(props: FooterProps): JSX.Element {
     (title: string, items: Record<string, { href: string; rel?: string; target?: string }>) => {
       return (
         <div key={title} className="flex flex-col gap-[10px]">
-          <Typography variant="xs" weight={500} className="text-sm sm:text-xs text-slate-100">
+          <Typography variant="xs" weight={500} className="text-sm sm:text-xs text-stone-100">
             {title}
           </Typography>
           {Object.entries(items).map(([item, { href, rel, target }]) => (
@@ -68,7 +68,7 @@ export function Footer(props: FooterProps): JSX.Element {
               href={href}
               target={target}
               rel={rel}
-              className="text-sm cursor-pointer sm:text-xs text-slate-400 hover:underline"
+              className="text-sm cursor-pointer sm:text-xs text-stone-400 hover:underline"
             >
               {item}
             </a>
@@ -80,24 +80,24 @@ export function Footer(props: FooterProps): JSX.Element {
   )
 
   return (
-    <footer className="hidden sm:flex flex-col border-t border-slate-400/5 pt-[72px]" {...props}>
+    <footer className="hidden sm:flex flex-col border-t border-stone-400/5 pt-[72px]" {...props}>
       <Container maxWidth="5xl" className="grid grid-cols-1 md:grid-cols-[176px_auto] mx-auto px-4 gap-4">
         <div className="flex flex-col gap-5">
           <div className="flex items-center justify-start gap-3 pt-2">
-            <DozerWithTextIcon height={20} className="text-slate-50" />
+            <DozerWithTextIcon height={20} className="text-stone-50" />
           </div>
-          <div className="text-sm sm:text-[0.625rem] leading-5 sm:leading-4 text-slate-400">
+          <div className="text-sm sm:text-[0.625rem] leading-5 sm:leading-4 text-stone-400">
             The first DeFi App on Hathor Network.
           </div>
           <div className="flex items-center gap-4">
             <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">
-              <GithubIcon width={16} className="text-slate-300 hover:text-slate-50" />
+              <GithubIcon width={16} className="text-stone-300 hover:text-stone-50" />
             </a>
             <a href="https://twitter.com/DozerProtocol" target="_blank" rel="noopener noreferrer">
-              <TwitterIcon width={16} className="text-slate-300 hover:text-slate-50" />
+              <TwitterIcon width={16} className="text-stone-300 hover:text-stone-50" />
             </a>
             <a href="https://discord.gg/" target="_blank" rel="noopener noreferrer">
-              <DiscordIcon width={16} className="text-slate-300 hover:text-slate-50" />
+              <DiscordIcon width={16} className="text-stone-300 hover:text-stone-50" />
             </a>
           </div>
         </div>
@@ -120,18 +120,18 @@ export function Footer(props: FooterProps): JSX.Element {
         </div>
       </Container>
       <Container maxWidth="5xl" className="mx-auto mt-20 mb-5">
-        <div className="flex justify-between py-2 mx-4 border-t border-slate-800">
-          <Typography variant="xs" className="text-slate-400">
+        <div className="flex justify-between py-2 mx-4 border-t border-stone-800">
+          <Typography variant="xs" className="text-stone-400">
             Copyright © 2023 Dozer. All rights reserved.
           </Typography>
-          <div className="flex divide-x divide-slate-200/20 gap-">
+          <div className="flex divide-x divide-stone-200/20 gap-">
             <Link.Internal href="https://dozer.finance/terms-of-use" passHref={true}>
-              <Typography as="a" variant="xs" weight={500} className="px-3 text-slate-300">
+              <Typography as="a" variant="xs" weight={500} className="px-3 text-stone-300">
                 Terms of Use
               </Typography>
             </Link.Internal>
             {/*<Link.Internal href="/privacy-policy" passHref={true}>*/}
-            {/*  <Typography as="a" variant="xs" weight={500} className="pl-3 text-slate-300">*/}
+            {/*  <Typography as="a" variant="xs" weight={500} className="pl-3 text-stone-300">*/}
             {/*    Privacy Policy*/}
             {/*  </Typography>*/}
             {/*</Link.Internal>*/}

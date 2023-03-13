@@ -18,10 +18,10 @@ export const TokenSelectorSettingsOverlay: FC<TokenSelectorSettingsOverlayProps>
           setOpen(true)
         }}
       >
-        <CogIcon width={20} height={20} className="hover:text-slate-50 text-slate-100" />
+        <CogIcon width={20} height={20} className="hover:text-stone-50 text-stone-100" />
       </IconButton>
       <SlideIn.FromLeft show={open} onClose={() => setOpen(false)}>
-        <Overlay.Content className="!bg-slate-800">
+        <Overlay.Content className="!bg-stone-800">
           <Overlay.Header onClose={() => setOpen(false)} title="Settings" />
           {/* <div className="px-1 py-1">
             <TokenSelectorCustomTokensOverlay customTokenMap={customTokenMap} onRemoveToken={onRemoveToken} />

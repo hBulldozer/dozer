@@ -15,19 +15,19 @@ export const StepLabel: FC<StepLabelInterface> = ({ children, _index }) => {
   return (
     <div className="flex gap-3 items-center my-2">
       {activeStep > Number(_index) ? (
-        <CheckCircleIcon width={24} height={24} className="text-blue" />
+        <CheckCircleIcon width={24} height={24} className="text-yellow" />
       ) : (
         <CircleWithText
           text={_index}
           width={24}
           height={24}
-          className={activeStep < Number(_index) ? 'text-slate-500' : 'text-blue'}
+          className={activeStep < Number(_index) ? 'text-stone-500' : 'text-yellow'}
         />
       )}
       <Typography
         variant="sm"
         weight={500}
-        className={activeStep === Number(_index) ? 'text-slate-200' : 'text-slate-400'}
+        className={activeStep === Number(_index) ? 'text-stone-200' : 'text-stone-400'}
       >
         {children}
       </Typography>

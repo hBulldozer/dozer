@@ -15,8 +15,8 @@ type SwitchProps = {
 }
 
 const COLOR = {
-  default: (checked: boolean) => (checked ? 'bg-slate-100' : 'bg-slate-100'),
-  gradient: (checked: boolean) => (checked ? 'bg-gradient-to-r from-blue to-pink' : 'bg-slate-700'),
+  default: (checked: boolean) => (checked ? 'bg-stone-100' : 'bg-stone-100'),
+  gradient: (checked: boolean) => (checked ? 'bg-gradient-to-r from-yellow to-pink' : 'bg-stone-700'),
 }
 
 const HEIGHT = {
@@ -48,7 +48,7 @@ export const Switch: FC<SwitchProps> = ({
       checked={checked}
       onChange={onChange}
       className={classNames(
-        checked ? 'bg-blue' : 'bg-white bg-opacity-[0.12]',
+        checked ? 'bg-yellow' : 'bg-white bg-opacity-[0.12]',
         `flex items-center relative inline-flex flex-shrink-0 rounded-full cursor-pointer ease-in-out duration-200 ${id}`
       )}
       style={{ height, width }}

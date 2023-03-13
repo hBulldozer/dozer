@@ -53,6 +53,7 @@
     "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
+    "@dozer/currency": "workspace:*",
     "@types/react": "^18.0.0",
     "@types/react-datepicker": "^4.8.0",
     "@types/react-dom": "^18.0.0",

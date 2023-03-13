@@ -8,7 +8,7 @@ const Head: FC<React.DetailedHTMLProps<React.HTMLAttributes<HTMLTableSectionElem
   ...props
 }) => {
   return (
-    <thead {...props} className={classNames(className, 'bg-slate-800')}>
+    <thead {...props} className={classNames(className, 'bg-stone-800')}>
       {children}
     </thead>
   )

@@ -20,7 +20,6 @@
       "outputs": [
         ".vercel/**/*",
         ".next/**/*",
-        ".graphclient/**/*",
         ".mesh/**/*",
         "dist/**/*",
         "typechain/**/*",
@@ -35,13 +34,20 @@
       "outputs": ["dist/**/*"],
       "inputs": []
     },
+    "//#build-packages": {
+      "dependsOn": [],
+      "outputs": [
+        ".graphclient/**/*",
+        "dist/**/*"
+      ],
+      "inputs": []
+    },
     "lint": {
       "dependsOn": ["^build"],
       "outputs": []
     },
-    "check-types": {},
     "start": {
-      "dependsOn": ["^build", "^db:generate", "generate"],
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },

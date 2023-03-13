@@ -13,7 +13,7 @@ export interface StepContentInterface extends StepDetails {
 export const StepContent: FC<StepContentInterface> = ({ children, description, _index, _active, _last }) => {
   return (
     <div className="flex gap-3">
-      <div className={classNames(_last ? '' : 'bg-slate-700', 'flex flex-grow-col min-h-[16px] mx-3 w-px')} />
+      <div className={classNames(_last ? '' : 'bg-stone-700', 'flex flex-grow-col min-h-[16px] mx-3 w-px')} />
       <Transition
         as={Fragment}
         show={_active}

@@ -15,7 +15,8 @@ module.exports = {
     },
     extend: {
       backgroundImage: () => ({
-        'gradient-radial': 'radial-gradient(#13213E, #111829)',
+        // 'gradient-radial': 'radial-gradient(#13213E, #111829)',
+        'gradient-radial': 'radial-gradient(at center center, rgb(68, 64, 60), rgb(41, 37, 36), rgb(28, 25, 23))',
         // 'gradient-radial': 'radial-gradient(#171717, #150E02)', testing gradient
         'shimmer-gradient':
           'linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.03) 30%, rgba(255, 255, 255, 0.06) 50%, rgba(255, 255, 255, 0.03) 70%, rgba(255, 255, 255, 0) 100%)',
@@ -40,6 +41,9 @@ module.exports = {
         },
         yellow: {
           DEFAULT: '#eab308',
+        },
+        amber: {
+          DEFAULT: '#f59e0b',
         },
       },
       animation: {

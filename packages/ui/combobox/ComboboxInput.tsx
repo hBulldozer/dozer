@@ -19,14 +19,14 @@ const ComboboxInput: FC<ComboboxInputProps> = forwardRef(({ className, standalon
       ref,
       className: classNames(
         className,
-        'relative w-full cursor-default rounded-xl bg-slate-800 py-3 pl-4 pr-10 text-left'
+        'relative w-full cursor-default rounded-xl bg-stone-800 py-3 pl-4 pr-10 text-left'
       ),
     },
     <>
       <Typography
         variant="sm"
         weight={children ? 700 : 400}
-        className={classNames(children ? '' : 'text-slate-600', 'block truncate')}
+        className={classNames(children ? '' : 'text-stone-600', 'block truncate')}
       >
         {children || 'Combobox a token'}
       </Typography>
