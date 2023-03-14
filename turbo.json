@@ -15,7 +15,8 @@
       "dependsOn": ["^build"],
       "env": [
         "ROOT_URL",
-        "SWAP_URL"
+        "SWAP_URL",
+        "EARN_URL"
       ],
       "outputs": [
         ".vercel/**/*",
@@ -36,10 +37,7 @@
     },
     "//#build-packages": {
       "dependsOn": [],
-      "outputs": [
-        ".graphclient/**/*",
-        "dist/**/*"
-      ],
+      "outputs": ["dist/**/*"],
       "inputs": []
     },
     "lint": {

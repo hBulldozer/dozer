@@ -1,11 +1,12 @@
 import { ButtonColor, ButtonSize, ButtonVariant } from './Button'
 
 export const BUTTON_CLASSES: Record<string, string> = {
-  btn: 'font-medium flex hover:bg-yellow-400 focus:bg-yellow-400 items-center justify-center gap-2 rounded-xl cursor-pointer',
+  btn: 'font-medium flex hover:bg-ring-1 focus:bg-ring-1 items-center justify-center gap-2 rounded-xl cursor-pointer',
   'btn-disabled': 'cursor-not-allowed opacity-40 !ring-0',
-  'btn-filled': 'text-stone-800',
+  'btn-filled': 'text-stone-800 ',
   'btn-empty': '!ring-0',
-  'btn-outlined': 'border-2 hover:ring-2 border-opacity-20 ring-offset-2 ring-offset-stone-900 rounded-xl',
+  'btn-outlined':
+    'border-2 hover:border-yellow hover:text-yellow border-opacity-20 ring-offset-2 ring-offset-yellow-900 rounded-xl',
   'btn-outlined-red': 'border-2 hover:ring-2 border-opacity-20 ring-offset-2 ring-offset-stone-900 rounded-xl',
   'btn-outlined-yellow': 'border-yellow ring-yellow-700 text-yellow',
   'btn-outlined-amber': 'border-amber ring-amber-700 text-amber',
@@ -13,7 +14,7 @@ export const BUTTON_CLASSES: Record<string, string> = {
     'bg-gradient-to-r hover:ring-4 ring-stone-600 ring-amber/30 from-yellow to-yellow focus:border-yellow-700',
   'btn-outlined-gray': 'border-stone-700 ring-stone-700 text-stone-400',
   'btn-filled-red': 'bg-red ring-red-700',
-  'btn-filled-yellow': 'bg-yellow ring-yellow-700',
+  'btn-filled-yellow': 'bg-yellow hover:bg-yellow-600 focus:bg-yellow-600',
   'btn-filled-amber': 'bg-amber ring-amber-700',
   'btn-filled-gradient':
     'bg-gradient-to-r hover:ring-4 !ring-yellow/20 from-yellow-600 to-yellow-600 focus:border-yellow-700',
@@ -32,8 +33,8 @@ export const BUTTON_CLASSES: Record<string, string> = {
 export const BUTTON_STYLES: Record<ButtonVariant, Record<ButtonColor, string>> = {
   outlined: {
     red: 'btn-outlined-red',
-    yellow: 'btn-outlined-yellow',
-    blue: 'btn-outlined-yellow',
+    yellow: 'btn-outlined-yellow ',
+    blue: 'btn-outlined-blue',
     amber: 'btn-outlined-amber',
     gradient: 'btn-outlined-gradient',
     gray: 'btn-outlined-gray',

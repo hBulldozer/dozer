@@ -5,7 +5,7 @@ const Home = () => {
   return (
     <>
       <h1 className="text-yellow-500">Root</h1>
-      <Button color="blue" variant="filled">
+      <Button color="yellow" variant="filled">
         DOZER PROTOCOL
       </Button>
       <button

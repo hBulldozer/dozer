@@ -22,7 +22,7 @@ export const PoolButtons: FC<PoolButtonsProps> = ({ pair }) => {
         <Link.Internal href={`/${pair.id}/remove`} passHref={true}>
           <a className="w-full">
             <Button
-              // disabled={Boolean(balance?.[FundSource.WALLET]?.equalTo(ZERO) && stakedBalance?.equalTo(ZERO))}
+              disabled
               size="md"
               color="gray"
               fullWidth
