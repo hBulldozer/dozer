@@ -22,9 +22,9 @@ export const PoolActionBar: FC<PoolActionBarProps> = ({ pair }) => {
     <AppearOnMount as={Fragment}>
       <div className="fixed left-0 right-0 flex justify-center bottom-6">
         <div>
-          <div className="divide-x rounded-full shadow-md shadow-black/50 bg-blue divide-stone-800">
+          <div className="divide-x rounded-full shadow-md shadow-black/50 bg-yellow divide-stone-800">
             <button onClick={() => setOpenPosition(true)} className="inline-flex px-4 py-3 cursor-pointer">
-              <Typography variant="sm" weight={600} className="text-stone-50">
+              <Typography variant="sm" weight={600} className="text-stone-800">
                 My Position
               </Typography>
             </button>
