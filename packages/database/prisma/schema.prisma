@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+
+model Token {
+  id       String      @id // chainId:address
+  uuid  String
+  chainId  Int
+  name     String
+  symbol   String
+  decimals Int
+  
+  isFeeOnTransfer Boolean @default(false)
+  isCommon Boolean @default(false)
+
+  derivedUSD    Decimal?
+
+  generatedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pools0 Pool[] @relation("token0")
+  pools1 Pool[] @relation("token1")
+  dozerPools0 DozerPool[] @relation("token0")
+  dozerPools1 DozerPool[] @relation("token1")
+  incentives  Incentive[]
+
+  @@unique([chainId, uuid])
+  @@index(fields: [id])
+  @@index(fields: [uuid])
+  @@index(fields: [chainId])
+  @@index(fields: [uuid, chainId])
+}
+
+model Pool {
+  id            String  @id // chainId:address
+  name          String
+  chainId       Int
+  version       String
+  token0        Token   @relation("token0", fields: [token0Id], references: [id])
+  token0Id      String
+  token1        Token   @relation("token1", fields: [token1Id], references: [id])
+  token1Id      String
+
+  swapFee      Float
+  reserve0     String  @default("0")
+  reserve1     String  @default("0")
+  liquidityUSD Decimal
+
+  generatedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index(fields: [id])
+  @@index(fields: [chainId])
+  @@index(fields: [chainId, version])
+  @@index(fields: [token0Id])
+  @@index(fields: [token1Id])
+  @@index(fields: [generatedAt])
+}
+
+
+model DozerPool {
+  id                   String      @id // chainId_address
+  name                 String
+  chainId              Int
+  version              String
+  token0               Token       @relation("token0", fields: [token0Id], references: [id])
+  token0Id             String
+  token1               Token       @relation("token1", fields: [token1Id], references: [id])
+  token1Id             String
+  swapFee              Float
+  twapEnabled          Boolean
+  reserve0             String 
+  reserve1             String 
+  totalSupply          String 
+  liquidityUSD         Decimal
+  volumeUSD            Decimal
+  token0Price          String
+  token1Price          String
+  feeApr               Float       @default(0)
+  incentiveApr         Float       @default(0)
+  totalApr             Float       @default(0)
+  isIncentivized       Boolean     @default(false)
+  incentives           Incentive[]
+  volume1d             Decimal     @default(0)
+  fees1d               Decimal     @default(0)
+  volume1w             Decimal     @default(0)
+  fees1w               Decimal     @default(0)
+  createdAtBlockNumber BigInt      @db.UnsignedBigInt
+  isBlacklisted        Boolean     @default(false)
+  generatedAt          DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  @@index(fields: [id])
+  @@index(fields: [chainId])
+  @@index(fields: [liquidityUSD, chainId])
+  @@index(fields: [totalApr, chainId])
+  @@index(fields: [token0Id])
+  @@index(fields: [token1Id])
+}
+
+model Incentive {
+  id              String @id // poolAddress_rewarderAddress
+  chainId         Int
+  apr             Float
+  rewardPerDay    Float
+  rewardToken     Token  @relation(fields: [rewardTokenId], references: [id])
+  rewardTokenId   String
+  pool            DozerPool   @relation(fields: [poolId], references: [id])
+  poolId          String
+  pid             Int
+  rewarderAddress String
+
+  @@index(fields: [id])
+  @@index(fields: [poolId])
+  @@index(fields: [rewardTokenId])
+  @@index(fields: [chainId, rewardTokenId])
+}
