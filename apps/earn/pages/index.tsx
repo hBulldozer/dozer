@@ -1,8 +1,10 @@
 import { PlusIcon } from '@heroicons/react/solid'
 import { Button, Link, OnsenIcon, Typography } from '@dozer/ui'
+import type { NextPage } from 'next'
 // import { SUPPORTED_CHAIN_IDS } from '../config'
 import { GetStaticProps, InferGetStaticPropsType } from 'next'
 import { FC, useMemo } from 'react'
+import { api, type RouterOutputs } from '../utils/api'
 
 import { Layout, PoolsSection } from '../components'
 // import { getBundles, getPoolCount, getPools, getSushiBar } from '../lib/api'
@@ -16,12 +18,32 @@ import { Layout, PoolsSection } from '../components'
 //   )
 // }
 
-const Pools = () => {
+const Pools: NextPage = () => {
+  const poolQuery = api.pool.all.useQuery()
+
   return (
     <Layout>
       <div className="flex flex-col gap-10 md:gap-16">
         <section className="flex flex-col gap-6 lg:flex-row">
           <div className="max-w-md space-y-4">
+            {poolQuery.data ? (
+              <div className="w-full max-w-2xl">
+                {poolQuery.data?.length === 0 ? (
+                  <span>There are no pools!</span>
+                ) : (
+                  <div className="flex h-[40vh] justify-center overflow-y-scroll px-4 text-2xl">
+                    <div className="flex flex-col w-full gap-4">
+                      {poolQuery.data?.map((p) => {
+                        return <Typography key={p.id}>{p.name}</Typography>
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p>Loading...</p>
+            )}
+
             <Typography variant="hero" weight={600} className="text-stone-50">
               Earn
             </Typography>

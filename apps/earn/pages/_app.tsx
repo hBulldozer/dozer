@@ -16,7 +16,7 @@ import { Provider } from 'react-redux'
 // import { store } from '../store'
 // import { WagmiConfig } from 'wagmi'
 import NoSSR from 'react-no-ssr'
-
+import { api } from "../utils/api"
 // import SEO from '../next-seo.config.mjs'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -74,4 +74,4 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   )
 }
 
-export default MyApp
+export default api.withTRPC(MyApp)
