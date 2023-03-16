@@ -1,9 +1,20 @@
 import { PlusIcon } from '@heroicons/react/solid'
 import { Button, Link, OnsenIcon, Typography } from '@dozer/ui'
-import type { NextPage } from 'next'
+import type { InferGetServerSidePropsType, NextPage } from 'next'
 // import { SUPPORTED_CHAIN_IDS } from '../config'
-import { GetStaticProps, InferGetStaticPropsType } from 'next'
-import { FC, useMemo } from 'react'
+// import { GetStaticProps, InferGetStaticPropsType } from 'next'
+import { GetServerSideProps } from 'next'
+import {
+  FC,
+  JSXElementConstructor,
+  Key,
+  ReactElement,
+  ReactFragment,
+  ReactPortal,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { api, type RouterOutputs } from '../utils/api'
 
 import { Layout, PoolsSection } from '../components'
@@ -17,33 +28,50 @@ import { Layout, PoolsSection } from '../components'
 //     </SWRConfig>
 //   )
 // }
+import { PrismaClient, Pool } from '@dozer/database'
 
-const Pools: NextPage = () => {
-  const poolQuery = api.pool.all.useQuery()
+export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+  const prisma = new PrismaClient()
+  const pool = await prisma.pool.findFirst()
+  return { props: { pool } }
+}
+
+// const poolQuery = api.pool.all.useQuery()
+
+// async function readAllPools() {
+//   const pools = await pool.findMany()
+
+//   return pools
+// }
+
+// export function List(props: { pools: Pool[] }) {
+//   return (
+//     <div>
+//       {props.pools.map((pool: Pool) => (
+//         <p key={pool.id}>
+//           {pool.name}: {pool.token0Id}
+//         </p>
+//       ))}
+//     </div>
+//   )
+// }
+
+const Pools: NextPage = (pool: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  // const [poolsList, setPoolsList] = useState<Pool[]>([])
+  useEffect(() => {
+    async function getPools() {
+      // const data = await readAllPools()
+      console.log(pool)
+      // setPoolsList(data)
+    }
+    getPools()
+  }, [])
 
   return (
     <Layout>
       <div className="flex flex-col gap-10 md:gap-16">
         <section className="flex flex-col gap-6 lg:flex-row">
           <div className="max-w-md space-y-4">
-            {poolQuery.data ? (
-              <div className="w-full max-w-2xl">
-                {poolQuery.data?.length === 0 ? (
-                  <span>There are no pools!</span>
-                ) : (
-                  <div className="flex h-[40vh] justify-center overflow-y-scroll px-4 text-2xl">
-                    <div className="flex flex-col w-full gap-4">
-                      {poolQuery.data?.map((p) => {
-                        return <Typography key={p.id}>{p.name}</Typography>
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p>Loading...</p>
-            )}
-
             <Typography variant="hero" weight={600} className="text-stone-50">
               Earn
             </Typography>

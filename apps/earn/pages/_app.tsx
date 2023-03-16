@@ -16,16 +16,10 @@ import { Provider } from 'react-redux'
 // import { store } from '../store'
 // import { WagmiConfig } from 'wagmi'
 import NoSSR from 'react-no-ssr'
-import { api } from "../utils/api"
+import { api } from '../utils/api'
 // import SEO from '../next-seo.config.mjs'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-
-declare global {
-  interface Window {
-    dataLayer: Record<string, any>[]
-  }
-}
 
 const queryClient = new QueryClient()
 

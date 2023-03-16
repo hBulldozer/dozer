@@ -175,6 +175,7 @@ importers:
       next: 13.1.1
       next-seo: 5.15.0
       next-sitemap: 3.1.43
+      next-superjson-plugin: ^0.5.6
       numeral: 2.0.6
       postcss: 8.4.21
       react: 18.2.0
@@ -216,6 +217,7 @@ importers:
       next: 13.1.1_biqbaboplfbrettd7655fr4n2y
       next-seo: 5.15.0_q76c2b4vyoegvsbrcwkfvimnai
       next-sitemap: 3.1.43_next@13.1.1
+      next-superjson-plugin: 0.5.6_xx5ddxsja4by273gn64qkzu3ey
       numeral: 2.0.6
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -520,7 +522,6 @@ importers:
       '@prisma/client': 4.8.1
       '@types/jest': ^29.2.0
       '@types/node': ^18.0.0
-      dotenv: 16.0.3
       eslint: 8.29.0
       ioredis: 5.3.1
       jest: 29.3.1
@@ -539,7 +540,6 @@ importers:
       '@dozer/typescript-config': link:../../config/typescript
       '@types/jest': 29.2.5
       '@types/node': 18.11.18
-      dotenv: 16.0.3
       eslint: 8.29.0
       jest: 29.3.1_@types+node@18.11.18
       prisma: 4.8.1
@@ -8319,6 +8319,17 @@ packages:
       '@corex/deepmerge': 4.0.37
       minimist: 1.2.7
       next: 13.1.1_biqbaboplfbrettd7655fr4n2y
+    dev: false
+
+  /next-superjson-plugin/0.5.6_xx5ddxsja4by273gn64qkzu3ey:
+    resolution: {integrity: sha512-vokzkgtr3axon5uXobhXJWN6/YlPOHdcAb/BeR+d0rXA3h1b5h98A+V0TgMUf+vcy9RvBqte/ppaJfkOwi4NGA==}
+    peerDependencies:
+      next: ^13
+      superjson: ^1
+    dependencies:
+      hoist-non-react-statics: 3.3.2
+      next: 13.1.1_biqbaboplfbrettd7655fr4n2y
+      superjson: 1.9.1
     dev: false
 
   /next/13.1.1:
