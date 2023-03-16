@@ -2,9 +2,9 @@
   "name": "@dozer/database",
   "version": "0.0.0",
   "private": true,
-  "description": "Sushi Database",
+  "description": "Dozer Database",
   "keywords": [
-    "sushi",
+    "dozer",
     "database"
   ],
   "repository": {
