@@ -15,12 +15,12 @@ model Token {
   chainId  Int
   name     String
   symbol   String
-  decimals Int
+  Floats Int
   
   isFeeOnTransfer Boolean @default(false)
   isCommon Boolean @default(false)
 
-  derivedUSD    Decimal?
+  derivedUSD    Float?
 
   generatedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -51,7 +51,7 @@ model Pool {
   swapFee      Float
   reserve0     String  @default("0")
   reserve1     String  @default("0")
-  liquidityUSD Decimal
+  liquidityUSD Float
 
   generatedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -79,8 +79,8 @@ model DozerPool {
   reserve0             String 
   reserve1             String 
   totalSupply          String 
-  liquidityUSD         Decimal
-  volumeUSD            Decimal
+  liquidityUSD         Float
+  volumeUSD            Float
   token0Price          String
   token1Price          String
   feeApr               Float       @default(0)
@@ -88,10 +88,10 @@ model DozerPool {
   totalApr             Float       @default(0)
   isIncentivized       Boolean     @default(false)
   incentives           Incentive[]
-  volume1d             Decimal     @default(0)
-  fees1d               Decimal     @default(0)
-  volume1w             Decimal     @default(0)
-  fees1w               Decimal     @default(0)
+  volume1d             Float     @default(0)
+  fees1d               Float     @default(0)
+  volume1w             Float     @default(0)
+  fees1w               Float     @default(0)
   createdAtBlockNumber BigInt      @db.UnsignedBigInt
   isBlacklisted        Boolean     @default(false)
   generatedAt          DateTime    @default(now())

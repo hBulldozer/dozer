@@ -1,11 +1,11 @@
-import 'dotenv/config'
+// import 'dotenv/config'
 
 import { PrismaClient } from '@prisma/client'
 // import { Prisma, PrismaClient } from '@prisma/client'
 // import { Redis } from 'ioredis'
 // import { createPrismaRedisCache } from 'prisma-redis-middleware'
 
-if (!process.env['DATABASE_URL']) throw new Error('DATABASE_URL is required')
+// if (!process.env['DATABASE_URL']) throw new Error('DATABASE_URL is required')
 // if (!process.env['REDIS_URL']) throw new Error('REDIS_URL is required')
 
 declare let global: { prisma: PrismaClient }
@@ -16,16 +16,16 @@ declare let global: { prisma: PrismaClient }
 // Learn more:
 // https://pris.ly/d/help/next-js-best-practices
 
-export let prisma: PrismaClient
+export const prisma = new PrismaClient()
 
-if (process.env['NODE_ENV'] === 'production') {
-  prisma = new PrismaClient()
-} else {
-  if (!global.prisma) {
-    global.prisma = new PrismaClient()
-  }
-  prisma = global.prisma
-}
+// if (process.env['NODE_ENV'] === 'production') {
+//   prisma = new PrismaClient()
+// } else {
+//   if (!global.prisma) {
+//     global.prisma = new PrismaClient()
+//   }
+//   prisma = global.prisma
+// }
 
 // const redis = new Redis(process.env['REDIS_URL'])
 
