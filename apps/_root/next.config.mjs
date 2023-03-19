@@ -1,6 +1,6 @@
 import defaultNextConfig from '@dozer/nextjs-config'
 
-const { ROOT_URL, SWAP_URL } = process.env
+const { ROOT_URL, SWAP_URL, EARN_URL } = process.env
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -38,6 +38,14 @@ const nextConfig = {
       {
         source: '/swap/:path*',
         destination: `${SWAP_URL}/swap/:path*`,
+      },
+      {
+        source: '/earn',
+        destination: `${EARN_URL}/earn`,
+      },
+      {
+        source: '/earn/:path*',
+        destination: `${EARN_URL}/earn/:path*`,
       },
     ]
   },
