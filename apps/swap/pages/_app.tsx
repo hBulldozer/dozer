@@ -42,10 +42,10 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <App.Shell>
-            <NoSSR>
-              <Header />
-              <Component {...pageProps} />
-            </NoSSR>
+            {/* <NoSSR> */}
+            <Header />
+            <Component {...pageProps} />
+            {/* </NoSSR> */}
             <App.Footer />
           </App.Shell>
           <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
