@@ -3,7 +3,13 @@ import { formatPercent } from '@dozer/format'
 // import { getBuiltGraphSDK, Pair } from '@dozer/graph-client'
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
 // import { SUPPORTED_CHAIN_IDS } from '../../config'
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
+import {
+  GetServerSideProps,
+  GetStaticPaths,
+  GetStaticProps,
+  InferGetServerSidePropsType,
+  InferGetStaticPropsType,
+} from 'next'
 import { useRouter } from 'next/router'
 import { FC } from 'react'
 // import useSWR, { SWRConfig } from 'swr'
@@ -24,8 +30,37 @@ import {
   PoolRewards,
   PoolStats,
 } from '../../components'
-import { getTokens } from '@dozer/currency'
 // import { GET_POOL_TYPE_MAP } from '../../lib/constants'
+
+import { prisma } from '@dozer/database'
+import { getTokens } from '@dozer/currency'
+
+export const getServerSideProps: GetServerSideProps = async ({ query }) => {
+  const pre_pool = await prisma.pool.findUnique({
+    where: { id: query.id?.toString() },
+  })
+  const pool: Pair =
+    pre_pool &&
+    JSON.parse(
+      JSON.stringify({
+        id: pre_pool.id,
+        name: pre_pool.name,
+        liquidityUSD: pre_pool.liquidityUSD,
+        volumeUSD: pre_pool.liquidityUSD,
+        feeUSD: pre_pool.swapFee,
+        apr: pre_pool.swapFee,
+        token0: getTokens(pre_pool.chainId)[Number(pre_pool.token0Id)],
+        token1: getTokens(pre_pool.chainId)[Number(pre_pool.token1Id)],
+        reserve0: Number(pre_pool.reserve0),
+        reserve1: Number(pre_pool.reserve1),
+        chainId: pre_pool.chainId,
+        liquidity: pre_pool.liquidityUSD,
+        volume1d: pre_pool.liquidityUSD,
+        fees1d: pre_pool.swapFee,
+      })
+    )
+  return { props: { pool } }
+}
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
@@ -42,7 +77,7 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 //   )
 // }
 
-const Pool = () => {
+const Pool = ({ pool }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter()
   // const { data } = useSWR<{ pair: Pair }>(`/earn/api/pool/${router.query.id}`, (url) =>
   //   fetch(url).then((response) => response.json())
@@ -50,22 +85,24 @@ const Pool = () => {
   // if (!data) return <></>
   // const { pair } = data
 
-  const pair = {
-    id: '3',
-    name: 'Dummy Pool 3',
-    liquidityUSD: 50000,
-    volumeUSD: 2500,
-    feeUSD: 75,
-    apr: 0.1,
-    token0: getTokens(ChainId.HATHOR)[0],
-    token1: getTokens(ChainId.HATHOR)[3],
-    reserve0: 1,
-    reserve1: 2,
-    chainId: 2,
-    liquidity: 10000,
-    volume1d: 4523,
-    fees1d: 7651,
-  }
+  // const pair = {
+  //   id: '3',
+  //   name: 'Dummy Pool 3',
+  //   liquidityUSD: 50000,
+  //   volumeUSD: 2500,
+  //   feeUSD: 75,
+  //   apr: 0.1,
+  //   token0: getTokens(ChainId.HATHOR)[0],
+  //   token1: getTokens(ChainId.HATHOR)[3],
+  //   reserve0: 1,
+  //   reserve1: 2,
+  //   chainId: 2,
+  //   liquidity: 10000,
+  //   volume1d: 4523,
+  //   fees1d: 7651,
+  // }
+
+  const pair = pool
 
   return (
     // <PoolPositionProvider pair={pair}>
