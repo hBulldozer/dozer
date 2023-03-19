@@ -26,8 +26,9 @@ const queryClient = new QueryClient()
 const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   const router = useRouter()
   useEffect(() => {
+    const dataLayer = window.dataLayer || []
     const handler = (page: any) => {
-      window.dataLayer.push({
+      dataLayer.push({
         event: 'pageview',
         page,
       })
