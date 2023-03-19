@@ -6,10 +6,11 @@ import { FC, useState } from 'react'
 import { useAccount } from '@dozer/zustand'
 
 import { PoolsTable } from './Tables'
+import { Pair } from '../../utils/Pair'
 // import { PoolsTable, PositionsTable } from './Tables'
 // import { TableFilters } from './Tables/TableFilters'
 
-export const PoolsSection: FC = () => {
+export const PoolsSection: FC = (pools) => {
   const { address } = useAccount()
   const [tab, setTab] = useState<number>(0)
   // const { data: userWithFarms } = useSWR<UserWithFarm[]>(address ? [`/earn/api/user/${address}`] : null, (url) =>
@@ -47,7 +48,7 @@ export const PoolsSection: FC = () => {
         {/* <TableFilters showAllFilters={tab === 0} /> */}
         <Tab.Panels>
           <Tab.Panel unmount={false}>
-            <PoolsTable />
+            <PoolsTable {...pools} />
           </Tab.Panel>
           <Tab.Panel unmount={!address}>{/* <PositionsTable /> */}</Tab.Panel>
         </Tab.Panels>

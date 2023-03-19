@@ -18,6 +18,38 @@ import {
 import { api, type RouterOutputs } from '../utils/api'
 
 import { Layout, PoolsSection } from '../components'
+import { Pool, prisma } from '@dozer/database'
+import { Pair } from '../utils/Pair'
+import { getTokens } from '@dozer/currency'
+
+export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+  const pre_pools = await prisma.pool.findMany()
+  const pools: Pair[] = []
+  pre_pools.forEach((pool) => {
+    pools?.push(
+      JSON.parse(
+        JSON.stringify({
+          id: pool.id,
+          name: pool.name,
+          liquidityUSD: pool.liquidityUSD,
+          volumeUSD: pool.liquidityUSD,
+          feeUSD: pool.swapFee,
+          apr: pool.swapFee,
+          token0: getTokens(pool.chainId)[Number(pool.token0Id)],
+          token1: getTokens(pool.chainId)[Number(pool.token1Id)],
+          reserve0: Number(pool.reserve0),
+          reserve1: Number(pool.reserve1),
+          chainId: pool.chainId,
+          liquidity: pool.liquidityUSD,
+          volume1d: pool.liquidityUSD,
+          fees1d: pool.swapFee,
+        })
+      )
+    )
+  })
+  return { props: { pools } }
+}
+
 // import { getBundles, getPoolCount, getPools, getSushiBar } from '../lib/api'
 // import { AVAILABLE_POOL_TYPE_MAP } from '../lib/constants'
 
@@ -28,13 +60,6 @@ import { Layout, PoolsSection } from '../components'
 //     </SWRConfig>
 //   )
 // }
-import { PrismaClient, Pool } from '@dozer/database'
-
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  const prisma = new PrismaClient()
-  const pool = await prisma.pool.findFirst()
-  return { props: { pool } }
-}
 
 // const poolQuery = api.pool.all.useQuery()
 
@@ -56,17 +81,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
 //   )
 // }
 
-const Pools: NextPage = (pool: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  // const [poolsList, setPoolsList] = useState<Pool[]>([])
-  useEffect(() => {
-    async function getPools() {
-      // const data = await readAllPools()
-      console.log(pool)
-      // setPoolsList(data)
-    }
-    getPools()
-  }, [])
-
+const Pools: NextPage = ({ pools }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   return (
     <Layout>
       <div className="flex flex-col gap-10 md:gap-16">
@@ -94,7 +109,7 @@ const Pools: NextPage = (pool: InferGetServerSidePropsType<typeof getServerSideP
         </section>
         {/* <SushiBarSection /> */}
         {/* <PoolsFiltersProvider selectedNetworks={selectedNetworks}> */}
-        <PoolsSection />
+        <PoolsSection {...pools} />
         {/* </PoolsFiltersProvider> */}
       </div>
     </Layout>
