@@ -14,6 +14,7 @@ import { APR_COLUMN, FEES_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN } from 
 import { getTokens } from '@dozer/currency'
 import { ChainId } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
+import { InferGetServerSidePropsType } from 'next'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -67,58 +68,58 @@ const COLUMNS = [NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN
 //     .catch((e) => console.log(stringify(e)))
 // }
 
-const pools = [
-  {
-    id: '1',
-    name: 'Dummy Pool 1',
-    liquidityUSD: 200000,
-    volumeUSD: 10000,
-    feeUSD: 300,
-    apr: 0.25,
-    token0: getTokens(ChainId.HATHOR)[0],
-    token1: getTokens(ChainId.HATHOR)[1],
-    reserve0: 1,
-    reserve1: 2,
-    chainId: 2,
-    liquidity: 10000,
-    volume1d: 45553,
-    fees1d: 10000,
-  },
-  {
-    id: '2',
-    name: 'Dummy Pool 2',
-    liquidityUSD: 100000,
-    volumeUSD: 5000,
-    feeUSD: 150,
-    apr: 0.15,
-    token0: getTokens(ChainId.HATHOR)[0],
-    token1: getTokens(ChainId.HATHOR)[2],
-    reserve0: 1,
-    reserve1: 2,
-    chainId: 2,
-    liquidity: 10000,
-    volume1d: 45266,
-    fees1d: 15469,
-  },
-  {
-    id: '3',
-    name: 'Dummy Pool 3',
-    liquidityUSD: 50000,
-    volumeUSD: 2500,
-    feeUSD: 75,
-    apr: 0.1,
-    token0: getTokens(ChainId.HATHOR)[0],
-    token1: getTokens(ChainId.HATHOR)[3],
-    reserve0: 1,
-    reserve1: 2,
-    chainId: 2,
-    liquidity: 10000,
-    volume1d: 4523,
-    fees1d: 7651,
-  },
-]
+// const pools = [
+//   {
+//     id: '1',
+//     name: 'Dummy Pool 1',
+//     liquidityUSD: 200000,
+//     volumeUSD: 10000,
+//     feeUSD: 300,
+//     apr: 0.25,
+//     token0: getTokens(ChainId.HATHOR)[0],
+//     token1: getTokens(ChainId.HATHOR)[1],
+//     reserve0: 1,
+//     reserve1: 2,
+//     chainId: 2,
+//     liquidity: 10000,
+//     volume1d: 45553,
+//     fees1d: 10000,
+//   },
+//   {
+//     id: '2',
+//     name: 'Dummy Pool 2',
+//     liquidityUSD: 100000,
+//     volumeUSD: 5000,
+//     feeUSD: 150,
+//     apr: 0.15,
+//     token0: getTokens(ChainId.HATHOR)[0],
+//     token1: getTokens(ChainId.HATHOR)[2],
+//     reserve0: 1,
+//     reserve1: 2,
+//     chainId: 2,
+//     liquidity: 10000,
+//     volume1d: 45266,
+//     fees1d: 15469,
+//   },
+//   {
+//     id: '3',
+//     name: 'Dummy Pool 3',
+//     liquidityUSD: 50000,
+//     volumeUSD: 2500,
+//     feeUSD: 75,
+//     apr: 0.1,
+//     token0: getTokens(ChainId.HATHOR)[0],
+//     token1: getTokens(ChainId.HATHOR)[3],
+//     reserve0: 1,
+//     reserve1: 2,
+//     chainId: 2,
+//     liquidity: 10000,
+//     volume1d: 4523,
+//     fees1d: 7651,
+//   },
+// ]
 
-export const PoolsTable: FC = () => {
+export const PoolsTable: FC = (pools) => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
   // usePoolFilters()
   const { isSm } = useBreakpoint('sm')
@@ -130,6 +131,8 @@ export const PoolsTable: FC = () => {
     pageIndex: 0,
     pageSize: PAGE_SIZE,
   })
+
+  const pools_array: Pair[] = Object.values(pools)
 
   const args = useMemo(
     () => ({
@@ -155,7 +158,7 @@ export const PoolsTable: FC = () => {
   // )
 
   const table = useReactTable<Pair>({
-    data: pools || [],
+    data: pools_array || [],
     columns: COLUMNS,
     state: {
       sorting,
