@@ -15,7 +15,7 @@ model Token {
   chainId  Int
   name     String
   symbol   String
-  Floats Int
+  decimals Int @default(2)
   
   isFeeOnTransfer Boolean @default(false)
   isCommon Boolean @default(false)
@@ -41,6 +41,7 @@ model Token {
 model Pool {
   id            String  @id // chainId:address
   name          String
+  apr           Float
   chainId       Int
   version       String
   token0        Token   @relation("token0", fields: [token0Id], references: [id])
@@ -49,9 +50,14 @@ model Pool {
   token1Id      String
 
   swapFee      Float
+  feeUSD       Float
   reserve0     String  @default("0")
   reserve1     String  @default("0")
   liquidityUSD Float
+  volumeUSD    Float
+  liquidity    Float
+  volume1d     Float
+  fees1d       Float
 
   generatedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt

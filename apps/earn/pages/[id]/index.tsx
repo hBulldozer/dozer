@@ -39,27 +39,29 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const pre_pool = await prisma.pool.findUnique({
     where: { id: query.id?.toString() },
   })
-  const pool: Pair =
+  const tokens = await prisma.token.findMany()
+  const pair: Pair =
     pre_pool &&
+    tokens &&
     JSON.parse(
       JSON.stringify({
         id: pre_pool.id,
         name: pre_pool.name,
         liquidityUSD: pre_pool.liquidityUSD,
-        volumeUSD: pre_pool.liquidityUSD,
-        feeUSD: pre_pool.swapFee,
-        apr: pre_pool.swapFee,
-        token0: getTokens(pre_pool.chainId)[Number(pre_pool.token0Id)],
-        token1: getTokens(pre_pool.chainId)[Number(pre_pool.token1Id)],
+        volumeUSD: pre_pool.volumeUSD,
+        feeUSD: pre_pool.feeUSD,
+        apr: pre_pool.apr,
+        token0: tokens[Number(pre_pool.token0Id)],
+        token1: tokens[Number(pre_pool.token1Id)],
         reserve0: Number(pre_pool.reserve0),
         reserve1: Number(pre_pool.reserve1),
         chainId: pre_pool.chainId,
-        liquidity: pre_pool.liquidityUSD,
-        volume1d: pre_pool.liquidityUSD,
-        fees1d: pre_pool.swapFee,
+        liquidity: pre_pool.liquidity,
+        volume1d: pre_pool.volume1d,
+        fees1d: pre_pool.fees1d,
       })
     )
-  return { props: { pool } }
+  return { props: { pair } }
 }
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
@@ -77,7 +79,7 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 //   )
 // }
 
-const Pool = ({ pool }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Pool = ({ pair }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter()
   // const { data } = useSWR<{ pair: Pair }>(`/earn/api/pool/${router.query.id}`, (url) =>
   //   fetch(url).then((response) => response.json())
@@ -101,8 +103,6 @@ const Pool = ({ pool }: InferGetServerSidePropsType<typeof getServerSideProps>) 
   //   volume1d: 4523,
   //   fees1d: 7651,
   // }
-
-  const pair = pool
 
   return (
     // <PoolPositionProvider pair={pair}>
