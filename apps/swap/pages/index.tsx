@@ -88,7 +88,6 @@ const Home = () => {
     fetchPool()
     setPriceImpact()
     if (!poolExist) {
-      console.log('não existe')
       setInput0('')
       setAmountSpecified(0)
       setOutputAmount()

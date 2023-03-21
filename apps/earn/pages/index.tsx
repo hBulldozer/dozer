@@ -15,7 +15,6 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { api, type RouterOutputs } from '../utils/api'
 
 import { Layout, PoolsSection } from '../components'
 import { Pool, prisma } from '@dozer/database'
@@ -24,6 +23,7 @@ import { getTokens } from '@dozer/currency'
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const pre_pools = await prisma.pool.findMany()
+  const tokens = await prisma.token.findMany()
   const pools: Pair[] = []
   pre_pools.forEach((pool) => {
     pools?.push(
@@ -32,17 +32,17 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
           id: pool.id,
           name: pool.name,
           liquidityUSD: pool.liquidityUSD,
-          volumeUSD: pool.liquidityUSD,
-          feeUSD: pool.swapFee,
-          apr: pool.swapFee,
-          token0: getTokens(pool.chainId)[Number(pool.token0Id)],
-          token1: getTokens(pool.chainId)[Number(pool.token1Id)],
+          volumeUSD: pool.volumeUSD,
+          feeUSD: pool.feeUSD,
+          apr: pool.apr,
+          token0: tokens[Number(pool.token0Id)],
+          token1: tokens[Number(pool.token1Id)],
           reserve0: Number(pool.reserve0),
           reserve1: Number(pool.reserve1),
           chainId: pool.chainId,
           liquidity: pool.liquidityUSD,
-          volume1d: pool.liquidityUSD,
-          fees1d: pool.swapFee,
+          volume1d: pool.volume1d,
+          fees1d: pool.fees1d,
         })
       )
     )
