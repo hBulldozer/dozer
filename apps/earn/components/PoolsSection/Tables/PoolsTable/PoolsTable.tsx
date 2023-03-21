@@ -14,7 +14,7 @@ import { APR_COLUMN, FEES_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN } from 
 import { getTokens } from '@dozer/currency'
 import { ChainId } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
-import { InferGetServerSidePropsType } from 'next'
+// import { InferGetServerSidePropsType } from 'next'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore

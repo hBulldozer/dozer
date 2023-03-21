@@ -6,7 +6,7 @@ import Image, { ImageProps } from 'next/legacy/image'
 import { FC, useEffect, useMemo, useState } from 'react'
 
 import { GradientCircleIcon } from '../icons'
-import { Link } from '../link'
+// import { Link } from '../link'
 
 const BLOCKCHAIN: Record<number, string> = {
   [ChainId.HATHOR]: 'hathor',
@@ -80,10 +80,11 @@ export const Icon: FC<IconProps> = ({ currency, ...rest }) => {
   // }
 
   return (
-    <Link.External
-      className="flex"
-      // href={chains[currency.chainId].getTokenUrl(currency.uuid)}
-    >
+    // <Link.External
+    //   className="flex"
+    //   // href={chains[currency.chainId].getTokenUrl(currency.uuid)}
+    // >
+    <>
       <Image
         key={src}
         // placeholder={rest?.width && rest?.height && rest?.width >= 40 && rest?.height >= 40 ? 'blur' : 'empty'}
@@ -94,6 +95,7 @@ export const Icon: FC<IconProps> = ({ currency, ...rest }) => {
         className="rounded-full"
         {...rest}
       />
-    </Link.External>
+      {/* </Link.External> */}
+    </>
   )
 }
