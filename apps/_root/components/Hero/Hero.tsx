@@ -1,6 +1,7 @@
 import { ChevronDownIcon } from '@heroicons/react/solid'
-// import { ChainId } from '@dozer/chain'
+import { ChainId } from '@dozer/chain'
 // import { Native, SUSHI } from '@dozer/currency'
+import { getTokens } from '@dozer/currency'
 import { useInterval } from '@dozer/hooks'
 import { App, Button, classNames, Container, Typography } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
@@ -9,6 +10,7 @@ import { motion } from 'framer-motion'
 import React, { FC, useEffect, useState } from 'react'
 
 import { Search } from './Search'
+import { CurrencyInput } from 'components/CurrencyInput'
 
 const TITLES = ['Whenever', 'Wherever', 'Whoever']
 const VALUES = [
@@ -84,37 +86,36 @@ export const Hero: FC = () => {
                       </App.NavItemList>
                     </div>
                   </motion.div>
-                  {/* <CurrencyInput
+                  <CurrencyInput
                     className="p-3 "
                     value={valueIndex >= 0 ? VALUES[valueIndex].value0 : ''}
                     onChange={() => {}}
                     onSelect={() => {}}
-                    currency={Native.onChain(ChainId.ETHEREUM)}
-                    chainId={ChainId.ETHEREUM}
+                    currency={getTokens(ChainId.HATHOR)[0]}
                     tokenMap={{}}
                     disabled={true}
-                  /> */}
+                  />
                   <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
                     <button
                       type="button"
-                      className=" group bg-slate-700 p-0.5 border-2 border-slate-800 transition-all rounded-full hover:ring-2 hover:ring-slate-500 cursor-pointer"
+                      className=" group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full hover:ring-2 hover:ring-stone-500 cursor-pointer"
                     >
                       <div className="transition-all rotate-0 group-hover:rotate-180 group-hover:delay-200">
                         <ChevronDownIcon width={16} height={16} />
                       </div>
                     </button>
                   </div>
-                  <div className="bg-slate-800">
-                    {/* <CurrencyInput
+                  <div className="bg-stone-800">
+                    <CurrencyInput
                       className="p-3 "
                       value={valueIndex >= 0 ? VALUES[valueIndex].value1 : ''}
                       onChange={() => {}}
                       onSelect={() => {}}
-                      currency={SUSHI[ChainId.ETHEREUM]}
-                      chainId={ChainId.ETHEREUM}
+                      currency={getTokens(ChainId.HATHOR)[1]}
+                      // chainId={ChainId.ETHEREUM}
                       tokenMap={{}}
                       disabled={true}
-                    /> */}
+                    />
                     <div className="p-3 pt-0">
                       <motion.div
                         initial={{ opacity: 0, scale: 1.05 }}
