@@ -14,6 +14,7 @@ import { useRouter } from 'next/router'
 import { FC } from 'react'
 // import useSWR, { SWRConfig } from 'swr'
 import { Pair } from '../../utils/Pair'
+import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
   Layout,
@@ -37,7 +38,8 @@ import { getTokens } from '@dozer/currency'
 
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const pre_pool = await prisma.pool.findUnique({
-    where: { id: query.id?.toString() },
+    where: { id: Number(query.id) },
+    include: { hourSnapshots: true, daySnapshots: true },
   })
   const tokens = await prisma.token.findMany()
   const pair: Pair =
@@ -59,6 +61,8 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
         liquidity: pre_pool.liquidity,
         volume1d: pre_pool.volume1d,
         fees1d: pre_pool.fees1d,
+        hourSnapshot: pre_pool.hourSnapshots,
+        daySnapshot: pre_pool.daySnapshots,
       })
     )
   return { props: { pair } }
@@ -81,28 +85,12 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 
 const Pool = ({ pair }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter()
+  console.log(pair.hourSnapshots, pair.daySnapshots)
   // const { data } = useSWR<{ pair: Pair }>(`/earn/api/pool/${router.query.id}`, (url) =>
   //   fetch(url).then((response) => response.json())
   // )
   // if (!data) return <></>
   // const { pair } = data
-
-  // const pair = {
-  //   id: '3',
-  //   name: 'Dummy Pool 3',
-  //   liquidityUSD: 50000,
-  //   volumeUSD: 2500,
-  //   feeUSD: 75,
-  //   apr: 0.1,
-  //   token0: getTokens(ChainId.HATHOR)[0],
-  //   token1: getTokens(ChainId.HATHOR)[3],
-  //   reserve0: 1,
-  //   reserve1: 2,
-  //   chainId: 2,
-  //   liquidity: 10000,
-  //   volume1d: 4523,
-  //   fees1d: 7651,
-  // }
 
   return (
     // <PoolPositionProvider pair={pair}>

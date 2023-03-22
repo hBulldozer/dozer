@@ -10,7 +10,7 @@ datasource db {
 
 
 model Token {
-  id       String      @id // chainId:address
+  id       Int      @id 
   uuid  String
   chainId  Int
   name     String
@@ -38,16 +38,17 @@ model Token {
   @@index(fields: [uuid, chainId])
 }
 
+
 model Pool {
-  id            String  @id // chainId:address
+  id            Int  @id 
   name          String
   apr           Float
   chainId       Int
   version       String
   token0        Token   @relation("token0", fields: [token0Id], references: [id])
-  token0Id      String
+  token0Id      Int
   token1        Token   @relation("token1", fields: [token1Id], references: [id])
-  token1Id      String
+  token1Id      Int
 
   swapFee      Float
   feeUSD       Float
@@ -62,6 +63,9 @@ model Pool {
   generatedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  daySnapshots  daySnapshot[]
+  hourSnapshots  hourSnapshot[]
+
   @@index(fields: [id])
   @@index(fields: [chainId])
   @@index(fields: [chainId, version])
@@ -70,16 +74,39 @@ model Pool {
   @@index(fields: [generatedAt])
 }
 
+model daySnapshot{
+  id           Int @id @default(autoincrement())
+  pool         Pool @relation(fields: [poolId], references:[id])
+  poolId       Int
+  date         DateTime
+  volumeUSD    Float
+  liquidityUSD Float
+  apr          Float
+
+  @@index(fields:[poolId])
+}
+
+model hourSnapshot{
+  id           Int @id @default(autoincrement())
+  pool         Pool @relation(fields: [poolId], references:[id])
+  poolId       Int
+  date         DateTime
+  volumeUSD    Float
+  liquidityUSD Float
+  apr          Float
+
+  @@index(fields:[poolId])
+}
 
 model DozerPool {
-  id                   String      @id // chainId_address
+  id                   Int      @id
   name                 String
   chainId              Int
   version              String
   token0               Token       @relation("token0", fields: [token0Id], references: [id])
-  token0Id             String
+  token0Id             Int
   token1               Token       @relation("token1", fields: [token1Id], references: [id])
-  token1Id             String
+  token1Id             Int
   swapFee              Float
   twapEnabled          Boolean
   reserve0             String 
@@ -112,14 +139,14 @@ model DozerPool {
 }
 
 model Incentive {
-  id              String @id // poolAddress_rewarderAddress
+  id              Int @id @default(autoincrement())
   chainId         Int
   apr             Float
   rewardPerDay    Float
   rewardToken     Token  @relation(fields: [rewardTokenId], references: [id])
-  rewardTokenId   String
+  rewardTokenId   Int
   pool            DozerPool   @relation(fields: [poolId], references: [id])
-  poolId          String
+  poolId          Int
   pid             Int
   rewarderAddress String
 
