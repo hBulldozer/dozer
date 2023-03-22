@@ -24,7 +24,7 @@ export const useTokensFromPair = (pair: Pair) => {
       _token0,
       _token1,
       new Token({
-        uuid: pair.id.includes(':') ? pair.id.split(':')[1] : pair.id,
+        uuid: 'LP_' + pair.token0.uuid + '_' + pair.token1.uuid,
         name: 'SLP Token',
         decimals: 18,
         symbol: 'SLP',

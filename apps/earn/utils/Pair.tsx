@@ -31,12 +31,30 @@ export type Scalars = {
   deprecated_BigDecimal: any
   deprecated_Bytes: any
 }
-export type Pair = {
+
+export type PairHourSnapshot = {
   id: string
+  date: Date
+  volumeUSD: number
+  liquidityUSD: number
+  apr: number
+}
+
+export type PairDaySnapshot = {
+  id: string
+  date: Date
+  volumeUSD: number
+  liquidityUSD: number
+  apr: number
+}
+
+export type Pair = {
+  id: number
   name: string
   liquidityUSD: number
   volumeUSD: number
   feeUSD: number
+  swapFee: number
   apr: number
   /**  First Token  */
   token0: Token
@@ -48,6 +66,8 @@ export type Pair = {
   liquidity: number
   volume1d: number
   fees1d: number
+  hourSnapshots: Array<PairHourSnapshot>
+  daySnapshots: Array<PairDaySnapshot>
 }
 // export type Pair = {
 //   /**  Pair address (contract address)  */
