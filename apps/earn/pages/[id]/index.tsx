@@ -38,7 +38,7 @@ import { getTokens } from '@dozer/currency'
 
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const pre_pool = await prisma.pool.findUnique({
-    where: { id: Number(query.id) },
+    where: { id: query.id?.toString() },
     include: { hourSnapshots: true, daySnapshots: true },
   })
   const tokens = await prisma.token.findMany()
@@ -61,8 +61,8 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
         liquidity: pre_pool.liquidity,
         volume1d: pre_pool.volume1d,
         fees1d: pre_pool.fees1d,
-        hourSnapshot: pre_pool.hourSnapshots,
-        daySnapshot: pre_pool.daySnapshots,
+        hourSnapshots: pre_pool.hourSnapshots,
+        daySnapshots: pre_pool.daySnapshots,
       })
     )
   return { props: { pair } }
@@ -102,7 +102,7 @@ const Pool = ({ pair }: InferGetServerSidePropsType<typeof getServerSideProps>) 
           <div className="flex flex-col order-1 gap-9">
             <PoolHeader pair={pair} />
             <hr className="my-3 border-t border-stone-200/5" />
-            {/* <PoolChart pair={pair} /> */}
+            <PoolChart pair={pair} />
             <AppearOnMount>
               <PoolStats pair={pair} />
             </AppearOnMount>
