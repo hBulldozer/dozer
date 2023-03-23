@@ -104,7 +104,7 @@ export function pairFromPoolAndTokensList(pool: Pool | null, tokens: Token[]): P
 }
 
 export type Pair = {
-  id: number
+  id: string
   name: string
   liquidityUSD: number
   volumeUSD: number
