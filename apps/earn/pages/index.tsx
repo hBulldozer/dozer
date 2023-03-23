@@ -18,7 +18,7 @@ import {
 
 import { Layout, PoolsSection } from '../components'
 import { Pool, prisma } from '@dozer/database'
-import { Pair } from '../utils/Pair'
+import { Pair, pairFromPoolAndTokensList } from '../utils/Pair'
 import { getTokens } from '@dozer/currency'
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
@@ -26,26 +26,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const tokens = await prisma.token.findMany()
   const pools: Pair[] = []
   pre_pools.forEach((pool) => {
-    pools?.push(
-      JSON.parse(
-        JSON.stringify({
-          id: pool.id,
-          name: pool.name,
-          liquidityUSD: pool.liquidityUSD,
-          volumeUSD: pool.volumeUSD,
-          feeUSD: pool.feeUSD,
-          apr: pool.apr,
-          token0: tokens[Number(pool.token0Id)],
-          token1: tokens[Number(pool.token1Id)],
-          reserve0: Number(pool.reserve0),
-          reserve1: Number(pool.reserve1),
-          chainId: pool.chainId,
-          liquidity: pool.liquidityUSD,
-          volume1d: pool.volume1d,
-          fees1d: pool.fees1d,
-        })
-      )
-    )
+    pools?.push(pairFromPoolAndTokensList(pool, tokens))
   })
   return { props: { pools } }
 }

@@ -9,7 +9,7 @@ datasource db {
 }
 
 model Token {
-  id              String         @id
+  id              String      @id
   uuid            String
   chainId         Int
   name            String
@@ -34,7 +34,7 @@ model Token {
 }
 
 model Pool {
-  id            String            @id
+  id            String         @id
   name          String
   apr           Float
   chainId       Int
@@ -90,7 +90,7 @@ model hourSnapshot {
 }
 
 model DozerPool {
-  id                   String         @id
+  id                   String      @id
   name                 String
   chainId              Int
   version              String
@@ -130,7 +130,7 @@ model DozerPool {
 }
 
 model Incentive {
-  id              String       @id
+  id              String    @id
   chainId         Int
   apr             Float
   rewardPerDay    Float
