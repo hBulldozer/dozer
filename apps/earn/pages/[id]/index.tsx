@@ -13,7 +13,7 @@ import {
 import { useRouter } from 'next/router'
 import { FC } from 'react'
 // import useSWR, { SWRConfig } from 'swr'
-import { Pair } from '../../utils/Pair'
+import { Pair, pairFromPoolAndTokens } from '../../utils/Pair'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
@@ -34,7 +34,6 @@ import {
 // import { GET_POOL_TYPE_MAP } from '../../lib/constants'
 
 import { prisma } from '@dozer/database'
-import { getTokens } from '@dozer/currency'
 
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const pre_pool = await prisma.pool.findUnique({
@@ -42,29 +41,7 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
     include: { hourSnapshots: true, daySnapshots: true },
   })
   const tokens = await prisma.token.findMany()
-  const pair: Pair =
-    pre_pool &&
-    tokens &&
-    JSON.parse(
-      JSON.stringify({
-        id: pre_pool.id,
-        name: pre_pool.name,
-        liquidityUSD: pre_pool.liquidityUSD,
-        volumeUSD: pre_pool.volumeUSD,
-        feeUSD: pre_pool.feeUSD,
-        apr: pre_pool.apr,
-        token0: tokens[Number(pre_pool.token0Id)],
-        token1: tokens[Number(pre_pool.token1Id)],
-        reserve0: Number(pre_pool.reserve0),
-        reserve1: Number(pre_pool.reserve1),
-        chainId: pre_pool.chainId,
-        liquidity: pre_pool.liquidity,
-        volume1d: pre_pool.volume1d,
-        fees1d: pre_pool.fees1d,
-        hourSnapshots: pre_pool.hourSnapshots,
-        daySnapshots: pre_pool.daySnapshots,
-      })
-    )
+  const pair: Pair = pairFromPoolAndTokens(pre_pool, tokens)
   return { props: { pair } }
 }
 
