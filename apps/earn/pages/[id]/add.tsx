@@ -2,10 +2,17 @@ import { ExternalLinkIcon } from '@heroicons/react/solid'
 import { ChainId, chainName } from '@dozer/chain'
 import { formatPercent } from '@dozer/format'
 // import { getBuiltGraphSDK, Pair } from '@dozer/graph-client'
-import { Pair } from '../../utils/Pair'
+import { Pair, pairFromPoolAndTokens } from '../../utils/Pair'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
 // import { SUPPORTED_CHAIN_IDS } from '../../config'
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
+import {
+  GetServerSideProps,
+  GetStaticPaths,
+  GetStaticProps,
+  InferGetServerSidePropsType,
+  InferGetStaticPropsType,
+  NextPage,
+} from 'next'
 import { useRouter } from 'next/router'
 import { FC } from 'react'
 // import useSWR, { SWRConfig } from 'swr'
@@ -21,6 +28,17 @@ import {
 } from '../../components'
 import { getTokens } from '@dozer/currency'
 // import { GET_POOL_TYPE_MAP } from '../../lib/constants'
+import { prisma } from '@dozer/database'
+
+export const getServerSideProps: GetServerSideProps = async ({ query }) => {
+  const pre_pool = await prisma.pool.findUnique({
+    where: { id: query.id?.toString() },
+    include: { hourSnapshots: true, daySnapshots: true },
+  })
+  const tokens = await prisma.token.findMany()
+  const pair: Pair = pairFromPoolAndTokens(pre_pool, tokens)
+  return { props: { pair } }
+}
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
@@ -53,29 +71,13 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 //   )
 // }
 
-const Add = () => {
+const Add: NextPage = ({ pair }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter()
   // const { data } = useSWR<{ pair: Pair }>(`/earn/api/pool/${router.query.id}`, (url) =>
   //   fetch(url).then((response) => response.json())
   // )
 
   // if (!data) return <></>
-  const pair = {
-    id: '3',
-    name: 'Dummy Pool 3',
-    liquidityUSD: 50000,
-    volumeUSD: 2500,
-    feeUSD: 75,
-    apr: 0.1,
-    token0: getTokens(ChainId.HATHOR)[0],
-    token1: getTokens(ChainId.HATHOR)[3],
-    reserve0: 1,
-    reserve1: 2,
-    chainId: 2,
-    liquidity: 10000,
-    volume1d: 4523,
-    fees1d: 7651,
-  }
 
   return (
     // <PoolPositionProvider pair={pair}>
