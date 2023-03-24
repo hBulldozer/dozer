@@ -20,6 +20,7 @@
   "dependencies": {
     "@headlessui/react": "^1.7.3",
     "@heroicons/react": "^1.0.6",
+    "@web3modal/react": "2.2.1",
     "@dozer/hooks": "workspace:*",
     "@dozer/currency": "workspace:*",
     "@dozer/format": "workspace:*",

@@ -1,10 +1,11 @@
 import { ChevronDoubleDownIcon } from '@heroicons/react/outline'
-import { AppearOnMount, ButtonProps, Menu } from '@dozer/ui'
+import { AppearOnMount, ButtonProps, Menu, WalletConnectIcon } from '@dozer/ui'
 import React, { ReactNode, useState } from 'react'
 import { Address } from '@dozer/ui/input/Address'
 import { useAccount } from '@dozer/zustand'
 import { useBalance } from '@dozer/react-query'
 import { useEffect } from 'react'
+import { useWeb3Modal } from '@web3modal/react'
 // import { useConnect } from 'wagmi'
 
 // import { useAutoConnect, useWalletState } from '../../hooks'
@@ -13,7 +14,7 @@ const Icons: Record<string, ReactNode> = {
   Injected: <ChevronDoubleDownIcon width={16} height={16} />,
   //   MetaMask: <MetamaskIcon width={16} height={16} />,
   //   'Trust Wallet': <TrustWalletIcon width={16} height={16} />,
-  //   WalletConnect: <WalletConnectIcon width={16} height={16} />,
+  WalletConnect: <WalletConnectIcon width={16} height={16} />,
   //   'Coinbase Wallet': <CoinbaseWalletIcon width={16} height={16} />,
   //   Safe: <GnosisSafeIcon width={16} height={16} />,
 }
@@ -49,6 +50,10 @@ export const Button = <C extends React.ElementType>({
   const setBalance = useAccount((state) => state.setBalance)
   const balance = useBalance(connectAddress)
 
+  const [loadingWC, setLoadingWC] = useState(false)
+  const { open } = useWeb3Modal()
+  const [isConnected, setIsConnected] = useState(false)
+
   function connect() {
     setAddress(connectAddress)
   }
@@ -76,6 +81,28 @@ export const Button = <C extends React.ElementType>({
 
   function onChange(x: string) {
     setConnectAddress(x)
+  }
+
+  async function onOpenWC() {
+    setLoadingWC(true)
+    console.log('antes do open')
+    await open()
+    console.log('depois do open')
+
+    setLoadingWC(false)
+  }
+
+  function disconnectWC() {
+    setIsConnected(false)
+    console.log('desconectado')
+  }
+
+  function onClickWC() {
+    if (isConnected) {
+      disconnectWC()
+    } else {
+      onOpenWC()
+    }
   }
 
   return (
@@ -118,6 +145,21 @@ export const Button = <C extends React.ElementType>({
                       {Icons['Injected'] && Icons['Injected']}
                     </div>{' '}
                     Hathor Wallet
+                  </Menu.Item>
+                )}
+              </div>
+              <div>
+                {isMounted && (
+                  <Menu.Item
+                    key="wallet_connect"
+                    onClick={() => onClickWC()}
+                    disabled={loadingWC}
+                    className="flex items-center gap-3 group"
+                  >
+                    <div className="-ml-[6px] group-hover:bg-yellow-700 rounded-full group-hover:ring-[1px] group-hover:ring-yellow-100">
+                      {Icons['WalletConnect'] && Icons['WalletConnect']}
+                    </div>{' '}
+                    {loadingWC ? 'Loading...' : 'WalletConnect'}
                   </Menu.Item>
                 )}
               </div>
