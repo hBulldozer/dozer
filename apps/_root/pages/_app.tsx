@@ -10,6 +10,7 @@ import { default as NextApp } from 'next/app'
 import { useRouter } from 'next/router'
 // import { DefaultSeo } from 'next-seo'
 import React, { FC, useEffect } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { Header } from '../components'
 
@@ -18,6 +19,8 @@ declare global {
     dataLayer: Record<string, any>[]
   }
 }
+
+const queryClient = new QueryClient()
 
 const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   const isSmallScreen = useIsSmScreen()
@@ -39,17 +42,19 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   }, [router.events])
   return (
     <>
-      <ThemeProvider>
-        <App.Shell>
-          <Header />
-          <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
-            <Component {...pageProps} />
-          </MotionConfig>
-          <App.Footer />
-          <ToastContainer className="mt-[50px]" />
-        </App.Shell>
-      </ThemeProvider>
-      <Analytics />
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <App.Shell>
+            <Header />
+            <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
+              <Component {...pageProps} />
+            </MotionConfig>
+            <App.Footer />
+            <ToastContainer className="mt-[50px]" />
+          </App.Shell>
+        </ThemeProvider>
+        <Analytics />
+      </QueryClientProvider>
     </>
   )
 }

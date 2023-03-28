@@ -79,6 +79,7 @@ importers:
       '@dozer/zustand': workspace:*
       '@heroicons/react': ^1.0.0
       '@tailwindcss/typography': ^0.5.2
+      '@tanstack/react-query': 4.20.4
       '@types/node': 17.0.30
       '@types/react': ^18.0.0
       '@types/react-dom': ^18.0.0
@@ -115,6 +116,7 @@ importers:
       '@dozer/prettier-config': link:../../config/prettier
       '@dozer/typescript-config': link:../../config/typescript
       '@heroicons/react': 1.0.6_react@18.2.0
+      '@tanstack/react-query': 4.20.4_biqbaboplfbrettd7655fr4n2y
       '@types/node': 17.0.30
       '@types/react': 18.0.26
       '@types/react-dom': 18.0.10

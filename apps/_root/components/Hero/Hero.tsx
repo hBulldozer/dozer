@@ -11,14 +11,15 @@ import React, { FC, useEffect, useState } from 'react'
 
 import { Search } from './Search'
 import { CurrencyInput } from 'components/CurrencyInput'
+import { TradeType } from 'components/utils/TradeType'
 
 const TITLES = ['Whenever', 'Wherever', 'Whoever']
 const VALUES = [
-  { value0: '1', value1: '867.5' },
-  { value0: '1.', value1: '867.5' },
-  { value0: '1.4', value1: '1214.448' },
-  { value0: '1.43', value1: '1240.464' },
-  { value0: '1.435', value1: '1244.80654' },
+  { value0: '1', value1: '1.5' },
+  { value0: '1.', value1: '1.5' },
+  { value0: '1.4', value1: '2,1' },
+  { value0: '1.43', value1: '2.14' },
+  { value0: '1.43', value1: '2.14' },
 ]
 
 export const Hero: FC = () => {
@@ -92,8 +93,11 @@ export const Hero: FC = () => {
                     onChange={() => {}}
                     onSelect={() => {}}
                     currency={getTokens(ChainId.HATHOR)[0]}
-                    tokenMap={{}}
                     disabled={true}
+                    id={''}
+                    inputType={TradeType.EXACT_INPUT}
+                    tradeType={TradeType.EXACT_INPUT}
+                    chainId={ChainId.HATHOR}
                   />
                   <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
                     <button
@@ -111,10 +115,13 @@ export const Hero: FC = () => {
                       value={valueIndex >= 0 ? VALUES[valueIndex].value1 : ''}
                       onChange={() => {}}
                       onSelect={() => {}}
+                      chainId={ChainId.HATHOR}
                       currency={getTokens(ChainId.HATHOR)[1]}
                       // chainId={ChainId.ETHEREUM}
-                      tokenMap={{}}
                       disabled={true}
+                      id={''}
+                      inputType={TradeType.EXACT_INPUT}
+                      tradeType={TradeType.EXACT_INPUT}
                     />
                     <div className="p-3 pt-0">
                       <motion.div
