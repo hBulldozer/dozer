@@ -1,0 +1,10 @@
+{
+    "crons": [{
+      "path": "/api/hoursnap?key=DOZER",
+      "schedule": "0 1 * * *"
+    },
+    {
+        "path": "/api/daysnap?key=DOZER",
+        "schedule": "0 3 * * *"
+    }]
+  }

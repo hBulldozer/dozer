@@ -5,7 +5,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   if (request.query.key && request.query.key === process.env.API_KEY) {
     const pools = await prisma.pool.findMany()
     pools.forEach(async (pool) => {
-      const snap = await prisma.hourSnapshot.create({
+      const snap = await prisma.daySnapshot.create({
         data: {
           poolId: pool.id,
           apr: pool.apr,
