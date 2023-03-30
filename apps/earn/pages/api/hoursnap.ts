@@ -19,13 +19,13 @@ export default async function handler(request: NextApiRequest, response: NextApi
   // })
   const snap = await prisma.hourSnapshot.create({
     data: {
-      poolId: '6',
+      poolId: '0',
       apr: 10,
       date: new Date(),
       liquidityUSD: 100,
       volumeUSD: 1000,
     },
   })
-  return response.status(200).end(snap)
+  return response.status(200).end('snap ' + snap.id + ' criado')
   // } else return response.status(401).end(`Not Authorized !`)
 }
