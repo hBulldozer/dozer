@@ -3,28 +3,20 @@ import { prisma } from '@dozer/database'
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   // if (request.query.key && request.query.key === process.env.API_KEY) {
-  // const pools = await prisma.pool.findMany()
-  const pool = await prisma.pool.findFirst()
-  // pools.forEach(async (pool) => {
-  const snap = await prisma.hourSnapshot.create({
-    data: {
-      poolId: pool ? pool.id : '0',
-      apr: pool ? pool.apr : 0,
+  const pools = await prisma.pool.findMany()
+  const pools_array: { poolId: string; apr: number; date: Date; liquidityUSD: number; volumeUSD: number }[] = []
+  pools.forEach((pool) => {
+    pools_array.push({
+      poolId: pool.id,
+      apr: pool.apr,
       date: new Date(),
-      liquidityUSD: pool ? pool.liquidityUSD : 10,
-      volumeUSD: pool ? pool.volumeUSD : 100,
-    },
+      liquidityUSD: pool.liquidityUSD,
+      volumeUSD: pool.volumeUSD,
+    })
   })
-  // })
-  // const snap = await prisma.hourSnapshot.create({
-  //   data: {
-  //     poolId: '0',
-  //     apr: 10,
-  //     date: new Date(),
-  //     liquidityUSD: 100,
-  //     volumeUSD: 1000,
-  //   },
-  // })
-  return response.status(200).end('snap ' + snap.id + ' criado')
+  const snaps = await prisma.hourSnapshot.createMany({
+    data: pools_array,
+  })
+  return response.status(200).end('criado')
   // } else return response.status(401).end(`Not Authorized !`)
 }
