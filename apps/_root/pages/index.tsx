@@ -3,7 +3,11 @@ import { ChevronDownIcon } from '@heroicons/react/solid'
 import { Hero } from 'components/Hero/Hero'
 
 const Home = () => {
-  return <Hero />
+  return (
+    <article className="w-full my-20">
+      <Hero />
+    </article>
+  )
 }
 
 export default Home

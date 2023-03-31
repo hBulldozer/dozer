@@ -9,7 +9,7 @@ import { Widget } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import React, { FC, useEffect, useState } from 'react'
 
-import { Search } from './Search'
+// import { Search } from './Search'
 import { CurrencyInput } from 'components/CurrencyInput'
 import { TradeType } from 'components/utils/TradeType'
 
@@ -45,10 +45,10 @@ export const Hero: FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[auto_400px] flex justify-between gap-[100px]">
           <div className="flex flex-col">
             <Typography variant="hero" weight={800} className="text-neutral-50 leading-[3.5rem]">
-              Buy and Sell Instantly on Sushi. <br /> <span className="text-yellow"> {TITLES[index]}.</span>
+              Buy and Sell Instantly on dozer. <br /> <span className="text-yellow"> {TITLES[index]}.</span>
             </Typography>
             <Typography variant="lg" className="mt-3 text-neutral-400">
-              No registration needed. Over 400 tokens to trade at your fingertips.
+              The fastest swap on the web3, and you don&apost need gas. No registration needed.
             </Typography>
             <div className="mt-10">{/* <Search /> */}</div>
           </div>
@@ -83,12 +83,12 @@ export const Hero: FC = () => {
                     <div className={classNames('p-3 mx-0.5 grid grid-cols-2 items-center pb-4 font-medium')}>
                       <App.NavItemList hideOnMobile={false}>
                         <App.NavItem href="https://www.sushi.com/swap" label="Swap" />
-                        <App.NavItem href="https://www.sushi.com/xswap" label="xSwap" />
+                        {/* <App.NavItem href="https://www.sushi.com/xswap" label="xSwap" /> */}
                       </App.NavItemList>
                     </div>
                   </motion.div>
                   <CurrencyInput
-                    className="p-3 "
+                    className="p-3"
                     value={valueIndex >= 0 ? VALUES[valueIndex].value0 : ''}
                     onChange={() => {}}
                     onSelect={() => {}}
