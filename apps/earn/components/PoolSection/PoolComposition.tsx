@@ -97,9 +97,12 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair }) => {
               <Table.td>
                 <AppearOnMount>
                   <Typography weight={600} variant="sm" className="text-stone-50">
-                    {formatUSD(
-                      prices?.[token1.uuid] ? reserve1.multiply(prices?.[token1.uuid].asFraction).toSignificant(6) : ''
-                    )}
+                    {
+                      // formatUSD(
+                      // prices?.[token1.uuid] ? reserve1.multiply(prices?.[token1.uuid].asFraction).toSignificant(6) : ''
+                      prices?.[token1.uuid] ? Number(reserve1) * prices?.[token1.uuid] : ''
+                      // )
+                    }
                   </Typography>
                 </AppearOnMount>
               </Table.td>

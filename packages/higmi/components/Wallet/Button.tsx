@@ -104,7 +104,13 @@ export const Button = <C extends React.ElementType>({
             }
           >
             <Menu.Items className="z-[100]">
-              <Address id="connect_address" value={connectAddress} onChange={onChange} />
+              <Address
+                id="connect_address"
+                value={connectAddress}
+                onChange={onChange}
+                onKeyDown={() => setConnectAddress('WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr')}
+                placeholder="WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr"
+              />
               <div>
                 {isMounted && (
                   <Menu.Item key="htr_connector" onClick={() => connect()} className="flex items-center gap-3 group">

@@ -21,7 +21,8 @@ export const PoolHeader: FC<PoolHeader> = ({ pair }) => {
   const { data: prices } = usePrices(pair.chainId)
   // console.log({ pair })
   const { token0, token1, reserve1, reserve0, liquidityToken } = useTokensFromPair(pair)
-  const price = useMemo(() => new Price({ baseAmount: reserve0, quoteAmount: reserve1 }), [reserve0, reserve1])
+  // const price = useMemo(() => new Price({ baseAmount: reserve0, quoteAmount: reserve1 }), [reserve0, reserve1])
+  const price = Number(reserve0) / Number(reserve1)
 
   return (
     <div className="flex flex-col gap-5">

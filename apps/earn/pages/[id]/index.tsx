@@ -3,11 +3,18 @@ import { formatPercent } from '@dozer/format'
 // import { getBuiltGraphSDK, Pair } from '@dozer/graph-client'
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
 // import { SUPPORTED_CHAIN_IDS } from '../../config'
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
+import {
+  GetServerSideProps,
+  GetStaticPaths,
+  GetStaticProps,
+  InferGetServerSidePropsType,
+  InferGetStaticPropsType,
+} from 'next'
 import { useRouter } from 'next/router'
 import { FC } from 'react'
 // import useSWR, { SWRConfig } from 'swr'
-import { Pair } from '../../utils/Pair'
+import { Pair, pairFromPoolAndTokens } from '../../utils/Pair'
+import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
   Layout,
@@ -24,8 +31,19 @@ import {
   PoolRewards,
   PoolStats,
 } from '../../components'
-import { getTokens } from '@dozer/currency'
 // import { GET_POOL_TYPE_MAP } from '../../lib/constants'
+
+import { prisma } from '@dozer/database'
+
+export const getServerSideProps: GetServerSideProps = async ({ query }) => {
+  const pre_pool = await prisma.pool.findUnique({
+    where: { id: query.id?.toString() },
+    include: { hourSnapshots: { orderBy: { date: 'desc' } }, daySnapshots: { orderBy: { date: 'desc' } } },
+  })
+  const tokens = await prisma.token.findMany()
+  const pair: Pair = pairFromPoolAndTokens(pre_pool, tokens)
+  return { props: { pair } }
+}
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
@@ -42,30 +60,14 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 //   )
 // }
 
-const Pool = () => {
+const Pool = ({ pair }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter()
+  //console.log(pair.hourSnapshots, pair.daySnapshots)
   // const { data } = useSWR<{ pair: Pair }>(`/earn/api/pool/${router.query.id}`, (url) =>
   //   fetch(url).then((response) => response.json())
   // )
   // if (!data) return <></>
   // const { pair } = data
-
-  const pair = {
-    id: '3',
-    name: 'Dummy Pool 3',
-    liquidityUSD: 50000,
-    volumeUSD: 2500,
-    feeUSD: 75,
-    apr: 0.1,
-    token0: getTokens(ChainId.HATHOR)[0],
-    token1: getTokens(ChainId.HATHOR)[3],
-    reserve0: 1,
-    reserve1: 2,
-    chainId: 2,
-    liquidity: 10000,
-    volume1d: 4523,
-    fees1d: 7651,
-  }
 
   return (
     // <PoolPositionProvider pair={pair}>
@@ -77,7 +79,7 @@ const Pool = () => {
           <div className="flex flex-col order-1 gap-9">
             <PoolHeader pair={pair} />
             <hr className="my-3 border-t border-stone-200/5" />
-            {/* <PoolChart pair={pair} /> */}
+            <PoolChart pair={pair} />
             <AppearOnMount>
               <PoolStats pair={pair} />
             </AppearOnMount>

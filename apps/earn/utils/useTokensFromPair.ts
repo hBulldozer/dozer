@@ -7,7 +7,7 @@ export const useTokensFromPair = (pair: Pair) => {
     const _token0 = new Token({
       uuid: pair.token0.uuid,
       name: pair.token0.name,
-      decimals: Number(pair.token0.decimals),
+      decimals: pair.token0.decimals,
       symbol: pair.token0.symbol,
       chainId: pair.chainId,
     })
@@ -15,7 +15,7 @@ export const useTokensFromPair = (pair: Pair) => {
     const _token1 = new Token({
       uuid: pair.token1.uuid,
       name: pair.token1.name,
-      decimals: Number(pair.token1.decimals),
+      decimals: pair.token1.decimals,
       symbol: pair.token1.symbol,
       chainId: pair.chainId,
     })
@@ -24,7 +24,7 @@ export const useTokensFromPair = (pair: Pair) => {
       _token0,
       _token1,
       new Token({
-        uuid: pair.id.includes(':') ? pair.id.split(':')[1] : pair.id,
+        uuid: 'LP_' + pair.token0.uuid + '_' + pair.token1.uuid,
         name: 'SLP Token',
         decimals: 18,
         symbol: 'SLP',
@@ -36,8 +36,8 @@ export const useTokensFromPair = (pair: Pair) => {
       token0,
       token1,
       liquidityToken,
-      reserve0: Amount.fromRawAmount(token0, pair.reserve0 || 0),
-      reserve1: Amount.fromRawAmount(token1, pair.reserve1 || 0),
+      reserve0: Amount.fromRawAmount(token0, Number(pair.reserve0) || 0),
+      reserve1: Amount.fromRawAmount(token1, Number(pair.reserve1) || 0),
       totalSupply: Amount.fromRawAmount(liquidityToken, pair.liquidity || 0),
     }
   }, [

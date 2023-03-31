@@ -1,5 +1,5 @@
 import { ChainId } from '@dozer/chain'
-import { Token } from '@dozer/currency'
+import { Pool, Token, daySnapshot, hourSnapshot } from '@dozer/database'
 
 export type Maybe<T> = T | null
 export type InputMaybe<T> = Maybe<T>
@@ -31,12 +31,85 @@ export type Scalars = {
   deprecated_BigDecimal: any
   deprecated_Bytes: any
 }
+
+export type PairHourSnapshot = {
+  id: string
+  date: Date
+  volumeUSD: number
+  liquidityUSD: number
+  apr: number
+}
+
+export type PairDaySnapshot = {
+  id: string
+  date: Date
+  volumeUSD: number
+  liquidityUSD: number
+  apr: number
+}
+
+export function pairFromPoolAndTokens(
+  pool: (Pool & { hourSnapshots: hourSnapshot[]; daySnapshots: daySnapshot[] }) | null,
+  tokens: Token[]
+): Pair {
+  return (
+    pool &&
+    tokens &&
+    JSON.parse(
+      JSON.stringify({
+        id: pool.id,
+        name: pool.name,
+        liquidityUSD: pool.liquidityUSD,
+        volumeUSD: pool.volumeUSD,
+        feeUSD: pool.feeUSD,
+        apr: pool.apr,
+        token0: tokens[Number(pool.token0Id)],
+        token1: tokens[Number(pool.token1Id)],
+        reserve0: Number(pool.reserve0),
+        reserve1: Number(pool.reserve1),
+        chainId: pool.chainId,
+        liquidity: pool.liquidity,
+        volume1d: pool.volume1d,
+        fees1d: pool.fees1d,
+        hourSnapshots: pool.hourSnapshots,
+        daySnapshots: pool.daySnapshots,
+      })
+    )
+  )
+}
+
+export function pairFromPoolAndTokensList(pool: Pool | null, tokens: Token[]): Pair {
+  return (
+    pool &&
+    tokens &&
+    JSON.parse(
+      JSON.stringify({
+        id: pool.id,
+        name: pool.name,
+        liquidityUSD: pool.liquidityUSD,
+        volumeUSD: pool.volumeUSD,
+        feeUSD: pool.feeUSD,
+        apr: pool.apr,
+        token0: tokens[Number(pool.token0Id)],
+        token1: tokens[Number(pool.token1Id)],
+        reserve0: Number(pool.reserve0),
+        reserve1: Number(pool.reserve1),
+        chainId: pool.chainId,
+        liquidity: pool.liquidity,
+        volume1d: pool.volume1d,
+        fees1d: pool.fees1d,
+      })
+    )
+  )
+}
+
 export type Pair = {
   id: string
   name: string
   liquidityUSD: number
   volumeUSD: number
   feeUSD: number
+  swapFee: number
   apr: number
   /**  First Token  */
   token0: Token
@@ -48,6 +121,8 @@ export type Pair = {
   liquidity: number
   volume1d: number
   fees1d: number
+  hourSnapshots: Array<PairHourSnapshot>
+  daySnapshots: Array<PairDaySnapshot>
 }
 // export type Pair = {
 //   /**  Pair address (contract address)  */

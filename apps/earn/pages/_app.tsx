@@ -16,24 +16,18 @@ import { Provider } from 'react-redux'
 // import { store } from '../store'
 // import { WagmiConfig } from 'wagmi'
 import NoSSR from 'react-no-ssr'
-
 // import SEO from '../next-seo.config.mjs'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-
-declare global {
-  interface Window {
-    dataLayer: Record<string, any>[]
-  }
-}
 
 const queryClient = new QueryClient()
 
 const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   const router = useRouter()
   useEffect(() => {
+    const dataLayer = window.dataLayer || []
     const handler = (page: any) => {
-      window.dataLayer.push({
+      dataLayer.push({
         event: 'pageview',
         page,
       })
@@ -59,11 +53,11 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
         <ThemeProvider>
           <App.Shell>
             {/* <DefaultSeo {...SEO} /> */}
-            <NoSSR>
-              <Header />
-              {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
-              <Component {...pageProps} />
-            </NoSSR>
+            {/* <NoSSR> */}
+            <Header />
+            {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
+            <Component {...pageProps} />
+            {/* </NoSSR> */}
             <App.Footer />
             {/* <ToastContainer className="mt-[50px]" /> */}
           </App.Shell>

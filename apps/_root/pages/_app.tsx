@@ -1,13 +1,16 @@
 import '@dozer/ui/index.css'
+import 'styles/index.css'
 
-import { App, ThemeProvider } from '@dozer/ui'
+import { useIsSmScreen } from '@dozer/hooks'
+import { App, ThemeProvider, ToastContainer } from '@dozer/ui'
 import { Analytics } from '@vercel/analytics/react'
+import { MotionConfig } from 'framer-motion'
 import type { AppContext, AppProps } from 'next/app'
 import { default as NextApp } from 'next/app'
-import Head from 'next/head'
 import { useRouter } from 'next/router'
-import { DefaultSeo } from 'next-seo'
-import { useEffect } from 'react'
+// import { DefaultSeo } from 'next-seo'
+import React, { FC, useEffect } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { Header } from '../components'
 
@@ -17,8 +20,12 @@ declare global {
   }
 }
 
-const MyApp = ({ Component, pageProps }: AppProps) => {
+const queryClient = new QueryClient()
+
+const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
+  const isSmallScreen = useIsSmScreen()
   const router = useRouter()
+
   useEffect(() => {
     const handler = (page: any) => {
       window.dataLayer.push({
@@ -35,15 +42,19 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
   }, [router.events])
   return (
     <>
-      <ThemeProvider>
-        <App.Shell>
-          <Header />
-          <Component {...pageProps} />
-          <App.Footer />
-        </App.Shell>
-        <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
-      </ThemeProvider>
-      <Analytics />
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <App.Shell>
+            <Header />
+            <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
+              <Component {...pageProps} />
+            </MotionConfig>
+            <App.Footer />
+            <ToastContainer className="mt-[50px]" />
+          </App.Shell>
+        </ThemeProvider>
+        <Analytics />
+      </QueryClientProvider>
     </>
   )
 }
@@ -52,12 +63,12 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
 // have getStaticProps. So article, category and home pages still get SSG.
 // Hopefully we can replace this with getStaticProps once this issue is fixed:
 // https://github.com/vercel/next.js/discussions/10949
-MyApp.getInitialProps = async (ctx: AppContext) => {
-  // Calls page's `getInitialProps` and fills `appProps.pageProps`
-  const appProps = await NextApp.getInitialProps(ctx)
+// MyApp.getInitialProps = async (ctx: AppContext) => {
+//   // Calls page's `getInitialProps` and fills `appProps.pageProps`
+//   const appProps = await NextApp.getInitialProps(ctx)
 
-  // Pass the data to our page via props
-  return { ...appProps }
-}
+//   // Pass the data to our page via props
+//   return { ...appProps }
+// }
 
 export default MyApp

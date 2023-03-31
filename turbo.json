@@ -1,6 +1,9 @@
-// ! important review
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "CI",
+    "NODE_ENV"
+  ],
   "globalDependencies": [
     ".eslintignore",
     ".eslint.js",
@@ -11,12 +14,31 @@
     "tsconfig.json"
   ],
   "pipeline": {
+    "db:init": {
+      "outputs": ["prisma/**/*"],
+      "cache": false
+    },
+    "db:pull": {
+      "outputs": ["prisma/**/*"],
+      "dependsOn": ["db:init"],
+      "cache": false,
+      "env": ["DATABASE_URL"]
+    },
+    "db:generate": {
+      "dependsOn": [],
+      "cache": false
+    },
+    "db:push": {
+      "cache": false
+    },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^db:generate", "^build", "db:generate"],
       "env": [
         "ROOT_URL",
         "SWAP_URL",
-        "EARN_URL"
+        "EARN_URL",
+        "DATABASE_URL",
+        "API_KEY"
       ],
       "outputs": [
         ".vercel/**/*",
