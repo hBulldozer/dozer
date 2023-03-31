@@ -62,7 +62,7 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 
 const Pool = ({ pair }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter()
-  console.log(pair.hourSnapshots, pair.daySnapshots)
+  //console.log(pair.hourSnapshots, pair.daySnapshots)
   // const { data } = useSWR<{ pair: Pair }>(`/earn/api/pool/${router.query.id}`, (url) =>
   //   fetch(url).then((response) => response.json())
   // )

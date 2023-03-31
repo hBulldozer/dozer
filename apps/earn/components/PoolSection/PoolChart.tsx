@@ -47,9 +47,9 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
     const currentDate = Math.round(Date.now())
     const [x, y] = data.reduce<[number[], number[]]>(
       (acc, cur) => {
-        const data: number = new Date(cur.date.toString()).getTime()
-        if (data * 1000 >= currentDate - chartTimespans[chartPeriod]) {
-          acc[0].push(data)
+        const date = new Date(cur.date).getTime()
+        if (date >= currentDate - chartTimespans[chartPeriod]) {
+          acc[0].push(date / 1000)
           if (chartType === PoolChartType.Fees) {
             acc[1].push(Number(cur.volumeUSD * (pair.swapFee / 10000)))
           } else if (chartType === PoolChartType.Volume) {
