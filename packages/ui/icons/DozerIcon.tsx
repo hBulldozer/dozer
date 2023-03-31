@@ -10,6 +10,7 @@ export const DozerIcon = (props: React.ComponentProps<'svg'>) => {
       // width="400"
       // height="400"
       viewBox="0, 0, 400,400"
+      {...props}
     >
       <g id="svgg">
         <path

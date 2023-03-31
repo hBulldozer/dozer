@@ -16,7 +16,7 @@ export const LoadingOverlay: FC<{ show?: boolean }> = ({ show }) => {
       leaveTo="opacity-0"
     >
       <div className="fixed z-[9999] flex items-center justify-center inset-0 transition-opacity bg-white bg-opacity-5 backdrop-blur-sm rounded-xl overflow-hidden">
-        <LogoLoader width={36} height={36} />
+        <LogoLoader width={360} height={360} />
       </div>
     </Transition>
   )
