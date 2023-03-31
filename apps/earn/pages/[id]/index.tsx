@@ -38,7 +38,7 @@ import { prisma } from '@dozer/database'
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const pre_pool = await prisma.pool.findUnique({
     where: { id: query.id?.toString() },
-    include: { hourSnapshots: true, daySnapshots: true },
+    include: { hourSnapshots: { orderBy: { date: 'desc' } }, daySnapshots: { orderBy: { date: 'desc' } } },
   })
   const tokens = await prisma.token.findMany()
   const pair: Pair = pairFromPoolAndTokens(pre_pool, tokens)
