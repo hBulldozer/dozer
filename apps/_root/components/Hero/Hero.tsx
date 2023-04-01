@@ -43,15 +43,6 @@ export const Hero: FC = () => {
     <section className="relative">
       <Container maxWidth="5xl" className="px-4 mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[auto_400px] flex justify-between gap-[100px]">
-          <div className="flex flex-col">
-            <Typography variant="hero" weight={800} className="text-neutral-50 leading-[3.5rem]">
-              Buy and Sell Instantly on dozer. <br /> <span className="text-yellow"> {TITLES[index]}.</span>
-            </Typography>
-            <Typography variant="lg" className="mt-3 text-neutral-400">
-              The fastest swap on the web3, and you don&apost need gas. No registration needed.
-            </Typography>
-            <div className="mt-10">{/* <Search /> */}</div>
-          </div>
           <div className="relative justify-end hidden lg:flex">
             <motion.div
               initial={{ opacity: 0, scale: 1.5 }}
@@ -141,6 +132,15 @@ export const Hero: FC = () => {
                 </Widget.Content>
               </Widget>
             </motion.div>
+          </div>
+          <div className="flex flex-col">
+            <Typography variant="hero" weight={800} className="text-neutral-50 leading-[3.5rem]">
+              Trade Instantly on dozer. <br /> <span className="text-yellow"> {TITLES[index]}.</span>
+            </Typography>
+            <Typography variant="lg" className="mt-3 text-neutral-400">
+              The fastest swap on the web3. You will not spend gas. No registration needed.
+            </Typography>
+            <div className="mt-10">{/* <Search /> */}</div>
           </div>
         </div>
       </Container>
