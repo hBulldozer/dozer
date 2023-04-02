@@ -2,7 +2,7 @@ import { ChevronDownIcon } from '@heroicons/react/solid'
 import { App, Button, classNames, Container, Link, Typography, Widget } from '@dozer/ui'
 import { Layout } from '../components/Layout'
 import { CurrencyInput } from '../components/CurrencyInput'
-import { getTokens, Token } from '@dozer/currency'
+import { Token } from '@dozer/currency'
 import { useState, useCallback, useMemo, useEffect, FC } from 'react'
 import { useIsMounted } from '@dozer/hooks'
 import { TradeType } from '../components/utils/TradeType'
@@ -13,21 +13,43 @@ import { SwapStatsDisclosure, SettingsOverlay } from '../components'
 import { Checker } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
+import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from 'next'
+import { prisma, Token as dbToken, Pool } from '@dozer/database'
 
-const Home = () => {
+export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+  const pools = await prisma.pool.findMany()
+  const tokens = await prisma.token.findMany()
+  return { props: { pools: JSON.parse(JSON.stringify(pools)), tokens: JSON.parse(JSON.stringify(tokens)) } }
+}
+
+function toToken(dbToken: dbToken): Token {
+  return new Token({
+    chainId: dbToken.chainId,
+    uuid: dbToken.uuid,
+    decimals: dbToken.decimals,
+    name: dbToken.name,
+    symbol: dbToken.symbol,
+  })
+}
+
+const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const isMounted = useIsMounted()
   const network = useNetwork((state) => state.network)
 
   const inputToken = useMemo(() => {
-    return getTokens(network).find((obj) => {
-      return obj.symbol == 'DZR'
-    })
+    return toToken(
+      tokens.find((obj: dbToken) => {
+        return obj.symbol == 'DZR' && obj.chainId == network
+      })
+    )
   }, [])
 
   const outputToken = useMemo(() => {
-    return getTokens(network).find((obj) => {
-      return obj.symbol == 'HTR'
-    })
+    return toToken(
+      tokens.find((obj: dbToken) => {
+        return obj.symbol == 'HTR' && obj.chainId == network
+      })
+    )
   }, [])
 
   const [input0, setInput0] = useState<string>('')
@@ -42,7 +64,6 @@ const Home = () => {
     setOtherCurrencyPrice,
     setAmountSpecified,
     setOutputAmount,
-    setPool,
     setPriceImpact,
   } = useTrade()
   const [poolExist, setPoolExist] = useState(true)
@@ -76,16 +97,22 @@ const Home = () => {
   // }, [inputToken, outputToken])
 
   useEffect(() => {
-    const fetchPool = async () => {
-      if (await setPool()) {
-        setPoolExist(true)
-      } else {
-        setPoolExist(false)
-      }
-    }
-    setMainCurrency(token0 ? token0 : getTokens(network)[0])
-    setOtherCurrency(token1 ? token1 : getTokens(network)[1])
-    fetchPool()
+    setPoolExist(
+      pools.forEach((pool: Pool) => {
+        const uuid0 = tokens.filter((token: dbToken) => {
+          return token.id === pool.token0Id
+        }).uuid
+        const uuid1 = tokens.filter((token: dbToken) => {
+          return token.id === pool.token1Id
+        }).uuid
+        return (uuid0 == token0?.uuid || uuid0 == token1?.uuid) && (uuid1 == token0?.uuid || uuid1 == token1?.uuid)
+      })
+    )
+  }, [pools, tokens, token0, token1])
+
+  useEffect(() => {
+    setMainCurrency(token0 ? token0 : toToken(tokens[0]))
+    setOtherCurrency(token1 ? token1 : toToken(tokens[0]))
     setPriceImpact()
     if (!poolExist) {
       setInput0('')

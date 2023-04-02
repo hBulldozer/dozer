@@ -10,7 +10,6 @@ const nextConfig = {
     '@dozer/higmi',
     '@dozer/ui',
     '@dozer/math',
-    '@dozer/api',
     '@dozer/database',
   ],
   experimental: {

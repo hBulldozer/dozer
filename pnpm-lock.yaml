@@ -249,6 +249,7 @@ importers:
     specifiers:
       '@dozer/chain': workspace:*
       '@dozer/currency': workspace:*
+      '@dozer/database': workspace:*
       '@dozer/eslint-config': workspace:*
       '@dozer/format': workspace:*
       '@dozer/higmi': workspace:*
@@ -283,6 +284,7 @@ importers:
     dependencies:
       '@dozer/chain': link:../../packages/chain
       '@dozer/currency': link:../../packages/currency
+      '@dozer/database': link:../../packages/database
       '@dozer/format': link:../../packages/format
       '@dozer/higmi': link:../../packages/higmi
       '@dozer/hooks': link:../../packages/hooks

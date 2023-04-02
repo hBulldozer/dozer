@@ -4,7 +4,17 @@ import defaultNextConfig from '@dozer/nextjs-config'
 const nextConfig = {
   ...defaultNextConfig,
   basePath: '/swap',
-  transpilePackages: ['@dozer/ui', '@dozer/higmi'],
+  transpilePackages: [
+    '@dozer/redux-token-lists',
+    '@dozer/redux-localstorage',
+    '@dozer/higmi',
+    '@dozer/ui',
+    '@dozer/math',
+    '@dozer/database',
+  ],
+  experimental: {
+    swcPlugins: [['next-superjson-plugin', {}]],
+  },
   async redirects() {
     return [
       {

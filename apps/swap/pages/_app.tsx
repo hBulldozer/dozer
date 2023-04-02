@@ -2,22 +2,18 @@ import '@dozer/ui/index.css'
 
 import { App, ThemeProvider } from '@dozer/ui'
 import { Analytics } from '@vercel/analytics/react'
-import type { AppContext, AppProps } from 'next/app'
-import { default as NextApp } from 'next/app'
-import Head from 'next/head'
+import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
-import { DefaultSeo } from 'next-seo'
 import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import NoSSR from 'react-no-ssr'
 
 import { Header } from '../components'
 
-declare global {
-  interface Window {
-    dataLayer: Record<string, any>[]
-  }
-}
+// declare global {
+//   interface Window {
+//     dataLayer: Record<string, any>[]
+//   }
+// }
 
 const queryClient = new QueryClient()
 
