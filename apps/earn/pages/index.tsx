@@ -25,7 +25,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const pre_pools = await prisma.pool.findMany()
   const tokens = await prisma.token.findMany()
   const pools: Pair[] = []
-  pre_pools.forEach((pool) => {
+  pre_pools.forEach((pool: Pool) => {
     pools?.push(pairFromPoolAndTokensList(pool, tokens))
   })
   return { props: { pools } }

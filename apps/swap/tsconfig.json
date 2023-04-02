@@ -2,7 +2,11 @@
   "extends": "@dozer/typescript-config/nextjs.json",
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"],
-  // "compilerOptions": {
+  "compilerOptions": {
   //   "baseUrl": "."
-  // }
+  "paths": {
+    "@dozer/database": ["../packages/database"],
+  	"@dozer/database/types": ["../packages/database/types"],
+  }
+}
 }

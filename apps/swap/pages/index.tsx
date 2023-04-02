@@ -7,14 +7,14 @@ import { useState, useCallback, useMemo, useEffect, FC } from 'react'
 import { useIsMounted } from '@dozer/hooks'
 import { TradeType } from '../components/utils/TradeType'
 import { useNetwork, useSettings, useTrade } from '@dozer/zustand'
-import { ChainId } from '@dozer/chain'
 import { usePrices } from '@dozer/react-query'
 import { SwapStatsDisclosure, SettingsOverlay } from '../components'
 import { Checker } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
 import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from 'next'
-import { prisma, Token as dbToken, Pool } from '@dozer/database'
+import { prisma } from '@dozer/database'
+import { Token as dbToken, Pool } from '@dozer/database/types'
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const pools = await prisma.pool.findMany()
@@ -98,14 +98,17 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
 
   useEffect(() => {
     setPoolExist(
-      pools.forEach((pool: Pool) => {
-        const uuid0 = tokens.filter((token: dbToken) => {
+      pools.find((pool: Pool) => {
+        const uuid0 = tokens.find((token: dbToken) => {
           return token.id === pool.token0Id
         }).uuid
-        const uuid1 = tokens.filter((token: dbToken) => {
+        const uuid1 = tokens.find((token: dbToken) => {
           return token.id === pool.token1Id
         }).uuid
-        return (uuid0 == token0?.uuid || uuid0 == token1?.uuid) && (uuid1 == token0?.uuid || uuid1 == token1?.uuid)
+
+        const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
+        const result = checker([token0 ? token0.uuid : '', token1 ? token1.uuid : ''], [uuid0, uuid1])
+        return result
       })
     )
   }, [pools, tokens, token0, token1])

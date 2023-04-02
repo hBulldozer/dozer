@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../types"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Token {
+  id              String      @id
+  uuid            String
+  chainId         Int
+  name            String
+  symbol          String
+  isFeeOnTransfer Boolean     @default(false)
+  isCommon        Boolean     @default(false)
+  derivedUSD      Float?
+  generatedAt     DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  decimals        Int         @default(2)
+  pools0          Pool[]      @relation("token0")
+  pools1          Pool[]      @relation("token1")
+  dozerPools0     DozerPool[] @relation("token0")
+  dozerPools1     DozerPool[] @relation("token1")
+  incentives      Incentive[]
+
+  @@unique([chainId, uuid])
+  @@index([id])
+  @@index([uuid])
+  @@index([chainId])
+  @@index([uuid, chainId])
+}
+
+model Pool {
+  id            String         @id
+  name          String
+  apr           Float
+  chainId       Int
+  version       String
+  token0Id      String
+  token1Id      String
+  swapFee       Float
+  feeUSD        Float
+  reserve0      String         @default("0")
+  reserve1      String         @default("0")
+  liquidityUSD  Float
+  volumeUSD     Float
+  liquidity     Float
+  volume1d      Float
+  fees1d        Float
+  generatedAt   DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  token0        Token          @relation("token0", fields: [token0Id], references: [id])
+  token1        Token          @relation("token1", fields: [token1Id], references: [id])
+  daySnapshots  daySnapshot[]
+  hourSnapshots hourSnapshot[]
+
+  @@index([id])
+  @@index([chainId])
+  @@index([chainId, version])
+  @@index([token0Id])
+  @@index([token1Id])
+  @@index([generatedAt])
+}
+
+model daySnapshot {
+  id           Int      @id @default(autoincrement())
+  poolId       String
+  date         DateTime
+  volumeUSD    Float
+  liquidityUSD Float
+  apr          Float
+  pool         Pool     @relation(fields: [poolId], references: [id])
+
+  @@index([poolId])
+}
+
+model hourSnapshot {
+  id           Int      @id @default(autoincrement())
+  poolId       String
+  date         DateTime
+  volumeUSD    Float
+  liquidityUSD Float
+  apr          Float
+  pool         Pool     @relation(fields: [poolId], references: [id])
+
+  @@index([poolId])
+}
+
+model DozerPool {
+  id                   String      @id
+  name                 String
+  chainId              Int
+  version              String
+  token0Id             String
+  token1Id             String
+  swapFee              Float
+  twapEnabled          Boolean
+  reserve0             String
+  reserve1             String
+  totalSupply          String
+  liquidityUSD         Float
+  volumeUSD            Float
+  token0Price          String
+  token1Price          String
+  feeApr               Float       @default(0)
+  incentiveApr         Float       @default(0)
+  totalApr             Float       @default(0)
+  isIncentivized       Boolean     @default(false)
+  volume1d             Float       @default(0)
+  fees1d               Float       @default(0)
+  volume1w             Float       @default(0)
+  fees1w               Float       @default(0)
+  createdAtBlockNumber BigInt      @db.UnsignedBigInt
+  isBlacklisted        Boolean     @default(false)
+  generatedAt          DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  token0               Token       @relation("token0", fields: [token0Id], references: [id])
+  token1               Token       @relation("token1", fields: [token1Id], references: [id])
+  incentives           Incentive[]
+
+  @@index([id])
+  @@index([chainId])
+  @@index([liquidityUSD, chainId])
+  @@index([totalApr, chainId])
+  @@index([token0Id])
+  @@index([token1Id])
+}
+
+model Incentive {
+  id              String    @id
+  chainId         Int
+  apr             Float
+  rewardPerDay    Float
+  rewardTokenId   String
+  poolId          String
+  pid             Int
+  rewarderAddress String
+  rewardToken     Token     @relation(fields: [rewardTokenId], references: [id])
+  pool            DozerPool @relation(fields: [poolId], references: [id])
+
+  @@index([id])
+  @@index([poolId])
+  @@index([rewardTokenId])
+  @@index([chainId, rewardTokenId])
+}
