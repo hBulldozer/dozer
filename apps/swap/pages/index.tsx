@@ -66,8 +66,11 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
     setAmountSpecified,
     setOutputAmount,
     setPriceImpact,
+    setPool,
+    pool,
   } = useTrade()
   const [poolExist, setPoolExist] = useState(true)
+  const [selectedPool, setSelectedPool] = useState<dbPool>()
 
   const { data: prices } = usePrices(network)
 
@@ -98,7 +101,7 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
   // }, [inputToken, outputToken])
 
   useEffect(() => {
-    setPoolExist(
+    setSelectedPool(
       pools.find((pool: dbPool) => {
         const uuid0 = tokens.find((token: dbToken) => {
           return token.id === pool.token0Id
@@ -106,31 +109,44 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
         const uuid1 = tokens.find((token: dbToken) => {
           return token.id === pool.token1Id
         }).uuid
-
         const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
         const result = checker([token0 ? token0.uuid : '', token1 ? token1.uuid : ''], [uuid0, uuid1])
         return result
       })
     )
-  }, [pools, tokens, token0, token1])
-
-  useEffect(() => {
+    // setPoolExist(selected_pool ? true : false)
     setMainCurrency(token0 ? token0 : toToken(tokens[0]))
     setOtherCurrency(token1 ? token1 : toToken(tokens[0]))
     setPriceImpact()
-    if (!poolExist) {
+    if (!selectedPool) {
       setInput0('')
       setAmountSpecified(0)
       setOutputAmount()
       // setInput1('')
     } else {
+      setPool({
+        token1: token0,
+        token2: token1,
+        token1_balance:
+          tokens.find((token: dbToken) => {
+            return token.id == selectedPool.token0Id
+          }) == token0?.uuid
+            ? Number(selectedPool.reserve0)
+            : Number(selectedPool.reserve1),
+        token2_balance:
+          tokens.find((token: dbToken) => {
+            return token.id == selectedPool.token1Id
+          }) == token1?.uuid
+            ? Number(selectedPool.reserve1)
+            : Number(selectedPool.reserve0),
+      })
       setAmountSpecified(Number(input0))
       setMainCurrencyPrice(prices && token0 ? prices[token0.uuid] : 0)
       setOtherCurrencyPrice(prices && token1 ? prices[token1.uuid] : 0)
       setOutputAmount()
       // setInput1(outputAmount ? outputAmount.toString() : '')
     }
-  }, [outputAmount, token0, token1, input0, input1, prices, network, poolExist])
+  }, [pools, outputAmount, token0, token1, input0, input1, prices, network, poolExist, selectedPool])
 
   // const onSuccess = useCallback(() => {
   //   setInput0('')
@@ -164,7 +180,7 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
           <CurrencyInput
             id={'swap-input-currency0'}
             className="p-3"
-            disabled={token0?.symbol && token1?.symbol && poolExist ? false : true}
+            disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
             value={token0?.symbol && token1?.symbol ? input0 : ''}
             onChange={onInput0}
             currency={token0}
@@ -194,7 +210,7 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
               id={'swap-output-currency1'}
               disabled={true}
               className="p-3"
-              value={poolExist ? (outputAmount ? outputAmount.toString() : '') : ''}
+              value={selectedPool ? (outputAmount ? outputAmount.toString() : '') : ''}
               onChange={onInput1}
               currency={token1}
               onSelect={_setToken1}
@@ -211,7 +227,7 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
             <SwapStatsDisclosure />
             <div className="p-3 pt-0">
               <Checker.Connected fullWidth size="md">
-                <Checker.Pool fullWidth size="md" poolExist={poolExist}>
+                <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
                   <Checker.Amounts fullWidth size="md" amount={Number(input0)} token={token0}>
                     <SwapReviewModalLegacy chainId={network} onSuccess={onSuccess}>
                       {({ setOpen }) => {

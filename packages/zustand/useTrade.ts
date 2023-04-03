@@ -31,7 +31,7 @@ interface TradeProps {
   otherCurrencyPrice: number | undefined
   setOtherCurrencyPrice: (otherCurrencyPrice: number) => void
   pool: PoolType | undefined
-  setPool: () => Promise<boolean>
+  setPool: (pool: PoolType) => void
   outputAmount: number | undefined
   setOutputAmount: () => void
   priceImpact: number
@@ -63,34 +63,7 @@ export const useTrade = create<TradeProps>()(
         token1_balance: 0,
         token2_balance: 0,
       },
-      setPool: async () => {
-        const list_url = `https://raw.githubusercontent.com/Dozer-Protocol/automatic-exchange-service/main/assets/${
-          get().chainId
-        }/pools_list`
-        const list = await fetch(list_url).then((resp) => resp.json())
-        const pool = list.list.find((obj: { tokens: (string | undefined)[] }) => {
-          return obj.tokens.indexOf(get().mainCurrency?.uuid) > -1 && obj.tokens.indexOf(get().otherCurrency?.uuid) > -1
-        })
-        if (!pool) return false
-        else {
-          const url = `https://raw.githubusercontent.com/Dozer-Protocol/automatic-exchange-service/main/assets/${
-            get().chainId
-          }/pools/${pool.name}`
-          const data = await fetch(url).then((resp) => resp.json())
-          const result = {
-            token1: getTokens(get().chainId).find((obj) => {
-              return obj.uuid === data.token1
-            }),
-            token2: getTokens(get().chainId).find((obj) => {
-              return obj.uuid === data.token2
-            }),
-            token1_balance: Number(data.token1_balance),
-            token2_balance: Number(data.token2_balance),
-          }
-          set({ pool: result })
-          return true
-        }
-      },
+      setPool: (pool: PoolType) => set((state) => ({ pool: pool })),
       outputAmount: 0,
       setOutputAmount: () =>
         set((state) => ({
