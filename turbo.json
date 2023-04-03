@@ -72,7 +72,7 @@
       "persistent": true
     },
     "dev": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "^db:generate"],
       "cache": false,
       "persistent": true
     },

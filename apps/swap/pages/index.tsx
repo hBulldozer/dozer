@@ -14,7 +14,8 @@ import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
 import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from 'next'
 import { prisma } from '@dozer/database'
-import { Token as dbToken, Pool } from '@dozer/database/types'
+import { dbToken, dbPool } from '../interfaces'
+// import { Token as dbToken, Pool } from '@dozer/database/types'
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const pools = await prisma.pool.findMany()
@@ -98,7 +99,7 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
 
   useEffect(() => {
     setPoolExist(
-      pools.find((pool: Pool) => {
+      pools.find((pool: dbPool) => {
         const uuid0 = tokens.find((token: dbToken) => {
           return token.id === pool.token0Id
         }).uuid
