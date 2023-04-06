@@ -44,17 +44,18 @@ export const Button = <C extends React.ElementType>({
   //     return <></>
   //   }
 
-  const [connectAddress, setConnectAddress] = useState<string>('')
+  const [input, setInput] = useState('')
   const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
-  const balance = useBalance(connectAddress)
+  const address = useAccount((state) => state.address)
+  const balance = useBalance(address)
 
   function connect() {
-    setAddress(connectAddress)
+    setAddress(input)
   }
 
   useEffect(() => {
-    if (connectAddress && balance) {
+    if (address && balance) {
       const balance_data = []
       // console.log(balance.isLoading)
       // console.log(balance.data)
@@ -72,10 +73,10 @@ export const Button = <C extends React.ElementType>({
     } else {
       // setBalance([])
     }
-  }, [balance, connectAddress])
+  }, [balance, address])
 
   function onChange(x: string) {
-    setConnectAddress(x)
+    setInput(x)
   }
 
   return (
@@ -106,9 +107,9 @@ export const Button = <C extends React.ElementType>({
             <Menu.Items className="z-[100]">
               <Address
                 id="connect_address"
-                value={connectAddress}
+                value={input}
                 onChange={onChange}
-                onKeyDown={() => setConnectAddress('WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr')}
+                onKeyDown={() => setInput('WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr')}
                 placeholder="WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr"
               />
               <div>

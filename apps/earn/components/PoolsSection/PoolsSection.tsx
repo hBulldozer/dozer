@@ -1,7 +1,7 @@
 import { Tab } from '@headlessui/react'
 // import { UserWithFarm } from '@dozer/graph-client'
 import { Chip, classNames } from '@dozer/ui'
-import { FC, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 // import useSWR from 'swr'
 import { useAccount } from '@dozer/zustand'
 
@@ -11,11 +11,16 @@ import { Pair } from '../../utils/Pair'
 // import { TableFilters } from './Tables/TableFilters'
 
 export const PoolsSection: FC = (pools) => {
-  const { address } = useAccount()
+  const accountAddress = useAccount((state) => state.address)
   const [tab, setTab] = useState<number>(0)
+  const [address, setAddress] = useState('')
   // const { data: userWithFarms } = useSWR<UserWithFarm[]>(address ? [`/earn/api/user/${address}`] : null, (url) =>
   //   fetch(url).then((response) => response.json())
   // )
+
+  useEffect(() => {
+    setAddress(accountAddress)
+  }, [accountAddress])
 
   return (
     <section className="flex flex-col">

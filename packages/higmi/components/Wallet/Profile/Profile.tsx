@@ -27,20 +27,17 @@ export const Profile: FC = () => {
   const { isSm } = useBreakpoint('sm')
   const [view, setView] = useState<ProfileView>(ProfileView.Default)
   const { network } = useNetwork()
-  const address = useAccount((state) => state.address)
+  const accountAddress = useAccount((state) => state.address)
+  const [address, setAddress] = useState('')
   const chainId = network
 
   // const { data: avatar } = useEnsAvatar({
   //   address,
   // })
 
-  const ref = useRef<Element | null>(null)
-  const [mounted, setMounted] = useState(false)
-
   useEffect(() => {
-    ref.current = document.querySelector<HTMLElement>('#portal')
-    setMounted(true)
-  }, [])
+    setAddress(accountAddress)
+  }, [accountAddress])
 
   if (!address) {
     return <Wallet.Button size="sm" className="border-none shadow-md whitespace-nowrap" />

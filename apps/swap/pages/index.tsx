@@ -67,9 +67,7 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
     setOutputAmount,
     setPriceImpact,
     setPool,
-    pool,
   } = useTrade()
-  const [poolExist, setPoolExist] = useState(true)
   const [selectedPool, setSelectedPool] = useState<dbPool>()
 
   const { data: prices } = usePrices(network)
@@ -114,7 +112,6 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
         return result
       })
     )
-    // setPoolExist(selected_pool ? true : false)
     setMainCurrency(token0 ? token0 : toToken(tokens[0]))
     setOtherCurrency(token1 ? token1 : toToken(tokens[0]))
     setPriceImpact()
@@ -146,7 +143,7 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
       setOutputAmount()
       // setInput1(outputAmount ? outputAmount.toString() : '')
     }
-  }, [pools, outputAmount, token0, token1, input0, input1, prices, network, poolExist, selectedPool])
+  }, [pools, outputAmount, token0, token1, input0, input1, prices, network, selectedPool])
 
   // const onSuccess = useCallback(() => {
   //   setInput0('')
