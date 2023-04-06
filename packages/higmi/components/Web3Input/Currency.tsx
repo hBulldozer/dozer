@@ -21,6 +21,7 @@ export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' 
   // fundSource?: FundSource
   loading?: boolean
   includeNative?: boolean
+  prices: { [key: string]: number }
 }
 
 export const CurrencyInput: FC<CurrencyInputProps> = ({
@@ -41,6 +42,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   // fundSource = FundSource.WALLET,
   includeNative = true,
   loading,
+  prices,
 }) => {
   const isMounted = useIsMounted()
   const account = useAccount()
@@ -121,7 +123,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
           </button>
         </div>
         <div className="flex flex-row justify-between h-[24px]">
-          <PricePanel value={value} currency={currency} usdPctChange={usdPctChange} chainId={chainId} />
+          <PricePanel prices={prices} value={value} currency={currency} usdPctChange={usdPctChange} chainId={chainId} />
           <div className="h-6">
             <BalancePanel
               id={id}
@@ -225,19 +227,25 @@ const BalancePanel: FC<BalancePanel> = ({
   )
 }
 
-type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange'>
-const PricePanel: FC<PricePanel> = ({ currency, value, usdPctChange, chainId }) => {
+type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange' | 'prices'>
+const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, chainId }) => {
   const isMounted = useIsMounted()
-  // const [tokenPrices, setTokenPrices] = useState(usePrices(chainId ? chainId : ChainId.HATHOR))
-  const { data: tokenPrices } = usePrices(chainId ? chainId : ChainId.HATHOR)
-  const price = currency ? tokenPrices?.[currency.uuid] : undefined
+  // const [prices, setprices] = useState(usePrices(chainId ? chainId : ChainId.HATHOR))
+  // const { data: prices } = usePrices(chainId ? chainId : ChainId.HATHOR)
+  const [price, setPrice] = useState<number | undefined>(0)
+  const [usd, setUsd] = useState<number | undefined>(0)
+  const calculatedPrice = currency ? prices?.[currency.uuid] : undefined
   const parsedValue = useMemo(() => parseFloat(value), [value])
 
+  useEffect(() => {
+    setPrice(calculatedPrice)
+    setUsd(usdPctChange)
+  }, [calculatedPrice, usdPctChange])
   // useEffect(() => {
-  //   setTokenPrices(usePrices(chainId ? chainId : ChainId.HATHOR))
+  //   setprices(usePrices(chainId ? chainId : ChainId.HATHOR))
   // }, [chainId])
 
-  if (!tokenPrices && isMounted)
+  if (!prices && isMounted)
     return (
       <div className="h-[24px] w-[60px] flex items-center">
         <Skeleton.Box className="bg-white/[0.06] h-[12px] w-full" />
@@ -246,25 +254,23 @@ const PricePanel: FC<PricePanel> = ({ currency, value, usdPctChange, chainId }) 
 
   return (
     <Typography variant="xs" weight={400} className="py-1 select-none text-stone-400">
-      {parsedValue && price && isMounted ? `$${parsedValue * price}` : '$0.00'}
-      {usdPctChange && (
+      {parsedValue && price && isMounted ? `$${Number(parsedValue * price).toFixed(2)}` : '$0.00'}
+      {usd && (
         <span
           className={classNames(
-            usdPctChange === 0
+            usd === 0
               ? ''
-              : usdPctChange > 0
+              : usd > 0
               ? 'text-green'
-              : usdPctChange < -5
+              : usd < -5
               ? 'text-red'
-              : usdPctChange < -3
+              : usd < -3
               ? 'text-yellow'
               : 'text-stone-500'
           )}
         >
           {' '}
-          {`${usdPctChange === 0 ? '' : usdPctChange > 0 ? '(+' : '('}${
-            usdPctChange === 0 ? '0.00' : usdPctChange?.toFixed(2)
-          }%)`}
+          {`${usd === 0 ? '' : usd > 0 ? '(+' : '('}${usd === 0 ? '0.00' : usd?.toFixed(2)}%)`}
         </span>
       )}
     </Typography>

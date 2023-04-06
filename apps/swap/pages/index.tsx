@@ -36,9 +36,9 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
       return (uuid0 == '00' && token.uuid == uuid1) || (uuid1 == '00' && token.uuid == uuid0)
     })
     return pool && uuid0 == '00' && token.uuid == uuid1
-      ? priceHTR * (Number(pool.reserve1) / Number(pool.reserve0))
+      ? priceHTR * (Number(pool.reserve0) / (Number(pool.reserve1) + 1000))
       : pool && uuid1 == '00' && token.uuid == uuid0
-      ? priceHTR * (Number(pool.reserve0) / Number(pool.reserve1))
+      ? priceHTR * (Number(pool.reserve1) / (Number(pool.reserve0) + 1000))
       : 0
   })
 
@@ -48,7 +48,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
 
   const prices: { [key: string]: number } = {}
   tokens_uuid_arr.forEach((element, index) => {
-    prices[element] = prices_arr[index]
+    element == '00' ? (prices[element] = priceHTR) : (prices[element] = prices_arr[index])
   })
 
   return {
@@ -104,6 +104,7 @@ const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<t
     setOutputAmount,
     setPriceImpact,
     setPool,
+    pool,
   } = useTrade()
   const [selectedPool, setSelectedPool] = useState<dbPool>()
 
@@ -260,7 +261,7 @@ const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<t
               prices={prices}
               // isWrap={isWrap}
             />
-            <SwapStatsDisclosure />
+            <SwapStatsDisclosure prices={prices} />
             <div className="p-3 pt-0">
               <Checker.Connected fullWidth size="md">
                 <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>

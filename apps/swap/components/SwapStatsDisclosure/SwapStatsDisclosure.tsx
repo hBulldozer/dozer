@@ -12,7 +12,11 @@ import { Price, getTokens } from '@dozer/currency'
 import { ChainId } from '@dozer/chain'
 // import { useSettings } from '../../lib/state/storage'
 
-export const SwapStatsDisclosure: FC = () => {
+interface SwapStats {
+  prices: { [key: string]: number }
+}
+
+export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
   const trade = useTrade()
   // const [showRoute, setShowRoute] = useState(false)
   const { mainCurrency, otherCurrency } = useTrade()
@@ -65,10 +69,10 @@ export const SwapStatsDisclosure: FC = () => {
           {({ open }) => (
             <>
               <div className="flex justify-between items-center bg-white bg-opacity-[0.04] hover:bg-opacity-[0.08] rounded-2xl px-4 mb-4 py-2.5 gap-2">
-                <Rate token1={mainCurrency} token2={otherCurrency}>
+                <Rate token1={mainCurrency} token2={otherCurrency} prices={prices}>
                   {({ content, usdPrice, toggleInvert }) => (
                     <div
-                      className="text-sm text-stone-300 hover:text-stone-50 cursor-pointer flex items-center h-full gap-1 font-semibold tracking-tight h-[36px] flex items-center truncate"
+                      className="text-sm text-stone-300 hover:text-stone-50 cursor-pointer gap-1 font-semibold tracking-tight h-[36px] flex items-center truncate"
                       onClick={toggleInvert}
                     >
                       <Tooltip

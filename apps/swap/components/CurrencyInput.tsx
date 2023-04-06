@@ -67,6 +67,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
       loading={loading}
       disabled={disabled}
       usdPctChange={inputType === TradeType.EXACT_OUTPUT ? usdPctChange : undefined}
+      prices={prices}
     />
   )
 }
