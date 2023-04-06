@@ -81,7 +81,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                       />{' '}
                       {content}{' '}
                       {usdPrice && trade.amountSpecified ? (
-                        <span className="font-medium text-stone-500">(${usdPrice})</span>
+                        <span className="font-medium text-stone-500">(${Number(usdPrice).toFixed(2)})</span>
                       ) : null}
                     </div>
                   )}
