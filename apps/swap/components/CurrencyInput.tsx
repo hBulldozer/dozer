@@ -12,6 +12,7 @@ interface CurrencyInput extends CurrencyInputProps {
   id: string
   inputType: TradeType
   tradeType: TradeType
+  prices: { [key: string]: number }
   // isWrap?: boolean
 }
 
@@ -31,10 +32,11 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   tradeType,
   disabled,
   loading = false,
+  prices,
   // isWrap = false,
 }) => {
   const trade = useTrade()
-  const { data: prices } = usePrices(chainId ? chainId : ChainId.HATHOR)
+  // const { data: prices } = usePrices(chainId ? chainId : ChainId.HATHOR)
 
   // If output field and (un)wrapping, set to _value
   let value = inputType === tradeType ? _value.toString() : trade ? trade?.outputAmount?.toFixed(2).toString() : ''

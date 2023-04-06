@@ -18,9 +18,46 @@ import { dbToken, dbPool } from '../interfaces'
 // import { Token as dbToken, Pool } from '@dozer/database/types'
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+  // TODO: build request to receive ChainId and filter
   const pools = await prisma.pool.findMany()
   const tokens = await prisma.token.findMany()
-  return { props: { pools: JSON.parse(JSON.stringify(pools)), tokens: JSON.parse(JSON.stringify(tokens)) } }
+  const res = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
+  const data = await res.json()
+  const priceHTR = data.data.HTR
+  const prices_arr: number[] = tokens.map((token) => {
+    let uuid0, uuid1
+    const pool = pools.find((pool: dbPool) => {
+      uuid0 = tokens.find((token_in: dbToken) => {
+        return token_in.id === pool.token0Id
+      })?.uuid
+      uuid1 = tokens.find((token_in: dbToken) => {
+        return token_in.id === pool.token1Id
+      })?.uuid
+      return (uuid0 == '00' && token.uuid == uuid1) || (uuid1 == '00' && token.uuid == uuid0)
+    })
+    return pool && uuid0 == '00' && token.uuid == uuid1
+      ? priceHTR * (Number(pool.reserve1) / Number(pool.reserve0))
+      : pool && uuid1 == '00' && token.uuid == uuid0
+      ? priceHTR * (Number(pool.reserve0) / Number(pool.reserve1))
+      : 0
+  })
+
+  const tokens_uuid_arr: string[] = tokens.map((token: dbToken) => {
+    return token.uuid
+  })
+
+  const prices: { [key: string]: number } = {}
+  tokens_uuid_arr.forEach((element, index) => {
+    prices[element] = prices_arr[index]
+  })
+
+  return {
+    props: {
+      pools: JSON.parse(JSON.stringify(pools)),
+      tokens: JSON.parse(JSON.stringify(tokens)),
+      prices: JSON.parse(JSON.stringify(prices)),
+    },
+  }
 }
 
 function toToken(dbToken: dbToken): Token {
@@ -33,7 +70,7 @@ function toToken(dbToken: dbToken): Token {
   })
 }
 
-const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const isMounted = useIsMounted()
   const network = useNetwork((state) => state.network)
 
@@ -70,7 +107,7 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
   } = useTrade()
   const [selectedPool, setSelectedPool] = useState<dbPool>()
 
-  const { data: prices } = usePrices(network)
+  // const { data: prices } = usePrices(network)
 
   const onInput0 = async (val: string) => {
     setTradeType(TradeType.EXACT_INPUT)
@@ -190,6 +227,7 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
             inputType={TradeType.EXACT_INPUT}
             tradeType={tradeType}
             loading={!token0}
+            prices={prices}
           />
           <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
             <button
@@ -219,6 +257,7 @@ const Home: NextPage = ({ pools, tokens }: InferGetServerSidePropsType<typeof ge
               inputType={TradeType.EXACT_OUTPUT}
               tradeType={tradeType}
               loading={!token1}
+              prices={prices}
               // isWrap={isWrap}
             />
             <SwapStatsDisclosure />
