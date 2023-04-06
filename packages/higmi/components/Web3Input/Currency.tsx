@@ -21,7 +21,7 @@ export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' 
   // fundSource?: FundSource
   loading?: boolean
   includeNative?: boolean
-  prices: { [key: string]: number }
+  prices?: { [key: string]: number }
 }
 
 export const CurrencyInput: FC<CurrencyInputProps> = ({

@@ -9,13 +9,14 @@ interface RenderPayload {
   toggleInvert(): void
   content: ReactElement
   usdPrice?: string
+  prices?: { [key: string]: number }
 }
 
 interface Rate {
   token1: Token | undefined
   token2: Token | undefined
   children?: (payload: RenderPayload) => ReactNode
-  prices: { [key: string]: number }
+  prices?: { [key: string]: number }
 }
 
 export const Rate: FC<Rate> = ({ children, token1, token2, prices }) => {
@@ -64,7 +65,7 @@ export const Rate: FC<Rate> = ({ children, token1, token2, prices }) => {
   }, [])
 
   if (typeof children === 'function') {
-    return <>{children({ invert, toggleInvert, content, usdPrice })}</>
+    return <>{children({ invert, toggleInvert, content, usdPrice, prices })}</>
   }
 
   return isMounted ? (

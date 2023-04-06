@@ -70,7 +70,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
             <>
               <div className="flex justify-between items-center bg-white bg-opacity-[0.04] hover:bg-opacity-[0.08] rounded-2xl px-4 mb-4 py-2.5 gap-2">
                 <Rate token1={mainCurrency} token2={otherCurrency} prices={prices}>
-                  {({ content, usdPrice, toggleInvert }) => (
+                  {({ content, usdPrice, toggleInvert, prices }) => (
                     <div
                       className="text-sm text-stone-300 hover:text-stone-50 cursor-pointer gap-1 font-semibold tracking-tight h-[36px] flex items-center truncate"
                       onClick={toggleInvert}
