@@ -6,8 +6,8 @@ import { useInterval } from '@dozer/hooks'
 import { App, Button, classNames, Container, Typography } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
 // import { CurrencyInput } from '@dozer/wagmi/components/Web3Input/Currency'
-import { motion } from 'framer-motion'
-import React, { FC, useEffect, useState } from 'react'
+import { motion, useInView } from 'framer-motion'
+import React, { FC, useEffect, useState, useRef } from 'react'
 
 // import { Search } from './Search'
 import { CurrencyInput } from 'components/CurrencyInput'
@@ -17,7 +17,7 @@ const TITLES = ['Whenever', 'Wherever', 'Whoever']
 const VALUES = [
   { value0: '1', value1: '1.5' },
   { value0: '1.', value1: '1.5' },
-  { value0: '1.4', value1: '2,1' },
+  { value0: '1.4', value1: '2.1' },
   { value0: '1.43', value1: '2.14' },
   { value0: '1.43', value1: '2.14' },
 ]
@@ -25,6 +25,8 @@ const VALUES = [
 export const Hero: FC = () => {
   const [index, setIndex] = useState(0)
   const [valueIndex, setValueIndex] = useState<number>(-1)
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true })
 
   useInterval(() => setIndex((prev) => (prev + 1) % 3), 1500)
 
@@ -32,49 +34,65 @@ export const Hero: FC = () => {
     const setIndex = (i: number) => {
       if (i < 5) {
         setValueIndex(i)
-        setTimeout(() => setIndex(i + 1), 100)
+        setTimeout(() => setIndex(i + 1), 250)
       }
     }
-
-    setTimeout(() => setIndex(0), 2400)
-  }, [])
+    if (isInView) {
+      setTimeout(() => setIndex(0), 2400)
+    }
+  }, [isInView])
 
   return (
-    <section className="relative">
+    <section className="relative mt-52">
       <Container maxWidth="5xl" className="px-4 mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[auto_400px] flex justify-between gap-[100px]">
           <div className="relative justify-end hidden lg:flex">
             <motion.div
-              initial={{ opacity: 0, scale: 1.5 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
               transition={{
                 duration: 0.8,
                 delay: 0.7,
               }}
+              variants={{
+                visible: { opacity: 1, scale: 1 },
+                hidden: { opacity: 0, scale: 1.3 },
+              }}
             >
               <Widget id="test" maxWidth={400} className="relative">
                 <motion.div
-                  initial={{ opacity: 0.08 }}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
                   animate={{ opacity: 0 }}
                   transition={{
                     duration: 0.8,
-                    delay: 0.7,
+                    delay: 0.5,
+                  }}
+                  variants={{
+                    visible: { opacity: 0 },
+                    hidden: { opacity: 0.08 },
                   }}
                   className="bg-white absolute inset-0 z-[10]"
                 />
                 <Widget.Content>
                   <motion.div
-                    initial={{ opacity: 0, scale: 1.05 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    variants={{
+                      visible: { opacity: 1, scale: 1 },
+                      hidden: { opacity: 0, scale: 1.05 },
+                    }}
                     transition={{
                       duration: 0.5,
-                      delay: 1.6,
+                      delay: 1.4,
                     }}
                   >
-                    <div className={classNames('p-3 mx-0.5 grid grid-cols-2 items-center pb-4 font-medium')}>
+                    <div ref={ref} className={classNames('p-3 mx-0.5 grid grid-cols-2 items-center pb-4 font-medium')}>
                       <App.NavItemList hideOnMobile={false}>
-                        <App.NavItem href="https://www.sushi.com/swap" label="Swap" />
-                        {/* <App.NavItem href="https://www.sushi.com/xswap" label="xSwap" /> */}
+                        <App.NavItem href="https://www.dozer.finance/swap" label="Swap" />
                       </App.NavItemList>
                     </div>
                   </motion.div>
@@ -116,14 +134,19 @@ export const Hero: FC = () => {
                     />
                     <div className="p-3 pt-0">
                       <motion.div
-                        initial={{ opacity: 0, scale: 1.05 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={{
+                          visible: { opacity: 1, scale: 1 },
+                          hidden: { opacity: 0, scale: 1.05 },
+                        }}
                         transition={{
                           duration: 0.8,
-                          delay: 3,
+                          delay: 2,
                         }}
                       >
-                        <Button as="a" href="https://sushi.com/swap" size="md" fullWidth className="relative z-10">
+                        <Button as="a" href="https://dozer.finance/swap" size="md" fullWidth className="relative z-10">
                           Trade Now
                         </Button>
                       </motion.div>
