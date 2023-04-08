@@ -7,7 +7,7 @@ export const useBalance = (address: string) => {
       fetch('https://node1.testnet.hathor.network/v1a/thin_wallet/address_balance?address=' + address).then(
         (response) => response.json()
       ),
-    staleTime: Infinity,
+    staleTime: 100,
     enabled: Boolean(address),
   })
 }

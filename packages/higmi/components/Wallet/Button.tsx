@@ -68,8 +68,8 @@ export const Button = <C extends React.ElementType>({
             token_balance: data[token].received - data[token].spent,
           })
         }
+        setBalance(balance_data)
       }
-      setBalance(balance_data)
     } else {
       // setBalance([])
     }

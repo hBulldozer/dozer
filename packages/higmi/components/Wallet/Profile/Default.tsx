@@ -3,9 +3,9 @@ import { BuyCrypto, CopyHelper, IconButton, JazzIcon, Typography } from '@dozer/
 import { CreditCardIcon, DuplicateIcon, ExternalLinkIcon, LogoutIcon } from '@heroicons/react/outline'
 import { ChevronRightIcon } from '@heroicons/react/solid'
 import Image from 'next/legacy/image'
-import React, { Dispatch, FC, SetStateAction, useMemo } from 'react'
+import React, { Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { usePrices } from '@dozer/react-query'
+import { useBalance, usePrices } from '@dozer/react-query'
 import { ProfileView } from './Profile'
 import { useAccount } from '@dozer/zustand'
 import { shortenAddress } from './Utils'
@@ -44,8 +44,30 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
   }
   // useDisconnect()
 
-  const { data: prices } = usePrices(chainId)
-  const balanceAsUsd = prices ? prices['00'] : 0
+  // const { data: prices } = usePrices(chainId)
+  const [usdPrice, setUsdPrice] = useState<number>(0)
+  // const balanceAsUsd = prices ? prices['00'] : 0
+  const [showBalance, setShowBalance] = useState<number | undefined>(0)
+
+  useEffect(() => {
+    setShowBalance(
+      balance?.find((token) => {
+        return token.token_symbol == 'HTR'
+      })?.token_balance
+    )
+  }, [balance])
+
+  const updatePrice = useCallback(async () => {
+    const res = await fetch('/kucoin/prices?currencies=HTR')
+    const data = await res.json()
+    const priceHTR = data.data.HTR
+    if (priceHTR) setUsdPrice(priceHTR)
+    else setUsdPrice(0)
+  }, [])
+
+  useEffect(() => {
+    updatePrice().catch(console.error)
+  }, [updatePrice])
 
   return (
     <>
@@ -87,17 +109,12 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
         <div className="flex flex-col items-center justify-center gap-2">
           <Typography variant="h1" className="whitespace-nowrap">
             {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-            {balance.length > 0
-              ? balance.map((token) => {
-                  if (token.token_symbol === 'HTR') {
-                    return token.token_balance / 100
-                  }
-                })
-              : 0.0}{' '}
-            HTR
+            {showBalance ? (showBalance / 100).toString() + ' HTR' : 'Loading balance...'}
           </Typography>
           <Typography weight={600} className="text-stone-400">
-            ${balanceAsUsd?.toFixed(2)}
+            {showBalance && showBalance != 0 && usdPrice != 0
+              ? '$' + ((showBalance / 100) * usdPrice).toFixed(2)
+              : 'Loading KuCoin price...'}
           </Typography>
         </div>
       </div>
