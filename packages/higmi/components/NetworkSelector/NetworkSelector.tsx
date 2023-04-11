@@ -2,7 +2,7 @@ import { Popover } from '@headlessui/react'
 import { ChevronDownIcon, SearchIcon } from '@heroicons/react/solid'
 import { ChainId, chainName } from '@dozer/chain'
 import { classNames, DEFAULT_INPUT_UNSTYLED, NetworkIcon, Typography } from '@dozer/ui'
-import React, { FC, useState } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 import { useNetwork } from '@dozer/zustand'
 // import { useNetwork, useSwitchNetwork } from 'wagmi'
 
@@ -15,6 +15,12 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
   // const { chain } = useNetwork()
   // const { switchNetwork } = useSwitchNetwork()
   const { network, setNetwork } = useNetwork()
+
+  const [rendNetwork, setRendNetwork] = useState<number>(ChainId.HATHOR)
+
+  useEffect(() => {
+    setRendNetwork(network)
+  }, [network])
 
   if (!network) return <></>
 
@@ -54,7 +60,7 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
                 </Typography>
               </div>
               {/* {chain?.id === el && <div className="w-2 h-2 mr-1 rounded-full bg-green" />} */}
-              {network === el && <div className="w-2 h-2 mr-1 rounded-full bg-green" />}
+              {rendNetwork === el && <div className="w-2 h-2 mr-1 rounded-full bg-green" />}
             </Popover.Button>
           ))}
       </div>
@@ -72,10 +78,10 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
                 'flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] hover:text-white h-[38px] rounded-xl px-2 pl-3 !font-semibold !text-sm text-stone-200'
               )}
             >
-              <NetworkIcon type="naked" chainId={network} width={20} height={20} />
+              <NetworkIcon type="naked" chainId={rendNetwork} width={20} height={20} />
               <div className="hidden sm:block">
                 {/* {chainName?.[chainId]?.replace('Mainnet Shard 0', '')?.replace('Mainnet', '')?.trim()} */}
-                {chainName?.[network]}
+                {chainName?.[rendNetwork]}
               </div>
               <ChevronDownIcon
                 width={20}
