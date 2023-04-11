@@ -3,8 +3,6 @@ import { Web3Input } from '@dozer/higmi'
 import { CurrencyInputProps } from '@dozer/higmi/components/Web3Input/Currency'
 import React, { FC, useMemo } from 'react'
 import { useTrade } from '@dozer/zustand'
-import { usePrices } from '@dozer/react-query'
-import { ChainId } from '@dozer/chain'
 import { Token } from '@dozer/currency'
 
 // import { useTrade } from '../utils/TradeProvider'

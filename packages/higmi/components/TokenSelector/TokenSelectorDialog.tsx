@@ -1,30 +1,16 @@
 // import { AddressZero } from '@ethersproject/constants'
-import { SearchIcon } from '@heroicons/react/outline'
-import { XCircleIcon } from '@heroicons/react/solid'
 import chain from '@dozer/chain'
 import { Amount, Token } from '@dozer/currency'
-import { FundSource, useIsSmScreen } from '@dozer/hooks'
+import { useIsSmScreen } from '@dozer/hooks'
 // import { Fraction } from '@dozer/math'
-import {
-  classNames,
-  Currency,
-  DEFAULT_INPUT_PADDING,
-  DEFAULT_INPUT_UNSTYLED,
-  Dialog,
-  Input,
-  Loader,
-  NetworkIcon,
-  SlideIn,
-  Typography,
-} from '@dozer/ui'
-import React, { FC, useCallback, useEffect } from 'react'
+import { Currency, Dialog, NetworkIcon, SlideIn, Typography } from '@dozer/ui'
+import { FC, useCallback } from 'react'
 
 // import { BalanceMap } from '../../hooks/useBalance/types'
 // import { TokenListFilterByQuery } from '../TokenListFilterByQuery'
 import { TokenSelectorProps } from './TokenSelector'
 // import { TokenSelectorImportRow } from './TokenSelectorImportRow'
 import { TokenSelectorRow } from './TokenSelectorRow'
-import { TokenSelectorSettingsOverlay } from './TokenSelectorSettingsOverlay'
 
 import { TokenBalance, getTokens } from '@dozer/currency'
 
@@ -56,7 +42,6 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
   includeNative,
   tokens,
 }) => {
-  const isSmallScreen = useIsSmScreen()
   // const currencies = [
   //   new Token({ uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' }),
   //   new Token({ uuid: '0das23asds123', decimals: 2, name: 'Dozer', symbol: 'DZR' }),

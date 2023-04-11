@@ -2,10 +2,8 @@ import { BuyCrypto, CopyHelper, IconButton, JazzIcon, Typography } from '@dozer/
 // import { useBalance, useDisconnect, useEnsAvatar } from '@dozer/zustand'
 import { CreditCardIcon, DuplicateIcon, ExternalLinkIcon, LogoutIcon } from '@heroicons/react/outline'
 import { ChevronRightIcon } from '@heroicons/react/solid'
-import Image from 'next/legacy/image'
-import React, { Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react'
+import { Dispatch, FC, SetStateAction, useCallback, useEffect, useState } from 'react'
 
-import { useBalance, usePrices } from '@dozer/react-query'
 import { ProfileView } from './Profile'
 import { useAccount } from '@dozer/zustand'
 import { shortenAddress } from './Utils'

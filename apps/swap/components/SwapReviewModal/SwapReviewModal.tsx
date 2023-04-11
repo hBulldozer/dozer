@@ -1,10 +1,7 @@
-import { ChainId } from '@dozer/chain'
-import { Button, Dialog, Dots } from '@dozer/ui'
-import { useSettings, useAccount, useTrade } from '@dozer/zustand'
+import { Button, Dialog } from '@dozer/ui'
+import { useAccount, useTrade } from '@dozer/zustand'
 import React, { FC, ReactNode, useCallback, useMemo, useState } from 'react'
-import { Amount, getTokens } from '@dozer/currency'
 import { SwapReviewModalBase } from './SwapReviewModalBase'
-import Image from 'next/legacy/image'
 import { XIcon } from '@heroicons/react/solid'
 
 interface SwapReviewModalLegacy {
@@ -15,23 +12,12 @@ interface SwapReviewModalLegacy {
 
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
   const trade = useTrade()
-  const { address: account } = useAccount()
+  useAccount()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
-  const [bannerIndex] = useState(Math.floor(Math.random() * 8))
+  const [] = useState(Math.floor(Math.random() * 8))
 
-  const [input0, input1] = useMemo(
-    () => [trade?.amountSpecified, trade?.outputAmount],
-    [trade?.amountSpecified, trade?.outputAmount]
-  )
-
-  const onSwapSuccess = useCallback(() => {
-    setCard(true)
-
-    setTimeout(() => {
-      setOpen(false)
-    }, 500)
-  }, [onSuccess])
+  const [] = useMemo(() => [trade?.amountSpecified, trade?.outputAmount], [trade?.amountSpecified, trade?.outputAmount])
 
   const onCloseCard = useCallback(() => {
     onSuccess()

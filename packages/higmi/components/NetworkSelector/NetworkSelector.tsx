@@ -1,8 +1,8 @@
 import { Popover } from '@headlessui/react'
-import { ChevronDownIcon, SearchIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon } from '@heroicons/react/solid'
 import { ChainId, chainName } from '@dozer/chain'
 import { classNames, DEFAULT_INPUT_UNSTYLED, NetworkIcon, Typography } from '@dozer/ui'
-import React, { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import { useNetwork } from '@dozer/zustand'
 // import { useNetwork, useSwitchNetwork } from 'wagmi'
 

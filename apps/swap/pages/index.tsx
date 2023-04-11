@@ -1,13 +1,11 @@
 import { ChevronDownIcon } from '@heroicons/react/solid'
-import { App, Button, classNames, Container, Link, Typography, Widget } from '@dozer/ui'
+import { App, Button, classNames, Widget } from '@dozer/ui'
 import { Layout } from '../components/Layout'
 import { CurrencyInput } from '../components/CurrencyInput'
 import { Token } from '@dozer/currency'
 import { useState, useCallback, useMemo, useEffect, FC } from 'react'
-import { useIsMounted } from '@dozer/hooks'
 import { TradeType } from '../components/utils/TradeType'
 import { useNetwork, useSettings, useTrade } from '@dozer/zustand'
-import { usePrices } from '@dozer/react-query'
 import { SwapStatsDisclosure, SettingsOverlay } from '../components'
 import { Checker } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
@@ -72,7 +70,6 @@ function toToken(dbToken: dbToken): Token {
 }
 
 const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const isMounted = useIsMounted()
   const network = useNetwork((state) => state.network)
 
   const inputToken = useMemo(() => {
@@ -109,7 +106,6 @@ const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<t
     setOutputAmount,
     setPriceImpact,
     setPool,
-    pool,
   } = useTrade()
   const [selectedPool, setSelectedPool] = useState<dbPool>()
 
@@ -128,8 +124,6 @@ const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<t
   const switchCurrencies = async () => {
     setTokens(([prevSrc, prevDst]) => [prevDst, prevSrc])
   }
-
-  const amounts = useMemo(() => [input0], [input0])
 
   const onSuccess = () => {
     console.log('sucesso')
