@@ -22,6 +22,7 @@ export type TokenSelectorProps = {
   // onRemoveToken?({ uuid }: { uuid: string }): void
   // fundSource?: FundSource
   includeNative?: boolean
+  tokens?: Token[]
 }
 
 export const TokenSelector: FC<TokenSelectorProps> = memo(
@@ -35,6 +36,7 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
     open,
     // customTokenMap = {},
     includeNative,
+    tokens,
     ...props
   }) => {
     const { address } = useAccount()
@@ -78,10 +80,11 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
           // fundSource={fundSource}
           onSelect={onSelect}
           includeNative={includeNative}
+          tokens={tokens}
           {...props}
         />
       )
-    }, [address, balances, chainId, isMounted, onSelect, open, pricesMap, props, variant])
+    }, [address, balances, chainId, isMounted, onSelect, open, pricesMap, props, variant, tokens])
   },
   (prevProps, nextProps) => {
     return (

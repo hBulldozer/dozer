@@ -5,6 +5,7 @@ import React, { FC, useMemo } from 'react'
 import { useTrade } from '@dozer/zustand'
 import { usePrices } from '@dozer/react-query'
 import { ChainId } from '@dozer/chain'
+import { Token } from '@dozer/currency'
 
 // import { useTrade } from '../utils/TradeProvider'
 
@@ -13,6 +14,7 @@ interface CurrencyInput extends CurrencyInputProps {
   inputType: TradeType
   tradeType: TradeType
   prices: { [key: string]: number }
+  tokens?: Token[]
   // isWrap?: boolean
 }
 
@@ -33,6 +35,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   disabled,
   loading = false,
   prices,
+  tokens,
   // isWrap = false,
 }) => {
   const trade = useTrade()
@@ -68,6 +71,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
       disabled={disabled}
       usdPctChange={inputType === TradeType.EXACT_OUTPUT ? usdPctChange : undefined}
       prices={prices}
+      tokens={tokens}
     />
   )
 }

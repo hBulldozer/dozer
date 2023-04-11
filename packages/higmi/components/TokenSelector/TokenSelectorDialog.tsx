@@ -17,7 +17,7 @@ import {
   SlideIn,
   Typography,
 } from '@dozer/ui'
-import React, { FC, useCallback } from 'react'
+import React, { FC, useCallback, useEffect } from 'react'
 
 // import { BalanceMap } from '../../hooks/useBalance/types'
 // import { TokenListFilterByQuery } from '../TokenListFilterByQuery'
@@ -54,13 +54,18 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
   pricesMap,
   // fundSource,
   includeNative,
+  tokens,
 }) => {
   const isSmallScreen = useIsSmScreen()
   // const currencies = [
   //   new Token({ uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' }),
   //   new Token({ uuid: '0das23asds123', decimals: 2, name: 'Dozer', symbol: 'DZR' }),
   // ]
-  const currencies = getTokens(chainId)
+  const currencies = tokens
+    ? tokens?.filter((token) => {
+        return token.chainId == chainId
+      })
+    : getTokens(chainId)
 
   const handleSelect = useCallback(
     (currency: Token) => {

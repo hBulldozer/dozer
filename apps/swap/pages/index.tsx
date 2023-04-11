@@ -15,6 +15,7 @@ import { warningSeverity } from '../components/utils/functions'
 import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from 'next'
 import { prisma } from '@dozer/database'
 import { dbToken, dbPool } from '../interfaces'
+import { ChainId } from '@dozer/chain'
 // import { Token as dbToken, Pool } from '@dozer/database/types'
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
@@ -77,18 +78,22 @@ const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<t
   const inputToken = useMemo(() => {
     return toToken(
       tokens.find((obj: dbToken) => {
-        return obj.symbol == 'DZR' && obj.chainId == network
+        return obj.symbol == 'DZR' && obj.chainId == (network ? network : ChainId.HATHOR)
       })
     )
-  }, [])
+  }, [network, tokens])
 
   const outputToken = useMemo(() => {
     return toToken(
       tokens.find((obj: dbToken) => {
-        return obj.symbol == 'HTR' && obj.chainId == network
+        return obj.symbol == 'HTR' && obj.chainId == (network ? network : ChainId.HATHOR)
       })
     )
-  }, [])
+  }, [network, tokens])
+
+  useEffect(() => {
+    setTokens([inputToken, outputToken])
+  }, [inputToken, network, outputToken])
 
   const [input0, setInput0] = useState<string>('')
   const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([inputToken, outputToken])
@@ -176,12 +181,12 @@ const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<t
             : Number(selectedPool.reserve0),
       })
       setAmountSpecified(Number(input0))
-      setMainCurrencyPrice(prices && token0 ? prices[token0.uuid] : 0)
-      setOtherCurrencyPrice(prices && token1 ? prices[token1.uuid] : 0)
+      setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
+      setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
       setOutputAmount()
       // setInput1(outputAmount ? outputAmount.toString() : '')
     }
-  }, [pools, outputAmount, token0, token1, input0, input1, prices, network, selectedPool])
+  }, [pools, outputAmount, token0, token1, input0, input1, prices, network, selectedPool, tokens])
 
   // const onSuccess = useCallback(() => {
   //   setInput0('')
@@ -229,6 +234,9 @@ const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<t
             tradeType={tradeType}
             loading={!token0}
             prices={prices}
+            tokens={tokens.map((token: Token) => {
+              return new Token(token)
+            })}
           />
           <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
             <button
@@ -259,6 +267,9 @@ const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<t
               tradeType={tradeType}
               loading={!token1}
               prices={prices}
+              tokens={tokens.map((token: Token) => {
+                return new Token(token)
+              })}
               // isWrap={isWrap}
             />
             <SwapStatsDisclosure prices={prices} />

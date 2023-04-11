@@ -22,6 +22,7 @@ export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' 
   loading?: boolean
   includeNative?: boolean
   prices?: { [key: string]: number }
+  tokens?: Token[]
 }
 
 export const CurrencyInput: FC<CurrencyInputProps> = ({
@@ -43,6 +44,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   includeNative = true,
   loading,
   prices,
+  tokens,
 }) => {
   const isMounted = useIsMounted()
   const account = useAccount()
@@ -152,6 +154,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             // tokenMap={tokenMap}
             // customTokenMap={customTokenMap}
             includeNative={includeNative}
+            tokens={tokens}
           />
         )}
       </div>
