@@ -12,8 +12,9 @@ import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { PAGE_SIZE } from '../contants'
 import { APR_COLUMN, FEES_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN } from './Cells/columns'
 import { getTokens } from '@dozer/currency'
-import { ChainId } from '@dozer/chain'
+import { ChainId, Network } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
+import { useNetwork } from '@dozer/zustand'
 // import { InferGetServerSidePropsType } from 'next'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -132,7 +133,17 @@ export const PoolsTable: FC = (pools) => {
     pageSize: PAGE_SIZE,
   })
 
-  const pools_array: Pair[] = Object.values(pools)
+  const [rendNetwork, setRendNetwork] = useState<number>(ChainId.HATHOR)
+  const { network } = useNetwork()
+
+  useEffect(() => {
+    setRendNetwork(network)
+  }, [network])
+
+  const _pools_array: Pair[] = Object.values(pools)
+  const pools_array = _pools_array.filter((pool) => {
+    return pool.chainId == rendNetwork
+  })
 
   const args = useMemo(
     () => ({
