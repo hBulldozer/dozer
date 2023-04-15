@@ -28,7 +28,7 @@ export const PairQuickHoverTooltip: FC<PairQuickHoverTooltipProps> = ({ row }) =
                 {token0.symbol} <span className="text-stone-500">/</span> {token1.symbol}
               </Typography>
               {/* <Typography variant="xxs" className="text-stone-400">
-                SushiSwap Farm
+                dozer Farm
               </Typography> */}
             </div>
           </div>

@@ -4,6 +4,13 @@ import { Pool, Token, daySnapshot, hourSnapshot } from '@dozer/database'
 export type Maybe<T> = T | null
 export type InputMaybe<T> = Maybe<T>
 
+export enum PairState {
+  LOADING,
+  NOT_EXISTS,
+  EXISTS,
+  INVALID,
+}
+
 export type UserWithFarm = {
   id: number
   chainId: number

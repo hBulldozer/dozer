@@ -44,7 +44,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {input0?.toSignificant(6)}{' '}
+                  {input0?.multiply(100).toSignificant(6)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input0 && (
@@ -71,7 +71,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {input1?.toSignificant(6)}{' '}
+                  {input1?.multiply(100).toSignificant(6)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input1 && (

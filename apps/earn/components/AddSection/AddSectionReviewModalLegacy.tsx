@@ -78,24 +78,8 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
 
   const [minAmount0, minAmount1] = useMemo(() => {
     return [
-      input0
-        ? poolState === 0
-          ? input0
-          : Amount.fromRawAmount(
-              input0.currency,
-              // calculateSlippageAmount(input0, slippagePercent)[0]
-              Number(input0)
-            )
-        : undefined,
-      input1
-        ? poolState === 0
-          ? input1
-          : Amount.fromRawAmount(
-              input1.currency,
-              // calculateSlippageAmount(input1, slippagePercent)[0]
-              Number(input1)
-            )
-        : undefined,
+      input0 ? (poolState === 0 ? input0 : undefined) : undefined,
+      input1 ? (poolState === 0 ? input1 : undefined) : undefined,
     ]
   }, [
     poolState,
@@ -176,31 +160,20 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   //   onSettled,
   //   onSuccess: () => setOpen(false),
   // })
+  const isWritePending = false
 
   return useMemo(
     () => (
       <>
-        {/* {children({ isWritePending, setOpen })} */}
+        {children({ isWritePending, setOpen })}
         <AddSectionReviewModal chainId={chainId} input0={input0} input1={input1} open={open} setOpen={setOpen}>
           <Approve
             onSuccess={() => {}}
             className="flex-grow !justify-end"
             components={
               <Approve.Components>
-                <Approve.Token
-                  size="md"
-                  className="whitespace-nowrap"
-                  fullWidth
-                  amount={input0}
-                  address={'meu endereço'}
-                />
-                <Approve.Token
-                  size="md"
-                  className="whitespace-nowrap"
-                  fullWidth
-                  amount={input1}
-                  address={'my address'}
-                />
+                <Approve.Token size="md" className="whitespace-nowrap" fullWidth amount={input0} address={address} />
+                <Approve.Token size="md" className="whitespace-nowrap" fullWidth amount={input1} address={address} />
               </Approve.Components>
             }
             render={({ approved }) => {
