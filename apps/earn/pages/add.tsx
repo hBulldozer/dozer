@@ -26,7 +26,7 @@ const LINKS: BreadcrumbLink[] = [
   },
 ]
 
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+export const getServerSideProps: GetServerSideProps = async ({ req, query }) => {
   const pools = await prisma.pool.findMany()
   const tokens = await prisma.token.findMany()
   const res = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
@@ -64,21 +64,44 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
       pools: JSON.parse(JSON.stringify(pools)),
       tokens: JSON.parse(JSON.stringify(tokens)),
       prices: JSON.parse(JSON.stringify(prices)),
+      query: query,
     },
   }
 }
 
-const Add: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const [chainId, setChainId] = useState(ChainId.HATHOR)
+const Add: NextPage = ({ pools, tokens, prices, query }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const [chainId, setChainId] = useState(query?.chainId ? query.chainId : ChainId.HATHOR)
   // const [fee, setFee] = useState(2)
 
-  const [token0, setToken0] = useState<Token | undefined>()
-  const [token1, setToken1] = useState<Token | undefined>()
+  const [initialToken0, setInitialToken0] = useState(
+    query?.token0 && query?.chainId
+      ? toToken(
+          tokens.find((token: dbToken) => {
+            return query.token0 == token.symbol
+          })
+        )
+      : undefined
+  )
+
+  const [initialToken1, setInitialToken1] = useState(
+    query?.token1 && query?.chainId
+      ? toToken(
+          tokens.find((token: dbToken) => {
+            return query.token1 == token.symbol
+          })
+        )
+      : undefined
+  )
+
+  console.log(initialToken0, initialToken1)
+
+  const [token0, setToken0] = useState<Token | undefined>(initialToken0)
+  const [token1, setToken1] = useState<Token | undefined>(initialToken1)
 
   useEffect(() => {
-    setToken0(undefined)
-    setToken1(undefined)
-  }, [chainId])
+    setToken0(initialToken0)
+    setToken1(initialToken1)
+  }, [chainId, initialToken0, initialToken1])
 
   // Reset default fee if switching networks and not on a trident enabled network
   useEffect(() => {
@@ -276,7 +299,7 @@ const _Add: FC<AddProps> = ({
 
         <Widget id="addLiquidity" maxWidth={400}>
           <Widget.Content>
-            <Widget.Header title="4. Add Liquidity">{/* <SettingsOverlay /> */}</Widget.Header>
+            <Widget.Header title="2. Add Liquidity">{/* <SettingsOverlay /> */}</Widget.Header>
             <Web3Input.Currency
               className="p-3"
               value={input0}
@@ -312,7 +335,7 @@ const _Add: FC<AddProps> = ({
               />
               <div className="p-3">
                 <Checker.Connected fullWidth size="md">
-                  <Checker.Pool poolExist={selectedPool ? true : false}>
+                  <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
                     {/* <Checker.Network fullWidth size="md" chainId={chainId}> */}
                     <Checker.Amounts
                       fullWidth
