@@ -34,15 +34,47 @@ import {
 // import { GET_POOL_TYPE_MAP } from '../../lib/constants'
 
 import { prisma } from '@dozer/database'
+import { dbPool, dbToken } from '../../interfaces'
 
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const pre_pool = await prisma.pool.findUnique({
     where: { id: query.id?.toString() },
     include: { hourSnapshots: { orderBy: { date: 'desc' } }, daySnapshots: { orderBy: { date: 'desc' } } },
   })
+  const pools = await prisma.pool.findMany()
   const tokens = await prisma.token.findMany()
   const pair: Pair = pairFromPoolAndTokens(pre_pool, tokens)
-  return { props: { pair } }
+  const res = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
+  const data = await res.json()
+  const priceHTR = Number(data.data.HTR)
+  const prices_arr: number[] = tokens.map((token) => {
+    let uuid0, uuid1
+    const pool = pools.find((pool: dbPool) => {
+      uuid0 = tokens.find((token_in: dbToken) => {
+        return token_in.id === pool.token0Id
+      })?.uuid
+      uuid1 = tokens.find((token_in: dbToken) => {
+        return token_in.id === pool.token1Id
+      })?.uuid
+      return (uuid0 == '00' && token.uuid == uuid1) || (uuid1 == '00' && token.uuid == uuid0)
+    })
+    return pool && uuid0 == '00' && token.uuid == uuid1
+      ? priceHTR * (Number(pool.reserve0) / (Number(pool.reserve1) + 1000))
+      : pool && uuid1 == '00' && token.uuid == uuid0
+      ? priceHTR * (Number(pool.reserve1) / (Number(pool.reserve0) + 1000))
+      : 0
+  })
+
+  const tokens_uuid_arr: string[] = tokens.map((token: dbToken) => {
+    return token.uuid
+  })
+
+  const prices: { [key: string]: number } = {}
+  tokens_uuid_arr.forEach((element, index) => {
+    element == '00' ? (prices[element] = priceHTR) : (prices[element] = prices_arr[index])
+  })
+
+  return { props: { pair, prices } }
 }
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
@@ -60,7 +92,7 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 //   )
 // }
 
-const Pool = ({ pair }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Pool = ({ pair, prices }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter()
   //console.log(pair.hourSnapshots, pair.daySnapshots)
   // const { data } = useSWR<{ pair: Pair }>(`/earn/api/pool/${router.query.id}`, (url) =>
@@ -77,7 +109,7 @@ const Pool = ({ pair }: InferGetServerSidePropsType<typeof getServerSideProps>) 
       <Layout breadcrumbs={LINKS({ pair })}>
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-9">
-            <PoolHeader pair={pair} />
+            <PoolHeader pair={pair} prices={prices} />
             <hr className="my-3 border-t border-stone-200/5" />
             <PoolChart pair={pair} />
             <AppearOnMount>

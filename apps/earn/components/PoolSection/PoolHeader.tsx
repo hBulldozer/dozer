@@ -15,10 +15,11 @@ import { FarmRewardsAvailableTooltip } from '../FarmRewardsAvailableTooltip'
 
 interface PoolHeader {
   pair: Pair
+  prices: { [key: string]: number }
 }
 
-export const PoolHeader: FC<PoolHeader> = ({ pair }) => {
-  const { data: prices } = usePrices(pair.chainId)
+export const PoolHeader: FC<PoolHeader> = ({ pair, prices }) => {
+  // const { data: prices } = usePrices(pair.chainId)
   // console.log({ pair })
   const { token0, token1, reserve1, reserve0, liquidityToken } = useTokensFromPair(pair)
   // const price = useMemo(() => new Price({ baseAmount: reserve0, quoteAmount: reserve1 }), [reserve0, reserve1])
@@ -30,8 +31,8 @@ export const PoolHeader: FC<PoolHeader> = ({ pair }) => {
         <div className="flex gap-1">
           <NetworkIcon type="naked" chainId={pair.chainId} width={16} height={16} />
           <Typography variant="xs" className="text-stone-500">
-            {/* {chains[pair.chainId].name} */}
-            HATHOR
+            {chains[pair.chainId].name}
+            {/* HATHOR */}
           </Typography>
         </div>
         <div className="flex flex-col gap-6 sm:flex-row sm:justify-between sm:items-center">
@@ -55,8 +56,8 @@ export const PoolHeader: FC<PoolHeader> = ({ pair }) => {
                 </Typography>
               </div>
               <Typography variant="xs" className="text-stone-300">
-                Fee: 1%
-                {/* {pair.swapFee / 100}% */}
+                {/* Fee: 1% */}
+                Fee: {pair.swapFee}%
               </Typography>
             </Link.External>
           </div>
@@ -71,9 +72,10 @@ export const PoolHeader: FC<PoolHeader> = ({ pair }) => {
                   Rewards: {formatPercent(pair.incentiveApr)}
                 </Typography>
               )} */}
-              <Typography variant="sm" weight={400} as="span" className="text-stone-400">
+              {/* <Typography variant="sm" weight={400} as="span" className="text-stone-400">
                 Fees: {formatPercent(1)}
-              </Typography>
+              </Typography> */}
+              {/* Don't know what these "fees" are */}
             </div>
           </div>
         </div>
@@ -84,10 +86,10 @@ export const PoolHeader: FC<PoolHeader> = ({ pair }) => {
           <Typography variant="sm" weight={600} className="text-stone-300">
             <AppearOnMount>
               {token0.symbol} ={' '}
-              {prices?.[token1.uuid]
-                ? // ? formatUSD(Number(price.toFixed(6)) * Number(prices[token1.uuid].toSignificant(6)))
-                  formatUSD(100)
-                : `$0.00`}
+              {prices?.[token0.uuid]
+                ? '$' + prices[token0.uuid].toFixed(2)
+                : // ?  formatUSD(100)
+                  `$0.00`}
             </AppearOnMount>
           </Typography>
         </div>
@@ -96,10 +98,10 @@ export const PoolHeader: FC<PoolHeader> = ({ pair }) => {
           <Typography variant="sm" weight={600} className="text-stone-300">
             <AppearOnMount>
               {token1.symbol} ={' '}
-              {prices?.[token0.uuid]
-                ? // ? formatUSD(Number(prices[token0.uuid].toSignificant(6)) / Number(price.toSignificant(6)))
-                  formatUSD(100)
-                : '$0.00'}{' '}
+              {prices?.[token1.uuid]
+                ? '$' + prices[token1.uuid].toFixed(2)
+                : // ?  formatUSD(100)
+                  `$0.00`}
             </AppearOnMount>
           </Typography>
         </div>

@@ -69,6 +69,7 @@ export function pairFromPoolAndTokens(
         liquidityUSD: pool.liquidityUSD,
         volumeUSD: pool.volumeUSD,
         feeUSD: pool.feeUSD,
+        swapFee: pool.swapFee,
         apr: pool.apr,
         token0: tokens[Number(pool.token0Id)],
         token1: tokens[Number(pool.token1Id)],
