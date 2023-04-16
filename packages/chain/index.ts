@@ -100,6 +100,6 @@ export const chainNameToChainId = Object.fromEntries(CHAINS.map((data): [string]
 export const chainName = Object.fromEntries(CHAINS.map((data): [number, string] => [data.chainId, data.name]))
 
 // Chain Id => Chain mapping
-export const chains = Object.fromEntries(CHAINS.map((data): [Chain] => [new Chain(data)]))
+export const chains = Object.fromEntries(CHAINS.map((data): [ChainId, Chain] => [data.chainId, new Chain(data)]))
 
 export default chains

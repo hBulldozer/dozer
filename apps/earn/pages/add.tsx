@@ -70,7 +70,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
 
 const Add: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [chainId, setChainId] = useState(ChainId.HATHOR)
-  const [fee, setFee] = useState(2)
+  // const [fee, setFee] = useState(2)
 
   const [token0, setToken0] = useState<Token | undefined>()
   const [token1, setToken1] = useState<Token | undefined>()
@@ -92,47 +92,9 @@ const Add: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<ty
     <Layout breadcrumbs={LINKS}>
       <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
         <div className="hidden md:block" />
-        {/* <PoolFinder
-          components={
-            <PoolFinder.Components>
-              <PoolFinder.LegacyPool
-                chainId={chainId}
-                token0={token0}
-                token1={token1}
-                enabled={AMM_ENABLED_NETWORKS.includes(chainId)}
-              />
-              <PoolFinder.ConstantProductPool
-                chainId={chainId}
-                token0={token0}
-                token1={token1}
-                enabled={TRIDENT_ENABLED_NETWORKS.includes(chainId) && poolType === PoolFinderType.Classic}
-                fee={FEE_MAP[fee]}
-                twap={false}
-              />
-              <PoolFinder.StablePool
-                chainId={chainId}
-                token0={token0}
-                token1={token1}
-                enabled={TRIDENT_ENABLED_NETWORKS.includes(chainId) && poolType === PoolFinderType.Stable}
-                fee={FEE_MAP[fee]}
-                twap={false}
-              />
-            </PoolFinder.Components>
-          }
-        >
-          {({ pool: [poolState, pool] }) => { */}
-        {/* const title = !token0 || !token1 ? ( 'Select Tokens' ) : [PairState.LOADING, ConstantProductPoolState.LOADING,
-        StablePoolState.LOADING].includes(poolState) ? ( */}
-        {/* <div className="h-[20px] flex items-center justify-center">
-          <Loader width={14} />
-        </div>
-        ) : [PairState.EXISTS, ConstantProductPoolState.EXISTS, StablePoolState.EXISTS].includes(poolState) ? ( 'Add
-        Liquidity' ) : ( 'Create Pool' ) return ( */}
         <_Add
           chainId={chainId}
           setChainId={setChainId}
-          fee={fee}
-          setFee={setFee}
           pools={pools}
           title={'teste'}
           token0={token0}
@@ -140,11 +102,10 @@ const Add: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<ty
           setToken0={setToken0}
           setToken1={setToken1}
           prices={prices}
-          tokens={tokens}
+          tokens={tokens.filter((token: dbToken) => {
+            return token.chainId == chainId
+          })}
         />
-        {/* ) */}
-        {/* }}
-        </PoolFinder> */}
       </div>
     </Layout>
   )
@@ -163,8 +124,6 @@ function toToken(dbToken: dbToken): Token {
 interface AddProps {
   chainId: ChainId
   setChainId(chainId: ChainId): void
-  fee: number
-  setFee(fee: number): void
   pools: dbPool[]
   title: ReactNode
   token0: Token | undefined
@@ -178,8 +137,6 @@ interface AddProps {
 const _Add: FC<AddProps> = ({
   chainId,
   setChainId,
-  fee,
-  setFee,
   pools,
   title,
   token0,
@@ -315,8 +272,8 @@ const _Add: FC<AddProps> = ({
   return (
     <>
       <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-        {/* <SelectNetworkWidget selectedNetwork={chainId} onSelect={setChainId} /> */}
-        <SelectFeeWidget selectedNetwork={chainId} fee={fee} setFee={setFee} />
+        <SelectNetworkWidget selectedNetwork={chainId} onSelect={setChainId} />
+        {/* <SelectFeeWidget selectedNetwork={chainId} fee={fee} setFee={setFee} /> */}
 
         <Widget id="addLiquidity" maxWidth={400}>
           <Widget.Content>
