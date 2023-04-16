@@ -77,7 +77,7 @@ const Add: NextPage = ({ pools, tokens, prices, query }: InferGetServerSideProps
     query?.token0 && query?.chainId
       ? toToken(
           tokens.find((token: dbToken) => {
-            return query.token0 == token.symbol
+            return query.token0 == token.uuid
           })
         )
       : undefined
@@ -87,7 +87,7 @@ const Add: NextPage = ({ pools, tokens, prices, query }: InferGetServerSideProps
     query?.token1 && query?.chainId
       ? toToken(
           tokens.find((token: dbToken) => {
-            return query.token1 == token.symbol
+            return query.token1 == token.uuid
           })
         )
       : undefined
