@@ -12,7 +12,6 @@ interface SelectNetworkWidgetProps {
 }
 
 export const SelectNetworkWidget: FC<SelectNetworkWidgetProps> = memo(({ selectedNetwork, onSelect }) => {
-  console.log(chains)
   return (
     <Widget id="selectNetwork" maxWidth={400} className="!bg-stone-800">
       <Widget.Content>

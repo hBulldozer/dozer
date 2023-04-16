@@ -266,7 +266,6 @@ const _Add: FC<AddProps> = ({
       setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
       setOutputAmount()
     }
-    console.log(selectedPool)
     // setInput1(outputAmount ? outputAmount.toString() : '')
   }, [pools, outputAmount, token0, token1, input0, input1, prices, selectedPool, tokens])
   return (
