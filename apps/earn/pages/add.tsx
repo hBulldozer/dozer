@@ -179,6 +179,8 @@ const _Add: FC<AddProps> = ({
   }, [input0, input1])
   const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
   const [selectedPool, setSelectedPool] = useState<dbPool>()
+  const [listTokens0, setListTokens0] = useState<Token[]>([])
+  const [listTokens1, setListTokens1] = useState<Token[]>([])
   const {
     outputAmount,
     setMainCurrency,
@@ -289,8 +291,24 @@ const _Add: FC<AddProps> = ({
       setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
       setOutputAmount()
     }
-    // setInput1(outputAmount ? outputAmount.toString() : '')
+    const list0: dbToken[] = tokens.filter((token) => {
+      return token.uuid !== token1?.uuid
+    })
+    setListTokens0(
+      list0.map((token) => {
+        return toToken(token)
+      })
+    )
+    const list1: dbToken[] = tokens.filter((token) => {
+      return token.uuid !== token0?.uuid
+    })
+    setListTokens1(
+      list1.map((token) => {
+        return toToken(token)
+      })
+    )
   }, [pools, outputAmount, token0, token1, input0, input1, prices, selectedPool, tokens])
+
   return (
     <>
       <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
@@ -309,9 +327,7 @@ const _Add: FC<AddProps> = ({
               onSelect={setToken0}
               chainId={chainId}
               prices={prices}
-              tokens={tokens.map((token: dbToken) => {
-                return toToken(token)
-              })}
+              tokens={listTokens0}
             />
             <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
               <div className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full">
@@ -329,9 +345,7 @@ const _Add: FC<AddProps> = ({
                 chainId={chainId}
                 loading={poolState === PairState.LOADING}
                 prices={prices}
-                tokens={tokens.map((token: dbToken) => {
-                  return toToken(token)
-                })}
+                tokens={listTokens1}
               />
               <div className="p-3">
                 <Checker.Connected fullWidth size="md">
