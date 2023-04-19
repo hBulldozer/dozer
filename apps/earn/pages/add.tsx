@@ -60,6 +60,11 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
           id: true,
           reserve0: true,
           reserve1: true,
+          token1: {
+            select: {
+              uuid: true,
+            },
+          },
         },
       },
       pools1: {
@@ -67,6 +72,11 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
           id: true,
           reserve0: true,
           reserve1: true,
+          token0: {
+            select: {
+              uuid: true,
+            },
+          },
         },
       },
     },
@@ -75,43 +85,22 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
   const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
   const data = await resp.json()
   const priceHTR = data.data.HTR
+  const prices: { [key: string]: number | undefined } = {}
 
-  const prices_arr = tokens.map((token) => {
-    return token.uuid == '00'
-      ? Number(priceHTR)
-      : token.pools0.length > 0
-      ? Number(token.pools0[0].reserve0) / (Number(token.pools0[0].reserve1) + 1000)
-      : token.pools1.length > 0
-      ? Number(token.pools1[0].reserve1) / (Number(token.pools1[0].reserve0) + 1000)
-      : null
+  tokens.forEach((token) => {
+    if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)
+    else if (token.pools0.length > 0) {
+      const poolHTR = token.pools0.find((pool) => {
+        return pool.token1.uuid == '00'
+      })
+      prices[token.uuid] = (Number(poolHTR?.reserve1) / Number(poolHTR?.reserve0)) * priceHTR
+    } else if (token.pools1.length > 0) {
+      const poolHTR = token.pools1.find((pool) => {
+        return pool.token0.uuid == '00'
+      })
+      prices[token.uuid] = (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR
+    }
   })
-  // const prices_arr: number[] = tokens.map((token) => {
-  //   let uuid0, uuid1
-  //   const pool = pools.find((pool: dbPool) => {
-  //     uuid0 = tokens.find((token_in: dbToken) => {
-  //       return token_in.id === pool.token0Id
-  //     })?.uuid
-  //     uuid1 = tokens.find((token_in: dbToken) => {
-  //       return token_in.id === pool.token1Id
-  //     })?.uuid
-  //     return (uuid0 == '00' && token.uuid == uuid1) || (uuid1 == '00' && token.uuid == uuid0)
-  //   })
-  //   return pool && uuid0 == '00' && token.uuid == uuid1
-  //     ? priceHTR * (Number(pool.reserve0) / (Number(pool.reserve1) + 1000))
-  //     : pool && uuid1 == '00' && token.uuid == uuid0
-  //     ? priceHTR * (Number(pool.reserve1) / (Number(pool.reserve0) + 1000))
-  //     : 0
-  // })
-
-  const tokens_uuid_arr: string[] = tokens.map((token) => {
-    return token.uuid
-  })
-
-  const prices: { [key: string]: number } = {}
-  tokens_uuid_arr.forEach((element, index) => {
-    prices[element] = prices_arr[index]
-  })
-
   return {
     props: {
       pools: JSON.parse(JSON.stringify(pools)),
@@ -125,7 +114,6 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
 const Add: NextPage = ({ pools, tokens, prices, query }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [chainId, setChainId] = useState(query?.chainId ? query.chainId : ChainId.HATHOR)
   // const [fee, setFee] = useState(2)
-  console.log(prices)
 
   const [initialToken0, setInitialToken0] = useState(
     query?.token0 && query?.chainId
