@@ -248,7 +248,6 @@ const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, cha
   //   setprices(usePrices(chainId ? chainId : ChainId.HATHOR))
   // }, [chainId])
 
-  console.log(price)
   if (!prices && isMounted)
     return (
       <div className="h-[24px] w-[60px] flex items-center">

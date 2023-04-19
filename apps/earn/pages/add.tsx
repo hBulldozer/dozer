@@ -93,12 +93,12 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
       const poolHTR = token.pools0.find((pool) => {
         return pool.token1.uuid == '00'
       })
-      prices[token.uuid] = (Number(poolHTR?.reserve1) / Number(poolHTR?.reserve0)) * priceHTR
+      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve1) / Number(poolHTR?.reserve0)) * priceHTR
     } else if (token.pools1.length > 0) {
       const poolHTR = token.pools1.find((pool) => {
         return pool.token0.uuid == '00'
       })
-      prices[token.uuid] = (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR
+      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR
     }
   })
   return {
