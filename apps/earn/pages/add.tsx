@@ -26,37 +26,90 @@ const LINKS: BreadcrumbLink[] = [
   },
 ]
 
-export const getServerSideProps: GetServerSideProps = async ({ req, query }) => {
-  const pools = await prisma.pool.findMany()
-  const tokens = await prisma.token.findMany()
-  const res = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
-  const data = await res.json()
-  const priceHTR = data.data.HTR
-  const prices_arr: number[] = tokens.map((token) => {
-    let uuid0, uuid1
-    const pool = pools.find((pool: dbPool) => {
-      uuid0 = tokens.find((token_in: dbToken) => {
-        return token_in.id === pool.token0Id
-      })?.uuid
-      uuid1 = tokens.find((token_in: dbToken) => {
-        return token_in.id === pool.token1Id
-      })?.uuid
-      return (uuid0 == '00' && token.uuid == uuid1) || (uuid1 == '00' && token.uuid == uuid0)
-    })
-    return pool && uuid0 == '00' && token.uuid == uuid1
-      ? priceHTR * (Number(pool.reserve0) / (Number(pool.reserve1) + 1000))
-      : pool && uuid1 == '00' && token.uuid == uuid0
-      ? priceHTR * (Number(pool.reserve1) / (Number(pool.reserve0) + 1000))
-      : 0
+export const getServerSideProps: GetServerSideProps = async ({ query, res }) => {
+  // res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=3500')
+  const pools = await prisma.pool.findMany({
+    select: {
+      id: true,
+      reserve0: true,
+      reserve1: true,
+      token0: {
+        select: {
+          id: true,
+          name: true,
+          uuid: true,
+          symbol: true,
+        },
+      },
+      token1: {
+        select: {
+          id: true,
+          name: true,
+          uuid: true,
+          symbol: true,
+        },
+      },
+    },
+  })
+  const tokens = await prisma.token.findMany({
+    select: {
+      id: true,
+      name: true,
+      uuid: true,
+      symbol: true,
+      pools0: {
+        select: {
+          reserve0: true,
+          reserve1: true,
+        },
+      },
+      pools1: {
+        select: {
+          reserve0: true,
+          reserve1: true,
+        },
+      },
+    },
   })
 
-  const tokens_uuid_arr: string[] = tokens.map((token: dbToken) => {
+  const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
+  const data = await resp.json()
+  const priceHTR = data.data.HTR
+
+  const prices_arr = tokens.map((token) => {
+    return token.uuid == '00'
+      ? priceHTR
+      : token.pools0.length > 0
+      ? Number(token.pools0[0].reserve0) / Number(token.pools0[0].reserve1 + 1000)
+      : token.pools1.length > 0
+      ? Number(token.pools1[0].reserve1) / Number(token.pools1[0].reserve0 + 1000)
+      : null
+  })
+  // const prices_arr: number[] = tokens.map((token) => {
+  //   let uuid0, uuid1
+  //   const pool = pools.find((pool: dbPool) => {
+  //     uuid0 = tokens.find((token_in: dbToken) => {
+  //       return token_in.id === pool.token0Id
+  //     })?.uuid
+  //     uuid1 = tokens.find((token_in: dbToken) => {
+  //       return token_in.id === pool.token1Id
+  //     })?.uuid
+  //     return (uuid0 == '00' && token.uuid == uuid1) || (uuid1 == '00' && token.uuid == uuid0)
+  //   })
+  //   return pool && uuid0 == '00' && token.uuid == uuid1
+  //     ? priceHTR * (Number(pool.reserve0) / (Number(pool.reserve1) + 1000))
+  //     : pool && uuid1 == '00' && token.uuid == uuid0
+  //     ? priceHTR * (Number(pool.reserve1) / (Number(pool.reserve0) + 1000))
+  //     : 0
+  // })
+
+  const tokens_uuid_arr: string[] = tokens.map((token) => {
     return token.uuid
   })
 
   const prices: { [key: string]: number } = {}
   tokens_uuid_arr.forEach((element, index) => {
-    element == '00' ? (prices[element] = priceHTR) : (prices[element] = prices_arr[index])
+    prices[element] = prices_arr[index]
   })
 
   return {
@@ -307,6 +360,7 @@ const _Add: FC<AddProps> = ({
         return toToken(token)
       })
     )
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pools, outputAmount, token0, token1, input0, input1, prices, selectedPool, tokens])
 
   return (
