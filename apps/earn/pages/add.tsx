@@ -403,6 +403,7 @@ const _Add: FC<AddProps> = ({
                             token1={token1}
                             input0={Amount.fromFractionalAmount(token0, parsedInput0, 100)}
                             input1={Amount.fromFractionalAmount(token1, parsedInput1, 100)}
+                            prices={prices}
                           >
                             {({ isWritePending, setOpen }) => (
                               <Button fullWidth onClick={() => setOpen(true)} disabled={isWritePending} size="md">

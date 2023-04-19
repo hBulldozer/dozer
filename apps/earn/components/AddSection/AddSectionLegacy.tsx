@@ -14,7 +14,7 @@ import { Pair } from '../../utils/Pair'
 import { AddSectionReviewModalLegacy } from './AddSectionReviewModalLegacy'
 import { AddSectionWidget } from './AddSectionWidget'
 
-export const AddSectionLegacy: FC<{ pair: Pair }> = ({ pair }) => {
+export const AddSectionLegacy: FC<{ pair: Pair; prices: { [key: string]: number } }> = ({ pair, prices }) => {
   const isMounted = useIsMounted()
   const { token0, token1 } = useTokensFromPair(pair)
   const [{ input0, input1 }, setTypedAmounts] = useState<{
@@ -88,6 +88,7 @@ export const AddSectionLegacy: FC<{ pair: Pair }> = ({ pair }) => {
         token1={token1}
         input0={parsedInput0}
         input1={parsedInput1}
+        prices={prices}
       >
         {({ isWritePending, setOpen }) => (
           <AddSectionWidget

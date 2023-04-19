@@ -1,8 +1,7 @@
-import { Token, Price } from '@dozer/currency'
+import { Token } from '@dozer/currency'
 import { classNames, Typography } from '@dozer/ui'
-import { usePrices } from '@dozer/react-query'
-import { FC, ReactElement, ReactNode, useCallback, useState } from 'react'
-import { useNetwork, useTrade } from '@dozer/zustand'
+import { FC, ReactElement, ReactNode, useCallback, useEffect, useState } from 'react'
+import { useTrade } from '@dozer/zustand'
 
 interface RenderPayload {
   invert: boolean
@@ -15,15 +14,24 @@ interface Rate {
   token1: Token | undefined
   token2: Token | undefined
   children?: (payload: RenderPayload) => ReactNode
+  prices?: { [key: string]: number }
 }
 
-export const Rate: FC<Rate> = ({ children, token1, token2 }) => {
+export const Rate: FC<Rate> = ({ children, token1, token2, prices }) => {
   const [invert, setInvert] = useState(false)
-  const { network } = useNetwork()
-  const { data: prices } = usePrices(network)
+  const [isMounted, setIsMounted] = useState<boolean>(false)
+  // const { data: prices } = usePrices(network)
   const trade = useTrade()
-  const usdPrice = token1 && token2 ? prices?.[invert ? token2.uuid : token1.uuid] : undefined
+  const usd = token1 && token2 ? prices?.[invert ? token2.uuid : token1.uuid] : undefined
+  const [usdPrice, setUsdPrice] = useState<string | undefined>('')
 
+  useEffect(() => {
+    setUsdPrice(usd?.toString())
+  }, [usd])
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
   const content = (
     <>
       {token1 && token2 && trade.pool?.token1_balance && trade.pool.token2_balance && trade.amountSpecified ? (
@@ -65,7 +73,8 @@ export const Rate: FC<Rate> = ({ children, token1, token2 }) => {
       </Typography>
       <Typography variant="xs" className={classNames('cursor-pointer h-[36px] flex items-center ')}>
         <div className="flex items-center h-full gap-1 font-medium" onClick={toggleInvert}>
-          {content} <span className="text-stone-500">{trade.amountSpecified ? `(${usdPrice})` : null}</span>
+          {content}{' '}
+          <span className="text-stone-500">{trade.amountSpecified ? `(${Number(usdPrice).toFixed(2)})` : null}</span>
         </div>
       </Typography>
     </div>

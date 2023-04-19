@@ -3,12 +3,10 @@ import { formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
 import { Pair } from '../../utils/Pair'
 import { AppearOnMount, Currency, Table, Typography } from '@dozer/ui'
-// import { usePrices } from '@dozer/higmi'
 import { FC } from 'react'
 
 // import { useTokensFromPair } from '../../lib/hooks'
 import { useTokensFromPair } from '../../utils/useTokensFromPair'
-import { usePrices } from '@dozer/react-query'
 
 interface PoolCompositionProps {
   pair: Pair
@@ -16,7 +14,6 @@ interface PoolCompositionProps {
 }
 
 export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices }) => {
-  // const { data: prices } = usePrices(pair.chainId)
   const { token0, token1, reserve1, reserve0 } = useTokensFromPair(pair)
 
   return (

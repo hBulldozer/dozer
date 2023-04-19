@@ -4,7 +4,6 @@ import { FundSource, useIsMounted } from '@dozer/hooks'
 import { FC, memo, useMemo } from 'react'
 import { useAccount } from '@dozer/zustand'
 
-// import { useBalances, usePrices } from '../../hooks'
 import { TokenSelectorDialog } from './TokenSelectorDialog'
 import { ChainId } from '@dozer/chain'
 

@@ -30,6 +30,7 @@ interface AddSectionReviewModalLegacyProps {
   input0: Amount<Type> | undefined
   input1: Amount<Type> | undefined
   children({ isWritePending, setOpen }: { isWritePending: boolean; setOpen(open: boolean): void }): ReactNode
+  prices: { [key: string]: number }
 }
 
 export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> = ({
@@ -40,6 +41,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   input0,
   input1,
   children,
+  prices,
 }) => {
   // const deadline = useTransactionDeadline(chainId)
   const [open, setOpen] = useState(false)
@@ -166,7 +168,14 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
     () => (
       <>
         {children({ isWritePending, setOpen })}
-        <AddSectionReviewModal chainId={chainId} input0={input0} input1={input1} open={open} setOpen={setOpen}>
+        <AddSectionReviewModal
+          chainId={chainId}
+          input0={input0}
+          input1={input1}
+          open={open}
+          setOpen={setOpen}
+          prices={prices}
+        >
           <Approve
             onSuccess={() => {}}
             className="flex-grow !justify-end"

@@ -155,8 +155,6 @@ const Home: NextPage = ({ pools, tokens, prices, query }: InferGetServerSideProp
   } = useTrade()
   const [selectedPool, setSelectedPool] = useState<dbPool>()
 
-  // const { data: prices } = usePrices(network)
-
   const onInput0 = async (val: string) => {
     setTradeType(TradeType.EXACT_INPUT)
     setInput0(val)

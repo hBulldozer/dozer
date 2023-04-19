@@ -6,8 +6,6 @@ import { FC, useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { AccountState, useAccount } from '@dozer/zustand'
 
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
-import { usePrices } from '@dozer/react-query'
-import { ChainId } from '@dozer/chain'
 
 export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' | 'chainId'> {
   id?: string
@@ -233,8 +231,6 @@ const BalancePanel: FC<BalancePanel> = ({
 type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange' | 'prices'>
 const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, chainId }) => {
   const isMounted = useIsMounted()
-  // const [prices, setprices] = useState(usePrices(chainId ? chainId : ChainId.HATHOR))
-  // const { data: prices } = usePrices(chainId ? chainId : ChainId.HATHOR)
   const [price, setPrice] = useState<number | undefined>(0)
   const [usd, setUsd] = useState<number | undefined>(0)
   const calculatedPrice = currency ? prices?.[currency.uuid] : undefined
@@ -244,9 +240,6 @@ const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, cha
     setPrice(calculatedPrice)
     setUsd(usdPctChange)
   }, [calculatedPrice, usdPctChange])
-  // useEffect(() => {
-  //   setprices(usePrices(chainId ? chainId : ChainId.HATHOR))
-  // }, [chainId])
 
   if (!prices && isMounted)
     return (

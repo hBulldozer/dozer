@@ -1,6 +1,6 @@
 import { PlusIcon } from '@heroicons/react/solid'
 import { ChainId } from '@dozer/chain'
-import { Amount, Price, Type } from '@dozer/currency'
+import { Amount, Type } from '@dozer/currency'
 import { Currency, Dialog, Typography } from '@dozer/ui'
 import { FC, ReactNode, useMemo } from 'react'
 
@@ -14,26 +14,26 @@ interface AddSectionReviewModal {
   open: boolean
   setOpen(open: boolean): void
   children: ReactNode
+  prices: { [key: string]: number }
 }
 
 export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
-  chainId,
+  // chainId,
   input0,
   input1,
   open,
   setOpen,
   children,
+  prices,
 }) => {
-  const [value0, value1] = [1, 2]
   // useTokenAmountDollarValues({
   //   chainId,
   //   amounts: [input0, input1],
   // })
 
-  const price = useMemo(() => {
-    if (!input0 || !input1) return undefined
-    return new Price({ baseAmount: input0, quoteAmount: input1 })
-  }, [input0, input1])
+  const [price0, price1] = useMemo(() => {
+    return input0 && input1 ? [prices[input0?.currency.uuid], prices[input1?.currency.uuid]] : [0, 0]
+  }, [input0, input1, prices])
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>
@@ -59,7 +59,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {value0 ? `$${value0.toFixed(2)}` : '-'}
+              {price0 && input0 ? `$${(price0 * Number(input0.multiply(100).toSignificant(6))).toFixed(2)}` : '-'}
             </Typography>
           </div>
           <div className="flex items-center justify-center col-span-12 -mt-2.5 -mb-2.5">
@@ -86,12 +86,12 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {value1 ? `$${value1.toFixed(2)}` : ''}
+              {price1 && input1 ? `$${(price1 * Number(input1.multiply(100).toSignificant(6))).toFixed(2)}` : '-'}
             </Typography>
           </div>
         </div>
         <div className="flex justify-center p-4">
-          <Rate token1={input0?.currency} token2={input1?.currency}>
+          <Rate token1={input0?.currency} token2={input1?.currency} prices={prices}>
             {({ toggleInvert, content, usdPrice }) => (
               <Typography
                 as="button"
@@ -100,7 +100,8 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
                 weight={600}
                 className="flex items-center gap-1 text-stone-100"
               >
-                {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
+                {content}{' '}
+                {usdPrice && <span className="font-normal text-stone-300">(${Number(usdPrice).toFixed(2)})</span>}
               </Typography>
             )}
           </Rate>

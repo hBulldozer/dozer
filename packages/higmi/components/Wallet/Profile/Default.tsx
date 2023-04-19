@@ -18,7 +18,6 @@ interface DefaultProps {
 export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
   const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
-  // const { data: prices } = usePrices({ chainId })
   // const { data: avatar } = useEnsAvatar({
   //   address: address,
   // })
@@ -42,7 +41,6 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
   }
   // useDisconnect()
 
-  // const { data: prices } = usePrices(chainId)
   const [usdPrice, setUsdPrice] = useState<number>(0)
   // const balanceAsUsd = prices ? prices['00'] : 0
   const [showBalance, setShowBalance] = useState<number | undefined>(0)

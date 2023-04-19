@@ -1,8 +1,7 @@
-import { Token, Price } from '@dozer/currency'
+import { Token } from '@dozer/currency'
 import { classNames, Typography } from '@dozer/ui'
-import { usePrices } from '@dozer/react-query'
 import { FC, ReactElement, ReactNode, useCallback, useEffect, useState } from 'react'
-import { useNetwork, useTrade } from '@dozer/zustand'
+import { useTrade } from '@dozer/zustand'
 
 interface RenderPayload {
   invert: boolean
@@ -21,9 +20,7 @@ interface Rate {
 
 export const Rate: FC<Rate> = ({ children, token1, token2, prices }) => {
   const [invert, setInvert] = useState(false)
-  const { network } = useNetwork()
   const [isMounted, setIsMounted] = useState<boolean>(false)
-  // const { data: prices } = usePrices(network)
   const trade = useTrade()
   const usd = token1 && token2 ? prices?.[invert ? token2.uuid : token1.uuid] : undefined
   const [usdPrice, setUsdPrice] = useState<string | undefined>('')

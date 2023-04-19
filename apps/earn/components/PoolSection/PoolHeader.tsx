@@ -5,8 +5,6 @@ import { formatPercent, formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
 import { Pair } from '../../utils/Pair'
 import { AppearOnMount, Currency, Link, NetworkIcon, Typography } from '@dozer/ui'
-// import { usePrices } from '@dozer/wagmi'
-import { usePrices } from '@dozer/react-query'
 import { FC, useMemo } from 'react'
 
 // import { useTokensFromPair } from '../../lib/hooks'
@@ -19,7 +17,6 @@ interface PoolHeader {
 }
 
 export const PoolHeader: FC<PoolHeader> = ({ pair, prices }) => {
-  // const { data: prices } = usePrices(pair.chainId)
   // console.log({ pair })
   const { token0, token1, reserve1, reserve0, liquidityToken } = useTokensFromPair(pair)
   // const price = useMemo(() => new Price({ baseAmount: reserve0, quoteAmount: reserve1 }), [reserve0, reserve1])

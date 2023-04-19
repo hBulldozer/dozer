@@ -37,7 +37,6 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   // isWrap = false,
 }) => {
   const trade = useTrade()
-  // const { data: prices } = usePrices(chainId ? chainId : ChainId.HATHOR)
 
   // If output field and (un)wrapping, set to _value
   let value = inputType === tradeType ? _value.toString() : trade ? trade?.outputAmount?.toFixed(2).toString() : ''

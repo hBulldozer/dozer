@@ -1,18 +1,6 @@
-import { ChainId, chainName } from '@dozer/chain'
-import { formatPercent } from '@dozer/format'
-// import { getBuiltGraphSDK, Pair } from '@dozer/graph-client'
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
-// import { SUPPORTED_CHAIN_IDS } from '../../config'
-import {
-  GetServerSideProps,
-  GetStaticPaths,
-  GetStaticProps,
-  InferGetServerSidePropsType,
-  InferGetStaticPropsType,
-} from 'next'
+import { GetServerSideProps, InferGetServerSidePropsType } from 'next'
 import { useRouter } from 'next/router'
-import { FC } from 'react'
-// import useSWR, { SWRConfig } from 'swr'
 import { Pair, pairFromPoolAndTokens } from '../../utils/Pair'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
 
@@ -34,7 +22,6 @@ import {
 // import { GET_POOL_TYPE_MAP } from '../../lib/constants'
 
 import { prisma } from '@dozer/database'
-import { dbPool, dbToken } from '../../interfaces'
 
 export const getServerSideProps: GetServerSideProps = async ({ res, query }) => {
   res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=3500')
@@ -122,7 +109,7 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 // }
 
 const Pool = ({ pair, prices }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const router = useRouter()
+  // const router = useRouter()
   //console.log(pair.hourSnapshots, pair.daySnapshots)
   // const { data } = useSWR<{ pair: Pair }>(`/earn/api/pool/${router.query.id}`, (url) =>
   //   fetch(url).then((response) => response.json())
@@ -142,7 +129,7 @@ const Pool = ({ pair, prices }: InferGetServerSidePropsType<typeof getServerSide
             <hr className="my-3 border-t border-stone-200/5" />
             <PoolChart pair={pair} />
             <AppearOnMount>
-              <PoolStats pair={pair} />
+              <PoolStats pair={pair} prices={prices} />
             </AppearOnMount>
             <PoolComposition pair={pair} prices={prices} />
             <PoolRewards pair={pair} />
