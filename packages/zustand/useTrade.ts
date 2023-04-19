@@ -23,9 +23,9 @@ interface TradeProps {
   amountSpecified: number | undefined
   setAmountSpecified: (amountSpecified: number) => void
   mainCurrency: Token | undefined
-  setMainCurrency: (mainCurrency: Token) => void
+  setMainCurrency: (mainCurrency: Token | undefined) => void
   otherCurrency: Token | undefined
-  setOtherCurrency: (otherCurrency: Token) => void
+  setOtherCurrency: (otherCurrency: Token | undefined) => void
   mainCurrencyPrice: number | undefined
   setMainCurrencyPrice: (mainCurrencyPrice: number) => void
   otherCurrencyPrice: number | undefined
@@ -49,9 +49,9 @@ export const useTrade = create<TradeProps>()(
       amountSpecified: 0,
       setAmountSpecified: (amountSpecified: number) => set((state) => ({ amountSpecified: amountSpecified })),
       mainCurrency: new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 }),
-      setMainCurrency: (mainCurrency: Token) => set((state) => ({ mainCurrency: mainCurrency })),
+      setMainCurrency: (mainCurrency: Token | undefined) => set((state) => ({ mainCurrency: mainCurrency })),
       otherCurrency: new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 }),
-      setOtherCurrency: (otherCurrency: Token) => set((state) => ({ otherCurrency: otherCurrency })),
+      setOtherCurrency: (otherCurrency: Token | undefined) => set((state) => ({ otherCurrency: otherCurrency })),
       mainCurrencyPrice: 0,
       setMainCurrencyPrice: (mainCurrencyPrice: number) => set((state) => ({ mainCurrencyPrice: mainCurrencyPrice })),
       otherCurrencyPrice: 0,

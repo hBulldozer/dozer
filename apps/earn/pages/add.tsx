@@ -15,7 +15,7 @@ import React, { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 
 import { Checker, Web3Input } from '@dozer/higmi'
 import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from 'next'
 import prisma from '@dozer/database'
-import { dbToken, dbPool } from '../interfaces'
+import { dbToken, dbPool, dbTokenWithPools, dbPoolWithTokens } from '../interfaces'
 import { Pair, PairState, pairFromPoolAndTokensList } from '../utils/Pair'
 import { useTrade } from '@dozer/zustand'
 
@@ -35,16 +35,12 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
       reserve1: true,
       token0: {
         select: {
-          id: true,
-          name: true,
           uuid: true,
           symbol: true,
         },
       },
       token1: {
         select: {
-          id: true,
-          name: true,
           uuid: true,
           symbol: true,
         },
@@ -57,14 +53,18 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
       name: true,
       uuid: true,
       symbol: true,
+      chainId: true,
+      decimals: true,
       pools0: {
         select: {
+          id: true,
           reserve0: true,
           reserve1: true,
         },
       },
       pools1: {
         select: {
+          id: true,
           reserve0: true,
           reserve1: true,
         },
@@ -78,11 +78,11 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
 
   const prices_arr = tokens.map((token) => {
     return token.uuid == '00'
-      ? priceHTR
+      ? Number(priceHTR)
       : token.pools0.length > 0
-      ? Number(token.pools0[0].reserve0) / Number(token.pools0[0].reserve1 + 1000)
+      ? Number(token.pools0[0].reserve0) / (Number(token.pools0[0].reserve1) + 1000)
       : token.pools1.length > 0
-      ? Number(token.pools1[0].reserve1) / Number(token.pools1[0].reserve0 + 1000)
+      ? Number(token.pools1[0].reserve1) / (Number(token.pools1[0].reserve0) + 1000)
       : null
   })
   // const prices_arr: number[] = tokens.map((token) => {
@@ -125,6 +125,7 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
 const Add: NextPage = ({ pools, tokens, prices, query }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [chainId, setChainId] = useState(query?.chainId ? query.chainId : ChainId.HATHOR)
   // const [fee, setFee] = useState(2)
+  console.log(prices)
 
   const [initialToken0, setInitialToken0] = useState(
     query?.token0 && query?.chainId
@@ -145,8 +146,6 @@ const Add: NextPage = ({ pools, tokens, prices, query }: InferGetServerSideProps
         )
       : undefined
   )
-
-  console.log(initialToken0, initialToken1)
 
   const [token0, setToken0] = useState<Token | undefined>(initialToken0)
   const [token1, setToken1] = useState<Token | undefined>(initialToken1)
@@ -200,13 +199,13 @@ function toToken(dbToken: dbToken): Token {
 interface AddProps {
   chainId: ChainId
   setChainId(chainId: ChainId): void
-  pools: dbPool[]
+  pools: dbPoolWithTokens[]
   title: ReactNode
   token0: Token | undefined
   token1: Token | undefined
   setToken0(token: Token): void
   setToken1(token: Token): void
-  tokens: dbToken[]
+  tokens: dbTokenWithPools[]
   prices: { [key: string]: number }
 }
 
@@ -231,7 +230,7 @@ const _Add: FC<AddProps> = ({
     return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
   }, [input0, input1])
   const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
-  const [selectedPool, setSelectedPool] = useState<dbPool>()
+  const [selectedPool, setSelectedPool] = useState<dbPoolWithTokens>()
   const [listTokens0, setListTokens0] = useState<Token[]>([])
   const [listTokens1, setListTokens1] = useState<Token[]>([])
   const {
@@ -300,13 +299,9 @@ const _Add: FC<AddProps> = ({
 
   useEffect(() => {
     setSelectedPool(
-      pools.find((pool: dbPool) => {
-        const uuid0 = tokens.find((token: dbToken) => {
-          return token.id === pool.token0Id
-        })?.uuid
-        const uuid1 = tokens.find((token: dbToken) => {
-          return token.id === pool.token1Id
-        })?.uuid
+      pools.find((pool: dbPoolWithTokens) => {
+        const uuid0 = pool.token0.uuid
+        const uuid1 = pool.token1.uuid
         const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
         const result = checker(
           [token0 ? token0.uuid : '', token1 ? token1.uuid : ''],
@@ -336,8 +331,8 @@ const _Add: FC<AddProps> = ({
       setPoolState(PairState.NOT_EXISTS)
     } else {
       setPoolState(PairState.EXISTS)
-      setMainCurrency(token0 ? token0 : toToken(tokens[0]))
-      setOtherCurrency(token1 ? token1 : toToken(tokens[0]))
+      setMainCurrency(token0 ? token0 : undefined)
+      setOtherCurrency(token1 ? token1 : undefined)
       setPriceImpact()
       setAmountSpecified(Number(input0))
       setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
@@ -360,7 +355,7 @@ const _Add: FC<AddProps> = ({
         return toToken(token)
       })
     )
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pools, outputAmount, token0, token1, input0, input1, prices, selectedPool, tokens])
 
   return (
