@@ -1,5 +1,7 @@
 import { ChainId } from '@dozer/chain'
 import { Pool, Token, daySnapshot, hourSnapshot } from '@dozer/database'
+import { dbPoolWithTokens } from '../interfaces'
+import toToken from './toToken'
 
 export type Maybe<T> = T | null
 export type InputMaybe<T> = Maybe<T>
@@ -56,12 +58,10 @@ export type PairDaySnapshot = {
 }
 
 export function pairFromPoolAndTokens(
-  pool: (Pool & { hourSnapshots: hourSnapshot[]; daySnapshots: daySnapshot[] }) | null,
-  tokens: Token[]
+  pool: (dbPoolWithTokens & { hourSnapshots: hourSnapshot[]; daySnapshots: daySnapshot[] }) | null
 ): Pair {
   return (
     pool &&
-    tokens &&
     JSON.parse(
       JSON.stringify({
         id: pool.id,
@@ -71,8 +71,8 @@ export function pairFromPoolAndTokens(
         feeUSD: pool.feeUSD,
         swapFee: pool.swapFee,
         apr: pool.apr,
-        token0: tokens[Number(pool.token0Id)],
-        token1: tokens[Number(pool.token1Id)],
+        token0: toToken(pool.token0),
+        token1: toToken(pool.token1),
         reserve0: Number(pool.reserve0),
         reserve1: Number(pool.reserve1),
         chainId: pool.chainId,

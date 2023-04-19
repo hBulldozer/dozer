@@ -18,6 +18,7 @@ import prisma from '@dozer/database'
 import { dbToken, dbPool, dbTokenWithPools, dbPoolWithTokens } from '../interfaces'
 import { Pair, PairState, pairFromPoolAndTokensList } from '../utils/Pair'
 import { useTrade } from '@dozer/zustand'
+import toToken from '../utils/toToken'
 
 const LINKS: BreadcrumbLink[] = [
   {
@@ -27,7 +28,7 @@ const LINKS: BreadcrumbLink[] = [
 ]
 
 export const getServerSideProps: GetServerSideProps = async ({ query, res }) => {
-  // res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=3500')
+  res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=3500')
   const pools = await prisma.pool.findMany({
     select: {
       id: true,
@@ -172,16 +173,6 @@ const Add: NextPage = ({ pools, tokens, prices, query }: InferGetServerSideProps
       </div>
     </Layout>
   )
-}
-
-function toToken(dbToken: dbToken): Token {
-  return new Token({
-    chainId: dbToken.chainId,
-    uuid: dbToken.uuid,
-    decimals: dbToken.decimals,
-    name: dbToken.name,
-    symbol: dbToken.symbol,
-  })
 }
 
 interface AddProps {

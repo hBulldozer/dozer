@@ -36,42 +36,71 @@ import {
 import { prisma } from '@dozer/database'
 import { dbPool, dbToken } from '../../interfaces'
 
-export const getServerSideProps: GetServerSideProps = async ({ query }) => {
+export const getServerSideProps: GetServerSideProps = async ({ res, query }) => {
+  res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=3500')
   const pre_pool = await prisma.pool.findUnique({
     where: { id: query.id?.toString() },
-    include: { hourSnapshots: { orderBy: { date: 'desc' } }, daySnapshots: { orderBy: { date: 'desc' } } },
+    include: {
+      token0: true,
+      token1: true,
+      hourSnapshots: { orderBy: { date: 'desc' } },
+      daySnapshots: { orderBy: { date: 'desc' } },
+    },
   })
-  const pools = await prisma.pool.findMany()
-  const tokens = await prisma.token.findMany()
-  const pair: Pair = pairFromPoolAndTokens(pre_pool, tokens)
-  const res = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
-  const data = await res.json()
-  const priceHTR = Number(data.data.HTR)
-  const prices_arr: number[] = tokens.map((token) => {
-    let uuid0, uuid1
-    const pool = pools.find((pool: dbPool) => {
-      uuid0 = tokens.find((token_in: dbToken) => {
-        return token_in.id === pool.token0Id
-      })?.uuid
-      uuid1 = tokens.find((token_in: dbToken) => {
-        return token_in.id === pool.token1Id
-      })?.uuid
-      return (uuid0 == '00' && token.uuid == uuid1) || (uuid1 == '00' && token.uuid == uuid0)
-    })
-    return pool && uuid0 == '00' && token.uuid == uuid1
-      ? priceHTR * (Number(pool.reserve0) / (Number(pool.reserve1) + 1000))
-      : pool && uuid1 == '00' && token.uuid == uuid0
-      ? priceHTR * (Number(pool.reserve1) / (Number(pool.reserve0) + 1000))
-      : 0
+  const tokens = await prisma.token.findMany({
+    select: {
+      id: true,
+      name: true,
+      uuid: true,
+      symbol: true,
+      chainId: true,
+      decimals: true,
+      pools0: {
+        select: {
+          id: true,
+          reserve0: true,
+          reserve1: true,
+          token1: {
+            select: {
+              uuid: true,
+            },
+          },
+        },
+      },
+      pools1: {
+        select: {
+          id: true,
+          reserve0: true,
+          reserve1: true,
+          token0: {
+            select: {
+              uuid: true,
+            },
+          },
+        },
+      },
+    },
   })
 
-  const tokens_uuid_arr: string[] = tokens.map((token: dbToken) => {
-    return token.uuid
-  })
+  const pair: Pair = pairFromPoolAndTokens(pre_pool)
+  const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
+  const data = await resp.json()
+  const priceHTR = data.data.HTR
+  const prices: { [key: string]: number | undefined } = {}
 
-  const prices: { [key: string]: number } = {}
-  tokens_uuid_arr.forEach((element, index) => {
-    element == '00' ? (prices[element] = priceHTR) : (prices[element] = prices_arr[index])
+  tokens.forEach((token) => {
+    if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)
+    else if (token.pools0.length > 0) {
+      const poolHTR = token.pools0.find((pool) => {
+        return pool.token1.uuid == '00'
+      })
+      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve1) / Number(poolHTR?.reserve0)) * priceHTR
+    } else if (token.pools1.length > 0) {
+      const poolHTR = token.pools1.find((pool) => {
+        return pool.token0.uuid == '00'
+      })
+      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR
+    }
   })
 
   return { props: { pair, prices } }
@@ -115,7 +144,7 @@ const Pool = ({ pair, prices }: InferGetServerSidePropsType<typeof getServerSide
             <AppearOnMount>
               <PoolStats pair={pair} />
             </AppearOnMount>
-            <PoolComposition pair={pair} />
+            <PoolComposition pair={pair} prices={prices} />
             <PoolRewards pair={pair} />
           </div>
 

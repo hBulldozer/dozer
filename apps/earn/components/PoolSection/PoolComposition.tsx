@@ -12,10 +12,11 @@ import { usePrices } from '@dozer/react-query'
 
 interface PoolCompositionProps {
   pair: Pair
+  prices: { [key: string]: number }
 }
 
-export const PoolComposition: FC<PoolCompositionProps> = ({ pair }) => {
-  const { data: prices } = usePrices(pair.chainId)
+export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices }) => {
+  // const { data: prices } = usePrices(pair.chainId)
   const { token0, token1, reserve1, reserve0 } = useTokensFromPair(pair)
 
   return (
@@ -30,8 +31,12 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair }) => {
             <span className="font-semibold text-stone-50">
               {' '}
               {formatUSD(
-                // pair.liquidityNative * Number(prices?.[Native.onChain(pair.chainId).wrapped.address]?.toFixed(10))
-                100
+                Number(
+                  (
+                    Number(reserve0.toFixed(2)) * prices?.[token0.uuid] +
+                    Number(reserve1.toFixed(2)) * prices?.[token1.uuid]
+                  )?.toFixed(2)
+                )
               )}
             </span>
           </Typography>
@@ -64,18 +69,13 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair }) => {
               </Table.td>
               <Table.td>
                 <Typography weight={500} variant="sm" className="text-stone-400">
-                  {reserve0?.toSignificant(6)}
+                  {reserve0.toFixed(2)}
                 </Typography>
               </Table.td>
               <Table.td>
                 <AppearOnMount>
                   <Typography weight={600} variant="sm" className="text-stone-50">
-                    {formatUSD(
-                      prices?.[token0.uuid]
-                        ? // ? reserve0.multiply(prices?.[token0.uuid].asFraction).toSignificant(6)
-                          50
-                        : ''
-                    )}
+                    ${prices?.[token0.uuid] ? (Number(reserve0.toFixed(2)) * prices?.[token0.uuid]).toFixed(2) : ''}
                   </Typography>
                 </AppearOnMount>
               </Table.td>
@@ -91,18 +91,13 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair }) => {
               </Table.td>
               <Table.td>
                 <Typography weight={500} variant="sm" className="text-stone-400">
-                  {reserve1?.toSignificant(6)}
+                  {reserve1.toFixed(2)}
                 </Typography>
               </Table.td>
               <Table.td>
                 <AppearOnMount>
                   <Typography weight={600} variant="sm" className="text-stone-50">
-                    {
-                      // formatUSD(
-                      // prices?.[token1.uuid] ? reserve1.multiply(prices?.[token1.uuid].asFraction).toSignificant(6) : ''
-                      prices?.[token1.uuid] ? Number(reserve1) * prices?.[token1.uuid] : ''
-                      // )
-                    }
+                    ${prices?.[token1.uuid] ? (Number(reserve1.toFixed(2)) * prices?.[token1.uuid]).toFixed(2) : ''}
                   </Typography>
                 </AppearOnMount>
               </Table.td>

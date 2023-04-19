@@ -12,49 +12,91 @@ import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
 import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from 'next'
 import { prisma } from '@dozer/database'
-import { dbToken, dbPool } from '../interfaces'
+import { dbToken, dbPool, dbPoolWithTokens, dbTokenWithPools } from '../interfaces'
 import { ChainId } from '@dozer/chain'
 // import { Token as dbToken, Pool } from '@dozer/database/types'
 
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  // TODO: build request to receive ChainId and filter
-  const pools = await prisma.pool.findMany()
-  const tokens = await prisma.token.findMany()
-  const res = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
-  const data = await res.json()
+export const getServerSideProps: GetServerSideProps = async ({ query, res }) => {
+  res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=3500')
+  const pools = await prisma.pool.findMany({
+    select: {
+      id: true,
+      reserve0: true,
+      reserve1: true,
+      token0: {
+        select: {
+          uuid: true,
+          symbol: true,
+        },
+      },
+      token1: {
+        select: {
+          uuid: true,
+          symbol: true,
+        },
+      },
+    },
+  })
+  const tokens = await prisma.token.findMany({
+    select: {
+      id: true,
+      name: true,
+      uuid: true,
+      symbol: true,
+      chainId: true,
+      decimals: true,
+      pools0: {
+        select: {
+          id: true,
+          reserve0: true,
+          reserve1: true,
+          token1: {
+            select: {
+              uuid: true,
+            },
+          },
+        },
+      },
+      pools1: {
+        select: {
+          id: true,
+          reserve0: true,
+          reserve1: true,
+          token0: {
+            select: {
+              uuid: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
+  const data = await resp.json()
   const priceHTR = data.data.HTR
-  const prices_arr: number[] = tokens.map((token) => {
-    let uuid0, uuid1
-    const pool = pools.find((pool: dbPool) => {
-      uuid0 = tokens.find((token_in: dbToken) => {
-        return token_in.id === pool.token0Id
-      })?.uuid
-      uuid1 = tokens.find((token_in: dbToken) => {
-        return token_in.id === pool.token1Id
-      })?.uuid
-      return (uuid0 == '00' && token.uuid == uuid1) || (uuid1 == '00' && token.uuid == uuid0)
-    })
-    return pool && uuid0 == '00' && token.uuid == uuid1
-      ? priceHTR * (Number(pool.reserve0) / (Number(pool.reserve1) + 1000))
-      : pool && uuid1 == '00' && token.uuid == uuid0
-      ? priceHTR * (Number(pool.reserve1) / (Number(pool.reserve0) + 1000))
-      : 0
-  })
+  const prices: { [key: string]: number | undefined } = {}
 
-  const tokens_uuid_arr: string[] = tokens.map((token: dbToken) => {
-    return token.uuid
+  tokens.forEach((token) => {
+    if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)
+    else if (token.pools0.length > 0) {
+      const poolHTR = token.pools0.find((pool) => {
+        return pool.token1.uuid == '00'
+      })
+      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve1) / Number(poolHTR?.reserve0)) * priceHTR
+    } else if (token.pools1.length > 0) {
+      const poolHTR = token.pools1.find((pool) => {
+        return pool.token0.uuid == '00'
+      })
+      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR
+    }
   })
-
-  const prices: { [key: string]: number } = {}
-  tokens_uuid_arr.forEach((element, index) => {
-    element == '00' ? (prices[element] = priceHTR) : (prices[element] = prices_arr[index])
-  })
-
   return {
     props: {
       pools: JSON.parse(JSON.stringify(pools)),
       tokens: JSON.parse(JSON.stringify(tokens)),
       prices: JSON.parse(JSON.stringify(prices)),
+      query: query,
     },
   }
 }
@@ -69,31 +111,35 @@ function toToken(dbToken: dbToken): Token {
   })
 }
 
-const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Home: NextPage = ({ pools, tokens, prices, query }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const network = useNetwork((state) => state.network)
 
-  const inputToken = useMemo(() => {
-    return toToken(
-      tokens.find((obj: dbToken) => {
-        return obj.symbol == 'DZR' && obj.chainId == (network ? network : ChainId.HATHOR)
-      })
-    )
-  }, [network, tokens])
+  const [initialToken0, setInitialToken0] = useState(
+    query?.token0 && query?.chainId
+      ? toToken(
+          tokens.find((token: dbToken) => {
+            return query.token0 == token.uuid
+          })
+        )
+      : undefined
+  )
 
-  const outputToken = useMemo(() => {
-    return toToken(
-      tokens.find((obj: dbToken) => {
-        return obj.symbol == 'HTR' && obj.chainId == (network ? network : ChainId.HATHOR)
-      })
-    )
-  }, [network, tokens])
+  const [initialToken1, setInitialToken1] = useState(
+    query?.token1 && query?.chainId
+      ? toToken(
+          tokens.find((token: dbToken) => {
+            return query.token1 == token.uuid
+          })
+        )
+      : undefined
+  )
 
   useEffect(() => {
-    setTokens([inputToken, outputToken])
-  }, [inputToken, network, outputToken])
+    setTokens([initialToken0, initialToken1])
+  }, [network, initialToken0, initialToken1])
 
   const [input0, setInput0] = useState<string>('')
-  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([inputToken, outputToken])
+  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([initialToken0, initialToken1])
   const [input1, setInput1] = useState<string>('')
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
   const {
@@ -137,15 +183,14 @@ const Home: NextPage = ({ pools, tokens, prices }: InferGetServerSidePropsType<t
 
   useEffect(() => {
     setSelectedPool(
-      pools.find((pool: dbPool) => {
-        const uuid0 = tokens.find((token: dbToken) => {
-          return token.id === pool.token0Id
-        }).uuid
-        const uuid1 = tokens.find((token: dbToken) => {
-          return token.id === pool.token1Id
-        }).uuid
+      pools.find((pool: dbPoolWithTokens) => {
+        const uuid0 = pool.token0.uuid
+        const uuid1 = pool.token1.uuid
         const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
-        const result = checker([token0 ? token0.uuid : '', token1 ? token1.uuid : ''], [uuid0, uuid1])
+        const result = checker(
+          [token0 ? token0.uuid : '', token1 ? token1.uuid : ''],
+          [uuid0 ? uuid0 : '', uuid1 ? uuid1 : '']
+        )
         return result
       })
     )
