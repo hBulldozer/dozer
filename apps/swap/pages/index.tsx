@@ -121,7 +121,7 @@ const Home: NextPage = ({ pools, tokens, prices, query }: InferGetServerSideProp
             return query.token0 == token.uuid
           })
         )
-      : undefined
+      : toToken(tokens[0])
   )
 
   const [initialToken1, setInitialToken1] = useState(
@@ -131,7 +131,7 @@ const Home: NextPage = ({ pools, tokens, prices, query }: InferGetServerSideProp
             return query.token1 == token.uuid
           })
         )
-      : undefined
+      : toToken(tokens[1])
   )
 
   useEffect(() => {
