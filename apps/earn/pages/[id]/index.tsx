@@ -52,7 +52,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
   // Get the paths we want to pre-render based on pairs
   const paths = pairs.map((pair, i) => ({
-    params: { id: `${chainName[pair.chainId]}:${pair.id}` },
+    params: { id: `${pair.id}` },
   }))
 
   // We'll pre-render only these paths at build time.
