@@ -30,43 +30,6 @@ import { getTokens } from '@dozer/currency'
 // import { GET_POOL_TYPE_MAP } from '../../lib/constants'
 import { prisma } from '@dozer/database'
 
-export const getServerSideProps: GetServerSideProps = async ({ query }) => {
-  const pre_pool = await prisma.pool.findUnique({
-    where: { id: query.id?.toString() },
-    include: {
-      token0: true,
-      token1: true,
-      hourSnapshots: { orderBy: { date: 'desc' } },
-      daySnapshots: { orderBy: { date: 'desc' } },
-    },
-  })
-  const pair: Pair = pairFromPoolAndTokens(pre_pool)
-  return { props: { pair } }
-}
-
-const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
-  {
-    href: `/${pair.id}`,
-    label: `${pair.name}`,
-  },
-  {
-    href: `/${pair.id}/add`,
-    label: `Add Liquidity`,
-  },
-]
-
-// export const getServerSideProps: GetServerSideProps = async ({ query, res }) => {
-//   res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=59')
-//   const [pair] = await Promise.all([getPool(query.id as string)])
-//   return {
-//     props: {
-//       fallback: {
-//         [`/earn/api/pool/${query.id}`]: { pair },
-//       },
-//     },
-//   }
-// }
-
 const Add: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
   return (
     <SWRConfig value={{ fallback }}>
