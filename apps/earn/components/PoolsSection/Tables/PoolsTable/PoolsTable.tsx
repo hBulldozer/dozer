@@ -6,7 +6,7 @@ import { GenericTable, Table } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 // import stringify from 'fast-json-stable-stringify'
-// import useSWR from 'swr'
+import useSWR from 'swr'
 
 // import { usePoolFilters } from '../../../PoolsFiltersProvider'
 import { PAGE_SIZE } from '../contants'
@@ -120,7 +120,7 @@ const COLUMNS = [NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN
 //   },
 // ]
 
-export const PoolsTable: FC = (pools) => {
+export const PoolsTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
   // usePoolFilters()
   const { isSm } = useBreakpoint('sm')
@@ -140,10 +140,15 @@ export const PoolsTable: FC = (pools) => {
     setRendNetwork(network)
   }, [network])
 
-  const _pools_array: Pair[] = Object.values(pools)
-  const pools_array = _pools_array.filter((pool) => {
-    return pool.chainId == rendNetwork
-  })
+  const { data: pools } = useSWR<Pair[]>(`/earn/api/pools`, (url: string) =>
+    fetch(url).then((response) => response.json())
+  )
+  const _pools_array: Pair[] | undefined = pools ? Object.values(pools) : []
+  const pools_array = _pools_array[0]
+    ? _pools_array?.filter((pool: Pair) => {
+        return pool.chainId == rendNetwork
+      })
+    : []
 
   const args = useMemo(
     () => ({
@@ -158,8 +163,6 @@ export const PoolsTable: FC = (pools) => {
     [sorting, pagination]
     // [sorting, pagination, selectedNetworks, selectedPoolTypes, farmsOnly, query, extraQuery]
   )
-
-  // const { data: pools, isValidating } = useSWR<Pair[]>({ url: '/earn/api/pools', args }, fetcher)
 
   // console.log({ pools })
 
@@ -209,6 +212,7 @@ export const PoolsTable: FC = (pools) => {
     return `/${row.id}`
   }, [])
 
+  if (!pools) return <></>
   return (
     <>
       <GenericTable<Pair>

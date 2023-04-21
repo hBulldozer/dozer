@@ -10,7 +10,7 @@ import { Pair } from '../../utils/Pair'
 // import { PoolsTable, PositionsTable } from './Tables'
 // import { TableFilters } from './Tables/TableFilters'
 
-export const PoolsSection: FC = (pools) => {
+export const PoolsSection: FC = () => {
   const accountAddress = useAccount((state) => state.address)
   const [tab, setTab] = useState<number>(0)
   const [address, setAddress] = useState('')
@@ -53,7 +53,7 @@ export const PoolsSection: FC = (pools) => {
         {/* <TableFilters showAllFilters={tab === 0} /> */}
         <Tab.Panels>
           <Tab.Panel unmount={false}>
-            <PoolsTable {...pools} />
+            <PoolsTable />
           </Tab.Panel>
           <Tab.Panel unmount={!address}>{/* <PositionsTable /> */}</Tab.Panel>
         </Tab.Panels>

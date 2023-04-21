@@ -86,10 +86,9 @@ export function pairFromPoolAndTokens(
   )
 }
 
-export function pairFromPoolAndTokensList(pool: Pool | null, tokens: Token[]): Pair {
+export function pairFromPoolAndTokensList(pool: dbPoolWithTokens | null): Pair {
   return (
     pool &&
-    tokens &&
     JSON.parse(
       JSON.stringify({
         id: pool.id,
@@ -98,8 +97,8 @@ export function pairFromPoolAndTokensList(pool: Pool | null, tokens: Token[]): P
         volumeUSD: pool.volumeUSD,
         feeUSD: pool.feeUSD,
         apr: pool.apr,
-        token0: tokens[Number(pool.token0Id)],
-        token1: tokens[Number(pool.token1Id)],
+        token0: toToken(pool.token0),
+        token1: toToken(pool.token1),
         reserve0: Number(pool.reserve0),
         reserve1: Number(pool.reserve1),
         chainId: pool.chainId,

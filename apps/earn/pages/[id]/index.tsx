@@ -43,11 +43,15 @@ export const getStaticPaths: GetStaticPaths = async () => {
   //     fallback: 'blocking',
   //   }
   // }
-  const pre_pools = await prisma.pool.findMany()
-  const tokens = await prisma.token.findMany()
+  const pre_pools = await prisma.pool.findMany({
+    include: {
+      token0: true,
+      token1: true,
+    },
+  })
   const pairs: Pair[] = []
   pre_pools.forEach((pool) => {
-    pairs?.push(pairFromPoolAndTokensList(pool, tokens))
+    pairs?.push(pairFromPoolAndTokensList(pool))
   })
 
   // Get the paths we want to pre-render based on pairs
