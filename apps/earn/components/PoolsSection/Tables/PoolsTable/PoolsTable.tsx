@@ -140,13 +140,13 @@ export const PoolsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: pools } = useSWR<Pair[]>(`/earn/api/pools`, (url: string) =>
+  const { data: pairs } = useSWR<Pair[]>(`/earn/api/pairs`, (url: string) =>
     fetch(url).then((response) => response.json())
   )
-  const _pools_array: Pair[] | undefined = pools ? Object.values(pools) : []
-  const pools_array = _pools_array[0]
-    ? _pools_array?.filter((pool: Pair) => {
-        return pool.chainId == rendNetwork
+  const _pairs_array: Pair[] | undefined = pairs ? Object.values(pairs) : []
+  const pairs_array = _pairs_array[0]
+    ? _pairs_array?.filter((pair: Pair) => {
+        return pair.chainId == rendNetwork
       })
     : []
 
@@ -172,7 +172,7 @@ export const PoolsTable: FC = () => {
   // )
 
   const table = useReactTable<Pair>({
-    data: pools_array || [],
+    data: pairs_array || [],
     columns: COLUMNS,
     state: {
       sorting,
@@ -212,12 +212,12 @@ export const PoolsTable: FC = () => {
     return `/${row.id}`
   }, [])
 
-  if (!pools) return <></>
+  if (!pairs) return <></>
   return (
     <>
       <GenericTable<Pair>
         table={table}
-        loading={!pools}
+        loading={!pairs}
         // loading={!pools && isValidating}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
         placeholder="No pools found"
@@ -231,7 +231,7 @@ export const PoolsTable: FC = () => {
         //   !atLeastOneFilterSelected ? pagination.pageIndex < table.getPageCount() : (pools?.length || 0) >= PAGE_SIZE
         // }
         // nextDisabled={!pools && isValidating}
-        nextDisabled={!pools}
+        nextDisabled={!pairs}
         // nextDisabled={!pools && isValidating}
         onPrev={table.previousPage}
         onNext={table.nextPage}

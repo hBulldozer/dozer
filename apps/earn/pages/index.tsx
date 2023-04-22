@@ -34,20 +34,20 @@ import useSWR, { SWRConfig } from 'swr'
 
 export const getStaticProps: GetStaticProps = async (context) => {
   // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
-  const pre_pools = await prisma.pool.findMany({
+  const pre_pairs = await prisma.pool.findMany({
     include: {
       token0: true,
       token1: true,
     },
   })
-  const pools: Pair[] = []
-  pre_pools.forEach((pool) => {
-    pools?.push(pairFromPoolAndTokensList(pool))
+  const pairs: Pair[] = []
+  pre_pairs.forEach((pair) => {
+    pairs?.push(pairFromPoolAndTokensList(pair))
   })
   return {
     props: {
       fallback: {
-        ['/earn/api/pools']: { pools },
+        ['/earn/api/pairs']: { pairs },
       },
       revalidate: 60,
     },

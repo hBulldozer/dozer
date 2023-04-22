@@ -87,16 +87,16 @@ const _Add: NextPage = () => {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const pre_pools = await prisma.pool.findMany()
-  const tokens = await prisma.token.findMany()
-  const pairs: Pair[] = []
-  pre_pools.forEach((pool) => {
-    pairs?.push(pairFromPoolAndTokensList(pool, tokens))
+  const pre_pools = await prisma.pool.findMany({
+    include: {
+      token0: true,
+      token1: true,
+    },
   })
 
   // Get the paths we want to pre-render based on pairs
-  const paths = pairs.map((pair, i) => ({
-    params: { id: `${pair.id}` },
+  const paths = pre_pools.map((pool, i) => ({
+    params: { id: `${pool.id}` },
   }))
 
   // We'll pre-render only these paths at build time.
