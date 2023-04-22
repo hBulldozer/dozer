@@ -15,7 +15,6 @@ import { getTokens } from '@dozer/currency'
 import { ChainId, Network } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
-// import { InferGetServerSidePropsType } from 'next'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore

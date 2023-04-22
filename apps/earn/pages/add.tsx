@@ -29,20 +29,20 @@ const LINKS: BreadcrumbLink[] = [
   },
 ]
 
-const Add: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback, query }) => {
+const Add: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
   return (
     <SWRConfig value={{ fallback }}>
       <Layout breadcrumbs={LINKS}>
         <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
           <div className="hidden md:block" />
-          <_Add query={query} />
+          <_Add />
         </div>
       </Layout>
     </SWRConfig>
   )
 }
 
-const _Add: FC<{ query: any }> = (query: any) => {
+const _Add: FC = () => {
   const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/earn/api/pools`, (url: string) =>
     fetch(url).then((response) => response.json())
   )
@@ -53,32 +53,41 @@ const _Add: FC<{ query: any }> = (query: any) => {
     (url: string) => fetch(url).then((response) => response.json())
   )
   const { tokens, prices } = data ? data : { tokens: [], prices: {} }
-  const _initialToken0 =
-    query?.token9 && query?.chainId && tokens
-      ? tokens.find((token: dbToken) => {
-          return query.token0 == token.uuid
-        })
-      : undefined
-  const [initialToken0, setInitialToken0] = useState(_initialToken0 ? toToken(_initialToken0) : undefined)
-  const _initialToken1 =
-    query?.token1 && query?.chainId && tokens
-      ? tokens.find((token: dbToken) => {
-          return query.token1 == token.uuid
-        })
-      : undefined
-  const [initialToken1, setInitialToken1] = useState(_initialToken1 ? toToken(_initialToken1) : undefined)
+  // const _initialToken0 =
+  //   query?.token9 && query?.chainId && tokens
+  //     ? tokens.find((token: dbToken) => {
+  //         return query.token0 == token.uuid
+  //       })
+  //     : undefined
+  // const [initialToken0, setInitialToken0] = useState(_initialToken0 ? toToken(_initialToken0) : undefined)
+  // const _initialToken1 =
+  //   query?.token1 && query?.chainId && tokens
+  //     ? tokens.find((token: dbToken) => {
+  //         return query.token1 == token.uuid
+  //       })
+  //     : undefined
+  // const [initialToken1, setInitialToken1] = useState(_initialToken1 ? toToken(_initialToken1) : undefined)
   const [{ input0, input1 }, setTypedAmounts] = useState<{
     input0: string
     input1: string
   }>({ input0: '', input1: '' })
-  const [token0, setToken0] = useState<Token | undefined>(initialToken0)
-  const [token1, setToken1] = useState<Token | undefined>(initialToken1)
-  const [chainId, setChainId] = useState(query?.chainId ? query.chainId : ChainId.HATHOR)
+  const [token0, setToken0] = useState<Token | undefined>(
+    // initialToken0
+    undefined
+  )
+  const [token1, setToken1] = useState<Token | undefined>(
+    // initialToken1
+    undefined
+  )
+  const [chainId, setChainId] = useState(
+    // query?.chainId ? query.chainId :
+    ChainId.HATHOR
+  )
 
   useEffect(() => {
-    setToken0(initialToken0)
-    setToken1(initialToken1)
-  }, [chainId, initialToken0, initialToken1])
+    setToken0(undefined)
+    setToken1(undefined)
+  }, [chainId])
   // const [fee, setFee] = useState(2)
 
   const [parsedInput0, parsedInput1] = useMemo(() => {
@@ -324,10 +333,6 @@ const _Add: FC<{ query: any }> = (query: any) => {
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const chainId = params?.chainId as string
-  const token0 = params?.token0 as string
-  const token1 = params?.token1 as string
-  const query = { chainId, token0, token1 }
   const pre_pools = await prisma.pool.findMany({
     include: {
       token0: true,
@@ -408,7 +413,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         [`/earn/api/pools`]: { pools },
         [`/earn/api/prices`]: { tokens, prices },
       },
-      query: { query },
     },
     revalidate: 60,
   }

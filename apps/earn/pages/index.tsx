@@ -1,9 +1,8 @@
 import { PlusIcon } from '@heroicons/react/solid'
 import { Button, Link, OnsenIcon, Typography } from '@dozer/ui'
-import type { GetStaticProps, InferGetServerSidePropsType, InferGetStaticPropsType, NextPage } from 'next'
+import type { GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
 // import { SUPPORTED_CHAIN_IDS } from '../config'
 // import { GetStaticProps, InferGetStaticPropsType } from 'next'
-import { GetServerSideProps } from 'next'
 import {
   FC,
   JSXElementConstructor,
@@ -21,16 +20,6 @@ import { Pool, prisma } from '@dozer/database'
 import { Pair, pairFromPoolAndTokensList } from '../utils/Pair'
 import { getTokens } from '@dozer/currency'
 import useSWR, { SWRConfig } from 'swr'
-
-// export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-//   const pre_pools = await prisma.pool.findMany()
-//   const tokens = await prisma.token.findMany()
-//   const pools: Pair[] = []
-//   pre_pools.forEach((pool: Pool) => {
-//     pools?.push(pairFromPoolAndTokensList(pool, tokens))
-//   })
-//   return { props: { pools } }
-// }
 
 export const getStaticProps: GetStaticProps = async (context) => {
   // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])

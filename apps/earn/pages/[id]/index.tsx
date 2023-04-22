@@ -1,11 +1,5 @@
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
-import {
-  GetServerSideProps,
-  GetStaticPaths,
-  GetStaticProps,
-  InferGetServerSidePropsType,
-  InferGetStaticPropsType,
-} from 'next'
+import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
 import { useRouter } from 'next/router'
 import { Pair, pairFromPoolAndTokens, pairFromPoolAndTokensList } from '../../utils/Pair'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
@@ -148,7 +142,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       fallback: {
-        [`/earn/api/pool/${id}`]: { pair, prices },
+        [`/earn/api/pair/${id}`]: { pair, prices },
       },
     },
     revalidate: 60,
@@ -173,7 +167,7 @@ const Pool: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) 
 const _Pool = () => {
   const router = useRouter()
   const { data } = useSWR<{ pair: Pair; prices: { [key: string]: number } }>(
-    `/earn/api/pool/${router.query.id}`,
+    `/earn/api/pair/${router.query.id}`,
     (url: string) => fetch(url).then((response) => response.json())
   )
   if (!data) return <></>
