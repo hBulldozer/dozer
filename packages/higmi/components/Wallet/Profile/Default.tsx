@@ -4,6 +4,7 @@ import { CreditCardIcon, DuplicateIcon, ExternalLinkIcon, LogoutIcon } from '@he
 import { ChevronRightIcon } from '@heroicons/react/solid'
 import { Dispatch, FC, SetStateAction, useCallback, useEffect, useState } from 'react'
 
+import { useHtrPrice } from '@dozer/react-query'
 import { ProfileView } from './Profile'
 import { useAccount } from '@dozer/zustand'
 import { shortenAddress } from './Utils'
@@ -41,9 +42,10 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
   }
   // useDisconnect()
 
-  const [usdPrice, setUsdPrice] = useState<number>(0)
+  // const [usdPrice, setUsdPrice] = useState<number>(0)
   // const balanceAsUsd = prices ? prices['00'] : 0
   const [showBalance, setShowBalance] = useState<number | undefined>(0)
+  const { isLoading, error, data: priceHTR } = useHtrPrice()
 
   useEffect(() => {
     setShowBalance(
@@ -52,18 +54,6 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
       })?.token_balance
     )
   }, [balance])
-
-  const updatePrice = useCallback(async () => {
-    const res = await fetch('/kucoin/prices?currencies=HTR')
-    const data = await res.json()
-    const priceHTR = data.data.HTR
-    if (priceHTR) setUsdPrice(priceHTR)
-    else setUsdPrice(0)
-  }, [])
-
-  useEffect(() => {
-    updatePrice().catch(console.error)
-  }, [updatePrice])
 
   return (
     <>
@@ -105,12 +95,15 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
         <div className="flex flex-col items-center justify-center gap-2">
           <Typography variant="h1" className="whitespace-nowrap">
             {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-            {showBalance ? (showBalance / 100).toString() + ' HTR' : 'Loading balance...'}
+            {showBalance ? (showBalance / 100).toString() + ' HTR' : ''}
           </Typography>
           <Typography weight={600} className="text-stone-400">
-            {showBalance && showBalance != 0 && usdPrice != 0
-              ? '$' + ((showBalance / 100) * usdPrice).toFixed(2)
-              : 'Loading KuCoin price...'}
+            {/* {showBalance && showBalance != 0  ? '$' + ((showBalance / 100) * priceHTR).toFixed(2) : ''} */}
+            {isLoading
+              ? 'Loading'
+              : showBalance && showBalance != 0
+              ? '$' + ((showBalance / 100) * priceHTR).toFixed(2)
+              : ''}
           </Typography>
         </div>
       </div>
