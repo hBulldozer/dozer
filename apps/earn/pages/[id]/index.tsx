@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
-import { GetServerSideProps, InferGetServerSidePropsType } from 'next'
+import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPoolAndTokens } from '../../utils/Pair'
+import { Pair, pairFromPoolAndTokens, pairFromPoolAndTokensList } from '../../utils/Pair'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
@@ -20,13 +20,49 @@ import {
   PoolStats,
 } from '../../components'
 // import { GET_POOL_TYPE_MAP } from '../../lib/constants'
+import useSWR, { SWRConfig } from 'swr'
 
 import { prisma } from '@dozer/database'
+import { chainName } from '@dozer/chain'
+import { formatPercent } from '@dozer/format'
+import { FC } from 'react'
 
-export const getServerSideProps: GetServerSideProps = async ({ res, query }) => {
-  res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=3500')
+export const getStaticPaths: GetStaticPaths = async () => {
+  // When this is true (in preview environments) don't
+  // prerender any static pages
+  // (faster builds, but slower initial page load)
+  // if (process.env.SKIP_BUILD_STATIC_GENERATION === 'true') {
+  //   return {
+  //     paths: [],
+  //     fallback: 'blocking',
+  //   }
+  // }
+  const pre_pools = await prisma.pool.findMany({
+    include: {
+      token0: true,
+      token1: true,
+    },
+  })
+  const pairs: Pair[] = []
+  pre_pools.forEach((pool) => {
+    pairs?.push(pairFromPoolAndTokensList(pool))
+  })
+
+  // Get the paths we want to pre-render based on pairs
+  const paths = pairs.map((pair, i) => ({
+    params: { id: `${pair.id}` },
+  }))
+
+  // We'll pre-render only these paths at build time.
+  // { fallback: blocking } will server-render pages
+  // on-demand if the path doesn't exist.
+  return { paths, fallback: 'blocking' }
+}
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const id = params?.id as string
   const pre_pool = await prisma.pool.findUnique({
-    where: { id: query.id?.toString() },
+    where: { id: id },
     include: {
       token0: true,
       token1: true,
@@ -34,6 +70,14 @@ export const getServerSideProps: GetServerSideProps = async ({ res, query }) => 
       daySnapshots: { orderBy: { date: 'desc' } },
     },
   })
+  const pair: Pair = pairFromPoolAndTokens(pre_pool)
+
+  if (!pair) {
+    // If there is a server error, you might want to
+    // throw an error instead of returning so that the cache is not updated
+    // until the next successful request.
+    throw new Error(`Failed to fetch pair, received ${pair}`)
+  }
   const tokens = await prisma.token.findMany({
     select: {
       id: true,
@@ -69,7 +113,6 @@ export const getServerSideProps: GetServerSideProps = async ({ res, query }) => 
     },
   })
 
-  const pair: Pair = pairFromPoolAndTokens(pre_pool)
   const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
   const data = await resp.json()
   const priceHTR = data.data.HTR
@@ -90,32 +133,45 @@ export const getServerSideProps: GetServerSideProps = async ({ res, query }) => 
     }
   })
 
-  return { props: { pair, prices } }
+  if (!prices) {
+    // If there is a server error, you might want to
+    // throw an error instead of returning so that the cache is not updated
+    // until the next successful request.
+    throw new Error(`Failed to fetch prices, received ${prices}`)
+  }
+  return {
+    props: {
+      fallback: {
+        [`/earn/api/pair/${id}`]: { pair, prices },
+      },
+    },
+    revalidate: 60,
+  }
 }
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
     href: `/${pair.id}`,
-    label: `${pair.name}`,
+    label: `${pair.name} - ${formatPercent(pair.swapFee / 10000)}`,
   },
 ]
 
-// const Pool: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-//   return (
-//     <SWRConfig value={{ fallback }}>
-//       <_Pool />
-//     </SWRConfig>
-//   )
-// }
+const Pool: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
+  return (
+    <SWRConfig value={{ fallback }}>
+      <_Pool />
+    </SWRConfig>
+  )
+}
 
-const Pool = ({ pair, prices }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  // const router = useRouter()
-  //console.log(pair.hourSnapshots, pair.daySnapshots)
-  // const { data } = useSWR<{ pair: Pair }>(`/earn/api/pool/${router.query.id}`, (url) =>
-  //   fetch(url).then((response) => response.json())
-  // )
-  // if (!data) return <></>
-  // const { pair } = data
+const _Pool = () => {
+  const router = useRouter()
+  const { data } = useSWR<{ pair: Pair; prices: { [key: string]: number } }>(
+    `/earn/api/pair/${router.query.id}`,
+    (url: string) => fetch(url).then((response) => response.json())
+  )
+  if (!data) return <></>
+  const { pair, prices } = data
 
   return (
     // <PoolPositionProvider pair={pair}>

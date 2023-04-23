@@ -10,33 +10,33 @@ import { SwapStatsDisclosure, SettingsOverlay } from '../components'
 import { Checker } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
-import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from 'next'
+import { GetStaticProps, InferGetStaticPropsType } from 'next'
 import { prisma } from '@dozer/database'
 import { dbToken, dbPool, dbPoolWithTokens, dbTokenWithPools } from '../interfaces'
-import { ChainId } from '@dozer/chain'
+import useSWR, { SWRConfig } from 'swr'
+import { useRouter } from 'next/router'
 // import { Token as dbToken, Pool } from '@dozer/database/types'
 
-export const getServerSideProps: GetServerSideProps = async ({ query, res }) => {
-  res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=3500')
+function toToken(dbToken: dbToken): Token {
+  return new Token({
+    chainId: dbToken.chainId,
+    uuid: dbToken.uuid,
+    decimals: dbToken.decimals,
+    name: dbToken.name,
+    symbol: dbToken.symbol,
+  })
+}
+export const getStaticProps: GetStaticProps = async (context) => {
+  // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
   const pools = await prisma.pool.findMany({
-    select: {
-      id: true,
-      reserve0: true,
-      reserve1: true,
-      token0: {
-        select: {
-          uuid: true,
-          symbol: true,
-        },
-      },
-      token1: {
-        select: {
-          uuid: true,
-          symbol: true,
-        },
-      },
+    include: {
+      token0: true,
+      token1: true,
     },
   })
+  if (!pools) {
+    throw new Error(`Failed to fetch pools, received ${pools}`)
+  }
   const tokens = await prisma.token.findMany({
     select: {
       id: true,
@@ -72,6 +72,9 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
     },
   })
 
+  if (!tokens) {
+    throw new Error(`Failed to fetch tokens, received ${tokens}`)
+  }
   const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
   const data = await resp.json()
   const priceHTR = data.data.HTR
@@ -91,48 +94,65 @@ export const getServerSideProps: GetServerSideProps = async ({ query, res }) => 
       if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR
     }
   })
+
+  if (!prices) {
+    throw new Error(`Failed to fetch prices, received ${prices}`)
+  }
   return {
     props: {
-      pools: JSON.parse(JSON.stringify(pools)),
-      tokens: JSON.parse(JSON.stringify(tokens)),
-      prices: JSON.parse(JSON.stringify(prices)),
-      query: query,
+      fallback: {
+        ['/earn/api/pools']: { pools },
+        [`/earn/api/prices`]: { tokens, prices },
+      },
+      revalidate: 60,
     },
   }
 }
 
-function toToken(dbToken: dbToken): Token {
-  return new Token({
-    chainId: dbToken.chainId,
-    uuid: dbToken.uuid,
-    decimals: dbToken.decimals,
-    name: dbToken.name,
-    symbol: dbToken.symbol,
-  })
+const Home: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
+  return (
+    <SWRConfig value={{ fallback }}>
+      <_Home />
+    </SWRConfig>
+  )
 }
 
-const Home: NextPage = ({ pools, tokens, prices, query }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const _Home = () => {
+  const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/earn/api/pools`, (url: string) =>
+    fetch(url).then((response) => response.json())
+  )
+  const { pools } = pre_pools ? pre_pools : { pools: [] }
+  // const pools: dbPoolWithTokens[] | undefined = pre_pools ? Object.values(pre_pools) : []
+  const { data } = useSWR<{ tokens: dbTokenWithPools[]; prices: { [key: string]: number } }>(
+    `/earn/api/prices`,
+    (url: string) => fetch(url).then((response) => response.json())
+  )
+  const { tokens, prices } = data ? data : { tokens: [], prices: {} }
+
+  const router = useRouter()
+  useEffect(() => {
+    const params = router.query
+    const _initialToken0 =
+      params?.token0 && params?.chainId && tokens
+        ? tokens.find((token) => {
+            return params.token0 == token.uuid
+          })
+        : undefined
+    const _initialToken1 =
+      params?.token1 && params?.chainId && tokens
+        ? tokens.find((token) => {
+            return params.token1 == token.uuid
+          })
+        : undefined
+    if (_initialToken0) setInitialToken0(toToken(_initialToken0))
+    if (_initialToken1) setInitialToken1(toToken(_initialToken1))
+  }, [router.query, router.query.isReady, tokens])
+
   const network = useNetwork((state) => state.network)
 
-  const [initialToken0, setInitialToken0] = useState(
-    query?.token0 && query?.chainId
-      ? toToken(
-          tokens.find((token: dbToken) => {
-            return query.token0 == token.uuid
-          })
-        )
-      : undefined
-  )
+  const [initialToken0, setInitialToken0] = useState(toToken(tokens[0]))
 
-  const [initialToken1, setInitialToken1] = useState(
-    query?.token1 && query?.chainId
-      ? toToken(
-          tokens.find((token: dbToken) => {
-            return query.token1 == token.uuid
-          })
-        )
-      : undefined
-  )
+  const [initialToken1, setInitialToken1] = useState(toToken(tokens[1]))
 
   useEffect(() => {
     setTokens([initialToken0, initialToken1])
@@ -242,6 +262,7 @@ const Home: NextPage = ({ pools, tokens, prices, query }: InferGetServerSideProp
     })
   }, [])
 
+  if (!(pools || tokens || prices)) return <></>
   return (
     <Layout>
       <Widget id="swap" maxWidth={400}>
@@ -271,7 +292,7 @@ const Home: NextPage = ({ pools, tokens, prices, query }: InferGetServerSideProp
             tradeType={tradeType}
             loading={!token0}
             prices={prices}
-            tokens={tokens.map((token: Token) => {
+            tokens={tokens.map((token) => {
               return new Token(token)
             })}
           />
@@ -304,7 +325,7 @@ const Home: NextPage = ({ pools, tokens, prices, query }: InferGetServerSideProp
               tradeType={tradeType}
               loading={!token1}
               prices={prices}
-              tokens={tokens.map((token: Token) => {
+              tokens={tokens.map((token) => {
                 return new Token(token)
               })}
               // isWrap={isWrap}

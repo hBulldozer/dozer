@@ -1,49 +1,37 @@
 import { ExternalLinkIcon } from '@heroicons/react/solid'
-import { ChainId, chainName } from '@dozer/chain'
 import { formatPercent } from '@dozer/format'
-// import { getBuiltGraphSDK, Pair } from '@dozer/graph-client'
-import { Pair, pairFromPool, pairFromPoolAndTokens, pairFromPoolAndTokensList } from '../../utils/Pair'
+import { Pair, pairFromPool } from '../../utils/Pair'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
-// import { SUPPORTED_CHAIN_IDS } from '../../config'
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
-import { useRouter } from 'next/router'
-import { FC } from 'react'
-import useSWR, { SWRConfig } from 'swr'
 
-import {
-  AddSectionLegacy,
-  AddSectionMyPosition,
-  // AddSectionStake,
-  // AddSectionTrident,
-  Layout,
-  // PoolPositionProvider,
-  // PoolPositionStakedProvider,
-} from '../../components'
-import { getTokens } from '@dozer/currency'
-// import { GET_POOL_TYPE_MAP } from '../../lib/constants'
+import { AddSectionMyPosition, Layout, RemoveSectionLegacy } from '../../components'
+
 import { prisma } from '@dozer/database'
+import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
+import useSWR, { SWRConfig } from 'swr'
+import { useRouter } from 'next/router'
 import { dbPoolWithTokens } from '../../interfaces'
+import { FC } from 'react'
 
-const LINKS = (pool: dbPoolWithTokens): BreadcrumbLink[] => [
+const LINKS = ({ pool }: { pool: dbPoolWithTokens }): BreadcrumbLink[] => [
   {
     href: `/${pool.id}`,
     label: `${pool.name} - ${formatPercent(pool.swapFee / 10000)}`,
   },
   {
-    href: `/${pool.id}/add`,
-    label: `Add Liquidity`,
+    href: `/${pool.id}/remove`,
+    label: `Remove Liquidity`,
   },
 ]
 
-const Add: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
+const Remove: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
   return (
     <SWRConfig value={{ fallback }}>
-      <_Add />
+      <_Remove />
     </SWRConfig>
   )
 }
 
-const _Add: NextPage = () => {
+const _Remove: NextPage = () => {
   const router = useRouter()
   const { data: pre_pool } = useSWR<{ pool: dbPoolWithTokens }>(`/earn/api/pool/${router.query.id}`, (url) =>
     fetch(url).then((response) => response.json())
@@ -58,38 +46,31 @@ const _Add: NextPage = () => {
   const { prices } = pre_prices
 
   return (
-    // <PoolPositionProvider pair={pair}>
-    <>
-      {/* <PoolPositionStakedProvider pair={pair}> */}
-      <Layout breadcrumbs={LINKS(pool)}>
-        <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
-          <div className="hidden md:block" />
-          <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-            <AddSectionLegacy pool={pool} prices={prices} />
-            {/* <AddSectionStake poolAddress={pair.id} /> */}
-            <Container className="flex justify-center">
-              <Link.External
-                href="https://docs.dozer.finance/docs/Products/dozer/Liquidity%20Pools"
-                className="flex justify-center px-6 py-4 decoration-stone-500 hover:bg-opacity-[0.06] cursor-pointer rounded-2xl"
-              >
-                <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-500">
-                  Learn more about liquidity and yield farming
-                  <ExternalLinkIcon width={16} height={16} className="text-stone-500" />
-                </Typography>
-              </Link.External>
-            </Container>
-          </div>
-          <div className="order-1 sm:order-3">
-            <AppearOnMount>
-              <AddSectionMyPosition pair={pairFromPool(pool)} />
-            </AppearOnMount>
-          </div>
+    <Layout breadcrumbs={LINKS({ pool })}>
+      <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
+        <div className="hidden md:block" />
+        <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
+          <RemoveSectionLegacy pool={pool} prices={prices} />
+          <Container className="flex justify-center">
+            <Link.External
+              href="https://docs.dozer.finance/docs/Products/Dozer/Liquidity%20Pools"
+              className="flex justify-center px-6 py-4 decoration-stone-500 hover:bg-opacity-[0.06] cursor-pointer rounded-2xl"
+            >
+              <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-500">
+                Learn more about liquidity and yield farming
+                <ExternalLinkIcon width={16} height={16} className="text-stone-500" />
+              </Typography>
+            </Link.External>
+          </Container>
         </div>
-        <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
-      </Layout>
-      {/* </PoolPositionStakedProvider> */}
-    </>
-    // </PoolPositionProvider>
+        <div className="order-1 sm:order-3">
+          <AppearOnMount>
+            <AddSectionMyPosition pair={pairFromPool(pool)} />
+          </AppearOnMount>
+        </div>
+      </div>
+      <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
+    </Layout>
   )
 }
 
@@ -171,4 +152,4 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   }
 }
 
-export default Add
+export default Remove

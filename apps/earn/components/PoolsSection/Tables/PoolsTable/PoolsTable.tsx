@@ -6,7 +6,7 @@ import { GenericTable, Table } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 // import stringify from 'fast-json-stable-stringify'
-// import useSWR from 'swr'
+import useSWR from 'swr'
 
 // import { usePoolFilters } from '../../../PoolsFiltersProvider'
 import { PAGE_SIZE } from '../contants'
@@ -15,7 +15,6 @@ import { getTokens } from '@dozer/currency'
 import { ChainId, Network } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
-// import { InferGetServerSidePropsType } from 'next'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -120,7 +119,7 @@ const COLUMNS = [NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN
 //   },
 // ]
 
-export const PoolsTable: FC = (pools) => {
+export const PoolsTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
   // usePoolFilters()
   const { isSm } = useBreakpoint('sm')
@@ -140,10 +139,15 @@ export const PoolsTable: FC = (pools) => {
     setRendNetwork(network)
   }, [network])
 
-  const _pools_array: Pair[] = Object.values(pools)
-  const pools_array = _pools_array.filter((pool) => {
-    return pool.chainId == rendNetwork
-  })
+  const { data: pairs } = useSWR<Pair[]>(`/earn/api/pairs`, (url: string) =>
+    fetch(url).then((response) => response.json())
+  )
+  const _pairs_array: Pair[] | undefined = pairs ? Object.values(pairs) : []
+  const pairs_array = _pairs_array[0]
+    ? _pairs_array?.filter((pair: Pair) => {
+        return pair.chainId == rendNetwork
+      })
+    : []
 
   const args = useMemo(
     () => ({
@@ -159,8 +163,6 @@ export const PoolsTable: FC = (pools) => {
     // [sorting, pagination, selectedNetworks, selectedPoolTypes, farmsOnly, query, extraQuery]
   )
 
-  // const { data: pools, isValidating } = useSWR<Pair[]>({ url: '/earn/api/pools', args }, fetcher)
-
   // console.log({ pools })
 
   // const { data: poolCount } = useSWR<number>(
@@ -169,7 +171,7 @@ export const PoolsTable: FC = (pools) => {
   // )
 
   const table = useReactTable<Pair>({
-    data: pools_array || [],
+    data: pairs_array || [],
     columns: COLUMNS,
     state: {
       sorting,
@@ -209,11 +211,12 @@ export const PoolsTable: FC = (pools) => {
     return `/${row.id}`
   }, [])
 
+  if (!pairs) return <></>
   return (
     <>
       <GenericTable<Pair>
         table={table}
-        loading={!pools}
+        loading={!pairs}
         // loading={!pools && isValidating}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
         placeholder="No pools found"
@@ -227,7 +230,7 @@ export const PoolsTable: FC = (pools) => {
         //   !atLeastOneFilterSelected ? pagination.pageIndex < table.getPageCount() : (pools?.length || 0) >= PAGE_SIZE
         // }
         // nextDisabled={!pools && isValidating}
-        nextDisabled={!pools}
+        nextDisabled={!pairs}
         // nextDisabled={!pools && isValidating}
         onPrev={table.previousPage}
         onNext={table.nextPage}
