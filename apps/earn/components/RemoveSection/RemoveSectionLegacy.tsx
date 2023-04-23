@@ -10,16 +10,19 @@ import { RemoveSectionWidget } from './RemoveSectionWidget'
 import { Pair } from '../../utils/Pair'
 import { useTokensFromPair } from '../../utils/useTokensFromPair'
 import toToken from '../../utils/toToken'
+import { dbPoolWithTokens } from '../../interfaces'
 
 interface RemoveSectionLegacyProps {
-  pair: Pair
+  pool: dbPoolWithTokens
   prices: { [key: string]: number }
 }
 
 const DEFAULT_REMOVE_LIQUIDITY_SLIPPAGE_TOLERANCE = new Percent(5, 100)
 
-export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices }) => {
-  const { token0, token1, liquidityToken } = useTokensFromPair(pair)
+export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices }) => {
+  const token0 = toToken(pool.token0)
+  const token1 = toToken(pool.token1)
+  // const liquidityToken = pool.liquidityToken
   const { network } = useNetwork()
   const isMounted = useIsMounted()
   const { address, balance } = useAccount()
@@ -37,9 +40,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   const [percentage, setPercentage] = useState<string>('')
   const percentToRemove = useMemo(() => new Percent(percentage, 100), [percentage])
 
-  const {
-    data: [poolState, pool],
-  } = { data: [1, pair] }
+  const poolState = 1
   const totalSupply = 100
   // useTotalSupply(liquidityToken)
 
@@ -47,7 +48,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
     return [pool?.reserve0, pool?.reserve1]
   }, [pool?.reserve0, pool?.reserve1])
 
-  const underlying = [Amount.fromRawAmount(toToken(pair.token0), 10), Amount.fromRawAmount(toToken(pair.token1), 10)]
+  const underlying = [Amount.fromRawAmount(toToken(pool.token0), 10), Amount.fromRawAmount(toToken(pool.token1), 10)]
   // useUnderlyingTokenBalanceFromPair({
   //   reserve0,
   //   reserve1,
@@ -95,7 +96,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
     ]
   }, [currencyAToRemove, slippageTolerance, currencyBToRemove])
 
-  const amountToRemove = Amount.fromRawAmount(toToken(pair.token0), 10)
+  const amountToRemove = Amount.fromRawAmount(toToken(pool.token0), 10)
   // useMemo(
   //   () => balance?.[FundSource.WALLET].multiply(percentToRemove),
   //   [balance, percentToRemove]
@@ -228,7 +229,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
     <div>
       <RemoveSectionWidget
         // isFarm={!!pair.farm}
-        chainId={pair.chainId}
+        chainId={pool.chainId}
         percentage={percentage}
         token0={token0}
         token1={token1}
