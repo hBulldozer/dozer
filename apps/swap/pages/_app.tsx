@@ -1,10 +1,10 @@
 import '@dozer/ui/index.css'
 
-import { App, ThemeProvider } from '@dozer/ui'
+import { App, LoadingOverlay, ThemeProvider } from '@dozer/ui'
 import { Analytics } from '@vercel/analytics/react'
 import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { Header } from '../components'
@@ -20,6 +20,7 @@ const queryClient = new QueryClient()
 
 const MyApp = ({ Component, pageProps }: AppProps) => {
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
   useEffect(() => {
     const handler = (page: any) => {
       window.dataLayer.push({
@@ -27,15 +28,28 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
         page,
       })
     }
-    router.events.on('routeChangeComplete', handler)
-    router.events.on('hashChangeComplete', handler)
     return () => {
       router.events.off('routeChangeComplete', handler)
       router.events.off('hashChangeComplete', handler)
     }
   }, [router.events])
+
+  useEffect(() => {
+    router.events.on('routeChangeStart', (url) => {
+      setIsLoading(true)
+    })
+
+    router.events.on('routeChangeComplete', (url) => {
+      setIsLoading(false)
+    })
+
+    router.events.on('routeChangeError', (url) => {
+      setIsLoading(false)
+    })
+  }, [isLoading, router])
   return (
     <>
+      <LoadingOverlay show={isLoading} />
       <Head>
         <link rel="apple-touch-icon" sizes="180x180" href="/earn/apple-touch-icon.png?v=1" />
         <link rel="icon" type="image/png" sizes="32x32" href="/earn/favicon-32x32.png?v=1" />

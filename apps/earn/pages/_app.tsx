@@ -1,6 +1,6 @@
 import '@dozer/ui/index.css'
 
-import { App, ThemeProvider } from '@dozer/ui'
+import { App, LoadingOverlay, ThemeProvider } from '@dozer/ui'
 // import { client } from '@dozer/wagmi'
 import { Analytics } from '@vercel/analytics/react'
 import { Header } from '../components'
@@ -8,7 +8,7 @@ import { Header } from '../components'
 // import { Updaters as TokenListsUpdaters } from '../lib/state/TokenListsUpdaters'
 import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
-import { FC, useEffect } from 'react'
+import { FC, useEffect, useState } from 'react'
 // import { store } from '../store'
 // import { WagmiConfig } from 'wagmi'
 // import SEO from '../next-seo.config.mjs'
@@ -20,23 +20,36 @@ const queryClient = new QueryClient()
 
 const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
   useEffect(() => {
-    const dataLayer = window.dataLayer || []
     const handler = (page: any) => {
-      dataLayer.push({
+      window.dataLayer.push({
         event: 'pageview',
         page,
       })
     }
-    router.events.on('routeChangeComplete', handler)
-    router.events.on('hashChangeComplete', handler)
     return () => {
       router.events.off('routeChangeComplete', handler)
       router.events.off('hashChangeComplete', handler)
     }
   }, [router.events])
+
+  useEffect(() => {
+    router.events.on('routeChangeStart', (url) => {
+      setIsLoading(true)
+    })
+
+    router.events.on('routeChangeComplete', (url) => {
+      setIsLoading(false)
+    })
+
+    router.events.on('routeChangeError', (url) => {
+      setIsLoading(false)
+    })
+  }, [isLoading, router])
   return (
     <>
+      <LoadingOverlay show={isLoading} />
       <Head>
         <link rel="apple-touch-icon" sizes="180x180" href="/earn/apple-touch-icon.png?v=1" />
         <link rel="icon" type="image/png" sizes="32x32" href="/earn/favicon-32x32.png?v=1" />
