@@ -53,20 +53,6 @@ const _Add: FC = () => {
     (url: string) => fetch(url).then((response) => response.json())
   )
   const { tokens, prices } = data ? data : { tokens: [], prices: {} }
-  // const _initialToken0 =
-  //   query?.token9 && query?.chainId && tokens
-  //     ? tokens.find((token: dbToken) => {
-  //         return query.token0 == token.uuid
-  //       })
-  //     : undefined
-  // const [initialToken0, setInitialToken0] = useState(_initialToken0 ? toToken(_initialToken0) : undefined)
-  // const _initialToken1 =
-  //   query?.token1 && query?.chainId && tokens
-  //     ? tokens.find((token: dbToken) => {
-  //         return query.token1 == token.uuid
-  //       })
-  //     : undefined
-  // const [initialToken1, setInitialToken1] = useState(_initialToken1 ? toToken(_initialToken1) : undefined)
   const [{ input0, input1 }, setTypedAmounts] = useState<{
     input0: string
     input1: string
