@@ -139,7 +139,7 @@ export const PoolsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: pairs } = useSWR<Pair[]>(`/earn/api/pairs`, (url: string) =>
+  const { data: pairs, isLoading } = useSWR<Pair[]>(`/earn/api/pairs`, (url: string) =>
     fetch(url).then((response) => response.json())
   )
   const _pairs_array: Pair[] | undefined = pairs ? Object.values(pairs) : []
@@ -219,7 +219,7 @@ export const PoolsTable: FC = () => {
         loading={!pairs}
         // loading={!pools && isValidating}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
-        placeholder="No pools found"
+        placeholder={isLoading ? 'Loading pools...' : 'No pools found'}
         pageSize={PAGE_SIZE}
         linkFormatter={rowLink}
       />
