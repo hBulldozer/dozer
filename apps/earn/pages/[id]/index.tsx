@@ -125,7 +125,7 @@ const _Pool = () => {
             <AppearOnMount>
               <div className="flex flex-col gap-10">
                 <PoolMyRewards pair={pair} />
-                <PoolPosition pair={pair} />
+                <PoolPosition pair={pair} prices={prices} />
               </div>
             </AppearOnMount>
             <div className="hidden lg:flex">
@@ -141,62 +141,5 @@ const _Pool = () => {
     // </PoolPositionProvider>
   )
 }
-
-// export const getStaticPaths: GetStaticPaths = async () => {
-//   // When this is true (in preview environments) don't
-//   // prerender any static pages
-//   // (faster builds, but slower initial page load)
-//   if (process.env.SKIP_BUILD_STATIC_GENERATION === 'true') {
-//     return {
-//       paths: [],
-//       fallback: 'blocking',
-//     }
-//   }
-
-//   const sdk = getBuiltGraphSDK()
-//   const { pairs } = await sdk.PairsByChainIds({
-//     first: 250,
-//     orderBy: 'liquidityUSD',
-//     orderDirection: 'desc',
-//     chainIds: SUPPORTED_CHAIN_IDS,
-//   })
-
-//   // Get the paths we want to pre-render based on pairs
-//   const paths = pairs
-//     .sort(({ liquidityUSD: a }, { liquidityUSD: b }) => {
-//       return Number(b) - Number(a)
-//     })
-//     .slice(0, 250)
-//     .map((pair, i) => ({
-//       params: { id: `${chainName[pair.chainId]}:${pair.address}` },
-//     }))
-
-//   // We'll pre-render only these paths at build time.
-// { fallback: blocking } will server-render pages
-//   // on-demand if the path doesn't exist.
-//   return { paths, fallback: 'blocking' }
-// }
-//
-// export const getStaticProps: GetStaticProps = async ({ params }) => {
-//   const sdk = getBuiltGraphSDK()
-//   const id = params?.id as string
-//   const { pair } = await sdk.PairById({ id })
-
-//   if (!pair) {
-//     // If there is a server error, you might want to
-//     // throw an error instead of returning so that the cache is not updated
-//     // until the next successful request.
-//     throw new Error(`Failed to fetch pair, received ${pair}`)
-//   }
-
-//   return {
-//     props: {
-//       fallback: {
-//         [`/earn/api/pool/${id}`]: { pair },
-//       },
-//     },
-//     revalidate: 60,
-//   }
-// }
 
 export default Pool

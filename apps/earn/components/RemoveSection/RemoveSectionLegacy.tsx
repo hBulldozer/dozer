@@ -1,16 +1,17 @@
-import { Amount, Token } from '@dozer/currency'
-import { FundSource, useIsMounted } from '@dozer/hooks'
-import { Percent, ZERO } from '@dozer/math'
-import { Button, Dots } from '@dozer/ui'
+import { Amount } from '@dozer/currency'
+import { useIsMounted } from '@dozer/hooks'
+import { Percent } from '@dozer/math'
+import { Button } from '@dozer/ui'
 import { Approve, Checker } from '@dozer/higmi'
-import { Dispatch, FC, SetStateAction, useCallback, useMemo, useState } from 'react'
+import { FC, useMemo, useState } from 'react'
 
 import { useAccount, useNetwork, useSettings } from '@dozer/zustand'
 import { RemoveSectionWidget } from './RemoveSectionWidget'
-import { Pair } from '../../utils/Pair'
-import { useTokensFromPair } from '../../utils/useTokensFromPair'
 import toToken from '../../utils/toToken'
 import { dbPoolWithTokens } from '../../interfaces'
+import { useUnderlyingTokenBalanceFromPair } from '../../utils/useUnderlyingTokenBalanceFromPair'
+import { pairFromPool } from '../../utils/Pair'
+import { usePoolPosition } from '../../utils/usePoolPosition'
 
 interface RemoveSectionLegacyProps {
   pool: dbPoolWithTokens
@@ -19,53 +20,8 @@ interface RemoveSectionLegacyProps {
 
 const DEFAULT_REMOVE_LIQUIDITY_SLIPPAGE_TOLERANCE = new Percent(5, 100)
 
-interface Params {
-  totalSupply: Amount<Token> | undefined
-  reserve0: Amount<Token> | undefined
-  reserve1: Amount<Token> | undefined
-  balance: Amount<Token> | undefined
-}
-
-type UseUnderlyingTokenBalanceFromPairParams = (
-  params: Params
-) => [Amount<Token> | undefined, Amount<Token> | undefined]
-
-const useUnderlyingTokenBalanceFromPair: UseUnderlyingTokenBalanceFromPairParams = ({
-  balance,
-  totalSupply,
-  reserve1,
-  reserve0,
-}) => {
-  return useMemo(() => {
-    if (!balance || !totalSupply || !reserve0 || !reserve1) {
-      return [undefined, undefined]
-    }
-
-    if (totalSupply.equalTo(ZERO)) {
-      return [
-        Amount.fromRawAmount(reserve0.wrapped.currency, '0'),
-        Amount.fromRawAmount(reserve1.wrapped.currency, '0'),
-      ]
-    }
-
-    return [
-      reserve0.wrapped.multiply(balance.wrapped.divide(totalSupply)),
-      reserve1.wrapped.multiply(balance.wrapped.divide(totalSupply)),
-    ]
-  }, [balance, reserve0, reserve1, totalSupply])
-}
-
 export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices }) => {
-  const token0 = toToken(pool.token0)
-  const token1 = toToken(pool.token1)
-  const liquidityToken = pool.tokenLP
-  const { network } = useNetwork()
-  const isMounted = useIsMounted()
-  const { address, balance } = useAccount()
-  // const deadline = useTransactionDeadline(pair.chainId)
-  // const contract = useSushiSwapRouterContract(pair.chainId)
   const { slippageTolerance } = useSettings()
-  // const [, { createNotification }] = useNotifications(address)
 
   const slippagePercent = useMemo(
     () =>
@@ -79,28 +35,13 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
   const poolState = 1
   const totalSupply = Amount.fromRawAmount(toToken(pool.tokenLP), Number(pool.tokenLP.totalSupply))
 
-  const [reserve0, reserve1] = useMemo(() => {
-    return [
-      Amount.fromRawAmount(toToken(pool.token0), Number(pool?.reserve0)),
-      Amount.fromRawAmount(toToken(pool.token1), Number(pool?.reserve1)),
-    ]
-  }, [pool?.reserve0, pool?.reserve1])
-
-  const BalanceLPToken = balance.find((token) => {
-    return token.token_uuid == liquidityToken.uuid
+  const [underlying0, underlying1, BalanceLPAmount, value0, value1] = usePoolPosition({
+    pair: pairFromPool(pool),
+    prices: prices,
   })
-  const BalanceLPAmount = Amount.fromRawAmount(toToken(pool.tokenLP), BalanceLPToken ? BalanceLPToken.token_balance : 0)
 
-  const underlying =
-    // [Amount.fromRawAmount(toToken(pool.token0), 10), Amount.fromRawAmount(toToken(pool.token1), 10)]
-    useUnderlyingTokenBalanceFromPair({
-      reserve0,
-      reserve1,
-      totalSupply,
-      balance: BalanceLPAmount,
-    })
-
-  const [underlying0, underlying1] = underlying
+  const token0 = toToken(pool.token0)
+  const token1 = toToken(pool.token1)
 
   const currencyAToRemove = useMemo(
     () =>
@@ -141,7 +82,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
   }, [currencyAToRemove, slippageTolerance, currencyBToRemove])
 
   const amountToRemove = Amount.fromRawAmount(
-    toToken(liquidityToken),
+    toToken(pool.tokenLP),
     percentToRemove.multiply(BalanceLPAmount.quotient).quotient || '0'
   )
 

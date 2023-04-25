@@ -41,6 +41,7 @@ export class Token extends Currency {
   }
   public constructor({
     chainId,
+    totalSupply,
     uuid,
     decimals,
     symbol,
@@ -48,6 +49,7 @@ export class Token extends Currency {
     rebase = { base: JSBI.BigInt(1), elastic: JSBI.BigInt(1) },
   }: {
     chainId: number | string
+    totalSupply?: number
     uuid: string
     decimals: number
     symbol?: string
@@ -56,6 +58,7 @@ export class Token extends Currency {
   }) {
     super({
       chainId,
+      totalSupply,
       decimals,
       symbol,
       name,

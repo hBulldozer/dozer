@@ -149,6 +149,7 @@ export type Pair = {
   token0: Token
   /**  Second Token  */
   token1: Token
+  tokenLP: Token
   chainId: ChainId
   reserve0: number
   reserve1: number
