@@ -41,6 +41,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
     include: {
       token0: true,
       token1: true,
+      tokenLP: true,
     },
   })
   const pairs: Pair[] = []
@@ -66,6 +67,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     include: {
       token0: true,
       token1: true,
+      tokenLP: true,
       hourSnapshots: { orderBy: { date: 'desc' } },
       daySnapshots: { orderBy: { date: 'desc' } },
     },

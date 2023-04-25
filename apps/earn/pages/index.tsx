@@ -27,6 +27,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
     include: {
       token0: true,
       token1: true,
+      tokenLP: true,
     },
   })
   const pairs: Pair[] = []

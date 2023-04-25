@@ -11,6 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     include: {
       token0: true,
       token1: true,
+      tokenLP: true,
       hourSnapshots: { orderBy: { date: 'desc' } },
       daySnapshots: { orderBy: { date: 'desc' } },
     },

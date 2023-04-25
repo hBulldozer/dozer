@@ -35,6 +35,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
         },
       },
+      poolsLP: {
+        select: {
+          id: true,
+          reserve0: true,
+          reserve1: true,
+          tokenLP: {
+            select: {
+              uuid: true,
+            },
+          },
+        },
+      },
     },
   })
   const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')

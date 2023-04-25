@@ -323,6 +323,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     include: {
       token0: true,
       token1: true,
+      tokenLP: true,
     },
   })
   const pools: Pair[] = []
@@ -358,6 +359,18 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           reserve0: true,
           reserve1: true,
           token0: {
+            select: {
+              uuid: true,
+            },
+          },
+        },
+      },
+      poolsLP: {
+        select: {
+          id: true,
+          reserve0: true,
+          reserve1: true,
+          tokenLP: {
             select: {
               uuid: true,
             },
