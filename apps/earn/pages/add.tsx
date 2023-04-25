@@ -1,26 +1,18 @@
 import { PlusIcon } from '@heroicons/react/solid'
-import { ChainId, chainName } from '@dozer/chain'
+import { ChainId } from '@dozer/chain'
 import { Amount, Token } from '@dozer/currency'
-import { FundSource } from '@dozer/hooks'
-import { AppearOnMount, BreadcrumbLink, Button, Container, Dots, Loader } from '@dozer/ui'
+import { AppearOnMount, BreadcrumbLink, Button, Dots } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
-import {
-  AddSectionMyPosition,
-  AddSectionReviewModalLegacy,
-  Layout,
-  SelectFeeWidget,
-  SelectNetworkWidget,
-} from '../components'
-import React, { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { AddSectionMyPosition, AddSectionReviewModalLegacy, Layout, SelectNetworkWidget } from '../components'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { Checker, Web3Input } from '@dozer/higmi'
-import { GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
-import prisma from '@dozer/database'
-import { dbToken, dbPool, dbTokenWithPools, dbPoolWithTokens } from '../interfaces'
-import { Pair, PairState, pairFromPoolAndTokensList } from '../utils/Pair'
+import { GetStaticProps, InferGetStaticPropsType } from 'next'
+import { dbToken, dbTokenWithPools, dbPoolWithTokens } from '../interfaces'
+import { PairState, pairFromPoolAndTokensList } from '../utils/Pair'
 import { useTrade } from '@dozer/zustand'
 import toToken from '../utils/toToken'
 import useSWR, { SWRConfig } from 'swr'
-import { useRouter } from 'next/router'
+import { getPools, getPrices, getTokens } from '../utils/api'
 
 const LINKS: BreadcrumbLink[] = [
   {
@@ -319,93 +311,10 @@ const _Add: FC = () => {
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const pre_pools = await prisma.pool.findMany({
-    include: {
-      token0: true,
-      token1: true,
-      tokenLP: true,
-    },
-  })
-  const pools: Pair[] = []
-  pre_pools.forEach((pool) => {
-    pools?.push(pairFromPoolAndTokensList(pool))
-  })
-  if (!pools) {
-    throw new Error(`Failed to fetch pools, received ${pools}`)
-  }
-  const tokens = await prisma.token.findMany({
-    select: {
-      id: true,
-      name: true,
-      uuid: true,
-      symbol: true,
-      chainId: true,
-      decimals: true,
-      pools0: {
-        select: {
-          id: true,
-          reserve0: true,
-          reserve1: true,
-          token1: {
-            select: {
-              uuid: true,
-            },
-          },
-        },
-      },
-      pools1: {
-        select: {
-          id: true,
-          reserve0: true,
-          reserve1: true,
-          token0: {
-            select: {
-              uuid: true,
-            },
-          },
-        },
-      },
-      poolsLP: {
-        select: {
-          id: true,
-          reserve0: true,
-          reserve1: true,
-          tokenLP: {
-            select: {
-              uuid: true,
-            },
-          },
-        },
-      },
-    },
-  })
+  const pools = await getPools()
+  const tokens = await getTokens()
+  const prices = await getPrices(tokens)
 
-  if (!tokens) {
-    throw new Error(`Failed to fetch tokens, received ${tokens}`)
-  }
-  const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
-  const data = await resp.json()
-  const priceHTR = data.data.HTR
-  const prices: { [key: string]: number | undefined } = {}
-
-  tokens.forEach((token) => {
-    if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)
-    else if (token.pools0.length > 0) {
-      const poolHTR = token.pools0.find((pool) => {
-        return pool.token1.uuid == '00'
-      })
-      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve1) / Number(poolHTR?.reserve0)) * priceHTR
-    } else if (token.pools1.length > 0) {
-      const poolHTR = token.pools1.find((pool) => {
-        return pool.token0.uuid == '00'
-      })
-      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR
-    }
-  })
-
-  if (!prices) {
-    throw new Error(`Failed to fetch prices, received ${prices}`)
-  }
   return {
     props: {
       fallback: {

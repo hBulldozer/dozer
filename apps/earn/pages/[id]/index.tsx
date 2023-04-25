@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPoolAndTokens, pairFromPoolAndTokensList } from '../../utils/Pair'
+import { Pair, pairFromPoolAndTokens } from '../../utils/Pair'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
@@ -22,10 +22,9 @@ import {
 // import { GET_POOL_TYPE_MAP } from '../../lib/constants'
 import useSWR, { SWRConfig } from 'swr'
 
-import { prisma } from '@dozer/database'
-import { chainName } from '@dozer/chain'
 import { formatPercent } from '@dozer/format'
 import { FC } from 'react'
+import { getPairs, getPoolWithTokensAndSnaps, getPrices } from '../../utils/api'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   // When this is true (in preview environments) don't
@@ -37,17 +36,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   //     fallback: 'blocking',
   //   }
   // }
-  const pre_pools = await prisma.pool.findMany({
-    include: {
-      token0: true,
-      token1: true,
-      tokenLP: true,
-    },
-  })
-  const pairs: Pair[] = []
-  pre_pools.forEach((pool) => {
-    pairs?.push(pairFromPoolAndTokensList(pool))
-  })
+  const pairs: Pair[] = await getPairs()
 
   // Get the paths we want to pre-render based on pairs
   const paths = pairs.map((pair, i) => ({
@@ -62,85 +51,24 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
-  const pre_pool = await prisma.pool.findUnique({
-    where: { id: id },
-    include: {
-      token0: true,
-      token1: true,
-      tokenLP: true,
-      hourSnapshots: { orderBy: { date: 'desc' } },
-      daySnapshots: { orderBy: { date: 'desc' } },
-    },
-  })
-  const pair: Pair = pairFromPoolAndTokens(pre_pool)
+  const pool = await getPoolWithTokensAndSnaps(id)
+  const tokens = [pool.token0, pool.token1]
+  const prices = await getPrices(tokens)
+
+  const pair: Pair = pairFromPoolAndTokens(pool)
 
   if (!pair) {
-    // If there is a server error, you might want to
-    // throw an error instead of returning so that the cache is not updated
-    // until the next successful request.
     throw new Error(`Failed to fetch pair, received ${pair}`)
   }
-  const tokens = await prisma.token.findMany({
-    select: {
-      id: true,
-      name: true,
-      uuid: true,
-      symbol: true,
-      chainId: true,
-      decimals: true,
-      pools0: {
-        select: {
-          id: true,
-          reserve0: true,
-          reserve1: true,
-          token1: {
-            select: {
-              uuid: true,
-            },
-          },
-        },
-      },
-      pools1: {
-        select: {
-          id: true,
-          reserve0: true,
-          reserve1: true,
-          token0: {
-            select: {
-              uuid: true,
-            },
-          },
-        },
-      },
-    },
-  })
 
-  const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
-  const data = await resp.json()
-  const priceHTR = data.data.HTR
-  const prices: { [key: string]: number | undefined } = {}
-
-  tokens.forEach((token) => {
-    if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)
-    else if (token.pools0.length > 0) {
-      const poolHTR = token.pools0.find((pool) => {
-        return pool.token1.uuid == '00'
-      })
-      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve1) / Number(poolHTR?.reserve0)) * priceHTR
-    } else if (token.pools1.length > 0) {
-      const poolHTR = token.pools1.find((pool) => {
-        return pool.token0.uuid == '00'
-      })
-      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR
-    }
-  })
+  if (!tokens) {
+    throw new Error(`Failed to fetch tokens, received ${tokens}`)
+  }
 
   if (!prices) {
-    // If there is a server error, you might want to
-    // throw an error instead of returning so that the cache is not updated
-    // until the next successful request.
     throw new Error(`Failed to fetch prices, received ${prices}`)
   }
+
   return {
     props: {
       fallback: {

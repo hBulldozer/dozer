@@ -1,39 +1,20 @@
 import { PlusIcon } from '@heroicons/react/solid'
-import { Button, Link, OnsenIcon, Typography } from '@dozer/ui'
-import type { GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
+import { Button, Typography } from '@dozer/ui'
+import type { GetStaticProps, InferGetStaticPropsType } from 'next'
 // import { SUPPORTED_CHAIN_IDS } from '../config'
 // import { GetStaticProps, InferGetStaticPropsType } from 'next'
-import {
-  FC,
-  JSXElementConstructor,
-  Key,
-  ReactElement,
-  ReactFragment,
-  ReactPortal,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { FC } from 'react'
 
 import { Layout, PoolsSection } from '../components'
-import { Pool, prisma } from '@dozer/database'
-import { Pair, pairFromPoolAndTokensList } from '../utils/Pair'
-import { getTokens } from '@dozer/currency'
-import useSWR, { SWRConfig } from 'swr'
+import { SWRConfig } from 'swr'
+import { getPairs } from '../utils/api'
 
 export const getStaticProps: GetStaticProps = async (context) => {
   // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
-  const pre_pairs = await prisma.pool.findMany({
-    include: {
-      token0: true,
-      token1: true,
-      tokenLP: true,
-    },
-  })
-  const pairs: Pair[] = []
-  pre_pairs.forEach((pair) => {
-    pairs?.push(pairFromPoolAndTokensList(pair))
-  })
+  const pairs = await getPairs()
+  if (!pairs) {
+    throw new Error(`Failed to fetch pairs, received ${pairs}`)
+  }
   return {
     props: {
       fallback: {
