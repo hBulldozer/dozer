@@ -17,34 +17,34 @@ interface PoolPositionProps {
 
 export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair, prices }) => {
   const { token1, token0 } = useTokensFromPair(pair)
-  const [underlying1, underlying0, BalanceLPAmount, value1, value0] = usePoolPosition({
+  const { underlying1, underlying0, BalanceLPAmount, value1, value0, isLoading, isError } = usePoolPosition({
     pair: pair,
     prices: prices,
   })
 
-  // if (isLoading && !isError) {
-  //   return (
-  //     <div className="flex flex-col gap-3 px-5 py-4">
-  //       <div className="flex justify-between mb-1 py-0.5">
-  //         <div className="h-[16px] bg-stone-600 animate-pulse w-[100px] rounded-full" />
-  //         <div className="h-[16px] bg-stone-600 animate-pulse w-[60px] rounded-full" />
-  //       </div>
-  //       <div className="flex justify-between py-0.5">
-  //         <div className="h-[16px] bg-stone-700 animate-pulse w-[160px] rounded-full" />
-  //         <div className="h-[16px] bg-stone-700 animate-pulse w-[60px] rounded-full" />
-  //       </div>
-  //       <div className="flex justify-between py-0.5">
-  //         <div className="h-[16px] bg-stone-700 animate-pulse w-[160px] rounded-full" />
-  //         <div className="h-[16px] bg-stone-700 animate-pulse w-[60px] rounded-full" />
-  //       </div>
-  //     </div>
-  //   )
-  // }
+  if (isLoading && !isError) {
+    return (
+      <div className="flex flex-col gap-3 px-5 py-4">
+        <div className="flex justify-between mb-1 py-0.5">
+          <div className="h-[16px] bg-stone-600 animate-pulse w-[100px] rounded-full" />
+          <div className="h-[16px] bg-stone-600 animate-pulse w-[60px] rounded-full" />
+        </div>
+        <div className="flex justify-between py-0.5">
+          <div className="h-[16px] bg-stone-700 animate-pulse w-[160px] rounded-full" />
+          <div className="h-[16px] bg-stone-700 animate-pulse w-[60px] rounded-full" />
+        </div>
+        <div className="flex justify-between py-0.5">
+          <div className="h-[16px] bg-stone-700 animate-pulse w-[160px] rounded-full" />
+          <div className="h-[16px] bg-stone-700 animate-pulse w-[60px] rounded-full" />
+        </div>
+      </div>
+    )
+  }
 
-  // if (!isLoading && !isError) {
-  return (
-    <div className="flex flex-col gap-3 px-5 py-4">
-      {/* {pair.farm && (
+  if (!isLoading && !isError) {
+    return (
+      <div className="flex flex-col gap-3 px-5 py-4">
+        {/* {pair.farm && (
           <div className="flex items-center justify-between mb-1">
             <Typography variant="sm" weight={600} className="text-stone-100">
               Unstaked Position
@@ -54,33 +54,33 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair, prices }) => 
             </Typography>
           </div>
         )} */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Currency.Icon currency={token0} width={20} height={20} />
-          <Typography variant="sm" weight={600} className="text-stone-300">
-            {underlying0?.toFixed(2)}
-            {' ' + token0.symbol}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Currency.Icon currency={token0} width={20} height={20} />
+            <Typography variant="sm" weight={600} className="text-stone-300">
+              {underlying0?.toFixed(2)}
+              {' ' + token0.symbol}
+            </Typography>
+          </div>
+          <Typography variant="xs" weight={500} className="text-stone-400">
+            {formatUSD(value0)}
           </Typography>
         </div>
-        <Typography variant="xs" weight={500} className="text-stone-400">
-          {formatUSD(value0)}
-        </Typography>
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Currency.Icon currency={token1} width={20} height={20} />
-          <Typography variant="sm" weight={600} className="text-stone-300">
-            {underlying1?.toFixed(2)}
-            {' ' + token1.symbol}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Currency.Icon currency={token1} width={20} height={20} />
+            <Typography variant="sm" weight={600} className="text-stone-300">
+              {underlying1?.toFixed(2)}
+              {' ' + token1.symbol}
+            </Typography>
+          </div>
+          <Typography variant="xs" weight={500} className="text-stone-400">
+            {formatUSD(value1)}
           </Typography>
         </div>
-        <Typography variant="xs" weight={500} className="text-stone-400">
-          {formatUSD(value1)}
-        </Typography>
       </div>
-    </div>
-  )
-  // }
+    )
+  }
 
   return <></>
 }

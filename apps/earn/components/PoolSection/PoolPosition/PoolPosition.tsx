@@ -35,7 +35,7 @@ interface PoolPositionProps {
 export const PoolPosition: FC<PoolPositionProps> = ({ pair, prices }) => {
   const isLg = useBreakpoint('lg')
 
-  const [underlying0, underlying1, BalanceLPAmount, value0, value1] = usePoolPosition({
+  const { underlying0, underlying1, BalanceLPAmount, value0, value1, isLoading, isError } = usePoolPosition({
     pair: pair,
     prices: prices,
   })

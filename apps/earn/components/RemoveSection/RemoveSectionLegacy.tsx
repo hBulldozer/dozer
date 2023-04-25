@@ -33,9 +33,8 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
   const percentToRemove = useMemo(() => new Percent(percentage, 100), [percentage])
 
   const poolState = 1
-  const totalSupply = Amount.fromRawAmount(toToken(pool.tokenLP), Number(pool.tokenLP.totalSupply))
 
-  const [underlying0, underlying1, BalanceLPAmount, value0, value1] = usePoolPosition({
+  const { underlying0, underlying1, BalanceLPAmount, value0, value1, isLoading, isError } = usePoolPosition({
     pair: pairFromPool(pool),
     prices: prices,
   })
