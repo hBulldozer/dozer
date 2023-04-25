@@ -38,7 +38,6 @@ export const useTokensFromPair = (pair: Pair) => {
       liquidityToken,
       reserve0: Amount.fromRawAmount(token0, Number(pair.reserve0) || 0),
       reserve1: Amount.fromRawAmount(token1, Number(pair.reserve1) || 0),
-      totalSupply: Amount.fromRawAmount(liquidityToken, pair.liquidity || 0),
     }
   }, [
     pair.chainId,

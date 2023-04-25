@@ -23,14 +23,14 @@ type UsePoolPositionParams = (params: Params) => {
 }
 
 export const usePoolPosition: UsePoolPositionParams = ({ pair, prices }) => {
-  const token0 = toToken(pair.token0)
-  const token1 = toToken(pair.token1)
-  const liquidityToken = toToken(pair.tokenLP)
+  const token0 = pair.token0
+  const token1 = pair.token1
+  const liquidityToken = pair.tokenLP
   const { balance } = useAccount()
 
   const [totalSupply, setTotalSupply] = useState<Amount<Token>>()
 
-  const data = useTotalSupply(pair.tokenLP.uuid, pair.chainId)
+  const data = useTotalSupply(liquidityToken.uuid, pair.chainId)
 
   useEffect(() => {
     if (data) {

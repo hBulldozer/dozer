@@ -18,7 +18,6 @@ model Token {
   isFeeOnTransfer  Boolean     @default(false)
   isCommon         Boolean     @default(false)
   isLiquidityToken Boolean     @default(false)
-  totalSupply      Int?
   derivedUSD       Float?
   generatedAt      DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -108,7 +107,6 @@ model hourSnapshot {
 //   twapEnabled          Boolean
 //   reserve0             String
 //   reserve1             String
-//   totalSupply          String
 //   liquidityUSD         Float
 //   volumeUSD            Float
 //   token0Price          String

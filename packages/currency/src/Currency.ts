@@ -22,10 +22,6 @@ export abstract class Currency {
    */
   public readonly decimals: number
   /**
-   * The totalSupply of the currency
-   */
-  public readonly totalSupply?: number
-  /**
    * The symbol of the currency, i.e. a short textual non-unique identifier
    */
   public readonly symbol?: string
@@ -44,7 +40,6 @@ export abstract class Currency {
   /**
    * Constructs an instance of the abstract class `Currency`.
    * @param chainId Id of the chain
-   * @param totalSupply totalSupply of currency
    * @param decimals decimals of the currency
    * @param symbol symbol of the currency
    * @param name of the currency
@@ -52,14 +47,12 @@ export abstract class Currency {
    */
   protected constructor({
     chainId,
-    totalSupply,
     decimals,
     symbol,
     name,
     rebase = { base: JSBI.BigInt(1), elastic: JSBI.BigInt(1) },
   }: {
     chainId: number | string
-    totalSupply?: number
     decimals: number | string
     symbol?: string
     name?: string
@@ -67,7 +60,6 @@ export abstract class Currency {
   }) {
     // invariant(decimals >= 0 && decimals < 255 && Number.isInteger(Number(decimals)), 'DECIMALS')
     this.chainId = Number(chainId)
-    this.totalSupply = Number(totalSupply)
     this.decimals = Number(decimals)
     this.symbol = symbol
     this.name = name

@@ -1,5 +1,6 @@
 import { ChainId } from '@dozer/chain'
-import { Pool, Token, daySnapshot, hourSnapshot } from '@dozer/database'
+import { Pool, daySnapshot, hourSnapshot } from '@dozer/database'
+import { Token } from '@dozer/currency'
 import { dbPoolWithTokens } from '../interfaces'
 import toToken from './toToken'
 
@@ -126,6 +127,7 @@ export function pairFromPool(pool: dbPoolWithTokens | null): Pair {
         apr: pool.apr,
         token0: toToken(pool.token0),
         token1: toToken(pool.token1),
+        tokenLP: toToken(pool.tokenLP),
         reserve0: Number(pool.reserve0),
         reserve1: Number(pool.reserve1),
         chainId: pool.chainId,
