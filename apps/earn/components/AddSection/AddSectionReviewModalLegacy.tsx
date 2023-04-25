@@ -7,10 +7,8 @@ import { Percent } from '@dozer/math'
 import { Button, Dots } from '@dozer/ui'
 import {
   Approve,
-  //   getSushiSwapRouterContractConfig,
   //   PairState,
   //   useSendTransaction,
-  //   useSushiSwapRouterContract,
 } from '@dozer/higmi'
 // import { BigNumber, BigNumberish } from 'ethers'
 import { Dispatch, FC, ReactNode, SetStateAction, useCallback, useMemo, useState } from 'react'
@@ -49,7 +47,6 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   const { network } = useNetwork()
 
   // const [, { createNotification }] = useNotifications(address)
-  // const contract = useSushiSwapRouterContract(chainId)
   const { slippageTolerance } = useSettings()
 
   // const onSettled = useCallback(

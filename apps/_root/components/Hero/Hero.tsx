@@ -5,7 +5,7 @@ import { getTokens } from '@dozer/currency'
 import { useInterval } from '@dozer/hooks'
 import { App, Button, classNames, Container, Typography } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
-// import { CurrencyInput } from '@dozer/wagmi/components/Web3Input/Currency'
+// import { CurrencyInput } from '@dozer/higmi/components/Web3Input/Currency'
 import { motion, useInView } from 'framer-motion'
 import React, { FC, useEffect, useState, useRef } from 'react'
 

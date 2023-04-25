@@ -216,10 +216,9 @@ export const PoolsTable: FC = () => {
     <>
       <GenericTable<Pair>
         table={table}
-        loading={!pairs}
-        // loading={!pools && isValidating}
+        loading={isLoading}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
-        placeholder={isLoading ? 'Loading pools...' : 'No pools found'}
+        placeholder={'No pools found'}
         pageSize={PAGE_SIZE}
         linkFormatter={rowLink}
       />

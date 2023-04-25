@@ -251,13 +251,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
             className="flex-grow !justify-end"
             components={
               <Approve.Components>
-                <Approve.Token
-                  size="md"
-                  className="whitespace-nowrap"
-                  fullWidth
-                  amount={amountToRemove}
-                  // address={getSushiSwapRouterContractConfig(pair.chainId).address as Address}
-                />
+                <Approve.Token size="md" className="whitespace-nowrap" fullWidth amount={amountToRemove} />
               </Approve.Components>
             }
             render={({ approved }) => {

@@ -1,7 +1,7 @@
 import '@dozer/ui/index.css'
 
 import { App, LoadingOverlay, ThemeProvider } from '@dozer/ui'
-// import { client } from '@dozer/wagmi'
+// import { client } from '@dozer/higmi'
 import { Analytics } from '@vercel/analytics/react'
 import { Header } from '../components'
 // import { SUPPORTED_CHAIN_IDS } from '../config'
