@@ -43,12 +43,16 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
 
   const [usdPrice, setUsdPrice] = useState<number>(0)
   // const balanceAsUsd = prices ? prices['00'] : 0
-  const [showBalance, setShowBalance] = useState<number | undefined>(0)
+  const [showBalance, setShowBalance] = useState<number | undefined>(
+    balance?.find((token) => {
+      return token.token_uuid == '00'
+    })?.token_balance
+  )
 
   useEffect(() => {
     setShowBalance(
       balance?.find((token) => {
-        return token.token_symbol == 'HTR'
+        return token.token_uuid == '00'
       })?.token_balance
     )
   }, [balance])
@@ -105,7 +109,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
         <div className="flex flex-col items-center justify-center gap-2">
           <Typography variant="h1" className="whitespace-nowrap">
             {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-            {showBalance ? (showBalance / 100).toString() + ' HTR' : 'Loading balance...'}
+            {showBalance !== undefined ? (showBalance / 100).toString() + ' HTR' : 'Loading balance...'}
           </Typography>
           <Typography weight={600} className="text-stone-400">
             {showBalance && showBalance != 0 && usdPrice != 0

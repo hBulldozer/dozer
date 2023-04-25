@@ -1,7 +1,7 @@
 import { Disclosure, Transition } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/outline'
 import { ChainId } from '@dozer/chain'
-import { Amount, Type } from '@dozer/currency'
+import { Amount, Token, Type } from '@dozer/currency'
 import { formatUSD } from '@dozer/format'
 import { FundSource, useIsMounted } from '@dozer/hooks'
 import { ZERO } from '@dozer/math'
@@ -30,6 +30,7 @@ interface RemoveSectionWidgetProps {
   token1Minimum?: Amount<Type>
   setPercentage(percentage: string): void
   prices: { [key: string]: number }
+  BalanceLPAmount: Amount<Token>
   children: ReactNode
 }
 
@@ -42,6 +43,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
   token0Minimum,
   token1Minimum,
   prices,
+  BalanceLPAmount,
   children,
 }) => {
   const isMounted = useIsMounted()
@@ -49,16 +51,15 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
   const { address, balance } = useAccount()
   const value0 = prices[token0.uuid]
   const value1 = prices[token1.uuid]
+
   const { network } = useNetwork()
+
+  Boolean(!BalanceLPAmount.greaterThan(ZERO) && hover && !address)
 
   return (
     <div className="relative" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <Transition
-        show={Boolean(
-          hover &&
-            // !balance?.[FundSource.WALLET]?.greaterThan(ZERO) &&
-            !address
-        )}
+        show={Boolean(hover && (!address || !BalanceLPAmount.greaterThan(ZERO)))}
         as={Fragment}
         enter="transition duration-300 origin-center ease-out"
         enterFrom="transform opacity-0"
@@ -146,7 +147,11 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                       <div className="grid items-center justify-between grid-cols-3 pb-2">
                         <AppearOnMount show={Boolean(balance)}>
                           <Typography variant="sm" weight={500} className="text-stone-300 hover:text-stone-20">
-                            {formatUSD((value0 + value1) * (+percentage / 100))}
+                            {formatUSD(
+                              (Number(token0Minimum?.toFixed(2)) * value0 +
+                                Number(token1Minimum?.toFixed(2)) * value1) *
+                                (+percentage / 100)
+                            )}
                           </Typography>
                         </AppearOnMount>
                         <AppearOnMount className="flex justify-end col-span-2" show={Boolean(balance)}>
@@ -157,7 +162,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                             weight={500}
                             className="truncate text-stone-300 hover:text-stone-200"
                           >
-                            Balance: {balance[0].token_balance.toFixed(2)}
+                            Balance: {BalanceLPAmount.toFixed(2)}
                           </Typography>
                         </AppearOnMount>
                       </div>
@@ -186,7 +191,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                               </span>
                             </Typography>
                             <Typography variant="xs" className="text-stone-400">
-                              {formatUSD(value0 * (+percentage / 100))}
+                              {formatUSD(Number(token0Minimum?.toFixed(2)) * value0 * (+percentage / 100))}
                             </Typography>
                           </div>
                           <div className="flex items-center justify-between">
@@ -198,7 +203,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                               </span>
                             </Typography>
                             <Typography variant="xs" className="text-stone-400">
-                              {formatUSD(value1 * (+percentage / 100))}
+                              {formatUSD(Number(token1Minimum?.toFixed(2)) * value1 * (+percentage / 100))}
                             </Typography>
                           </div>
                         </div>

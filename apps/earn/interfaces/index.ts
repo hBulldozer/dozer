@@ -4,11 +4,11 @@ export type dbPool = _Pool
 export type dbToken = _Token
 
 const dbPoolWithTokens = Prisma.validator<Prisma.PoolArgs>()({
-  include: { token0: true, token1: true },
+  include: { token0: true, token1: true, tokenLP: true },
 })
 
 const dbTokensWithPools = Prisma.validator<Prisma.TokenArgs>()({
-  include: { pools0: true, pools1: true },
+  include: { pools0: true, pools1: true, poolsLP: true },
 })
 
 export type dbPoolWithTokens = Prisma.PoolGetPayload<typeof dbPoolWithTokens>

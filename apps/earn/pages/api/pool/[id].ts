@@ -21,6 +21,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           pools1: { include: { token0: true, token1: true } },
         },
       },
+      tokenLP: {
+        include: {
+          poolsLP: { include: { token0: true, token1: true } },
+        },
+      },
       // hourSnapshots: { orderBy: { date: 'desc' } },
       // daySnapshots: { orderBy: { date: 'desc' } },
     },
