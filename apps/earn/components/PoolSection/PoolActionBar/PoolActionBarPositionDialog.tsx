@@ -75,7 +75,7 @@ export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> =
               <div className="flex items-center gap-2">
                 <Currency.Icon currency={token0} width={20} height={20} />
                 <Typography variant="sm" weight={500} className="text-stone-300">
-                  {underlying0?.toFixed(0)} {token0.symbol}
+                  {underlying0?.toFixed(0) || '0'} {token0.symbol}
                   {/* {1000} */}
                 </Typography>
               </div>
@@ -89,7 +89,7 @@ export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> =
                 <Currency.Icon currency={token1} width={20} height={20} />
                 <Typography variant="sm" weight={500} className="text-stone-300">
                   {/* {1000} */}
-                  {underlying1?.toFixed(0)} {token1.symbol}
+                  {underlying1?.toFixed(0) || '0'} {token1.symbol}
                 </Typography>
               </div>
               <Typography variant="xs" weight={500} className="text-stone-400">

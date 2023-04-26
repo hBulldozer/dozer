@@ -56,7 +56,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
           <div className="flex items-center gap-2">
             <Currency.Icon currency={token0} width={20} height={20} />
             <Typography variant="sm" weight={600} className="text-stone-300">
-              {underlying0?.toFixed(2)}
+              {underlying0?.toFixed(2) || '0'}
               {' ' + token0.symbol}
             </Typography>
           </div>
@@ -68,7 +68,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
           <div className="flex items-center gap-2">
             <Currency.Icon currency={token1} width={20} height={20} />
             <Typography variant="sm" weight={600} className="text-stone-300">
-              {underlying1?.toFixed(2)}
+              {underlying1?.toFixed(2) || '0'}
               {' ' + token1.symbol}
             </Typography>
           </div>

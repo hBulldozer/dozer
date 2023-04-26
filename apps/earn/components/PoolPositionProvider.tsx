@@ -29,7 +29,7 @@ export const PoolPositionProvider: FC<{
   const token0 = pair.token0
   const token1 = pair.token1
   const liquidityToken = pair.tokenLP
-  const { balance } = useAccount()
+  const { balance, address } = useAccount()
 
   const [totalSupply, setTotalSupply] = useState<Amount<Token>>()
 
@@ -41,7 +41,7 @@ export const PoolPositionProvider: FC<{
   }, [pair?.reserve0, pair?.reserve1])
 
   useEffect(() => {
-    if (data && !isLoading && !isError) {
+    if (data && !isLoading && !isError && data['total']) {
       setTotalSupply(Amount.fromRawAmount(liquidityToken, data['total']))
 
       const BalanceLPToken = balance.find((token) => {
@@ -49,7 +49,7 @@ export const PoolPositionProvider: FC<{
       })
       setBalanceLPAmount(Amount.fromRawAmount(liquidityToken, BalanceLPToken ? BalanceLPToken.token_balance : 0))
     }
-  }, [balance, pair, prices, data, isLoading, isError])
+  }, [balance, pair, prices, data, isLoading, isError, address])
 
   const [underlying0, underlying1] = useUnderlyingTokenBalanceFromPair({
     reserve0,
