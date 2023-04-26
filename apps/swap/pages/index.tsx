@@ -118,7 +118,7 @@ const _Home = () => {
     setPriceImpact,
     setPool,
   } = useTrade()
-  const [selectedPool, setSelectedPool] = useState<dbPool>()
+  const [selectedPool, setSelectedPool] = useState<dbPoolWithTokens>()
 
   const onInput0 = async (val: string) => {
     setTradeType(TradeType.EXACT_INPUT)
@@ -158,7 +158,7 @@ const _Home = () => {
       })
     )
     setMainCurrency(token0 ? token0 : toToken(tokens[0]))
-    setOtherCurrency(token1 ? token1 : toToken(tokens[0]))
+    setOtherCurrency(token1 ? token1 : toToken(tokens[1]))
     setPriceImpact()
     if (!selectedPool) {
       setInput0('')
@@ -166,22 +166,16 @@ const _Home = () => {
       setOutputAmount()
       // setInput1('')
     } else {
-      setPool({
-        token1: token0,
-        token2: token1,
-        token1_balance:
-          tokens.find((token: dbToken) => {
-            return token.id == selectedPool.token0Id
-          }) == token0?.uuid
-            ? Number(selectedPool.reserve0)
-            : Number(selectedPool.reserve1),
-        token2_balance:
-          tokens.find((token: dbToken) => {
-            return token.id == selectedPool.token1Id
-          }) == token1?.uuid
-            ? Number(selectedPool.reserve1)
-            : Number(selectedPool.reserve0),
-      })
+      token0 &&
+        token1 &&
+        setPool({
+          token1: token0,
+          token2: token1,
+          token1_balance:
+            selectedPool.token0.uuid == token0.uuid ? Number(selectedPool.reserve0) : Number(selectedPool.reserve1),
+          token2_balance:
+            selectedPool.token1.uuid == token1.uuid ? Number(selectedPool.reserve1) : Number(selectedPool.reserve0),
+        })
       setAmountSpecified(Number(input0))
       setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
       setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)

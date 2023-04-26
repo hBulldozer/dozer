@@ -80,7 +80,7 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
     setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
     setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
     setOutputAmount()
-  }, [input0, input1, pool, prices, token0, token1])
+  }, [input0, input1])
 
   return useMemo(() => {
     return (
