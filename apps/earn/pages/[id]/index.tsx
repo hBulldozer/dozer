@@ -8,18 +8,14 @@ import {
   Layout,
   PoolActionBar,
   PoolButtons,
-  // PoolChart,
   PoolComposition,
   PoolHeader,
   PoolMyRewards,
   PoolPosition,
-  // PoolPositionProvider,
-  // PoolPositionRewardsProvider,
-  // PoolPositionStakedProvider,
+  PoolPositionProvider,
   PoolRewards,
   PoolStats,
 } from '../../components'
-// import { GET_POOL_TYPE_MAP } from '../../lib/constants'
 import useSWR, { SWRConfig } from 'swr'
 
 import { formatPercent } from '@dozer/format'
@@ -104,41 +100,37 @@ const _Pool = () => {
   const { pair, prices } = data
 
   return (
-    // <PoolPositionProvider pair={pair}>
-    //   <PoolPositionStakedProvider pair={pair}>
-    //     <PoolPositionRewardsProvider pair={pair}>
-    <>
-      <Layout breadcrumbs={LINKS({ pair })}>
-        <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
-          <div className="flex flex-col order-1 gap-9">
-            <PoolHeader pair={pair} prices={prices} />
-            <hr className="my-3 border-t border-stone-200/5" />
-            <PoolChart pair={pair} />
-            <AppearOnMount>
-              <PoolStats pair={pair} prices={prices} />
-            </AppearOnMount>
-            <PoolComposition pair={pair} prices={prices} />
-            <PoolRewards pair={pair} />
-          </div>
+    <PoolPositionProvider pair={pair} prices={prices}>
+      <>
+        <Layout breadcrumbs={LINKS({ pair })}>
+          <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
+            <div className="flex flex-col order-1 gap-9">
+              <PoolHeader pair={pair} prices={prices} />
+              <hr className="my-3 border-t border-stone-200/5" />
+              <PoolChart pair={pair} />
+              <AppearOnMount>
+                <PoolStats pair={pair} prices={prices} />
+              </AppearOnMount>
+              <PoolComposition pair={pair} prices={prices} />
+              <PoolRewards pair={pair} />
+            </div>
 
-          <div className="flex flex-col order-2 gap-4">
-            <AppearOnMount>
-              <div className="flex flex-col gap-10">
-                <PoolMyRewards pair={pair} />
-                <PoolPosition pair={pair} prices={prices} />
+            <div className="flex flex-col order-2 gap-4">
+              <AppearOnMount>
+                <div className="flex flex-col gap-10">
+                  <PoolMyRewards pair={pair} />
+                  <PoolPosition pair={pair} />
+                </div>
+              </AppearOnMount>
+              <div className="hidden lg:flex">
+                <PoolButtons pair={pair} />
               </div>
-            </AppearOnMount>
-            <div className="hidden lg:flex">
-              <PoolButtons pair={pair} />
             </div>
           </div>
-        </div>
-      </Layout>
-      <PoolActionBar pair={pair} />
-    </>
-    //  </PoolPositionRewardsProvider>
-    //   </PoolPositionStakedProvider>
-    // </PoolPositionProvider>
+        </Layout>
+        <PoolActionBar pair={pair} />
+      </>
+    </PoolPositionProvider>
   )
 }
 

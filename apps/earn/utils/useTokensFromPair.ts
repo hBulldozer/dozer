@@ -24,10 +24,10 @@ export const useTokensFromPair = (pair: Pair) => {
       _token0,
       _token1,
       new Token({
-        uuid: 'LP_' + pair.token0.uuid + '_' + pair.token1.uuid,
-        name: 'SLP Token',
-        decimals: 18,
-        symbol: 'SLP',
+        uuid: pair.tokenLP.uuid,
+        name: pair.tokenLP.name,
+        decimals: pair.tokenLP.decimals,
+        symbol: pair.tokenLP.symbol,
         chainId: pair.chainId,
       }),
     ]

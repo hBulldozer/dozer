@@ -10,37 +10,42 @@ import useSWR from 'swr'
 import { ICON_SIZE } from '../contants'
 import { Pair } from '../../../../utils/Pair'
 import { useTokensFromPair } from '../../../../utils/useTokensFromPair'
-import { usePoolPosition } from '../../../../utils/usePoolPosition'
 import { dbTokenWithPools } from '../../../../interfaces'
+import { PoolPositionProvider, usePoolPosition } from '../../../PoolPositionProvider'
 
 interface PositionQuickHoverTooltipProps {
   row: Pair
 }
 
 export const PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row }) => {
+  const { data: pre_prices, isLoading } = useSWR<{ prices: { [key: string]: number } }>(`/earn/api/prices`, (url) =>
+    fetch(url).then((response) => response.json())
+  )
+
+  if (!pre_prices && isLoading)
+    return (
+      <>
+        <Typography>Loading prices...</Typography>
+      </>
+    )
+  if (!pre_prices)
+    return (
+      <>
+        <Typography>No prices found</Typography>
+      </>
+    )
+  const { prices } = pre_prices
   return (
-    // <PoolPositionProvider watch={false} pair={row.pair}>
-    // <PoolPositionStakedProvider watch={false} pair={row.pair}>
-    // <PoolPositionRewardsProvider pair={row.pair}>
-    <_PositionQuickHoverTooltip row={row} />
-    // </PoolPositionRewardsProvider>
-    // </PoolPositionStakedProvider>
-    // </PoolPositionProvider>
+    <PoolPositionProvider watch={false} pair={row} prices={prices}>
+      <_PositionQuickHoverTooltip row={row} />
+    </PoolPositionProvider>
   )
 }
 
 const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row }) => {
   const { token0, token1 } = useTokensFromPair(row)
-  const { data } = useSWR<{ tokens: dbTokenWithPools[]; prices: { [key: string]: number } }>(
-    `/earn/api/prices`,
-    (url: string) => fetch(url).then((response) => response.json())
-  )
 
-  const { prices } = data ? data : { prices: {} }
-  const { underlying0, underlying1, BalanceLPAmount, value1, value0, isLoading, isError } = usePoolPosition({
-    pair: row,
-    prices: prices,
-  })
+  const { underlying0, underlying1, BalanceLPAmount, value1, value0, isLoading, isError } = usePoolPosition()
   // const {
   //   underlying1: stakedUnderlying1,
   //   underlying0: stakedUnderlying0,

@@ -2,25 +2,23 @@ import { formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
 import { Pair } from '../../../utils/Pair'
 import { Currency, Typography } from '@dozer/ui'
-import { FC } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 
 // import { useTokensFromPair } from '../../../lib/hooks'
 import { useTokensFromPair } from '../../../utils/useTokensFromPair'
 import { isError } from '@tanstack/react-query'
-import { usePoolPosition } from '../../../utils/usePoolPosition'
+import { Amount, Token } from '@dozer/currency'
+import { usePoolPosition } from '../../PoolPositionProvider'
 // import { usePoolPosition } from '../../PoolPositionProvider'
 
 interface PoolPositionProps {
   pair: Pair
-  prices: { [key: string]: number }
 }
 
-export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair, prices }) => {
-  const { token1, token0 } = useTokensFromPair(pair)
-  const { underlying1, underlying0, BalanceLPAmount, value1, value0, isLoading, isError } = usePoolPosition({
-    pair: pair,
-    prices: prices,
-  })
+export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
+  const { token1, token0, liquidityToken } = useTokensFromPair(pair)
+
+  const { underlying1, underlying0, BalanceLPAmount, value1, value0, isLoading, isError } = usePoolPosition()
 
   if (isLoading && !isError) {
     return (

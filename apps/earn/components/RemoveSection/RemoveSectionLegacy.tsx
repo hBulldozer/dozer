@@ -11,7 +11,7 @@ import toToken from '../../utils/toToken'
 import { dbPoolWithTokens } from '../../interfaces'
 import { useUnderlyingTokenBalanceFromPair } from '../../utils/useUnderlyingTokenBalanceFromPair'
 import { pairFromPool } from '../../utils/Pair'
-import { usePoolPosition } from '../../utils/usePoolPosition'
+import { usePoolPosition } from '../PoolPositionProvider'
 
 interface RemoveSectionLegacyProps {
   pool: dbPoolWithTokens
@@ -34,10 +34,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
 
   const poolState = 1
 
-  const { underlying0, underlying1, BalanceLPAmount, value0, value1, isLoading, isError } = usePoolPosition({
-    pair: pairFromPool(pool),
-    prices: prices,
-  })
+  const { underlying0, underlying1, BalanceLPAmount, value0, value1, isLoading, isError } = usePoolPosition()
 
   const token0 = toToken(pool.token0)
   const token1 = toToken(pool.token1)
@@ -82,7 +79,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
 
   const amountToRemove = Amount.fromRawAmount(
     toToken(pool.tokenLP),
-    percentToRemove.multiply(BalanceLPAmount.quotient).quotient || '0'
+    percentToRemove.multiply(BalanceLPAmount?.quotient || '0').quotient || '0'
   )
 
   // useMemo(
