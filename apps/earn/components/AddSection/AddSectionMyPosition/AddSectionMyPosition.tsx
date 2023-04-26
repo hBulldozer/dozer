@@ -1,12 +1,8 @@
 import { formatPercent } from '@dozer/format'
-// import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../../utils/Pair'
-import { classNames, Currency as UICurrency, Typography } from '@dozer/ui'
-import React, { FC } from 'react'
 
-// import { incentiveRewardToToken } from '../../../lib/functions'
-// import { AddSectionMyPositionStaked } from './AddSectionMyPositionStaked'
-// import { AddSectionMyPositionUnstaked } from './AddSectionMyPositionUnstaked'
+import { Pair } from '../../../utils/Pair'
+import { Typography } from '@dozer/ui'
+import React, { FC } from 'react'
 
 export const AddSectionMyPosition: FC<{ pair: Pair }> = ({ pair }) => {
   return (

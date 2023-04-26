@@ -310,7 +310,7 @@ const _Add: FC = () => {
   )
 }
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
+export const getStaticProps: GetStaticProps = async () => {
   const pools = await getPools()
   const tokens = await getTokens()
   const prices = await getPrices(tokens)

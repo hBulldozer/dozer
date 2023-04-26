@@ -1,16 +1,9 @@
-// import { tryParseAmount } from '@dozer/currency'
 import { Amount } from '@dozer/currency'
-// import { Pair } from '@dozer/graph-client'
-import { FundSource, useIsMounted } from '@dozer/hooks'
+import { useIsMounted } from '@dozer/hooks'
 import { Button, Dots } from '@dozer/ui'
-import {
-  Checker,
-  // , PairState, usePair
-} from '@dozer/higmi'
+import { Checker } from '@dozer/higmi'
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { useTokensFromPair } from '../../utils/useTokensFromPair'
-import { Pair } from '../../utils/Pair'
 import { AddSectionReviewModalLegacy } from './AddSectionReviewModalLegacy'
 import { AddSectionWidget } from './AddSectionWidget'
 import { dbPoolWithTokens } from '../../interfaces'
@@ -29,7 +22,6 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
     input1: string
   }>({ input0: '', input1: '' })
   const {
-    outputAmount,
     setMainCurrency,
     setOtherCurrency,
     setMainCurrencyPrice,
@@ -88,7 +80,7 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
     setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
     setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
     setOutputAmount()
-  }, [input0, input1])
+  }, [input0, input1, pool, prices, token0, token1])
 
   return useMemo(() => {
     return (
@@ -159,5 +151,6 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
     // poolState,
     token0,
     token1,
+    prices,
   ])
 }

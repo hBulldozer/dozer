@@ -81,7 +81,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   const pools = await getPools()
 
   // Get the paths we want to pre-render based on pairs
-  const paths = pools.map((pool, i) => ({
+  const paths = pools.map((pool) => ({
     params: { id: `${pool.id}` },
   }))
 

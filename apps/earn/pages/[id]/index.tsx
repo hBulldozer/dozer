@@ -35,7 +35,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   const pairs: Pair[] = await getPairs()
 
   // Get the paths we want to pre-render based on pairs
-  const paths = pairs.map((pair, i) => ({
+  const paths = pairs.map((pair) => ({
     params: { id: `${pair.id}` },
   }))
 

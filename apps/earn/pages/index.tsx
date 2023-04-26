@@ -9,7 +9,7 @@ import { Layout, PoolsSection } from '../components'
 import { SWRConfig } from 'swr'
 import { getPairs } from '../utils/api'
 
-export const getStaticProps: GetStaticProps = async (context) => {
+export const getStaticProps: GetStaticProps = async () => {
   // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
   const pairs = await getPairs()
   if (!pairs) {

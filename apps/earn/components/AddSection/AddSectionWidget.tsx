@@ -43,7 +43,6 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
   children,
 }) => {
   const isMounted = useIsMounted()
-  const tokenMap = getTokens(chainId)
   // const [customTokensMap, { addCustomToken, removeCustomToken }] = useCustomTokens(chainId)
   return (
     <Widget id="addLiquidity" maxWidth={400}>

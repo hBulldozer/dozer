@@ -1,7 +1,7 @@
 import '@dozer/ui/index.css'
 
 import { App, LoadingOverlay, ThemeProvider } from '@dozer/ui'
-// import { client } from '@dozer/higmi'
+// import { client } from '@dozer/wagmi'
 import { Analytics } from '@vercel/analytics/react'
 import { Header } from '../components'
 // import { SUPPORTED_CHAIN_IDS } from '../config'
@@ -35,15 +35,15 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   }, [router.events])
 
   useEffect(() => {
-    router.events.on('routeChangeStart', (url) => {
+    router.events.on('routeChangeStart', () => {
       setIsLoading(true)
     })
 
-    router.events.on('routeChangeComplete', (url) => {
+    router.events.on('routeChangeComplete', () => {
       setIsLoading(false)
     })
 
-    router.events.on('routeChangeError', (url) => {
+    router.events.on('routeChangeError', () => {
       setIsLoading(false)
     })
   }, [isLoading, router])

@@ -1,24 +1,13 @@
 import { ExternalLinkIcon } from '@heroicons/react/solid'
 import { formatPercent } from '@dozer/format'
-// import { getBuiltGraphSDK, Pair } from '@dozer/graph-client'
 import { pairFromPool } from '../../utils/Pair'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
-// import { SUPPORTED_CHAIN_IDS } from '../../config'
 import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { FC } from 'react'
 import useSWR, { SWRConfig } from 'swr'
 
-import {
-  AddSectionLegacy,
-  AddSectionMyPosition,
-  // AddSectionStake,
-  // AddSectionTrident,
-  Layout,
-  // PoolPositionProvider,
-  // PoolPositionStakedProvider,
-} from '../../components'
-// import { GET_POOL_TYPE_MAP } from '../../lib/constants'
+import { AddSectionLegacy, AddSectionMyPosition, Layout } from '../../components'
 import { dbPoolWithTokens } from '../../interfaces'
 import { getPoolWithTokens, getPools, getPrices } from '../../utils/api'
 
@@ -95,7 +84,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   const pools = await getPools()
 
   // Get the paths we want to pre-render based on pairs
-  const paths = pools.map((pool, i) => ({
+  const paths = pools.map((pool) => ({
     params: { id: `${pool.id}` },
   }))
 

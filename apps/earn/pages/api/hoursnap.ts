@@ -5,7 +5,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   if (request.query.key && request.query.key === process.env.API_KEY) {
     const pools = await prisma.pool.findMany()
     const pools_array: { poolId: string; apr: number; date: Date; liquidityUSD: number; volumeUSD: number }[] = []
-    pools.forEach((pool: { id: any; apr: any; liquidityUSD: any; volumeUSD: any }) => {
+    pools.forEach((pool) => {
       pools_array.push({
         poolId: pool.id,
         apr: pool.apr + Math.random(),
