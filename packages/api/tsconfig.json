@@ -1,0 +1,14 @@
+{
+  "extends": "@dozer/typescript-config/base.json",
+  "include": ["src", "index.ts", "transformer.ts"],
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "lib": ["ES2015"],
+    "module": "CommonJS",
+    "target": "ES5",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "resolveJsonModule": true,
+    "esModuleInterop": true
+  }
+}

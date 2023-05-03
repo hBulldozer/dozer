@@ -12,6 +12,8 @@ import { useRouter } from 'next/router'
 import React, { FC, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+import type { AppType } from 'next/app'
+import { trpc } from 'utils/trpc'
 import { Header } from '../components'
 
 declare global {
@@ -71,4 +73,4 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
 //   return { ...appProps }
 // }
 
-export default MyApp
+export default trpc.withTRPC(MyApp)
