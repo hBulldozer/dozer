@@ -1,14 +1,21 @@
 {
-  "extends": "@dozer/typescript-config/base.json",
-  "include": ["src", "index.ts", "transformer.ts"],
-  "exclude": ["node_modules"],
   "compilerOptions": {
-    "lib": ["ES2015"],
-    "module": "CommonJS",
-    "target": "ES5",
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "target": "es2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
-    "esModuleInterop": true
-  }
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["src", "index.ts", "transformer.ts"]
 }

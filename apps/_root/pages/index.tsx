@@ -5,7 +5,7 @@ import { BuildWealth } from 'components/BuildWealth/BuildWealth'
 import { Hero } from 'components/Hero/Hero'
 import { Partners } from 'components/Partners/Partners'
 import { Story } from 'components/Story/Story'
-import { trpc } from 'utils/trpc'
+import { api } from 'utils/api'
 const Home = () => {
   // return (
   //   // <article className="w-full my-20">
@@ -21,13 +21,13 @@ const Home = () => {
   //   </>
   //   // </article>
   // )
-  const hello = trpc.hello.useQuery({ text: 'maike' })
+  const hello = api.pool.all.useQuery()
   if (!hello.data) {
     return <div>Loading...</div>
   }
   return (
     <div>
-      <p>{hello.data.greeting}</p>
+      <p>{hello.data[0].name}</p>
     </div>
   )
 }
