@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { Pair, pairFromPoolAndTokens } from '../../../utils/Pair'
-import { getPoolWithTokensAndSnaps, getPrices } from '../../../utils/api'
+import { getPoolWithTokensAndSnaps, getPrices } from '../../../utils/functions'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=59')

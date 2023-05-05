@@ -68,7 +68,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       fallback: {
-        [`/earn/api/pair/${id}`]: { pair, prices },
+        [`/api/pair/${id}`]: { pair, prices },
       },
     },
     revalidate: 60,
@@ -93,7 +93,7 @@ const Pool: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) 
 const _Pool = () => {
   const router = useRouter()
   const { data } = useSWR<{ pair: Pair; prices: { [key: string]: number } }>(
-    `/earn/api/pair/${router.query.id}`,
+    `/api/pair/${router.query.id}`,
     (url: string) => fetch(url).then((response) => response.json())
   )
   if (!data) return <></>

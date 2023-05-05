@@ -18,7 +18,7 @@ export const getStaticProps: GetStaticProps = async () => {
   return {
     props: {
       fallback: {
-        ['/earn/api/pairs']: { pairs },
+        ['/api/pairs']: { pairs },
       },
       revalidate: 60,
     },

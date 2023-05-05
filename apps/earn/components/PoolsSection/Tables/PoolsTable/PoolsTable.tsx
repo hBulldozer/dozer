@@ -139,7 +139,7 @@ export const PoolsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: pairs, isLoading } = useSWR<Pair[]>(`/earn/api/pairs`, (url: string) =>
+  const { data: pairs, isLoading } = useSWR<Pair[]>(`/api/pairs`, (url: string) =>
     fetch(url).then((response) => response.json())
   )
   const _pairs_array: Pair[] | undefined = pairs ? Object.values(pairs) : []

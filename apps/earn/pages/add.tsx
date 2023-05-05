@@ -35,13 +35,13 @@ const Add: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) =
 }
 
 const _Add: FC = () => {
-  const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/earn/api/pools`, (url: string) =>
+  const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/api/pools`, (url: string) =>
     fetch(url).then((response) => response.json())
   )
   const { pools } = pre_pools ? pre_pools : { pools: [] }
   // const pools: dbPoolWithTokens[] | undefined = pre_pools ? Object.values(pre_pools) : []
   const { data } = useSWR<{ tokens: dbTokenWithPools[]; prices: { [key: string]: number } }>(
-    `/earn/api/prices`,
+    `/api/prices`,
     (url: string) => fetch(url).then((response) => response.json())
   )
   const { tokens, prices } = data ? data : { tokens: [], prices: {} }
@@ -318,8 +318,8 @@ export const getStaticProps: GetStaticProps = async () => {
   return {
     props: {
       fallback: {
-        [`/earn/api/pools`]: { pools },
-        [`/earn/api/prices`]: { tokens, prices },
+        [`/api/pools`]: { pools },
+        [`/api/prices`]: { tokens, prices },
       },
     },
     revalidate: 60,

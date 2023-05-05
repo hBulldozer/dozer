@@ -34,11 +34,11 @@ const Remove: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }
 
 const _Remove: NextPage = () => {
   const router = useRouter()
-  const { data: pre_pool } = useSWR<{ pool: dbPoolWithTokens }>(`/earn/api/pool/${router.query.id}`, (url) =>
+  const { data: pre_pool } = useSWR<{ pool: dbPoolWithTokens }>(`/api/pool/${router.query.id}`, (url) =>
     fetch(url).then((response) => response.json())
   )
 
-  const { data: pre_prices } = useSWR<{ prices: { [key: string]: number } }>(`/earn/api/prices`, (url) =>
+  const { data: pre_prices } = useSWR<{ prices: { [key: string]: number } }>(`/api/prices`, (url) =>
     fetch(url).then((response) => response.json())
   )
   if (!pre_pool) return <></>
@@ -110,8 +110,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       fallback: {
-        [`/earn/api/pool/${id}`]: { pool },
-        [`/earn/api/prices`]: { prices },
+        [`/api/pool/${id}`]: { pool },
+        [`/api/prices`]: { prices },
       },
     },
     revalidate: 60,

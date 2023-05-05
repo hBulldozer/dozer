@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getPairs } from '../../../utils/api'
+import { getPairs } from '../../../utils/functions'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=59')

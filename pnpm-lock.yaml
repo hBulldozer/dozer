@@ -67,6 +67,7 @@ importers:
     specifiers:
       '@dozer/chain': workspace:*
       '@dozer/currency': workspace:*
+      '@dozer/database': workspace:*
       '@dozer/eslint-config': workspace:*
       '@dozer/higmi': workspace:*
       '@dozer/hooks': workspace:*
@@ -98,6 +99,7 @@ importers:
     dependencies:
       '@dozer/chain': link:../../packages/chain
       '@dozer/currency': link:../../packages/currency
+      '@dozer/database': link:../../packages/database
       '@dozer/higmi': link:../../packages/higmi
       '@dozer/hooks': link:../../packages/hooks
       '@dozer/react-query': link:../../packages/react-query

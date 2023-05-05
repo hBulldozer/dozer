@@ -18,7 +18,7 @@ interface PositionQuickHoverTooltipProps {
 }
 
 export const PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row }) => {
-  const { data: pre_prices, isLoading } = useSWR<{ prices: { [key: string]: number } }>(`/earn/api/prices`, (url) =>
+  const { data: pre_prices, isLoading } = useSWR<{ prices: { [key: string]: number } }>(`/api/prices`, (url) =>
     fetch(url).then((response) => response.json())
   )
 
