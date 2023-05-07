@@ -47,10 +47,6 @@ const nextConfig = {
         source: '/earn/:path*',
         destination: `${EARN_URL}/earn/:path*`,
       },
-      {
-        source: '/kucoin/:path*',
-        destination: `https://api.kucoin.com/api/v1/:path*`,
-      },
     ]
   },
 }
