@@ -1,16 +1,14 @@
-import { z } from "zod";
+import { z } from 'zod'
 
-import { createTRPCRouter, procedure } from "../trpc";
+import { createTRPCRouter, procedure } from '../trpc'
 
 export const poolRouter = createTRPCRouter({
   all: procedure.query(({ ctx }) => {
-    return ctx.prisma.pool.findMany({ orderBy: { id: "desc" } });
+    return ctx.prisma.pool.findMany()
   }),
-  byId: procedure
-    .input(z.object({ id: z.string() }))
-    .query(({ ctx, input }) => {
-      return ctx.prisma.pool.findFirst({ where: { id: input.id } });
-    }),
+  byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
+    return ctx.prisma.pool.findFirst({ where: { id: input.id } })
+  }),
   // create: procedure
   //   .input(
   //     z.object({
@@ -24,4 +22,4 @@ export const poolRouter = createTRPCRouter({
   // delete: procedure.input(z.string()).mutation(({ ctx, input }) => {
   //   return ctx.prisma.pool.delete({ where: { id: input } });
   // }),
-});
+})

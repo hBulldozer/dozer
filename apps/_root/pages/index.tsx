@@ -27,7 +27,9 @@ const Home = () => {
   }
   return (
     <div>
-      <p>{hello.data[0].name}</p>
+      {hello.data?.map((index) => {
+        return <p key={index.id}>{index.name}</p>
+      })}
     </div>
   )
 }
