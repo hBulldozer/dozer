@@ -6,7 +6,7 @@ import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-
+import { api } from 'utils/api'
 import { Header } from '../components'
 
 // declare global {
@@ -64,4 +64,4 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
 //   return { ...appProps }
 // }
 
-export default MyApp
+export default api.withTRPC(MyApp)

@@ -381,6 +381,9 @@ importers:
 
   apps/swap:
     dependencies:
+      '@dozer/api':
+        specifier: workspace:*
+        version: link:../../packages/api
       '@dozer/chain':
         specifier: workspace:*
         version: link:../../packages/chain
@@ -420,6 +423,15 @@ importers:
       '@tailwindcss/typography':
         specifier: ^0.5.2
         version: 0.5.2(tailwindcss@3.2.4)
+      '@trpc/client':
+        specifier: ^10.23.0
+        version: 10.23.0(@trpc/server@10.23.0)
+      '@trpc/next':
+        specifier: ^10.23.0
+        version: 10.23.0(@tanstack/react-query@4.20.4)(@trpc/client@10.23.0)(@trpc/react-query@10.23.0)(@trpc/server@10.23.0)(next@13.1.1)(react-dom@18.2.0)(react@18.2.0)
+      '@trpc/react-query':
+        specifier: ^10.23.0
+        version: 10.23.0(@tanstack/react-query@4.20.4)(@trpc/client@10.23.0)(@trpc/server@10.23.0)(react-dom@18.2.0)(react@18.2.0)
       '@vercel/analytics':
         specifier: 0.1.5
         version: 0.1.5(react@18.2.0)
@@ -435,6 +447,9 @@ importers:
       react-dom:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
+      superjson:
+        specifier: 1.9.1
+        version: 1.9.1
     devDependencies:
       '@dozer/eslint-config':
         specifier: workspace:*

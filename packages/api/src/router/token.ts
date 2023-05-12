@@ -54,15 +54,8 @@ export const tokenRouter = createTRPCRouter({
       throw new Error(`Failed to fetch tokens, received ${tokens}`)
     }
     return tokens
-    // pool.findMany({
-    //   include: {
-    //     token0: true,
-    //     token1: true,
-    //     tokenLP: true,
-    //   }
-    // })
   }),
-    by: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
-      return ctx.prisma.pool.findFirst({ where: { id: input.id } })
-    }),
+  bySymbol: procedure.input(z.object({ symbol: z.string().max(8).min(3) })).query(({ ctx, input }) => {
+    return ctx.prisma.token.findFirst({ where: { symbol: input.symbol } })
+  }),
 })

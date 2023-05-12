@@ -25,6 +25,7 @@ const Home = () => {
   // )
   const pools = api.getPools.all.useQuery().data
   const tokens = api.getTokens.all.useQuery().data
+  const htr = api.getTokens.bySymbol.useQuery({ symbol: 'HTR' }).data
   if (!pools) {
     return <div>Loading...</div>
   }
@@ -33,13 +34,11 @@ const Home = () => {
       {/* {pools.map((index) => {
         return <p key={index.id}>{index.name}</p>
       })} */}
-      {tokens?.map((index) => {
+      {/* {tokens?.map((index) => {
         return <p key={index.id}>{index.symbol}</p>
-      })}
+      })} */}
+      <p>{htr?.name}</p>
     </div>
-    
-
-    
   )
 }
 
