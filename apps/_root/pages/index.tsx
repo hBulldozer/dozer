@@ -6,6 +6,8 @@ import { Hero } from 'components/Hero/Hero'
 import { Partners } from 'components/Partners/Partners'
 import { Story } from 'components/Story/Story'
 import { api } from 'utils/api'
+// import { generateSSGHelper } from "~/server/helpers/ssgHelper";
+
 const Home = () => {
   // return (
   //   // <article className="w-full my-20">
@@ -21,16 +23,23 @@ const Home = () => {
   //   </>
   //   // </article>
   // )
-  const hello = api.pool.all.useQuery()
-  if (!hello.data) {
+  const pools = api.getPools.all.useQuery().data
+  const tokens = api.getTokens.all.useQuery().data
+  if (!pools) {
     return <div>Loading...</div>
   }
   return (
     <div>
-      {hello.data?.map((index) => {
+      {/* {pools.map((index) => {
         return <p key={index.id}>{index.name}</p>
+      })} */}
+      {tokens?.map((index) => {
+        return <p key={index.id}>{index.symbol}</p>
       })}
     </div>
+    
+
+    
   )
 }
 

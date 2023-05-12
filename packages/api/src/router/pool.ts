@@ -4,7 +4,13 @@ import { createTRPCRouter, procedure } from '../trpc'
 
 export const poolRouter = createTRPCRouter({
   all: procedure.query(({ ctx }) => {
-    return ctx.prisma.pool.findMany()
+    return ctx.prisma.pool.findMany({
+      include: {
+        token0: true,
+        token1: true,
+        tokenLP: true,
+      }
+    })
   }),
   byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.pool.findFirst({ where: { id: input.id } })
