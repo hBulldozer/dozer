@@ -15,7 +15,7 @@ import { prisma } from '@dozer/database'
 import { dbToken, dbPool, dbPoolWithTokens, dbTokenWithPools } from '../interfaces'
 import useSWR, { SWRConfig } from 'swr'
 import { useRouter } from 'next/router'
-import { getPools, getPrices, getTokens } from 'utils/api'
+import { getPools, getPrices, getTokens } from 'utils/functions'
 // import { Token as dbToken, Pool } from '@dozer/database/types'
 
 function toToken(dbToken: dbToken): Token {

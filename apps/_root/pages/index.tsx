@@ -9,36 +9,19 @@ import { api } from 'utils/api'
 // import { generateSSGHelper } from "~/server/helpers/ssgHelper";
 
 const Home = () => {
-  // return (
-  //   // <article className="w-full my-20">
-  //   <>
-  //     <Background />
-  //     <Hero />
-  //     <Partners />
-  //     <div className="overflow-x-hidden bg-black">
-  //       <Story />
-  //       <div className="flex flex-col gap-2 border-t border-neutral-200/10"></div>
-  //       <BuildWealth />
-  //     </div>
-  //   </>
-  //   // </article>
-  // )
-  const pools = api.getPools.all.useQuery().data
-  const tokens = api.getTokens.all.useQuery().data
-  const htr = api.getTokens.bySymbol.useQuery({ symbol: 'HTR' }).data
-  if (!pools) {
-    return <div>Loading...</div>
-  }
   return (
-    <div>
-      {/* {pools.map((index) => {
-        return <p key={index.id}>{index.name}</p>
-      })} */}
-      {/* {tokens?.map((index) => {
-        return <p key={index.id}>{index.symbol}</p>
-      })} */}
-      <p>{htr?.name}</p>
-    </div>
+    // <article className="w-full my-20">
+    <>
+      <Background />
+      <Hero />
+      <Partners />
+      <div className="overflow-x-hidden bg-black">
+        <Story />
+        <div className="flex flex-col gap-2 border-t border-neutral-200/10"></div>
+        <BuildWealth />
+      </div>
+    </>
+    // </article>
   )
 }
 
