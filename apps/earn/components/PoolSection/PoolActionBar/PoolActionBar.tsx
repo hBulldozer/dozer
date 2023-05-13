@@ -13,7 +13,6 @@ interface PoolActionBarProps {
 
 export const PoolActionBar: FC<PoolActionBarProps> = ({ pair }) => {
   const [openPosition, setOpenPosition] = useState<boolean>(false)
-  const [openRewards, setOpenRewards] = useState<boolean>(false)
   const { isLg } = useBreakpoint('lg')
 
   if (isLg) return <></>

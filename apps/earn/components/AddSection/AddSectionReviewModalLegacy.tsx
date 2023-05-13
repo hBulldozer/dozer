@@ -1,24 +1,9 @@
-// import { TransactionRequest } from '@ethersproject/providers'
-// import { calculateSlippageAmount } from '@dozer/amm'
 import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
-// import { calculateGasMargin } from '@dozer/gas'
 import { Percent } from '@dozer/math'
 import { Button, Dots } from '@dozer/ui'
-import {
-  Approve,
-  //   getSushiSwapRouterContractConfig,
-  //   PairState,
-  //   useSendTransaction,
-  //   useSushiSwapRouterContract,
-} from '@dozer/higmi'
-// import { BigNumber, BigNumberish } from 'ethers'
-import { Dispatch, FC, ReactNode, SetStateAction, useCallback, useMemo, useState } from 'react'
-// import { Address, useAccount, useNetwork } from 'wagmi'
-// import { SendTransactionResult } from 'wagmi/actions'
-
-// import { useTransactionDeadline } from '../../lib/hooks'
-// import { useNotifications, useSettings } from '../../lib/state/storage'
+import { Approve } from '@dozer/higmi'
+import { FC, ReactNode, useMemo, useState } from 'react'
 import { useSettings, useAccount, useNetwork } from '@dozer/zustand'
 import { AddSectionReviewModal } from './AddSectionReviewModal'
 
@@ -36,8 +21,6 @@ interface AddSectionReviewModalLegacyProps {
 export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> = ({
   poolState,
   chainId,
-  token0,
-  token1,
   input0,
   input1,
   children,
@@ -46,10 +29,8 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   // const deadline = useTransactionDeadline(chainId)
   const [open, setOpen] = useState(false)
   const { address } = useAccount()
-  const { network } = useNetwork()
 
   // const [, { createNotification }] = useNotifications(address)
-  // const contract = useSushiSwapRouterContract(chainId)
   const { slippageTolerance } = useSettings()
 
   // const onSettled = useCallback(
@@ -74,21 +55,21 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   //   [chainId, createNotification, token0, token1]
   // )
 
-  const slippagePercent = useMemo(() => {
-    return new Percent(Math.floor(slippageTolerance * 100), 10_000)
-  }, [slippageTolerance])
+  // const slippagePercent = useMemo(() => {
+  //   return new Percent(Math.floor(slippageTolerance * 100), 10_000)
+  // }, [slippageTolerance])
 
-  const [minAmount0, minAmount1] = useMemo(() => {
-    return [
-      input0 ? (poolState === 0 ? input0 : undefined) : undefined,
-      input1 ? (poolState === 0 ? input1 : undefined) : undefined,
-    ]
-  }, [
-    poolState,
-    input0,
-    input1,
-    // slippagePercent
-  ])
+  // const [minAmount0, minAmount1] = useMemo(() => {
+  //   return [
+  //     input0 ? (poolState === 0 ? input0 : undefined) : undefined,
+  //     input1 ? (poolState === 0 ? input1 : undefined) : undefined,
+  //   ]
+  // }, [
+  //   poolState,
+  //   input0,
+  //   input1,
+  //   // slippagePercent
+  // ])
 
   // const prepare = useCallback(
   //   async (setRequest: Dispatch<SetStateAction<(TransactionRequest & { to: string }) | undefined>>) => {
@@ -177,7 +158,9 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
           prices={prices}
         >
           <Approve
-            onSuccess={() => {}}
+            onSuccess={() => {
+              console.log('success')
+            }}
             className="flex-grow !justify-end"
             components={
               <Approve.Components>
@@ -188,7 +171,14 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
             render={({ approved }) => {
               // console.log({ approved, isWritePending })
               return (
-                <Button size="md" disabled={!approved} fullWidth onClick={() => {}}>
+                <Button
+                  size="md"
+                  disabled={!approved}
+                  fullWidth
+                  onClick={() => {
+                    console.log('click')
+                  }}
+                >
                   {<Dots>Confirm transaction</Dots>}
                 </Button>
               )
@@ -197,6 +187,6 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
         </AddSectionReviewModal>
       </>
     ),
-    [chainId, children, input0, input1, open]
+    [chainId, children, input0, input1, open, address, isWritePending, prices]
   )
 }

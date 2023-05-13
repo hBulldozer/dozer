@@ -1,24 +1,18 @@
 import { PlusIcon } from '@heroicons/react/solid'
-import { ChainId, chainName } from '@dozer/chain'
+import { ChainId } from '@dozer/chain'
 import { Amount, Token } from '@dozer/currency'
-import { FundSource } from '@dozer/hooks'
-import { AppearOnMount, BreadcrumbLink, Button, Container, Dots, Loader } from '@dozer/ui'
+import { AppearOnMount, BreadcrumbLink, Button, Dots } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
-import {
-  AddSectionMyPosition,
-  AddSectionReviewModalLegacy,
-  Layout,
-  SelectFeeWidget,
-  SelectNetworkWidget,
-} from '../components'
-import React, { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { AddSectionMyPosition, AddSectionReviewModalLegacy, Layout, SelectNetworkWidget } from '../components'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { Checker, Web3Input } from '@dozer/higmi'
-import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from 'next'
-import prisma from '@dozer/database'
-import { dbToken, dbPool, dbTokenWithPools, dbPoolWithTokens } from '../interfaces'
-import { Pair, PairState, pairFromPoolAndTokensList } from '../utils/Pair'
+import { GetStaticProps, InferGetStaticPropsType } from 'next'
+import { dbToken, dbTokenWithPools, dbPoolWithTokens } from '../interfaces'
+import { PairState, pairFromPoolAndTokensList } from '../utils/Pair'
 import { useTrade } from '@dozer/zustand'
 import toToken from '../utils/toToken'
+import useSWR, { SWRConfig } from 'swr'
+import { getPools, getPrices, getTokens } from '../utils/api'
 
 const LINKS: BreadcrumbLink[] = [
   {
@@ -27,183 +21,52 @@ const LINKS: BreadcrumbLink[] = [
   },
 ]
 
-export const getServerSideProps: GetServerSideProps = async ({ query, res }) => {
-  res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=3500')
-  const pools = await prisma.pool.findMany({
-    select: {
-      id: true,
-      reserve0: true,
-      reserve1: true,
-      token0: {
-        select: {
-          uuid: true,
-          symbol: true,
-        },
-      },
-      token1: {
-        select: {
-          uuid: true,
-          symbol: true,
-        },
-      },
-    },
-  })
-  const tokens = await prisma.token.findMany({
-    select: {
-      id: true,
-      name: true,
-      uuid: true,
-      symbol: true,
-      chainId: true,
-      decimals: true,
-      pools0: {
-        select: {
-          id: true,
-          reserve0: true,
-          reserve1: true,
-          token1: {
-            select: {
-              uuid: true,
-            },
-          },
-        },
-      },
-      pools1: {
-        select: {
-          id: true,
-          reserve0: true,
-          reserve1: true,
-          token0: {
-            select: {
-              uuid: true,
-            },
-          },
-        },
-      },
-    },
-  })
-
-  const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
-  const data = await resp.json()
-  const priceHTR = data.data.HTR
-  const prices: { [key: string]: number | undefined } = {}
-
-  tokens.forEach((token) => {
-    if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)
-    else if (token.pools0.length > 0) {
-      const poolHTR = token.pools0.find((pool) => {
-        return pool.token1.uuid == '00'
-      })
-      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve1) / Number(poolHTR?.reserve0)) * priceHTR
-    } else if (token.pools1.length > 0) {
-      const poolHTR = token.pools1.find((pool) => {
-        return pool.token0.uuid == '00'
-      })
-      if (!prices[token.uuid]) prices[token.uuid] = (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR
-    }
-  })
-  return {
-    props: {
-      pools: JSON.parse(JSON.stringify(pools)),
-      tokens: JSON.parse(JSON.stringify(tokens)),
-      prices: JSON.parse(JSON.stringify(prices)),
-      query: query,
-    },
-  }
-}
-
-const Add: NextPage = ({ pools, tokens, prices, query }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const [chainId, setChainId] = useState(query?.chainId ? query.chainId : ChainId.HATHOR)
-  // const [fee, setFee] = useState(2)
-
-  const [initialToken0, setInitialToken0] = useState(
-    query?.token0 && query?.chainId
-      ? toToken(
-          tokens.find((token: dbToken) => {
-            return query.token0 == token.uuid
-          })
-        )
-      : undefined
-  )
-
-  const [initialToken1, setInitialToken1] = useState(
-    query?.token1 && query?.chainId
-      ? toToken(
-          tokens.find((token: dbToken) => {
-            return query.token1 == token.uuid
-          })
-        )
-      : undefined
-  )
-
-  const [token0, setToken0] = useState<Token | undefined>(initialToken0)
-  const [token1, setToken1] = useState<Token | undefined>(initialToken1)
-
-  useEffect(() => {
-    setToken0(initialToken0)
-    setToken1(initialToken1)
-  }, [chainId, initialToken0, initialToken1])
-
-  // Reset default fee if switching networks and not on a trident enabled network
-  useEffect(() => {
-    // if (!TRIDENT_ENABLED_NETWORKS.includes(chainId)) {
-    //   setFee(2)
-    //   setPoolType(PoolFinderType.Classic)
-    // }
-  }, [chainId])
-
+const Add: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
   return (
-    <Layout breadcrumbs={LINKS}>
-      <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
-        <div className="hidden md:block" />
-        <_Add
-          chainId={chainId}
-          setChainId={setChainId}
-          pools={pools}
-          title={'teste'}
-          token0={token0}
-          token1={token1}
-          setToken0={setToken0}
-          setToken1={setToken1}
-          prices={prices}
-          tokens={tokens.filter((token: dbToken) => {
-            return token.chainId == chainId
-          })}
-        />
-      </div>
-    </Layout>
+    <SWRConfig value={{ fallback }}>
+      <Layout breadcrumbs={LINKS}>
+        <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
+          <div className="hidden md:block" />
+          <_Add />
+        </div>
+      </Layout>
+    </SWRConfig>
   )
 }
 
-interface AddProps {
-  chainId: ChainId
-  setChainId(chainId: ChainId): void
-  pools: dbPoolWithTokens[]
-  title: ReactNode
-  token0: Token | undefined
-  token1: Token | undefined
-  setToken0(token: Token): void
-  setToken1(token: Token): void
-  tokens: dbTokenWithPools[]
-  prices: { [key: string]: number }
-}
-
-const _Add: FC<AddProps> = ({
-  chainId,
-  setChainId,
-  pools,
-  title,
-  token0,
-  token1,
-  setToken0,
-  setToken1,
-  prices,
-  tokens,
-}) => {
+const _Add: FC = () => {
+  const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/api/pools`, (url: string) =>
+    fetch(url).then((response) => response.json())
+  )
+  const { pools } = pre_pools ? pre_pools : { pools: [] }
+  // const pools: dbPoolWithTokens[] | undefined = pre_pools ? Object.values(pre_pools) : []
+  const { data } = useSWR<{ tokens: dbTokenWithPools[]; prices: { [key: string]: number } }>(
+    `/api/prices`,
+    (url: string) => fetch(url).then((response) => response.json())
+  )
+  const { tokens, prices } = data ? data : { tokens: [], prices: {} }
   const [{ input0, input1 }, setTypedAmounts] = useState<{
     input0: string
     input1: string
   }>({ input0: '', input1: '' })
+  const [token0, setToken0] = useState<Token | undefined>(
+    // initialToken0
+    undefined
+  )
+  const [token1, setToken1] = useState<Token | undefined>(
+    // initialToken1
+    undefined
+  )
+  const [chainId, setChainId] = useState(
+    // query?.chainId ? query.chainId :
+    ChainId.HATHOR
+  )
+
+  useEffect(() => {
+    setToken0(undefined)
+    setToken1(undefined)
+  }, [chainId])
+  // const [fee, setFee] = useState(2)
 
   const [parsedInput0, parsedInput1] = useMemo(() => {
     return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
@@ -278,7 +141,7 @@ const _Add: FC<AddProps> = ({
 
   useEffect(() => {
     setSelectedPool(
-      pools.find((pool: dbPoolWithTokens) => {
+      pools?.find((pool: dbPoolWithTokens) => {
         const uuid0 = pool.token0.uuid
         const uuid1 = pool.token1.uuid
         const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
@@ -322,7 +185,7 @@ const _Add: FC<AddProps> = ({
       return token.uuid !== token1?.uuid
     })
     setListTokens0(
-      list0.map((token) => {
+      list0?.map((token) => {
         return toToken(token)
       })
     )
@@ -330,12 +193,13 @@ const _Add: FC<AddProps> = ({
       return token.uuid !== token0?.uuid
     })
     setListTokens1(
-      list1.map((token) => {
-        return toToken(token)
+      list1?.map((token) => {
+        return token && toToken(token)
       })
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pools, outputAmount, token0, token1, input0, input1, prices, selectedPool, tokens])
+  if (!(pools || tokens || prices)) return <></>
 
   return (
     <>
@@ -407,7 +271,7 @@ const _Add: FC<AddProps> = ({
                           >
                             {({ isWritePending, setOpen }) => (
                               <Button fullWidth onClick={() => setOpen(true)} disabled={isWritePending} size="md">
-                                {isWritePending ? <Dots>Confirm transaction</Dots> : title}
+                                {isWritePending ? <Dots>Confirm transaction</Dots> : 'Add Liquidity'}
                               </Button>
                             )}
                           </AddSectionReviewModalLegacy>
@@ -438,12 +302,28 @@ const _Add: FC<AddProps> = ({
       {selectedPool && (
         <div className="order-1 sm:order-3">
           <AppearOnMount>
-            <AddSectionMyPosition pair={pairFromPoolAndTokensList(selectedPool, tokens)} />
+            <AddSectionMyPosition pair={pairFromPoolAndTokensList(selectedPool)} />
           </AppearOnMount>
         </div>
       )}
     </>
   )
+}
+
+export const getStaticProps: GetStaticProps = async () => {
+  const pools = await getPools()
+  const tokens = await getTokens()
+  const prices = await getPrices(tokens)
+
+  return {
+    props: {
+      fallback: {
+        [`/api/pools`]: { pools },
+        [`/api/prices`]: { tokens, prices },
+      },
+    },
+    revalidate: 60,
+  }
 }
 
 export default Add

@@ -31,10 +31,7 @@ export const PoolButtons: FC<PoolButtonsProps> = ({ pair }) => {
             </Button>
           </a>
         </Link.Internal>
-        <Link.Internal
-          href={`/add?chainId=${pair.chainId}&token0=${pair.token0.uuid}&token1=${pair.token1.uuid}`}
-          passHref={true}
-        >
+        <Link.Internal href={`/${pair.id}/add`} passHref={true}>
           <Button as="a" size="md" fullWidth>
             Deposit
           </Button>

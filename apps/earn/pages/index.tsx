@@ -1,68 +1,39 @@
 import { PlusIcon } from '@heroicons/react/solid'
-import { Button, Link, OnsenIcon, Typography } from '@dozer/ui'
-import type { InferGetServerSidePropsType, NextPage } from 'next'
+import { Button, Typography } from '@dozer/ui'
+import type { GetStaticProps, InferGetStaticPropsType } from 'next'
 // import { SUPPORTED_CHAIN_IDS } from '../config'
 // import { GetStaticProps, InferGetStaticPropsType } from 'next'
-import { GetServerSideProps } from 'next'
-import {
-  FC,
-  JSXElementConstructor,
-  Key,
-  ReactElement,
-  ReactFragment,
-  ReactPortal,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { FC } from 'react'
 
 import { Layout, PoolsSection } from '../components'
-import { Pool, prisma } from '@dozer/database'
-import { Pair, pairFromPoolAndTokensList } from '../utils/Pair'
-import { getTokens } from '@dozer/currency'
+import { SWRConfig } from 'swr'
+import { getPairs } from '../utils/api'
 
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  const pre_pools = await prisma.pool.findMany()
-  const tokens = await prisma.token.findMany()
-  const pools: Pair[] = []
-  pre_pools.forEach((pool: Pool) => {
-    pools?.push(pairFromPoolAndTokensList(pool, tokens))
-  })
-  return { props: { pools } }
+export const getStaticProps: GetStaticProps = async () => {
+  // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
+  const pairs = await getPairs()
+  if (!pairs) {
+    throw new Error(`Failed to fetch pairs, received ${pairs}`)
+  }
+  return {
+    props: {
+      fallback: {
+        ['/api/pairs']: { pairs },
+      },
+      revalidate: 60,
+    },
+  }
 }
 
-// import { getBundles, getPoolCount, getPools, getSushiBar } from '../lib/api'
-// import { AVAILABLE_POOL_TYPE_MAP } from '../lib/constants'
+const Pools: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
+  return (
+    <SWRConfig value={{ fallback }}>
+      <_Pools />
+    </SWRConfig>
+  )
+}
 
-// const Pools: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-//   return (
-//     <SWRConfig value={{ fallback }}>
-//       <_Pools />
-//     </SWRConfig>
-//   )
-// }
-
-// const poolQuery = api.pool.all.useQuery()
-
-// async function readAllPools() {
-//   const pools = await pool.findMany()
-
-//   return pools
-// }
-
-// export function List(props: { pools: Pool[] }) {
-//   return (
-//     <div>
-//       {props.pools.map((pool: Pool) => (
-//         <p key={pool.id}>
-//           {pool.name}: {pool.token0Id}
-//         </p>
-//       ))}
-//     </div>
-//   )
-// }
-
-const Pools: NextPage = ({ pools }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const _Pools = () => {
   return (
     <Layout>
       <div className="flex flex-col gap-10 md:gap-16">
@@ -90,7 +61,7 @@ const Pools: NextPage = ({ pools }: InferGetServerSidePropsType<typeof getServer
         </section>
         {/* <SushiBarSection /> */}
         {/* <PoolsFiltersProvider selectedNetworks={selectedNetworks}> */}
-        <PoolsSection {...pools} />
+        <PoolsSection />
         {/* </PoolsFiltersProvider> */}
       </div>
     </Layout>

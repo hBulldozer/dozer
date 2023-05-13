@@ -24,6 +24,7 @@ interface AddSectionWidgetProps {
   onSelectToken1?(currency: Type): void
   onInput0(value: string): void
   onInput1(value: string): void
+  prices?: { [key: string]: number }
   children: ReactNode
 }
 
@@ -38,10 +39,10 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
   onSelectToken1,
   onInput0,
   onInput1,
+  prices,
   children,
 }) => {
   const isMounted = useIsMounted()
-  const tokenMap = getTokens(chainId)
   // const [customTokensMap, { addCustomToken, removeCustomToken }] = useCustomTokens(chainId)
   return (
     <Widget id="addLiquidity" maxWidth={400}>
@@ -97,6 +98,7 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
                     // onRemoveToken={removeCustomToken}
                     chainId={chainId}
                     // tokenMap={tokenMap}
+                    prices={prices}
                   />
                   <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
                     <div className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full">
@@ -110,6 +112,7 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
                       onChange={onInput1}
                       currency={token1}
                       onSelect={onSelectToken1}
+                      prices={prices}
                       // customTokenMap={customTokensMap}
                       // onAddToken={addCustomToken}
                       // onRemoveToken={removeCustomToken}

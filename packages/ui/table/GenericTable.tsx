@@ -38,7 +38,7 @@ export const GenericTable = <T extends { id: string }>({
 
   return (
     <>
-      <LoadingOverlay show={showOverlay} />
+      {/* <LoadingOverlay show={showOverlay} /> */}
       <Table.container>
         <Table.table style={{ minHeight: (pageSize + 1) * 52 }}>
           <Table.thead>
@@ -248,7 +248,7 @@ export const GenericTable = <T extends { id: string }>({
             {!loading && table.getRowModel().rows.length === 0 && (
               <Table.tr className="!h-[260px]">
                 <Table.td colSpan={table.getAllColumns().length} className="!h-[260px]">
-                  <Typography variant="xs" className="text-stone-400 italic w-full text-center">
+                  <Typography variant="xs" className="w-full italic text-center text-stone-400">
                     {placeholder}
                   </Typography>
                 </Table.td>

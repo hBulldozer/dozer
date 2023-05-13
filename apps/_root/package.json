@@ -15,6 +15,7 @@
     "@dozer/chain": "workspace:*",
     "@dozer/api": "workspace:*",
     "@dozer/currency": "workspace:*",
+    "@dozer/database": "workspace:*",
     "@dozer/higmi": "workspace:*",
     "@dozer/hooks": "workspace:*",
     "@dozer/react-query": "workspace:*",

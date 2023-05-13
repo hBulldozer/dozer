@@ -5,12 +5,12 @@ import { FC, useEffect, useState } from 'react'
 // import useSWR from 'swr'
 import { useAccount } from '@dozer/zustand'
 
-import { PoolsTable } from './Tables'
+import { PoolsTable, PositionsTable } from './Tables'
 import { Pair } from '../../utils/Pair'
 // import { PoolsTable, PositionsTable } from './Tables'
 // import { TableFilters } from './Tables/TableFilters'
 
-export const PoolsSection: FC = (pools) => {
+export const PoolsSection: FC = () => {
   const accountAddress = useAccount((state) => state.address)
   const [tab, setTab] = useState<number>(0)
   const [address, setAddress] = useState('')
@@ -46,16 +46,20 @@ export const PoolsSection: FC = (pools) => {
                 )
               }
             >
-              My Positions <Chip label="label" size="sm" color="amber" />
+              My Positions
+              {/* <Chip label="label" size="sm" color="amber" /> */}
             </Tab>
           )}
         </div>
         {/* <TableFilters showAllFilters={tab === 0} /> */}
         <Tab.Panels>
           <Tab.Panel unmount={false}>
-            <PoolsTable {...pools} />
+            <PoolsTable />
           </Tab.Panel>
-          <Tab.Panel unmount={!address}>{/* <PositionsTable /> */}</Tab.Panel>
+          <Tab.Panel unmount={!address}>
+            {' '}
+            <PositionsTable />{' '}
+          </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
     </section>

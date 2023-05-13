@@ -12,6 +12,7 @@ import { useTokensFromPair } from '../../../utils/useTokensFromPair'
 import { PoolButtons } from '../PoolButtons'
 import { useBalance } from '@dozer/react-query'
 import { useAccount } from '@dozer/zustand'
+import { usePoolPosition } from '../../PoolPositionProvider'
 
 interface PoolActionBarPositionDialogProps {
   pair: Pair
@@ -21,9 +22,9 @@ interface PoolActionBarPositionDialogProps {
 
 export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> = ({ pair, open, setOpen }) => {
   const { token0, token1 } = useTokensFromPair(pair)
-  // const { balance, isError, isLoading, value0, value1, underlying1, underlying0 } = usePoolPosition()
+  const { isError, isLoading, value0, value1, underlying1, underlying0 } = usePoolPosition()
+
   const address = useAccount((state) => state.address)
-  const { data: balance, isLoading, isError } = useBalance(address)
   // const {
   //   balance: stakedBalance,
   //   value0: stakedValue0,
@@ -42,7 +43,7 @@ export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> =
     <Dialog onClose={handleClose} open={open}>
       <Dialog.Content className="!pb-6">
         <Dialog.Header title="My Position" onClose={handleClose} />
-        {isLoading && !isError && !balance?.[FundSource.WALLET] ? (
+        {isLoading && !isError ? (
           <div className="flex flex-col gap-2 px-2 py-4 mt-2">
             <div className="grid justify-between grid-cols-10 gap-10 mb-2">
               <div className="h-[20px] bg-stone-600 animate-pulse col-span-8 rounded-full" />
@@ -65,8 +66,8 @@ export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> =
               </Typography>
               <div className="flex flex-col">
                 <Typography variant="xs" weight={500} className="text-right text-stone-100">
-                  {/* {formatUSD(value0 + value1)} */}
-                  {100}
+                  {formatUSD(value0 + value1)}
+                  {/* {100} */}
                 </Typography>
               </div>
             </div>
@@ -74,27 +75,26 @@ export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> =
               <div className="flex items-center gap-2">
                 <Currency.Icon currency={token0} width={20} height={20} />
                 <Typography variant="sm" weight={500} className="text-stone-300">
-                  {/* {underlying0?.toSignificant(6)}  */}
-                  {1000}
-                  {token0.symbol}
+                  {underlying0?.toFixed(0) || '0'} {token0.symbol}
+                  {/* {1000} */}
                 </Typography>
               </div>
               <Typography variant="xs" weight={500} className="text-stone-400">
-                {/* {formatUSD(value0)} */}
-                {2000}
+                {formatUSD(value0)}
+                {/* {2000} */}
               </Typography>
             </div>
             <div className="flex justify-between px-2 py-1">
               <div className="flex items-center gap-2">
                 <Currency.Icon currency={token1} width={20} height={20} />
                 <Typography variant="sm" weight={500} className="text-stone-300">
-                  {1000}
-                  {/* {underlying1?.toSignificant(6)} {token1.symbol} */}
+                  {/* {1000} */}
+                  {underlying1?.toFixed(0) || '0'} {token1.symbol}
                 </Typography>
               </div>
               <Typography variant="xs" weight={500} className="text-stone-400">
-                {3000}
-                {/* {formatUSD(value1)} */}
+                {/* {3000} */}
+                {formatUSD(value1)}
               </Typography>
             </div>
           </>

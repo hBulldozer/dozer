@@ -33,7 +33,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {input0}{' '}
+                  {input0?.toFixed(2)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input0 && (
@@ -48,7 +48,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {value0 ? `$${value0.toFixed(2)}` : '-'}
+              {value0 && input0 ? `$${(value0 * input0).toFixed(2)}` : '-'}
             </Typography>
           </div>
           <div className="flex items-center justify-center col-span-12 -mt-2.5 -mb-2.5">
@@ -60,7 +60,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {input1}{' '}
+                  {input1?.toFixed(2)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input1 && (
@@ -75,7 +75,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {value1 ? `$${value1.toFixed(2)}` : ''}
+              {value1 && input1 ? `$${(value1 * input1).toFixed(2)}` : ''}
             </Typography>
           </div>
         </div>

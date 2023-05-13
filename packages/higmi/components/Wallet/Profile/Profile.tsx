@@ -12,6 +12,7 @@ import { Default } from './Default'
 import { Transactions } from './Transactions'
 import { Portal } from './Portal'
 import { shortenAddress } from './Utils'
+import { useBalance } from '@dozer/react-query'
 
 export enum ProfileView {
   Default,
@@ -30,6 +31,8 @@ export const Profile: FC = () => {
   const accountAddress = useAccount((state) => state.address)
   const [address, setAddress] = useState('')
   const chainId = network
+  const { data, isLoading, isError, error } = useBalance(accountAddress)
+  const { setBalance } = useAccount()
 
   // const { data: avatar } = useEnsAvatar({
   //   address,
@@ -38,6 +41,20 @@ export const Profile: FC = () => {
   useEffect(() => {
     setAddress(accountAddress)
   }, [accountAddress])
+
+  useEffect(() => {
+    if (address && data && !isLoading && !isError) {
+      const balance_data = []
+      for (const token in data.tokens_data) {
+        balance_data.push({
+          token_uuid: token,
+          token_symbol: data.tokens_data[token].symbol,
+          token_balance: data.tokens_data[token].received - data.tokens_data[token].spent,
+        })
+      }
+      setBalance(balance_data)
+    }
+  }, [data, isError, isLoading, address, error])
 
   if (!address) {
     return <Wallet.Button size="sm" className="border-none shadow-md whitespace-nowrap" />

@@ -1,103 +1,107 @@
-// import { tryParseAmount } from '@dozer/currency'
 import { Amount } from '@dozer/currency'
-// import { Pair } from '@dozer/graph-client'
-import { FundSource, useIsMounted } from '@dozer/hooks'
+import { useIsMounted } from '@dozer/hooks'
 import { Button, Dots } from '@dozer/ui'
-import {
-  Checker,
-  // , PairState, usePair
-} from '@dozer/higmi'
-import { FC, useCallback, useMemo, useState } from 'react'
+import { Checker } from '@dozer/higmi'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { useTokensFromPair } from '../../utils/useTokensFromPair'
-import { Pair } from '../../utils/Pair'
 import { AddSectionReviewModalLegacy } from './AddSectionReviewModalLegacy'
 import { AddSectionWidget } from './AddSectionWidget'
+import { dbPoolWithTokens } from '../../interfaces'
+import toToken from '../../utils/toToken'
+import { useTrade } from '@dozer/zustand'
 
-export const AddSectionLegacy: FC<{ pair: Pair; prices: { [key: string]: number } }> = ({ pair, prices }) => {
+export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: string]: number } }> = ({
+  pool,
+  prices,
+}) => {
   const isMounted = useIsMounted()
-  const { token0, token1 } = useTokensFromPair(pair)
+  const token0 = toToken(pool.token0)
+  const token1 = toToken(pool.token1)
   const [{ input0, input1 }, setTypedAmounts] = useState<{
     input0: string
     input1: string
   }>({ input0: '', input1: '' })
+  const {
+    setMainCurrency,
+    setOtherCurrency,
+    setMainCurrencyPrice,
+    setOtherCurrencyPrice,
+    setAmountSpecified,
+    setOutputAmount,
+    setPriceImpact,
+    setPool,
+  } = useTrade()
   // const {
   //   data: [poolState, pool],
   // } = usePair(pair.chainId, token0, token1)
 
   const [parsedInput0, parsedInput1] = useMemo(() => {
-    return [Amount.fromRawAmount(token0, Number(input0)), Amount.fromRawAmount(token1, Number(input1))]
-  }, [input0, input1, token0, token1])
+    return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
+  }, [input0, input1])
 
   const onChangeToken0TypedAmount = useCallback(
     (value: string) => {
-      // if (poolState === PairState.NOT_EXISTS) {
-      //   setTypedAmounts((prev) => ({
-      //     ...prev,
-      //     input0: value,
-      //   }))
-      // } else if (token0 && pool) {
-      const parsedAmount = Amount.fromRawAmount(token0, Number(value))
+      const parsedAmount = Number(value)
       setTypedAmounts({
         input0: value,
         input1: parsedAmount
-          ? // pool.priceOf(token0.wrapped).quote(parsedAmount.wrapped).toExact()
-            '12345'
+          ? ((parsedAmount * Number(pool.reserve1)) / (Number(pool.reserve0) + parsedAmount)).toFixed(2)
           : '',
       })
-      // }
     },
-    [
-      // pool,
-      // poolState,
-      token0,
-    ]
+    [pool]
   )
 
   const onChangeToken1TypedAmount = useCallback(
     (value: string) => {
-      // if (poolState === PairState.NOT_EXISTS) {
-      //   setTypedAmounts((prev) => ({
-      //     ...prev,
-      //     input1: value,
-      //   }))
-      // } else if (token1 && pool) {
-      const parsedAmount = Amount.fromRawAmount(token1, Number(value))
+      const parsedAmount = Number(value)
       setTypedAmounts({
         input0: parsedAmount
-          ? // pool.priceOf(token1.wrapped).quote(parsedAmount.wrapped).toExact()
-            '56789'
+          ? ((parsedAmount * Number(pool.reserve0)) / (Number(pool.reserve1) + parsedAmount)).toFixed(2)
           : '',
         input1: value,
       })
-      // }
     },
-    [
-      // pool,
-      // poolState,
-      token1,
-    ]
+    [pool]
   )
+
+  useEffect(() => {
+    pool &&
+      setPool({
+        token1: token1,
+        token2: token0,
+        token1_balance: pool.token0.uuid == token1?.uuid ? Number(pool.reserve1) : Number(pool.reserve0),
+        token2_balance: pool.token1.uuid == token0?.uuid ? Number(pool.reserve0) : Number(pool.reserve1),
+      })
+    setMainCurrency(token0 ? token0 : undefined)
+    setOtherCurrency(token1 ? token1 : undefined)
+    setPriceImpact()
+    setAmountSpecified(Number(input0))
+    setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
+    setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
+    setOutputAmount()
+  }, [input0, input1])
 
   return useMemo(() => {
     return (
       <AddSectionReviewModalLegacy
         poolState={3}
-        chainId={pair.chainId}
+        chainId={pool.chainId}
         token0={token0}
         token1={token1}
-        input0={parsedInput0}
-        input1={parsedInput1}
+        input0={Amount.fromFractionalAmount(token0, parsedInput0, 100)}
+        input1={Amount.fromFractionalAmount(token1, parsedInput1, 100)}
         prices={prices}
       >
         {({ isWritePending, setOpen }) => (
           <AddSectionWidget
             isFarm={false}
-            chainId={pair.chainId}
+            chainId={pool.chainId}
             input0={input0}
             input1={input1}
             token0={token0}
             token1={token1}
+            prices={prices}
             onInput0={onChangeToken0TypedAmount}
             onInput1={onChangeToken1TypedAmount}
           >
@@ -140,12 +144,13 @@ export const AddSectionLegacy: FC<{ pair: Pair; prices: { [key: string]: number 
     isMounted,
     onChangeToken0TypedAmount,
     onChangeToken1TypedAmount,
-    pair.chainId,
+    pool.chainId,
     // pair.farm,
     parsedInput0,
     parsedInput1,
     // poolState,
     token0,
     token1,
+    prices,
   ])
 }

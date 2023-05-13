@@ -2,10 +2,13 @@ import { formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
 import { Pair } from '../../../utils/Pair'
 import { Currency, Typography } from '@dozer/ui'
-import { FC } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 
 // import { useTokensFromPair } from '../../../lib/hooks'
 import { useTokensFromPair } from '../../../utils/useTokensFromPair'
+import { isError } from '@tanstack/react-query'
+import { Amount, Token } from '@dozer/currency'
+import { usePoolPosition } from '../../PoolPositionProvider'
 // import { usePoolPosition } from '../../PoolPositionProvider'
 
 interface PoolPositionProps {
@@ -13,14 +16,9 @@ interface PoolPositionProps {
 }
 
 export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
-  const { token1, token0 } = useTokensFromPair(pair)
-  // const { underlying1, underlying0, value1, value0, isError, isLoading } = usePoolPosition()
-  const underlying1 = 10
-  const underlying0 = 20
-  const value1 = 100
-  const value0 = 200
-  const isError = false
-  const isLoading = false
+  const { token1, token0, liquidityToken } = useTokensFromPair(pair)
+
+  const { underlying1, underlying0, BalanceLPAmount, value1, value0, isLoading, isError } = usePoolPosition()
 
   if (isLoading && !isError) {
     return (
@@ -58,9 +56,8 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
           <div className="flex items-center gap-2">
             <Currency.Icon currency={token0} width={20} height={20} />
             <Typography variant="sm" weight={600} className="text-stone-300">
-              {/* {underlying0?.toSignificant(6)} */}
-              {underlying0}
-              {token0.symbol}
+              {underlying0?.toFixed(2) || '0'}
+              {' ' + token0.symbol}
             </Typography>
           </div>
           <Typography variant="xs" weight={500} className="text-stone-400">
@@ -71,9 +68,8 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
           <div className="flex items-center gap-2">
             <Currency.Icon currency={token1} width={20} height={20} />
             <Typography variant="sm" weight={600} className="text-stone-300">
-              {/* {underlying1?.toSignificant(6)}  */}
-              {underlying1}
-              {token1.symbol}
+              {underlying1?.toFixed(2) || '0'}
+              {' ' + token1.symbol}
             </Typography>
           </div>
           <Typography variant="xs" weight={500} className="text-stone-400">

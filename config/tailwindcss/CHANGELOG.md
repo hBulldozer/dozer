@@ -1,4 +1,4 @@
-# @dozer/wagmi-config
+# @dozer/higmi-config
 
 ## 0.1.0
 

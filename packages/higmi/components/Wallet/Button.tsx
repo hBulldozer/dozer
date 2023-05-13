@@ -1,6 +1,6 @@
 import { ChevronDoubleDownIcon } from '@heroicons/react/outline'
 import { AppearOnMount, ButtonProps, Menu } from '@dozer/ui'
-import React, { ReactNode, useState } from 'react'
+import React, { ReactNode, useMemo, useState } from 'react'
 import { Address } from '@dozer/ui/input/Address'
 import { useAccount } from '@dozer/zustand'
 import { useBalance } from '@dozer/react-query'
@@ -46,34 +46,10 @@ export const Button = <C extends React.ElementType>({
 
   const [input, setInput] = useState('')
   const setAddress = useAccount((state) => state.setAddress)
-  const setBalance = useAccount((state) => state.setBalance)
-  const address = useAccount((state) => state.address)
-  const balance = useBalance(address)
 
   function connect() {
     setAddress(input)
   }
-
-  useEffect(() => {
-    if (address && balance) {
-      const balance_data = []
-      // console.log(balance.isLoading)
-      // console.log(balance.data)
-      if (balance.data && !balance.isLoading) {
-        const data = balance.data.tokens_data
-        for (const token in data) {
-          balance_data.push({
-            token_uuid: token,
-            token_symbol: data[token].symbol,
-            token_balance: data[token].received - data[token].spent,
-          })
-        }
-        setBalance(balance_data)
-      }
-    } else {
-      // setBalance([])
-    }
-  }, [balance, address])
 
   function onChange(x: string) {
     setInput(x)
