@@ -9,11 +9,38 @@ export const poolRouter = createTRPCRouter({
         token0: true,
         token1: true,
         tokenLP: true,
-      }
+      },
     })
   }),
   byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
-    return ctx.prisma.pool.findFirst({ where: { id: input.id } })
+    const pool = ctx.prisma.pool.findUnique({
+      where: { id: input.id },
+      include: {
+        token0: {
+          include: {
+            pools0: { include: { token0: true, token1: true } },
+            pools1: { include: { token0: true, token1: true } },
+          },
+        },
+        token1: {
+          include: {
+            pools0: { include: { token0: true, token1: true } },
+            pools1: { include: { token0: true, token1: true } },
+          },
+        },
+        tokenLP: {
+          include: {
+            poolsLP: { include: { tokenLP: true } },
+          },
+        },
+        hourSnapshots: { orderBy: { date: 'desc' } },
+        daySnapshots: { orderBy: { date: 'desc' } },
+      },
+    })
+    if (!pool) {
+      throw new Error(`Failed to fetch pool, received ${pool}`)
+    }
+    return pool
   }),
   // create: procedure
   //   .input(

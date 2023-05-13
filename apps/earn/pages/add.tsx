@@ -12,7 +12,7 @@ import { PairState, pairFromPoolAndTokensList } from '../utils/Pair'
 import { useTrade } from '@dozer/zustand'
 import toToken from '../utils/toToken'
 import useSWR, { SWRConfig } from 'swr'
-import { getPools, getPrices, getTokens } from '../utils/api'
+import { getPools, getPrices, getTokens } from '../utils/functions'
 
 const LINKS: BreadcrumbLink[] = [
   {

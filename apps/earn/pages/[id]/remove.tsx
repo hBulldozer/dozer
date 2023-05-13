@@ -10,7 +10,7 @@ import useSWR, { SWRConfig } from 'swr'
 import { useRouter } from 'next/router'
 import { dbPoolWithTokens } from '../../interfaces'
 import { FC } from 'react'
-import { getPoolWithTokens, getPools, getPrices } from '../../utils/api'
+import { getPoolWithTokens, getPools, getPrices } from '../../utils/functions'
 import { PoolPositionProvider } from '../../components/PoolPositionProvider'
 
 const LINKS = ({ pool }: { pool: dbPoolWithTokens }): BreadcrumbLink[] => [

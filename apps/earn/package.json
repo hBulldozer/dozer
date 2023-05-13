@@ -11,6 +11,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@dozer/api": "workspace:*",
     "@dozer/chain": "workspace:*",
     "@dozer/currency": "workspace:*",
     "@dozer/database": "workspace:*",

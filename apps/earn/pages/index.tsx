@@ -7,7 +7,7 @@ import { FC } from 'react'
 
 import { Layout, PoolsSection } from '../components'
 import { SWRConfig } from 'swr'
-import { getPairs } from '../utils/api'
+import { getPairs } from '../utils/functions'
 
 export const getStaticProps: GetStaticProps = async () => {
   // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])

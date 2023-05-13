@@ -209,6 +209,9 @@ importers:
 
   apps/earn:
     dependencies:
+      '@dozer/api':
+        specifier: workspace:*
+        version: link:../../packages/api
       '@dozer/chain':
         specifier: workspace:*
         version: link:../../packages/chain

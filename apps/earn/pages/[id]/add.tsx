@@ -9,7 +9,7 @@ import useSWR, { SWRConfig } from 'swr'
 
 import { AddSectionLegacy, AddSectionMyPosition, Layout } from '../../components'
 import { dbPoolWithTokens } from '../../interfaces'
-import { getPoolWithTokens, getPools, getPrices } from '../../utils/api'
+import { getPoolWithTokens, getPools, getPrices } from '../../utils/functions'
 
 const LINKS = (pool: dbPoolWithTokens): BreadcrumbLink[] => [
   {
