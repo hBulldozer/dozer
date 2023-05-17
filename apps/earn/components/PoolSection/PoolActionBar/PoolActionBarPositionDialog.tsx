@@ -10,7 +10,6 @@ import { useTokensFromPair } from '../../../utils/useTokensFromPair'
 // import { usePoolPosition } from '../../PoolPositionProvider'
 // import { usePoolPositionStaked } from '../../PoolPositionStakedProvider'
 import { PoolButtons } from '../PoolButtons'
-import { useBalance } from '@dozer/react-query'
 import { useAccount } from '@dozer/zustand'
 import { usePoolPosition } from '../../PoolPositionProvider'
 

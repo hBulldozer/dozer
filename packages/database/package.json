@@ -32,6 +32,7 @@
     "predev": "npm run db:generate",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
     "generate": "prisma generate",
+    "postinstall": "prisma generate",
     "lint": "TIMING=1 eslint src --fix",
     "prepublishOnly": "pnpm build",
     "studio": "prisma studio",

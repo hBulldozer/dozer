@@ -14,6 +14,7 @@ import { Portal } from './Portal'
 import { shortenAddress } from './Utils'
 import { useBalance } from '@dozer/react-query'
 
+
 export enum ProfileView {
   Default,
   Transactions,
