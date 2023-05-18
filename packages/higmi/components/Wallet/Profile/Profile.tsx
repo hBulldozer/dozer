@@ -13,7 +13,7 @@ import { Transactions } from './Transactions'
 import { Portal } from './Portal'
 import { shortenAddress } from './Utils'
 import { useBalance } from '@dozer/react-query'
-
+import { api } from '../../../utils/api'
 
 export enum ProfileView {
   Default,
@@ -24,12 +24,14 @@ export enum ProfileView {
 //   notifications: Record<number, string[]>
 //   clearNotifications(): void
 // }
-
 export const Profile: FC = () => {
   const { isSm } = useBreakpoint('sm')
   const [view, setView] = useState<ProfileView>(ProfileView.Default)
   const { network } = useNetwork()
   const accountAddress = useAccount((state) => state.address)
+  // const utils = api.useContext()
+  // const htr = utils.getTokens.all.getData()
+  // console.log(htr)
   const [address, setAddress] = useState('')
   const chainId = network
   const { data, isLoading, isError, error } = useBalance(accountAddress)

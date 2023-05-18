@@ -870,6 +870,9 @@ importers:
 
   packages/higmi:
     dependencies:
+      '@dozer/api':
+        specifier: workspace:*
+        version: link:../api
       '@dozer/chain':
         specifier: workspace:*
         version: link:../chain
@@ -900,6 +903,15 @@ importers:
       '@heroicons/react':
         specifier: ^1.0.6
         version: 1.0.6(react@18.2.0)
+      '@trpc/client':
+        specifier: ^10.23.0
+        version: 10.23.0(@trpc/server@10.23.0)
+      '@trpc/next':
+        specifier: ^10.23.0
+        version: 10.23.0(@tanstack/react-query@4.20.4)(@trpc/client@10.23.0)(@trpc/react-query@10.23.0)(@trpc/server@10.23.0)(next@13.1.1)(react-dom@18.2.0)(react@18.2.0)
+      superjson:
+        specifier: 1.9.1
+        version: 1.9.1
     optionalDependencies:
       next:
         specifier: 13.1.1
