@@ -5,6 +5,7 @@ import React, { FC } from 'react'
 // import { useAccount } from 'higmi'
 
 import { SUPPORTED_CHAIN_IDS } from '../config'
+import { api } from 'utils/api'
 // import { useNotifications } from '../lib/state/storage'
 
 export const Header: FC = () => {
@@ -27,9 +28,10 @@ export const Header: FC = () => {
       <div className="flex items-center gap-2">
         <NetworkSelector supportedNetworks={SUPPORTED_CHAIN_IDS} />
         <Profile
-        // supportedNetworks={SUPPORTED_CHAIN_IDS}
-        // notifications={notifications}
-        // clearNotifications={clearNotifications}
+          client={api}
+          // supportedNetworks={SUPPORTED_CHAIN_IDS}
+          // notifications={notifications}
+          // clearNotifications={clearNotifications}
         />
       </div>
     </App.Header>

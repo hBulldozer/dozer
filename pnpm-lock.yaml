@@ -659,6 +659,12 @@ importers:
       '@dozer/database':
         specifier: workspace:*
         version: link:../database
+      '@trpc/client':
+        specifier: ^10.23.0
+        version: 10.23.0(@trpc/server@10.23.0)
+      '@trpc/next':
+        specifier: ^10.23.0
+        version: 10.23.0(@tanstack/react-query@4.20.4)(@trpc/client@10.23.0)(@trpc/react-query@10.23.0)(@trpc/server@10.23.0)(next@13.1.1)(react-dom@18.2.0)(react@18.2.0)
       '@trpc/react-query':
         specifier: ^10.23.0
         version: 10.23.0(@tanstack/react-query@4.20.4)(@trpc/client@10.23.0)(@trpc/server@10.23.0)(react-dom@18.2.0)(react@18.2.0)
