@@ -13,7 +13,7 @@ import { ChainId } from '@dozer/chain'
 // import { useSettings } from '../../lib/state/storage'
 
 interface SwapStats {
-  prices: { [key: string]: number }
+  prices: { [key: string]: number | undefined }
 }
 
 export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {

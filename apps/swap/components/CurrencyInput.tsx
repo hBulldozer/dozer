@@ -11,7 +11,7 @@ interface CurrencyInput extends CurrencyInputProps {
   id: string
   inputType: TradeType
   tradeType: TradeType
-  prices: { [key: string]: number }
+  prices: { [key: string]: number | undefined }
   tokens?: Token[]
   // isWrap?: boolean
 }

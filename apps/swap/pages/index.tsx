@@ -16,9 +16,10 @@ import { dbToken, dbPool, dbPoolWithTokens, dbTokenWithPools } from '../interfac
 import useSWR, { SWRConfig } from 'swr'
 import { useRouter } from 'next/router'
 import { getPools, getPrices, getTokens } from 'utils/functions'
+import { api } from 'utils/api'
 // import { Token as dbToken, Pool } from '@dozer/database/types'
 
-function toToken(dbToken: dbToken): Token {
+function toToken(dbToken: any): Token {
   return new Token({
     chainId: dbToken.chainId,
     uuid: dbToken.uuid,
@@ -27,70 +28,76 @@ function toToken(dbToken: dbToken): Token {
     symbol: dbToken.symbol,
   })
 }
-export const getStaticProps: GetStaticProps = async (context) => {
-  // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
-  const pools = await getPools()
-  if (!pools) {
-    throw new Error(`Failed to fetch pools, received ${pools}`)
-  }
-  const tokens = await getTokens()
+// export const getStaticProps: GetStaticProps = async (context) => {
+//   // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
+//   const pools = await getPools()
+//   if (!pools) {
+//     throw new Error(`Failed to fetch pools, received ${pools}`)
+//   }
+//   const tokens = await getTokens()
 
-  if (!tokens) {
-    throw new Error(`Failed to fetch tokens, received ${tokens}`)
-  }
+//   if (!tokens) {
+//     throw new Error(`Failed to fetch tokens, received ${tokens}`)
+//   }
 
-  const prices = await getPrices(tokens)
-  if (!prices) {
-    throw new Error(`Failed to fetch prices, received ${prices}`)
-  }
-  return {
-    props: {
-      fallback: {
-        ['/api/pools']: { pools },
-        [`/api/prices`]: { tokens, prices },
-      },
-      revalidate: 60,
-    },
-  }
-}
+//   const prices = await getPrices(tokens)
+//   if (!prices) {
+//     throw new Error(`Failed to fetch prices, received ${prices}`)
+//   }
+//   return {
+//     props: {
+//       fallback: {
+//         ['/api/pools']: { pools },
+//         [`/api/prices`]: { tokens, prices },
+//       },
+//       revalidate: 60,
+//     },
+//   }
+// }
 
-const Home: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-  return (
-    <SWRConfig value={{ fallback }}>
-      <_Home />
-    </SWRConfig>
-  )
-}
+// const Home: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
+//   return (
+//     <SWRConfig value={{ fallback }}>
+//       <_Home />
+//     </SWRConfig>
+//   )
+// }
 
-const _Home = () => {
-  const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/api/pools`, (url: string) =>
-    fetch(url).then((response) => response.json())
-  )
-  const { pools } = pre_pools ? pre_pools : { pools: [] }
-  // const pools: dbPoolWithTokens[] | undefined = pre_pools ? Object.values(pre_pools) : []
-  const { data } = useSWR<{ tokens: dbTokenWithPools[]; prices: { [key: string]: number } }>(
-    `/api/prices`,
-    (url: string) => fetch(url).then((response) => response.json())
-  )
-  const { tokens, prices } = data ? data : { tokens: [], prices: {} }
+const Home = () => {
+  // const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/api/pools`, (url: string) =>
+  //   fetch(url).then((response) => response.json())
+  // )
+  // const { pools } = pre_pools ? pre_pools : { pools: [] }
+  // // const pools: dbPoolWithTokens[] | undefined = pre_pools ? Object.values(pre_pools) : []
+  // const { data } = useSWR<{ tokens: dbTokenWithPools[]; prices: { [key: string]: number } }>(
+  //   `/api/prices`,
+  //   (url: string) => fetch(url).then((response) => response.json())
+  // )
+  // const { tokens, prices } = data ? data : { tokens: [], prices: {} }
 
+  const { data: pools = [] } = api.getPools.all.useQuery()
+  const { data: tokens = [] } = api.getTokens.all.useQuery()
+  // const tokens = _tokens ? _tokens : []
+  const { data: prices = { '00': 0 } } = api.getPrices.all.useQuery()
   const router = useRouter()
   useEffect(() => {
-    const params = router.query
-    const _initialToken0 =
-      params?.token0 && params?.chainId && tokens
-        ? tokens.find((token) => {
-            return params.token0 == token.uuid
-          })
-        : undefined
-    const _initialToken1 =
-      params?.token1 && params?.chainId && tokens
-        ? tokens.find((token) => {
-            return params.token1 == token.uuid
-          })
-        : undefined
-    if (_initialToken0) setInitialToken0(toToken(_initialToken0))
-    if (_initialToken1) setInitialToken1(toToken(_initialToken1))
+    if (tokens) {
+      const params = router.query
+      const _initialToken0 =
+        params?.token0 && params?.chainId && tokens
+          ? tokens.find((token) => {
+              return params.token0 == token.uuid
+            })
+          : undefined
+      const _initialToken1 =
+        params?.token1 && params?.chainId && tokens
+          ? tokens.find((token) => {
+              return params.token1 == token.uuid
+            })
+          : undefined
+      if (_initialToken0) setInitialToken0(toToken(_initialToken0))
+      if (_initialToken1) setInitialToken1(toToken(_initialToken1))
+    }
   }, [router.query, router.query.isReady, tokens])
 
   const network = useNetwork((state) => state.network)
