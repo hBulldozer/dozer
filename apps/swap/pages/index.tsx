@@ -11,15 +11,13 @@ import { Checker } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
 import { GetStaticProps, InferGetStaticPropsType } from 'next'
-import { prisma } from '@dozer/database'
-import { dbToken, dbPool, dbPoolWithTokens, dbTokenWithPools } from '../interfaces'
-import useSWR, { SWRConfig } from 'swr'
+import type {  dbPoolWithTokens } from '../interfaces'
 import { useRouter } from 'next/router'
-import { getPools, getPrices, getTokens } from 'utils/functions'
 import { api } from 'utils/api'
-// import { Token as dbToken, Pool } from '@dozer/database/types'
+import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 
 function toToken(dbToken: any): Token {
+  if (!dbToken) return new Token({ chainId: 1, uuid: '', decimals: 18, name: '', symbol: 'HTR' })
   return new Token({
     chainId: dbToken.chainId,
     uuid: dbToken.uuid,
@@ -28,76 +26,42 @@ function toToken(dbToken: any): Token {
     symbol: dbToken.symbol,
   })
 }
-// export const getStaticProps: GetStaticProps = async (context) => {
-//   // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
-//   const pools = await getPools()
-//   if (!pools) {
-//     throw new Error(`Failed to fetch pools, received ${pools}`)
-//   }
-//   const tokens = await getTokens()
 
-//   if (!tokens) {
-//     throw new Error(`Failed to fetch tokens, received ${tokens}`)
-//   }
-
-//   const prices = await getPrices(tokens)
-//   if (!prices) {
-//     throw new Error(`Failed to fetch prices, received ${prices}`)
-//   }
-//   return {
-//     props: {
-//       fallback: {
-//         ['/api/pools']: { pools },
-//         [`/api/prices`]: { tokens, prices },
-//       },
-//       revalidate: 60,
-//     },
-//   }
-// }
-
-// const Home: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-//   return (
-//     <SWRConfig value={{ fallback }}>
-//       <_Home />
-//     </SWRConfig>
-//   )
-// }
+export const getStaticProps: GetStaticProps = async () => {
+  const ssg = generateSSGHelper()
+  await ssg.getPools.all.prefetch()
+  await ssg.getTokens.all.prefetch()
+  await ssg.getPrices.all.prefetch()
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+    },
+    revalidate: 5,
+  }
+}
 
 const Home = () => {
-  // const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/api/pools`, (url: string) =>
-  //   fetch(url).then((response) => response.json())
-  // )
-  // const { pools } = pre_pools ? pre_pools : { pools: [] }
-  // // const pools: dbPoolWithTokens[] | undefined = pre_pools ? Object.values(pre_pools) : []
-  // const { data } = useSWR<{ tokens: dbTokenWithPools[]; prices: { [key: string]: number } }>(
-  //   `/api/prices`,
-  //   (url: string) => fetch(url).then((response) => response.json())
-  // )
-  // const { tokens, prices } = data ? data : { tokens: [], prices: {} }
-
   const { data: pools = [] } = api.getPools.all.useQuery()
   const { data: tokens = [] } = api.getTokens.all.useQuery()
   // const tokens = _tokens ? _tokens : []
   const { data: prices = { '00': 0 } } = api.getPrices.all.useQuery()
   const router = useRouter()
   useEffect(() => {
-    if (tokens) {
-      const params = router.query
-      const _initialToken0 =
-        params?.token0 && params?.chainId && tokens
-          ? tokens.find((token) => {
-              return params.token0 == token.uuid
-            })
-          : undefined
-      const _initialToken1 =
-        params?.token1 && params?.chainId && tokens
-          ? tokens.find((token) => {
-              return params.token1 == token.uuid
-            })
-          : undefined
-      if (_initialToken0) setInitialToken0(toToken(_initialToken0))
-      if (_initialToken1) setInitialToken1(toToken(_initialToken1))
-    }
+    const params = router.query
+    const _initialToken0 =
+      params?.token0 && params?.chainId && tokens
+        ? tokens.find((token) => {
+            return params.token0 == token.uuid
+          })
+        : undefined
+    const _initialToken1 =
+      params?.token1 && params?.chainId && tokens
+        ? tokens.find((token) => {
+            return params.token1 == token.uuid
+          })
+        : undefined
+    if (_initialToken0) setInitialToken0(toToken(_initialToken0))
+    if (_initialToken1) setInitialToken1(toToken(_initialToken1))
   }, [router.query, router.query.isReady, tokens])
 
   const network = useNetwork((state) => state.network)
@@ -141,9 +105,9 @@ const Home = () => {
     setTokens(([prevSrc, prevDst]) => [prevDst, prevSrc])
   }
 
-  const onSuccess = () => {
-    console.log('sucesso')
-  }
+  // const onSuccess = () => {
+  //   console.log('sucesso')
+  // }
 
   // useEffect(() => {
   //   setTokens([inputToken, outputToken])
@@ -189,12 +153,31 @@ const Home = () => {
       setOutputAmount()
       // setInput1(outputAmount ? outputAmount.toString() : '')
     }
-  }, [pools, outputAmount, token0, token1, input0, input1, prices, network, selectedPool, tokens])
+  }, [
+    pools,
+    outputAmount,
+    token0,
+    token1,
+    input0,
+    input1,
+    prices,
+    network,
+    selectedPool,
+    tokens,
+    setMainCurrency,
+    setOtherCurrency,
+    setPriceImpact,
+    setAmountSpecified,
+    setOutputAmount,
+    setPool,
+    setMainCurrencyPrice,
+    setOtherCurrencyPrice,
+  ])
 
-  // const onSuccess = useCallback(() => {
-  //   setInput0('')
-  //   setInput1('')
-  // }, [])
+  const onSuccess = useCallback(() => {
+    setInput0('')
+    setInput1('')
+  }, [])
 
   const _setToken0 = useCallback((currency: Token) => {
     setTokens(([prevSrc, prevDst]) => {

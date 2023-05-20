@@ -16,7 +16,6 @@ import Head from 'next/head'
 //   }
 // }
 
-const queryClient = new QueryClient()
 
 const MyApp = ({ Component, pageProps }: AppProps) => {
   const router = useRouter()
@@ -58,18 +57,16 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
         <link rel="mask-icon" href="/earn/safari-pinned-tab.svg?v=1" color="#fa52a0" />
         <link rel="shortcut icon" href="/earn/favicon.ico?v=1" />
       </Head>
-      <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <App.Shell>
             {/* <NoSSR> */}
-            <Header />
+            {/* <Header /> */}
             <Component {...pageProps} />
             {/* </NoSSR> */}
             <App.Footer />
           </App.Shell>
           <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
         </ThemeProvider>
-      </QueryClientProvider>
       <Analytics />
     </>
   )
