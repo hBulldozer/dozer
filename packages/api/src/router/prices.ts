@@ -57,7 +57,7 @@ export const pricesRouter = createTRPCRouter({
     console.log(resp)
     const data = await resp.json()
     const priceHTR = data.data.HTR
-    const prices: { [key: string]: number | undefined } = {}
+    const prices: { [key: string]: number } = {}
 
     tokens.forEach((token) => {
       if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)

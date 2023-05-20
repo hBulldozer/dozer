@@ -148,7 +148,7 @@ export const getPrices = async (tokens: any[]) => {
   const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
   const data = await resp.json()
   const priceHTR = data.data.HTR
-  const prices: { [key: string]: number | undefined } = {}
+  const prices: { [key: string]: number } = {}
 
   tokens.forEach((token) => {
     if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)

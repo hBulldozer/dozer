@@ -60,7 +60,7 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
         <ThemeProvider>
           <App.Shell>
             {/* <NoSSR> */}
-            {/* <Header /> */}
+            <Header />
             <Component {...pageProps} />
             {/* </NoSSR> */}
             <App.Footer />

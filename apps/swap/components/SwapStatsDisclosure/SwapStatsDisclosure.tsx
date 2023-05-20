@@ -1,19 +1,16 @@
 import { Disclosure, Transition } from '@headlessui/react'
 import { InformationCircleIcon } from '@heroicons/react/outline'
 import { ChevronDownIcon } from '@heroicons/react/solid'
-import { Percent } from '@dozer/math'
-import { classNames, Dialog, Tooltip, Typography } from '@dozer/ui'
-import React, { FC, useMemo, useState, useEffect } from 'react'
+import { classNames, Tooltip, Typography } from '@dozer/ui'
+import React, { FC, useMemo } from 'react'
 
 import { Rate } from '../../components'
 import { useTrade, useSettings } from '@dozer/zustand'
 import { warningSeverity } from '../utils/functions'
-import { Price, getTokens } from '@dozer/currency'
-import { ChainId } from '@dozer/chain'
 // import { useSettings } from '../../lib/state/storage'
 
 interface SwapStats {
-  prices: { [key: string]: number | undefined }
+  prices: { [key: string]: number }
 }
 
 export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
@@ -70,7 +67,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
             <>
               <div className="flex justify-between items-center bg-white bg-opacity-[0.04] hover:bg-opacity-[0.08] rounded-2xl px-4 mb-4 py-2.5 gap-2">
                 <Rate token1={mainCurrency} token2={otherCurrency} prices={prices}>
-                  {({ content, usdPrice, toggleInvert, prices }) => (
+                  {({ content, usdPrice, toggleInvert }) => (
                     <div
                       className="text-sm text-stone-300 hover:text-stone-50 cursor-pointer gap-1 font-semibold tracking-tight h-[36px] flex items-center truncate"
                       onClick={toggleInvert}

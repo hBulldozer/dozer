@@ -20,6 +20,7 @@
     "@dozer/math": "workspace:*",
     "@dozer/react-query": "workspace:*",
     "@dozer/ui": "workspace:*",
+    "@dozer/api": "workspace:*",
     "@dozer/zustand": "workspace:*",
     "@headlessui/react": "^1.7.3",
     "@heroicons/react": "^1.0.0",

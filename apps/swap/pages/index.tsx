@@ -10,11 +10,11 @@ import { SwapStatsDisclosure, SettingsOverlay } from '../components'
 import { Checker } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
-import { GetStaticProps, InferGetStaticPropsType } from 'next'
-import type {  dbPoolWithTokens } from '../interfaces'
 import { useRouter } from 'next/router'
 import { api } from 'utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+import type { GetStaticProps } from 'next'
+import type { dbPoolWithTokens } from '../interfaces'
 
 function toToken(dbToken: any): Token {
   if (!dbToken) return new Token({ chainId: 1, uuid: '', decimals: 18, name: '', symbol: 'HTR' })
@@ -36,16 +36,16 @@ export const getStaticProps: GetStaticProps = async () => {
     props: {
       trpcState: ssg.dehydrate(),
     },
-    revalidate: 5,
+    revalidate: 3600,
   }
 }
 
 const Home = () => {
   const { data: pools = [] } = api.getPools.all.useQuery()
   const { data: tokens = [] } = api.getTokens.all.useQuery()
-  // const tokens = _tokens ? _tokens : []
   const { data: prices = { '00': 0 } } = api.getPrices.all.useQuery()
   const router = useRouter()
+
   useEffect(() => {
     const params = router.query
     const _initialToken0 =
