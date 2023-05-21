@@ -10,7 +10,8 @@ import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
 import { useAccount, useNetwork } from '@dozer/zustand'
 import { PAGE_SIZE } from '../contants'
 import { ChainId } from '@dozer/chain'
-import { Pair } from '../../../../utils/Pair'
+import { Pair, pairFromPool } from '../../../../utils/Pair'
+import { api } from '../../../../utils/trpc'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -40,16 +41,15 @@ export const PositionsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: pairs, isLoading } = useSWR<Pair[]>(`/api/pairs`, (url: string) =>
-    fetch(url).then((response) => response.json())
-  )
-  const _pairs_array: Pair[] | undefined = pairs ? Object.values(pairs) : []
-  const pairs_array = _pairs_array[0]
-    ? _pairs_array?.filter((pair: Pair) => {
-        return pair.chainId == rendNetwork && userTokens.includes(pair.tokenLP.uuid)
+  const { data: pools, isLoading } = api.getPools.all.useQuery()
+  const _pairs_array: Pair[] = pools
+    ? pools.map((pool) => {
+        return pairFromPool(pool)
       })
     : []
-
+  const pairs_array = _pairs_array?.filter((pair: Pair) => {
+    return pair.chainId == rendNetwork
+  })
   const args = useMemo(
     () => ({
       sorting,
@@ -111,8 +111,6 @@ export const PositionsTable: FC = () => {
   const rowLink = useCallback((row: Pair) => {
     return `/${row.id}`
   }, [])
-
-  if (!pairs) return <></>
 
   return (
     <GenericTable<Pair>

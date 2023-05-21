@@ -11,12 +11,17 @@ import { Checker } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
 import { useRouter } from 'next/router'
-import { api } from 'utils/api'
+import { api, RouterOutputs } from 'utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import type { GetStaticProps } from 'next'
 import type { dbPoolWithTokens } from '../interfaces'
 
-function toToken(dbToken: any): Token {
+type TokenOutputArray = RouterOutputs['getTokens']['all']
+
+type ElementType<T> = T extends (infer U)[] ? U : never
+type TokenOutput = ElementType<TokenOutputArray>
+
+function toToken(dbToken: TokenOutput): Token {
   if (!dbToken) return new Token({ chainId: 1, uuid: '', decimals: 18, name: '', symbol: 'HTR' })
   return new Token({
     chainId: dbToken.chainId,
