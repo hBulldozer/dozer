@@ -9,11 +9,18 @@ export const poolRouter = createTRPCRouter({
         token0: true,
         token1: true,
         tokenLP: true,
-      }
+      },
     })
   }),
   byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
-    return ctx.prisma.pool.findFirst({ where: { id: input.id } })
+    return ctx.prisma.pool.findFirst({
+      where: { id: input.id },
+      include: {
+        token0: true,
+        token1: true,
+        tokenLP: true,
+      },
+    })
   }),
   // create: procedure
   //   .input(
