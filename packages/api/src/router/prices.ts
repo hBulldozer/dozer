@@ -54,7 +54,6 @@ export const pricesRouter = createTRPCRouter({
       throw new Error(`Failed to fetch tokens, received ${tokens}`)
     }
     const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
-    console.log(resp)
     const data = await resp.json()
     const priceHTR = data.data.HTR
     const prices: { [key: string]: number } = {}

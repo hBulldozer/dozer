@@ -48,7 +48,32 @@ export const getStaticProps: GetStaticProps = async () => {
   }
 }
 
-const Pools = () => {
+// const Pools = () => {
+// export const getStaticProps: GetStaticProps = async () => {
+//   // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
+//   const pairs = await getPairs()
+//   if (!pairs) {
+//     throw new Error(`Failed to fetch pairs, received ${pairs}`)
+//   }
+//   return {
+//     props: {
+//       fallback: {
+//         ['/api/pairs']: { pairs },
+//       },
+//       revalidate: 60,
+//     },
+//   }
+// }
+
+// const Pools: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
+//   return (
+//     <SWRConfig value={{ fallback }}>
+//       <_Pools />
+//     </SWRConfig>
+//   )
+// }
+
+const Pools: FC = () => {
   return (
     <Layout>
       <div className="flex flex-col gap-10 md:gap-16">

@@ -13,9 +13,11 @@ import { FC, useEffect, useState } from 'react'
 // import { WagmiConfig } from 'wagmi'
 // import SEO from '../next-seo.config.mjs'
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+// import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Head from 'next/head'
 import { api } from '../utils/trpc'
+
+// const queryClient = new QueryClient()
 
 const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   const router = useRouter()
@@ -57,11 +59,12 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
         <link rel="mask-icon" href="/earn/safari-pinned-tab.svg?v=1" color="#fa52a0" />
         <link rel="shortcut icon" href="/earn/favicon.ico?v=1" />
       </Head>
+      {/* <QueryClientProvider client={queryClient}> */}
       <ThemeProvider>
         <App.Shell>
           {/* <DefaultSeo {...SEO} /> */}
           {/* <NoSSR> */}
-          <Header />
+          {/* <Header /> */}
           {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
           <Component {...pageProps} />
           {/* </NoSSR> */}
@@ -69,6 +72,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
           {/* <ToastContainer className="mt-[50px]" /> */}
         </App.Shell>
       </ThemeProvider>
+      {/* </QueryClientProvider> */}
       <Analytics />
     </>
   )
