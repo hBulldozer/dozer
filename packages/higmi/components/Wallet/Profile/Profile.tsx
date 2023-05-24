@@ -60,7 +60,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
       }
       setBalance(balance_data)
     }
-  }, [data, isError, isLoading, address, error])
+  }, [data, isError, isLoading, address, error, setBalance])
 
   if (!address) {
     return <Wallet.Button size="sm" className="border-none shadow-md whitespace-nowrap" />

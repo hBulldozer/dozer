@@ -1,39 +1,22 @@
 import { PlusIcon } from '@heroicons/react/solid'
 import { Button, Typography } from '@dozer/ui'
-import type { GetStaticProps, InferGetStaticPropsType } from 'next'
-// import { SUPPORTED_CHAIN_IDS } from '../config'
-// import { GetStaticProps, InferGetStaticPropsType } from 'next'
-import { FC } from 'react'
-
 import { Layout, PoolsSection } from '../components'
-import { SWRConfig } from 'swr'
-import { getPairs } from '../utils/api'
+import type { GetStaticProps, NextPage } from 'next'
+import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 
 export const getStaticProps: GetStaticProps = async () => {
-  // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
-  const pairs = await getPairs()
-  if (!pairs) {
-    throw new Error(`Failed to fetch pairs, received ${pairs}`)
-  }
+  const ssg = generateSSGHelper()
+  await ssg.getPools.all.prefetch()
+  await ssg.getTokens.all.prefetch()
+  await ssg.getPrices.all.prefetch()
   return {
     props: {
-      fallback: {
-        ['/api/pairs']: { pairs },
-      },
-      revalidate: 60,
+      trpcState: ssg.dehydrate(),
     },
+    revalidate: 3600,
   }
 }
-
-const Pools: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-  return (
-    <SWRConfig value={{ fallback }}>
-      <_Pools />
-    </SWRConfig>
-  )
-}
-
-const _Pools = () => {
+const Pools: NextPage = () => {
   return (
     <Layout>
       <div className="flex flex-col gap-10 md:gap-16">

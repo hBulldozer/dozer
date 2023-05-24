@@ -1,20 +1,23 @@
 // import { ChainId } from '@dozer/chain'
 // import { Pair, PairType, QuerypairsArgs } from '@dozer/graph-client'
-import { Pair } from '../../../../utils/Pair'
+// import { Pair } from '../../../../utils/Pair'
 import { useBreakpoint } from '@dozer/hooks'
 import { GenericTable, Table } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 // import stringify from 'fast-json-stable-stringify'
-import useSWR from 'swr'
+// import useSWR from 'swr'
 
 // import { usePoolFilters } from '../../../PoolsFiltersProvider'
 import { PAGE_SIZE } from '../contants'
 import { APR_COLUMN, FEES_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN } from './Cells/columns'
-import { getTokens } from '@dozer/currency'
+// import { getTokens } from '@dozer/currency'
 import { ChainId, Network } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
+import { RouterOutputs, api } from '../../../../utils/trpc'
+import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+import { GetStaticProps } from 'next'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -119,6 +122,12 @@ const COLUMNS = [NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN
 //   },
 // ]
 
+type PoolOutputArray = RouterOutputs['getPools']['all']
+
+type ElementType<T> = T extends (infer U)[] ? U : never
+type PoolOutput = ElementType<PoolOutputArray>
+
+
 export const PoolsTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
   // usePoolFilters()
@@ -138,13 +147,14 @@ export const PoolsTable: FC = () => {
   useEffect(() => {
     setRendNetwork(network)
   }, [network])
+  const { data: pairs = [], isLoading } = api.getPools.all.useQuery()
 
-  const { data: pairs, isLoading } = useSWR<Pair[]>(`/api/pairs`, (url: string) =>
-    fetch(url).then((response) => response.json())
-  )
-  const _pairs_array: Pair[] | undefined = pairs ? Object.values(pairs) : []
+  // const { data: pairs, isLoading } = useSWR<Pair[]>(`/api/pairs`, (url: string) =>
+  //   fetch(url).then((response) => response.json())
+  // )
+  const _pairs_array = pairs ? Object.values(pairs) : []
   const pairs_array = _pairs_array[0]
-    ? _pairs_array?.filter((pair: Pair) => {
+    ? _pairs_array?.filter((pair: PoolOutput) => {
         return pair.chainId == rendNetwork
       })
     : []
@@ -170,7 +180,7 @@ export const PoolsTable: FC = () => {
   //   (url) => fetch(url).then((response) => response.json())
   // )
 
-  const table = useReactTable<Pair>({
+  const table = useReactTable<PoolOutput>({
     data: pairs_array || [],
     columns: COLUMNS,
     state: {
@@ -207,14 +217,14 @@ export const PoolsTable: FC = () => {
     }
   }, [isMd, isSm])
 
-  const rowLink = useCallback((row: Pair) => {
+  const rowLink = useCallback((row: PoolOutput) => {
     return `/${row.id}`
   }, [])
 
   if (!pairs) return <></>
   return (
     <>
-      <GenericTable<Pair>
+      <GenericTable<PoolOutput>
         table={table}
         loading={isLoading}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
