@@ -62,11 +62,9 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
         <ThemeProvider>
           <App.Shell>
             {/* <DefaultSeo {...SEO} /> */}
-            {/* <NoSSR> */}
             <Header />
             {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
             <Component {...pageProps} />
-            {/* </NoSSR> */}
             <App.Footer />
             {/* <ToastContainer className="mt-[50px]" /> */}
           </App.Shell>

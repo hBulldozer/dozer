@@ -16,8 +16,6 @@ import { ChainId, Network } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
 import { RouterOutputs, api } from '../../../../utils/trpc'
-import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
-import { GetStaticProps } from 'next'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -127,7 +125,6 @@ type PoolOutputArray = RouterOutputs['getPools']['all']
 type ElementType<T> = T extends (infer U)[] ? U : never
 type PoolOutput = ElementType<PoolOutputArray>
 
-
 export const PoolsTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
   // usePoolFilters()
@@ -152,9 +149,9 @@ export const PoolsTable: FC = () => {
   // const { data: pairs, isLoading } = useSWR<Pair[]>(`/api/pairs`, (url: string) =>
   //   fetch(url).then((response) => response.json())
   // )
-  const _pairs_array = pairs ? Object.values(pairs) : []
-  const pairs_array = _pairs_array[0]
-    ? _pairs_array?.filter((pair: PoolOutput) => {
+  // const _pairs_array = pairs ? Object.values(pairs) : []
+  const pairs_array = pairs[0]
+    ? pairs.filter((pair: PoolOutput) => {
         return pair.chainId == rendNetwork
       })
     : []
