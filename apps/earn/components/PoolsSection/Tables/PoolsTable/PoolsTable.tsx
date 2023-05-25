@@ -6,7 +6,6 @@ import { GenericTable, Table } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 // import stringify from 'fast-json-stable-stringify'
-import useSWR from 'swr'
 
 // import { usePoolFilters } from '../../../PoolsFiltersProvider'
 import { PAGE_SIZE } from '../contants'
@@ -142,10 +141,6 @@ export const PoolsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  // const { data: pairs, isLoading } = useSWR<Pair[]>(`/api/pairs`, (url: string) =>
-  //   fetch(url).then((response) => response.json())
-  // )
-
   const { data: pools, isLoading } = api.getPools.all.useQuery()
   const _pairs_array: Pair[] = pools
     ? pools.map((pool) => {
@@ -171,11 +166,6 @@ export const PoolsTable: FC = () => {
   )
 
   // console.log({ pools })
-
-  // const { data: poolCount } = useSWR<number>(
-  //   `/earn/api/pools/count${selectedNetworks ? `?networks=${stringify(selectedNetworks)}` : ''}`,
-  //   (url) => fetch(url).then((response) => response.json())
-  // )
 
   const table = useReactTable<Pair>({
     data: pairs_array || [],

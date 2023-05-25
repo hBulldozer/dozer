@@ -2,7 +2,6 @@ import { formatPercent, formatUSD } from '@dozer/format'
 // import { UserWithFarm } from '@dozer/graph-client'
 import { Button, Chip, Currency, Link, Typography } from '@dozer/ui'
 import { FC } from 'react'
-import useSWR from 'swr'
 
 // import { PoolPositionProvider, usePoolPosition } from '../../../PoolPositionProvider'
 // import { PoolPositionRewardsProvider, usePoolPositionRewards } from '../../../PoolPositionRewardsProvider'

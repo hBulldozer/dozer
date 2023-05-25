@@ -6,12 +6,18 @@ import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@doz
 import { AddSectionMyPosition, Layout, RemoveSectionLegacy } from '../../components'
 
 import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
-import useSWR, { SWRConfig } from 'swr'
 import { useRouter } from 'next/router'
 import { dbPoolWithTokens } from '../../interfaces'
 import { FC } from 'react'
 import { getPoolWithTokens, getPools, getPrices } from '../../utils/api'
 import { PoolPositionProvider } from '../../components/PoolPositionProvider'
+import { RouterOutputs } from '@dozer/api'
+import { api } from '../../utils/trpc'
+
+type PoolsOutputArray = RouterOutputs['getPools']['all']
+
+type ElementType<T> = T extends (infer U)[] ? U : never
+type PoolsOutput = ElementType<PoolsOutputArray>
 
 const LINKS = ({ pool }: { pool: dbPoolWithTokens }): BreadcrumbLink[] => [
   {
@@ -24,27 +30,14 @@ const LINKS = ({ pool }: { pool: dbPoolWithTokens }): BreadcrumbLink[] => [
   },
 ]
 
-const Remove: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-  return (
-    <SWRConfig value={{ fallback }}>
-      <_Remove />
-    </SWRConfig>
-  )
-}
-
-const _Remove: NextPage = () => {
+const Remove: NextPage = () => {
   const router = useRouter()
-  const { data: pre_pool } = useSWR<{ pool: dbPoolWithTokens }>(`/api/pool/${router.query.id}`, (url) =>
-    fetch(url).then((response) => response.json())
-  )
+  const id = router.query.id as string
 
-  const { data: pre_prices } = useSWR<{ prices: { [key: string]: number } }>(`/api/prices`, (url) =>
-    fetch(url).then((response) => response.json())
-  )
-  if (!pre_pool) return <></>
-  if (!pre_prices) return <></>
-  const { pool } = pre_pool
-  const { prices } = pre_prices
+  const { data: pre_pool = {} as PoolsOutput } = api.getPools.byId.useQuery({ id })
+  const pool = pre_pool ? pre_pool : ({} as PoolsOutput)
+  const tokens = pool ? [pool.token0, pool.token1] : []
+  const { data: prices = {} } = api.getPrices.byTokens.useQuery({ tokens })
 
   return (
     <PoolPositionProvider pair={pairFromPool(pool)} prices={prices}>

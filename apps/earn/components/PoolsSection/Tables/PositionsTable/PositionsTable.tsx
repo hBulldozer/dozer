@@ -3,7 +3,6 @@ import { GenericTable } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import stringify from 'fast-json-stable-stringify'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
-import useSWR from 'swr'
 
 import { APR_COLUMN, NAME_COLUMN, NETWORK_COLUMN, VALUE_COLUMN } from './Cells/columns'
 import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
@@ -65,11 +64,6 @@ export const PositionsTable: FC = () => {
   )
 
   // console.log({ pools })
-
-  // const { data: poolCount } = useSWR<number>(
-  //   `/earn/api/pools/count${selectedNetworks ? `?networks=${stringify(selectedNetworks)}` : ''}`,
-  //   (url) => fetch(url).then((response) => response.json())
-  // )
 
   const table = useReactTable<Pair>({
     data: pairs_array || [],

@@ -59,17 +59,6 @@ export const getStaticProps: GetStaticProps = async () => {
 // }
 
 const Add: FC = () => {
-  // const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/api/pools`, (url: string) =>
-  //   fetch(url).then((response) => response.json())
-  // )
-  // const { pools } = pre_pools ? pre_pools : { pools: [] }
-  // // const pools: dbPoolWithTokens[] | undefined = pre_pools ? Object.values(pre_pools) : []
-  // const { data } = useSWR<{ tokens: dbTokenWithPools[]; prices: { [key: string]: number } }>(
-  //   `/api/prices`,
-  //   (url: string) => fetch(url).then((response) => response.json())
-  // )
-  // const { tokens, prices } = data ? data : { tokens: [], prices: {} }
-
   const { data: pools = [] } = api.getPools.all.useQuery()
   const { data: tokens = [] } = api.getTokens.all.useQuery()
   const { data: prices = {} } = api.getPrices.all.useQuery()

@@ -5,15 +5,19 @@ import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@doz
 import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { FC } from 'react'
-import useSWR, { SWRConfig } from 'swr'
 
 import { AddSectionLegacy, AddSectionMyPosition, Layout } from '../../components'
 import { dbPoolWithTokens } from '../../interfaces'
 import { getPoolWithTokens, getPools, getPrices } from '../../utils/api'
-import { api } from '../../utils/trpc'
+import { RouterOutputs, api } from '../../utils/trpc'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 
-const LINKS = (pool: dbPoolWithTokens): BreadcrumbLink[] => [
+type PoolsOutputArray = RouterOutputs['getPools']['all']
+
+type ElementType<T> = T extends (infer U)[] ? U : never
+type PoolsOutput = ElementType<PoolsOutputArray>
+
+const LINKS = (pool: PoolsOutput): BreadcrumbLink[] => [
   {
     href: `/${pool.id}`,
     label: `${pool.name} - ${formatPercent(pool.swapFee / 10000)}`,
@@ -24,33 +28,14 @@ const LINKS = (pool: dbPoolWithTokens): BreadcrumbLink[] => [
   },
 ]
 
-const Add: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-  return (
-    <SWRConfig value={{ fallback }}>
-      <_Add />
-    </SWRConfig>
-  )
-}
-
-const _Add: NextPage = () => {
+const Add: NextPage = () => {
   const router = useRouter()
   const id = router.query.id as string
-  // const { data: pre_pool } = useSWR<{ pool: dbPoolWithTokens }>(`/api/pool/${router.query.id}`, (url) =>
-  //   fetch(url).then((response) => response.json())
-  // )
 
-  // const { data: pre_prices } = useSWR<{ prices: { [key: string]: number } }>(`/api/prices`, (url) =>
-  //   fetch(url).then((response) => response.json())
-  // )
-
-  // if (!pre_pool) return <></>
-  // if (!pre_prices) return <></>
-  // const { pool } = pre_pool
-  // const { prices } = pre_prices
-
-  const { data: pool = [] } = api.getPools.byId.useQuery({ id })
+  const { data: pre_pool = {} as PoolsOutput } = api.getPools.byId.useQuery({ id })
+  const pool = pre_pool ? pre_pool : ({} as PoolsOutput)
   const tokens = pool ? [pool.token0, pool.token1] : []
-  const { data: prices = [] } = api.getPrices.byTokens.useQuery({ tokens })
+  const { data: prices = {} } = api.getPrices.byTokens.useQuery({ tokens })
 
   return (
     // <PoolPositionProvider pair={pair}>

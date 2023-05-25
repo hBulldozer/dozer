@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPoolAndTokens } from '../../utils/Pair'
+import { Pair, pairFromPool, pairFromPoolAndTokens } from '../../utils/Pair'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
@@ -16,27 +16,27 @@ import {
   PoolRewards,
   PoolStats,
 } from '../../components'
-import useSWR, { SWRConfig } from 'swr'
 
 import { formatPercent } from '@dozer/format'
 import { FC } from 'react'
 import { getPairs, getPoolWithTokensAndSnaps, getPrices } from '../../utils/api'
+import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+import { RouterOutputs, api } from '../../utils/trpc'
+
+type PoolsOutputArray = RouterOutputs['getPools']['all']
+
+type ElementType<T> = T extends (infer U)[] ? U : never
+type PoolsOutput = ElementType<PoolsOutputArray>
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  // When this is true (in preview environments) don't
-  // prerender any static pages
-  // (faster builds, but slower initial page load)
-  // if (process.env.SKIP_BUILD_STATIC_GENERATION === 'true') {
-  //   return {
-  //     paths: [],
-  //     fallback: 'blocking',
-  //   }
-  // }
-  const pairs: Pair[] = await getPairs()
+  const { data: pools } = api.getPools.all.useQuery()
 
+  if (!pools) {
+    throw new Error(`Failed to fetch pool, received ${pools}`)
+  }
   // Get the paths we want to pre-render based on pairs
-  const paths = pairs.map((pair) => ({
-    params: { id: `${pair.id}` },
+  const paths = pools?.map((pool) => ({
+    params: { id: `${pool.id}` },
   }))
 
   // We'll pre-render only these paths at build time.
@@ -45,33 +45,50 @@ export const getStaticPaths: GetStaticPaths = async () => {
   return { paths, fallback: 'blocking' }
 }
 
+// export const getStaticProps: GetStaticProps = async ({ params }) => {
+//   const id = params?.id as string
+//   const pool = await getPoolWithTokens(id)
+//   const tokens = [pool.token0, pool.token1]
+//   const prices = await getPrices(tokens)
+
+//   if (!tokens) {
+//     throw new Error(`Failed to fetch tokens, received ${tokens}`)
+//   }
+
+//   if (!prices) {
+//     throw new Error(`Failed to fetch prices, received ${prices}`)
+//   }
+
+//   if (!pool) {
+//     throw new Error(`Failed to fetch pool, received ${pool}`)
+//   }
+
+//   return {
+//     props: {
+//       fallback: {
+//         [`/api/pool/${id}`]: { pool },
+//         [`/api/prices`]: { prices },
+//       },
+//     },
+//     revalidate: 60,
+//   }
+// }
+
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
-  const pool = await getPoolWithTokensAndSnaps(id)
+  const ssg = generateSSGHelper()
+  const pool = await ssg.getPools.byId.fetch({ id })
+  if (!pool) {
+    throw new Error(`Failed to fetch pool, received ${pool}`)
+  }
   const tokens = [pool.token0, pool.token1]
-  const prices = await getPrices(tokens)
-
-  const pair: Pair = pairFromPoolAndTokens(pool)
-
-  if (!pair) {
-    throw new Error(`Failed to fetch pair, received ${pair}`)
-  }
-
-  if (!tokens) {
-    throw new Error(`Failed to fetch tokens, received ${tokens}`)
-  }
-
-  if (!prices) {
-    throw new Error(`Failed to fetch prices, received ${prices}`)
-  }
-
+  await ssg.getTokens.all.prefetch()
+  await ssg.getPrices.byTokens.prefetch({ tokens })
   return {
     props: {
-      fallback: {
-        [`/api/pair/${id}`]: { pair, prices },
-      },
+      trpcState: ssg.dehydrate(),
     },
-    revalidate: 60,
+    revalidate: 3600,
   }
 }
 
@@ -82,22 +99,14 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   },
 ]
 
-const Pool: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-  return (
-    <SWRConfig value={{ fallback }}>
-      <_Pool />
-    </SWRConfig>
-  )
-}
-
-const _Pool = () => {
+const Pool = () => {
   const router = useRouter()
-  const { data } = useSWR<{ pair: Pair; prices: { [key: string]: number } }>(
-    `/api/pair/${router.query.id}`,
-    (url: string) => fetch(url).then((response) => response.json())
-  )
-  if (!data) return <></>
-  const { pair, prices } = data
+  const id = router.query.id as string
+
+  const { data: pre_pool = {} as PoolsOutput } = api.getPools.byId.useQuery({ id })
+  const pair = pre_pool ? pairFromPool(pre_pool) : ({} as Pair)
+  const tokens = pair ? [pair.token0, pair.token1] : []
+  const { data: prices = {} } = api.getPrices.byTokens.useQuery({ tokens })
 
   return (
     <PoolPositionProvider pair={pair} prices={prices}>
