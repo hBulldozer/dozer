@@ -139,6 +139,36 @@ export function pairFromPool(pool: dbPoolWithTokens | null): Pair {
   )
 }
 
+export function pairWithSnapsFromPool(
+  pool: (dbPoolWithTokens & { hourSnapshots: hourSnapshot[]; daySnapshots: daySnapshot[] }) | null
+): Pair {
+  return (
+    pool &&
+    JSON.parse(
+      JSON.stringify({
+        id: pool.id,
+        name: pool.name,
+        liquidityUSD: pool.liquidityUSD,
+        volumeUSD: pool.volumeUSD,
+        feeUSD: pool.feeUSD,
+        swapFee: pool.swapFee,
+        apr: pool.apr,
+        token0: toToken(pool.token0),
+        token1: toToken(pool.token1),
+        tokenLP: toToken(pool.tokenLP),
+        reserve0: Number(pool.reserve0),
+        reserve1: Number(pool.reserve1),
+        chainId: pool.chainId,
+        liquidity: pool.liquidity,
+        volume1d: pool.volume1d,
+        fees1d: pool.fees1d,
+        hourSnapshots: pool.hourSnapshots,
+        daySnapshots: pool.daySnapshots,
+      })
+    )
+  )
+}
+
 export type Pair = {
   id: string
   name: string

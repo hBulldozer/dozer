@@ -1,6 +1,6 @@
 import { ExternalLinkIcon } from '@heroicons/react/solid'
 import { formatPercent } from '@dozer/format'
-import { pairFromPool } from '../../utils/Pair'
+import { Pair, pairFromPool } from '../../utils/Pair'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
 import { useRouter } from 'next/router'
@@ -32,10 +32,14 @@ const Add: NextPage = () => {
   const router = useRouter()
   const id = router.query.id as string
 
-  const { data: pre_pool = {} as PoolsOutput } = api.getPools.byId.useQuery({ id })
-  const pool = pre_pool ? pre_pool : ({} as PoolsOutput)
+  const { data: pool } = api.getPools.byId.useQuery({ id })
+  if (!pool) return <></>
+  const pair = pool ? pairFromPool(pool) : ({} as Pair)
+  if (!pair) return <></>
   const tokens = pool ? [pool.token0, pool.token1] : []
+  if (!tokens) return <></>
   const { data: prices = {} } = api.getPrices.byTokens.useQuery({ tokens })
+  if (!prices) return <></>
 
   return (
     // <PoolPositionProvider pair={pair}>
@@ -61,7 +65,7 @@ const Add: NextPage = () => {
           </div>
           <div className="order-1 sm:order-3">
             <AppearOnMount>
-              <AddSectionMyPosition pair={pairFromPool(pool)} />
+              <AddSectionMyPosition pair={pair} />
             </AppearOnMount>
           </div>
         </div>
@@ -74,7 +78,8 @@ const Add: NextPage = () => {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const { data: pools } = api.getPools.all.useQuery()
+  const ssg = generateSSGHelper()
+  const pools = await ssg.getPools.all.fetch()
 
   if (!pools) {
     throw new Error(`Failed to fetch pool, received ${pools}`)

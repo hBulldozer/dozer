@@ -64,7 +64,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
         <App.Shell>
           {/* <DefaultSeo {...SEO} /> */}
           {/* <NoSSR> */}
-          {/* <Header /> */}
+          <Header />
           {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
           <Component {...pageProps} />
           {/* </NoSSR> */}

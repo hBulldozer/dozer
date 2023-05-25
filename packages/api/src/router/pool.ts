@@ -12,6 +12,18 @@ export const poolRouter = createTRPCRouter({
       },
     })
   }),
+  byIdWithSnaps: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
+    return ctx.prisma.pool.findFirst({
+      where: { id: input.id },
+      include: {
+        token0: true,
+        token1: true,
+        tokenLP: true,
+        hourSnapshots: { orderBy: { date: 'desc' } },
+        daySnapshots: { orderBy: { date: 'desc' } },
+      },
+    })
+  }),
   byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.pool.findFirst({
       where: { id: input.id },

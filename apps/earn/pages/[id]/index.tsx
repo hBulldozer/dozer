@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPool, pairFromPoolAndTokens } from '../../utils/Pair'
+import { Pair, pairFromPool, pairFromPoolAndTokens, pairWithSnapsFromPool } from '../../utils/Pair'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
@@ -29,7 +29,8 @@ type ElementType<T> = T extends (infer U)[] ? U : never
 type PoolsOutput = ElementType<PoolsOutputArray>
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const { data: pools } = api.getPools.all.useQuery()
+  const ssg = generateSSGHelper()
+  const pools = await ssg.getPools.all.fetch()
 
   if (!pools) {
     throw new Error(`Failed to fetch pool, received ${pools}`)
@@ -82,6 +83,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     throw new Error(`Failed to fetch pool, received ${pool}`)
   }
   const tokens = [pool.token0, pool.token1]
+  await ssg.getPools.byIdWithSnaps.prefetch({ id })
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.byTokens.prefetch({ tokens })
   return {
@@ -103,10 +105,14 @@ const Pool = () => {
   const router = useRouter()
   const id = router.query.id as string
 
-  const { data: pre_pool = {} as PoolsOutput } = api.getPools.byId.useQuery({ id })
-  const pair = pre_pool ? pairFromPool(pre_pool) : ({} as Pair)
+  const { data: pool } = api.getPools.byIdWithSnaps.useQuery({ id })
+  if (!pool) return <></>
+  const pair = pool ? pairWithSnapsFromPool(pool) : ({} as Pair)
+  if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []
+  if (!tokens) return <></>
   const { data: prices = {} } = api.getPrices.byTokens.useQuery({ tokens })
+  if (!prices) return <></>
 
   return (
     <PoolPositionProvider pair={pair} prices={prices}>
