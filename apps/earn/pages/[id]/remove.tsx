@@ -13,6 +13,7 @@ import { getPoolWithTokens, getPools, getPrices } from '../../utils/api'
 import { PoolPositionProvider } from '../../components/PoolPositionProvider'
 import { RouterOutputs } from '@dozer/api'
 import { api } from '../../utils/trpc'
+import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 
 type PoolsOutputArray = RouterOutputs['getPools']['all']
 
@@ -71,10 +72,13 @@ const Remove: NextPage = () => {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const pools = await getPools()
+  const { data: pools } = api.getPools.all.useQuery()
 
+  if (!pools) {
+    throw new Error(`Failed to fetch pool, received ${pools}`)
+  }
   // Get the paths we want to pre-render based on pairs
-  const paths = pools.map((pool) => ({
+  const paths = pools?.map((pool) => ({
     params: { id: `${pool.id}` },
   }))
 
@@ -86,28 +90,19 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
-  const pool = await getPoolWithTokens(id)
-  const tokens = [pool.token0, pool.token1]
-  const prices = await getPrices(tokens)
-  if (!tokens) {
-    throw new Error(`Failed to fetch tokens, received ${tokens}`)
-  }
-
-  if (!prices) {
-    throw new Error(`Failed to fetch prices, received ${prices}`)
-  }
-
+  const ssg = generateSSGHelper()
+  const pool = await ssg.getPools.byId.fetch({ id })
   if (!pool) {
     throw new Error(`Failed to fetch pool, received ${pool}`)
   }
+  const tokens = [pool.token0, pool.token1]
+  await ssg.getTokens.all.prefetch()
+  await ssg.getPrices.byTokens.prefetch({ tokens })
   return {
     props: {
-      fallback: {
-        [`/api/pool/${id}`]: { pool },
-        [`/api/prices`]: { prices },
-      },
+      trpcState: ssg.dehydrate(),
     },
-    revalidate: 60,
+    revalidate: 3600,
   }
 }
 
