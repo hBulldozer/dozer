@@ -1,39 +1,10 @@
 import { PlusIcon } from '@heroicons/react/solid'
 import { Button, Typography } from '@dozer/ui'
 import type { GetStaticProps, InferGetStaticPropsType } from 'next'
-// import { SUPPORTED_CHAIN_IDS } from '../config'
-// import { GetStaticProps, InferGetStaticPropsType } from 'next'
 import { FC } from 'react'
 
 import { Layout, PoolsSection } from '../components'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
-
-// import { SWRConfig } from 'swr'
-// import { getPairs } from '../utils/api'
-
-// export const getStaticProps: GetStaticProps = async () => {
-//   // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
-//   const pairs = await getPairs()
-//   if (!pairs) {
-//     throw new Error(`Failed to fetch pairs, received ${pairs}`)
-//   }
-//   return {
-//     props: {
-//       fallback: {
-//         ['/api/pairs']: { pairs },
-//       },
-//       revalidate: 60,
-//     },
-//   }
-// }
-
-// const Pools: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-//   return (
-//     <SWRConfig value={{ fallback }}>
-//       <_Pools />
-//     </SWRConfig>
-//   )
-// }
 
 export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
@@ -47,31 +18,6 @@ export const getStaticProps: GetStaticProps = async () => {
     revalidate: 3600,
   }
 }
-
-// const Pools = () => {
-// export const getStaticProps: GetStaticProps = async () => {
-//   // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
-//   const pairs = await getPairs()
-//   if (!pairs) {
-//     throw new Error(`Failed to fetch pairs, received ${pairs}`)
-//   }
-//   return {
-//     props: {
-//       fallback: {
-//         ['/api/pairs']: { pairs },
-//       },
-//       revalidate: 60,
-//     },
-//   }
-// }
-
-// const Pools: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-//   return (
-//     <SWRConfig value={{ fallback }}>
-//       <_Pools />
-//     </SWRConfig>
-//   )
-// }
 
 const Pools: FC = () => {
   return (

@@ -1,6 +1,6 @@
 import { ExternalLinkIcon } from '@heroicons/react/solid'
 import { formatPercent } from '@dozer/format'
-import { pairFromPool } from '../../utils/Pair'
+import { Pair, pairFromPool } from '../../utils/Pair'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
 
 import { AddSectionMyPosition, Layout, RemoveSectionLegacy } from '../../components'
