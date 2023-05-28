@@ -2,13 +2,11 @@ import { ExternalLinkIcon } from '@heroicons/react/solid'
 import { formatPercent } from '@dozer/format'
 import { Pair, pairFromPool } from '../../utils/Pair'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
+import { GetStaticPaths, GetStaticProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { FC } from 'react'
 
 import { AddSectionLegacy, AddSectionMyPosition, Layout } from '../../components'
-import { dbPoolWithTokens } from '../../interfaces'
-import { getPoolWithTokens, getPools, getPrices } from '../../utils/api'
+
 import { RouterOutputs, api } from '../../utils/trpc'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 
@@ -94,35 +92,6 @@ export const getStaticPaths: GetStaticPaths = async () => {
   // on-demand if the path doesn't exist.
   return { paths, fallback: 'blocking' }
 }
-
-// export const getStaticProps: GetStaticProps = async ({ params }) => {
-//   const id = params?.id as string
-//   const pool = await getPoolWithTokens(id)
-//   const tokens = [pool.token0, pool.token1]
-//   const prices = await getPrices(tokens)
-
-//   if (!tokens) {
-//     throw new Error(`Failed to fetch tokens, received ${tokens}`)
-//   }
-
-//   if (!prices) {
-//     throw new Error(`Failed to fetch prices, received ${prices}`)
-//   }
-
-//   if (!pool) {
-//     throw new Error(`Failed to fetch pool, received ${pool}`)
-//   }
-
-//   return {
-//     props: {
-//       fallback: {
-//         [`/api/pool/${id}`]: { pool },
-//         [`/api/prices`]: { prices },
-//       },
-//     },
-//     revalidate: 60,
-//   }
-// }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string

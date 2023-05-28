@@ -5,11 +5,9 @@ import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@doz
 
 import { AddSectionMyPosition, Layout, RemoveSectionLegacy } from '../../components'
 
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
+import { GetStaticPaths, GetStaticProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { dbPoolWithTokens } from '../../interfaces'
-import { FC } from 'react'
-import { getPoolWithTokens, getPools, getPrices } from '../../utils/api'
 import { PoolPositionProvider } from '../../components/PoolPositionProvider'
 import { RouterOutputs } from '@dozer/api'
 import { api } from '../../utils/trpc'

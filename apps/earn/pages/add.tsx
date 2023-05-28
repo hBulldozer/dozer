@@ -48,16 +48,6 @@ export const getStaticProps: GetStaticProps = async () => {
   }
 }
 
-// const Add: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-//   return (
-//     <SWRConfig value={{ fallback }}>
-
-//           <_Add />
-
-//     </SWRConfig>
-//   )
-// }
-
 const Add: FC = () => {
   const { data: pools = [] } = api.getPools.all.useQuery()
   const { data: tokens = [] } = api.getTokens.all.useQuery()

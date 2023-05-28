@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next'
+import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPool, pairFromPoolAndTokens, pairWithSnapsFromPool } from '../../utils/Pair'
+import { Pair, pairWithSnapsFromPool } from '../../utils/Pair'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
@@ -18,8 +18,6 @@ import {
 } from '../../components'
 
 import { formatPercent } from '@dozer/format'
-import { FC } from 'react'
-import { getPairs, getPoolWithTokensAndSnaps, getPrices } from '../../utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../../utils/trpc'
 
@@ -45,35 +43,6 @@ export const getStaticPaths: GetStaticPaths = async () => {
   // on-demand if the path doesn't exist.
   return { paths, fallback: 'blocking' }
 }
-
-// export const getStaticProps: GetStaticProps = async ({ params }) => {
-//   const id = params?.id as string
-//   const pool = await getPoolWithTokens(id)
-//   const tokens = [pool.token0, pool.token1]
-//   const prices = await getPrices(tokens)
-
-//   if (!tokens) {
-//     throw new Error(`Failed to fetch tokens, received ${tokens}`)
-//   }
-
-//   if (!prices) {
-//     throw new Error(`Failed to fetch prices, received ${prices}`)
-//   }
-
-//   if (!pool) {
-//     throw new Error(`Failed to fetch pool, received ${pool}`)
-//   }
-
-//   return {
-//     props: {
-//       fallback: {
-//         [`/api/pool/${id}`]: { pool },
-//         [`/api/prices`]: { prices },
-//       },
-//     },
-//     revalidate: 60,
-//   }
-// }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
