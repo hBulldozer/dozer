@@ -59,20 +59,16 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
         <link rel="mask-icon" href="/earn/safari-pinned-tab.svg?v=1" color="#fa52a0" />
         <link rel="shortcut icon" href="/earn/favicon.ico?v=1" />
       </Head>
-      {/* <QueryClientProvider client={queryClient}> */}
       <ThemeProvider>
         <App.Shell>
           {/* <DefaultSeo {...SEO} /> */}
-          {/* <NoSSR> */}
           <Header />
           {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
           <Component {...pageProps} />
-          {/* </NoSSR> */}
           <App.Footer />
           {/* <ToastContainer className="mt-[50px]" /> */}
         </App.Shell>
       </ThemeProvider>
-      {/* </QueryClientProvider> */}
       <Analytics />
     </>
   )
