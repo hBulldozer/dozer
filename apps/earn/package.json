@@ -56,7 +56,7 @@
     "@dozer/prettier-config": "workspace:*",
     "@dozer/tailwindcss-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
-    "@tanstack/react-query": "4.20.4",
+    "@tanstack/react-query": "4.29.12",
     "@types/lodash.orderby": "4.6.7",
     "@types/lodash.sortby": "4.7.7",
     "@types/lodash.take": "4.1.7",
