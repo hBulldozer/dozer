@@ -23,7 +23,7 @@
     "@dozer/api": "workspace:*",
     "@dozer/zustand": "workspace:*",
     "@headlessui/react": "^1.7.3",
-    "@heroicons/react": "^1.0.0",
+    "@heroicons/react": "^2.0.18",
     "@reduxjs/toolkit": "1.9.1",
     "@tanstack/react-table": "8.5.0",
     "@trpc/client": "^10.14.0",
