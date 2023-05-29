@@ -5,6 +5,8 @@ import { BuildWealth } from 'components/BuildWealth/BuildWealth'
 import { Hero } from 'components/Hero/Hero'
 import { Partners } from 'components/Partners/Partners'
 import { Story } from 'components/Story/Story'
+import { api } from 'utils/api'
+// import { generateSSGHelper } from "~/server/helpers/ssgHelper";
 
 const Home = () => {
   return (

@@ -3,7 +3,7 @@ import { NetworkSelector } from '@dozer/higmi'
 import { Profile } from '@dozer/higmi/components/Wallet/Profile'
 import React, { FC } from 'react'
 // import { useAccount } from 'wagmi'
-
+import { api } from '../utils/trpc'
 import { SUPPORTED_CHAIN_IDS } from '../config'
 // import { useNotifications } from '../lib/state/storage'
 
@@ -30,6 +30,7 @@ export const Header: FC = () => {
         // supportedNetworks={SUPPORTED_CHAIN_IDS}
         // notifications={notifications}
         // clearNotifications={clearNotifications}
+        client={api}
         />
       </div>
     </App.Header>

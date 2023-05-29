@@ -2,7 +2,6 @@ import { formatPercent, formatUSD } from '@dozer/format'
 // import { UserWithFarm } from '@dozer/graph-client'
 import { Button, Chip, Currency, Link, Typography } from '@dozer/ui'
 import { FC } from 'react'
-import useSWR from 'swr'
 
 // import { PoolPositionProvider, usePoolPosition } from '../../../PoolPositionProvider'
 // import { PoolPositionRewardsProvider, usePoolPositionRewards } from '../../../PoolPositionRewardsProvider'
@@ -12,29 +11,28 @@ import { Pair } from '../../../../utils/Pair'
 import { useTokensFromPair } from '../../../../utils/useTokensFromPair'
 import { dbTokenWithPools } from '../../../../interfaces'
 import { PoolPositionProvider, usePoolPosition } from '../../../PoolPositionProvider'
+import { api } from '../../../../utils/trpc'
 
 interface PositionQuickHoverTooltipProps {
   row: Pair
 }
 
 export const PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row }) => {
-  const { data: pre_prices, isLoading } = useSWR<{ prices: { [key: string]: number } }>(`/earn/api/prices`, (url) =>
-    fetch(url).then((response) => response.json())
-  )
+  const { data: prices, isLoading } = api.getPrices.all.useQuery()
 
-  if (!pre_prices && isLoading)
+  if (!prices && isLoading)
     return (
       <>
         <Typography>Loading prices...</Typography>
       </>
     )
-  if (!pre_prices)
+  if (!prices)
     return (
       <>
         <Typography>No prices found</Typography>
       </>
     )
-  const { prices } = pre_prices
+
   return (
     <PoolPositionProvider watch={false} pair={row} prices={prices}>
       <_PositionQuickHoverTooltip row={row} />

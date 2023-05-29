@@ -1,17 +1,21 @@
 import { ExternalLinkIcon } from '@heroicons/react/solid'
 import { formatPercent } from '@dozer/format'
-import { pairFromPool } from '../../utils/Pair'
+import { Pair, pairFromPool } from '../../utils/Pair'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
+import { GetStaticPaths, GetStaticProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { FC } from 'react'
-import useSWR, { SWRConfig } from 'swr'
 
 import { AddSectionLegacy, AddSectionMyPosition, Layout } from '../../components'
-import { dbPoolWithTokens } from '../../interfaces'
-import { getPoolWithTokens, getPools, getPrices } from '../../utils/api'
 
-const LINKS = (pool: dbPoolWithTokens): BreadcrumbLink[] => [
+import { RouterOutputs, api } from '../../utils/trpc'
+import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+
+type PoolsOutputArray = RouterOutputs['getPools']['all']
+
+type ElementType<T> = T extends (infer U)[] ? U : never
+type PoolsOutput = ElementType<PoolsOutputArray>
+
+const LINKS = (pool: PoolsOutput): BreadcrumbLink[] => [
   {
     href: `/${pool.id}`,
     label: `${pool.name} - ${formatPercent(pool.swapFee / 10000)}`,
@@ -22,27 +26,18 @@ const LINKS = (pool: dbPoolWithTokens): BreadcrumbLink[] => [
   },
 ]
 
-const Add: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-  return (
-    <SWRConfig value={{ fallback }}>
-      <_Add />
-    </SWRConfig>
-  )
-}
-
-const _Add: NextPage = () => {
+const Add: NextPage = () => {
   const router = useRouter()
-  const { data: pre_pool } = useSWR<{ pool: dbPoolWithTokens }>(`/earn/api/pool/${router.query.id}`, (url) =>
-    fetch(url).then((response) => response.json())
-  )
+  const id = router.query.id as string
 
-  const { data: pre_prices } = useSWR<{ prices: { [key: string]: number } }>(`/earn/api/prices`, (url) =>
-    fetch(url).then((response) => response.json())
-  )
-  if (!pre_pool) return <></>
-  if (!pre_prices) return <></>
-  const { pool } = pre_pool
-  const { prices } = pre_prices
+  const { data: pool } = api.getPools.byId.useQuery({ id })
+  if (!pool) return <></>
+  const pair = pool ? pairFromPool(pool) : ({} as Pair)
+  if (!pair) return <></>
+  const tokens = pool ? [pool.token0, pool.token1] : []
+  if (!tokens) return <></>
+  const { data: prices = {} } = api.getPrices.byTokens.useQuery({ tokens })
+  if (!prices) return <></>
 
   return (
     // <PoolPositionProvider pair={pair}>
@@ -68,7 +63,7 @@ const _Add: NextPage = () => {
           </div>
           <div className="order-1 sm:order-3">
             <AppearOnMount>
-              <AddSectionMyPosition pair={pairFromPool(pool)} />
+              <AddSectionMyPosition pair={pair} />
             </AppearOnMount>
           </div>
         </div>
@@ -81,10 +76,14 @@ const _Add: NextPage = () => {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const pools = await getPools()
+  const ssg = generateSSGHelper()
+  const pools = await ssg.getPools.all.fetch()
 
+  if (!pools) {
+    throw new Error(`Failed to fetch pool, received ${pools}`)
+  }
   // Get the paths we want to pre-render based on pairs
-  const paths = pools.map((pool) => ({
+  const paths = pools?.map((pool) => ({
     params: { id: `${pool.id}` },
   }))
 
@@ -96,30 +95,19 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
-  const pool = await getPoolWithTokens(id)
-  const tokens = [pool.token0, pool.token1]
-  const prices = await getPrices(tokens)
-
-  if (!tokens) {
-    throw new Error(`Failed to fetch tokens, received ${tokens}`)
-  }
-
-  if (!prices) {
-    throw new Error(`Failed to fetch prices, received ${prices}`)
-  }
-
+  const ssg = generateSSGHelper()
+  const pool = await ssg.getPools.byId.fetch({ id })
   if (!pool) {
     throw new Error(`Failed to fetch pool, received ${pool}`)
   }
-
+  const tokens = [pool.token0, pool.token1]
+  await ssg.getTokens.all.prefetch()
+  await ssg.getPrices.byTokens.prefetch({ tokens })
   return {
     props: {
-      fallback: {
-        [`/earn/api/pool/${id}`]: { pool },
-        [`/earn/api/prices`]: { prices },
-      },
+      trpcState: ssg.dehydrate(),
     },
-    revalidate: 60,
+    revalidate: 3600,
   }
 }
 

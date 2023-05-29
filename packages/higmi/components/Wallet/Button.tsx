@@ -3,7 +3,6 @@ import { AppearOnMount, ButtonProps, Menu } from '@dozer/ui'
 import React, { ReactNode, useMemo, useState } from 'react'
 import { Address } from '@dozer/ui/input/Address'
 import { useAccount } from '@dozer/zustand'
-import { useBalance } from '@dozer/react-query'
 import { useEffect } from 'react'
 // import { useConnect } from 'wagmi'
 

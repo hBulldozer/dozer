@@ -158,27 +158,23 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
       </div>
     ),
     [
-      // address,
       account,
       chainId,
       className,
       currency,
-      // customTokenMap,
       disableMaxButton,
       disabled,
       focusInput,
-      // fundSource,
       handleClose,
       id,
       includeNative,
       isMounted,
       loading,
-      // onAddToken,
       onChange,
-      // onRemoveToken,
       onSelect,
-      // tokenMap,
+      prices,
       tokenSelectorOpen,
+      tokens,
       usdPctChange,
       value,
     ]
@@ -229,7 +225,7 @@ const BalancePanel: FC<BalancePanel> = ({
 }
 
 type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange' | 'prices'>
-const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, chainId }) => {
+const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange }) => {
   const isMounted = useIsMounted()
   const [price, setPrice] = useState<number | undefined>(0)
   const [usd, setUsd] = useState<number | undefined>(0)

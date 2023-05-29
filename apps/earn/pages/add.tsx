@@ -6,13 +6,27 @@ import { Widget } from '@dozer/ui'
 import { AddSectionMyPosition, AddSectionReviewModalLegacy, Layout, SelectNetworkWidget } from '../components'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { Checker, Web3Input } from '@dozer/higmi'
-import { GetStaticProps, InferGetStaticPropsType } from 'next'
-import { dbToken, dbTokenWithPools, dbPoolWithTokens } from '../interfaces'
+import { GetStaticProps } from 'next'
+import { dbPoolWithTokens } from '../interfaces'
 import { PairState, pairFromPoolAndTokensList } from '../utils/Pair'
 import { useTrade } from '@dozer/zustand'
-import toToken from '../utils/toToken'
-import useSWR, { SWRConfig } from 'swr'
-import { getPools, getPrices, getTokens } from '../utils/api'
+import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+import { RouterOutputs, api } from '../utils/trpc'
+
+type TokenOutputArray = RouterOutputs['getTokens']['all']
+
+type ElementType<T> = T extends (infer U)[] ? U : never
+type TokenOutput = ElementType<TokenOutputArray>
+
+function toToken(dbToken: TokenOutput): Token {
+  return new Token({
+    chainId: dbToken.chainId,
+    uuid: dbToken.uuid,
+    decimals: dbToken.decimals,
+    name: dbToken.name,
+    symbol: dbToken.symbol,
+  })
+}
 
 const LINKS: BreadcrumbLink[] = [
   {
@@ -21,30 +35,24 @@ const LINKS: BreadcrumbLink[] = [
   },
 ]
 
-const Add: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-  return (
-    <SWRConfig value={{ fallback }}>
-      <Layout breadcrumbs={LINKS}>
-        <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
-          <div className="hidden md:block" />
-          <_Add />
-        </div>
-      </Layout>
-    </SWRConfig>
-  )
+export const getStaticProps: GetStaticProps = async () => {
+  const ssg = generateSSGHelper()
+  await ssg.getPools.all.prefetch()
+  await ssg.getTokens.all.prefetch()
+  await ssg.getPrices.all.prefetch()
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+    },
+    revalidate: 3600,
+  }
 }
 
-const _Add: FC = () => {
-  const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/earn/api/pools`, (url: string) =>
-    fetch(url).then((response) => response.json())
-  )
-  const { pools } = pre_pools ? pre_pools : { pools: [] }
-  // const pools: dbPoolWithTokens[] | undefined = pre_pools ? Object.values(pre_pools) : []
-  const { data } = useSWR<{ tokens: dbTokenWithPools[]; prices: { [key: string]: number } }>(
-    `/earn/api/prices`,
-    (url: string) => fetch(url).then((response) => response.json())
-  )
-  const { tokens, prices } = data ? data : { tokens: [], prices: {} }
+const Add: FC = () => {
+  const { data: pools = [] } = api.getPools.all.useQuery()
+  const { data: tokens = [] } = api.getTokens.all.useQuery()
+  const { data: prices = {} } = api.getPrices.all.useQuery()
+
   const [{ input0, input1 }, setTypedAmounts] = useState<{
     input0: string
     input1: string
@@ -157,13 +165,13 @@ const _Add: FC = () => {
         token1: token1,
         token2: token0,
         token1_balance:
-          tokens.find((token: dbToken) => {
+          tokens.find((token: TokenOutput) => {
             return token.id == selectedPool.token0Id
           }) == token1?.uuid
             ? Number(selectedPool.reserve1)
             : Number(selectedPool.reserve0),
         token2_balance:
-          tokens.find((token: dbToken) => {
+          tokens.find((token: TokenOutput) => {
             return token.id == selectedPool.token1Id
           }) == token0?.uuid
             ? Number(selectedPool.reserve0)
@@ -181,7 +189,7 @@ const _Add: FC = () => {
       setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
       setOutputAmount()
     }
-    const list0: dbToken[] = tokens.filter((token) => {
+    const list0: TokenOutputArray = tokens.filter((token) => {
       return token.uuid !== token1?.uuid
     })
     setListTokens0(
@@ -189,7 +197,7 @@ const _Add: FC = () => {
         return toToken(token)
       })
     )
-    const list1: dbToken[] = tokens.filter((token) => {
+    const list1: TokenOutputArray = tokens.filter((token) => {
       return token.uuid !== token0?.uuid
     })
     setListTokens1(
@@ -203,89 +211,92 @@ const _Add: FC = () => {
 
   return (
     <>
-      <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-        <SelectNetworkWidget selectedNetwork={chainId} onSelect={setChainId} />
-        {/* <SelectFeeWidget selectedNetwork={chainId} fee={fee} setFee={setFee} /> */}
+      <Layout breadcrumbs={LINKS}>
+        <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
+          <div className="hidden md:block" />
+          <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
+            <SelectNetworkWidget selectedNetwork={chainId} onSelect={setChainId} />
+            {/* <SelectFeeWidget selectedNetwork={chainId} fee={fee} setFee={setFee} /> */}
 
-        <Widget id="addLiquidity" maxWidth={400}>
-          <Widget.Content>
-            <Widget.Header title="2. Add Liquidity">{/* <SettingsOverlay /> */}</Widget.Header>
-            <Web3Input.Currency
-              className="p-3"
-              value={input0}
-              onChange={onChangeToken0TypedAmount}
-              disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
-              currency={token0}
-              onSelect={setToken0}
-              chainId={chainId}
-              prices={prices}
-              tokens={listTokens0}
-            />
-            <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
-              <div className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full">
-                <PlusIcon width={16} height={16} />
-              </div>
-            </div>
-            <div className="bg-stone-800">
-              <Web3Input.Currency
-                className="p-3 !pb-1"
-                value={input1}
-                onChange={onChangeToken1TypedAmount}
-                disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
-                currency={token1}
-                onSelect={setToken1}
-                chainId={chainId}
-                loading={poolState === PairState.LOADING}
-                prices={prices}
-                tokens={listTokens1}
-              />
-              <div className="p-3">
-                <Checker.Connected fullWidth size="md">
-                  <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
-                    {/* <Checker.Network fullWidth size="md" chainId={chainId}> */}
-                    <Checker.Amounts
-                      fullWidth
-                      size="md"
-                      // chainId={chainId}
-                      // fundSource={FundSource.WALLET}
-                      amount={Number(input0)}
-                      token={token0}
-                    >
-                      <Checker.Amounts
-                        fullWidth
-                        size="md"
-                        // chainId={chainId}
-                        // fundSource={FundSource.WALLET}
-                        amount={Number(input1)}
-                        token={token1}
-                      >
-                        {selectedPool && token0 && token1 && (
-                          <AddSectionReviewModalLegacy
-                            poolState={poolState as PairState}
-                            chainId={chainId}
-                            token0={token0}
-                            token1={token1}
-                            input0={Amount.fromFractionalAmount(token0, parsedInput0, 100)}
-                            input1={Amount.fromFractionalAmount(token1, parsedInput1, 100)}
-                            prices={prices}
+            <Widget id="addLiquidity" maxWidth={400}>
+              <Widget.Content>
+                <Widget.Header title="2. Add Liquidity">{/* <SettingsOverlay /> */}</Widget.Header>
+                <Web3Input.Currency
+                  className="p-3"
+                  value={input0}
+                  onChange={onChangeToken0TypedAmount}
+                  disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
+                  currency={token0}
+                  onSelect={setToken0}
+                  chainId={chainId}
+                  prices={prices}
+                  tokens={listTokens0}
+                />
+                <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
+                  <div className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full">
+                    <PlusIcon width={16} height={16} />
+                  </div>
+                </div>
+                <div className="bg-stone-800">
+                  <Web3Input.Currency
+                    className="p-3 !pb-1"
+                    value={input1}
+                    onChange={onChangeToken1TypedAmount}
+                    disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
+                    currency={token1}
+                    onSelect={setToken1}
+                    chainId={chainId}
+                    loading={poolState === PairState.LOADING}
+                    prices={prices}
+                    tokens={listTokens1}
+                  />
+                  <div className="p-3">
+                    <Checker.Connected fullWidth size="md">
+                      <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
+                        {/* <Checker.Network fullWidth size="md" chainId={chainId}> */}
+                        <Checker.Amounts
+                          fullWidth
+                          size="md"
+                          // chainId={chainId}
+                          // fundSource={FundSource.WALLET}
+                          amount={Number(input0)}
+                          token={token0}
+                        >
+                          <Checker.Amounts
+                            fullWidth
+                            size="md"
+                            // chainId={chainId}
+                            // fundSource={FundSource.WALLET}
+                            amount={Number(input1)}
+                            token={token1}
                           >
-                            {({ isWritePending, setOpen }) => (
-                              <Button fullWidth onClick={() => setOpen(true)} disabled={isWritePending} size="md">
-                                {isWritePending ? <Dots>Confirm transaction</Dots> : 'Add Liquidity'}
-                              </Button>
+                            {selectedPool && token0 && token1 && (
+                              <AddSectionReviewModalLegacy
+                                poolState={poolState as PairState}
+                                chainId={chainId}
+                                token0={token0}
+                                token1={token1}
+                                input0={Amount.fromFractionalAmount(token0, parsedInput0, 100)}
+                                input1={Amount.fromFractionalAmount(token1, parsedInput1, 100)}
+                                prices={prices}
+                              >
+                                {({ isWritePending, setOpen }) => (
+                                  <Button fullWidth onClick={() => setOpen(true)} disabled={isWritePending} size="md">
+                                    {isWritePending ? <Dots>Confirm transaction</Dots> : 'Add Liquidity'}
+                                  </Button>
+                                )}
+                              </AddSectionReviewModalLegacy>
                             )}
-                          </AddSectionReviewModalLegacy>
-                        )}
-                      </Checker.Amounts>
-                    </Checker.Amounts>
-                    {/* </Checker.Network> */}
-                  </Checker.Pool>
-                </Checker.Connected>
-              </div>
-            </div>
-          </Widget.Content>
-        </Widget>
-        {/* {pool && data?.pair && (
+                          </Checker.Amounts>
+                        </Checker.Amounts>
+                        {/* </Checker.Network> */}
+                      </Checker.Pool>
+                    </Checker.Connected>
+                  </div>
+                </div>
+              </Widget.Content>
+            </Widget>
+            {/* {pool && data?.pair && (
           <PoolPositionProvider pair={data.pair}>
             <PoolPositionStakedProvider pair={data.pair}>
               <Container maxWidth={400} className="mx-auto">
@@ -297,7 +308,9 @@ const _Add: FC = () => {
             </PoolPositionStakedProvider>
           </PoolPositionProvider>
         )} */}
-      </div>
+          </div>
+        </div>
+      </Layout>
 
       {selectedPool && (
         <div className="order-1 sm:order-3">
@@ -308,22 +321,6 @@ const _Add: FC = () => {
       )}
     </>
   )
-}
-
-export const getStaticProps: GetStaticProps = async () => {
-  const pools = await getPools()
-  const tokens = await getTokens()
-  const prices = await getPrices(tokens)
-
-  return {
-    props: {
-      fallback: {
-        [`/earn/api/pools`]: { pools },
-        [`/earn/api/prices`]: { tokens, prices },
-      },
-    },
-    revalidate: 60,
-  }
 }
 
 export default Add

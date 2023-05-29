@@ -13,25 +13,31 @@ import { Transactions } from './Transactions'
 import { Portal } from './Portal'
 import { shortenAddress } from './Utils'
 import { useBalance } from '@dozer/react-query'
+// import { api } from '../../../utils/api'
+import { client } from '@dozer/api'
 
+interface ProfileProps {
+  client: typeof client
+}
 export enum ProfileView {
   Default,
   Transactions,
 }
-
-// interface ProfileProps {
-//   notifications: Record<number, string[]>
-//   clearNotifications(): void
-// }
-
-export const Profile: FC = () => {
+export const Profile: FC<ProfileProps> = ({ client }) => {
   const { isSm } = useBreakpoint('sm')
   const [view, setView] = useState<ProfileView>(ProfileView.Default)
   const { network } = useNetwork()
   const accountAddress = useAccount((state) => state.address)
+  // const utils = api.useContext()
+  // const htr = utils.getTokens.all.getData()
+  // console.log(htr)
   const [address, setAddress] = useState('')
   const chainId = network
-  const { data, isLoading, isError, error } = useBalance(accountAddress)
+  // const { data, isLoading, isError, error } = useBalance(accountAddress)
+  const { data, isLoading, isError, error } = client.getProfile.balance.useQuery(
+    { address: accountAddress },
+    { enabled: Boolean(accountAddress) }
+  )
   const { setBalance } = useAccount()
 
   // const { data: avatar } = useEnsAvatar({
@@ -54,7 +60,7 @@ export const Profile: FC = () => {
       }
       setBalance(balance_data)
     }
-  }, [data, isError, isLoading, address, error])
+  }, [data, isError, isLoading, address, error, setBalance])
 
   if (!address) {
     return <Wallet.Button size="sm" className="border-none shadow-md whitespace-nowrap" />

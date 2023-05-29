@@ -10,15 +10,19 @@ import { SwapStatsDisclosure, SettingsOverlay } from '../components'
 import { Checker } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
-import { GetStaticProps, InferGetStaticPropsType } from 'next'
-import { prisma } from '@dozer/database'
-import { dbToken, dbPool, dbPoolWithTokens, dbTokenWithPools } from '../interfaces'
-import useSWR, { SWRConfig } from 'swr'
 import { useRouter } from 'next/router'
-import { getPools, getPrices, getTokens } from 'utils/api'
-// import { Token as dbToken, Pool } from '@dozer/database/types'
+import { api, RouterOutputs } from 'utils/api'
+import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+import type { GetStaticProps } from 'next'
+import type { dbPoolWithTokens } from '../interfaces'
 
-function toToken(dbToken: dbToken): Token {
+type TokenOutputArray = RouterOutputs['getTokens']['all']
+
+type ElementType<T> = T extends (infer U)[] ? U : never
+type TokenOutput = ElementType<TokenOutputArray>
+
+function toToken(dbToken: TokenOutput): Token {
+  if (!dbToken) return new Token({ chainId: 1, uuid: '', decimals: 18, name: '', symbol: 'HTR' })
   return new Token({
     chainId: dbToken.chainId,
     uuid: dbToken.uuid,
@@ -27,54 +31,26 @@ function toToken(dbToken: dbToken): Token {
     symbol: dbToken.symbol,
   })
 }
-export const getStaticProps: GetStaticProps = async (context) => {
-  // const [pairs, bundles, poolCount, bar] = await Promise.all([getPools(), getBundles(), getPoolCount(), getSushiBar()])
-  const pools = await getPools()
-  if (!pools) {
-    throw new Error(`Failed to fetch pools, received ${pools}`)
-  }
-  const tokens = await getTokens()
 
-  if (!tokens) {
-    throw new Error(`Failed to fetch tokens, received ${tokens}`)
-  }
-
-  const prices = await getPrices(tokens)
-  if (!prices) {
-    throw new Error(`Failed to fetch prices, received ${prices}`)
-  }
+export const getStaticProps: GetStaticProps = async () => {
+  const ssg = generateSSGHelper()
+  await ssg.getPools.all.prefetch()
+  await ssg.getTokens.all.prefetch()
+  await ssg.getPrices.all.prefetch()
   return {
     props: {
-      fallback: {
-        ['/earn/api/pools']: { pools },
-        [`/earn/api/prices`]: { tokens, prices },
-      },
-      revalidate: 60,
+      trpcState: ssg.dehydrate(),
     },
+    revalidate: 3600,
   }
 }
 
-const Home: FC<InferGetStaticPropsType<typeof getStaticProps>> = ({ fallback }) => {
-  return (
-    <SWRConfig value={{ fallback }}>
-      <_Home />
-    </SWRConfig>
-  )
-}
-
-const _Home = () => {
-  const { data: pre_pools } = useSWR<{ pools: dbPoolWithTokens[] }>(`/earn/api/pools`, (url: string) =>
-    fetch(url).then((response) => response.json())
-  )
-  const { pools } = pre_pools ? pre_pools : { pools: [] }
-  // const pools: dbPoolWithTokens[] | undefined = pre_pools ? Object.values(pre_pools) : []
-  const { data } = useSWR<{ tokens: dbTokenWithPools[]; prices: { [key: string]: number } }>(
-    `/earn/api/prices`,
-    (url: string) => fetch(url).then((response) => response.json())
-  )
-  const { tokens, prices } = data ? data : { tokens: [], prices: {} }
-
+const Home = () => {
+  const { data: pools = [] } = api.getPools.all.useQuery()
+  const { data: tokens = [] } = api.getTokens.all.useQuery()
+  const { data: prices = { '00': 0 } } = api.getPrices.all.useQuery()
   const router = useRouter()
+
   useEffect(() => {
     const params = router.query
     const _initialToken0 =
@@ -134,9 +110,9 @@ const _Home = () => {
     setTokens(([prevSrc, prevDst]) => [prevDst, prevSrc])
   }
 
-  const onSuccess = () => {
-    console.log('sucesso')
-  }
+  // const onSuccess = () => {
+  //   console.log('sucesso')
+  // }
 
   // useEffect(() => {
   //   setTokens([inputToken, outputToken])
@@ -182,12 +158,31 @@ const _Home = () => {
       setOutputAmount()
       // setInput1(outputAmount ? outputAmount.toString() : '')
     }
-  }, [pools, outputAmount, token0, token1, input0, input1, prices, network, selectedPool, tokens])
+  }, [
+    pools,
+    outputAmount,
+    token0,
+    token1,
+    input0,
+    input1,
+    prices,
+    network,
+    selectedPool,
+    tokens,
+    setMainCurrency,
+    setOtherCurrency,
+    setPriceImpact,
+    setAmountSpecified,
+    setOutputAmount,
+    setPool,
+    setMainCurrencyPrice,
+    setOtherCurrencyPrice,
+  ])
 
-  // const onSuccess = useCallback(() => {
-  //   setInput0('')
-  //   setInput1('')
-  // }, [])
+  const onSuccess = useCallback(() => {
+    setInput0('')
+    setInput1('')
+  }, [])
 
   const _setToken0 = useCallback((currency: Token) => {
     setTokens(([prevSrc, prevDst]) => {
