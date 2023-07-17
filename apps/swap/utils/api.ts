@@ -26,7 +26,6 @@ export const api = createTRPCNext<AppRouter>({
       ],
     }
   },
-  ssr: true,
 })
 
 export { type RouterInputs, type RouterOutputs } from '@dozer/api'
