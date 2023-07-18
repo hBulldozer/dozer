@@ -1,6 +1,6 @@
 import '@dozer/ui/index.css'
 
-import { App, LoadingOverlay, ThemeProvider } from '@dozer/ui'
+import { App, LoadingOverlay, ThemeProvider, ToastContainer } from '@dozer/ui'
 import { Analytics } from '@vercel/analytics/react'
 import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
@@ -14,7 +14,6 @@ import Head from 'next/head'
 //     dataLayer: Record<string, any>[]
 //   }
 // }
-
 
 const MyApp = ({ Component, pageProps }: AppProps) => {
   const router = useRouter()
@@ -56,14 +55,15 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
         <link rel="mask-icon" href="/earn/safari-pinned-tab.svg?v=1" color="#fa52a0" />
         <link rel="shortcut icon" href="/earn/favicon.ico?v=1" />
       </Head>
-        <ThemeProvider>
-          <App.Shell>
-            <Header />
-            <Component {...pageProps} />
-            <App.Footer />
-          </App.Shell>
-          <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
-        </ThemeProvider>
+      <ThemeProvider>
+        <App.Shell>
+          <Header />
+          <Component {...pageProps} />
+          <App.Footer />
+          <ToastContainer className="mt-[50px]" />
+        </App.Shell>
+        <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
+      </ThemeProvider>
       <Analytics />
     </>
   )
