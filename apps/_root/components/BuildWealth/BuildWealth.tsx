@@ -32,7 +32,7 @@ export const BuildWealth: FC = () => {
                 With multiple ways to passively earn yield on your coins, you can choose your own yield stack and make
                 your money work for you, all in the background, 24/7.
               </Typography>
-              <div className="flex flex-wrap justify-center md:justify-start gap-x-6">
+              <div className="flex flex-wrap justify-center md:justify-start gap-x-16">
                 <ExpandableCard
                   caption="For Retail Users"
                   title="Provide Liquidity"
@@ -86,16 +86,13 @@ export const BuildWealth: FC = () => {
                   link="https://dozer.finance/earn"
                   linkText="Visit Earn"
                 />
-                <ExpandableCard
+                {/* <ExpandableCard
                   caption="For Retail Users"
                   title="Dozer Vault"
                   content={
                     <>
                       <h3>What Is The Dozer Vault? How Does It Earn You Yield?</h3>
-                      <p>
-                        The Dozer Vault (previously known as the BentoBox) is a token vault that underlies the entirety
-                        of the product suite at Dozer.
-                      </p>
+                      <p>The Dozer Vault is a token vault that underlies the entirety of the product suite at Dozer.</p>
                       <h3>Automatic Yield</h3>
                       <p>
                         The purpose of the vault is to accrue more yield for users automatically, without them having to
@@ -112,7 +109,7 @@ export const BuildWealth: FC = () => {
                   }
                   link="https://dozer.finance/earn"
                   linkText="Visit Earn"
-                />
+                /> */}
               </div>
             </div>
           </div>

@@ -1,7 +1,8 @@
 import { Container, Typography } from '@dozer/ui'
 import Image from 'next/image'
 import React from 'react'
-import background from '../../public/dozer-background-night.png'
+// import background from '../../public/dozer-background-night.png'
+import background from '../../public/Runway 2023-03-31T20_35_33.849Z Image to Image Original (1).jpg'
 const Background = () => {
   return (
     <header className="-mt-24">
@@ -20,13 +21,18 @@ const Background = () => {
           src={background}
         />
         <div className="flex items-center justify-center w-full h-full py-12 bg-gradient-to-t from-black via-white/[0.04] to-white/[0.04]">
-          <Container maxWidth="5xl" className="px-4 mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-[auto_400px] opacity-100 flex justify-between gap-[100px]">
-              <div className="flex flex-col">
-                <Typography variant="hero" weight={900} className="text-neutral-50 leading-[3.5rem]">
+          <Container maxWidth="5xl" className="px-4 mx-auto ">
+            <div className="grid grid-cols-1 lg:grid-cols-[auto_400px] opacity-100  justify-between gap-[100px] ">
+              <div className="flex flex-col ">
+                <div className="absolute  w-[210px] h-[210px] bg-black rounded-full blur-[200px]" />
+                <Typography
+                  variant="hero"
+                  weight={900}
+                  className="drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)] leading-[3.5rem]"
+                >
                   Empower your financial freedom
                 </Typography>
-                <Typography variant="lg" className="mt-3 text-neutral-100">
+                <Typography variant="lg" className="mt-3 drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]	">
                   The DeFi platform that puts you in control
                 </Typography>
               </div>

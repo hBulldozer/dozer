@@ -76,8 +76,6 @@ const test = () => {
         <Button onClick={() => createSuccessToast(generateRandomDummyData())}>Sucess</Button>
         <Button onClick={() => createFailedToast(generateRandomDummyData())}>Failed</Button>
         <Button onClick={() => createInfoToast(generateRandomDummyData())}>Info</Button>
-        <Button onClick={() => createFailedToast(generateRandomDummyData())}>Failed</Button>
-        <Button onClick={() => createFailedToast(generateRandomDummyData())}>Failed</Button>
       </div>
     </Layout>
   )

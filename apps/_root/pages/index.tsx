@@ -1,5 +1,4 @@
 import { Button, Switch } from '@dozer/ui'
-import { ChevronDownIcon } from '@heroicons/react/solid'
 import Background from 'components/Background/Background'
 import { BuildWealth } from 'components/BuildWealth/BuildWealth'
 import { Hero } from 'components/Hero/Hero'
