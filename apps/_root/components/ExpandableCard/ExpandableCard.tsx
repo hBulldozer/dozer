@@ -88,7 +88,7 @@ export const ExpandableCard: FC<ExpandableCardProps> = ({ children, title, capti
                   {content}
                 </motion.div>
                 <motion.div>
-                  <Button
+                  {/* <Button
                     target="_blank"
                     as={Link.External}
                     href={link}
@@ -97,7 +97,7 @@ export const ExpandableCard: FC<ExpandableCardProps> = ({ children, title, capti
                     endIcon={<ExternalLinkIcon width={16} height={16} />}
                   >
                     {linkText}
-                  </Button>
+                  </Button> */}
                 </motion.div>
               </motion.div>
             </article>

@@ -27,6 +27,7 @@ export interface HeaderProps extends React.HTMLProps<HTMLElement> {
   appType: AppType
   maxWidth?: MaxWidth
   bgColor?: string
+  hide?: boolean
 }
 
 export function Header({
@@ -34,6 +35,7 @@ export function Header({
   appType,
   className,
   nav,
+  hide = false,
   withScrollBackground = false,
   bgColor = 'bg-stone-900',
   maxWidth = 'full',
@@ -81,75 +83,91 @@ export function Header({
             </div>
           </a>
           <div className="bg-stone-200/10 w-0.5 h-[20px]" />
-          <Select
-            button={
-              <Listbox.Button
-                type="button"
-                className="flex items-center gap-2 font-semibold hover:text-stone-200 text-stone-300"
-              >
-                <span className="hidden text-sm truncate sm:block">{AppType.Root}</span>
-                <IconButton as="div" className="p-1">
-                  <ChevronDownIcon className="w-4 h-4" aria-hidden="true" />
-                </IconButton>
-              </Listbox.Button>
-            }
-          >
-            <Select.Options className="w-[max-content] !bg-stone-700 -ml-5 mt-5 !max-h-[unset]">
-              <div className="grid grid-cols-1 gap-1 px-2 py-2 md:grid-cols-3">
-                <div>
-                  <Typography variant="xs" weight={600} className="hidden px-2 mb-1 uppercase md:block text-stone-400">
-                    Core
-                  </Typography>
-                  <Select.Option
-                    as="a"
-                    href="https://dozer.finance/swap"
-                    key={AppType.Swap}
-                    value={AppType.Swap}
-                    className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
-                  >
-                    {AppType.Swap}
-                    <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
-                      The easiest way to trade
+          {!hide ? (
+            <Select
+              button={
+                <Listbox.Button
+                  type="button"
+                  className="flex items-center gap-2 font-semibold hover:text-stone-200 text-stone-300"
+                >
+                  <span className="hidden text-sm truncate sm:block">{AppType.Root}</span>
+                  <IconButton as="div" className="p-1">
+                    <ChevronDownIcon className="w-4 h-4" aria-hidden="true" />
+                  </IconButton>
+                </Listbox.Button>
+              }
+            >
+              <Select.Options className="w-[max-content] !bg-stone-700 -ml-5 mt-5 !max-h-[unset]">
+                <div className="grid grid-cols-1 gap-1 px-2 py-2 md:grid-cols-3">
+                  <div>
+                    <Typography
+                      variant="xs"
+                      weight={600}
+                      className="hidden px-2 mb-1 uppercase md:block text-stone-400"
+                    >
+                      Core
                     </Typography>
-                  </Select.Option>
-                  <Select.Option
-                    as="a"
-                    href="https://dozer.finance/earn"
-                    key={AppType.Invest}
-                    value={AppType.Invest}
-                    className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
-                  >
-                    {AppType.Invest}
-                    <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
-                      Earn fees by providing liquidity
+                    <Select.Option
+                      as="a"
+                      href="https://dozer.finance/swap"
+                      key={AppType.Swap}
+                      value={AppType.Swap}
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      {AppType.Swap}
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        The easiest way to trade
+                      </Typography>
+                    </Select.Option>
+                    <Select.Option
+                      as="a"
+                      href="https://dozer.finance/earn"
+                      key={AppType.Invest}
+                      value={AppType.Invest}
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      {AppType.Invest}
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Earn fees by providing liquidity
+                      </Typography>
+                    </Select.Option>
+                  </div>
+                  <div>
+                    <Typography
+                      variant="xs"
+                      weight={600}
+                      className="hidden px-2 mb-1 uppercase md:block text-stone-400"
+                    >
+                      Products
                     </Typography>
-                  </Select.Option>
-                </div>
-                <div>
-                  <Typography variant="xs" weight={600} className="hidden px-2 mb-1 uppercase md:block text-stone-400">
-                    Products
-                  </Typography>
-                </div>
-                <div>
-                  <Typography variant="xs" weight={600} className="hidden px-2 mb-1 uppercase md:block text-stone-400">
-                    Links
-                  </Typography>
-                  <Select.Option
-                    as="a"
-                    href="https://dozer.finance/blog"
-                    key={AppType.Blog}
-                    value={AppType.Blog}
-                    className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
-                  >
-                    {AppType.Blog}
-                    <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
-                      Stay up to date with Dozer
+                  </div>
+                  <div>
+                    <Typography
+                      variant="xs"
+                      weight={600}
+                      className="hidden px-2 mb-1 uppercase md:block text-stone-400"
+                    >
+                      Links
                     </Typography>
-                  </Select.Option>
+                    <Select.Option
+                      as="a"
+                      href="https://dozer.finance/blog"
+                      key={AppType.Blog}
+                      value={AppType.Blog}
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      {AppType.Blog}
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Stay up to date with Dozer
+                      </Typography>
+                    </Select.Option>
+                  </div>
                 </div>
-              </div>
-            </Select.Options>
-          </Select>
+              </Select.Options>
+            </Select>
+          ) : (
+            <></>
+          )}
         </div>
         <div className="flex justify-center flex-grow">{nav}</div>
         <div className="flex justify-end flex-grow">{children}</div>
