@@ -18,18 +18,9 @@ export const Partners: FC = () => {
 
   return (
     <section className="mt-48 py-20 sm:py-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black">
-      <Container maxWidth="5xl" className="px-4 mx-auto space-y-20">
-        <div className="flex flex-col items-center">
-          <Typography variant="h1" weight={600} className="text-center">
-            {/* {diff} Days. */}
-          </Typography>
-          <Typography variant="lg" weight={400} className="text-center mt-2 max-w-[420px]">
-            Since the inception of Dozer. We appreciate all the friends we’ve made along the way to the Future of
-            Finance.
-          </Typography>
-        </div>
-        <div className="flex flex-col gap-y-10">
-          {/* <div className="flex flex-wrap items-center justify-center gap-10">
+      <Container maxWidth="5xl" className="px-4 mx-auto">
+        {/* <div className="flex flex-col gap-y-10"> */}
+        {/* <div className="flex flex-wrap items-center justify-center gap-10">
             <ArbitrumSVG width={130} />
             <BarnBridgeSVG width={120} />
             <LayerzeroSVG width={120} />
@@ -42,7 +33,7 @@ export const Partners: FC = () => {
             <ZkSyncSVG width={120} />
             <BobaSVG height={38} />
           </div> */}
-        </div>
+        {/* </div> */}
       </Container>
     </section>
   )

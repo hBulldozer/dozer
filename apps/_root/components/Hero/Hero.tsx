@@ -43,7 +43,8 @@ export const Hero: FC = () => {
   }, [isInView])
 
   return (
-    <section className="relative mt-52">
+    <section className="relative  mt-48 py-20 sm:py-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black">
+      {/* <section className="mt-48 py-20 sm:py-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black"></section> */}
       <Container maxWidth="5xl" className="px-4 mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[auto_400px] flex justify-between gap-[100px]">
           <div className="relative justify-end hidden lg:flex">
@@ -161,7 +162,8 @@ export const Hero: FC = () => {
               Trade Instantly on dozer. <br /> <span className="text-yellow"> {TITLES[index]}.</span>
             </Typography>
             <Typography variant="lg" className="mt-3 text-neutral-400">
-              The fastest swap on the web3. You will not spend gas. No registration needed.
+              The fastest swap on the web3. <br />
+              No registration needed and you won&apos;t spend gas.
             </Typography>
             <div className="mt-10">{/* <Search /> */}</div>
           </div>
