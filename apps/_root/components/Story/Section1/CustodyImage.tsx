@@ -2,6 +2,7 @@ import { useIsSmScreen } from '@dozer/hooks'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Image from 'next/legacy/image'
 import { useRef } from 'react'
+import phone from './Phone with bg enhanced.jpg'
 
 function transformTemplate(transformProps: any) {
   return `perspective(${transformProps.y.toString()}) rotateX(${transformProps.rotateX.toString()}) scale(${transformProps.scale.toString()})`
@@ -27,12 +28,7 @@ export const CustodyImage = () => {
       })}
       className="relative w-[420px] h-[420px] -left-[140px] sm:left-0"
     >
-      {/* <Image
-        alt="stellar"
-        objectFit="contain"
-        src="https://res.cloudinary.com/sushi-cdn/image/upload/v1669286681/Phone_1_cajrdn.webp"
-        layout="fill"
-      /> */}
+      <Image alt="stellar" objectFit="contain" src={phone} layout="fill" />
     </motion.div>
   )
 }

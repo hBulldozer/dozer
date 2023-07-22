@@ -15,11 +15,11 @@ import { TradeType } from 'components/utils/TradeType'
 
 const TITLES = ['Whenever', 'Wherever', 'Whoever']
 const VALUES = [
-  { value0: '1', value1: '1.5' },
-  { value0: '1.', value1: '1.5' },
-  { value0: '1.4', value1: '2.1' },
-  { value0: '1.43', value1: '2.14' },
-  { value0: '1.43', value1: '2.14' },
+  { value0: '1', value1: '0' },
+  { value0: '1.', value1: '0.' },
+  { value0: '1.4', value1: '0.7' },
+  { value0: '1.44', value1: '0.72' },
+  { value0: '1.44', value1: '0.72' },
 ]
 
 export const Hero: FC = () => {
@@ -27,6 +27,12 @@ export const Hero: FC = () => {
   const [valueIndex, setValueIndex] = useState<number>(-1)
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
+  const token_DZR = getTokens(ChainId.HATHOR)[1]
+  const DZR_uuid = token_DZR.uuid
+  const prices: { [key: string]: number } = {
+    '00': 0.05,
+    [DZR_uuid]: 0.1,
+  }
 
   useInterval(() => setIndex((prev) => (prev + 1) % 3), 1500)
 
@@ -108,6 +114,7 @@ export const Hero: FC = () => {
                     inputType={TradeType.EXACT_INPUT}
                     tradeType={TradeType.EXACT_INPUT}
                     chainId={ChainId.HATHOR}
+                    prices={prices}
                   />
                   <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
                     <button
@@ -132,6 +139,7 @@ export const Hero: FC = () => {
                       id={''}
                       inputType={TradeType.EXACT_INPUT}
                       tradeType={TradeType.EXACT_INPUT}
+                      prices={prices}
                     />
                     <div className="p-3 pt-0">
                       <motion.div

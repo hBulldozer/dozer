@@ -7,7 +7,7 @@ export const Story: FC = () => {
   return (
     <>
       <Custody />
-      {/* <Move /> */}
+      <Move />
       {/* <Guard /> */}
     </>
   )

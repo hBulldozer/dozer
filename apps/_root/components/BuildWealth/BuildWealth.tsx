@@ -5,6 +5,8 @@ import React, { FC } from 'react'
 import { AnimatedTitle } from '../AnimatedTitle/AnimatedTitle'
 import { ExpandableCard } from '../ExpandableCard/ExpandableCard'
 
+import magnet from './magnet.png'
+
 export const BuildWealth: FC = () => {
   return (
     <section className="px-4 py-20 sm:py-40">
@@ -17,12 +19,7 @@ export const BuildWealth: FC = () => {
           <div className="grid items-center grid-cols-1 gap-20 md:grid-cols-2 justify-items-center">
             <div className="relative h-[420px] md:max-w-[420px] md:max-h-[420px] w-full h-full flex items-center justify-center">
               <div className="absolute w-[210px] h-[210px] bg-rose-500 rounded-full blur-[200px]" />
-              {/* <Image
-                alt="stellar"
-                objectFit="contain"
-                src="https://res.cloudinary.com/sushi-cdn/image/upload/v1668715316/ezgif.com-gif-maker_tyon6k.webp"
-                layout="fill"
-              /> */}
+              <Image alt="stellar" objectFit="contain" src={magnet} layout="fill" />
             </div>
             <div className="flex flex-col items-center md:items-start">
               <Typography variant="h1" weight={600} className="text-center md:text-left">
