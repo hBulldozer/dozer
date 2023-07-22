@@ -23,4 +23,3 @@ export const profileRouter = createTRPCRouter({
       return data
     }),
 })
-

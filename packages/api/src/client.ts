@@ -4,9 +4,13 @@ import superjson from 'superjson'
 
 import type { AppRouter } from './root'
 
+const replaceSwapAndEarnWithRoot = (input: string): string => {
+  const regex = /\b(swap|earn)\b/gi
+  return input.replace(regex, 'root')
+}
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') return '' // browser should use relative url
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}` // SSR should use vercel url
+  if (process.env.VERCEL_URL) return `https://${replaceSwapAndEarnWithRoot(process.env.VERCEL_URL)}` // SSR should use vercel url
 
   return `http://localhost:3000` // dev SSR should use localhost
 }
