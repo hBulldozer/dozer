@@ -3,9 +3,8 @@ import Background from 'components/Background/Background'
 import { BuildWealth } from 'components/BuildWealth/BuildWealth'
 import { Hero } from 'components/Hero/Hero'
 import { Partners } from 'components/Partners/Partners'
+import Roadmap from 'components/Roadmap'
 import { Story } from 'components/Story/Story'
-import Timeline from 'components/Timeline'
-import { api } from 'utils/api'
 // import { generateSSGHelper } from "~/server/helpers/ssgHelper";
 
 const Home = () => {
@@ -14,7 +13,7 @@ const Home = () => {
     <>
       <Background />
       {/* <Partners /> */}
-      <Timeline />
+      <Roadmap />
       <Hero />
       <div className="overflow-x-hidden bg-black">
         <Story />

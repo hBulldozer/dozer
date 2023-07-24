@@ -1,5 +1,39 @@
-import { Typography } from '@dozer/ui'
+import Full from 'components/Full'
+import Mobile from 'components/Mobile'
 import React from 'react'
+
+const exampleTimelineItems: TimelineItem[] = [
+  {
+    titulo: 'Event 1',
+    description: 'This is the description for event 1.',
+    date: 'July 20, 2023',
+    ready: true,
+  },
+  {
+    titulo: 'Event 2',
+    description: 'This is the description for event 2.',
+    date: 'July 21, 2023',
+    ready: true,
+  },
+  {
+    titulo: 'Event 3',
+    description: 'This is the description for event 3.',
+    date: 'July 22, 2023',
+    ready: !true,
+  },
+  {
+    titulo: 'Event 4',
+    description: 'This is the description for event 4.',
+    date: 'July 23, 2023',
+    ready: !true,
+  },
+  {
+    titulo: 'Event 2',
+    description: 'This is the description for event 2.',
+    date: 'July 21, 2023',
+    ready: !true,
+  },
+]
 
 const test = () => {
   return (
@@ -20,9 +54,9 @@ const test = () => {
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                fillRule="evenodd"
+                fill-rule="evenodd"
                 d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                clipRule="evenodd"
+                clip-rule="evenodd"
               ></path>
             </svg>
           </div>
@@ -71,9 +105,9 @@ const test = () => {
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                fillRule="evenodd"
+                fill-rule="evenodd"
                 d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                clipRule="evenodd"
+                clip-rule="evenodd"
               ></path>
             </svg>
           </div>
