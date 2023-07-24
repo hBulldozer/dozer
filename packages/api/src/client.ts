@@ -4,18 +4,9 @@ import superjson from 'superjson'
 
 import type { AppRouter } from './root'
 
-const replaceSwapAndEarnWithRoot = (url: string) => {
-  const lowercaseUrl = url.toLowerCase()
-  if (lowercaseUrl.includes('swap') || lowercaseUrl.includes('earn')) {
-    const replacedUrl = url.replace(/swap|earn/gi, 'root')
-    return replacedUrl
-  }
-  return url
-}
-
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') return '' // browser should use relative url
-  if (process.env.VERCEL_URL) return `https://${replaceSwapAndEarnWithRoot(process.env.VERCEL_URL)}` // SSR should use vercel url
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}` // SSR should use vercel url
 
   return `http://localhost:3000` // dev SSR should use localhost
 }
