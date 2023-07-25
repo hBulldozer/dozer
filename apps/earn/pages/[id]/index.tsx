@@ -54,7 +54,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const tokens = [pool.token0, pool.token1]
   await ssg.getPools.byIdWithSnaps.prefetch({ id })
   await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.byTokens.prefetch({ tokens })
+  await ssg.getPrices.all.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),
@@ -80,7 +80,7 @@ const Pool = () => {
   if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
-  const { data: prices = {} } = api.getPrices.byTokens.useQuery({ tokens })
+  const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
 
   return (

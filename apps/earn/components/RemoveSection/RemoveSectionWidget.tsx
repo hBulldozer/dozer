@@ -26,8 +26,10 @@ interface RemoveSectionWidgetProps {
   percentage: string
   token0: Type
   token1: Type
-  token0Minimum?: Amount<Type>
-  token1Minimum?: Amount<Type>
+  token0Minimum?: number
+  token1Minimum?: number
+  currency0?: Token
+  currency1?: Token
   setPercentage(percentage: string): void
   prices: { [key: string]: number }
   BalanceLPAmount: Amount<Token> | undefined
@@ -42,6 +44,8 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
   token1,
   token0Minimum,
   token1Minimum,
+  currency0,
+  currency1,
   prices,
   BalanceLPAmount,
   children,
@@ -53,8 +57,6 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
   const value1 = prices[token1.uuid]
 
   const { network } = useNetwork()
-
-  Boolean(!BalanceLPAmount?.greaterThan(ZERO) && hover && !address)
 
   return (
     <div className="relative" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
@@ -186,8 +188,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                             <Typography variant="sm" weight={500} className="flex items-center gap-2 text-stone-50">
                               {token0 && <UICurrency.Icon currency={token0} width={20} height={20} />}
                               <span className="text-stone-400">
-                                <span className="text-stone-50">{token0Minimum?.toSignificant(6)}</span>{' '}
-                                {token0Minimum?.currency.symbol}
+                                <span className="text-stone-50">{token0Minimum?.toFixed(2)}</span> {currency0?.symbol}
                               </span>
                             </Typography>
                             <Typography variant="xs" className="text-stone-400">
@@ -198,8 +199,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                             <Typography variant="sm" weight={500} className="flex items-center gap-2 text-stone-50">
                               {token1 && <UICurrency.Icon currency={token1} width={20} height={20} />}
                               <span className="text-stone-400">
-                                <span className="text-stone-50">{token1Minimum?.toSignificant(6)}</span>{' '}
-                                {token1Minimum?.currency.symbol}
+                                <span className="text-stone-50">{token1Minimum?.toFixed(2)}</span> {currency1?.symbol}
                               </span>
                             </Typography>
                             <Typography variant="xs" className="text-stone-400">

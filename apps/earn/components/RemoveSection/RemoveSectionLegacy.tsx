@@ -61,19 +61,8 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
 
   const [minAmount0, minAmount1] = useMemo(() => {
     return [
-      currencyAToRemove
-        ? Amount.fromRawAmount(
-            currencyAToRemove.currency,
-            Number(currencyAToRemove.toFixed(2)) * (1 - slippageTolerance / 100)
-            // calculateSlippageAmount(currencyAToRemove, slippagePercent)[0]
-          )
-        : undefined,
-      currencyBToRemove
-        ? Amount.fromRawAmount(
-            currencyBToRemove.currency,
-            Number(currencyBToRemove.toFixed(2)) * (1 - slippageTolerance / 100)
-          )
-        : undefined,
+      currencyAToRemove ? Number(currencyAToRemove.toFixed(2)) * (1 - slippageTolerance / 100) : undefined,
+      currencyBToRemove ? Number(currencyBToRemove.toFixed(2)) * (1 - slippageTolerance / 100) * 100 : undefined,
     ]
   }, [currencyAToRemove, slippageTolerance, currencyBToRemove])
 
@@ -220,6 +209,8 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
         token1={token1}
         token0Minimum={minAmount0}
         token1Minimum={minAmount1}
+        currency0={currencyAToRemove?.currency}
+        currency1={currencyBToRemove?.currency}
         setPercentage={setPercentage}
         prices={prices}
         BalanceLPAmount={BalanceLPAmount}

@@ -3,6 +3,9 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import Image from 'next/legacy/image'
 import { useRef } from 'react'
 
+import orbit from './orbit.png'
+import orbit_enhanced from './orbit enhanced.jpg'
+
 export const MoveImage = () => {
   const isSmallScreen = useIsSmScreen()
   const scrollRef = useRef(null)
@@ -21,12 +24,13 @@ export const MoveImage = () => {
         ref={scrollRef}
         {...(!isSmallScreen && { ...{ style: { opacity, scale } } })}
       >
-        {/* <Image
+        <Image
           alt="stellar"
           objectFit="contain"
-          src="https://res.cloudinary.com/sushi-cdn/image/upload/w_420,h_420/v1669343082/Orbit_1_bl83x0.webp"
+          // src={orbit}
+          src={orbit_enhanced}
           layout="fill"
-        /> */}
+        />
       </motion.div>
     </div>
   )
