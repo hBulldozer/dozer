@@ -1,4 +1,4 @@
-import { App, AppType, Button, CopyHelper, Dialog, IconButton, Link, Menu } from '@dozer/ui'
+import { App, AppType, Button, CopyHelper, Dialog, IconButton, Link, Menu, Typography } from '@dozer/ui'
 import React, { FC } from 'react'
 import qrcode from './Example-QR-code.webp'
 import Image from 'next/image'
@@ -23,7 +23,7 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
             </div>
           </div>
           <div className="relative flex flex-col col-span-12 gap-1 p-2 mt-3 border sm:p-4 rounded-2xl bg-stone-300/40 border-stone-100/5">
-            <div className="grid items-center grid-cols-2 gap-2">
+            <div className="grid items-center grid-cols-10 gap-1">
               <CopyHelper toCopy={address} hideIcon>
                 {(isCopied) => (
                   <IconButton className="p-0.5" description={isCopied ? 'Copied!' : 'Copy'}>
@@ -31,7 +31,7 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
                   </IconButton>
                 )}
               </CopyHelper>
-              <span className="text-sm text-gray-100">{address}</span>
+              <Typography className="col-span-2 text-sm">{address}</Typography>
             </div>
           </div>
         </div>
