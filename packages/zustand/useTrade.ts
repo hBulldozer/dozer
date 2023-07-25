@@ -92,8 +92,8 @@ export const useTrade = create<TradeProps>()(
             state.mainCurrency &&
             state.amountSpecified
               ? state.pool.token1.uuid === state.mainCurrency.uuid
-                ? ((state.pool.token1_balance + state.amountSpecified) / state.pool.token1_balance - 1) * 100
-                : ((state.pool.token2_balance + state.amountSpecified) / state.pool.token2_balance - 1) * 100
+                ? (state.amountSpecified / (state.pool.token1_balance + state.amountSpecified)) * 100
+                : (state.amountSpecified / (state.pool.token2_balance + state.amountSpecified)) * 100
               : 0,
         })),
     }),
