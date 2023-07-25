@@ -33,7 +33,7 @@ const DATA: ExpendableCardData = {
 
 export const Custody: FC = () => {
   return (
-    <section className="py-20 sm:py-40">
+    <section className="py-48">
       <Container maxWidth="5xl" className="px-4 mx-auto space-y-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 justify-center gap-[100px]">
           <div className="flex flex-col justify-center gap-3">

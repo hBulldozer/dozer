@@ -13,12 +13,12 @@ const Home = () => {
     <>
       <Background />
       {/* <Partners /> */}
-      <Roadmap />
+      <Story />
       <Hero />
       <div className="overflow-x-hidden bg-black">
-        <Story />
         <div className="flex flex-col gap-2 border-t border-neutral-200/10"></div>
         <BuildWealth />
+        <Roadmap />
       </div>
     </>
     // </article>
