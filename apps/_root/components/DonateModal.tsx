@@ -1,6 +1,6 @@
 import { App, AppType, Button, CopyHelper, Dialog, IconButton, Link, Menu, Typography } from '@dozer/ui'
 import React, { FC } from 'react'
-import qrcode from './Example-QR-code.webp'
+import qrcode from './qrcode.jpeg'
 import Image from 'next/image'
 import { DuplicateIcon } from '@heroicons/react/solid'
 
@@ -18,7 +18,7 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
           <div className="relative flex flex-col col-span-12 gap-1 p-2 border sm:p-4 rounded-2xl bg-stone-700/40 border-stone-200/5">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
-                <Image alt="qrcode" src={qrcode} />
+                <Image className="rounded-2xl" alt="qrcode" src={qrcode} />
               </div>
             </div>
           </div>
@@ -27,7 +27,7 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
               <CopyHelper toCopy={address} hideIcon>
                 {(isCopied) => (
                   <IconButton className="p-0.5" description={isCopied ? 'Copied!' : 'Copy'}>
-                    <DuplicateIcon width={18} height={18} />
+                    <DuplicateIcon width={25} height={25} color="yellow" />
                   </IconButton>
                 )}
               </CopyHelper>
@@ -35,6 +35,7 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
             </div>
           </div>
         </div>
+        <Typography className="items-center mt-3 text-sm text-center">Buy as a coffee, a dozer, or a lambo.</Typography>
       </Dialog.Content>
     </Dialog>
   )
