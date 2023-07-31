@@ -12,16 +12,16 @@ export const Move: FC = () => {
           <div className="order-2  flex flex-col justify-center gap-3">
             <div className="flex flex-col items-center lg:items-start">
               <Typography variant="h1" weight={600} className="text-center lg:text-left">
-                Move assets across networks in seconds.
+                Move assets across networks.
               </Typography>
               <Typography variant="lg" weight={400} className="text-center lg:text-left mt-2">
-                We will always find you the best rate, no matter what network you’re on, with no extra fees.
+                Bring your assets to Hathor Network, enjoy zero fess and blasting speed on your transactions.
               </Typography>
               <div className="flex gap-6">
                 <Button
                   as="a"
                   target="_blank"
-                  href="https://dozer.finance/xswap"
+                  href="https://github.com/HathorNetwork/rfcs/blob/doc/evm-compatible-brigde/projects/evm-compatible-bridge/design.md"
                   className="!p-0 mt-3"
                   variant="empty"
                   endIcon={<ExternalLinkIcon width={16} height={16} />}

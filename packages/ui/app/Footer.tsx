@@ -9,32 +9,32 @@ const config: Record<
   | Record<string, { href: string; rel?: string; target?: string }>
   | Array<Record<string, Record<string, { href: string; rel?: string; target?: string }>>>
 > = {
-  Services: {
-    Swap: { href: 'https://dozer.finance/swap' },
-    Earn: { href: 'https://dozer.finance/earn' },
+  Features: {
+    Swap: { href: 'https://dozer.finance/' },
+    Earn: { href: 'https://dozer.finance/' },
     Borrowing: {
       href: 'https://dozer.finance',
       target: '_blank',
       rel: 'noopener noreferrer',
     },
   },
-  Help: {
-    'About Us': {
-      href: 'https://dozer.finance',
-      target: '_blank',
-      rel: 'noopener noreferrer',
-    },
-    'Discord Support': {
-      href: 'https://discord.gg/',
-      target: '_blank',
-      rel: 'noopener noreferrer',
-    },
-    'Twitter Support': {
-      href: 'https://twitter.com/DozerProtocol',
-      target: '_blank',
-      rel: 'noopener noreferrer',
-    },
-  },
+  // Help: {
+  //   'About Us': {
+  //     href: 'https://dozer.finance',
+  //     target: '_blank',
+  //     rel: 'noopener noreferrer',
+  //   },
+  //   'Discord Support': {
+  //     href: 'https://discord.gg/',
+  //     target: '_blank',
+  //     rel: 'noopener noreferrer',
+  //   },
+  //   'Twitter Support': {
+  //     href: 'https://twitter.com/DozerProtocol',
+  //     target: '_blank',
+  //     rel: 'noopener noreferrer',
+  //   },
+  // },
 
   Items: [
     {
@@ -96,7 +96,7 @@ export function Footer(props: FooterProps): JSX.Element {
             <a href="https://twitter.com/DozerProtocol" target="_blank" rel="noopener noreferrer">
               <TwitterIcon width={16} className="text-stone-300 hover:text-stone-50" />
             </a>
-            <a href="https://discord.gg/" target="_blank" rel="noopener noreferrer">
+            <a href="https://discord.gg/cYquxw8w" target="_blank" rel="noopener noreferrer">
               <DiscordIcon width={16} className="text-stone-300 hover:text-stone-50" />
             </a>
           </div>

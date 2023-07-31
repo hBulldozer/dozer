@@ -32,9 +32,10 @@ const Background = () => {
                 >
                   Empower your financial freedom
                 </Typography>
-                <Typography variant="lg" className="mt-3 drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]	">
-                  The DeFi platform that puts you in control
+                <Typography variant="lg" className="mt-3 drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]">
+                  DeFi done right: fast, safe, scalabe and beautiful.
                 </Typography>
+                <Typography variant="xxs">Powered by Hathor Nano Contracts</Typography>
               </div>
             </div>
             {/* <div className="text-center">

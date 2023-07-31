@@ -173,7 +173,9 @@ export const Hero: FC = () => {
               The fastest swap on the web3. <br />
               No registration needed and you won&apos;t spend gas.
             </Typography>
-            <div className="mt-10">{/* <Search /> */}</div>
+            {/* <div className="mt-10">
+              <Search />
+            </div> */}
           </div>
         </div>
       </Container>
