@@ -4,6 +4,8 @@ import { BuildWealth } from 'components/BuildWealth/BuildWealth'
 import { Hero } from 'components/Hero/Hero'
 import { Partners } from 'components/Partners/Partners'
 import Roadmap from 'components/Roadmap'
+import { Custody } from 'components/Story/Section1/Custody'
+import { Move } from 'components/Story/Section2/Move'
 import { Story } from 'components/Story/Story'
 // import { generateSSGHelper } from "~/server/helpers/ssgHelper";
 
@@ -13,10 +15,12 @@ const Home = () => {
     <>
       <Background />
       {/* <Partners /> */}
+      {/* <Story /> */}
+      <Custody />
+      <Move />
       <Hero />
-      <Story />
       <div className="overflow-x-hidden bg-black">
-        <div className="flex flex-col gap-2 border-t border-neutral-200/10"></div>
+        {/* <div className="flex flex-col gap-2 border-t border-neutral-200/10"></div> */}
         <BuildWealth />
         <Roadmap />
       </div>
