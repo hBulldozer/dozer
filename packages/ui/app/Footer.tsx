@@ -10,8 +10,16 @@ const config: Record<
   | Array<Record<string, Record<string, { href: string; rel?: string; target?: string }>>>
 > = {
   Features: {
-    Swap: { href: 'https://dozer.finance/' },
-    Earn: { href: 'https://dozer.finance/' },
+    Swap: {
+      href: 'https://dozer.finance',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
+    Earn: {
+      href: 'https://dozer.finance',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
     Borrowing: {
       href: 'https://dozer.finance',
       target: '_blank',
