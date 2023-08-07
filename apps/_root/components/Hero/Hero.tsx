@@ -15,11 +15,11 @@ import { TradeType } from 'components/utils/TradeType'
 
 const TITLES = ['Whenever', 'Wherever', 'Whoever']
 const VALUES = [
-  { value0: '1', value1: '0' },
-  { value0: '1.', value1: '0.' },
-  { value0: '1.4', value1: '0.7' },
-  { value0: '1.44', value1: '0.72' },
-  { value0: '1.44', value1: '0.72' },
+  { value0: '2', value1: '1' },
+  { value0: '25', value1: '12.5' },
+  { value0: '250', value1: '125' },
+  { value0: '2500', value1: '1250' },
+  { value0: '2500', value1: '1250' },
 ]
 
 export const Hero: FC = () => {
@@ -155,8 +155,15 @@ export const Hero: FC = () => {
                           delay: 2,
                         }}
                       >
-                        <Button as="a" href="https://dozer.finance/swap" size="md" fullWidth className="relative z-10">
-                          Trade Now
+                        <Button
+                          disabled={true}
+                          // as="a"
+                          // href="https://dozer.finance/swap"
+                          size="md"
+                          fullWidth
+                          className="relative z-10"
+                        >
+                          Coming soon
                         </Button>
                       </motion.div>
                     </div>
