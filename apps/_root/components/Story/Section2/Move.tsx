@@ -21,12 +21,12 @@ export const Move: FC = () => {
                 <Button
                   as="a"
                   target="_blank"
-                  href="https://github.com/HathorNetwork/rfcs/blob/doc/evm-compatible-brigde/projects/evm-compatible-bridge/design.md"
+                  href="https://github.com/HathorNetwork/rfcs/blob/fa6bb67db9f82e47efdfd02cb527366cab9772fe/projects/evm-compatible-bridge/design.md"
                   className="!p-0 mt-3"
                   variant="empty"
                   endIcon={<ExternalLinkIcon width={16} height={16} />}
                 >
-                  Bridge RFC
+                  Learn More
                 </Button>
               </div>
             </div>
