@@ -35,7 +35,7 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
             </CopyHelper>
           </div>
         </div>
-        <Typography className="items-center mt-3  text-center">Buy as a coffee, a dozer, or a lambo.</Typography>
+        <Typography className="items-center mt-3  text-center">Buy us a coffee, a dozer, or a lambo.</Typography>
       </Dialog.Content>
     </Dialog>
   )

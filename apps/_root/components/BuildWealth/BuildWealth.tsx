@@ -14,7 +14,7 @@ export const BuildWealth: FC = () => {
         <div className="flex flex-col gap-[120px]">
           <AnimatedTitle className="text-center !max-w-full">
             Build <span className="text-yellow">wealth</span> with Dozer. <br />
-            <span className="text-neutral-400">{`It doesnt stop at trading.`}</span>
+            <span className="text-neutral-400">{`Do not stop at trading.`}</span>
           </AnimatedTitle>
           <div className="grid items-center grid-cols-1 gap-20 md:grid-cols-2 justify-items-center">
             <div className="relative h-[420px] md:max-w-[420px] md:max-h-[420px] w-full h-full flex items-center justify-center">

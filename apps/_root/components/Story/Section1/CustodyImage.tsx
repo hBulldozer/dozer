@@ -26,7 +26,7 @@ export const CustodyImage = () => {
           style: { opacity, scale, y: perspective, rotateX },
         },
       })}
-      className="relative w-[420px] h-[420px] -left-[140px] sm:left-0"
+      className="relative w-[420px] h-[420px] -left-[84px] sm:left-0"
     >
       <Image alt="stellar" objectFit="contain" src={phone} layout="fill" />
     </motion.div>
