@@ -31,7 +31,7 @@ export const Move: FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex justify-center order-1 mr-12">
+          <div className="flex justify-center order-1 ">
             <MoveImage />
           </div>
         </div>

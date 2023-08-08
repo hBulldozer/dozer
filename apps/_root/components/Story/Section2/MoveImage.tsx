@@ -18,20 +18,20 @@ export const MoveImage = () => {
   const scale = useTransform(scrollYProgress, [0, 1], [1, 1.5])
 
   return (
-    <div className="relative w-[420px] h-[420px] flex justify-center items-center">
-      <motion.div
-        className="z-[1] relative w-[420px] h-[420px]"
-        ref={scrollRef}
-        {...(!isSmallScreen && { ...{ style: { opacity, scale } } })}
-      >
-        <Image
-          alt="stellar"
-          objectFit="contain"
-          // src={orbit}
-          src={orbit_enhanced}
-          layout="fill"
-        />
-      </motion.div>
-    </div>
+    // <div className="sm:relative sm:w-[420px] sm:h-[420px] sm:flex sm:justify-center sm:items-center">
+    <motion.div
+      className="z-[1] relative w-[420px] h-[420px]"
+      ref={scrollRef}
+      {...(!isSmallScreen && { ...{ style: { opacity, scale } } })}
+    >
+      <Image
+        alt="stellar"
+        objectFit="contain"
+        // src={orbit}
+        src={orbit_enhanced}
+        layout="fill"
+      />
+    </motion.div>
+    // </div>
   )
 }
