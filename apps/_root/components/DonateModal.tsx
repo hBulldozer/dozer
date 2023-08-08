@@ -28,7 +28,7 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
                 <IconButton className="p-1" altColor description={isCopied ? 'Copied!' : 'Copy'}>
                   <div className="grid items-center grid-cols-10 gap-1">
                     <DuplicateIcon width={25} height={25} color="black" />
-                    <Typography className="col-span-2 text-sm text-black">{address}</Typography>
+                    <Typography className="col-span-2 md:text-sm text-xs text-black">{address}</Typography>
                   </div>
                 </IconButton>
               )}
