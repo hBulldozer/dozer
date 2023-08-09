@@ -30,13 +30,18 @@ const Background = () => {
                   weight={900}
                   className="drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)] leading-[3.5rem]"
                 >
-                  Empower your financial freedom
+                  {/* Empower your financial freedom */}
+                  {/* Solving the problems of DeFi */}
+                  Overcoming the DeFi challenges
+                  {/* Revolutionizing DeFi */}
+                  {/* Eliminating the limitations of DeFi */}
                 </Typography>
                 <Typography variant="lg" className="mt-3 drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]">
-                  DeFi done right: fast, safe, scalabe and beautiful.
+                  {/* DeFi done right: */}
+                  Fast, safe, scalabe and beautiful.
                 </Typography>
                 <Typography variant="xxs" className="drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]">
-                  Powered by Hathor Nano Contracts
+                  Powered by Hathor Blockchain
                 </Typography>
               </div>
             </div>
