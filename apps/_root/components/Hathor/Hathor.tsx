@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { FC } from 'react'
 
 import { ExpandableCard, ExpendableCardData } from '../ExpandableCard/ExpandableCard'
-// import { CustodyImage } from './CustodyImage'
+import { HowImage } from './HowImage'
 
 {
   /* <Typography variant="h1" weight={600} className="text-center lg:text-left">
@@ -70,7 +70,7 @@ export const Hathor: FC = () => {
                     {/* Own your own crypto, just like cash in your wallet. Fully decentralized & self custody of your funds
                     means your money in your wallet, as it should be. */}
                     Leveraging Hathor Blockchain architecture, innovating with Nano Contracts and building on the
-                    shoulders of giants
+                    shoulders of DeFi giants
                   </Typography>
                   <Button
                     onClick={() => setOpen(true)}
@@ -85,6 +85,7 @@ export const Hathor: FC = () => {
             </ExpandableCard>
           </div>
           {/* <CustodyImage /> */}
+          <HowImage />
         </div>
       </Container>
     </section>
