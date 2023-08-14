@@ -1,9 +1,10 @@
 import { useIsSmScreen } from '@dozer/hooks'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Image from 'next/legacy/image'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 
-import how from './How.png'
+import how_bg from './How-bg.png'
+import how_front from './How-front.png'
 
 export const HowImage = () => {
   const isSmallScreen = useIsSmScreen()
@@ -14,15 +15,18 @@ export const HowImage = () => {
     offset: ['end end', 'start end'],
   })
   const opacity = useTransform(scrollYProgress, [0, 1], [1, 0])
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.5])
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.8])
 
   return (
-    <motion.div
-      className="z-[1] relative sm:w-[420px] h-[420px]"
-      ref={scrollRef}
-      {...(!isSmallScreen && { ...{ style: { opacity, scale } } })}
-    >
-      <Image alt="stellar" objectFit="contain" src={how} layout="fill" />
-    </motion.div>
+    <div className="z-[1] relative sm:w-[420px] h-[420px]">
+      <Image alt="how-we-make-it-hathor-bg" objectFit="contain" src={how_bg} layout="fill" />
+      <motion.div
+        className="z-[2] relative sm:w-[420px] h-[420px]"
+        ref={scrollRef}
+        {...(!isSmallScreen && { ...{ style: { opacity, scale } } })}
+      >
+        <Image alt="dozer-icon" objectFit="contain" src={how_front} layout="fill" />
+      </motion.div>
+    </div>
   )
 }
