@@ -133,7 +133,7 @@ export function Footer(props: FooterProps): JSX.Element {
             Copyright © 2023 Dozer. All rights reserved.
           </Typography>
           <div className="flex divide-x divide-stone-200/20 gap-">
-            <Link.Internal href="https://dozer.finance/terms-of-use" passHref={true}>
+            <Link.Internal href="https://dozer.finance" passHref={true}>
               <Typography as="a" variant="xs" weight={500} className="px-3 text-stone-300">
                 Terms of Use
               </Typography>
