@@ -1,1 +1,19 @@
-{"name":"Dozer - The Future of Finance - Coming soon","short_name":"Dozer","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"},{"src":"/android-chrome-512x512.png","sizes":"512x512","type":"image/png"}],"theme_color":"#eab308","background_color":"#000000","display":"standalone"}
+{
+    "name": "Dozer - The future of finance - Coming soon",
+    "short_name": "Dozer - The future of finance - Coming soon",
+    "icons": [
+        {
+            "src": "/images/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/images/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone"
+}
