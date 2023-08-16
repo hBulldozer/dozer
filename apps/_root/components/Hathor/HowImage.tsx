@@ -6,6 +6,9 @@ import { useRef } from 'react'
 import how_bg from './How-bg.png'
 import how_front from './How-front.png'
 
+function transformTemplate(transformProps: any) {
+  return `perspective(${transformProps.y.toString()}) rotateX(${transformProps.rotateX.toString()}) scale(${transformProps.scale.toString()})`
+}
 export const HowImage = () => {
   const isSmallScreen = useIsSmScreen()
   const scrollRef = useRef(null)

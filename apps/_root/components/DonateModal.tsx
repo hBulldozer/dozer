@@ -1,6 +1,6 @@
 import { App, AppType, Button, CopyHelper, Dialog, IconButton, Link, Menu, Typography } from '@dozer/ui'
 import React, { FC } from 'react'
-import qrcode from './qrcode.jpeg'
+import qrcode from '../public/qrcode.jpeg'
 import Image from 'next/image'
 import { DuplicateIcon } from '@heroicons/react/solid'
 

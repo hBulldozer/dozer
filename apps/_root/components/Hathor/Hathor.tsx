@@ -44,10 +44,11 @@ const DATA: ExpendableCardData = {
 
 export const Hathor: FC = () => {
   return (
-    <section className="py-48">
+    <section className="py-20 sm:py-40">
       <Container maxWidth="5xl" className="px-4 mx-auto space-y-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 justify-center gap-[100px]">
-          <div className="flex flex-col justify-center gap-3">
+        {/* <div className="grid grid-cols-1 lg:grid-cols-2 justify-center gap-[100px]"> */}
+        <div className="grid grid-cols-1 lg:grid-cols-[380px_auto] justify-center gap-x-[100px] gap-y-[20px]">
+          <div className="flex flex-col justify-center sm:order-1 order-2 gap-3">
             <ExpandableCard
               title={DATA.title}
               caption={DATA.caption}
@@ -84,8 +85,9 @@ export const Hathor: FC = () => {
               )}
             </ExpandableCard>
           </div>
-          {/* <CustodyImage /> */}
-          <HowImage />
+          <div className=" justify-center order-1 sm:order-2">
+            <HowImage />
+          </div>
         </div>
       </Container>
     </section>
