@@ -1,4 +1,4 @@
-import { ChevronRightIcon } from '@heroicons/react/solid'
+import { ChevronRightIcon, VideoCameraIcon } from '@heroicons/react/solid'
 import { Button, Container, Typography } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { FC } from 'react'
@@ -21,29 +21,81 @@ const DATA: ExpendableCardData = {
   title: 'How we make it',
   caption: 'The solution',
   content: (
+    //   <>
+    //   <p>
+    //     DeFi, or decentralized finance, has revolutionized the financial industry, but not without challenges.The
+    //     growing popularity of DeFi platforms has caused congestion on blockchains, leading to exorbitant gas fees that
+    //     hinders accessibility and scalability for users. ’
+    //   </p>
+    //   <p>
+    //     This is a infraestrucure and blockchain architecture issue, a lot of clever solutions were made to solve this
+    //     issue but most of them achieve escalability at the cost of security or decentralization.
+    //   </p>
+    //   <p>
+    //     Dozer choose to build upon Hathor Network that arguably solve the blockchain tryllema and has a easy to use
+    //     approuch.
+    //   </p>
+    //   <div className="flex gap-6">
+    //     <Button
+    //       as="a"
+    //       target="_blank"
+    //       href="https://www.youtube.com/watch?v=6s3Hkog7bd"
+    //       className="!p-0 mt-3 "
+    //       variant="empty"
+    //       endIcon={<VideoCameraIcon width={16} height={16} />}
+    //     >
+    //       Watch this video
+    //     </Button>
+    //   </div>
+
+    //   <p>
+    //     We also are using Nano Contracts for the dApp logics, this is a contract implementation that mitigates risks and
+    //     ensure a more secure implementation while being less complicated than solidity. This ensures a sure and fast
+    //     paced development facilitating upgrades and delivering more value to users
+    //   </p>
+    //   <p>
+    //     The last but not least, we are not reinventing the wheel, we are absorving all the previous DeFi implementations
+    //     learning from their mistakes to craft the better journey for both our users and investors.
+    //   </p>
+    // </>
     <>
       <p>
-        DeFi, or decentralized finance, has revolutionized the financial industry, but not without challenges.The
-        growing popularity of DeFi platforms has caused congestion on blockchains, leading to exorbitant gas fees that
-        hinders accessibility and scalability for users. ’
+        DeFi, or decentralized finance, has brought about a revolutionary shift in the financial industry. However, this
+        transformation hasn&apos;t occurred without its fair share of challenges. The soaring popularity of DeFi
+        platforms has led to blockchain congestion, resulting in exorbitant gas fees that hinder accessibility and
+        scalability for users.
       </p>
       <p>
-        This is a infraestrucure and blockchain architecture issue, a lot of clever solutions were made to solve this
-        issue but most of them achieve escalability at the cost of security or decentralization.
+        This issue pertains to infrastructure and blockchain architecture, and although numerous ingenious solutions
+        have been devised to address it, many of these solutions achieve scalability at the expense of security or
+        decentralization.
       </p>
       <p>
-        Dozer choose to build upon Hathor Network that arguably solve the blockchain tryllema and has a easy to use
-        approuch.
+        Dozer has chosen to build upon the Hathor Network, which arguably resolves the blockchain trilemma and offers a
+        user-friendly approach.
       </p>
-      <p>Video Link https://www.youtube.com/watch?v=6s3Hkog7bdc </p>
+      <div className="flex gap-6">
+        <Button
+          as="a"
+          target="_blank"
+          href="https://www.youtube.com/watch?v=6s3Hkog7bd"
+          className="!p-0 mt-3"
+          variant="empty"
+          endIcon={<VideoCameraIcon width={16} height={16} />}
+        >
+          Watch this video
+        </Button>
+      </div>
+
       <p>
-        We also are using Nano Contracts for the dApp logics, this is a contract implementation that mitigates risks and
-        ensure a more secure implementation while being less complicated than solidity. This ensures a sure and fast
-        paced development facilitating upgrades and delivering more value to users
+        Additionally, we employ Nano Contracts for dApp logic. These contract implementations mitigate risks and ensure
+        a more secure execution while being less complex than Solidity. This ensures a reliable and swift development
+        process, enabling upgrades and delivering greater value to users.
       </p>
       <p>
-        The last but not least, we are not reinventing the wheel, we are absorving all the previus DeFi implementations
-        learning from their mistakes to craft the better journey for both our users and investors.
+        Last but certainly not least, we are not reinventing the wheel; rather, we are absorbing the insights from
+        previous DeFi implementations, learning from their shortcomings, and crafting an enhanced journey for both our
+        users and investors.
       </p>
     </>
   ),
@@ -57,7 +109,7 @@ export const Hathor: FC = () => {
       <Container maxWidth="5xl" className="px-4 mx-auto space-y-20">
         {/* <div className="grid grid-cols-1 lg:grid-cols-2 justify-center gap-[100px]"> */}
         <div className="grid grid-cols-1 lg:grid-cols-[380px_auto] justify-center gap-x-[100px] gap-y-[20px]">
-          <div className="flex flex-col justify-center sm:order-1 order-2 gap-3">
+          <div className="flex flex-col justify-center order-2 gap-3 sm:order-1">
             <ExpandableCard
               title={DATA.title}
               caption={DATA.caption}
@@ -94,7 +146,7 @@ export const Hathor: FC = () => {
               )}
             </ExpandableCard>
           </div>
-          <div className=" justify-center order-1 sm:order-2">
+          <div className="justify-center order-1 sm:order-2">
             <HowImage />
           </div>
         </div>
