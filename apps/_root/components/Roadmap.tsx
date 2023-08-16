@@ -22,7 +22,7 @@ const _Roadmap: React.FC<TimelineProps> = ({ timelineItems }) => {
               Roadmap
             </Typography>
             <Typography variant="lg" weight={400} className="text-center mt-2 max-w-[420px]">
-              The inception of Dozer is comming. <br />
+              The inception of Dozer is near. <br />
               Be part of the Future of Finance.
             </Typography>
           </div>
@@ -81,7 +81,7 @@ const _Roadmap: React.FC<TimelineProps> = ({ timelineItems }) => {
               Roadmap
             </Typography>
             <Typography variant="lg" weight={400} className="text-center mt-2 max-w-[420px]">
-              The inception of Dozer is comming. <br />
+              The inception of Dozer is near. <br />
               Be part of the Future of Finance.
             </Typography>
           </div>
