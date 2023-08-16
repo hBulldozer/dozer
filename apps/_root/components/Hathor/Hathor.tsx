@@ -78,12 +78,12 @@ const DATA: ExpendableCardData = {
         <Button
           as="a"
           target="_blank"
-          href="https://www.youtube.com/watch?v=6s3Hkog7bd"
+          href="https://youtu.be/6s3Hkog7bdc"
           className="!p-0 mt-3"
           variant="empty"
           endIcon={<VideoCameraIcon width={16} height={16} />}
         >
-          Watch this video
+          Learn more
         </Button>
       </div>
 
