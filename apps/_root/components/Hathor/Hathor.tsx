@@ -23,18 +23,27 @@ const DATA: ExpendableCardData = {
   content: (
     <>
       <p>
-        Centralized exchanges, or exchanges run by a centralized entity, custody users’ tokens on their behalf into an
-        intermediary account, and are prone to many attack vectors such as hacks, government intervention, internal
-        mismanagement, frozen withdrawals, bank runs, etc. Due to the unfortunate prevalence of these issues with users’
-        funds on centralized exchanges, the space had adopted a common mantra: “Not your keys, not your crypto.” This
-        refers to the idea that if you yourself do not have the literal custody of your funds (because a third party is
-        looking over them for you), you can never be completely sure your funds are safe.
+        DeFi, or decentralized finance, has revolutionized the financial industry, but not without challenges.The
+        growing popularity of DeFi platforms has caused congestion on blockchains, leading to exorbitant gas fees that
+        hinders accessibility and scalability for users. ’
       </p>
       <p>
-        As a decentralized exchange, Dozer never has control of users’ funds, nor will they ever in the future. The
-        decentralized nature of it means that we do not rely on a third party or an intermediary account; the users are
-        always in full custody of your their tokens, and can exchange with them at any time, without ever having to jump
-        through any hoops or submit any personal information. Stay in full control of your money.
+        This is a infraestrucure and blockchain architecture issue, a lot of clever solutions were made to solve this
+        issue but most of them achieve escalability at the cost of security or decentralization.
+      </p>
+      <p>
+        Dozer choose to build upon Hathor Network that arguably solve the blockchain tryllema and has a easy to use
+        approuch.
+      </p>
+      <p>Video Link https://www.youtube.com/watch?v=6s3Hkog7bdc </p>
+      <p>
+        We also are using Nano Contracts for the dApp logics, this is a contract implementation that mitigates risks and
+        ensure a more secure implementation while being less complicated than solidity. This ensures a sure and fast
+        paced development facilitating upgrades and delivering more value to users
+      </p>
+      <p>
+        The last but not least, we are not reinventing the wheel, we are absorving all the previus DeFi implementations
+        learning from their mistakes to craft the better journey for both our users and investors.
       </p>
     </>
   ),
@@ -44,10 +53,11 @@ const DATA: ExpendableCardData = {
 
 export const Hathor: FC = () => {
   return (
-    <section className="py-48">
+    <section className="py-20 sm:py-40">
       <Container maxWidth="5xl" className="px-4 mx-auto space-y-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 justify-center gap-[100px]">
-          <div className="flex flex-col justify-center gap-3">
+        {/* <div className="grid grid-cols-1 lg:grid-cols-2 justify-center gap-[100px]"> */}
+        <div className="grid grid-cols-1 lg:grid-cols-[380px_auto] justify-center gap-x-[100px] gap-y-[20px]">
+          <div className="flex flex-col justify-center sm:order-1 order-2 gap-3">
             <ExpandableCard
               title={DATA.title}
               caption={DATA.caption}
@@ -84,8 +94,9 @@ export const Hathor: FC = () => {
               )}
             </ExpandableCard>
           </div>
-          {/* <CustodyImage /> */}
-          <HowImage />
+          <div className=" justify-center order-1 sm:order-2">
+            <HowImage />
+          </div>
         </div>
       </Container>
     </section>
