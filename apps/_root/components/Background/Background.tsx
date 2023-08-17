@@ -38,10 +38,10 @@ const Background = () => {
                 </Typography>
                 <Typography variant="lg" className="mt-3 drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]">
                   {/* DeFi done right: */}
-                  Fast, safe, scalabe and beautiful.
+                  Safe, fast and beautiful.
                 </Typography>
                 <Typography variant="xxs" className="drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]">
-                  Powered by Hathor Blockchain
+                  Powered by Hathor BlockDag
                 </Typography>
               </div>
             </div>

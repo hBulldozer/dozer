@@ -95,7 +95,7 @@ export function Footer(props: FooterProps): JSX.Element {
             <DozerWithTextIcon />
           </div>
           <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-400">
-            Fast, safe, scalabe and beautiful.
+            Safe, fast and beautiful.
           </div>
           <div className="flex items-center gap-4">
             <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">

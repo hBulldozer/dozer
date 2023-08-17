@@ -1,28 +1,36 @@
 import { ChevronRightIcon, ExternalLinkIcon } from '@heroicons/react/solid'
 import { Button, Container, Typography } from '@dozer/ui'
 import { FC } from 'react'
+import { motion } from 'framer-motion'
 
 import { MoveImage } from './MoveImage'
 import { ExpandableCard, ExpendableCardData } from 'components/ExpandableCard/ExpandableCard'
 
 const DATA: ExpendableCardData = {
-  title: 'Assets across networks',
-  caption: 'Hathor bridge',
+  title: 'EVM Bridge',
+  caption: 'Cross-chain',
   content: (
     <>
       <p>
-        Transform the way you trade assets between EVM networks through the upcoming bridge feature. Effortlessly
-        enabling fluid movement of assets, encounter unhindered flow and smooth transactions.
+        Seamlessly connect the world of Ethereum Virtual Machine (EVM) networks with Hathor&apos;s cutting-edge
+        blockchain ecosystem; unlock a new range of opportunities with your EVM native tokens such as $ETH, $WBTC, $USDT
+        and more.
       </p>
       <p>
-        Fueled by Hathor&apos;s strengths — fast transactions, scalability, and secure PoW architecture — this EVM
-        bridge bridges the gaps, delivering efficiency where it&apos;s most needed.
+        Experience the ultimate trio: Zero Gas Fees, Scalability, and Security, all powered by Hathor BlockDag. Thanks
+        to the robust backing of Bitcoin proof of work merged mining, Hathor achieves high transactions per second
+        without compromising security or decentralization.
       </p>
       <p>
-        Uncover decentralized finance&apos;s next level through this innovation. Click below for comprehensive bridge
-        development details and embrace a future of unobstructed cross-network asset exchange.
+        Exchange EVM tokens to Hathor native tokens without KYC; buy $HTR, $DZR, $NST, and more without CEX using Dozer
+        Protocol.
       </p>
-      <div className="flex gap-6">
+      <p>
+        Experience Hathor&apos;s bridge and redefine the way you interact with the blockchain universe. This is your
+        gateway to a future where innovation, speed, and limitless exploration converge to rewrite the rules of the
+        game. Click below for technical details.
+      </p>
+      <div className="flex -mt-10">
         <Button
           as="a"
           target="_blank"
@@ -31,7 +39,7 @@ const DATA: ExpendableCardData = {
           variant="empty"
           endIcon={<ExternalLinkIcon width={16} height={16} />}
         >
-          More details
+          RFC
         </Button>
       </div>
     </>
@@ -42,39 +50,43 @@ const DATA: ExpendableCardData = {
 
 export const Move: FC = () => {
   return (
-    <section className="">
+    <section className="py-20 sm:py-40">
       <Container maxWidth="5xl" className="px-4 mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[380px_auto] justify-center gap-x-[100px] gap-y-[20px]">
-          <ExpandableCard
-            title={DATA.title}
-            caption={DATA.caption}
-            content={DATA.content}
-            link={DATA.link}
-            linkText={DATA.linkText}
-          >
-            {({ setOpen, containerId, titleId }) => (
-              <div className="flex flex-col justify-center order-2 gap-3">
-                <div className="flex flex-col items-center lg:items-start">
-                  <Typography variant="h1" weight={600} className="text-center lg:text-left">
-                    Move assets across networks.
+          <div className="flex flex-col justify-center order-2 gap-3">
+            <ExpandableCard
+              title={DATA.title}
+              caption={DATA.caption}
+              content={DATA.content}
+              link={DATA.link}
+              linkText={DATA.linkText}
+            >
+              {({ setOpen, containerId, titleId }) => (
+                <motion.div layoutId={containerId} className="flex flex-col items-center lg:items-start">
+                  <Typography
+                    as={motion.h1}
+                    layoutId={titleId}
+                    variant="h1"
+                    weight={600}
+                    className="flex flex-col items-center text-center lg:items-start lg:text-left"
+                  >
+                    {DATA.title}
                   </Typography>
                   <Typography variant="lg" weight={400} className="mt-2 text-center lg:text-left">
                     Bring your assets to Hathor Network, enjoy zero fess and blasting speed on your transactions.
                   </Typography>
-                  <div className="flex gap-6">
-                    <Button
-                      onClick={() => setOpen(true)}
-                      className="!p-0 mt-3"
-                      variant="empty"
-                      endIcon={<ChevronRightIcon width={16} height={16} />}
-                    >
-                      Learn More
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </ExpandableCard>
+                  <Button
+                    onClick={() => setOpen(true)}
+                    className="!p-0 mt-3"
+                    variant="empty"
+                    endIcon={<ChevronRightIcon width={16} height={16} />}
+                  >
+                    Learn More
+                  </Button>
+                </motion.div>
+              )}
+            </ExpandableCard>
+          </div>
           <div className="flex justify-center order-1 ">
             <MoveImage />
           </div>

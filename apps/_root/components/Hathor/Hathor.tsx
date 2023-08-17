@@ -74,7 +74,7 @@ const DATA: ExpendableCardData = {
         Dozer has chosen to build upon the Hathor Network, which arguably resolves the blockchain trilemma and offers a
         user-friendly approach.
       </p>
-      <div className="flex gap-6">
+      <div className="flex -mt-10">
         <Button
           as="a"
           target="_blank"
@@ -83,7 +83,7 @@ const DATA: ExpendableCardData = {
           variant="empty"
           endIcon={<VideoCameraIcon width={16} height={16} />}
         >
-          Learn more
+          Hathor BlockDag
         </Button>
       </div>
 
@@ -99,7 +99,7 @@ const DATA: ExpendableCardData = {
       </p>
     </>
   ),
-  link: 'https://dozer.finance/swap',
+  link: 'https://dozer.finance/',
   linkText: 'Visit Swap',
 }
 
@@ -131,7 +131,7 @@ export const Hathor: FC = () => {
                   <Typography variant="lg" weight={400} className="mt-2 text-center lg:text-left">
                     {/* Own your own crypto, just like cash in your wallet. Fully decentralized & self custody of your funds
                     means your money in your wallet, as it should be. */}
-                    Leveraging Hathor Blockchain architecture, innovating with Nano Contracts and building on the
+                    Leveraging Hathor BlockDag architecture, innovating with Nano Contracts and building on the
                     shoulders of DeFi giants
                   </Typography>
                   <Button
