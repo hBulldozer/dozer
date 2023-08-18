@@ -87,6 +87,6 @@ export class Token extends Currency {
   }
 
   public logoURI(): string {
-    return `https://raw.githubusercontent.com/Dozer-Protocol/automatic-exchange-service/main/logos/${this.symbol}.svg`
+    return `/logos/${this.symbol?.toUpperCase()}.svg`
   }
 }

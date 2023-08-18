@@ -12,7 +12,7 @@ const BLOCKCHAIN: Record<number, string> = {
   [ChainId.HATHOR]: 'hathor',
 }
 
-const HathorLogo = 'https://raw.githubusercontent.com/Dozer-Protocol/automatic-exchange-service/main/logos/HTR.svg'
+const HathorLogo = '/logos/HTR.svg'
 
 const LOGO: Record<number, string> = {
   [ChainId.HATHOR]: HathorLogo,

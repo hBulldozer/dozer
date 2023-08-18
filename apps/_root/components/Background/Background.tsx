@@ -51,9 +51,18 @@ const Background = () => {
                   {/* DeFi done right: */}
                   Safe, fast and beautiful.
                 </Typography>
-                <Typography variant="xxs" className="drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]">
-                  Powered by Hathor BlockDag
-                </Typography>
+                <div className="flex">
+                  <Typography variant="xxs" className="relative drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]">
+                    Powered by
+                  </Typography>
+                  <Image
+                    className=" ml-1 relative drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]"
+                    width={45}
+                    height={15}
+                    alt="Hathor logo"
+                    src="/logos/Logo White.svg"
+                  />
+                </div>
               </div>
             </div>
             {/* <div className="text-center">
