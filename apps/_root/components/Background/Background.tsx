@@ -2,7 +2,9 @@ import { Container, Typography } from '@dozer/ui'
 import Image from 'next/image'
 import React from 'react'
 // import background from '../../public/dozer-background-night.png'
-import background from '../../public/Runway 2023-03-31T20_35_33.849Z Image to Image Original (1).jpg'
+import background from '../../public/background.jpg'
+import background_mobile from '../../public/background_mobile.jpg'
+import { useBreakpoint } from '@dozer/hooks'
 const Background = () => {
   return (
     <header className="-mt-24">
@@ -13,7 +15,16 @@ const Background = () => {
         }}
       >
         <Image
-          className="object-cover object-left sm:object-right -z-10"
+          className="object-cover object-right md:hidden opacity-40 -z-10"
+          placeholder="blur"
+          fill
+          priority
+          alt="Desert Land with a Bulldozer on the view"
+          src={background_mobile}
+        />
+
+        <Image
+          className="hidden object-cover object-left md:block sm:object-right -z-10"
           placeholder="blur"
           fill
           priority
