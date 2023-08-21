@@ -53,7 +53,7 @@ export const Move: FC = () => {
     <section className="py-20 sm:py-40">
       <Container maxWidth="5xl" className="px-4 mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[380px_auto] justify-center gap-x-[100px] gap-y-[20px]">
-          <div className="flex flex-col justify-center order-2 gap-3">
+          <div className="flex flex-col justify-center order-1 gap-3">
             <ExpandableCard
               title={DATA.title}
               caption={DATA.caption}
@@ -87,7 +87,7 @@ export const Move: FC = () => {
               )}
             </ExpandableCard>
           </div>
-          <div className="flex justify-center order-1 ">
+          <div className="flex justify-center order-2 ">
             <MoveImage />
           </div>
         </div>

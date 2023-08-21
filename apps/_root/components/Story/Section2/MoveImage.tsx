@@ -20,7 +20,7 @@ export const MoveImage = () => {
   return (
     // <div className="sm:relative sm:w-[420px] sm:h-[420px] sm:flex sm:justify-center sm:items-center">
     <motion.div
-      className="z-[1] relative w-[420px] h-[420px]"
+      className="z-[1] relative w-[380px] h-[380px]"
       ref={scrollRef}
       {...(!isSmallScreen && { ...{ style: { opacity, scale } } })}
     >
