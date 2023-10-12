@@ -46,6 +46,7 @@ export const Paginator: FC<PaginatorProps> = ({
             <ChevronLeftIcon className="text-stone-200" width={20} height={20} />
           </IconButton>
         </div>
+
         {pages ? (
           <div className="text-base text-stone-200">
             <b>{page + 1}</b> of <b>{pages}</b>

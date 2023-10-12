@@ -218,14 +218,13 @@ export const PoolsTable: FC = () => {
         pageSize={PAGE_SIZE}
         linkFormatter={rowLink}
       />
-      <Table.Paginator
+      {/* only needed when we have more than 8 or 10 pools */}
+      {/* <Table.Paginator
         hasPrev={pagination.pageIndex > 0}
-        hasNext={true}
-        // hasNext={
-        //   !atLeastOneFilterSelected ? pagination.pageIndex < table.getPageCount() : (pools?.length || 0) >= PAGE_SIZE
-        // }
-        // nextDisabled={!pools && isValidating}
-        nextDisabled={!pools}
+        // hasNext={true}
+        hasNext={(pools?.length || 0) >= PAGE_SIZE}
+        nextDisabled={true}
+        // nextDisabled={!pools}
         // nextDisabled={!pools && isValidating}
         onPrev={table.previousPage}
         onNext={table.nextPage}
@@ -234,7 +233,7 @@ export const PoolsTable: FC = () => {
         pages={undefined}
         // pages={!atLeastOneFilterSelected ? table.getPageCount() : undefined}
         pageSize={PAGE_SIZE}
-      />
+      /> */}
     </>
   )
 }
