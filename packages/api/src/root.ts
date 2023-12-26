@@ -1,3 +1,4 @@
+import { NanoStateRouter } from './router/nanostates'
 import { poolRouter } from './router/pool'
 import { pricesRouter } from './router/prices'
 import { profileRouter } from './router/profile'
@@ -9,6 +10,7 @@ export const appRouter = createTRPCRouter({
   getTokens: tokenRouter,
   getProfile: profileRouter,
   getPrices: pricesRouter,
+  getNanoState: NanoStateRouter,
 })
 
 // export type definition of API
