@@ -3,7 +3,7 @@ import { useAccount } from '@dozer/zustand'
 
 const Nanostate = () => {
   const userAddress = 'Wcwqb5eX1BYAjazBfHNPaFtp9344aPUv7L'
-  const contractId = '000003248a36eae2438b46164fa410355f235f7a9ed6376e34ea948c09d73f3f'
+  const contractId = '00009a7b3e3e3a062de7429e49168b7a8bd437058b152e6ef881288abe9eb6c0'
 
   const { data: data1 } = api.getNanoState.byUser.useQuery(userAddress)
   const { data: data2 } = api.getNanoState.maxWithdrawByUser.useQuery(userAddress)

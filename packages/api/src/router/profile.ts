@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
+import { fetchNodeData } from '../helpers/fetchFunction'
 
 export const profileRouter = createTRPCRouter({
   balance: procedure
@@ -37,13 +38,11 @@ export const profileRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const apiUrl = `http://localhost:8080/v1a/nano_contract/state`
+      const endpoint = 'nano_contract/state'
       const queryParams = [`id=${input.contractId}`, `calls[]=front_end_api_user("a'${input.address}'")`]
-      const fetchUrl = `${apiUrl}?${queryParams.join('&')}`
 
-      const response = await fetch(fetchUrl)
-      const data = await response.json()
-      const result = data['calls'][`front_end_api_user("a'${input.address}'")`]['value']
+      const response = await fetchNodeData(endpoint, queryParams)
+      const result = response['calls'][`front_end_api_user("a'${input.address}'")`]['value']
       return result
     }),
 })

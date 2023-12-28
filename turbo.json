@@ -38,7 +38,9 @@
         "SWAP_URL",
         "EARN_URL",
         "DATABASE_URL",
-        "API_KEY"
+        "API_KEY",
+        "LOCAL_NODE_URL",
+        "PUBLIC_NODE_URL"
       ],
       "outputs": [
         ".vercel/**/*",

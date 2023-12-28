@@ -17,16 +17,14 @@ model Token {
   symbol           String
   isFeeOnTransfer  Boolean     @default(false)
   isCommon         Boolean     @default(false)
-  isLiquidityToken Boolean     @default(false)
   derivedUSD       Float?
   generatedAt      DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   decimals         Int         @default(2)
+  isLiquidityToken Boolean     @default(false)
   poolsLP          Pool[]      @relation("tokenLP")
   pools0           Pool[]      @relation("token0")
   pools1           Pool[]      @relation("token1")
-  // dozerPools0       DozerPool[] @relation("token0")
-  // dozerPools1       DozerPool[] @relation("token1")
   incentives       Incentive[]
 
   @@unique([chainId, uuid])
@@ -44,7 +42,6 @@ model Pool {
   version       String
   token0Id      String
   token1Id      String
-  tokenLPId     String         @default("0")
   swapFee       Float
   feeUSD        Float
   reserve0      String         @default("0")
@@ -56,6 +53,7 @@ model Pool {
   fees1d        Float
   generatedAt   DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  tokenLPId     String         @default("0")
   token0        Token          @relation("token0", fields: [token0Id], references: [id])
   token1        Token          @relation("token1", fields: [token1Id], references: [id])
   tokenLP       Token          @relation("tokenLP", fields: [tokenLPId], references: [id])
@@ -96,45 +94,6 @@ model hourSnapshot {
   @@index([poolId])
 }
 
-// model DozerPool {
-//   id                   String      @id
-//   name                 String
-//   chainId              Int
-//   version              String
-//   token0Id             String
-//   token1Id             String
-//   swapFee              Float
-//   twapEnabled          Boolean
-//   reserve0             String
-//   reserve1             String
-//   liquidityUSD         Float
-//   volumeUSD            Float
-//   token0Price          String
-//   token1Price          String
-//   feeApr               Float       @default(0)
-//   incentiveApr         Float       @default(0)
-//   totalApr             Float       @default(0)
-//   isIncentivized       Boolean     @default(false)
-//   volume1d             Float       @default(0)
-//   fees1d               Float       @default(0)
-//   volume1w             Float       @default(0)
-//   fees1w               Float       @default(0)
-//   createdAtBlockNumber BigInt      @db.UnsignedBigInt
-//   isBlacklisted        Boolean     @default(false)
-//   generatedAt          DateTime    @default(now())
-//   updatedAt            DateTime    @updatedAt
-//   token0               Token       @relation("token0", fields: [token0Id], references: [id])
-//   token1               Token       @relation("token1", fields: [token1Id], references: [id])
-//   incentives           Incentive[]
-
-//   @@index([id])
-//   @@index([chainId])
-//   @@index([liquidityUSD, chainId])
-//   @@index([totalApr, chainId])
-//   @@index([token0Id])
-//   @@index([token1Id])
-// }
-
 model Incentive {
   id              String @id
   chainId         Int
@@ -151,4 +110,34 @@ model Incentive {
   @@index([poolId])
   @@index([rewardTokenId])
   @@index([chainId, rewardTokenId])
+}
+
+model DozerPool {
+  id           String   @id
+  name         String
+  apr          Float
+  chainId      Int
+  version      String
+  token0Id     String
+  token1Id     String
+  swapFee      Float
+  feeUSD       Float
+  reserve0     String   @default("0")
+  reserve1     String   @default("0")
+  liquidityUSD Float
+  volumeUSD    Float
+  liquidity    Float
+  volume1d     Float
+  fees1d       Float
+  generatedAt  DateTime @default(now())
+  updatedAt    DateTime
+  tokenLPId    String   @default("0")
+
+  @@index([chainId], map: "Pool_chainId_idx")
+  @@index([chainId, version], map: "Pool_chainId_version_idx")
+  @@index([generatedAt], map: "Pool_generatedAt_idx")
+  @@index([id], map: "Pool_id_idx")
+  @@index([token0Id], map: "Pool_token0Id_idx")
+  @@index([token1Id], map: "Pool_token1Id_idx")
+  @@index([tokenLPId], map: "Pool_tokenLPId_idx")
 }
