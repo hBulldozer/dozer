@@ -76,12 +76,12 @@ const Pool = () => {
 
   const { data: pool } = api.getPools.byIdWithSnaps.useQuery({ id })
   if (!pool) return <></>
+  const { data: prices = {} } = api.getPrices.all.useQuery()
+  if (!prices) return <></>
   const pair = pool ? pairWithSnapsFromPool(pool) : ({} as Pair)
   if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
-  const { data: prices = {} } = api.getPrices.all.useQuery()
-  if (!prices) return <></>
 
   return (
     <PoolPositionProvider pair={pair} prices={prices}>

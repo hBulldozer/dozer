@@ -17,11 +17,9 @@ export const profileRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const response = await fetch(
-        `https://node1.testnet.hathor.network/v1a/thin_wallet/address_balance?address=${input.address}`
-      )
-      const data = await response.json()
-      return data
+      const endpoint = 'thin_wallet/address_balance'
+      const response = await fetchNodeData(endpoint, [`address=${input.address}`])
+      return response
     }),
   pool: procedure
     .input(
