@@ -18,7 +18,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@tanstack/react-query": "4.20.4",
+    "@tanstack/react-query": "4.35.7",
     "@tanstack/react-query-devtools": "4.20.4",
     "@tanstack/react-query-persist-client": "4.20.4",
     "@dozer/chain": "workspace:*"
@@ -32,7 +32,7 @@
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "axios": "1.3.4",
-    "eslint": "8.29.0",
+    "eslint": "8.44.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "tsup": "6.5.0",
