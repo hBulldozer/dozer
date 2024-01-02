@@ -74,10 +74,11 @@ const Pool = () => {
   const router = useRouter()
   const id = router.query.id as string
 
-  const { data: pool } = api.getPools.byIdWithSnaps.useQuery({ id })
-  if (!pool) return <></>
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
+  const { data: pool } = api.getPools.byIdFromContract.useQuery({ id })
+  console.log(pool)
+  if (!pool) return <></>
   const pair = pool ? pairWithSnapsFromPool(pool) : ({} as Pair)
   if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []

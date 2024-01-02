@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
+import { fetchNodeData } from '../helpers/fetchFunction'
 
 export const tokenRouter = createTRPCRouter({
   all: procedure.query(({ ctx }) => {
