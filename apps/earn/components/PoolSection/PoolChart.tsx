@@ -20,6 +20,7 @@ enum PoolChartType {
   TVL,
   Fees,
   APR,
+  Price,
 }
 
 enum PoolChartPeriod {
@@ -45,7 +46,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
     const data =
       chartTimespans[chartPeriod] <= chartTimespans[PoolChartPeriod.Week] ? pair.hourSnapshots : pair.daySnapshots
     const currentDate = Math.round(Date.now())
-    const [x, y] = data.reduce<[number[], number[]]>(
+    const [x, y] = data.reduce<[number[], any]>(
       (acc, cur) => {
         const date = new Date(cur.date).getTime()
         if (date >= currentDate - chartTimespans[chartPeriod]) {
@@ -58,6 +59,9 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
             acc[1].push(Number(cur.liquidityUSD))
           } else if (chartType === PoolChartType.APR) {
             acc[1].push(Number(cur.apr))
+          } else if (chartType === PoolChartType.Price) {
+            const number = Number(cur.apr)
+            acc[1].push({ value: [number - 0.2, number, number - 0.24, number + 0.02], visualMap: false })
           }
         }
         return acc
@@ -103,12 +107,19 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           fontWeight: 600,
         },
         formatter: (params: any) => {
-          onMouseOver({ name: params[0].name, value: params[0].value })
+          onMouseOver({
+            name: params[0].name,
+            value: chartType === PoolChartType.Price ? params[0].value[2] : params[0].value,
+          })
 
           const date = new Date(Number(params[0].name * 1000))
           return `<div class="flex flex-col gap-0.5">
             <span class="text-sm text-stone-50 font-semibold">${
-              chartType === PoolChartType.APR ? formatPercent(params[0].value) : formatUSD(params[0].value)
+              chartType === PoolChartType.APR
+                ? formatPercent(params[0].value)
+                : chartType === PoolChartType.Price
+                ? formatUSD(params[0].value[2])
+                : formatUSD(params[0].value)
             }</span>
             <span class="text-xs text-stone-400 font-medium">${
               date instanceof Date && !isNaN(date?.getTime()) ? format(date, 'dd MMM yyyy HH:mm') : ''
@@ -155,27 +166,47 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
         },
       ],
       series: [
-        {
-          name: 'Volume',
-          type: chartType === PoolChartType.TVL || chartType === PoolChartType.APR ? 'line' : 'bar',
-          xAxisIndex: 0,
-          yAxisIndex: 0,
-          itemStyle: {
-            color: 'yellow',
-            normal: {
-              barBorderRadius: 2,
+        chartType === PoolChartType.Price
+          ? {
+              name: 'Price',
+              type: 'candlestick',
+              xAxisIndex: 0,
+              yAxisIndex: 0,
+              itemStyle: {
+                color: 'green',
+                color0: 'red',
+                normal: {
+                  borderColor: '#555',
+                  borderColor0: '#222',
+                },
+              },
+              animationEasing: 'elasticOut',
+              animationDelayUpdate: function (idx: number) {
+                return idx * 2
+              },
+              data: yData,
+            }
+          : {
+              name: 'Volume',
+              type: chartType === PoolChartType.TVL || chartType === PoolChartType.APR ? 'line' : 'bar',
+              xAxisIndex: 0,
+              yAxisIndex: 0,
+              itemStyle: {
+                color: 'yellow',
+                normal: {
+                  barBorderRadius: 2,
+                },
+              },
+              areaStyle: {
+                // @ts-ignore
+                color: tailwind.theme.colors.yellow['500'],
+              },
+              animationEasing: 'elasticOut',
+              animationDelayUpdate: function (idx: number) {
+                return idx * 2
+              },
+              data: yData,
             },
-          },
-          areaStyle: {
-            // @ts-ignore
-            color: tailwind.theme.colors.yellow['500'],
-          },
-          animationEasing: 'elasticOut',
-          animationDelayUpdate: function (idx: number) {
-            return idx * 2
-          },
-          data: yData,
-        },
       ],
     }),
     [onMouseOver, chartType, xData, yData]
@@ -185,6 +216,15 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col justify-between gap-5 md:flex-row">
         <div className="flex gap-6">
+          <button
+            onClick={() => setChartType(PoolChartType.Price)}
+            className={classNames(
+              'border-b-[3px] pb-2 font-semibold text-sm',
+              chartType === PoolChartType.Price ? 'text-stone-50 border-yellow' : 'text-stone-500 border-transparent'
+            )}
+          >
+            Price
+          </button>
           <button
             onClick={() => setChartType(PoolChartType.Volume)}
             className={classNames(
