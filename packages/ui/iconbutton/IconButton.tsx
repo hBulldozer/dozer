@@ -12,7 +12,7 @@ interface Props {
 export type IconButtonProps<C extends React.ElementType> = PolymorphicComponentPropsWithRef<C, Props>
 export type IconButtonComponent = <C extends React.ElementType = 'button'>(
   props: IconButtonProps<C>
-) => React.ReactElement | null
+) => React.ReactNode | null
 
 // eslint-disable-next-line react/display-name
 export const IconButton: IconButtonComponent = React.forwardRef(

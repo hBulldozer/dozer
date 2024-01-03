@@ -22,9 +22,7 @@ interface Props {
 }
 
 export type ButtonProps<C extends React.ElementType> = PolymorphicComponentPropsWithRef<C, Props>
-export type ButtonComponent = <C extends React.ElementType = 'button'>(
-  props: ButtonProps<C>
-) => React.ReactElement | null
+export type ButtonComponent = <C extends React.ElementType = 'button'>(props: ButtonProps<C>) => React.ReactNode | null
 
 export const Button: ButtonComponent = React.forwardRef(
   <Tag extends React.ElementType = 'button'>(

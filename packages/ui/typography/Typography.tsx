@@ -41,7 +41,7 @@ type Props = {
 }
 
 type TypographyProps<C extends React.ElementType> = PolymorphicComponentPropsWithRef<C, Props>
-type TypographyComponent = <C extends React.ElementType = 'div'>(props: TypographyProps<C>) => React.ReactElement | null
+type TypographyComponent = <C extends React.ElementType = 'div'>(props: TypographyProps<C>) => React.ReactNode | null
 
 // eslint-disable-next-line react/display-name
 export const Typography: TypographyComponent = forwardRef(
