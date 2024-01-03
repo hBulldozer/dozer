@@ -42,7 +42,7 @@
     "@types/react-dom": "^18.0.0",
     "eslint": "8.56.0",
     "ethers": "6.9.2",
-    "next": "13.1.1",
+    "next": "13.5.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "tsup": "8.0.1",
@@ -54,6 +54,6 @@
     "react-dom": "18.2.0"
   },
   "optionalDependencies": {
-    "next": "13.1.1"
+    "next": "13.5.1"
   }
 }
