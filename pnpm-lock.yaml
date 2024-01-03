@@ -1,4 +1,4 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
 
 settings:
   autoInstallPeers: true
@@ -3570,7 +3570,7 @@ packages:
     peerDependencies:
       jasmine: 2.x || 3.x || 4.x
       jest: 26.x || 27.x || 28.x
-      typescript: 4.9.4
+      typescript: '>=4.2'
     peerDependenciesMeta:
       jasmine:
         optional: true
@@ -5384,7 +5384,7 @@ packages:
     engines: {pnpm: '>=7'}
     requiresBuild: true
     peerDependencies:
-      typescript: 4.9.4
+      typescript: '>=4.7.4'
     dependencies:
       typescript: 4.9.4
     dev: false
@@ -7350,7 +7350,7 @@ packages:
     resolution: {integrity: sha512-zdRAQOr8v69ZwJRtBrGqAqm160ONqKxU/pV1FB1KlgfyqveGsLZmlQ7l31otwtw763901J7xdiTVkj2y3YxXZA==}
     peerDependencies:
       eslint: ^7.23.0 || ^8.0.0
-      typescript: 4.9.4
+      typescript: '>=3.3.1'
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -11451,8 +11451,8 @@ packages:
       react-popper: 2.3.0(@popperjs/core@2.11.5)(react-dom@18.2.0)(react@18.2.0)
     dev: false
 
-  /react-devtools-core@4.27.7:
-    resolution: {integrity: sha512-12N0HrhCPbD76Z7SkyJdGdXdPGouUsgV6tlEsbSpAnLDO06tjXZP+irht4wPdYwJAJRQ85DxL48eQoz7UmrSuQ==}
+  /react-devtools-core@4.28.5:
+    resolution: {integrity: sha512-cq/o30z9W2Wb4rzBefjv5fBalHU0rJGZCHAkf/RHSBWSSYwh8PlQTqqOJmgIIbBtpj27T6FIPXeomIjZtCNVqA==}
     dependencies:
       shell-quote: 1.8.1
       ws: 7.5.9
@@ -11563,7 +11563,7 @@ packages:
       pretty-format: 26.6.2
       promise: 8.3.0
       react: 18.2.0
-      react-devtools-core: 4.27.7
+      react-devtools-core: 4.28.5
       react-native-codegen: 0.71.5(@babel/preset-env@7.21.5)
       react-native-gradle-plugin: 0.71.17
       react-refresh: 0.4.3
@@ -13013,7 +13013,7 @@ packages:
   /ts-essentials@7.0.3(typescript@4.9.4):
     resolution: {integrity: sha512-8+gr5+lqO3G84KdiTSMRLtuyJ+nTBVRKuCrK4lidMPdVeEp0uqC875uE5NMcaA7YYMN7XsNiFQuMvasF8HT/xQ==}
     peerDependencies:
-      typescript: 4.9.4
+      typescript: '>=3.7.0'
     dependencies:
       typescript: 4.9.4
     dev: true
@@ -13032,7 +13032,7 @@ packages:
       babel-jest: ^29.0.0
       esbuild: '*'
       jest: ^29.0.0
-      typescript: 4.9.4
+      typescript: '>=4.3'
     peerDependenciesMeta:
       '@babel/core':
         optional: true
@@ -13063,7 +13063,7 @@ packages:
       '@swc/core': '>=1.2.50'
       '@swc/wasm': '>=1.2.50'
       '@types/node': '*'
-      typescript: 4.9.4
+      typescript: '>=2.7'
     peerDependenciesMeta:
       '@swc/core':
         optional: true
@@ -13115,7 +13115,7 @@ packages:
     peerDependencies:
       '@swc/core': ^1
       postcss: ^8.4.12
-      typescript: 4.9.4
+      typescript: ^4.1.0
     peerDependenciesMeta:
       '@swc/core':
         optional: true
@@ -13152,7 +13152,7 @@ packages:
     peerDependencies:
       '@swc/core': ^1
       postcss: ^8.4.12
-      typescript: 4.9.4
+      typescript: ^4.1.0
     peerDependenciesMeta:
       '@swc/core':
         optional: true
@@ -13186,7 +13186,7 @@ packages:
     resolution: {integrity: sha512-mHKK3iUXL+3UF6xL5k0PEhKRUBKPBCv/+RkEOpjRWxxx27KKRBmmA60A9pgOUvMi8GKhRMPEmjBRPzs2W7O1OA==}
     engines: {node: '>= 6'}
     peerDependencies:
-      typescript: 4.9.4
+      typescript: '>=2.8.0 || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.6.0-beta || >= 3.7.0-dev || >= 3.7.0-beta'
     dependencies:
       tslib: 1.14.1
       typescript: 4.9.4
@@ -13314,7 +13314,7 @@ packages:
     resolution: {integrity: sha512-rqDfDYc9voVAhmfVfAwzg3VYFvhvs5ck1X9T/iWkX745Cul4t+V/smjnyqrbDzWDbzD93xfld1epg7Y/uFAesQ==}
     hasBin: true
     peerDependencies:
-      typescript: 4.9.4
+      typescript: '>=4.3.0'
     dependencies:
       '@types/prettier': 2.7.1
       debug: 4.3.4
