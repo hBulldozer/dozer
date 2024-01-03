@@ -1,4 +1,4 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
 
 settings:
   autoInstallPeers: true
@@ -197,16 +197,16 @@ importers:
         version: 18.0.0
       autoprefixer:
         specifier: 10.4.13
-        version: 10.4.13(postcss@8.4.21)
+        version: 10.4.13(postcss@8.4.31)
       eslint:
         specifier: 8.29.0
         version: 8.29.0
       postcss:
-        specifier: 8.4.21
-        version: 8.4.21
+        specifier: 8.4.31
+        version: 8.4.31
       tailwindcss:
         specifier: 3.2.4
-        version: 3.2.4(postcss@8.4.21)(ts-node@10.9.1)
+        version: 3.2.4(postcss@8.4.31)(ts-node@10.9.1)
       typescript:
         specifier: 4.9.4
         version: 4.9.4
@@ -372,16 +372,16 @@ importers:
         version: 18.0.0
       autoprefixer:
         specifier: 10.4.13
-        version: 10.4.13(postcss@8.4.21)
+        version: 10.4.13(postcss@8.4.31)
       eslint:
         specifier: 8.29.0
         version: 8.29.0
       postcss:
-        specifier: 8.4.21
-        version: 8.4.21
+        specifier: 8.4.31
+        version: 8.4.31
       tailwindcss:
         specifier: 3.2.4
-        version: 3.2.4(postcss@8.4.21)(ts-node@10.9.1)
+        version: 3.2.4(postcss@8.4.31)(ts-node@10.9.1)
       typescript:
         specifier: 4.9.4
         version: 4.9.4
@@ -490,16 +490,16 @@ importers:
         version: 18.0.0
       autoprefixer:
         specifier: 10.4.13
-        version: 10.4.13(postcss@8.4.21)
+        version: 10.4.13(postcss@8.4.31)
       eslint:
         specifier: 8.29.0
         version: 8.29.0
       postcss:
-        specifier: 8.4.21
-        version: 8.4.21
+        specifier: 8.4.31
+        version: 8.4.31
       tailwindcss:
         specifier: 3.2.4
-        version: 3.2.4(postcss@8.4.21)(ts-node@10.9.1)
+        version: 3.2.4(postcss@8.4.31)(ts-node@10.9.1)
       typescript:
         specifier: 4.9.4
         version: 4.9.4
@@ -626,7 +626,7 @@ importers:
         version: 0.5.2(tailwindcss@3.2.4)
       tailwindcss:
         specifier: 3.2.4
-        version: 3.2.4(postcss@8.4.21)(ts-node@10.9.1)
+        version: 3.2.4(postcss@8.4.31)(ts-node@10.9.1)
     devDependencies:
       '@dozer/eslint-config':
         specifier: workspace:*
@@ -642,7 +642,7 @@ importers:
         version: link:../typescript
       tsup:
         specifier: 6.5.0
-        version: 6.5.0(postcss@8.4.21)(ts-node@10.9.1)(typescript@4.9.4)
+        version: 6.5.0(postcss@8.4.31)(ts-node@10.9.1)(typescript@4.9.4)
       typescript:
         specifier: 4.9.4
         version: 4.9.4
@@ -1008,7 +1008,7 @@ importers:
         version: 18.2.0(react@18.2.0)
       tailwindcss:
         specifier: 3.2.4
-        version: 3.2.4(postcss@8.4.21)(ts-node@10.9.1)
+        version: 3.2.4(postcss@8.4.31)(ts-node@10.9.1)
       typescript:
         specifier: 4.9.4
         version: 4.9.4
@@ -1237,13 +1237,13 @@ importers:
         version: 1.8.5
       autoprefixer:
         specifier: 10.4.13
-        version: 10.4.13(postcss@8.4.21)
+        version: 10.4.13(postcss@8.4.31)
       eslint:
         specifier: 8.29.0
         version: 8.29.0
       postcss:
-        specifier: 8.4.21
-        version: 8.4.21
+        specifier: 8.4.31
+        version: 8.4.31
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -1252,10 +1252,10 @@ importers:
         version: 18.2.0(react@18.2.0)
       tailwindcss:
         specifier: 3.2.4
-        version: 3.2.4(postcss@8.4.21)(ts-node@10.9.1)
+        version: 3.2.4(postcss@8.4.31)(ts-node@10.9.1)
       tsup:
         specifier: 6.5.0
-        version: 6.5.0(postcss@8.4.21)(ts-node@10.9.1)(typescript@4.9.4)
+        version: 6.5.0(postcss@8.4.31)(ts-node@10.9.1)(typescript@4.9.4)
       typescript:
         specifier: 4.9.4
         version: 4.9.4
@@ -3570,7 +3570,7 @@ packages:
     peerDependencies:
       jasmine: 2.x || 3.x || 4.x
       jest: 26.x || 27.x || 28.x
-      typescript: 4.9.4
+      typescript: '>=4.2'
     peerDependenciesMeta:
       jasmine:
         optional: true
@@ -4403,7 +4403,7 @@ packages:
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.2.4(postcss@8.4.21)(ts-node@10.9.1)
+      tailwindcss: 3.2.4(postcss@8.4.31)(ts-node@10.9.1)
     dev: false
 
   /@tailwindcss/forms@0.5.1(tailwindcss@3.2.4):
@@ -4412,7 +4412,7 @@ packages:
       tailwindcss: '>=3.0.0 || >= 3.0.0-alpha.1'
     dependencies:
       mini-svg-data-uri: 1.4.4
-      tailwindcss: 3.2.4(postcss@8.4.21)(ts-node@10.9.1)
+      tailwindcss: 3.2.4(postcss@8.4.31)(ts-node@10.9.1)
     dev: false
 
   /@tailwindcss/line-clamp@0.4.0(tailwindcss@3.2.4):
@@ -4420,7 +4420,7 @@ packages:
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.2.4(postcss@8.4.21)(ts-node@10.9.1)
+      tailwindcss: 3.2.4(postcss@8.4.31)(ts-node@10.9.1)
     dev: false
 
   /@tailwindcss/typography@0.5.2(tailwindcss@3.2.4):
@@ -4431,7 +4431,7 @@ packages:
       lodash.castarray: 4.4.0
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
-      tailwindcss: 3.2.4(postcss@8.4.21)(ts-node@10.9.1)
+      tailwindcss: 3.2.4(postcss@8.4.31)(ts-node@10.9.1)
     dev: false
 
   /@tanstack/match-sorter-utils@8.8.4:
@@ -5384,7 +5384,7 @@ packages:
     engines: {pnpm: '>=7'}
     requiresBuild: true
     peerDependencies:
-      typescript: 4.9.4
+      typescript: '>=4.7.4'
     dependencies:
       typescript: 4.9.4
     dev: false
@@ -5707,7 +5707,7 @@ packages:
     engines: {node: '>=4'}
     dev: false
 
-  /autoprefixer@10.4.13(postcss@8.4.21):
+  /autoprefixer@10.4.13(postcss@8.4.31):
     resolution: {integrity: sha512-49vKpMqcZYsJjwotvt4+h/BCjJVnhGwcLpDt5xkcaOG3eLrG/HUYLagrihYsQ+qrIBgIzX1Rw7a6L8I/ZA1Atg==}
     engines: {node: ^10 || ^12 || >=14}
     hasBin: true
@@ -5719,7 +5719,7 @@ packages:
       fraction.js: 4.2.0
       normalize-range: 0.1.2
       picocolors: 1.0.0
-      postcss: 8.4.21
+      postcss: 8.4.31
       postcss-value-parser: 4.2.0
     dev: true
 
@@ -7350,7 +7350,7 @@ packages:
     resolution: {integrity: sha512-zdRAQOr8v69ZwJRtBrGqAqm160ONqKxU/pV1FB1KlgfyqveGsLZmlQ7l31otwtw763901J7xdiTVkj2y3YxXZA==}
     peerDependencies:
       eslint: ^7.23.0 || ^8.0.0
-      typescript: 4.9.4
+      typescript: '>=3.3.1'
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -11068,27 +11068,27 @@ packages:
     resolution: {integrity: sha512-xTgYBc3fuo7Yt7JbiuFxSYGToMoz8fLoE6TC9Wx1P/u+LfeThMOAqmuyECnlBaaJb+u1m9hHiXUEtwW4OzfUJg==}
     engines: {node: '>=0.10.0'}
 
-  /postcss-import@14.1.0(postcss@8.4.21):
+  /postcss-import@14.1.0(postcss@8.4.31):
     resolution: {integrity: sha512-flwI+Vgm4SElObFVPpTIT7SU7R3qk2L7PyduMcokiaVKuWv9d/U+Gm/QAd8NDLuykTWTkcrjOeD2Pp1rMeBTGw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       postcss: ^8.0.0
     dependencies:
-      postcss: 8.4.21
+      postcss: 8.4.31
       postcss-value-parser: 4.2.0
       read-cache: 1.0.0
       resolve: 1.22.2
 
-  /postcss-js@4.0.1(postcss@8.4.21):
+  /postcss-js@4.0.1(postcss@8.4.31):
     resolution: {integrity: sha512-dDLF8pEO191hJMtlHFPRa8xsizHaM82MLfNkUHdUtVEV3tgTp5oj+8qbEqYM57SLfc74KSbw//4SeJma2LRVIw==}
     engines: {node: ^12 || ^14 || >= 16}
     peerDependencies:
       postcss: ^8.4.21
     dependencies:
       camelcase-css: 2.0.1
-      postcss: 8.4.21
+      postcss: 8.4.31
 
-  /postcss-load-config@3.1.4(postcss@8.4.21)(ts-node@10.9.1):
+  /postcss-load-config@3.1.4(postcss@8.4.31)(ts-node@10.9.1):
     resolution: {integrity: sha512-6DiM4E7v4coTE4uzA8U//WhtPwyhiim3eyjEMFCnUpzbrkK9wJHgKDT2mR+HbtSrd/NubVaYTOpSpjUl8NQeRg==}
     engines: {node: '>= 10'}
     peerDependencies:
@@ -11101,17 +11101,17 @@ packages:
         optional: true
     dependencies:
       lilconfig: 2.1.0
-      postcss: 8.4.21
+      postcss: 8.4.31
       ts-node: 10.9.1(@types/node@18.11.18)(typescript@4.9.4)
       yaml: 1.10.2
 
-  /postcss-nested@6.0.0(postcss@8.4.21):
+  /postcss-nested@6.0.0(postcss@8.4.31):
     resolution: {integrity: sha512-0DkamqrPcmkBDsLn+vQDIrtkSbNkv5AD/M322ySo9kqFkCIYklym2xEmWkwo+Y3/qZo34tzEPNUw4y7yMCdv5w==}
     engines: {node: '>=12.0'}
     peerDependencies:
       postcss: ^8.2.14
     dependencies:
-      postcss: 8.4.21
+      postcss: 8.4.31
       postcss-selector-parser: 6.0.12
 
   /postcss-selector-parser@6.0.12:
@@ -11132,8 +11132,8 @@ packages:
       picocolors: 1.0.0
       source-map-js: 1.0.2
 
-  /postcss@8.4.21:
-    resolution: {integrity: sha512-tP7u/Sn/dVxK2NnruI4H9BG+x+Wxz6oeZ1cJ8P6G/PZY0IKk4k/63TDsQf2kQq3+qoJeLm2kIBUNlZe3zgb4Zg==}
+  /postcss@8.4.31:
+    resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
     engines: {node: ^10 || ^12 || >=14}
     dependencies:
       nanoid: 3.3.6
@@ -12781,7 +12781,7 @@ packages:
       wordwrapjs: 4.0.1
     dev: true
 
-  /tailwindcss@3.2.4(postcss@8.4.21)(ts-node@10.9.1):
+  /tailwindcss@3.2.4(postcss@8.4.31)(ts-node@10.9.1):
     resolution: {integrity: sha512-AhwtHCKMtR71JgeYDaswmZXhPcW9iuI9Sp2LvZPo9upDZ7231ZJ7eA9RaURbhpXGVlrjX4cFNlB4ieTetEb7hQ==}
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -12802,11 +12802,11 @@ packages:
       normalize-path: 3.0.0
       object-hash: 3.0.0
       picocolors: 1.0.0
-      postcss: 8.4.21
-      postcss-import: 14.1.0(postcss@8.4.21)
-      postcss-js: 4.0.1(postcss@8.4.21)
-      postcss-load-config: 3.1.4(postcss@8.4.21)(ts-node@10.9.1)
-      postcss-nested: 6.0.0(postcss@8.4.21)
+      postcss: 8.4.31
+      postcss-import: 14.1.0(postcss@8.4.31)
+      postcss-js: 4.0.1(postcss@8.4.31)
+      postcss-load-config: 3.1.4(postcss@8.4.31)(ts-node@10.9.1)
+      postcss-nested: 6.0.0(postcss@8.4.31)
       postcss-selector-parser: 6.0.12
       postcss-value-parser: 4.2.0
       quick-lru: 5.1.1
@@ -13013,7 +13013,7 @@ packages:
   /ts-essentials@7.0.3(typescript@4.9.4):
     resolution: {integrity: sha512-8+gr5+lqO3G84KdiTSMRLtuyJ+nTBVRKuCrK4lidMPdVeEp0uqC875uE5NMcaA7YYMN7XsNiFQuMvasF8HT/xQ==}
     peerDependencies:
-      typescript: 4.9.4
+      typescript: '>=3.7.0'
     dependencies:
       typescript: 4.9.4
     dev: true
@@ -13032,7 +13032,7 @@ packages:
       babel-jest: ^29.0.0
       esbuild: '*'
       jest: ^29.0.0
-      typescript: 4.9.4
+      typescript: '>=4.3'
     peerDependenciesMeta:
       '@babel/core':
         optional: true
@@ -13063,7 +13063,7 @@ packages:
       '@swc/core': '>=1.2.50'
       '@swc/wasm': '>=1.2.50'
       '@types/node': '*'
-      typescript: 4.9.4
+      typescript: '>=2.7'
     peerDependenciesMeta:
       '@swc/core':
         optional: true
@@ -13115,7 +13115,7 @@ packages:
     peerDependencies:
       '@swc/core': ^1
       postcss: ^8.4.12
-      typescript: 4.9.4
+      typescript: ^4.1.0
     peerDependenciesMeta:
       '@swc/core':
         optional: true
@@ -13133,7 +13133,7 @@ packages:
       execa: 5.1.1
       globby: 11.1.0
       joycon: 3.1.1
-      postcss-load-config: 3.1.4(postcss@8.4.21)(ts-node@10.9.1)
+      postcss-load-config: 3.1.4(postcss@8.4.31)(ts-node@10.9.1)
       resolve-from: 5.0.0
       rollup: 3.21.5
       source-map: 0.8.0-beta.0
@@ -13145,14 +13145,14 @@ packages:
       - ts-node
     dev: true
 
-  /tsup@6.5.0(postcss@8.4.21)(ts-node@10.9.1)(typescript@4.9.4):
+  /tsup@6.5.0(postcss@8.4.31)(ts-node@10.9.1)(typescript@4.9.4):
     resolution: {integrity: sha512-36u82r7rYqRHFkD15R20Cd4ercPkbYmuvRkz3Q1LCm5BsiFNUgpo36zbjVhCOgvjyxNBWNKHsaD5Rl8SykfzNA==}
     engines: {node: '>=14'}
     hasBin: true
     peerDependencies:
       '@swc/core': ^1
       postcss: ^8.4.12
-      typescript: 4.9.4
+      typescript: ^4.1.0
     peerDependenciesMeta:
       '@swc/core':
         optional: true
@@ -13169,8 +13169,8 @@ packages:
       execa: 5.1.1
       globby: 11.1.0
       joycon: 3.1.1
-      postcss: 8.4.21
-      postcss-load-config: 3.1.4(postcss@8.4.21)(ts-node@10.9.1)
+      postcss: 8.4.31
+      postcss-load-config: 3.1.4(postcss@8.4.31)(ts-node@10.9.1)
       resolve-from: 5.0.0
       rollup: 3.21.5
       source-map: 0.8.0-beta.0
@@ -13186,7 +13186,7 @@ packages:
     resolution: {integrity: sha512-mHKK3iUXL+3UF6xL5k0PEhKRUBKPBCv/+RkEOpjRWxxx27KKRBmmA60A9pgOUvMi8GKhRMPEmjBRPzs2W7O1OA==}
     engines: {node: '>= 6'}
     peerDependencies:
-      typescript: 4.9.4
+      typescript: '>=2.8.0 || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.6.0-beta || >= 3.7.0-dev || >= 3.7.0-beta'
     dependencies:
       tslib: 1.14.1
       typescript: 4.9.4
@@ -13314,7 +13314,7 @@ packages:
     resolution: {integrity: sha512-rqDfDYc9voVAhmfVfAwzg3VYFvhvs5ck1X9T/iWkX745Cul4t+V/smjnyqrbDzWDbzD93xfld1epg7Y/uFAesQ==}
     hasBin: true
     peerDependencies:
-      typescript: 4.9.4
+      typescript: '>=4.3.0'
     dependencies:
       '@types/prettier': 2.7.1
       debug: 4.3.4
