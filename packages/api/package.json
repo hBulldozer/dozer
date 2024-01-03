@@ -16,7 +16,7 @@
     "@trpc/next": "^10.23.0",
     "@dozer/database": "workspace:*",
     "superjson": "1.9.1",
-    "zod": "^3.21.4",
+    "zod": "^3.22.3",
     "@trpc/react-query": "^10.23.0"
   },
   "devDependencies": {
