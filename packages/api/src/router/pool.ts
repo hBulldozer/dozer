@@ -15,13 +15,13 @@ export const poolRouter = createTRPCRouter({
     })
   }),
   byIdFromContract: procedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ ncid: z.string() }))
     .output(FrontEndApiNCObject)
     .query(async ({ ctx, input }) => {
       const endpoint = 'nano_contract/state'
-      const queryParams = [`id=${input}`, `calls[]=front_end_api()`]
+      const queryParams = [`id=${input.ncid}`, `calls[]=front_end_api_pool()`]
       const response = await fetchNodeData(endpoint, queryParams)
-      const result = response['calls'][`front_end_api()`]['value']
+      const result = response['calls'][`front_end_api_pool()`]['value']
       return result
     }),
   byIdWithSnaps: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {

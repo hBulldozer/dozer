@@ -47,13 +47,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   if (!poolDB) {
     throw new Error(`Failed to fetch pool, received ${poolDB}`)
   }
-  const poolNC = await ssg.getPools.byIdFromContract.fetch({ id })
+  const poolNC = await ssg.getPools.byIdFromContract.fetch({ ncid: poolDB.ncid })
   if (!poolNC) {
     throw new Error(`Failed to fetch pool, received ${poolNC}`)
   }
   const tokens = [poolDB.token0, poolDB.token1]
   await ssg.getPools.byIdWithSnaps.prefetch({ id })
-  await ssg.getPools.byIdFromContract.prefetch({ id })
+  await ssg.getPools.byIdFromContract.prefetch({ ncid: poolDB.ncid })
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
   return {
@@ -77,11 +77,10 @@ const Pool = () => {
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
-  const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ id })
-  if (!poolNC) return <></>
   const { data: poolDB } = api.getPools.byIdWithSnaps.useQuery({ id })
-  // console.log(poolDB)
   if (!poolDB) return <></>
+  const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
+  if (!poolNC) return <></>
   const pair = poolDB && poolNC ? pairFromPoolMerged(poolDB, poolNC) : ({} as Pair)
   if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []

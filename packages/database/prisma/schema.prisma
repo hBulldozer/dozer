@@ -1,5 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -23,9 +23,7 @@ model Token {
   isLiquidityToken Boolean     @default(false)
   poolsLP          Pool[]      @relation("tokenLP")
   pools0           Pool[]      @relation("token0")
-  dozerpools0      DozerPool[] @relation("token0")
   pools1           Pool[]      @relation("token1")
-  dozerpools1      DozerPool[] @relation("token1")
   incentives       Incentive[]
 
   @@unique([chainId, uuid])
@@ -37,6 +35,7 @@ model Token {
 
 model Pool {
   id            String         @id
+  ncid          String         @default("00")
   name          String
   apr           Float
   chainId       Int
@@ -74,31 +73,25 @@ model Pool {
 model daySnapshot {
   id           Int      @id @default(autoincrement())
   poolId       String
-  dozerpoolId  String
-  date         DateTime
-  volumeUSD    Float
-  liquidityUSD Float
-  apr          Float
-  pool         Pool          @relation(fields: [poolId], references: [id])
-  dozerpool    DozerPool     @relation(fields: [dozerpoolId], references: [id])
-
-  @@index([poolId])
-  @@index([dozerpoolId])
-}
-
-model hourSnapshot {
-  id           Int      @id @default(autoincrement())
-  poolId       String
-  dozerpoolId       String
   date         DateTime
   volumeUSD    Float
   liquidityUSD Float
   apr          Float
   pool         Pool     @relation(fields: [poolId], references: [id])
-  dozerpool         DozerPool     @relation(fields: [dozerpoolId], references: [id])
 
   @@index([poolId])
-  @@index([dozerpoolId])
+}
+
+model hourSnapshot {
+  id           Int      @id @default(autoincrement())
+  poolId       String
+  date         DateTime
+  volumeUSD    Float
+  liquidityUSD Float
+  apr          Float
+  pool         Pool     @relation(fields: [poolId], references: [id])
+
+  @@index([poolId])
 }
 
 model Incentive {
@@ -108,52 +101,45 @@ model Incentive {
   rewardPerDay    Float
   rewardTokenId   String
   poolId          String
-  dozerpoolId          String
   pid             Int
   rewarderAddress String
-  rewardToken     Token       @relation(fields: [rewardTokenId], references: [id])
-  pool            Pool        @relation(fields: [poolId], references: [id])
-  dozerpool       DozerPool   @relation(fields: [dozerpoolId], references: [id])
+  rewardToken     Token  @relation(fields: [rewardTokenId], references: [id])
+  pool            Pool   @relation(fields: [poolId], references: [id])
 
   @@index([id])
   @@index([poolId])
   @@index([rewardTokenId])
   @@index([chainId, rewardTokenId])
-  @@index([dozerpoolId])
 }
 
-model DozerPool {
-  id            String         @id
-  ncid          String
-  name          String
-  apr           Float
-  chainId       Int
-  version       String
-  token0Id      String
-  token1Id      String
-  swapFee       Float
-  feeUSD        Float
-  reserve0      String         @default("0")
-  reserve1      String         @default("0")
-  liquidityUSD  Float
-  volumeUSD     Float
-  liquidity     Float
-  volume1d      Float
-  fees1d        Float
-  generatedAt   DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  tokenLPId     String         @default("0")
-  token0        Token          @relation("token0", fields: [token0Id], references: [id])
-  token1        Token          @relation("token1", fields: [token1Id], references: [id])
-  daySnapshots  daySnapshot[]
-  hourSnapshots hourSnapshot[]
-  Incentive     Incentive[]
+model vt_HOLD_5ab9d7f7ee435b65b1fd7efffe213a11_20240105134236 {
+  id           String   @id
+  name         String
+  apr          Float
+  chainId      Int
+  version      String
+  token0Id     String
+  token1Id     String
+  swapFee      Float
+  feeUSD       Float
+  reserve0     String   @default("0")
+  reserve1     String   @default("0")
+  liquidityUSD Float
+  volumeUSD    Float
+  liquidity    Float
+  volume1d     Float
+  fees1d       Float
+  generatedAt  DateTime @default(now())
+  updatedAt    DateTime
+  tokenLPId    String   @default("0")
+  ncid         String?  @db.VarChar(64)
 
-  @@index([id])
-  @@index([chainId])
-  @@index([chainId, version])
-  @@index([token0Id])
-  @@index([token1Id])
-  @@index([generatedAt])
-  @@index([tokenLPId])
+  @@index([chainId], map: "Pool_chainId_idx")
+  @@index([chainId, version], map: "Pool_chainId_version_idx")
+  @@index([generatedAt], map: "Pool_generatedAt_idx")
+  @@index([id], map: "Pool_id_idx")
+  @@index([token0Id], map: "Pool_token0Id_idx")
+  @@index([token1Id], map: "Pool_token1Id_idx")
+  @@index([tokenLPId], map: "Pool_tokenLPId_idx")
+  @@map("_vt_HOLD_5ab9d7f7ee435b65b1fd7efffe213a11_20240105134236")
 }

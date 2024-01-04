@@ -30,9 +30,11 @@ export const NanoStateRouter = createTRPCRouter({
     }),
   api: procedure.query(async ({ ctx }) => {
     const contractId = '00009a7b3e3e3a062de7429e49168b7a8bd437058b152e6ef881288abe9eb6c0'
-    const resp = await fetch(`http://localhost:8080/v1a/nano_contract/state?id=${contractId}&calls[]=front_end_api()`)
+    const resp = await fetch(
+      `http://localhost:8080/v1a/nano_contract/state?id=${contractId}&calls[]=front_end_api_pool()`
+    )
     const data = await resp.json()
-    const result: ApiResult = data['calls']['front_end_api()']['value']
+    const result: ApiResult = data['calls']['front_end_api_pool()']['value']
     return result
   }),
 })
