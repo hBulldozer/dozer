@@ -20,8 +20,7 @@ export function fetchFakeData(endpoint: string, queryParams: string[]): any {
         },
       },
     }
-  }
-  if (queryParams[1]?.includes('max_withdrawal')) {
+  } else if (queryParams[1]?.includes('max_withdrawal')) {
     const key = queryParams[1]?.split('=')[1] || 'defaultKey'
     return {
       calls: {
@@ -43,7 +42,7 @@ export function fetchFakeData(endpoint: string, queryParams: string[]): any {
         },
       },
     }
-  } else if (queryParams[1]?.includes('front_end_api')) {
+  } else if (queryParams[1]?.includes('front_end_api()')) {
     const key = queryParams[1]?.split('=')[1] || 'defaultKey'
     return {
       calls: {
@@ -53,8 +52,8 @@ export function fetchFakeData(endpoint: string, queryParams: string[]): any {
             reserve1: 2000,
             fee: 0.1,
             volume: 10000,
-            fee_a: 10,
-            fee_b: 20,
+            fee0: 10,
+            fee1: 20,
             dzr_rewards: 200,
             transactions: 2,
           },
