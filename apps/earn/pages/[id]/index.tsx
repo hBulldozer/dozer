@@ -19,8 +19,7 @@ import {
 
 import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
-import { RouterOutputs, api } from '../../utils/trpc'
-import { FrontEndApiNCOutput } from '@dozer/api'
+import { api } from '../../utils/trpc'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()

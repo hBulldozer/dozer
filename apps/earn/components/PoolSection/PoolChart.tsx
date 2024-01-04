@@ -52,7 +52,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
         if (date >= currentDate - chartTimespans[chartPeriod]) {
           acc[0].push(date / 1000)
           if (chartType === PoolChartType.Fees) {
-            acc[1].push(Number(cur.volumeUSD * (pair.swapFee / 10000)))
+            acc[1].push(Number(cur.volumeUSD * (pair.swapFee / 100)))
           } else if (chartType === PoolChartType.Volume) {
             acc[1].push(Number(cur.volumeUSD))
           } else if (chartType === PoolChartType.TVL) {
@@ -90,7 +90,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
       }
 
       if (chartType === PoolChartType.Volume) {
-        valueNodes[1].innerHTML = formatUSD(value * (pair.swapFee / 10000))
+        valueNodes[1].innerHTML = formatUSD(value * (pair.swapFee / 100))
       }
       nameNodes[0].innerHTML = format(new Date(name * 1000), 'dd MMM yyyy HH:mm')
     },
@@ -326,7 +326,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           {chartType === PoolChartType.Volume && (
             <span className="text-sm font-medium text-stone-300">
               <span className="text-xs top-[-2px] relative">•</span>{' '}
-              <span className="hoveredItemValue">{formatUSD(yData[yData.length - 1] * (pair.swapFee / 10000))}</span>{' '}
+              <span className="hoveredItemValue">{formatUSD(yData[yData.length - 1] * (pair.swapFee / 100))}</span>{' '}
               earned
             </span>
           )}

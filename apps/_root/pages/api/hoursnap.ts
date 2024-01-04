@@ -19,7 +19,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
         apr: pool.apr + Math.random(),
         date: new Date(),
         liquidityUSD: pool.liquidityUSD + Math.random() * 10,
-        volumeUSD: pool.volumeUSD + Math.random() * 100,
+        volumeUSD: pool.volumeUSD + Math.random() * 10000,
       })
     })
     const snaps = await prisma.hourSnapshot.createMany({
