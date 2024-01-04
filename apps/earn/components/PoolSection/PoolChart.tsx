@@ -60,8 +60,13 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           } else if (chartType === PoolChartType.APR) {
             acc[1].push(Number(cur.apr))
           } else if (chartType === PoolChartType.Price) {
-            const number = Number(cur.apr)
-            acc[1].push({ value: [number - 0.2, number, number - 0.24, number + 0.02], visualMap: false })
+            const apr = Number(cur.apr)
+            const number = apr > 0.5 ? 0.51 : apr > 0.4 ? 0.48 : apr > 0.3 ? 0.45 : 0.2
+            const rand = Math.random() > 0.5 ? 1 : -1
+            acc[1].push({
+              value: [number + rand * 0.02, number, number + rand * 0.024, number + rand * 0.02],
+              visualMap: false,
+            })
           }
         }
         return acc
@@ -178,6 +183,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
                 normal: {
                   borderColor: '#555',
                   borderColor0: '#222',
+                  borderWidth: 0.5,
                 },
               },
               animationEasing: 'elasticOut',
