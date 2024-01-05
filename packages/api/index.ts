@@ -19,4 +19,6 @@ export type RouterInputs = inferRouterInputs<AppRouter>
 export type RouterOutputs = inferRouterOutputs<AppRouter>
 
 export * from './src/types'
+export * from './src/functions'
+export * from './src/hooks'
 export type { client } from './src/client'

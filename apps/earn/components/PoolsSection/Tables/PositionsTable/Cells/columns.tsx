@@ -7,7 +7,7 @@ import { PairChainCell } from './PairChainCell'
 import { PairNameCell } from './PairNameCell'
 import { PairValueCell } from './PairValueCell'
 import { PairVolume24hCell } from './PairVolume24hCell'
-import { Pair } from '../../../../../utils/Pair'
+import { Pair } from '@dozer/api'
 
 type TData = Pair
 

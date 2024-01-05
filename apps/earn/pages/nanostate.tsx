@@ -1,4 +1,4 @@
-import { RouterOutputs, api } from '../utils/trpc'
+import { RouterOutputs, api } from '../utils/api'
 import { useAccount } from '@dozer/zustand'
 
 const Nanostate = () => {

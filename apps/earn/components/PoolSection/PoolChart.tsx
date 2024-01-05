@@ -1,5 +1,5 @@
 import { formatPercent, formatUSD } from '@dozer/format'
-import { Pair } from '../../utils/Pair.jsx'
+import { Pair } from '@dozer/api'
 import { AppearOnMount, classNames, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
 import ReactECharts from 'echarts-for-react'

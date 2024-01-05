@@ -1,6 +1,6 @@
 import { formatPercent } from '@dozer/format'
 
-import { Pair } from '../../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { Typography } from '@dozer/ui'
 import React, { FC } from 'react'
 

@@ -1,6 +1,6 @@
 // import { getAddress } from '@ethersproject/address'
 // import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { FundSource } from '@dozer/hooks'
 import { ZERO } from '@dozer/math'
 import { Button, Link } from '@dozer/ui'

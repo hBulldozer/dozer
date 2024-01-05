@@ -264,9 +264,6 @@ importers:
       '@trpc/react-query':
         specifier: ^10.45.0
         version: 10.45.0(@tanstack/react-query@4.35.7)(@trpc/client@10.45.0)(@trpc/server@10.45.0)(react-dom@18.2.0)(react@18.2.0)
-      '@trpc/server':
-        specifier: ^10.45.0
-        version: 10.45.0
       '@vercel/analytics':
         specifier: 0.1.5
         version: 0.1.5(react@18.2.0)
@@ -645,9 +642,18 @@ importers:
 
   packages/api:
     dependencies:
+      '@dozer/chain':
+        specifier: workspace:*
+        version: link:../chain
+      '@dozer/currency':
+        specifier: workspace:*
+        version: link:../currency
       '@dozer/database':
         specifier: workspace:*
         version: link:../database
+      '@dozer/math':
+        specifier: workspace:*
+        version: link:../math
       '@trpc/client':
         specifier: ^10.45.0
         version: 10.45.0(@trpc/server@10.45.0)
@@ -660,6 +666,12 @@ importers:
       '@trpc/server':
         specifier: ^10.45.0
         version: 10.45.0
+      '@types/react':
+        specifier: ^18.0.0
+        version: 18.2.46
+      react:
+        specifier: 18.2.0
+        version: 18.2.0
       superjson:
         specifier: 1.9.1
         version: 1.9.1
@@ -3793,6 +3805,7 @@ packages:
 
   /@motionone/easing@10.16.3:
     resolution: {integrity: sha512-HWTMZbTmZojzwEuKT/xCdvoMPXjYSyQvuVM6jmM0yoGU6BWzsmYMeB4bn38UFf618fJCNtP9XeC/zxtKWfbr0w==}
+    requiresBuild: true
     dependencies:
       '@motionone/utils': 10.16.3
       tslib: 2.4.0
@@ -4082,6 +4095,7 @@ packages:
     dependencies:
       is-glob: 4.0.3
       micromatch: 4.0.5
+      napi-wasm: 1.1.0
     dev: false
     optional: true
     bundledDependencies:
@@ -11982,6 +11996,12 @@ packages:
     engines: {node: ^18 || >=20}
     hasBin: true
     dev: false
+
+  /napi-wasm@1.1.0:
+    resolution: {integrity: sha512-lHwIAJbmLSjF9VDRm9GoVOy9AGp3aIvkjv+Kvz9h16QR3uSVYH78PNQUnT2U4X53mhlnV2M7wrhibQ3GHicDmg==}
+    requiresBuild: true
+    dev: false
+    optional: true
 
   /natural-compare-lite@1.4.0:
     resolution: {integrity: sha512-Tj+HTDSJJKaZnfiuw+iaF9skdPpTo2GtEly5JHnWV/hfv2Qj/9RKsGISQtLh2ox3l5EAGw487hnBee0sIJ6v2g==}

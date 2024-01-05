@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPoolMerged, pairWithSnapsFromPool } from '../../utils/Pair'
+import { Pair, pairFromPoolMerged, pairWithSnapsFromPool } from '@dozer/api'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
@@ -19,7 +19,8 @@ import {
 
 import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
-import { api } from '../../utils/trpc'
+import { RouterOutputs, api } from '../../utils/api'
+import { FrontEndApiNCOutput } from '@dozer/api'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()

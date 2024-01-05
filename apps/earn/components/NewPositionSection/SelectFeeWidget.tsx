@@ -1,11 +1,20 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { Fee } from '../../utils/Fee'
 import { ChainId } from '@dozer/chain'
 import { Tab, Tooltip, Typography } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
 import React, { FC, memo } from 'react'
 
 // import { TRIDENT_ENABLED_NETWORKS } from '../../config'
+
+// Fee - Tiers TBD
+enum Fee {
+  LOW = 1,
+  MEDIUM = 5,
+  AVERAGE = 10,
+  DEFAULT = 30,
+  HIGH = 100,
+  //   MAX = 10000
+}
 
 interface SelectFeeWidgetProps {
   selectedNetwork: ChainId

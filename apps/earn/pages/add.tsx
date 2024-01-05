@@ -7,11 +7,10 @@ import { AddSectionMyPosition, AddSectionReviewModalLegacy, Layout, SelectNetwor
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { Checker, Web3Input } from '@dozer/higmi'
 import { GetStaticProps } from 'next'
-import { dbPoolWithTokens } from '../interfaces'
-import { PairState, pairFromPoolAndTokensList } from '../utils/Pair'
+import { PairState, pairFromPoolAndTokensList, dbPoolWithTokens } from '@dozer/api'
 import { useTrade } from '@dozer/zustand'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
-import { RouterOutputs, api } from '../utils/trpc'
+import { RouterOutputs, api } from '../utils/api'
 
 type TokenOutputArray = RouterOutputs['getTokens']['all']
 

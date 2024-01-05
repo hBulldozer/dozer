@@ -6,8 +6,8 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { AddSectionReviewModalLegacy } from './AddSectionReviewModalLegacy'
 import { AddSectionWidget } from './AddSectionWidget'
-import { dbPoolWithTokens } from '../../interfaces'
-import toToken from '../../utils/toToken'
+import { dbPoolWithTokens } from '@dozer/api'
+import { toToken } from '@dozer/api'
 import { useTrade } from '@dozer/zustand'
 
 export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: string]: number } }> = ({

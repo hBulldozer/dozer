@@ -1,7 +1,7 @@
 // import { Native } from '@dozer/currency'
 import { formatNumber, formatPercent, formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { Typography } from '@dozer/ui'
 import { FC } from 'react'
 

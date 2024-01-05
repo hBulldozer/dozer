@@ -1,13 +1,13 @@
 import { ExternalLinkIcon } from '@heroicons/react/solid'
 import { formatPercent } from '@dozer/format'
-import { Pair, pairFromPool } from '../../utils/Pair'
+import { Pair, pairFromPool } from '@dozer/api'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
 
 import { AddSectionLegacy, AddSectionMyPosition, Layout } from '../../components'
 
-import { RouterOutputs, api } from '../../utils/trpc'
+import { RouterOutputs, api } from '../../utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 
 type PoolsOutputArray = RouterOutputs['getPools']['all']

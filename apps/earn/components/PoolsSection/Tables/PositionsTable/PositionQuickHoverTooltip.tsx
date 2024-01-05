@@ -7,11 +7,11 @@ import { FC } from 'react'
 // import { PoolPositionRewardsProvider, usePoolPositionRewards } from '../../../PoolPositionRewardsProvider'
 // import { PoolPositionStakedProvider, usePoolPositionStaked } from '../../../PoolPositionStakedProvider'
 import { ICON_SIZE } from '../contants'
-import { Pair } from '../../../../utils/Pair'
-import { useTokensFromPair } from '../../../../utils/useTokensFromPair'
-import { dbTokenWithPools } from '../../../../interfaces'
+import { Pair } from '@dozer/api'
+import { useTokensFromPair } from '@dozer/api'
+import { dbTokenWithPools } from '@dozer/api'
 import { PoolPositionProvider, usePoolPosition } from '../../../PoolPositionProvider'
-import { api } from '../../../../utils/trpc'
+import { api } from '../../../../utils/api'
 
 interface PositionQuickHoverTooltipProps {
   row: Pair

@@ -7,10 +7,10 @@ import { FC, useMemo, useState } from 'react'
 
 import { useAccount, useNetwork, useSettings } from '@dozer/zustand'
 import { RemoveSectionWidget } from './RemoveSectionWidget'
-import toToken from '../../utils/toToken'
-import { dbPoolWithTokens } from '../../interfaces'
-import { useUnderlyingTokenBalanceFromPair } from '../../utils/useUnderlyingTokenBalanceFromPair'
-import { pairFromPool } from '../../utils/Pair'
+import { toToken } from '@dozer/api'
+import { dbPoolWithTokens } from '@dozer/api'
+import { useUnderlyingTokenBalanceFromPair } from '@dozer/api'
+import { pairFromPool } from '@dozer/api'
 import { usePoolPosition } from '../PoolPositionProvider'
 
 interface RemoveSectionLegacyProps {

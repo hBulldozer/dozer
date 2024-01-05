@@ -1,6 +1,6 @@
 import { formatNumber, formatPercent } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { Currency, Table, Typography } from '@dozer/ui'
 import React, { FC } from 'react'
 

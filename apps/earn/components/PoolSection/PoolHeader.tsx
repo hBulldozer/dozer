@@ -3,12 +3,12 @@ import chains from '@dozer/chain'
 import { Price } from '@dozer/currency'
 import { formatPercent, formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { AppearOnMount, Currency, Link, NetworkIcon, Typography } from '@dozer/ui'
 import { FC, useMemo } from 'react'
 
 // import { useTokensFromPair } from '../../lib/hooks'
-import { useTokensFromPair } from '../../utils/useTokensFromPair'
+import { useTokensFromPair } from '@dozer/api'
 import { FarmRewardsAvailableTooltip } from '../FarmRewardsAvailableTooltip'
 
 interface PoolHeader {

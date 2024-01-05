@@ -14,7 +14,7 @@ import { useRouter } from 'next/router'
 import { api, RouterOutputs } from 'utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import type { GetStaticProps } from 'next'
-import type { dbPoolWithTokens } from '../interfaces'
+import type { dbPoolWithTokens } from '@dozer/api'
 
 type TokenOutputArray = RouterOutputs['getTokens']['all']
 

@@ -9,8 +9,8 @@ import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
 import { useAccount, useNetwork } from '@dozer/zustand'
 import { PAGE_SIZE } from '../contants'
 import { ChainId } from '@dozer/chain'
-import { Pair, pairFromPool } from '../../../../utils/Pair'
-import { api } from '../../../../utils/trpc'
+import { Pair, pairFromPool } from '@dozer/api'
+import { api } from '../../../../utils/api'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore

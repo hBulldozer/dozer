@@ -3,7 +3,7 @@ import { useInViewport } from '@dozer/hooks'
 import { classNames, Currency, NetworkIcon, Typography } from '@dozer/ui'
 import { FC, useRef } from 'react'
 
-import { useTokensFromPair } from '../../../../../utils/useTokensFromPair'
+import { useTokensFromPair } from '@dozer/api'
 import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
 

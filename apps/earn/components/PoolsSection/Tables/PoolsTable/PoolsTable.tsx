@@ -1,6 +1,6 @@
 // import { ChainId } from '@dozer/chain'
 // import { Pair, PairType, QuerypairsArgs } from '@dozer/graph-client'
-import { Pair, pairFromPool } from '../../../../utils/Pair'
+import { Pair, pairFromPool } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
 import { GenericTable, Table } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
@@ -14,7 +14,7 @@ import { getTokens } from '@dozer/currency'
 import { ChainId, Network } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
-import { RouterOutputs, api } from '../../../../utils/trpc'
+import { RouterOutputs, api } from '../../../../utils/api'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore

@@ -1,4 +1,4 @@
-import { UserWithFarm } from '../../../utils/Pair'
+import { UserWithFarm } from '@dozer/api'
 
 export interface CellProps {
   row: UserWithFarm

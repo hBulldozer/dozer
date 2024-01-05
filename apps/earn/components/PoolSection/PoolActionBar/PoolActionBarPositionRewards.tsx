@@ -1,6 +1,6 @@
 import { formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { Button, Currency, Dialog, Typography } from '@dozer/ui'
 import { Checker } from '@dozer/higmi'
 import { FC, useCallback } from 'react'

@@ -1,5 +1,5 @@
 // import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
 import { AppearOnMount, Typography } from '@dozer/ui'
 import { FC, Fragment, useState } from 'react'

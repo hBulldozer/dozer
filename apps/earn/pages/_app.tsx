@@ -15,7 +15,7 @@ import { FC, useEffect, useState } from 'react'
 
 // import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Head from 'next/head'
-import { api } from '../utils/trpc'
+import { api } from '../utils/api'
 
 // const queryClient = new QueryClient()
 

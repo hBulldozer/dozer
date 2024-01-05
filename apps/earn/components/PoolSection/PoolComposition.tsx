@@ -1,12 +1,12 @@
 // import { Native } from '@dozer/currency'
 import { formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { AppearOnMount, Currency, Table, Typography } from '@dozer/ui'
 import { FC } from 'react'
 
 // import { useTokensFromPair } from '../../lib/hooks'
-import { useTokensFromPair } from '../../utils/useTokensFromPair'
+import { useTokensFromPair } from '@dozer/api'
 
 interface PoolCompositionProps {
   pair: Pair

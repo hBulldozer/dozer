@@ -1,5 +1,5 @@
 import { formatUSD } from '@dozer/format'
-import { Pair } from '../../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
 import { Typography } from '@dozer/ui'
 import { FC } from 'react'

@@ -5,7 +5,7 @@ import { FC, useEffect, useState } from 'react'
 import { useAccount } from '@dozer/zustand'
 
 import { PoolsTable, PositionsTable } from './Tables'
-import { Pair } from '../../utils/Pair'
+import { Pair } from '@dozer/api'
 // import { PoolsTable, PositionsTable } from './Tables'
 // import { TableFilters } from './Tables/TableFilters'
 

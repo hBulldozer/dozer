@@ -4,7 +4,7 @@ import { FC } from 'react'
 
 import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
-import { useTokensFromPair } from '../../../../../utils/useTokensFromPair'
+import { useTokensFromPair } from '@dozer/api'
 
 export const PairNameCell: FC<CellProps> = ({ row }) => {
   const { token0, token1 } = useTokensFromPair(row)
