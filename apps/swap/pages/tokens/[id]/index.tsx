@@ -3,12 +3,13 @@ import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { Pair, pairFromPoolMerged } from '@dozer/api'
 
-import { Layout, PoolHeader } from '../../../components'
+import { Layout } from 'components/Layout'
+import { TokenHeader } from 'components'
 
 import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../utils/api'
-import { TokenChart } from '../../../components/PoolSection/TokenChart'
+import { TokenChart } from '../../../components/TokenPage/TokenChart'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -59,7 +60,7 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   },
 ]
 
-const Pool = () => {
+const Token = () => {
   const router = useRouter()
   const id = router.query.id as string
 
@@ -79,7 +80,7 @@ const Pool = () => {
       <Layout breadcrumbs={LINKS({ pair })}>
         <div className="flex flex-col lg:grid lg:grid-cols-[1024px_auto] gap-12">
           <div className="flex flex-col order-1 gap-9">
-            <PoolHeader pair={pair} prices={prices} />
+            <TokenHeader pair={pair} prices={prices} />
             <hr className="my-3 border-t border-stone-200/5" />
             <TokenChart pair={pair} />
           </div>
@@ -89,4 +90,4 @@ const Pool = () => {
   )
 }
 
-export default Pool
+export default Token
