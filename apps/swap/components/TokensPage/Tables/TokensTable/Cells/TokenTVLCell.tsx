@@ -4,7 +4,7 @@ import { FC } from 'react'
 
 import { CellProps } from './types'
 
-export const PairTVLCell: FC<CellProps> = ({ row }) => {
+export const TokenTVLCell: FC<CellProps> = ({ row }) => {
   const tvl = formatUSD(row.liquidityUSD)
   return (
     <Typography variant="sm" weight={600} className="text-right text-stone-50">

@@ -4,7 +4,7 @@ import { FC } from 'react'
 
 import { CellProps } from './types'
 
-export const PairAPRCell: FC<CellProps> = ({ row }) => {
+export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   return (
     <Typography variant="sm" weight={600} className="flex items-center justify-end gap-1 text-stone-50">
       {/* {!!row.farm && row.incentiveApr > 0 && <FarmRewardsAvailableTooltip />} */}

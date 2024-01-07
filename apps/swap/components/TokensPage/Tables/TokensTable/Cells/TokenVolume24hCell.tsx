@@ -4,7 +4,7 @@ import { FC } from 'react'
 
 import { CellProps } from './types'
 
-export const PairVolume24hCell: FC<CellProps> = ({ row }) => {
+export const TokenVolume24hCell: FC<CellProps> = ({ row }) => {
   const volume = formatUSD(row.volume1d)
 
   return (

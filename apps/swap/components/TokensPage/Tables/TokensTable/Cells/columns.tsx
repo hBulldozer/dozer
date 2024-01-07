@@ -2,20 +2,20 @@ import { Pair } from '@dozer/api'
 import { ColumnDef } from '@tanstack/react-table'
 import React from 'react'
 
-import { PairAPRCell } from './PairAPRCell'
-import { PairChainCell } from './PairChainCell'
-import { PairFees24hCell } from './PairFees24hCell'
-import { PairNameCell } from './PairNameCell'
-import { PairTVLCell } from './PairTVLCell'
-import { PairVolume24hCell } from './PairVolume24hCell'
+import { TokenMiniChartCell } from './TokenMiniChartCell'
+import { TokenChangeCell } from './TokenChangeCell'
+import { TokenPriceCell } from './TokenPriceCell'
+import { TokenNameCell } from './TokenNameCell'
+import { TokenTVLCell } from './TokenTVLCell'
+import { TokenVolume24hCell } from './TokenVolume24hCell'
 
 export const ICON_SIZE = 26
 export const PAGE_SIZE = 20
 
-export const NETWORK_COLUMN: ColumnDef<Pair, unknown> = {
-  id: 'network',
-  header: 'Network',
-  cell: (props) => <PairChainCell row={props.row.original} />,
+export const CHART_COLUMN: ColumnDef<Pair, unknown> = {
+  id: 'chart',
+  header: '',
+  cell: (props) => <TokenMiniChartCell row={props.row.original} />,
   size: 50,
   meta: {
     skeleton: <div className="rounded-full bg-stone-700 w-[26px] h-[26px] animate-pulse" />,
@@ -25,7 +25,7 @@ export const NETWORK_COLUMN: ColumnDef<Pair, unknown> = {
 export const NAME_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'name',
   header: 'Name',
-  cell: (props) => <PairNameCell row={props.row.original} />,
+  cell: (props) => <TokenNameCell row={props.row.original} />,
   size: 160,
   meta: {
     skeleton: (
@@ -46,7 +46,7 @@ export const TVL_COLUMN: ColumnDef<Pair, unknown> = {
   header: 'TVL',
   id: 'liquidityUSD',
   accessorFn: (row) => row.liquidityUSD,
-  cell: (props) => <PairTVLCell row={props.row.original} />,
+  cell: (props) => <TokenTVLCell row={props.row.original} />,
   size: 100,
   meta: {
     className: 'justify-end',
@@ -54,10 +54,10 @@ export const TVL_COLUMN: ColumnDef<Pair, unknown> = {
   },
 }
 
-export const APR_COLUMN: ColumnDef<Pair, unknown> = {
-  id: 'apr',
-  header: 'APR',
-  cell: (props) => <PairAPRCell row={props.row.original} />,
+export const CHANGE_COLUMN: ColumnDef<Pair, unknown> = {
+  id: 'change',
+  header: 'Change',
+  cell: (props) => <TokenChangeCell row={props.row.original} />,
   size: 100,
   meta: {
     className: 'justify-end',
@@ -68,7 +68,7 @@ export const APR_COLUMN: ColumnDef<Pair, unknown> = {
 export const VOLUME_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'volume',
   header: 'Volume (24h)',
-  cell: (props) => <PairVolume24hCell row={props.row.original} />,
+  cell: (props) => <TokenVolume24hCell row={props.row.original} />,
   size: 100,
   meta: {
     className: 'justify-end',
@@ -76,11 +76,11 @@ export const VOLUME_COLUMN: ColumnDef<Pair, unknown> = {
   },
 }
 
-export const FEES_COLUMN: ColumnDef<Pair, unknown> = {
-  header: 'Fees (24h)',
-  id: 'fees',
+export const PRICE_COLUMN: ColumnDef<Pair, unknown> = {
+  header: 'Price',
+  id: 'price',
   // accessorFn: (row) => row.fees24h,
-  cell: (props) => <PairFees24hCell row={props.row.original} />,
+  cell: (props) => <TokenPriceCell row={props.row.original} />,
   size: 100,
   meta: {
     className: 'justify-end',

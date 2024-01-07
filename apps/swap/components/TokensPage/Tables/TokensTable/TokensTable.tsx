@@ -9,17 +9,16 @@ import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 // import { usePoolFilters } from '../../../PoolsFiltersProvider'
 import { PAGE_SIZE } from '../contants'
-import { APR_COLUMN, FEES_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN } from './Cells/columns'
+import { CHANGE_COLUMN, PRICE_COLUMN, CHART_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN } from './Cells/columns'
 import { getTokens } from '@dozer/currency'
 import { ChainId, Network } from '@dozer/chain'
-import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
 import { RouterOutputs, api } from '../../../../utils/api'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 // const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN]
-const COLUMNS = [NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN]
+const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, TVL_COLUMN, VOLUME_COLUMN, CHART_COLUMN]
 
 // const fetcher = ({
 //   url,
@@ -205,7 +204,7 @@ export const TokensTable: FC = () => {
   }, [isMd, isSm])
 
   const rowLink = useCallback((row: Pair) => {
-    return `/${row.id}`
+    return `/tokens/${row.id}`
   }, [])
 
   return (
@@ -213,7 +212,6 @@ export const TokensTable: FC = () => {
       <GenericTable<Pair>
         table={table}
         loading={isLoading}
-        HoverElement={isMd ? PairQuickHoverTooltip : undefined}
         placeholder={'No pools found'}
         pageSize={PAGE_SIZE}
         linkFormatter={rowLink}
