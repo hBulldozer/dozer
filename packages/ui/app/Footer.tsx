@@ -88,24 +88,24 @@ export function Footer(props: FooterProps): JSX.Element {
   )
 
   return (
-    <footer className="hidden sm:flex flex-col border-t border-stone-400/5 pt-[72px]" {...props}>
+    <footer className="hidden sm:flex flex-col border-t border-stone-300/5 mt-auto pt-[32px]" {...props}>
       <Container maxWidth="5xl" className="grid grid-cols-1 md:grid-cols-[176px_auto] mx-auto px-4 gap-4">
         <div className="flex flex-col gap-5">
-          <div className="flex items-center justify-start w-20 gap-3 pt-2">
+          <div className="items-center justify-start w-32 gap-3 pt-2">
             <DozerWithTextIcon />
           </div>
-          <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-400">
+          <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-300">
             Safe, fast and beautiful.
           </div>
           <div className="flex items-center gap-4">
             <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">
-              <GithubIcon width={16} className="text-stone-300 hover:text-stone-50" />
+              <GithubIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
             <a href="https://twitter.com/DozerProtocol" target="_blank" rel="noopener noreferrer">
-              <TwitterIcon width={16} className="text-stone-300 hover:text-stone-50" />
+              <TwitterIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
             <a href="https://discord.gg/cYquxw8w" target="_blank" rel="noopener noreferrer">
-              <DiscordIcon width={16} className="text-stone-300 hover:text-stone-50" />
+              <DiscordIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
           </div>
         </div>
@@ -127,14 +127,14 @@ export function Footer(props: FooterProps): JSX.Element {
           })}
         </div>
       </Container>
-      <Container maxWidth="5xl" className="mx-auto mt-20 mb-5">
+      <Container maxWidth="5xl" className="mx-auto mt-8 mb-2">
         <div className="flex justify-between py-2 mx-4 border-t border-stone-800">
-          <Typography variant="xs" className="text-stone-400">
+          <Typography variant="xs" className="text-stone-300">
             Copyright © 2023 Dozer. All rights reserved.
           </Typography>
-          <div className="flex divide-x divide-stone-200/20 gap-">
+          <div className="flex divide-x divide-stone-100/20 gap-">
             <Link.Internal href="https://dozer.finance" passHref={true}>
-              <Typography as="a" variant="xs" weight={500} className="px-3 text-stone-300">
+              <Typography as="a" variant="xs" weight={500} className="px-3 text-stone-200">
                 Terms of Use
               </Typography>
             </Link.Internal>
