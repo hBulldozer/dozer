@@ -67,7 +67,7 @@
     "prettier-plugin-tailwindcss": "0.2.1",
     "sort-package-json": "2.1.0",
     "ts-jest": "29.1.0",
-    "ts-node": "10.9.1",
+    "ts-node": "10.9.2",
     "turbo": "1.11.2"
   },
   "packageManager": "pnpm@8.6.0",
