@@ -199,7 +199,7 @@ const Home = () => {
   if (!(pools || tokens || prices)) return <></>
   return (
     <Layout>
-      <Widget id="swap" maxWidth={400} className="mt-40">
+      <Widget id="swap" maxWidth={400}>
         <Widget.Content>
           <div className={classNames('p-3 mx-0.5 grid grid-cols-2 items-center pb-4 font-medium')}>
             <App.NavItemList hideOnMobile={false}>

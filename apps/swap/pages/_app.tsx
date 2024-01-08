@@ -62,7 +62,6 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
           <App.Footer />
           <ToastContainer className="mt-[50px]" />
         </App.Shell>
-        <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
       </ThemeProvider>
       <Analytics />
     </>
