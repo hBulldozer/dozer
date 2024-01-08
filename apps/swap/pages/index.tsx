@@ -3,7 +3,7 @@ import { App, Button, classNames, Widget } from '@dozer/ui'
 import { Layout } from '../components/Layout'
 import { CurrencyInput } from '../components/CurrencyInput'
 import { Token } from '@dozer/currency'
-import { useState, useCallback, useMemo, useEffect, FC } from 'react'
+import { useState, useCallback, useMemo, useEffect, FC, ReactNode } from 'react'
 import { TradeType } from '../components/utils/TradeType'
 import { useNetwork, useSettings, useTrade } from '@dozer/zustand'
 import { SwapStatsDisclosure, SettingsOverlay } from '../components'
@@ -46,6 +46,16 @@ export const getStaticProps: GetStaticProps = async () => {
 }
 
 const Home = () => {
+  return (
+    <Layout>
+      <SwapWidget token0_idx={0} token1_idx={1} />
+    </Layout>
+  )
+}
+
+export default Home
+
+export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ token0_idx, token1_idx }) => {
   const { data: pools = [] } = api.getPools.all.useQuery()
   const { data: tokens = [] } = api.getTokens.all.useQuery()
   const { data: prices = { '00': 0 } } = api.getPrices.all.useQuery()
@@ -71,9 +81,9 @@ const Home = () => {
 
   const network = useNetwork((state) => state.network)
 
-  const [initialToken0, setInitialToken0] = useState(toToken(tokens[0]))
+  const [initialToken0, setInitialToken0] = useState(toToken(tokens[token0_idx]))
 
-  const [initialToken1, setInitialToken1] = useState(toToken(tokens[1]))
+  const [initialToken1, setInitialToken1] = useState(toToken(tokens[token1_idx]))
 
   useEffect(() => {
     setTokens([initialToken0, initialToken1])
@@ -198,96 +208,92 @@ const Home = () => {
 
   if (!(pools || tokens || prices)) return <></>
   return (
-    <Layout>
-      <Widget id="swap" maxWidth={400}>
-        <Widget.Content>
-          <div className={classNames('p-3 mx-0.5 grid grid-cols-2 items-center pb-4 font-medium')}>
-            <App.NavItemList hideOnMobile={false}>
-              <App.NavItem href="https://dozer.finance/swap" label="Swap" />
-            </App.NavItemList>
-            <div className="flex justify-end">
-              <SettingsOverlay chainId={network} />
-            </div>
+    <Widget id="swap" maxWidth={400}>
+      <Widget.Content>
+        <div className={classNames('p-3 mx-0.5 grid grid-cols-2 items-center pb-4 font-medium')}>
+          <App.NavItemList hideOnMobile={false}>
+            <App.NavItem href="https://dozer.finance/swap" label="Swap" />
+          </App.NavItemList>
+          <div className="flex justify-end">
+            <SettingsOverlay chainId={network} />
           </div>
+        </div>
+        <CurrencyInput
+          id={'swap-input-currency0'}
+          className="p-3"
+          disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
+          value={token0?.symbol && token1?.symbol ? input0 : ''}
+          onChange={onInput0}
+          currency={token0}
+          onSelect={_setToken0}
+          // customTokenMap={customTokensMap}
+          // onAddToken={addCustomToken}
+          // onRemoveToken={removeCustomToken}
+          chainId={network}
+          // tokenMap={tokenMap}
+          inputType={TradeType.EXACT_INPUT}
+          tradeType={tradeType}
+          loading={!token0}
+          prices={prices}
+          tokens={tokens.map((token) => {
+            return new Token(token)
+          })}
+        />
+        <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
+          <button
+            type="button"
+            onClick={switchCurrencies}
+            className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full hover:ring-2 hover:ring-stone-500 cursor-pointer"
+          >
+            <div className="transition-all rotate-0 group-hover:rotate-180 group-hover:delay-200">
+              <ChevronDownIcon width={16} height={16} />
+            </div>
+          </button>
+        </div>
+        <div className="bg-stone-800">
           <CurrencyInput
-            id={'swap-input-currency0'}
+            id={'swap-output-currency1'}
+            disabled={true}
             className="p-3"
-            disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
-            value={token0?.symbol && token1?.symbol ? input0 : ''}
-            onChange={onInput0}
-            currency={token0}
-            onSelect={_setToken0}
+            value={selectedPool ? (outputAmount ? outputAmount.toString() : '') : ''}
+            onChange={onInput1}
+            currency={token1}
+            onSelect={_setToken1}
             // customTokenMap={customTokensMap}
             // onAddToken={addCustomToken}
             // onRemoveToken={removeCustomToken}
             chainId={network}
             // tokenMap={tokenMap}
-            inputType={TradeType.EXACT_INPUT}
+            inputType={TradeType.EXACT_OUTPUT}
             tradeType={tradeType}
-            loading={!token0}
+            loading={!token1}
             prices={prices}
             tokens={tokens.map((token) => {
               return new Token(token)
             })}
+            // isWrap={isWrap}
           />
-          <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
-            <button
-              type="button"
-              onClick={switchCurrencies}
-              className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full hover:ring-2 hover:ring-stone-500 cursor-pointer"
-            >
-              <div className="transition-all rotate-0 group-hover:rotate-180 group-hover:delay-200">
-                <ChevronDownIcon width={16} height={16} />
-              </div>
-            </button>
+          <SwapStatsDisclosure prices={prices} />
+          <div className="p-3 pt-0">
+            <Checker.Connected fullWidth size="md">
+              <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
+                <Checker.Amounts fullWidth size="md" amount={Number(input0)} token={token0}>
+                  <SwapReviewModalLegacy chainId={network} onSuccess={onSuccess}>
+                    {({ setOpen }) => {
+                      return <SwapButton setOpen={setOpen} />
+                    }}
+                  </SwapReviewModalLegacy>
+                </Checker.Amounts>
+              </Checker.Pool>
+            </Checker.Connected>
           </div>
-          <div className="bg-stone-800">
-            <CurrencyInput
-              id={'swap-output-currency1'}
-              disabled={true}
-              className="p-3"
-              value={selectedPool ? (outputAmount ? outputAmount.toString() : '') : ''}
-              onChange={onInput1}
-              currency={token1}
-              onSelect={_setToken1}
-              // customTokenMap={customTokensMap}
-              // onAddToken={addCustomToken}
-              // onRemoveToken={removeCustomToken}
-              chainId={network}
-              // tokenMap={tokenMap}
-              inputType={TradeType.EXACT_OUTPUT}
-              tradeType={tradeType}
-              loading={!token1}
-              prices={prices}
-              tokens={tokens.map((token) => {
-                return new Token(token)
-              })}
-              // isWrap={isWrap}
-            />
-            <SwapStatsDisclosure prices={prices} />
-            <div className="p-3 pt-0">
-              <Checker.Connected fullWidth size="md">
-                <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
-                  <Checker.Amounts fullWidth size="md" amount={Number(input0)} token={token0}>
-                    <SwapReviewModalLegacy chainId={network} onSuccess={onSuccess}>
-                      {({ setOpen }) => {
-                        return <SwapButton setOpen={setOpen} />
-                      }}
-                    </SwapReviewModalLegacy>
-                  </Checker.Amounts>
-                </Checker.Pool>
-              </Checker.Connected>
-            </div>
-          </div>
-        </Widget.Content>
-      </Widget>
-    </Layout>
+        </div>
+      </Widget.Content>
+    </Widget>
   )
 }
 
-export default Home
-
-const SwapButton: FC<{
+export const SwapButton: FC<{
   setOpen(open: boolean): void
 }> = ({ setOpen }) => {
   const trade = useTrade()

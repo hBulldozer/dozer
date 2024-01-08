@@ -105,4 +105,9 @@ export const pricesRouter = createTRPCRouter({
     }
     return prices
   }),
+  htr: procedure.output(z.number()).query(async () => {
+    const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
+    const data = await resp.json()
+    return data.data.HTR
+  }),
 })

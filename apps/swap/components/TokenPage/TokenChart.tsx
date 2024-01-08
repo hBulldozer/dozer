@@ -156,16 +156,6 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           type: 'line',
           xAxisIndex: 0,
           yAxisIndex: 0,
-          itemStyle: {
-            color: 'yellow',
-            normal: {
-              barBorderRadius: 2,
-            },
-          },
-          areaStyle: {
-            // @ts-ignore
-            color: tailwind.theme.colors.yellow['500'],
-          },
           animationEasing: 'elasticOut',
           animationDelayUpdate: function (idx: number) {
             return idx * 2

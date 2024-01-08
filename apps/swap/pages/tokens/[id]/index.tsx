@@ -10,6 +10,7 @@ import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../utils/api'
 import { TokenChart } from '../../../components/TokenPage/TokenChart'
+import { SwapWidget } from 'pages'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -43,6 +44,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const tokens = [poolDB.token0, poolDB.token1]
   await ssg.getPools.byIdWithSnaps.prefetch({ id })
   await ssg.getPools.byIdFromContract.prefetch({ ncid: poolDB.ncid })
+  await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
   return {
@@ -78,11 +80,12 @@ const Token = () => {
   return (
     <>
       <Layout breadcrumbs={LINKS({ pair })}>
-        <div className="flex flex-col lg:grid lg:grid-cols-[1024px_auto] gap-12">
+        <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-9">
-            <TokenHeader pair={pair} prices={prices} />
-            <hr className="my-3 border-t border-stone-200/5" />
             <TokenChart pair={pair} />
+          </div>
+          <div className="flex flex-col order-2 gap-4">
+            <SwapWidget token0_idx={0} token1_idx={1} />
           </div>
         </div>
       </Layout>
