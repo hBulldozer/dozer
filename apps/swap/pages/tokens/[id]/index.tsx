@@ -31,7 +31,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const id = params?.id as string
+  const path_id = params?.id as string
+  const id = path_id == 'native' ? '0' : path_id
   const ssg = generateSSGHelper()
   const poolDB = await ssg.getPools.byId.fetch({ id })
   if (!poolDB) {
@@ -41,11 +42,11 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   if (!poolNC) {
     throw new Error(`Failed to fetch pool, received ${poolNC}`)
   }
+
   const tokens = [poolDB.token0, poolDB.token1]
-  if (id != 'native') {
-    await ssg.getPools.byIdWithSnaps.prefetch({ id })
-    await ssg.getPools.byIdFromContract.prefetch({ ncid: poolDB.ncid })
-  }
+
+  await ssg.getPools.byIdWithSnaps.prefetch({ id })
+  await ssg.getPools.byIdFromContract.prefetch({ ncid: poolDB.ncid })
   await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
@@ -60,26 +61,26 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
     href: `/${pair.id}`,
-    label: `${pair.name} - ${formatPercent(pair.swapFee / 10000)}`,
+    label: `${pair.id == 'native' ? 'Hathor' : pair.token0.uuid == '00' ? pair.token1.name : pair.token0.name}`,
   },
 ]
 
 const Token = () => {
   const router = useRouter()
-  const id = router.query.id as string
+  const pool_id = (router.query.id as string) == 'native' ? '0' : (router.query.id as string)
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
-  if (id != 'native') {
-    const { data: poolDB } = api.getPools.byIdWithSnaps.useQuery({ id })
-    if (!poolDB) return <></>
-    const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
-    if (!poolNC) return <></>
-    const pair = poolDB && poolNC ? pairFromPoolMergedWithSnaps(poolDB, poolNC) : ({} as Pair)
-    if (!pair) return <></>
-    const tokens = pair ? [pair.token0, pair.token1] : []
-    if (!tokens) return <></>
-  }
+
+  const { data: poolDB } = api.getPools.byIdWithSnaps.useQuery({ id: pool_id })
+  if (!poolDB) return <></>
+  const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
+  if (!poolNC) return <></>
+  const pair = poolDB && poolNC ? pairFromPoolMergedWithSnaps(poolDB, poolNC) : ({} as Pair)
+  if (!pair) return <></>
+  if ((router.query.id as string) == 'native') pair.id = 'native'
+  const tokens = pair ? [pair.token0, pair.token1] : []
+  if (!tokens) return <></>
 
   return (
     <>
@@ -89,7 +90,7 @@ const Token = () => {
             <TokenChart pair={pair} />
           </div>
           <div className="flex flex-col order-2 gap-4">
-            {pair.id != 'native' ? <SwapWidget token0_idx={0} token1_idx={1} /> : null}
+            <SwapWidget token0_idx={0} token1_idx={1} />
           </div>
         </div>
       </Layout>

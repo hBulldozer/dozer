@@ -85,6 +85,9 @@ export type PairHourSnapshot = {
   volumeUSD: number
   liquidityUSD: number
   apr: number
+  reserve0: string
+  reserve1: string
+  priceHTR: string
 }
 
 export type PairDaySnapshot = {
@@ -93,6 +96,9 @@ export type PairDaySnapshot = {
   volumeUSD: number
   liquidityUSD: number
   apr: number
+  reserve0: string
+  reserve1: string
+  priceHTR: string
 }
 
 export type Pair = {

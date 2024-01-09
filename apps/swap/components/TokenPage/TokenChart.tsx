@@ -38,22 +38,55 @@ const chartTimespans: Record<TokenChartPeriod, number> = {
   [TokenChartPeriod.All]: Infinity,
 }
 
+function generatePriceArray(numPrices: number, startPrice: number): number[] {
+  const prices: number[] = []
+
+  for (let i = 0; i < numPrices; i++) {
+    // Generate a random variation between 0.005 (0.5%) and 0.1 (10%), weighted towards smaller variations
+    let variation = Math.random() * 0.095 + 0.005
+
+    // 70% chance of keeping the variation within 3%
+    if (Math.random() < 0.7) {
+      variation = Math.random() * 0.025 + 0.005 // Generate a smaller variation within 0.5%-3%
+    }
+
+    // Decide if the variation is positive or negative
+    const isPositive = Math.random() < 0.5
+    variation *= isPositive ? 1 : -1
+
+    // Calculate the new price
+    const newPrice = startPrice + startPrice * variation
+
+    // Round the price to two decimal places
+    prices.push(Math.round(newPrice * 100) / 100)
+  }
+
+  return prices
+}
+
 export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(TokenChartCurrency.USD)
   const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Week)
+  const isHathor = pair.id == 'native'
   const [xData, yData] = useMemo(() => {
     const data =
       chartTimespans[chartPeriod] <= chartTimespans[TokenChartPeriod.Week] ? pair.hourSnapshots : pair.daySnapshots
     const currentDate = Math.round(Date.now())
-    const [x, y] = data.reduce<[number[], any]>(
+    const [x, y] = data.reduce<[number[], number[]]>(
       (acc, cur) => {
         const date = new Date(cur.date).getTime()
+        const tokenReserve: { reserve0: number; reserve1: number } = {
+          reserve0: Number(cur.reserve0),
+          reserve1: Number(cur.reserve1),
+        }
+        const priceInHTR = pair.id === 'native' ? 1 : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
+        const priceInUSD = priceInHTR * Number(cur.priceHTR)
         if (date >= currentDate - chartTimespans[chartPeriod]) {
           acc[0].push(date / 1000)
           if (chartCurrency === TokenChartCurrency.HTR) {
-            acc[1].push(Number(cur.volumeUSD))
+            acc[1].push(priceInHTR)
           } else {
-            acc[1].push(Number(cur.apr))
+            acc[1].push(priceInUSD)
           }
         }
         return acc
@@ -157,6 +190,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           xAxisIndex: 0,
           yAxisIndex: 0,
           animationEasing: 'elasticOut',
+          smooth: true,
           animationDelayUpdate: function (idx: number) {
             return idx * 2
           },
