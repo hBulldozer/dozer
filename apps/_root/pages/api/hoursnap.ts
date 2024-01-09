@@ -20,6 +20,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     }[] = []
     pools.forEach(async (pool) => {
       const poolNC = await client.getPools.byIdFromContract.query({ ncid: pool.ncid })
+      console.log('poolNC.reserve', poolNC.reserve0)
       pools_array.push({
         poolId: pool.id,
         apr: pool.apr + Math.random(),
@@ -34,6 +35,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     const snaps = await prisma.hourSnapshot.createMany({
       data: pools_array,
     })
+    console.log('snaps', snaps)
     return response.status(200).end('Updated!')
   } else return response.status(401).end(`Not Authorized !`)
 }
