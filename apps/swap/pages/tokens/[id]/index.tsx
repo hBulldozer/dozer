@@ -1,7 +1,7 @@
 import { BreadcrumbLink } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPoolMerged } from '@dozer/api'
+import { Pair, pairFromPoolMerged, pairFromPoolMergedWithSnaps } from '@dozer/api'
 
 import { Layout } from 'components/Layout'
 import { TokenHeader } from 'components'
@@ -42,8 +42,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     throw new Error(`Failed to fetch pool, received ${poolNC}`)
   }
   const tokens = [poolDB.token0, poolDB.token1]
-  await ssg.getPools.byIdWithSnaps.prefetch({ id })
-  await ssg.getPools.byIdFromContract.prefetch({ ncid: poolDB.ncid })
+  if (id != 'native') {
+    await ssg.getPools.byIdWithSnaps.prefetch({ id })
+    await ssg.getPools.byIdFromContract.prefetch({ ncid: poolDB.ncid })
+  }
   await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
@@ -68,14 +70,16 @@ const Token = () => {
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
-  const { data: poolDB } = api.getPools.byIdWithSnaps.useQuery({ id })
-  if (!poolDB) return <></>
-  const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
-  if (!poolNC) return <></>
-  const pair = poolDB && poolNC ? pairFromPoolMerged(poolDB, poolNC) : ({} as Pair)
-  if (!pair) return <></>
-  const tokens = pair ? [pair.token0, pair.token1] : []
-  if (!tokens) return <></>
+  if (id != 'native') {
+    const { data: poolDB } = api.getPools.byIdWithSnaps.useQuery({ id })
+    if (!poolDB) return <></>
+    const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
+    if (!poolNC) return <></>
+    const pair = poolDB && poolNC ? pairFromPoolMergedWithSnaps(poolDB, poolNC) : ({} as Pair)
+    if (!pair) return <></>
+    const tokens = pair ? [pair.token0, pair.token1] : []
+    if (!tokens) return <></>
+  }
 
   return (
     <>
@@ -85,7 +89,7 @@ const Token = () => {
             <TokenChart pair={pair} />
           </div>
           <div className="flex flex-col order-2 gap-4">
-            <SwapWidget token0_idx={0} token1_idx={1} />
+            {pair.id != 'native' ? <SwapWidget token0_idx={0} token1_idx={1} /> : null}
           </div>
         </div>
       </Layout>

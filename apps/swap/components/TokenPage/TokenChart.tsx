@@ -182,17 +182,19 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           >
             USD
           </button>
-          <button
-            onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
-            className={classNames(
-              'border-b-[3px] pb-2 font-semibold text-sm',
-              chartCurrency === TokenChartCurrency.HTR
-                ? 'text-stone-50 border-yellow'
-                : 'text-stone-500 border-transparent'
-            )}
-          >
-            HTR
-          </button>
+          {pair.id != 'native' ? (
+            <button
+              onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
+              className={classNames(
+                'border-b-[3px] pb-2 font-semibold text-sm',
+                chartCurrency === TokenChartCurrency.HTR
+                  ? 'text-stone-50 border-yellow'
+                  : 'text-stone-500 border-transparent'
+              )}
+            >
+              HTR
+            </button>
+          ) : null}
         </div>
         <div className="flex gap-4">
           <button
