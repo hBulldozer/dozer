@@ -4,9 +4,10 @@ import { FC } from 'react'
 import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
 import { formatUSD } from '@dozer/format'
+import { api } from 'utils/api'
 
 export const TokenChangeCell: FC<CellProps> = ({ row }) => {
-  const volume = formatUSD(row.fees1d)
+  const change = api.getPools.reserveChangeById({ id: row.id })
   return (
     <div className="flex items-center gap-2">
       <Typography variant="sm" weight={600} className="text-right text-stone-50">

@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPoolMerged, pairWithSnapsFromPool } from '@dozer/api'
+import { Pair, pairFromPoolMerged, pairFromPoolMergedWithSnaps, pairWithSnapsFromPool } from '@dozer/api'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
@@ -81,7 +81,7 @@ const Pool = () => {
   if (!poolDB) return <></>
   const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
   if (!poolNC) return <></>
-  const pair = poolDB && poolNC ? pairFromPoolMerged(poolDB, poolNC) : ({} as Pair)
+  const pair = poolDB && poolNC ? pairFromPoolMergedWithSnaps(poolDB, poolNC) : ({} as Pair)
   if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>

@@ -1,6 +1,16 @@
 // import { ChainId } from '@dozer/chain'
 // import { Pair, PairType, QuerypairsArgs } from '@dozer/graph-client'
-import { Pair, pairFromPool } from '@dozer/api'
+import {
+  AllTokensDBOutput,
+  FrontEndApiNCOutput,
+  Pair,
+  dbPoolWithTokens,
+  dbToken,
+  dbTokenWithPools,
+  pairFromPool,
+  pairFromPoolMerged,
+  toToken,
+} from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
 import { GenericTable, Table } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
@@ -10,10 +20,11 @@ import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 // import { usePoolFilters } from '../../../PoolsFiltersProvider'
 import { PAGE_SIZE } from '../contants'
 import { CHANGE_COLUMN, PRICE_COLUMN, CHART_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN } from './Cells/columns'
-import { getTokens } from '@dozer/currency'
+import { Token, getTokens } from '@dozer/currency'
 import { ChainId, Network } from '@dozer/chain'
 import { useNetwork } from '@dozer/zustand'
 import { RouterOutputs, api } from '../../../../utils/api'
+import { dbPool } from 'interfaces'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -64,7 +75,6 @@ const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, TVL_COLUMN, VOLUME_CO
 
 //   return fetch(_url.href)
 //     .then((res) => res.json())
-//     .catch((e) => console.log(stringify(e)))
 // }
 
 // const pools = [
@@ -118,8 +128,6 @@ const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, TVL_COLUMN, VOLUME_CO
 //   },
 // ]
 
-type PoolsOutput = RouterOutputs['getPools']['all']
-
 export const TokensTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
   // usePoolFilters()
@@ -140,15 +148,75 @@ export const TokensTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: pools, isLoading } = api.getPools.all.useQuery()
-  const _pairs_array: Pair[] = pools
-    ? pools.map((pool) => {
-        return pairFromPool(pool)
-      })
-    : []
-  const pairs_array = _pairs_array?.filter((pair: Pair) => {
-    return pair.chainId == rendNetwork
+  const { data: all_pools } = api.getPools.all.useQuery()
+  if (!all_pools) return <></>
+
+  const { data: tokens, isLoading } = api.getTokens.all.useQuery()
+  const tokens_array = tokens?.filter((token: AllTokensDBOutput) => {
+    return token.chainId == rendNetwork
   })
+
+  if (!tokens_array) return <></>
+
+  const _pairs_array: Pair[] = tokens_array.map((token: AllTokensDBOutput) => {
+    const pools0 = token.pools0
+    const pools1 = token.pools1
+    const htr_pools0 = pools0.find((pool) => {
+      return pool.token1.uuid == '00'
+    })
+    const htr_pools1 = pools1.find((pool) => {
+      return pool.token0.uuid == '00'
+    })
+    const pools_idx = []
+    htr_pools0 ? pools_idx.push(htr_pools0.id) : null
+    htr_pools1 ? pools_idx.push(htr_pools1.id) : null
+    if (token.uuid !== '00') {
+      const pool_with_htr = pools_idx[0]
+
+      if (!pool_with_htr) return {} as Pair
+      const _poolDB = all_pools.find((pool) => pool.id == pool_with_htr)
+      if (!_poolDB) return {} as Pair
+      const poolDB = _poolDB ? _poolDB : ({} as dbPoolWithTokens)
+
+      const { data: _poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
+      const poolNC = _poolNC ? _poolNC : ({} as FrontEndApiNCOutput)
+      if (!(poolDB && poolNC)) return {} as Pair
+      return pairFromPoolMerged(poolDB, poolNC)
+    } else {
+      const pairs_htr: Pair[] = all_pools
+        .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
+        .map((pool) => {
+          const poolDB = pool ? pool : ({} as dbPoolWithTokens)
+          const { data: _poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
+          const poolNC = _poolNC ? _poolNC : ({} as FrontEndApiNCOutput)
+          if (!(poolDB && poolNC)) return {} as Pair
+          return pairFromPoolMerged(poolDB, poolNC)
+        })
+      const fakeHTRPair: Pair = {
+        id: 'native',
+        name: 'HTR',
+        liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) : 0,
+        volumeUSD: pairs_htr ? pairs_htr.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
+        feeUSD: 0,
+        swapFee: 0,
+        apr: 0,
+        token0: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
+        token1: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
+        tokenLP: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
+        chainId: token.chainId,
+        reserve0: 0,
+        reserve1: 0,
+        liquidity: 0,
+        volume1d: 0,
+        fees1d: 0,
+        hourSnapshots: [],
+        daySnapshots: [],
+      }
+      return fakeHTRPair
+    }
+  })
+
+  const pairs_array = _pairs_array.filter((pair) => (pair.name ? pair : null))
 
   const args = useMemo(
     () => ({
@@ -163,8 +231,6 @@ export const TokensTable: FC = () => {
     [sorting, pagination]
     // [sorting, pagination, selectedNetworks, selectedPoolTypes, farmsOnly, query, extraQuery]
   )
-
-  // console.log({ pools })
 
   const table = useReactTable<Pair>({
     data: pairs_array || [],
@@ -212,7 +278,7 @@ export const TokensTable: FC = () => {
       <GenericTable<Pair>
         table={table}
         loading={isLoading}
-        placeholder={'No pools found'}
+        placeholder={'No tokens found'}
         pageSize={PAGE_SIZE}
         linkFormatter={rowLink}
       />
