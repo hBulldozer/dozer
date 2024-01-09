@@ -1,17 +1,29 @@
-import { NetworkIcon, Typography } from '@dozer/ui'
+import { ArrowIcon, Typography } from '@dozer/ui'
 import { FC } from 'react'
 
 import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
-import { formatUSD } from '@dozer/format'
+import { formatPercent, formatPercentChange, formatUSD } from '@dozer/format'
 import { api } from 'utils/api'
 
 export const TokenChangeCell: FC<CellProps> = ({ row }) => {
-  const change = api.getPools.reserveChangeById({ id: row.id })
+  const { data: poolNC } = row.ncid ? api.getPools.byIdFromContract.useQuery({ ncid: row.ncid }) : { data: undefined }
+  const tokenReserve: { reserve0: number; reserve1: number } = {
+    reserve0: poolNC ? Number(poolNC.reserve0) : row.reserve1,
+    reserve1: poolNC ? Number(poolNC.reserve1) : row.reserve1,
+  }
+  const tokenReservePrevious: { reserve0: number; reserve1: number } = {
+    reserve0: row.reserve1,
+    reserve1: row.reserve1,
+  }
+  const priceInHTR = row.id === 'native' ? 1 : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
+  const priceInHTR_previous = row.id === 'native' ? 1 : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
+  const change = (priceInHTR - priceInHTR_previous) / priceInHTR_previous
   return (
-    <div className="flex items-center gap-2">
-      <Typography variant="sm" weight={600} className="text-right text-stone-50">
-        {volume.includes('NaN') ? '$0.00' : volume}
+    <div className="flex items-center gap-1">
+      <ArrowIcon type={change < 0 ? 'down' : 'up'} className={change < 0 ? 'text-red-400' : 'text-green-400'} />
+      <Typography variant="sm" weight={600} className={change < 0 ? 'text-red-400' : 'text-green-400'}>
+        {formatPercentChange(change)}
       </Typography>
     </div>
   )

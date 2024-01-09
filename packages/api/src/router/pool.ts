@@ -46,26 +46,6 @@ export const poolRouter = createTRPCRouter({
       },
     })
   }),
-  reserveChangeById: procedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
-    const pool = await ctx.prisma.pool.findFirst({
-      where: { id: input.id },
-      include: {
-        hourSnapshots: { orderBy: { date: 'desc' } },
-        token0: true,
-        token1: true,
-      },
-    })
-    const poolSnaps = pool?.hourSnapshots
-    const previousReserve: { HTRReserve: number; TokenReserve: number } =
-      poolSnaps && poolSnaps.length > 1
-        ? pool?.token0.uuid == '00'
-          ? [poolSnaps[1]?.reserve0, poolSnaps[1]?.reserve1]
-          : [poolSnaps[1]?.reserve1, poolSnaps[1]?.reserve0]
-        : 0
-
-    const previousPrice =
-      previousReserve.HTRReserve != 0 ? previousReserve.TokenReserve / previousReserve.HTRReserve : 0
-  }),
   // create: procedure
   //   .input(
   //     z.object({
