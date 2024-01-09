@@ -26,8 +26,6 @@ module.exports = {
       }),
       boxShadow: {
         'depth-1': '0px 3px 6px rgba(15, 15, 15, 0.5)',
-        '4d': '0px 0px 10px 35px rgba(253, 224, 71, 1)',
-        '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.3)',
       },
       colors: {
         blue: {
