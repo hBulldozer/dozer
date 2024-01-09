@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@dozer/database'
-import { api } from 'utils/api'
-
+import { client } from 'utils/api'
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.query.key && request.query.key === process.env.API_KEY) {
     const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
@@ -18,8 +17,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
       reserve1: number
       priceHTR: number
     }[] = []
-    pools.forEach((pool) => {
-      const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: pool.ncid })
+    pools.forEach(async (pool) => {
+      const poolNC = await client.getPools.byIdFromContract.query({ ncid: pool.ncid })
       pools_array.push({
         poolId: pool.id,
         apr: pool.apr + Math.random(),

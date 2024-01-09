@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@dozer/database'
+import { client } from 'utils/api'
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.query.key && request.query.key === process.env.API_KEY) {
@@ -17,15 +18,16 @@ export default async function handler(request: NextApiRequest, response: NextApi
       reserve1: number
       priceHTR: number
     }[] = []
-    pools.forEach((pool) => {
+    pools.forEach(async (pool) => {
+      const poolNC = await client.getPools.byIdFromContract.query({ ncid: pool.ncid })
       pools_array.push({
         poolId: pool.id,
         apr: pool.apr + Math.random(),
         date: new Date(),
         liquidityUSD: pool.liquidityUSD + Math.random() * 10,
         volumeUSD: pool.volumeUSD + Math.random() * 10000,
-        reserve0: Number(pool.reserve0),
-        reserve1: Number(pool.reserve1),
+        reserve0: Number(poolNC ? poolNC.reserve0 : pool.reserve0),
+        reserve1: Number(poolNC ? poolNC.reserve1 : pool.reserve1),
         priceHTR: priceHTR,
       })
     })

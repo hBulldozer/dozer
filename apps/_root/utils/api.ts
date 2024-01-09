@@ -1,8 +1,12 @@
-import { httpBatchLink, loggerLink } from '@trpc/client'
+import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client'
+
 import { createTRPCNext } from '@trpc/next'
 import superjson from 'superjson'
 
 import type { AppRouter } from '@dozer/api'
+import { RegisterOptions } from 'superjson/dist/class-registry'
+import { CustomTransfomer } from 'superjson/dist/custom-transformer-registry'
+import { SuperJSONResult, Class, JSONValue } from 'superjson/dist/types'
 
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') return '' // browser should use relative url
@@ -26,6 +30,16 @@ export const api = createTRPCNext<AppRouter>({
       ],
     }
   },
+})
+
+export const client = createTRPCProxyClient<AppRouter>({
+  transformer: superjson,
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+      // You can pass any HTTP headers you wish here
+    }),
+  ],
 })
 
 export { type RouterInputs, type RouterOutputs } from '@dozer/api'
