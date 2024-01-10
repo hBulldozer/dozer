@@ -18,20 +18,23 @@ export default async function handler(request: NextApiRequest, response: NextApi
       reserve1: number
       priceHTR: number
     }[] = []
-    pools.forEach(async (pool) => {
-      const poolNC = await client.getPools.byIdFromContract.query({ ncid: pool.ncid })
-      console.log('poolNC.reserve', poolNC.reserve0)
-      pools_array.push({
-        poolId: pool.id,
-        apr: pool.apr + Math.random(),
-        date: new Date(),
-        liquidityUSD: pool.liquidityUSD + Math.random() * 10,
-        volumeUSD: pool.volumeUSD + Math.random() * 10000,
-        reserve0: Number(poolNC ? poolNC.reserve0 : pool.reserve0),
-        reserve1: Number(poolNC ? poolNC.reserve1 : pool.reserve1),
-        priceHTR: priceHTR,
+    await Promise.all(
+      pools.map((pool) => {
+        return client.getPools.byIdFromContract.query({ ncid: pool.ncid }).then((poolNC) => {
+          pools_array.push({
+            poolId: pool.id,
+            apr: pool.apr + Math.random(),
+            date: new Date(),
+            liquidityUSD: pool.liquidityUSD + Math.random() * 10,
+            volumeUSD: pool.volumeUSD + Math.random() * 10000,
+            reserve0: Number(poolNC ? poolNC.reserve0 : pool.reserve0),
+            reserve1: Number(poolNC ? poolNC.reserve1 : pool.reserve1),
+            priceHTR: priceHTR,
+          })
+        })
       })
-    })
+    )
+
     const snaps = await prisma.hourSnapshot.createMany({
       data: pools_array,
     })
