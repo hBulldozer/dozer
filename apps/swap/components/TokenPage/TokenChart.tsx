@@ -1,6 +1,6 @@
-import { formatHTR, formatUSD } from '@dozer/format'
+import { formatHTR, formatPercentChange, formatUSD5Digit } from '@dozer/format'
 import { Pair } from '@dozer/api'
-import { AppearOnMount, classNames, Typography } from '@dozer/ui'
+import { AppearOnMount, ArrowIcon, classNames, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
 import ReactECharts from 'echarts-for-react'
 import { EChartsOption } from 'echarts-for-react/lib/types'
@@ -66,11 +66,16 @@ function generatePriceArray(numPrices: number, startPrice: number): number[] {
 
 export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(TokenChartCurrency.USD)
-  const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Week)
-  const isHathor = pair.id == 'native'
+  const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Day)
+  const hourSnapshots = pair.hourSnapshots.filter((snap) => Number(snap.date) % 3600 == 0)
+  const tenMinSnapshots = pair.hourSnapshots
   const [xData, yData] = useMemo(() => {
     const data =
-      chartTimespans[chartPeriod] <= chartTimespans[TokenChartPeriod.Week] ? pair.hourSnapshots : pair.daySnapshots
+      chartTimespans[chartPeriod] == TokenChartPeriod.Day
+        ? tenMinSnapshots
+        : chartTimespans[chartPeriod] >= TokenChartPeriod.Year
+        ? pair.daySnapshots
+        : hourSnapshots
     const currentDate = Math.round(Date.now())
     const [x, y] = data.reduce<[number[], number[]]>(
       (acc, cur) => {
@@ -95,23 +100,29 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
     )
 
     return [x.reverse(), y.reverse()]
-  }, [chartPeriod, pair.hourSnapshots, pair.daySnapshots, pair.swapFee, chartCurrency])
-
+  }, [chartPeriod, tenMinSnapshots, pair.daySnapshots, pair.id, hourSnapshots, chartCurrency])
+  const [priceChange, setPriceChange] = useState<number>(
+    (yData[yData.length - 1] - yData[0]) / (yData[0] != 0 ? yData[0] : 1)
+  )
   // Transient update for performance
   const onMouseOver = useCallback(
-    ({ name, value }: { name: number; value: number }) => {
+    ({ name, value, change }: { name: number; value: number; change: number }) => {
       const valueNodes = document.getElementsByClassName('hoveredItemValue')
       const nameNodes = document.getElementsByClassName('hoveredItemName')
+      const changeNodes = document.getElementsByClassName('hoveredItemChange')
 
       if (chartCurrency === TokenChartCurrency.USD) {
-        valueNodes[0].innerHTML = formatUSD(value)
+        valueNodes[0].innerHTML = formatUSD5Digit(value)
       } else {
         valueNodes[0].innerHTML = formatHTR(value)
       }
 
       nameNodes[0].innerHTML = format(new Date(name * 1000), 'dd MMM yyyy HH:mm')
+
+      changeNodes[0].innerHTML = formatPercentChange(change)
+      setPriceChange(change)
     },
-    [pair.swapFee, chartCurrency]
+    [chartCurrency]
   )
 
   const DEFAULT_OPTION: EChartsOption = useMemo(
@@ -132,12 +143,13 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           onMouseOver({
             name: params[0].name,
             value: params[0].value,
+            change: (params[0].value - yData[0]) / (yData[0] != 0 ? yData[0] : 1),
           })
 
           const date = new Date(Number(params[0].name * 1000))
           return `<div class="flex flex-col gap-0.5">
             <span class="text-sm text-stone-50 font-semibold">${
-              chartCurrency == TokenChartCurrency.USD ? formatUSD(params[0].value) : formatHTR(params[0].value)
+              chartCurrency == TokenChartCurrency.USD ? formatUSD5Digit(params[0].value) : formatHTR(params[0].value)
             }</span>
             <span class="text-xs text-stone-400 font-medium">${
               date instanceof Date && !isNaN(date?.getTime()) ? format(date, 'dd MMM yyyy HH:mm') : ''
@@ -186,11 +198,11 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       series: [
         {
           name: 'Price',
+          symbol: 'none',
           type: 'line',
           xAxisIndex: 0,
           yAxisIndex: 0,
-          animationEasing: 'elasticOut',
-          smooth: true,
+          animationEasing: 'circularInOut',
           animationDelayUpdate: function (idx: number) {
             return idx * 2
           },
@@ -282,10 +294,20 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
         <Typography variant="xl" weight={500} className="text-stone-50">
           <span className="hoveredItemValue">
             {chartCurrency === TokenChartCurrency.USD
-              ? formatUSD(yData[yData.length - 1])
+              ? formatUSD5Digit(yData[yData.length - 1])
               : formatHTR(yData[yData.length - 1])}
           </span>
         </Typography>
+        <div className="flex gap-1 ">
+          <ArrowIcon
+            type={priceChange < 0 ? 'down' : 'up'}
+            className={priceChange < 0 ? 'text-red-400' : 'text-green-400'}
+          />
+          <Typography variant="sm" weight={600} className={priceChange < 0 ? 'text-red-400' : 'text-green-400'}>
+            <span className="hoveredItemChange">{formatPercentChange(priceChange)}</span>
+          </Typography>
+        </div>
+
         {xData.length && (
           <Typography variant="sm" className="text-stone-500 hoveredItemName">
             <AppearOnMount>{format(new Date(xData[xData.length - 1] * 1000), 'dd MMM yyyy HH:mm')}</AppearOnMount>
