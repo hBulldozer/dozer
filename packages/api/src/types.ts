@@ -17,9 +17,15 @@ export const FrontEndApiNCObject = z.object({
   transactions: z.number(),
 })
 
+//Extract Type from array
+type ElementType<T> = T extends (infer U)[] ? U : never
+
 // Exporting all types to be used through the app
 export type AllPoolsDBOutput = RouterOutputs['getPools']['all']
+export type AllTokensDBOutputArray = RouterOutputs['getTokens']['all']
 export type FrontEndApiNCOutput = RouterOutputs['getPools']['byIdFromContract']
+
+export type AllTokensDBOutput = ElementType<AllTokensDBOutputArray>
 
 export type Maybe<T> = T | null
 export type InputMaybe<T> = Maybe<T>
@@ -79,6 +85,9 @@ export type PairHourSnapshot = {
   volumeUSD: number
   liquidityUSD: number
   apr: number
+  reserve0: string
+  reserve1: string
+  priceHTR: string
 }
 
 export type PairDaySnapshot = {
@@ -87,11 +96,15 @@ export type PairDaySnapshot = {
   volumeUSD: number
   liquidityUSD: number
   apr: number
+  reserve0: string
+  reserve1: string
+  priceHTR: string
 }
 
 export type Pair = {
   id: string
   name: string
+  ncid?: string
   liquidityUSD: number
   volumeUSD: number
   feeUSD: number

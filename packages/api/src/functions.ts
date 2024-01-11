@@ -2,7 +2,7 @@ import { ChainId } from '@dozer/chain'
 import { Pool, daySnapshot, hourSnapshot } from '@dozer/database'
 import { Token } from '@dozer/currency'
 import { type Pair, dbPoolWithTokens, dbTokenWithPools, dbToken } from './types'
-import { FrontEndApiNCOutput } from '..'
+import { FrontEndApiNCOutput, dbPool } from '..'
 
 export function toToken(dbToken: dbToken | dbTokenWithPools): Token {
   return new Token({
@@ -95,7 +95,35 @@ export function pairFromPool(pool: dbPoolWithTokens | null): Pair {
   )
 }
 
-export function pairFromPoolMerged(
+export function pairFromPoolMerged(poolDB: dbPoolWithTokens | null, poolNC: FrontEndApiNCOutput): Pair {
+  return (
+    poolDB &&
+    poolNC &&
+    JSON.parse(
+      JSON.stringify({
+        id: poolDB.id,
+        ncid: poolDB.ncid ? poolDB.ncid : undefined,
+        name: poolDB.name,
+        liquidityUSD: poolDB.liquidityUSD,
+        volumeUSD: poolNC.volume,
+        feeUSD: poolDB.feeUSD,
+        swapFee: poolDB.swapFee,
+        apr: poolDB.apr,
+        token0: toToken(poolDB.token0),
+        token1: toToken(poolDB.token1),
+        tokenLP: toToken(poolDB.tokenLP),
+        reserve0: Number(poolNC.reserve0),
+        reserve1: Number(poolNC.reserve1),
+        chainId: poolDB.chainId,
+        liquidity: poolDB.liquidity,
+        volume1d: poolDB.volume1d,
+        fees1d: poolDB.fees1d,
+      })
+    )
+  )
+}
+
+export function pairFromPoolMergedWithSnaps(
   poolDB: (dbPoolWithTokens & { hourSnapshots: hourSnapshot[]; daySnapshots: daySnapshot[] }) | null,
   poolNC: FrontEndApiNCOutput
 ): Pair {

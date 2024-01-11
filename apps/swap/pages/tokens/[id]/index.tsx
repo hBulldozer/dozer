@@ -1,26 +1,16 @@
-import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
+import { BreadcrumbLink } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPoolMerged, pairFromPoolMergedWithSnaps, pairWithSnapsFromPool } from '@dozer/api'
-import { PoolChart } from '../../components/PoolSection/PoolChart'
+import { Pair, pairFromPoolMerged, pairFromPoolMergedWithSnaps } from '@dozer/api'
 
-import {
-  Layout,
-  PoolActionBar,
-  PoolButtons,
-  PoolComposition,
-  PoolHeader,
-  PoolMyRewards,
-  PoolPosition,
-  PoolPositionProvider,
-  PoolRewards,
-  PoolStats,
-} from '../../components'
+import { Layout } from 'components/Layout'
+import { TokenHeader } from 'components'
 
 import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
-import { RouterOutputs, api } from '../../utils/api'
-import { FrontEndApiNCOutput } from '@dozer/api'
+import { api } from '../../../utils/api'
+import { TokenChart } from '../../../components/TokenPage/TokenChart'
+import { SwapWidget } from 'pages'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -41,7 +31,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const id = params?.id as string
+  const path_id = params?.id as string
+  const id = path_id == 'native' ? '0' : path_id
   const ssg = generateSSGHelper()
   const poolDB = await ssg.getPools.byId.fetch({ id })
   if (!poolDB) {
@@ -51,9 +42,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   if (!poolNC) {
     throw new Error(`Failed to fetch pool, received ${poolNC}`)
   }
+
   const tokens = [poolDB.token0, poolDB.token1]
+
   await ssg.getPools.byIdWithSnaps.prefetch({ id })
   await ssg.getPools.byIdFromContract.prefetch({ ncid: poolDB.ncid })
+  await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
   return {
@@ -67,58 +61,41 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
     href: `/${pair.id}`,
-    label: `${pair.name} - ${formatPercent(pair.swapFee / 10000)}`,
+    label: `${pair.id == 'native' ? 'Hathor' : pair.token0.uuid == '00' ? pair.token1.name : pair.token0.name}`,
   },
 ]
 
-const Pool = () => {
+const Token = () => {
   const router = useRouter()
-  const id = router.query.id as string
+  const pool_id = (router.query.id as string) == 'native' ? '0' : (router.query.id as string)
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
-  const { data: poolDB } = api.getPools.byIdWithSnaps.useQuery({ id })
+
+  const { data: poolDB } = api.getPools.byIdWithSnaps.useQuery({ id: pool_id })
   if (!poolDB) return <></>
   const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
   if (!poolNC) return <></>
   const pair = poolDB && poolNC ? pairFromPoolMergedWithSnaps(poolDB, poolNC) : ({} as Pair)
   if (!pair) return <></>
+  if ((router.query.id as string) == 'native') pair.id = 'native'
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
 
   return (
-    <PoolPositionProvider pair={pair} prices={prices}>
-      <>
-        <Layout breadcrumbs={LINKS({ pair })}>
-          <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
-            <div className="flex flex-col order-1 gap-9">
-              <PoolHeader pair={pair} prices={prices} />
-              <hr className="my-3 border-t border-stone-200/5" />
-              <PoolChart pair={pair} />
-              <AppearOnMount>
-                <PoolStats pair={pair} prices={prices} />
-              </AppearOnMount>
-              <PoolComposition pair={pair} prices={prices} />
-              <PoolRewards pair={pair} />
-            </div>
-
-            <div className="flex flex-col order-2 gap-4">
-              <AppearOnMount>
-                <div className="flex flex-col gap-10">
-                  <PoolMyRewards pair={pair} />
-                  <PoolPosition pair={pair} />
-                </div>
-              </AppearOnMount>
-              <div className="hidden lg:flex">
-                <PoolButtons pair={pair} />
-              </div>
-            </div>
+    <>
+      <Layout breadcrumbs={LINKS({ pair })}>
+        <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
+          <div className="flex flex-col order-1 gap-9">
+            <TokenChart pair={pair} />
           </div>
-        </Layout>
-        <PoolActionBar pair={pair} />
-      </>
-    </PoolPositionProvider>
+          <div className="flex flex-col order-2 gap-4">
+            <SwapWidget token0_idx={0} token1_idx={1} />
+          </div>
+        </div>
+      </Layout>
+    </>
   )
 }
 
-export default Pool
+export default Token

@@ -1,4 +1,5 @@
 export * from './ArrowFlatLinesUp'
+export * from './ArrowIcon'
 export * from './BentoboxIcon'
 export * from './CalendarIcon'
 export * from './CarbonIcon'

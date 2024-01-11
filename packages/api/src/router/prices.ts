@@ -105,4 +105,17 @@ export const pricesRouter = createTRPCRouter({
     }
     return prices
   }),
+  fromPair: procedure.input(z.object({ pairMerged: z.any() })).query(async ({ input }) => {
+    const row = input.pairMerged
+    const tokenReserve: { reserve0: number; reserve1: number } = {
+      reserve0: row.reserve0,
+      reserve1: row.reserve1,
+    }
+    return row.id === 'native' ? 1 : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
+  }),
+  htr: procedure.output(z.number()).query(async () => {
+    const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
+    const data = await resp.json()
+    return Number(data.data.HTR)
+  }),
 })
