@@ -38,42 +38,16 @@ const chartTimespans: Record<TokenChartPeriod, number> = {
   [TokenChartPeriod.All]: Infinity,
 }
 
-function generatePriceArray(numPrices: number, startPrice: number): number[] {
-  const prices: number[] = []
-
-  for (let i = 0; i < numPrices; i++) {
-    // Generate a random variation between 0.005 (0.5%) and 0.1 (10%), weighted towards smaller variations
-    let variation = Math.random() * 0.095 + 0.005
-
-    // 70% chance of keeping the variation within 3%
-    if (Math.random() < 0.7) {
-      variation = Math.random() * 0.025 + 0.005 // Generate a smaller variation within 0.5%-3%
-    }
-
-    // Decide if the variation is positive or negative
-    const isPositive = Math.random() < 0.5
-    variation *= isPositive ? 1 : -1
-
-    // Calculate the new price
-    const newPrice = startPrice + startPrice * variation
-
-    // Round the price to two decimal places
-    prices.push(Math.round(newPrice * 100) / 100)
-  }
-
-  return prices
-}
-
 export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(TokenChartCurrency.USD)
   const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Day)
-  const hourSnapshots = pair.hourSnapshots.filter((snap) => Number(snap.date) % 3600 == 0)
+  const hourSnapshots = pair.hourSnapshots.filter((snap) => new Date(snap.date).getMinutes() === 0)
   const tenMinSnapshots = pair.hourSnapshots
   const [xData, yData] = useMemo(() => {
     const data =
-      chartTimespans[chartPeriod] == TokenChartPeriod.Day
+      chartPeriod == TokenChartPeriod.Day
         ? tenMinSnapshots
-        : chartTimespans[chartPeriod] >= TokenChartPeriod.Year
+        : chartPeriod >= TokenChartPeriod.Year
         ? pair.daySnapshots
         : hourSnapshots
     const currentDate = Math.round(Date.now())
