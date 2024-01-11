@@ -1,7 +1,5 @@
-// @ts-check
 /** @type {import('tailwindcss').Config} */
-const tailwindConfig = {
-  darkMode: 'media',
+module.exports = {
   presets: [require('@dozer/ui/tailwind')],
   content: [
     './pages/**/*.{js,ts,jsx,tsx}',
@@ -12,7 +10,6 @@ const tailwindConfig = {
   theme: {
     extend: {},
   },
+  darkMode: 'media',
   plugins: [require('@tailwindcss/typography')],
 }
-
-module.exports = tailwindConfig

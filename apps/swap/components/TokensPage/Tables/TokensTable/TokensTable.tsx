@@ -1,132 +1,18 @@
-// import { ChainId } from '@dozer/chain'
-// import { Pair, PairType, QuerypairsArgs } from '@dozer/graph-client'
-import {
-  AllTokensDBOutput,
-  FrontEndApiNCOutput,
-  Pair,
-  dbPoolWithTokens,
-  dbToken,
-  dbTokenWithPools,
-  pairFromPool,
-  pairFromPoolMerged,
-  toToken,
-} from '@dozer/api'
+import { AllTokensDBOutput, FrontEndApiNCOutput, Pair, dbPoolWithTokens, pairFromPoolMerged } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
-import { GenericTable, Table } from '@dozer/ui'
+import { GenericTable } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
-// import stringify from 'fast-json-stable-stringify'
 
-// import { usePoolFilters } from '../../../PoolsFiltersProvider'
 import { PAGE_SIZE } from '../contants'
 import { CHANGE_COLUMN, PRICE_COLUMN, CHART_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN } from './Cells/columns'
-import { Token, getTokens } from '@dozer/currency'
-import { ChainId, Network } from '@dozer/chain'
+import { ChainId } from '@dozer/chain'
 import { useNetwork } from '@dozer/zustand'
-import { RouterOutputs, api } from '../../../../utils/api'
-import { dbPool } from 'interfaces'
+import { api } from '../../../../utils/api'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-// const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN]
 const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, TVL_COLUMN, VOLUME_COLUMN, CHART_COLUMN]
-
-// const fetcher = ({
-//   url,
-//   args,
-// }: {
-//   url: string
-//   args: {
-//     sorting: SortingState
-//     pagination: PaginationState
-//     query: string
-//     extraQuery: string
-//     selectedNetworks: ChainId[]
-//     selectedPoolTypes: string[]
-//     farmsOnly: boolean
-//   }
-// }) => {
-//   const _url = new URL(url, window.location.origin)
-
-//   if (args.sorting[0]) {
-//     _url.searchParams.set('orderBy', args.sorting[0].id)
-//     _url.searchParams.set('orderDirection', args.sorting[0].desc ? 'desc' : 'asc')
-//   }
-
-//   if (args.pagination) {
-//     _url.searchParams.set('pagination', stringify(args.pagination))
-//   }
-
-//   if (args.selectedNetworks) {
-//     _url.searchParams.set('networks', stringify(args.selectedNetworks))
-//   }
-
-//   const where: QuerypairsArgs['where'] = {}
-//   if (args.query) where['name_contains_nocase'] = args.query
-//   if (args.selectedPoolTypes) where['type_in'] = args.selectedPoolTypes as PairType[]
-
-//   if (Object.keys(where).length > 0) {
-//     _url.searchParams.set('where', stringify(where))
-//   }
-
-//   if (args.farmsOnly) {
-//     _url.searchParams.set('farmsOnly', 'true')
-//   }
-
-//   return fetch(_url.href)
-//     .then((res) => res.json())
-// }
-
-// const pools = [
-//   {
-//     id: '1',
-//     name: 'Dummy Pool 1',
-//     liquidityUSD: 200000,
-//     volumeUSD: 10000,
-//     feeUSD: 300,
-//     apr: 0.25,
-//     token0: getTokens(ChainId.HATHOR)[0],
-//     token1: getTokens(ChainId.HATHOR)[1],
-//     reserve0: 1,
-//     reserve1: 2,
-//     chainId: 2,
-//     liquidity: 10000,
-//     volume1d: 45553,
-//     fees1d: 10000,
-//   },
-//   {
-//     id: '2',
-//     name: 'Dummy Pool 2',
-//     liquidityUSD: 100000,
-//     volumeUSD: 5000,
-//     feeUSD: 150,
-//     apr: 0.15,
-//     token0: getTokens(ChainId.HATHOR)[0],
-//     token1: getTokens(ChainId.HATHOR)[2],
-//     reserve0: 1,
-//     reserve1: 2,
-//     chainId: 2,
-//     liquidity: 10000,
-//     volume1d: 45266,
-//     fees1d: 15469,
-//   },
-//   {
-//     id: '3',
-//     name: 'Dummy Pool 3',
-//     liquidityUSD: 50000,
-//     volumeUSD: 2500,
-//     feeUSD: 75,
-//     apr: 0.1,
-//     token0: getTokens(ChainId.HATHOR)[0],
-//     token1: getTokens(ChainId.HATHOR)[3],
-//     reserve0: 1,
-//     reserve1: 2,
-//     chainId: 2,
-//     liquidity: 10000,
-//     volume1d: 4523,
-//     fees1d: 7651,
-//   },
-// ]
 
 export const TokensTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
@@ -148,15 +34,15 @@ export const TokensTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: all_pools } = api.getPools.all.useQuery()
-  if (!all_pools) return <></>
+  const { data: _all_pools } = api.getPools.all.useQuery()
+  const all_pools = _all_pools ? _all_pools : []
 
   const { data: tokens, isLoading } = api.getTokens.all.useQuery()
-  const tokens_array = tokens?.filter((token: AllTokensDBOutput) => {
-    return token.chainId == rendNetwork
-  })
-
-  if (!tokens_array) return <></>
+  const tokens_array = tokens
+    ? tokens.filter((token: AllTokensDBOutput) => {
+        return token.chainId == rendNetwork
+      })
+    : []
 
   const _pairs_array: Pair[] = tokens_array.map((token: AllTokensDBOutput) => {
     const pools0 = token.pools0

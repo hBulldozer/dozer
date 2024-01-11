@@ -470,6 +470,9 @@ importers:
       '@dozer/prettier-config':
         specifier: workspace:*
         version: link:../../config/prettier
+      '@dozer/tailwindcss-config':
+        specifier: workspace:*
+        version: link:../../config/tailwindcss
       '@dozer/typescript-config':
         specifier: workspace:*
         version: link:../../config/typescript

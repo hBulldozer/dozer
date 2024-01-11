@@ -45,6 +45,7 @@
     "@dozer/nextjs-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
+    "@dozer/tailwindcss-config": "workspace:*",
     "@heroicons/react": "^1.0.0",
     "@tanstack/react-query": "4.35.7",
     "@types/node": "20.8.0",
