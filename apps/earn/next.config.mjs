@@ -4,7 +4,7 @@ import defaultNextConfig from '@dozer/nextjs-config'
 const nextConfig = {
   ...defaultNextConfig,
   basePath: '/pool',
-  transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database'],
+  transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database', '@dozer/currency'],
   experimental: {
     swcPlugins: [['next-superjson-plugin', {}]],
   },

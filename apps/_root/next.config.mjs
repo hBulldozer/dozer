@@ -5,7 +5,7 @@ const { ROOT_URL, SWAP_URL, EARN_URL } = process.env
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   ...defaultNextConfig,
-  transpilePackages: ['@dozer/ui'],
+  transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database', '@dozer/currency'],
   async redirects() {
     return [
       {
