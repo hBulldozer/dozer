@@ -3,7 +3,7 @@ import defaultNextConfig from '@dozer/nextjs-config'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   ...defaultNextConfig,
-  basePath: '/earn',
+  basePath: '/pool',
   transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database'],
   experimental: {
     swcPlugins: [['next-superjson-plugin', {}]],
@@ -12,7 +12,7 @@ const nextConfig = {
     return [
       {
         source: '/',
-        destination: '/earn',
+        destination: '/pool',
         permanent: true,
         basePath: false,
       },

@@ -48,12 +48,12 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
     <>
       <LoadingOverlay show={isLoading} />
       <Head>
-        <link rel="apple-touch-icon" sizes="180x180" href="/earn/apple-touch-icon.png?v=1" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/earn/favicon-32x32.png?v=1" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/earn/favicon-16x16.png?v=1" />
-        <link rel="manifest" href="/earn/site.webmanifest?v=1" />
-        <link rel="mask-icon" href="/earn/safari-pinned-tab.svg?v=1" color="#fa52a0" />
-        <link rel="shortcut icon" href="/earn/favicon.ico?v=1" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/pool/apple-touch-icon.png?v=1" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/pool/favicon-32x32.png?v=1" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/pool/favicon-16x16.png?v=1" />
+        <link rel="manifest" href="/pool/site.webmanifest?v=1" />
+        <link rel="mask-icon" href="/pool/safari-pinned-tab.svg?v=1" color="#fa52a0" />
+        <link rel="shortcut icon" href="/pool/favicon.ico?v=1" />
       </Head>
       <ThemeProvider>
         <App.Shell>

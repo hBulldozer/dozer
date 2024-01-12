@@ -54,7 +54,7 @@ export const BuildWealth: FC = () => {
                       </p>
                     </>
                   }
-                  link="https://dozer.finance/earn"
+                  link="https://dozer.finance/pool"
                   linkText="Visit Earn"
                 />
                 <ExpandableCard
@@ -80,7 +80,7 @@ export const BuildWealth: FC = () => {
                       </p>
                     </>
                   }
-                  link="https://dozer.finance/earn"
+                  link="https://dozer.finance/pool"
                   linkText="Visit Earn"
                 />
                 {/* <ExpandableCard
@@ -104,7 +104,7 @@ export const BuildWealth: FC = () => {
                       </p>
                     </>
                   }
-                  link="https://dozer.finance/earn"
+                  link="https://dozer.finance/pool"
                   linkText="Visit Earn"
                 /> */}
               </div>

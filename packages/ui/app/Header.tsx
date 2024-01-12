@@ -10,15 +10,16 @@ import { classNames, Container, IconButton, Link, MaxWidth, Select, DozerIcon, D
 export enum AppType {
   Root = 'Explore Apps',
   Swap = 'Swap',
-  Invest = 'Earn',
+  Invest = 'Pools',
   Blog = 'Blog',
+  Tokens = 'Tokens',
 }
 
 const LINK = {
   [AppType.Root]: '/',
   [AppType.Swap]: '/swap',
-  [AppType.Invest]: '/earn',
-  [AppType.Blog]: '/blog',
+  [AppType.Invest]: '/pool',
+  [AppType.Tokens]: '/tokens',
 }
 
 export interface HeaderProps extends React.HTMLProps<HTMLElement> {
@@ -124,7 +125,20 @@ export function Header({
                     </Select.Option>
                     <Select.Option
                       as="a"
-                      href="https://dozer.finance/earn"
+                      href="https://dozer.finance/tokens"
+                      key={AppType.Tokens}
+                      value={AppType.Tokens}
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      {AppType.Tokens}
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Top tokens on Dozer
+                      </Typography>
+                    </Select.Option>
+
+                    <Select.Option
+                      as="a"
+                      href="https://dozer.finance/pool"
                       key={AppType.Invest}
                       value={AppType.Invest}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"

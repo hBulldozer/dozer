@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const allowedParams = ['networks']
 
 export const config = {
-  matcher: '/earn',
+  matcher: '/pool',
 }
 
 export function middleware(req: NextRequest) {

@@ -48,12 +48,12 @@ const nextConfig = {
         destination: `${SWAP_URL}/swap/tokens/:path*`,
       },
       {
-        source: '/earn',
-        destination: `${EARN_URL}/earn`,
+        source: '/pool',
+        destination: `${EARN_URL}/pool`,
       },
       {
-        source: '/earn/:path*',
-        destination: `${EARN_URL}/earn/:path*`,
+        source: '/pool/:path*',
+        destination: `${EARN_URL}/pool/:path*`,
       },
       {
         source: '/kucoin/:path*',

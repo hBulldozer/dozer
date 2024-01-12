@@ -33,7 +33,7 @@ const Pools: FC = () => {
           <div className="flex justify-end flex-grow not-prose">
             <div className="flex flex-col gap-3 w-full lg:w-[200px]">
               {/* <Link.Internal href="/add" passHref={true}> */}
-              <Button as="a" href="/earn/add" fullWidth color="yellow" startIcon={<PlusIcon width={16} height={16} />}>
+              <Button as="a" href="/pool/add" fullWidth color="yellow" startIcon={<PlusIcon width={16} height={16} />}>
                 New Position
               </Button>
               {/* </Link.Internal> */}
