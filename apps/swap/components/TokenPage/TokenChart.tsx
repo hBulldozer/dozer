@@ -140,6 +140,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
         left: 0,
         right: 0,
         bottom: 0,
+        containLabel: false,
       },
       dataZoom: {
         show: false,
@@ -153,10 +154,30 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       },
       xAxis: [
         {
-          show: false,
+          // show: false,
           type: 'category',
-          boundaryGap: true,
+          boundaryGap: false,
           data: xData,
+          axisLabel: {
+            formatter: function (value: number) {
+              return format(
+                new Date(value * 1000),
+                chartPeriod == TokenChartPeriod.Day
+                  ? 'HH:mm aaa'
+                  : chartPeriod == TokenChartPeriod.Week
+                  ? 'eeee'
+                  : chartPeriod === TokenChartPeriod.Month
+                  ? 'LLLL d'
+                  : 'LLLL'
+              )
+            },
+            interval: chartPeriod == TokenChartPeriod.Day ? '2' : '1',
+            inside: true,
+            margin: 5,
+          },
+          axisTick: {
+            show: false,
+          },
         },
       ],
       yAxis: [
@@ -166,7 +187,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           scale: true,
           name: 'Price',
           max: 'dataMax',
-          min: 'dataMin',
+          min: Math.min(...yData) - 0.001,
         },
       ],
       series: [
@@ -176,15 +197,17 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           type: 'line',
           xAxisIndex: 0,
           yAxisIndex: 0,
-          animationEasing: 'circularInOut',
-          animationDelayUpdate: function (idx: number) {
+          animationEasingUpdate: 'circularInOut',
+          animationDurationUpdate: 0,
+          animationDelay: function (idx: number) {
             return idx * 2
           },
+          animationEasing: 'circularInOut',
           data: yData,
         },
       ],
     }),
-    [onMouseOver, xData, yData, chartCurrency]
+    [xData, chartPeriod, yData, onMouseOver, chartCurrency]
   )
 
   return (
