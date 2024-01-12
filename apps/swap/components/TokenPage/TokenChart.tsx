@@ -9,6 +9,7 @@ import resolveConfig from 'tailwindcss/resolveConfig'
 
 import tailwindConfig from '../../tailwind.config.js'
 import { Token } from '@dozer/database'
+import { api } from '../../utils/api'
 
 const tailwind = resolveConfig(tailwindConfig)
 
@@ -43,6 +44,12 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Day)
   const hourSnapshots = pair.hourSnapshots.filter((snap) => new Date(snap.date).getMinutes() === 0)
   const tenMinSnapshots = pair.hourSnapshots
+  const tokenReserveNow: { reserve0: number; reserve1: number } = {
+    reserve0: Number(pair.reserve0),
+    reserve1: Number(pair.reserve1),
+  }
+  const priceInHTRNow = pair.id === 'native' ? 1 : Number(tokenReserveNow.reserve0) / Number(tokenReserveNow.reserve1)
+  const { data: _priceHTRNow } = api.getPrices.htr.useQuery()
   const [xData, yData] = useMemo(() => {
     const data =
       chartPeriod == TokenChartPeriod.Day
@@ -72,9 +79,24 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       },
       [[], []]
     )
+    x.unshift(Math.round(Date.now()) / 1000)
+    if (chartCurrency === TokenChartCurrency.HTR) {
+      y.unshift(priceInHTRNow)
+    } else {
+      y.unshift(_priceHTRNow ? priceInHTRNow * _priceHTRNow : y[y.length - 1])
+    }
 
     return [x.reverse(), y.reverse()]
-  }, [chartPeriod, tenMinSnapshots, pair.daySnapshots, pair.id, hourSnapshots, chartCurrency])
+  }, [
+    chartPeriod,
+    tenMinSnapshots,
+    pair.daySnapshots,
+    pair.id,
+    hourSnapshots,
+    chartCurrency,
+    priceInHTRNow,
+    _priceHTRNow,
+  ])
   const [priceChange, setPriceChange] = useState<number>(
     (yData[yData.length - 1] - yData[0]) / (yData[0] != 0 ? yData[0] : 1)
   )
