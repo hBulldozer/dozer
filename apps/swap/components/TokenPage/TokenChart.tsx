@@ -79,11 +79,13 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       },
       [[], []]
     )
-    x.unshift(Math.round(Date.now()) / 1000)
-    if (chartCurrency === TokenChartCurrency.HTR) {
-      y.unshift(priceInHTRNow)
-    } else {
-      y.unshift(_priceHTRNow ? priceInHTRNow * _priceHTRNow : y[y.length - 1])
+    if (_priceHTRNow) {
+      x.unshift(Math.round(Date.now()) / 1000)
+      if (chartCurrency === TokenChartCurrency.HTR) {
+        y.unshift(priceInHTRNow)
+      } else {
+        y.unshift(priceInHTRNow * _priceHTRNow)
+      }
     }
 
     return [x.reverse(), y.reverse()]
