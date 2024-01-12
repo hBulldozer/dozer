@@ -10,7 +10,7 @@ import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../utils/api'
 import { TokenChart } from '../../../components/TokenPage/TokenChart'
-import { SwapWidget } from 'pages'
+import { SwapWidget } from 'pages/swap'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -90,7 +90,7 @@ const Token = () => {
             <TokenChart pair={pair} />
           </div>
           <div className="flex flex-col order-2 gap-4">
-            <SwapWidget token0_idx={0} token1_idx={1} />
+            <SwapWidget token0_idx={tokens[0]} token1_idx={tokens[1]} />
           </div>
         </div>
       </Layout>

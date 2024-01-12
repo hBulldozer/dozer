@@ -41,11 +41,11 @@ const nextConfig = {
       },
       {
         source: '/tokens',
-        destination: `${SWAP_URL}/swap/tokens`,
+        destination: `${SWAP_URL}/tokens`,
       },
       {
         source: '/tokens/:path*',
-        destination: `${SWAP_URL}/swap/tokens/:path*`,
+        destination: `${SWAP_URL}/tokens/:path*`,
       },
       {
         source: '/pool',
