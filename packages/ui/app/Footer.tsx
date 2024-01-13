@@ -88,7 +88,7 @@ export function Footer(props: FooterProps): JSX.Element {
   )
 
   return (
-    <footer className="hidden sm:flex flex-col border-t border-stone-300/5 mt-auto pt-[32px]" {...props}>
+    <footer className="hidden md:flex flex-col border-t border-stone-300/5 mt-auto pt-[32px]" {...props}>
       <Container maxWidth="5xl" className="grid grid-cols-1 md:grid-cols-[176px_auto] mx-auto px-4 gap-4">
         <div className="flex flex-col gap-5">
           <div className="items-center justify-start w-32 gap-3 pt-2">

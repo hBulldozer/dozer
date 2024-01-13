@@ -1,4 +1,4 @@
-import { BreadcrumbLink } from '@dozer/ui'
+import { AppearOnMount, BreadcrumbLink, Button, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { Pair, pairFromPoolMerged, pairFromPoolMergedWithSnaps } from '@dozer/api'
@@ -11,6 +11,7 @@ import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../utils/api'
 import { TokenChart } from '../../../components/TokenPage/TokenChart'
 import { SwapWidget } from 'pages'
+import { Fragment } from 'react'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -60,6 +61,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
+    href: `/tokens`,
+    label: 'Tokens',
+  },
+  {
     href: `/${pair.id}`,
     label: `${pair.id == 'native' ? 'Hathor' : pair.token0.uuid == '00' ? pair.token1.name : pair.token0.name}`,
   },
@@ -89,11 +94,28 @@ const Token = () => {
           <div className="flex flex-col order-1 gap-9">
             <TokenChart pair={pair} />
           </div>
-          <div className="flex flex-col order-2 gap-4">
-            <SwapWidget token0_idx={0} token1_idx={1} />
+          <div className="hidden lg:flex flex-col order-2 gap-4">
+            <AppearOnMount>
+              <SwapWidget token0_idx={0} token1_idx={1} />
+            </AppearOnMount>
           </div>
         </div>
       </Layout>
+      <AppearOnMount as={Fragment}>
+        <div className="lg:hidden fixed left-0 right-0 flex justify-center bottom-6">
+          <div>
+            <div className="divide-x rounded-xl min-w-[95vw] shadow-md shadow-black/50 bg-yellow divide-stone-800">
+              <Button
+                size="md"
+                as="a"
+                href={`../../swap?token0=${pair.token0.uuid}&token1=${pair.token1.uuid}&chainId=${pair.chainId}`}
+              >
+                Swap
+              </Button>
+            </div>
+          </div>
+        </div>
+      </AppearOnMount>
     </>
   )
 }

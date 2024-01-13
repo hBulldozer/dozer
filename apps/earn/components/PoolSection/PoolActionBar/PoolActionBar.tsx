@@ -27,7 +27,9 @@ export const PoolActionBar: FC<PoolActionBarProps> = ({ pair }) => {
                 My Position
               </Typography>
             </button>
-            {/* {pair.farm && (
+
+            {/* CHECK IF MY REWARDS BUTTON SHOULD COME BACK 
+            {pair.farm && (
               <button onClick={() => setOpenRewards(true)} className="inline-flex px-4 py-3 cursor-pointer">
                 <Typography variant="sm" weight={600} className="text-stone-50">
                   My Rewards
