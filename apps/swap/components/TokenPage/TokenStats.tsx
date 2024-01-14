@@ -3,17 +3,17 @@ import { Pair } from '@dozer/api'
 import { Typography } from '@dozer/ui'
 import { FC } from 'react'
 
-interface PoolStats {
+interface TokenStats {
   pair: Pair
   prices: { [key: string]: number }
 }
 
-export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
+export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <div className="flex flex-col gap-1 p-3 rounded-md shadow-md bg-stone-800 shadow-black/20">
         <Typography variant="xs" weight={500} className="text-stone-400">
-          Liquidity
+          TVL
         </Typography>
         <Typography weight={500} className="text-stone-50">
           {formatUSD(pair.liquidityUSD * Number(prices['00']))}
@@ -42,7 +42,7 @@ export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
       </div>
       <div className="flex flex-col gap-1 p-3 rounded-md shadow-md bg-stone-800 shadow-black/20">
         <Typography variant="xs" weight={500} className="text-stone-400">
-          Fees (24h)
+          Min (52W)
         </Typography>
         <Typography weight={500} className="text-stone-50">
           {formatUSD(pair.volume1d * (pair.swapFee / 10000))}
@@ -57,7 +57,7 @@ export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
       </div>
       <div className="flex flex-col gap-1 p-3 rounded-md shadow-md bg-stone-800 shadow-black/20">
         <Typography variant="xs" weight={500} className="text-stone-400">
-          Transactions (24h)
+          Max (52W)
         </Typography>
         <Typography weight={500} className="text-stone-50">
           {/* Don't need decimals for a count */}

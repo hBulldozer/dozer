@@ -1,7 +1,7 @@
-import { AppearOnMount, BreadcrumbLink, Button, Typography } from '@dozer/ui'
+import { AppearOnMount, BreadcrumbLink, Button, Currency, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPoolMerged, pairFromPoolMergedWithSnaps } from '@dozer/api'
+import { Pair, pairFromPoolMerged, pairFromPoolMergedWithSnaps, useTokensFromPair } from '@dozer/api'
 
 import { Layout } from 'components/Layout'
 import { TokenHeader } from 'components'
@@ -12,6 +12,7 @@ import { api } from '../../../utils/api'
 import { TokenChart } from '../../../components/TokenPage/TokenChart'
 import { SwapWidget } from 'pages'
 import { Fragment } from 'react'
+import { TokenStats } from 'components/TokenPage/TokenStats'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -87,12 +88,28 @@ const Token = () => {
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   return (
     <>
       <Layout breadcrumbs={LINKS({ pair })}>
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
-          <div className="flex flex-col order-1 gap-9">
+          <div className="flex flex-col order-1 gap-6">
             <TokenChart pair={pair} />
+            {/* About */}
+            <div className="gap-4 flex flex-col">
+              <Typography weight={600} variant="h1">
+                Stats
+              </Typography>
+              <TokenStats pair={pair} prices={prices} />
+              <Typography weight={500} className="flex flex-col " variant="h2">
+                About
+              </Typography>
+              <Typography variant="lg" weight={400} className="pb-16 md:pb-0">
+                Cathor is the original Hathor Network community coin. Minted in February 2021 by the CEO of Hathor for
+                the community, Cathor’s mission is to support and grow awareness for the Hathor Network and projects
+                building on Hathor.
+              </Typography>
+            </div>
           </div>
           <div className="hidden lg:flex flex-col order-2 gap-4">
             <AppearOnMount>

@@ -75,6 +75,7 @@ export const TokenHeader: FC<TokenHeader> = ({ pair, prices }) => {
             </div>
           </div>
         </div>
+        T
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex gap-3 p-3 rounded-lg shadow-md bg-stone-800 shadow-black/10">

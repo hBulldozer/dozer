@@ -1,6 +1,6 @@
 import { formatHTR, formatPercentChange, formatUSD5Digit } from '@dozer/format'
-import { Pair } from '@dozer/api'
-import { AppearOnMount, ArrowIcon, classNames, Typography } from '@dozer/ui'
+import { Pair, useTokensFromPair } from '@dozer/api'
+import { AppearOnMount, ArrowIcon, classNames, Currency, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
 import ReactECharts from 'echarts-for-react'
 import { EChartsOption } from 'echarts-for-react/lib/types'
@@ -43,6 +43,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(TokenChartCurrency.USD)
   const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Day)
   const hourSnapshots = pair.hourSnapshots.filter((snap) => new Date(snap.date).getMinutes() === 0)
+  const { token1 } = useTokensFromPair(pair)
   const tenMinSnapshots = pair.hourSnapshots
   const tokenReserveNow: { reserve0: number; reserve1: number } = {
     reserve0: Number(pair.reserve0),
@@ -236,15 +237,46 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col justify-between gap-5 md:flex-row">
-        <div className="flex gap-6">
+      <div className="flex  justify-between gap-5 mr-3">
+        <div className="flex flex-col gap-1 ">
+          <div className="flex gap-2 items-center">
+            <Currency.Icon currency={token1} width={32} height={32} />
+            <Typography variant="lg" weight={600}>
+              {token1.name}
+            </Typography>
+            <Typography variant="lg" weight={600} className="text-stone-400">
+              {token1.symbol}
+            </Typography>
+          </div>
+          <Typography variant="h2" weight={600} className="text-stone-50">
+            <span className="hoveredItemValue">
+              {chartCurrency === TokenChartCurrency.USD
+                ? formatUSD5Digit(yData[yData.length - 1])
+                : formatHTR(yData[yData.length - 1])}
+            </span>
+          </Typography>
+          <div className="flex gap-1 ">
+            <Typography variant="lg" weight={500} className="text-stone-400">
+              <span className="hoveredItemChange">{formatPercentChange(priceChange)}</span>
+            </Typography>
+            <ArrowIcon
+              type={priceChange < 0 ? 'down' : 'up'}
+              className={priceChange < 0 ? 'text-red-500' : 'text-green-500'}
+            />
+          </div>
+
+          {xData.length && (
+            <Typography variant="sm" className="hidden text-stone-500 hoveredItemName">
+              <AppearOnMount>{format(new Date(xData[xData.length - 1] * 1000), 'dd MMM yyyy HH:mm')}</AppearOnMount>
+            </Typography>
+          )}
+        </div>
+        <div className="flex gap-4">
           <button
             onClick={() => setChartCurrency(TokenChartCurrency.USD)}
             className={classNames(
-              'border-b-[3px] pb-2 font-semibold text-sm',
-              chartCurrency === TokenChartCurrency.USD
-                ? 'text-stone-50 border-yellow'
-                : 'text-stone-500 border-transparent'
+              'font-semibold text-xl',
+              chartCurrency === TokenChartCurrency.USD ? 'text-yellow-500' : 'text-stone-500'
             )}
           >
             USD
@@ -253,89 +285,64 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
             <button
               onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
               className={classNames(
-                'border-b-[3px] pb-2 font-semibold text-sm',
-                chartCurrency === TokenChartCurrency.HTR
-                  ? 'text-stone-50 border-yellow'
-                  : 'text-stone-500 border-transparent'
+                'font-semibold text-xl',
+                chartCurrency === TokenChartCurrency.HTR ? 'text-yellow-500 ' : 'text-stone-500 '
               )}
             >
               HTR
             </button>
           ) : null}
         </div>
-        <div className="flex gap-4">
-          <button
-            onClick={() => setChartPeriod(TokenChartPeriod.Day)}
-            className={classNames(
-              'font-semibold text-sm',
-              chartPeriod === TokenChartPeriod.Day ? 'text-yellow' : 'text-stone-500'
-            )}
-          >
-            1D
-          </button>
-          <button
-            onClick={() => setChartPeriod(TokenChartPeriod.Week)}
-            className={classNames(
-              'font-semibold text-sm',
-              chartPeriod === TokenChartPeriod.Week ? 'text-yellow' : 'text-stone-500'
-            )}
-          >
-            1W
-          </button>
-          <button
-            onClick={() => setChartPeriod(TokenChartPeriod.Month)}
-            className={classNames(
-              'font-semibold text-sm',
-              chartPeriod === TokenChartPeriod.Month ? 'text-yellow' : 'text-stone-500'
-            )}
-          >
-            1M
-          </button>
-          <button
-            onClick={() => setChartPeriod(TokenChartPeriod.Year)}
-            className={classNames(
-              'font-semibold text-sm',
-              chartPeriod === TokenChartPeriod.Year ? 'text-yellow' : 'text-stone-500'
-            )}
-          >
-            1Y
-          </button>
-          <button
-            onClick={() => setChartPeriod(TokenChartPeriod.All)}
-            className={classNames(
-              'font-semibold text-sm',
-              chartPeriod === TokenChartPeriod.All ? 'text-yellow' : 'text-stone-500'
-            )}
-          >
-            ALL
-          </button>
-        </div>
       </div>
-      <div className="flex flex-col">
-        <Typography variant="xl" weight={500} className="text-stone-50">
-          <span className="hoveredItemValue">
-            {chartCurrency === TokenChartCurrency.USD
-              ? formatUSD5Digit(yData[yData.length - 1])
-              : formatHTR(yData[yData.length - 1])}
-          </span>
-        </Typography>
-        <div className="flex gap-1 ">
-          <ArrowIcon
-            type={priceChange < 0 ? 'down' : 'up'}
-            className={priceChange < 0 ? 'text-red-400' : 'text-green-400'}
-          />
-          <Typography variant="sm" weight={600} className={priceChange < 0 ? 'text-red-400' : 'text-green-400'}>
-            <span className="hoveredItemChange">{formatPercentChange(priceChange)}</span>
-          </Typography>
-        </div>
 
-        {xData.length && (
-          <Typography variant="sm" className="text-stone-500 hoveredItemName">
-            <AppearOnMount>{format(new Date(xData[xData.length - 1] * 1000), 'dd MMM yyyy HH:mm')}</AppearOnMount>
-          </Typography>
-        )}
-      </div>
       <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} />
+      <div className="flex justify-between px-8 md:px-0 md:gap-4 md:justify-end">
+        <button
+          onClick={() => setChartPeriod(TokenChartPeriod.Day)}
+          className={classNames(
+            'font-semibold text-xl',
+            chartPeriod === TokenChartPeriod.Day ? 'text-yellow' : 'text-stone-500'
+          )}
+        >
+          1D
+        </button>
+        <button
+          onClick={() => setChartPeriod(TokenChartPeriod.Week)}
+          className={classNames(
+            'font-semibold text-xl',
+            chartPeriod === TokenChartPeriod.Week ? 'text-yellow' : 'text-stone-500'
+          )}
+        >
+          1W
+        </button>
+        <button
+          onClick={() => setChartPeriod(TokenChartPeriod.Month)}
+          className={classNames(
+            'font-semibold text-xl',
+            chartPeriod === TokenChartPeriod.Month ? 'text-yellow' : 'text-stone-500'
+          )}
+        >
+          1M
+        </button>
+        <button
+          onClick={() => setChartPeriod(TokenChartPeriod.Year)}
+          className={classNames(
+            'font-semibold text-xl',
+            chartPeriod === TokenChartPeriod.Year ? 'text-yellow' : 'text-stone-500'
+          )}
+        >
+          1Y
+        </button>
+        <button
+          onClick={() => setChartPeriod(TokenChartPeriod.All)}
+          className={classNames(
+            'font-semibold text-xl',
+            chartPeriod === TokenChartPeriod.All ? 'text-yellow' : 'text-stone-500'
+          )}
+        >
+          ALL
+        </button>
+      </div>
     </div>
   )
 }
