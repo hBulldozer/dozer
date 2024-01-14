@@ -196,7 +196,8 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
                   : 'LLLL'
               )
             },
-            interval: chartPeriod == TokenChartPeriod.Day ? '2' : '1',
+            interval: 'auto',
+            showMinLabel: false,
             inside: true,
             margin: 5,
           },
@@ -237,9 +238,9 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex  justify-between gap-5 mr-3">
+      <div className="flex justify-between gap-5 mr-3">
         <div className="flex flex-col gap-1 ">
-          <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-2">
             <Currency.Icon currency={token1} width={32} height={32} />
             <Typography variant="lg" weight={600}>
               {token1.name}
