@@ -27,7 +27,7 @@
     "@dozer/react-query": "workspace:*",
     "@dozer/ui": "workspace:*",
     "@dozer/zustand": "workspace:*",
-    "@headlessui/react": "^1.7.3",
+    "@headlessui/react": "^1.7.18",
     "@heroicons/react": "^1.0.0",
     "@tailwindcss/typography": "^0.5.10",
     "@vercel/analytics": "1.1.1",
