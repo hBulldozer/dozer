@@ -29,7 +29,7 @@ const Tokens: FC = () => {
             <Typography variant="hero" weight={600} className="text-stone-50">
               Tokens
             </Typography>
-            <p className="text-stone-300">Follow tokens progress.</p>
+            <Typography className="text-stone-300">Dozer Protocol featured Tokens.</Typography>
           </div>
           <div className="flex justify-end flex-grow not-prose"></div>
         </section>

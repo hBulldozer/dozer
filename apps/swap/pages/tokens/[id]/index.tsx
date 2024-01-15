@@ -97,7 +97,7 @@ const Token = () => {
             <TokenChart pair={pair} />
             {/* About */}
             <div className="gap-4 flex flex-col">
-              <Typography weight={600} variant="h1">
+              <Typography weight={500} variant="h1">
                 Stats
               </Typography>
               <TokenStats pair={pair} prices={prices} />
