@@ -38,6 +38,19 @@ export default async function handler(request: NextApiRequest, response: NextApi
       data: pools_array,
     })
 
+    pools_array.map(async (pool) => {
+      // console.log(value, svgStringArray[index])
+      await prisma.pool.update({
+        where: {
+          id: pool.poolId,
+        },
+        data: {
+          reserve0: pool.reserve0.toString(),
+          reserve1: pool.reserve1.toString(),
+        },
+      })
+    })
+
     return response.status(200).end('Updated!')
   } else return response.status(401).end(`Not Authorized !`)
 }
