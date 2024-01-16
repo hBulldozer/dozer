@@ -13,8 +13,9 @@ export const TokenChangeCell: FC<CellProps> = ({ row }) => {
     reserve1: poolDB ? Number(poolDB.reserve1) : row.reserve1,
   }
   const { data: _priceInHTR, isLoading: isLoadingPrice } = api.getPrices.fromPair.useQuery({ pairMerged: row })
-  const priceInHTR_previous =
-    row.id === 'native' ? 1 : Number(tokenReservePrevious.reserve0) / Number(tokenReservePrevious.reserve1)
+  const priceInHTR_previous = row.id.includes('native')
+    ? 1
+    : Number(tokenReservePrevious.reserve0) / Number(tokenReservePrevious.reserve1)
   const priceInHTR = _priceInHTR ? _priceInHTR : priceInHTR_previous
   const change = (priceInHTR - priceInHTR_previous) / priceInHTR_previous
   const isLoading = isLoadingPoolDB || isLoadingPrice

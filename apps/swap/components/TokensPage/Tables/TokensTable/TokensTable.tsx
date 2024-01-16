@@ -70,6 +70,7 @@ export const TokensTable: FC = () => {
       return pairFromPoolMerged(poolDB, poolNC)
     } else {
       const pairs_htr: Pair[] = all_pools
+        .filter((pool) => pool.chainId == rendNetwork)
         .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
         .map((pool) => {
           const poolDB = pool ? pool : ({} as dbPoolWithTokens)
@@ -79,8 +80,8 @@ export const TokensTable: FC = () => {
           return pairFromPoolMerged(poolDB, poolNC)
         })
       const fakeHTRPair: Pair = {
-        id: 'native',
-        name: 'HTR',
+        id: network == ChainId.HATHOR ? 'native' : 'native-testnet',
+        name: network == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
         liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) : 0,
         volumeUSD: pairs_htr ? pairs_htr.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
         feeUSD: 0,

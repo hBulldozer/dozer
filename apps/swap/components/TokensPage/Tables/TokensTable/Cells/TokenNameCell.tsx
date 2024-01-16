@@ -1,22 +1,32 @@
-import { formatNumber } from '@dozer/format'
 import { useInViewport } from '@dozer/hooks'
-import { classNames, Currency, NetworkIcon, Typography } from '@dozer/ui'
+import { Currency, Typography } from '@dozer/ui'
 import { FC, useRef } from 'react'
 
-import { useTokensFromPair } from '@dozer/api'
 import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
 import { Token } from '@dozer/currency'
 
 export const TokenNameCell: FC<CellProps> = ({ row }) => {
-  const _token = row.token0.uuid != '00' ? row.token0 : row.token1
-  const token = new Token({
-    uuid: _token.uuid,
-    name: _token.name,
-    decimals: _token.decimals,
-    symbol: _token.symbol,
-    chainId: _token.chainId,
-  })
+  let token: Token
+  if (row.id.includes('native')) {
+    const _token = row.token0.uuid == '00' ? row.token0 : row.token1
+    token = new Token({
+      uuid: _token.uuid,
+      name: _token.name,
+      decimals: _token.decimals,
+      symbol: _token.symbol,
+      chainId: _token.chainId,
+    })
+  } else {
+    const _token = row.token0.uuid != '00' ? row.token0 : row.token1
+    token = new Token({
+      uuid: _token.uuid,
+      name: _token.name,
+      decimals: _token.decimals,
+      symbol: _token.symbol,
+      chainId: _token.chainId,
+    })
+  }
   const ref = useRef<HTMLDivElement>(null)
   const inViewport = useInViewport(ref)
   return (

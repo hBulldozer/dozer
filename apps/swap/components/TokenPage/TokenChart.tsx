@@ -49,7 +49,9 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
     reserve0: Number(pair.reserve0),
     reserve1: Number(pair.reserve1),
   }
-  const priceInHTRNow = pair.id === 'native' ? 1 : Number(tokenReserveNow.reserve0) / Number(tokenReserveNow.reserve1)
+  const priceInHTRNow = pair.id.includes('native')
+    ? 1
+    : Number(tokenReserveNow.reserve0) / Number(tokenReserveNow.reserve1)
   const { data: _priceHTRNow } = api.getPrices.htr.useQuery()
   const [xData, yData] = useMemo(() => {
     const data =
@@ -66,7 +68,9 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           reserve0: Number(cur.reserve0),
           reserve1: Number(cur.reserve1),
         }
-        const priceInHTR = pair.id === 'native' ? 1 : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
+        const priceInHTR = pair.id.includes('native')
+          ? 1
+          : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
         const priceInUSD = priceInHTR * Number(cur.priceHTR)
         if (date >= currentDate - chartTimespans[chartPeriod]) {
           acc[0].push(date / 1000)

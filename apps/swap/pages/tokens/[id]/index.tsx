@@ -34,7 +34,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const path_id = params?.id as string
-  const id = path_id == 'native' ? '0' : path_id
+  const id = path_id.includes('native') ? '0' : path_id
   const ssg = generateSSGHelper()
   const poolDB = await ssg.getPools.byId.fetch({ id })
   if (!poolDB) {
@@ -67,13 +67,13 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   },
   {
     href: `/${pair.id}`,
-    label: `${pair.id == 'native' ? 'Hathor' : pair.token0.uuid == '00' ? pair.token1.name : pair.token0.name}`,
+    label: `${pair.id.includes('native') ? 'Hathor' : pair.token0.uuid == '00' ? pair.token1.name : pair.token0.name}`,
   },
 ]
 
 const Token = () => {
   const router = useRouter()
-  const pool_id = (router.query.id as string) == 'native' ? '0' : (router.query.id as string)
+  const pool_id = (router.query.id as string).includes('native') ? '0' : (router.query.id as string)
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
@@ -84,7 +84,7 @@ const Token = () => {
   if (!poolNC) return <></>
   const pair = poolDB && poolNC ? pairFromPoolMergedWithSnaps(poolDB, poolNC) : ({} as Pair)
   if (!pair) return <></>
-  if ((router.query.id as string) == 'native') pair.id = 'native'
+  if ((router.query.id as string).includes('native')) pair.id = 'native'
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
 
@@ -96,7 +96,7 @@ const Token = () => {
           <div className="flex flex-col order-1 gap-6">
             <TokenChart pair={pair} />
             {/* About */}
-            <div className="gap-4 flex flex-col">
+            <div className="flex flex-col gap-4">
               <Typography weight={500} variant="h1">
                 Stats
               </Typography>
@@ -111,7 +111,7 @@ const Token = () => {
               </Typography>
             </div>
           </div>
-          <div className="hidden lg:flex flex-col order-2 gap-4">
+          <div className="flex-col order-2 hidden gap-4 lg:flex">
             <AppearOnMount>
               <SwapWidget token0_idx={0} token1_idx={1} />
             </AppearOnMount>
@@ -119,7 +119,7 @@ const Token = () => {
         </div>
       </Layout>
       <AppearOnMount as={Fragment}>
-        <div className="lg:hidden fixed left-0 right-0 flex justify-center bottom-6">
+        <div className="fixed left-0 right-0 flex justify-center lg:hidden bottom-6">
           <div>
             <div className="divide-x rounded-xl min-w-[95vw] shadow-md shadow-black/50 bg-yellow divide-stone-800">
               <Button
