@@ -6,6 +6,43 @@ interface Point {
   y: number
 }
 
+const createSVGString = (data: Point[], width: number, height: number, padding: number) => {
+  const createPathString = (points: Point[]): string => {
+    return (
+      `M${points[0].x},${points[0].y}` +
+      points
+        .slice(1)
+        .map((point) => `L${point.x},${point.y}`)
+        .join('')
+    )
+  }
+  const minX = Math.min(...data.map((p) => p.x))
+  const maxX = Math.max(...data.map((p) => p.x))
+  const minY = Math.min(...data.map((p) => p.y))
+  const maxY = Math.max(...data.map((p) => p.y))
+
+  const viewBoxValues = `${minX - padding} ${minY - padding} ${maxX - minX + 2 * padding} -${
+    maxY - minY + 3 * padding // Increase padding for the bottom
+  }`
+
+  const scalePoints = (points: Point[], svgWidth: number, svgHeight: number): Point[] => {
+    const scaleX = svgWidth / (maxX - minX)
+    const scaleY = svgHeight / (maxY - minY)
+    return points.map((point) => ({
+      x: (point.x - minX) * scaleX,
+      y: (point.y - minY) * scaleY,
+    }))
+  }
+
+  const scaledPoints = scalePoints(data, width, height)
+
+  return `
+<svg viewBox="${viewBoxValues}" width="${width}" height="${height}">
+  <path d="${createPathString(scaledPoints)}" stroke="black" strokeWidth="2" fill="none" />
+</svg>
+`
+}
+
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.query.key && request.query.key === process.env.API_KEY) {
     const _pools = await prisma.pool.findMany({ include: { token0: true, token1: true, hourSnapshots: true } })
@@ -38,46 +75,34 @@ export default async function handler(request: NextApiRequest, response: NextApi
         const data = y.reverse().map((value, index) => {
           return { x: index, y: value }
         })
-        const createPathString = (points: Point[]): string => {
-          return (
-            `M${points[0].x},${points[0].y}` +
-            points
-              .slice(1)
-              .map((point) => `L${point.x},${point.y}`)
-              .join('')
-          )
-        }
 
-        const padding = 2
-        const width = 110
-        const height = 30 // Adjust as needed
+        const svgString = createSVGString(data, 110, 30, 2)
+        svgStringArray.push(svgString)
+      })
+    )
 
-        const minX = Math.min(...data.map((p) => p.x))
-        const maxX = Math.max(...data.map((p) => p.x))
-        const minY = Math.min(...data.map((p) => p.y))
-        const maxY = Math.max(...data.map((p) => p.y))
+    await Promise.all(
+      pools.map((pool) => {
+        const token = pool.token0.uuid == '00' ? pool.token0 : pool.token1
+        tokensId.push(token.id)
+        const currentDate = Math.round(Date.now())
+        const [x, y] = pool.hourSnapshots.reduce<[number[], number[]]>(
+          (acc, cur) => {
+            const date = new Date(cur.date).getTime()
+            const priceInUSD = Number(cur.priceHTR)
+            if (date >= currentDate - 86400 * 1000) {
+              acc[0].push(date / 1000)
+              acc[1].push(priceInUSD)
+            }
+            return acc
+          },
+          [[], []]
+        )
+        const data = y.reverse().map((value, index) => {
+          return { x: index, y: value }
+        })
 
-        const viewBoxValues = `${minX - padding} ${minY - padding} ${maxX - minX + 2 * padding} -${
-          maxY - minY + 3 * padding // Increase padding for the bottom
-        }`
-
-        const scalePoints = (points: Point[], svgWidth: number, svgHeight: number): Point[] => {
-          const scaleX = svgWidth / (maxX - minX)
-          const scaleY = svgHeight / (maxY - minY)
-          return points.map((point) => ({
-            x: (point.x - minX) * scaleX,
-            y: (point.y - minY) * scaleY,
-          }))
-        }
-
-        const scaledPoints = scalePoints(data, width, height)
-
-        const svgString = `
-<svg viewBox="${viewBoxValues}" width="${width}" height="${height}">
-  <path d="${createPathString(scaledPoints)}" stroke="black" strokeWidth="2" fill="none" />
-</svg>
-`
-
+        const svgString = createSVGString(data, 110, 30, 2)
         svgStringArray.push(svgString)
       })
     )

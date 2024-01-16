@@ -20,6 +20,6 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
         symbol,
       })
     : { data: undefined }
-  const chartSVG = token?.miniChartSVG.replace('black', change > 0 ? 'green' : 'red')
+  const chartSVG = token?.miniChartSVG.replace('black', change >= 0 ? 'green' : 'red')
   return <div dangerouslySetInnerHTML={{ __html: chartSVG ? chartSVG : <></> }} />
 }
