@@ -38,7 +38,7 @@ const createSVGString = (data: Point[], width: number, height: number, padding: 
 
   return `
 <svg viewBox="${viewBoxValues}" width="${width}" height="${height}">
-  <path d="${createPathString(scaledPoints)}" stroke="black" strokeWidth="2" fill="none" />
+  <path d="${createPathString(scaledPoints)}" stroke="black" stroke-width="1.5" fill="none" />
 </svg>
 `
 }
