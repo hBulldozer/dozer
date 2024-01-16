@@ -16,7 +16,7 @@ export const CHART_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'chart',
   header: '',
   cell: (props) => <TokenMiniChartCell row={props.row.original} />,
-  size: 50,
+  size: 100,
   meta: {
     skeleton: <div className="rounded-full bg-stone-700 w-[26px] h-[26px] animate-pulse" />,
   },

@@ -20,7 +20,7 @@ export const TokenChangeCell: FC<CellProps> = ({ row }) => {
   return (
     <div className="flex items-center gap-1">
       <ArrowIcon type={change < 0 ? 'down' : 'up'} className={change < 0 ? 'text-red-400' : 'text-green-400'} />
-      <Typography variant="sm" weight={600} className={change < 0 ? 'text-red-400' : 'text-green-400'}>
+      <Typography key="changeCell" variant="sm" weight={600} className={change < 0 ? 'text-red-400' : 'text-green-400'}>
         {formatPercentChange(change)}
       </Typography>
     </div>

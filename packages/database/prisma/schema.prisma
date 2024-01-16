@@ -21,6 +21,7 @@ model Token {
   updatedAt        DateTime    @updatedAt
   decimals         Int         @default(2)
   isLiquidityToken Boolean     @default(false)
+  miniChartSVG     String      @db.VarChar(10000)      @default("")
   poolsLP          Pool[]      @relation("tokenLP")
   pools0           Pool[]      @relation("token0")
   pools1           Pool[]      @relation("token1")
@@ -116,4 +117,26 @@ model Incentive {
   @@index([poolId])
   @@index([rewardTokenId])
   @@index([chainId, rewardTokenId])
+}
+
+model d7f759_88b9_5c34_a58e_850d21f16dbe_20240116125340_vrepl {
+  id               String   @id
+  uuid             String
+  chainId          Int
+  name             String
+  symbol           String
+  isFeeOnTransfer  Boolean  @default(false)
+  isCommon         Boolean  @default(false)
+  derivedUSD       Float?
+  generatedAt      DateTime @default(now())
+  updatedAt        DateTime
+  decimals         Int      @default(2)
+  isLiquidityToken Boolean  @default(false)
+
+  @@unique([chainId, uuid], map: "Token_chainId_uuid_key")
+  @@index([chainId], map: "Token_chainId_idx")
+  @@index([id], map: "Token_id_idx")
+  @@index([uuid, chainId], map: "Token_uuid_chainId_idx")
+  @@index([uuid], map: "Token_uuid_idx")
+  @@map("_83d7f759_88b9_5c34_a58e_850d21f16dbe_20240116125340_vrepl")
 }

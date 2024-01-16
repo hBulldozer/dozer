@@ -10,10 +10,13 @@ export default async function handler(request: NextApiRequest, response: NextApi
   if (request.query.key && request.query.key === process.env.API_KEY) {
     const _pools = await prisma.pool.findMany({ include: { token0: true, token1: true, hourSnapshots: true } })
     const pools = _pools.filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
+    const tokensId: string[] = []
+    const svgStringArray: string[] = []
 
     await Promise.all(
       pools.map((pool) => {
         const token = pool.token0.uuid == '00' ? pool.token1 : pool.token0
+        tokensId.push(token.id)
         const currentDate = Math.round(Date.now())
         const [x, y] = pool.hourSnapshots.reduce<[number[], number[]]>(
           (acc, cur) => {
@@ -45,31 +48,52 @@ export default async function handler(request: NextApiRequest, response: NextApi
           )
         }
 
-        const minX = Math.min(...points.map((p) => p.x))
-        const maxX = Math.max(...points.map((p) => p.x))
-        const minY = Math.min(...points.map((p) => p.y))
-        const maxY = Math.max(...points.map((p) => p.y))
+        const padding = 2
+        const width = 110
+        const height = 30 // Adjust as needed
+
+        const minX = Math.min(...data.map((p) => p.x))
+        const maxX = Math.max(...data.map((p) => p.x))
+        const minY = Math.min(...data.map((p) => p.y))
+        const maxY = Math.max(...data.map((p) => p.y))
+
+        const viewBoxValues = `${minX - padding} ${minY - padding} ${maxX - minX + 2 * padding} -${
+          maxY - minY + 3 * padding // Increase padding for the bottom
+        }`
 
         const scalePoints = (points: Point[], svgWidth: number, svgHeight: number): Point[] => {
-          const scaleX = svgWidth / Math.max(...points.map((p) => p.x))
-          const scaleY = svgHeight / Math.max(...points.map((p) => p.y))
-
+          const scaleX = svgWidth / (maxX - minX)
+          const scaleY = svgHeight / (maxY - minY)
           return points.map((point) => ({
-            x: point.x * scaleX,
-            y: point.y * scaleY,
+            x: (point.x - minX) * scaleX,
+            y: (point.y - minY) * scaleY,
           }))
         }
 
-        console.log(createPathString(scalePoints(data, 300, 100)))
+        const scaledPoints = scalePoints(data, width, height)
 
-        // prisma.token.update({
-        //   where: { id: token.id },
-        //   data: {
-        //     miniChartSVG: svgString,
-        //   },
-        // })
+        const svgString = `
+<svg viewBox="${viewBoxValues}" width="${width}" height="${height}">
+  <path d="${createPathString(scaledPoints)}" stroke="black" strokeWidth="2" fill="none" />
+</svg>
+`
+
+        svgStringArray.push(svgString)
       })
     )
+
+    tokensId.map(async (value, index) => {
+      // console.log(value, svgStringArray[index])
+      await prisma.token.update({
+        where: {
+          id: value,
+        },
+        data: {
+          miniChartSVG: svgStringArray[index],
+        },
+      })
+    })
+
     return response.status(200).end('Updated!')
   } else return response.status(401).end(`Not Authorized !`)
 }
