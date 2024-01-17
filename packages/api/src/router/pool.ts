@@ -46,17 +46,33 @@ export const poolRouter = createTRPCRouter({
       },
     })
   }),
-  // create: procedure
-  //   .input(
-  //     z.object({
-  //       title: z.string().min(1),
-  //       content: z.string().min(1),
-  //     }),
-  //   )
-  //   .mutation(({ ctx, input }) => {
-  //     return ctx.prisma.pool.create({ data: input });
-  //   }),
-  // delete: procedure.input(z.string()).mutation(({ ctx, input }) => {
-  //   return ctx.prisma.pool.delete({ where: { id: input } });
-  // }),
+  sql: procedure.query(({ ctx }) => {
+    const test = ctx.prisma.pool.findMany({
+      where: {
+        token0: { uuid: '00' },
+      },
+      select: {
+        token1: {
+          select: {
+            name: true,
+            uuid: true,
+          },
+        },
+        hourSnapshots: {
+          where: {
+            date: {
+              gte: new Date(Date.now() - 86400 * 1000),
+            },
+          },
+          select: {
+            date: true,
+            reserve0: true,
+            reserve1: true,
+            priceHTR: true,
+          },
+        },
+      },
+    })
+    return test
+  }),
 })
