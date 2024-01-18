@@ -26,11 +26,27 @@ export const poolRouter = createTRPCRouter({
     }),
   hourSnaps: procedure
     //change id to ncid when included on prisma schema
-    .input(z.object({ poolId: z.string(), interval: z.number() }))
-    .query(({ ctx, input }) => {
-      const result = ctx.prisma.hourSnapshot.findMany({
+    .input(z.object({ tokenUuid: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.prisma.hourSnapshot.findMany({
         where: {
-          AND: [{ date: { gte: new Date(Date.now() - input.interval) } }, { poolId: input.poolId }],
+          AND: [
+            { date: { gte: new Date(Date.now() - 60 * 60 * 24 * 1000) } },
+            {
+              pool: {
+                token0: {
+                  uuid: '00',
+                },
+              },
+            },
+            {
+              pool: {
+                token1: {
+                  uuid: input.tokenUuid,
+                },
+              },
+            },
+          ],
         },
         //we can select vol, liq for example only for the pool page
         select: {
@@ -44,7 +60,9 @@ export const poolRouter = createTRPCRouter({
           priceHTR: true,
         },
       })
-      return result
+      return result.map((snap) => {
+        return { priceToken: (snap.reserve0 / snap.reserve1) * snap.priceHTR, priceHTR: snap.priceHTR }
+      })
     }),
   all: procedure.query(({ ctx }) => {
     return ctx.prisma.pool.findMany({

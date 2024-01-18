@@ -47,6 +47,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   if (request.query.key && request.query.key === process.env.API_KEY) {
     const _pools = await prisma.pool.findMany({ include: { token0: true, token1: true, hourSnapshots: true } })
     const pools = _pools.filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
+    const tokens = await prisma.token.findMany({ select: { uuid: true } })
     const tokensId: string[] = []
     const svgStringArray: string[] = []
 
