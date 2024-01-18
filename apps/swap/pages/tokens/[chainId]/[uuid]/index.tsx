@@ -74,15 +74,14 @@ const Token = () => {
   const uuid = router.query.uuid as string
   const chainId = Number(router.query.chainId)
 
-  console.log('uuid', uuid, 'chainId', chainId)
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
 
   const { data: poolDB } = api.getPools.byTokenUuidWithSnaps.useQuery({ uuid, chainId })
-  console.log(poolDB)
+
   if (!poolDB) return <></>
   const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ id: poolDB.id })
-  console.log(poolNC)
+
   if (!poolNC) return <></>
   const pair = poolDB && poolNC ? pairFromPoolMergedWithSnaps(poolDB, poolNC) : ({} as Pair)
   if (!pair) return <></>
