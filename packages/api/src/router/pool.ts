@@ -95,6 +95,52 @@ export const poolRouter = createTRPCRouter({
       },
     })
   }),
+  byTokenUuidWithSnaps: procedure.input(z.object({ uuid: z.string(), chainId: z.number() })).query(({ ctx, input }) => {
+    if (input.uuid == '00') {
+      return ctx.prisma.pool.findFirst({
+        where: { token0: { uuid: '00' }, chainId: input.chainId },
+        include: {
+          token0: true,
+          token1: true,
+          tokenLP: true,
+          hourSnapshots: { orderBy: { date: 'desc' } },
+          daySnapshots: { orderBy: { date: 'desc' } },
+        },
+      })
+    } else {
+      return ctx.prisma.pool.findFirst({
+        where: { token1: { uuid: input.uuid, chainId: input.chainId }, token0: { uuid: '00', chainId: input.chainId } },
+        include: {
+          token0: true,
+          token1: true,
+          tokenLP: true,
+          hourSnapshots: { orderBy: { date: 'desc' } },
+          daySnapshots: { orderBy: { date: 'desc' } },
+        },
+      })
+    }
+  }),
+  byTokenUuid: procedure.input(z.object({ uuid: z.string(), chainId: z.number() })).query(({ ctx, input }) => {
+    if (input.uuid == '00') {
+      return ctx.prisma.pool.findFirst({
+        where: { token0: { uuid: '00' }, chainId: input.chainId },
+        include: {
+          token0: true,
+          token1: true,
+          tokenLP: true,
+        },
+      })
+    } else {
+      return ctx.prisma.pool.findFirst({
+        where: { token1: { uuid: input.uuid, chainId: input.chainId }, token0: { uuid: '00', chainId: input.chainId } },
+        include: {
+          token0: true,
+          token1: true,
+          tokenLP: true,
+        },
+      })
+    }
+  }),
   byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.pool.findFirst({
       where: { id: input.id },

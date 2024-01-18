@@ -43,7 +43,8 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(TokenChartCurrency.USD)
   const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Day)
   const hourSnapshots = pair.hourSnapshots.filter((snap) => new Date(snap.date).getMinutes() === 0)
-  const { token1 } = useTokensFromPair(pair)
+  const { token0, token1 } = useTokensFromPair(pair)
+  const token = pair.id.includes('native') ? token0 : token1
   const tenMinSnapshots = pair.hourSnapshots
   const tokenReserveNow: { reserve0: number; reserve1: number } = {
     reserve0: Number(pair.reserve0),
@@ -245,12 +246,12 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       <div className="flex justify-between gap-5 mr-3">
         <div className="flex flex-col gap-1 ">
           <div className="flex items-center gap-2">
-            <Currency.Icon currency={token1} width={32} height={32} />
+            <Currency.Icon currency={token} width={32} height={32} />
             <Typography variant="lg" weight={600}>
-              {token1.name}
+              {token.name}
             </Typography>
             <Typography variant="lg" weight={600} className="text-stone-400">
-              {token1.symbol}
+              {token.symbol}
             </Typography>
           </div>
           <Typography variant="h2" weight={600} className="text-stone-50">

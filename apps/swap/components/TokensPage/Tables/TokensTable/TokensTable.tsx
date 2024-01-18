@@ -157,7 +157,7 @@ export const TokensTable: FC = () => {
   }, [isMd, isSm])
 
   const rowLink = useCallback((row: Pair) => {
-    return `/tokens/${row.id}`
+    return `/tokens/${row.token1.chainId}/${row.token1.uuid}`
   }, [])
 
   return (

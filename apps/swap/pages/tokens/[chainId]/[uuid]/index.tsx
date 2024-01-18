@@ -8,22 +8,22 @@ import { TokenHeader } from 'components'
 
 import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
-import { api } from '../../../utils/api'
-import { TokenChart } from '../../../components/TokenPage/TokenChart'
+import { api } from '../../../../utils/api'
+import { TokenChart } from '../../../../components/TokenPage/TokenChart'
 import { SwapWidget } from 'pages'
 import { Fragment } from 'react'
 import { TokenStats } from 'components/TokenPage/TokenStats'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
+  const tokens = await ssg.getTokens.all.fetch()
 
-  if (!pools) {
-    throw new Error(`Failed to fetch pool, received ${pools}`)
+  if (!tokens) {
+    throw new Error(`Failed to fetch pool, received ${tokens}`)
   }
   // Get the paths we want to pre-render based on pairs
-  const paths = pools?.map((pool) => ({
-    params: { id: `${pool.id}` },
+  const paths = tokens?.map((token) => ({
+    params: { chainId: `${token.chainId}`, uuid: `${token.uuid}` },
   }))
 
   // We'll pre-render only these paths at build time.
@@ -33,10 +33,10 @@ export const getStaticPaths: GetStaticPaths = async () => {
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const path_id = params?.id as string
-  const id = path_id.includes('native') ? '0' : path_id
+  const uuid = params?.uuid as string
+  const chainId = Number(params?.chainId)
   const ssg = generateSSGHelper()
-  const poolDB = await ssg.getPools.byId.fetch({ id })
+  const poolDB = await ssg.getPools.byTokenUuid.fetch({ uuid, chainId })
   if (!poolDB) {
     throw new Error(`Failed to fetch pool, received ${poolDB}`)
   }
@@ -45,9 +45,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     throw new Error(`Failed to fetch pool, received ${poolNC}`)
   }
 
-  const tokens = [poolDB.token0, poolDB.token1]
-
-  await ssg.getPools.byIdWithSnaps.prefetch({ id })
+  await ssg.getPools.byTokenUuidWithSnaps.prefetch({ uuid, chainId })
   await ssg.getPools.byIdFromContract.prefetch({ id: poolDB.id })
   await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
@@ -73,18 +71,22 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 
 const Token = () => {
   const router = useRouter()
-  const pool_id = (router.query.id as string).includes('native') ? '0' : (router.query.id as string)
+  const uuid = router.query.uuid as string
+  const chainId = Number(router.query.chainId)
 
+  console.log('uuid', uuid, 'chainId', chainId)
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
 
-  const { data: poolDB } = api.getPools.byIdWithSnaps.useQuery({ id: pool_id })
+  const { data: poolDB } = api.getPools.byTokenUuidWithSnaps.useQuery({ uuid, chainId })
+  console.log(poolDB)
   if (!poolDB) return <></>
   const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ id: poolDB.id })
+  console.log(poolNC)
   if (!poolNC) return <></>
   const pair = poolDB && poolNC ? pairFromPoolMergedWithSnaps(poolDB, poolNC) : ({} as Pair)
   if (!pair) return <></>
-  if ((router.query.id as string).includes('native')) pair.id = 'native'
+  if (uuid == '00') pair.id = 'native'
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
 
