@@ -18,6 +18,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
         const points: Point[] = snaps.map((snap, index) => {
           return { x: index, y: snap }
         })
+        console.log(token.id)
+        console.log(points)
 
         const svgString = createSVGString(points, 110, 30, 2)
         svgStringArray.push(svgString)
@@ -47,7 +49,7 @@ const getSnapsByUuid = async (tokenUuid: string) => {
           { date: { gte: new Date(Date.now() - 60 * 60 * 24 * 1000) } },
           {
             pool: {
-              id: '1',
+              id: '16c056e5-322d-4b80-bdad-58f399fbdc9e',
             },
           },
         ],

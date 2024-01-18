@@ -23,9 +23,11 @@ type ElementType<T> = T extends (infer U)[] ? U : never
 // Exporting all types to be used through the app
 export type AllPoolsDBOutput = RouterOutputs['getPools']['all']
 export type AllTokensDBOutputArray = RouterOutputs['getTokens']['all']
+export type AllTokensWithoutLPDBOutputArray = RouterOutputs['getTokens']['allWithoutLP']
 export type FrontEndApiNCOutput = RouterOutputs['getPools']['byIdFromContract']
 
 export type AllTokensDBOutput = ElementType<AllTokensDBOutputArray>
+export type AllTokensWithoutLPDBOutput = ElementType<AllTokensWithoutLPDBOutputArray>
 
 export type Maybe<T> = T | null
 export type InputMaybe<T> = Maybe<T>

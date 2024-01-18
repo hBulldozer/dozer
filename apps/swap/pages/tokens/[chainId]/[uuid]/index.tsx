@@ -1,12 +1,10 @@
-import { AppearOnMount, BreadcrumbLink, Button, Currency, Typography } from '@dozer/ui'
+import { AppearOnMount, BreadcrumbLink, Button, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPoolMerged, pairFromPoolMergedWithSnaps, useTokensFromPair } from '@dozer/api'
+import { AllTokensWithoutLPDBOutput, Pair, pairFromPoolMergedWithSnaps } from '@dozer/api'
 
 import { Layout } from 'components/Layout'
-import { TokenHeader } from 'components'
 
-import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../../utils/api'
 import { TokenChart } from '../../../../components/TokenPage/TokenChart'
@@ -16,13 +14,13 @@ import { TokenStats } from 'components/TokenPage/TokenStats'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
-  const tokens = await ssg.getTokens.all.fetch()
+  const tokens = await ssg.getTokens.allWithoutLP.fetch()
 
   if (!tokens) {
     throw new Error(`Failed to fetch pool, received ${tokens}`)
   }
   // Get the paths we want to pre-render based on pairs
-  const paths = tokens?.map((token) => ({
+  const paths = tokens?.map((token: AllTokensWithoutLPDBOutput) => ({
     params: { chainId: `${token.chainId}`, uuid: `${token.uuid}` },
   }))
 
