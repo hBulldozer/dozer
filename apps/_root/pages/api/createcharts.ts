@@ -8,7 +8,7 @@ interface Point {
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.query.key && request.query.key === process.env.API_KEY) {
-    const tokens = await prisma.token.findMany({ select: { id: true, uuid: true } })
+    const tokens = await prisma.token.findMany({ where: { isLiquidityToken: false }, select: { id: true, uuid: true } })
     const tokensId: string[] = []
     const svgStringArray: string[] = []
     await Promise.all(
