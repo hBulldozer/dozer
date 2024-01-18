@@ -64,7 +64,7 @@ export const TokensTable: FC = () => {
       if (!_poolDB) return {} as Pair
       const poolDB = _poolDB ? _poolDB : ({} as dbPoolWithTokens)
 
-      const { data: _poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
+      const { data: _poolNC } = api.getPools.byIdFromContract.useQuery({ id: poolDB.id })
       const poolNC = _poolNC ? _poolNC : ({} as FrontEndApiNCOutput)
       if (!(poolDB && poolNC)) return {} as Pair
       return pairFromPoolMerged(poolDB, poolNC)
@@ -74,7 +74,7 @@ export const TokensTable: FC = () => {
         .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
         .map((pool) => {
           const poolDB = pool ? pool : ({} as dbPoolWithTokens)
-          const { data: _poolNC } = api.getPools.byIdFromContract.useQuery({ ncid: poolDB.ncid })
+          const { data: _poolNC } = api.getPools.byIdFromContract.useQuery({ id: poolDB.id })
           const poolNC = _poolNC ? _poolNC : ({} as FrontEndApiNCOutput)
           if (!(poolDB && poolNC)) return {} as Pair
           return pairFromPoolMerged(poolDB, poolNC)

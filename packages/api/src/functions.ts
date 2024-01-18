@@ -102,7 +102,6 @@ export function pairFromPoolMerged(poolDB: dbPoolWithTokens | null, poolNC: Fron
     JSON.parse(
       JSON.stringify({
         id: poolDB.id,
-        ncid: poolDB.ncid ? poolDB.ncid : undefined,
         name: poolDB.name,
         liquidityUSD: poolDB.liquidityUSD,
         volumeUSD: poolNC.volume,

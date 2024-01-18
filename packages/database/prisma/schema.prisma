@@ -21,7 +21,7 @@ model Token {
   updatedAt        DateTime    @updatedAt
   decimals         Int         @default(2)
   isLiquidityToken Boolean     @default(false)
-  miniChartSVG     String      @db.VarChar(10000)      @default("")
+  miniChartSVG     String      @default("") @db.VarChar(10000)
   poolsLP          Pool[]      @relation("tokenLP")
   pools0           Pool[]      @relation("token0")
   pools1           Pool[]      @relation("token1")
@@ -35,7 +35,6 @@ model Token {
 }
 
 model Pool {
-  id            String         @id
   name          String
   apr           Float
   chainId       Int
@@ -54,7 +53,7 @@ model Pool {
   generatedAt   DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   tokenLPId     String         @default("0")
-  ncid          String         @default("00")
+  id            String         @id @default(uuid())
   token0        Token          @relation("token0", fields: [token0Id], references: [id])
   token1        Token          @relation("token1", fields: [token1Id], references: [id])
   tokenLP       Token          @relation("tokenLP", fields: [tokenLPId], references: [id])
@@ -119,24 +118,34 @@ model Incentive {
   @@index([chainId, rewardTokenId])
 }
 
-model d7f759_88b9_5c34_a58e_850d21f16dbe_20240116125340_vrepl {
-  id               String   @id
-  uuid             String
-  chainId          Int
-  name             String
-  symbol           String
-  isFeeOnTransfer  Boolean  @default(false)
-  isCommon         Boolean  @default(false)
-  derivedUSD       Float?
-  generatedAt      DateTime @default(now())
-  updatedAt        DateTime
-  decimals         Int      @default(2)
-  isLiquidityToken Boolean  @default(false)
+model c013_cf61_5c71_b944_0bf2d41fa1bd_20240118200748_vrepl {
+  id           String   @id
+  name         String
+  apr          Float
+  chainId      Int
+  version      String
+  token0Id     String
+  token1Id     String
+  swapFee      Float
+  feeUSD       Float
+  reserve0     String   @default("0")
+  reserve1     String   @default("0")
+  liquidityUSD Float
+  volumeUSD    Float
+  liquidity    Float
+  volume1d     Float
+  fees1d       Float
+  generatedAt  DateTime @default(now())
+  updatedAt    DateTime
+  tokenLPId    String   @default("0")
+  ncid         String   @default("00")
 
-  @@unique([chainId, uuid], map: "Token_chainId_uuid_key")
-  @@index([chainId], map: "Token_chainId_idx")
-  @@index([id], map: "Token_id_idx")
-  @@index([uuid, chainId], map: "Token_uuid_chainId_idx")
-  @@index([uuid], map: "Token_uuid_idx")
-  @@map("_83d7f759_88b9_5c34_a58e_850d21f16dbe_20240116125340_vrepl")
+  @@index([chainId], map: "Pool_chainId_idx")
+  @@index([chainId, version], map: "Pool_chainId_version_idx")
+  @@index([generatedAt], map: "Pool_generatedAt_idx")
+  @@index([id], map: "Pool_id_idx")
+  @@index([token0Id], map: "Pool_token0Id_idx")
+  @@index([token1Id], map: "Pool_token1Id_idx")
+  @@index([tokenLPId], map: "Pool_tokenLPId_idx")
+  @@map("_0517c013_cf61_5c71_b944_0bf2d41fa1bd_20240118200748_vrepl")
 }

@@ -9,23 +9,23 @@ export const poolRouter = createTRPCRouter({
   allNcids: procedure.query(({ ctx }) => {
     return ctx.prisma.pool.findMany({
       select: {
-        ncid: true,
+        id: true,
       },
     })
   }),
   contractState: procedure
-    .input(z.object({ ncid: z.string() }))
+    .input(z.object({ id: z.string() }))
     .output(FrontEndApiNCObject)
     .output(FrontEndApiNCObject)
     .query(async ({ ctx, input }) => {
       const endpoint = 'nano_contract/state'
-      const queryParams = [`id=${input.ncid}`, `calls[]=front_end_api_pool()`]
+      const queryParams = [`id=${input.id}`, `calls[]=front_end_api_pool()`]
       const response = await fetchNodeData(endpoint, queryParams)
       const result = response['calls'][`front_end_api_pool()`]['value']
       return result
     }),
   hourSnaps: procedure
-    //change id to ncid when included on prisma schema
+    //change id to id when included on prisma schema
     .input(z.object({ tokenUuid: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.prisma.hourSnapshot.findMany({
@@ -74,11 +74,11 @@ export const poolRouter = createTRPCRouter({
     })
   }),
   byIdFromContract: procedure
-    .input(z.object({ ncid: z.string() }))
+    .input(z.object({ id: z.string() }))
     .output(FrontEndApiNCObject)
     .query(async ({ ctx, input }) => {
       const endpoint = 'nano_contract/state'
-      const queryParams = [`id=${input.ncid}`, `calls[]=front_end_api_pool()`]
+      const queryParams = [`id=${input.id}`, `calls[]=front_end_api_pool()`]
       const response = await fetchNodeData(endpoint, queryParams)
       const result = response['calls'][`front_end_api_pool()`]['value']
       return result

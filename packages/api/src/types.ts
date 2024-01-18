@@ -104,7 +104,6 @@ export type PairDaySnapshot = {
 export type Pair = {
   id: string
   name: string
-  ncid?: string
   liquidityUSD: number
   volumeUSD: number
   feeUSD: number

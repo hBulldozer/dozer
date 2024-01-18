@@ -20,7 +20,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     }[] = []
     await Promise.all(
       pools.map((pool) => {
-        return client.getPools.byIdFromContract.query({ ncid: pool.ncid }).then((poolNC) => {
+        return client.getPools.byIdFromContract.query({ id: pool.id }).then((poolNC) => {
           pools_array.push({
             poolId: pool.id,
             apr: pool.apr + Math.random(),
