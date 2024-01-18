@@ -93,12 +93,16 @@ const Pool = () => {
           <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
             <div className="flex flex-col order-1 gap-9">
               <PoolHeader pair={pair} prices={prices} />
+              {/* uses chainid, swapfee, apr, incentivesapr */}
               <hr className="my-3 border-t border-stone-200/5" />
               <PoolChart pair={pair} />
+              {/* uses snapshots and swapfees */}
               <AppearOnMount>
                 <PoolStats pair={pair} prices={prices} />
+                {/* liquidityusd, volume1d, swapfee  */}
               </AppearOnMount>
               <PoolComposition pair={pair} prices={prices} />
+              {/* uses token0 token1 reserve0 reserve1 */}
               <PoolRewards pair={pair} />
             </div>
 

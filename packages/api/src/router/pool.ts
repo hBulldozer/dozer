@@ -5,6 +5,47 @@ import { fetchNodeData } from '../helpers/fetchFunction'
 import { FrontEndApiNCObject } from '../types'
 
 export const poolRouter = createTRPCRouter({
+  //New procedures enhanced SQL
+  allNcids: procedure.query(({ ctx }) => {
+    return ctx.prisma.pool.findMany({
+      select: {
+        ncid: true,
+      },
+    })
+  }),
+  contractState: procedure
+    .input(z.object({ ncid: z.string() }))
+    .output(FrontEndApiNCObject)
+    .output(FrontEndApiNCObject)
+    .query(async ({ ctx, input }) => {
+      const endpoint = 'nano_contract/state'
+      const queryParams = [`id=${input.ncid}`, `calls[]=front_end_api_pool()`]
+      const response = await fetchNodeData(endpoint, queryParams)
+      const result = response['calls'][`front_end_api_pool()`]['value']
+      return result
+    }),
+  hourSnaps: procedure
+    //change id to ncid when included on prisma schema
+    .input(z.object({ poolId: z.string(), interval: z.number() }))
+    .query(({ ctx, input }) => {
+      const result = ctx.prisma.hourSnapshot.findMany({
+        where: {
+          AND: [{ date: { gte: new Date(Date.now() - input.interval) } }, { poolId: input.poolId }],
+        },
+        //we can select vol, liq for example only for the pool page
+        select: {
+          date: true,
+          poolId: true,
+          // volumeUSD: true,
+          // liquidityUSD: true,
+          // apr: true,
+          reserve0: true,
+          reserve1: true,
+          priceHTR: true,
+        },
+      })
+      return result
+    }),
   all: procedure.query(({ ctx }) => {
     return ctx.prisma.pool.findMany({
       include: {
