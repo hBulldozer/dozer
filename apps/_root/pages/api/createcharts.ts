@@ -18,15 +18,12 @@ export default async function handler(request: NextApiRequest, response: NextApi
         const points: Point[] = snaps.map((snap, index) => {
           return { x: index, y: snap }
         })
-        console.log(token.id)
-        console.log(points)
 
         const svgString = createSVGString(points, 110, 30, 2)
         svgStringArray.push(svgString)
       })
     )
     tokensId.map(async (value, index) => {
-      // console.log(value, svgStringArray[index])
       await prisma.token.update({
         where: {
           id: value,
