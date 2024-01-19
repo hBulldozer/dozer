@@ -45,7 +45,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const hourSnapshots = pair.hourSnapshots.filter((snap) => new Date(snap.date).getMinutes() === 0)
   const { token0, token1 } = useTokensFromPair(pair)
   const token = pair.id.includes('native') ? token0 : token1
-  const tenMinSnapshots = pair.hourSnapshots
+  const fifteenMinSnapshots = pair.hourSnapshots
   const tokenReserveNow: { reserve0: number; reserve1: number } = {
     reserve0: Number(pair.reserve0),
     reserve1: Number(pair.reserve1),
@@ -57,13 +57,17 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const [xData, yData] = useMemo(() => {
     const data =
       chartPeriod == TokenChartPeriod.Day
-        ? tenMinSnapshots
+        ? fifteenMinSnapshots
         : chartPeriod >= TokenChartPeriod.Year
         ? pair.daySnapshots
         : hourSnapshots
     const currentDate = Math.round(Date.now())
+    const { data: priceKuCoin } = api.getPrices.htrKline.useQuery({
+      size: data.length,
+      period: chartPeriod == TokenChartPeriod.Day ? 0 : chartPeriod >= TokenChartPeriod.Year ? 2 : 1,
+    })
     const [x, y] = data.reduce<[number[], number[]]>(
-      (acc, cur) => {
+      (acc, cur, idx) => {
         const date = new Date(cur.date).getTime()
         const tokenReserve: { reserve0: number; reserve1: number } = {
           reserve0: Number(cur.reserve0),
@@ -72,7 +76,8 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
         const priceInHTR = pair.id.includes('native')
           ? 1
           : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
-        const priceInUSD = priceInHTR * Number(cur.priceHTR)
+        // const priceInUSD = priceInHTR * Number(cur.priceHTR)
+        const priceInUSD = priceInHTR * Number(priceKuCoin ? priceKuCoin[idx] : 1)
         if (date >= currentDate - chartTimespans[chartPeriod]) {
           acc[0].push(date / 1000)
           if (chartCurrency === TokenChartCurrency.HTR) {
@@ -97,7 +102,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
     return [x.reverse(), y.reverse()]
   }, [
     chartPeriod,
-    tenMinSnapshots,
+    fifteenMinSnapshots,
     pair.daySnapshots,
     pair.id,
     hourSnapshots,

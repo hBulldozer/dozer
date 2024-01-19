@@ -118,4 +118,22 @@ export const pricesRouter = createTRPCRouter({
     const data = await resp.json()
     return Number(data.data.HTR)
   }),
+  htrKline: procedure
+    .output(z.array(z.number()))
+    .input(z.object({ size: z.number(), period: z.number() }))
+    .query(async ({ input }) => {
+      // const now = Number(new Date())
+      const now = Math.round(Date.now() / 1000)
+      const period = input.period == 0 ? '5min' : input.period == 1 ? '1hour' : '1day'
+      const size = (input.size + 1) * (input.period == 0 ? 15 : input.period == 1 ? 60 : 24) * 60 // in seconds
+      const resp = await fetch(
+        `https://api.kucoin.com/api/v1/market/candles\?type\=${period}\&symbol\=HTR-USDT\&startAt\=${
+          now - size
+        }\&endAt\=${now}`
+      )
+      const data = await resp.json()
+      return data.data.map((item: any) => {
+        return Number(item[2])
+      })
+    }),
 })
