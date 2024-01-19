@@ -87,7 +87,7 @@ const getSnapsByUuid = async (tokenUuid: string) => {
         priceHTR: true,
       },
     })
-    return result.map((snap) => {
+    return result.reverse().map((snap) => {
       return (snap.reserve0 / snap.reserve1) * snap.priceHTR
     })
   }

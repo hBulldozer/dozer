@@ -60,8 +60,8 @@ export const poolRouter = createTRPCRouter({
           priceHTR: true,
         },
       })
-      return result.map((snap) => {
-        return { priceToken: (snap.reserve0 / snap.reserve1) * snap.priceHTR, priceHTR: snap.priceHTR }
+      return result.reverse().map((snap) => {
+        return { date: snap.date, priceToken: (snap.reserve0 / snap.reserve1) * snap.priceHTR, priceHTR: snap.priceHTR }
       })
     }),
   all: procedure.query(({ ctx }) => {
