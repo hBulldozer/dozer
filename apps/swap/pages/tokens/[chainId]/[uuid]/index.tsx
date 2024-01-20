@@ -11,7 +11,15 @@ import { TokenChart } from '../../../../components/TokenPage/TokenChart'
 import { SwapWidget } from 'pages'
 import { Fragment } from 'react'
 import { TokenStats } from 'components/TokenPage/TokenStats'
+import TokenDetails from 'components/TokenPage/TokenDetails'
 
+const about =
+  'Cathor is the original Hathor Network community coin. Minted in February 2021 by the CEO of Hathor for the community, Cathor’s mission is to support and grow awareness for the Hathor Network and projects building on Hathor'
+const tokenLinks = [
+  { name: 'Explorer', href: 'https://explorer.example.com' },
+  { name: 'Website', href: 'https://www.example.com' },
+  { name: 'Twitter', href: 'https://twitter.com/example' },
+]
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
   const tokens = await ssg.getTokens.allWithoutLP.fetch()
@@ -90,25 +98,16 @@ const Token = () => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   return (
     <>
-      <Layout breadcrumbs={LINKS({ pair })}>
-        <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
-          <div className="flex flex-col order-1 gap-6">
+      <Layout maxWidth="6xl" breadcrumbs={LINKS({ pair })}>
+        <div className="flex flex-col lg:grid lg:grid-cols-[700px_auto] gap-12">
+          <div className="flex flex-col order-1 gap-4">
             <TokenChart pair={pair} />
             {/* About */}
-            <div className="flex flex-col gap-4">
-              <Typography weight={500} variant="h1">
-                Stats
-              </Typography>
-              <TokenStats pair={pair} prices={prices} />
-              <Typography weight={500} className="flex flex-col " variant="h2">
-                About
-              </Typography>
-              <Typography variant="lg" weight={400} className="pb-16 md:pb-0">
-                Cathor is the original Hathor Network community coin. Minted in February 2021 by the CEO of Hathor for
-                the community, Cathor’s mission is to support and grow awareness for the Hathor Network and projects
-                building on Hathor.
-              </Typography>
-            </div>
+            <Typography weight={500} variant="h2">
+              Stats
+            </Typography>
+            <TokenStats pair={pair} prices={prices} />
+            <TokenDetails about={about} tokenLinks={tokenLinks} />
           </div>
           <div className="flex-col order-2 hidden gap-4 lg:flex">
             <AppearOnMount>
