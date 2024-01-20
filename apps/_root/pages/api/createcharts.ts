@@ -11,13 +11,15 @@ export default async function handler(request: NextApiRequest, response: NextApi
     const tokens = await prisma.token.findMany({ where: { isLiquidityToken: false }, select: { id: true, uuid: true } })
     const tokensId: string[] = []
     const svgStringArray: string[] = []
+    const kuCoinArray = await getKuCoinArray(60 * 24 * 15)
     await Promise.all(
       tokens.map(async (token) => {
         tokensId.push(token.id)
-        const snaps = await getSnapsByUuid(token.uuid)
+        const snaps = await getSnapsByUuid(token.uuid, kuCoinArray)
         const points: Point[] = snaps.map((snap: number, index: number) => {
           return { x: index, y: snap }
         })
+        console.log(token.id, points)
 
         const svgString = createSVGString(points, 110, 30, 2)
         svgStringArray.push(svgString)
@@ -38,10 +40,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
   } else return response.status(401).end(`Not Authorized !`)
 }
 
-const getSnapsByUuid = async (tokenUuid: string) => {
+const getSnapsByUuid = async (tokenUuid: string, kuCoinArray: number[]) => {
   if (tokenUuid == '00') {
-    const kuCoinArray = await getKuCoinArray(60 * 24 * 15)
-    console.log(kuCoinArray)
     return kuCoinArray
   } else {
     const result = await prisma.hourSnapshot.findMany({
@@ -71,29 +71,22 @@ const getSnapsByUuid = async (tokenUuid: string) => {
       },
     })
 
-    const kuCoinArray = await getKuCoinArray(result.length)
-    console.log(result.length, kuCoinArray)
-
     return result.reverse().map((snap, idx) => {
       return (snap.reserve0 / snap.reserve1) * kuCoinArray[idx]
     })
   }
-
-  async function getKuCoinArray(size: number) {
-    const now = Math.round(Date.now() / 1000)
-    const resp = await fetch(
-      `https://api.kucoin.com/api/v1/market/candles\?type\=5min\&symbol\=HTR-USDT\&startAt\=${
-        now - size
-      }\&endAt\=${now}`
-    )
-    const data = await resp.json()
-    const kuCoinArray = data.data.map((item: string[]) => {
-      return Number(item[2])
-    })
-    return kuCoinArray
-  }
 }
-
+async function getKuCoinArray(size: number) {
+  const now = Math.round(Date.now() / 1000)
+  const resp = await fetch(
+    `https://api.kucoin.com/api/v1/market/candles\?type\=5min\&symbol\=HTR-USDT\&startAt\=${now - size}\&endAt\=${now}`
+  )
+  const data = await resp.json()
+  const kuCoinArray = data.data.map((item: string[]) => {
+    return Number(item[2])
+  })
+  return kuCoinArray
+}
 const createSVGString = (data: Point[], width: number, height: number, padding: number) => {
   const createPathString = (points: Point[]): string => {
     return (

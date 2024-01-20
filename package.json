@@ -17,7 +17,7 @@
     "changeset-version": "changeset version",
     "check": "turbo run check --no-cache --parallel --continue --filter=!{./scripts/*}",
     "clean": "turbo run clean && rm -rf node_modules",
-    "dev": "dotenv -- turbo run dev --no-cache --parallel --continue",
+    "dev": "dotenv -- turbo run dev --no-cache --parallel --continue & pscale connect dozer-db main --port 3309",
     "disable-remote-caching": "turbo unlink && rm -rf ./node_modules/.cache/turbo",
     "enable-remote-caching": "turbo link",
     "format": "prettier --write \"**/*.{ts,cts,mts,tsx,md,js,cjs,mjs}\"",
