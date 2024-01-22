@@ -1,6 +1,6 @@
 import { formatHTR, formatPercentChange, formatUSD5Digit } from '@dozer/format'
 import { Pair, useTokensFromPair } from '@dozer/api'
-import { AppearOnMount, ArrowIcon, classNames, Currency, Typography } from '@dozer/ui'
+import { AppearOnMount, ArrowIcon, classNames, Currency, Skeleton, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
 import ReactECharts from 'echarts-for-react'
 import { EChartsOption } from 'echarts-for-react/lib/types'
@@ -77,7 +77,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           ? 1
           : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
         // const priceInUSD = priceInHTR * Number(cur.priceHTR)
-        const priceInUSD = priceInHTR * Number(priceKuCoin ? priceKuCoin[idx] : 1)
+        const priceInUSD = priceInHTR * Number(priceKuCoin ? priceKuCoin[idx] : undefined)
         if (date >= currentDate - chartTimespans[chartPeriod]) {
           acc[0].push(date / 1000)
           if (chartCurrency === TokenChartCurrency.HTR) {
@@ -305,8 +305,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           ) : null}
         </div>
       </div>
-
-      <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} />
+      {yData[0] ? <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} /> : <Skeleton.Box className="h-96" />}
       <div className="flex justify-between px-8 md:px-0 md:gap-4 md:justify-end">
         <button
           onClick={() => setChartPeriod(TokenChartPeriod.Day)}
