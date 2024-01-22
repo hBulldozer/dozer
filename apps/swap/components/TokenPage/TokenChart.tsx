@@ -54,18 +54,19 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
     ? 1
     : Number(tokenReserveNow.reserve0) / Number(tokenReserveNow.reserve1)
   const { data: _priceHTRNow } = api.getPrices.htr.useQuery()
+  const data = useMemo(() => {
+    return chartPeriod == TokenChartPeriod.Day
+      ? fifteenMinSnapshots
+      : chartPeriod >= TokenChartPeriod.Year
+      ? pair.daySnapshots
+      : hourSnapshots
+  }, [chartPeriod, fifteenMinSnapshots, hourSnapshots, pair.daySnapshots])
+  const { data: priceKuCoin, isLoading } = api.getPrices.htrKline.useQuery({
+    size: data.length,
+    period: chartPeriod == TokenChartPeriod.Day ? 0 : chartPeriod >= TokenChartPeriod.Year ? 2 : 1,
+  })
   const [xData, yData] = useMemo(() => {
-    const data =
-      chartPeriod == TokenChartPeriod.Day
-        ? fifteenMinSnapshots
-        : chartPeriod >= TokenChartPeriod.Year
-        ? pair.daySnapshots
-        : hourSnapshots
     const currentDate = Math.round(Date.now())
-    const { data: priceKuCoin } = api.getPrices.htrKline.useQuery({
-      size: data.length,
-      period: chartPeriod == TokenChartPeriod.Day ? 0 : chartPeriod >= TokenChartPeriod.Year ? 2 : 1,
-    })
     const [x, y] = data.reduce<[number[], number[]]>(
       (acc, cur, idx) => {
         const date = new Date(cur.date).getTime()
@@ -100,16 +101,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
     }
 
     return [x.reverse(), y.reverse()]
-  }, [
-    chartPeriod,
-    fifteenMinSnapshots,
-    pair.daySnapshots,
-    pair.id,
-    hourSnapshots,
-    chartCurrency,
-    priceInHTRNow,
-    _priceHTRNow,
-  ])
+  }, [data, _priceHTRNow, pair.id, priceKuCoin, chartPeriod, chartCurrency, priceInHTRNow])
   const [priceChange, setPriceChange] = useState<number>(
     (yData[yData.length - 1] - yData[0]) / (yData[0] != 0 ? yData[0] : 1)
   )
@@ -305,7 +297,11 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           ) : null}
         </div>
       </div>
-      {yData[0] ? <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} /> : <Skeleton.Box className="h-96" />}
+      {!isLoading ? (
+        <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} />
+      ) : (
+        <Skeleton.Box className="h-96" />
+      )}
       <div className="flex justify-between px-8 md:px-0 md:gap-4 md:justify-end">
         <button
           onClick={() => setChartPeriod(TokenChartPeriod.Day)}

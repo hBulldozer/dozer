@@ -97,14 +97,11 @@ const createSVGString = (data: Point[], width: number, height: number, padding: 
         .join('')
     )
   }
+
   const minX = Math.min(...data.map((p) => p.x))
   const maxX = Math.max(...data.map((p) => p.x))
   const minY = Math.min(...data.map((p) => p.y))
   const maxY = Math.max(...data.map((p) => p.y))
-
-  const viewBoxValues = `${minX - padding} ${minY - padding} ${maxX - minX + 2 * padding} -${
-    maxY - minY + 3 * padding // Increase padding for the bottom
-  }`
 
   const scalePoints = (points: Point[], svgWidth: number, svgHeight: number): Point[] => {
     const scaleX = svgWidth / (maxX - minX)
@@ -116,6 +113,13 @@ const createSVGString = (data: Point[], width: number, height: number, padding: 
   }
 
   const scaledPoints = scalePoints(data, width, height)
+  const minX_scaled = Math.min(...scaledPoints.map((p) => p.x))
+  const maxX_scaled = Math.max(...scaledPoints.map((p) => p.x))
+  const minY_scaled = Math.min(...scaledPoints.map((p) => p.y))
+  const maxY_scaled = Math.max(...scaledPoints.map((p) => p.y))
+  const viewBoxValues = `0 0 ${maxX_scaled - minX_scaled + 2 * padding} ${
+    maxY_scaled - minY_scaled + 3 * padding // Increase padding for the bottom
+  }`
 
   return `
   <svg viewBox="${viewBoxValues}" width="${width}" height="${height}">
