@@ -6,10 +6,8 @@ import { CellProps } from './types'
 import { api } from 'utils/api'
 
 export const TokenPriceCell: FC<CellProps> = ({ row }) => {
-  const { data: priceHTR, isLoading: isLoadingPriceHTR } = api.getPrices.htr.useQuery()
-  const { data: priceInHTR, isLoading: isLoadingPriceInHTR } = api.getPrices.fromPair.useQuery({ pairMerged: row })
-  const priceInUSD = priceHTR && priceInHTR ? formatUSD(priceInHTR * priceHTR) : ''
-  const isLoading = isLoadingPriceHTR || isLoadingPriceInHTR
+  const { data: prices, isLoading } = api.getPrices.all.useQuery()
+  const price = prices ? (row.id.includes('native') ? prices[row.token0.uuid] : prices[row.token1.uuid]) : 0
 
   return isLoading ? (
     <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
@@ -17,7 +15,7 @@ export const TokenPriceCell: FC<CellProps> = ({ row }) => {
     </div>
   ) : (
     <Typography variant="sm" weight={600} className="text-right text-stone-50">
-      {priceInUSD}
+      {formatUSD(price)}
     </Typography>
   )
 }

@@ -3,6 +3,55 @@ import { z } from 'zod'
 import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { FrontEndApiNCObject } from '../types'
+import { PrismaClient } from '@dozer/database'
+
+// Exporting common functions to use in another routers, as is suggested in https://trpc.io/docs/v10/server/server-side-calls
+
+export const HTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: PrismaClient) => {
+  if (uuid == '00') {
+    return await prisma.pool.findFirst({
+      where: { token0: { uuid: '00' }, chainId: chainId },
+      include: {
+        token0: true,
+        token1: true,
+        tokenLP: true,
+      },
+    })
+  } else {
+    return await prisma.pool.findFirst({
+      where: { token1: { uuid: uuid, chainId: chainId }, token0: { uuid: '00', chainId: chainId } },
+      include: {
+        token0: true,
+        token1: true,
+        tokenLP: true,
+      },
+    })
+  }
+}
+
+export const idFromHTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: PrismaClient) => {
+  if (uuid == '00') {
+    return await prisma.pool.findFirst({
+      where: { token0: { uuid: '00' }, chainId: chainId },
+      select: { id: true },
+    })
+  } else {
+    return await prisma.pool.findFirst({
+      where: { token1: { uuid: uuid, chainId: chainId }, token0: { uuid: '00', chainId: chainId } },
+      select: { id: true },
+    })
+  }
+}
+
+export const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: number, prisma: PrismaClient) => {
+  const poolId = await idFromHTRPoolByTokenUuid(uuid, chainId, prisma)
+  if (!poolId) return {}
+  const endpoint = 'nano_contract/state'
+  const queryParams = [`id=${poolId.id}`, `calls[]=front_end_api_pool()`]
+  const response = await fetchNodeData(endpoint, queryParams)
+  const result = response['calls'][`front_end_api_pool()`]['value']
+  return result
+}
 
 export const poolRouter = createTRPCRouter({
   //New procedures enhanced SQL
@@ -120,26 +169,8 @@ export const poolRouter = createTRPCRouter({
       })
     }
   }),
-  byTokenUuid: procedure.input(z.object({ uuid: z.string(), chainId: z.number() })).query(({ ctx, input }) => {
-    if (input.uuid == '00') {
-      return ctx.prisma.pool.findFirst({
-        where: { token0: { uuid: '00' }, chainId: input.chainId },
-        include: {
-          token0: true,
-          token1: true,
-          tokenLP: true,
-        },
-      })
-    } else {
-      return ctx.prisma.pool.findFirst({
-        where: { token1: { uuid: input.uuid, chainId: input.chainId }, token0: { uuid: '00', chainId: input.chainId } },
-        include: {
-          token0: true,
-          token1: true,
-          tokenLP: true,
-        },
-      })
-    }
+  HTRPoolbyTokenUuid: procedure.input(z.object({ uuid: z.string(), chainId: z.number() })).query(({ ctx, input }) => {
+    return HTRPoolByTokenUuid(input.uuid, input.chainId, ctx.prisma)
   }),
   byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.pool.findFirst({
