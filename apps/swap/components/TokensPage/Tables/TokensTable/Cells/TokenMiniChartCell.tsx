@@ -4,28 +4,61 @@ import { CellProps } from './types'
 import { api } from 'utils/api'
 import { Skeleton } from '@dozer/ui'
 
-export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
-  const symbol = (row.token0.uuid == '00' ? row.token1 : row.token0).symbol
-  const { data: poolDB, isLoading: isLoadingDB } = api.getPools.byId.useQuery({ id: row.id })
-  const tokenReservePrevious: { reserve0: number; reserve1: number } = {
-    reserve0: poolDB ? Number(poolDB.reserve0) : row.reserve1,
-    reserve1: poolDB ? Number(poolDB.reserve1) : row.reserve1,
+interface Point {
+  x: number
+  y: number
+}
+
+const createSVGString = (data: Point[], width: number, height: number, padding: number) => {
+  const createPathString = (points: Point[]): string => {
+    return (
+      `M${points[0].x},${points[0].y}` +
+      points
+        .slice(1)
+        .map((point) => `L${point.x},${point.y}`)
+        .join('')
+    )
   }
-  const { data: _priceInHTR, isLoading: isLoadingPrice } = api.getPrices.fromPair.useQuery({ pairMerged: row })
-  const priceInHTR_previous = row.id.includes('native')
-    ? 1
-    : Number(tokenReservePrevious.reserve0) / Number(tokenReservePrevious.reserve1)
-  const priceInHTR = _priceInHTR ? _priceInHTR : priceInHTR_previous
-  const change = (priceInHTR - priceInHTR_previous) / priceInHTR_previous
-  const { data: token, isLoading: isLoadingToken } = symbol
-    ? api.getTokens.bySymbol.useQuery({
-        symbol,
-      })
-    : { data: undefined, isLoading: false }
-  const chartSVG = token?.miniChartSVG
-    .replace('black', change >= 0 ? 'rgb(74 222 128)' : 'rgb(248 113 113)')
-    .replace('strokeWidth="2"', 'strokeWidth="5"')
-  const isLoading = isLoadingToken || isLoadingPrice || isLoadingDB
+
+  const minX = Math.min(...data.map((p) => p.x))
+  const maxX = Math.max(...data.map((p) => p.x))
+  const minY = Math.min(...data.map((p) => p.y))
+  const maxY = Math.max(...data.map((p) => p.y))
+
+  const scalePoints = (points: Point[], svgWidth: number, svgHeight: number): Point[] => {
+    const scaleX = svgWidth / (maxX - minX)
+    const scaleY = svgHeight / (maxY - minY)
+    return points.map((point) => ({
+      x: (point.x - minX) * scaleX,
+      y: (point.y - minY) * scaleY,
+    }))
+  }
+
+  const scaledPoints = scalePoints(data, width, height)
+  const minX_scaled = Math.min(...scaledPoints.map((p) => p.x))
+  const maxX_scaled = Math.max(...scaledPoints.map((p) => p.x))
+  const minY_scaled = Math.min(...scaledPoints.map((p) => p.y))
+  const maxY_scaled = Math.max(...scaledPoints.map((p) => p.y))
+  const viewBoxValues = `0 0 ${maxX_scaled - minX_scaled + 2 * padding} ${
+    maxY_scaled - minY_scaled + 3 * padding // Increase padding for the bottom
+  }`
+
+  const change = data[0].y - data[data.length - 1].y
+  return `
+  <svg viewBox="${viewBoxValues}" width="${width}" height="${height}">
+    <path d="${createPathString(scaledPoints)}" stroke=${
+    change >= 0 ? '#4ade80' : '#f87171'
+  } stroke-width="1.5" fill="none" />
+  </svg>
+  `
+}
+
+export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
+  const { data: prices24h, isLoading } = api.getPrices.all24h.useQuery()
+  const tokenUuid = row.id.includes('native') ? row.token0.uuid : row.token1.uuid
+  const price24h = prices24h ? prices24h[tokenUuid] : []
+  const points = price24h.map((p, i) => ({ x: i, y: p }))
+  const chartSVG = createSVGString(points, 110, 30, 2)
   return isLoading ? (
     <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
       <Skeleton.Box className="w-[120px] h-[22px] bg-white/[0.06] rounded-full" />

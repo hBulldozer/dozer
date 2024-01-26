@@ -53,6 +53,44 @@ export const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: numb
   return result
 }
 
+export const getPoolSnaps24h = async (tokenUuid: string, prisma: PrismaClient) => {
+  const result = await prisma.hourSnapshot.findMany({
+    where: {
+      AND: [
+        { date: { gte: new Date(Date.now() - 60 * 60 * 24 * 1000) } },
+        {
+          pool: {
+            token0: {
+              uuid: '00',
+            },
+          },
+        },
+        {
+          pool: {
+            token1: {
+              uuid: tokenUuid,
+            },
+          },
+        },
+      ],
+    },
+    //we can select vol, liq for example only for the pool page
+    select: {
+      date: true,
+      poolId: true,
+      // volumeUSD: true,
+      // liquidityUSD: true,
+      // apr: true,
+      reserve0: true,
+      reserve1: true,
+      priceHTR: true,
+    },
+  })
+  return result.reverse().map((snap) => {
+    return { date: snap.date, priceToken: (snap.reserve0 / snap.reserve1) * snap.priceHTR, priceHTR: snap.priceHTR }
+  })
+}
+
 export const poolRouter = createTRPCRouter({
   //New procedures enhanced SQL
   allNcids: procedure.query(({ ctx }) => {
@@ -73,46 +111,9 @@ export const poolRouter = createTRPCRouter({
       const result = response['calls'][`front_end_api_pool()`]['value']
       return result
     }),
-  hourSnaps: procedure
-    //change id to id when included on prisma schema
-    .input(z.object({ tokenUuid: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.prisma.hourSnapshot.findMany({
-        where: {
-          AND: [
-            { date: { gte: new Date(Date.now() - 60 * 60 * 24 * 1000) } },
-            {
-              pool: {
-                token0: {
-                  uuid: '00',
-                },
-              },
-            },
-            {
-              pool: {
-                token1: {
-                  uuid: input.tokenUuid,
-                },
-              },
-            },
-          ],
-        },
-        //we can select vol, liq for example only for the pool page
-        select: {
-          date: true,
-          poolId: true,
-          // volumeUSD: true,
-          // liquidityUSD: true,
-          // apr: true,
-          reserve0: true,
-          reserve1: true,
-          priceHTR: true,
-        },
-      })
-      return result.reverse().map((snap) => {
-        return { date: snap.date, priceToken: (snap.reserve0 / snap.reserve1) * snap.priceHTR, priceHTR: snap.priceHTR }
-      })
-    }),
+  hourSnaps: procedure.input(z.object({ tokenUuid: z.string() })).query(async ({ ctx, input }) => {
+    return getPoolSnaps24h(input.tokenUuid, ctx.prisma)
+  }),
   all: procedure.query(({ ctx }) => {
     return ctx.prisma.pool.findMany({
       include: {

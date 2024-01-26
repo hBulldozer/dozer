@@ -1,64 +1,59 @@
 import { z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
-import { HTRPoolByTokenUuid, HTRPoolByTokenUuidFromContract, idFromHTRPoolByTokenUuid } from './pool'
+import { HTRPoolByTokenUuid, HTRPoolByTokenUuidFromContract, getPoolSnaps24h, idFromHTRPoolByTokenUuid } from './pool'
+import { PrismaClient } from '@dozer/database'
 
 export const htrKline = async (input: { period: number; size: number }) => {
   const now = Math.round(Date.now() / 1000)
-  const period = input.period == 0 ? '5min' : input.period == 1 ? '1hour' : '1day'
-  const size = (input.size + 1) * (input.period == 0 ? 15 : input.period == 1 ? 60 : 24 * 60) * 60 // in seconds
+  const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
+  const start = (input.size + 1) * (input.period == 0 ? 15 : input.period == 1 ? 60 : 24 * 60) * 60 // in seconds
   const resp = await fetch(
     `https://api.kucoin.com/api/v1/market/candles\?type\=${period}\&symbol\=HTR-USDT\&startAt\=${
-      now - size
+      now - start
     }\&endAt\=${now}`
   )
   const data = await resp.json()
-  return data.data.map((item: any) => {
-    return Number(item[2])
+  return data.data
+    .map((item: any) => {
+      return { price: Number(item[2]), date: Number(item[0]) }
+    })
+    .reverse()
+}
+export const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
+  const result = await prisma.hourSnapshot.findMany({
+    where: {
+      AND: [
+        { date: { gte: new Date(since * 1000) } },
+        {
+          pool: {
+            token0: {
+              uuid: '00',
+            },
+          },
+        },
+        {
+          pool: {
+            token1: {
+              uuid: tokenUuid,
+            },
+          },
+        },
+      ],
+    },
+    select: {
+      date: true,
+      poolId: true,
+      reserve0: true,
+      reserve1: true,
+    },
+  })
+  return result.reverse().map((snap) => {
+    return snap.reserve0 / snap.reserve1
   })
 }
 
 export const pricesRouter = createTRPCRouter({
-  allChanges: procedure.query(async ({ ctx }) => {
-    const tokens = await ctx.prisma.token.findMany({
-      select: {
-        uuid: true,
-        chainId: true,
-      },
-    })
-    if (!tokens) {
-      throw new Error(`Failed to fetch tokens, received ${tokens}`)
-    }
-    const pricesHTR = await htrKline({ period: 2, size: 1 })
-    const priceHTR_now = pricesHTR[0]
-    const priceHTR_24h = pricesHTR[1]
-
-    const changes: { [key: string]: number } = {}
-
-    await Promise.all(
-      tokens.map(async (token) => {
-        if (token.uuid == '00') changes[token.uuid] = (priceHTR_now - priceHTR_24h) / priceHTR_now
-        else {
-          const poolHTR_nc = await HTRPoolByTokenUuidFromContract(token.uuid, token.chainId, ctx.prisma)
-          const poolHTR_db = await HTRPoolByTokenUuid(token.uuid, token.chainId, ctx.prisma)
-          if (!changes[token.uuid]) {
-            const price_nc = poolHTR_nc
-              ? (Number(poolHTR_nc?.reserve0) / Number(poolHTR_nc?.reserve1)) * priceHTR_now
-              : 0
-            const price_db = poolHTR_db
-              ? (Number(poolHTR_db?.reserve0) / Number(poolHTR_db?.reserve1)) * priceHTR_24h
-              : 0
-            changes[token.uuid] = (price_nc - price_db) / price_nc
-          }
-        }
-      })
-    )
-
-    if (!changes) {
-      throw new Error(`Failed to fetch changes, received ${changes}`)
-    }
-    return changes
-  }),
   all: procedure.query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
       select: {
@@ -92,6 +87,38 @@ export const pricesRouter = createTRPCRouter({
     }
     return prices
   }),
+  all24h: procedure.query(async ({ ctx }) => {
+    const tokens = await ctx.prisma.token.findMany({
+      select: {
+        uuid: true,
+        chainId: true,
+      },
+    })
+    if (!tokens) {
+      throw new Error(`Failed to fetch tokens, received ${tokens}`)
+    }
+    const prices24hUSD: { [key: string]: number[] } = {}
+    const prices24hHTR: { price: number; date: number }[] = await htrKline({ period: 0, size: 4 * 24 }) // get 1 day ticks with 15 min period
+    await Promise.all(
+      tokens.map(async (token) => {
+        const token_prices24hUSD: number[] = []
+        if (token.uuid == '00') prices24hUSD[token.uuid] = prices24hHTR.map((price) => price.price)
+        else {
+          const since = prices24hHTR[0]?.date ? prices24hHTR[0]?.date : new Date().getTime()
+          const prices24h = await getPricesSince(token.uuid, ctx.prisma, since) //from db snaps
+          prices24h.forEach((price, index) => {
+            // it can cause a misaligned data, as we can't assure the frequency of the prices from db
+            if (prices24hHTR.length > index) {
+              const priceHTR = prices24hHTR?.[index]?.price ?? 0
+              token_prices24hUSD.push(price * priceHTR)
+            }
+          })
+          if (!prices24hUSD[token.uuid]) prices24hUSD[token.uuid] = token_prices24hUSD
+        }
+      })
+    )
+    return prices24hUSD
+  }),
   byTokens: procedure.input(z.object({ tokens: z.any() })).query(async ({ ctx, input }) => {
     const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
     const data = await resp.json()
@@ -109,14 +136,6 @@ export const pricesRouter = createTRPCRouter({
       throw new Error(`Failed to fetch prices, received ${prices}`)
     }
     return prices
-  }),
-  fromPair: procedure.input(z.object({ pairMerged: z.any() })).query(async ({ input }) => {
-    const row = input.pairMerged
-    const tokenReserve: { reserve0: number; reserve1: number } = {
-      reserve0: row.reserve0,
-      reserve1: row.reserve1,
-    }
-    return row.id.includes('native') ? 1 : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
   }),
   htr: procedure.output(z.number()).query(async () => {
     const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')

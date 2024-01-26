@@ -7,9 +7,14 @@ import { formatPercent, formatPercentChange, formatUSD } from '@dozer/format'
 import { api } from 'utils/api'
 
 export const TokenChangeCell: FC<CellProps> = ({ row }) => {
-  const { data: changes, isLoading } = api.getPrices.allChanges.useQuery()
-  const change = changes ? (row.id.includes('native') ? changes[row.token0.uuid] : changes[row.token1.uuid]) : 0
-  return !isLoading ? (
+  const { data: prices24h, isLoading } = api.getPrices.all24h.useQuery()
+  const { data: lastPrices, isLoading: isLoadingLast } = api.getPrices.all.useQuery()
+  const tokenUuid = row.id.includes('native') ? row.token0.uuid : row.token1.uuid
+  const prices24h_token = prices24h?.[tokenUuid]
+  const lastPrice = lastPrices?.[tokenUuid]
+  const previousPrice = prices24h_token?.[0]
+  const change = lastPrice && previousPrice ? (lastPrice - previousPrice) / lastPrice : 0
+  return !(isLoading || isLoadingLast) ? (
     <div className="flex items-center gap-1">
       <ArrowIcon type={change < 0 ? 'down' : 'up'} className={change < 0 ? 'text-red-400' : 'text-green-400'} />
       <Typography key="changeCell" variant="sm" weight={600} className={change < 0 ? 'text-red-400' : 'text-green-400'}>
