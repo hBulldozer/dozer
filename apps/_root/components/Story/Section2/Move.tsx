@@ -73,7 +73,7 @@ export const Move: FC = () => {
                     {DATA.title}
                   </Typography>
                   <Typography variant="lg" weight={400} className="mt-2 text-center lg:text-left">
-                    Bring your assets to Hathor Network, enjoy zero fess and blasting speed on your transactions.
+                    Bring your assets to Hathor Network, enjoy zero fees and blasting speed on your transactions.
                   </Typography>
                   <Button
                     onClick={() => setOpen(true)}
