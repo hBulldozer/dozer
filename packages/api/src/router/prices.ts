@@ -15,10 +15,10 @@ export const htrKline = async (input: { period: number; size: number }) => {
   )
   const data = await resp.json()
   return data.data
-    .map((item: any) => {
+    .sort((a: number[], b: number[]) => (a[0] && b[0] ? a[0] - b[0] : null))
+    .map((item: number[]) => {
       return { price: Number(item[2]), date: Number(item[0]) }
     })
-    .reverse()
 }
 export const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
   const result = await prisma.hourSnapshot.findMany({
@@ -48,9 +48,11 @@ export const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, si
       reserve1: true,
     },
   })
-  return result.reverse().map((snap) => {
-    return snap.reserve0 / snap.reserve1
-  })
+  return result
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map((snap) => {
+      return snap.reserve0 / snap.reserve1
+    })
 }
 
 export const pricesRouter = createTRPCRouter({

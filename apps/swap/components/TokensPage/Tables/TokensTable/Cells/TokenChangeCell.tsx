@@ -1,9 +1,8 @@
 import { ArrowIcon, Skeleton, Typography } from '@dozer/ui'
 import { FC } from 'react'
 
-import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
-import { formatPercent, formatPercentChange, formatUSD } from '@dozer/format'
+import { formatPercentChange } from '@dozer/format'
 import { api } from 'utils/api'
 
 export const TokenChangeCell: FC<CellProps> = ({ row }) => {
