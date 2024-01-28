@@ -35,7 +35,6 @@ const createSVGString = (data: Point[], width: number, height: number, padding: 
   }
 
   const scaledPoints = scalePoints(data, width, height)
-  console.log(scaledPoints)
   const minX_scaled = Math.min(...scaledPoints.map((p) => p.x))
   const maxX_scaled = Math.max(...scaledPoints.map((p) => p.x))
   const minY_scaled = Math.min(...scaledPoints.map((p) => p.y))

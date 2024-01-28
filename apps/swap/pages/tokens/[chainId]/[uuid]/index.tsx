@@ -34,7 +34,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const uuid = params?.uuid as string
   const chainId = Number(params?.chainId)
   const ssg = generateSSGHelper()
-  const poolDB = await ssg.getPools.byTokenUuid.fetch({ uuid, chainId })
+  const poolDB = await ssg.getPools.HTRPoolbyTokenUuid.fetch({ uuid, chainId })
   if (!poolDB) {
     throw new Error(`Failed to fetch pool, received ${poolDB}`)
   }
