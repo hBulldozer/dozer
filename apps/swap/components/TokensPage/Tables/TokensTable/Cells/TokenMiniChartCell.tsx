@@ -30,11 +30,12 @@ const createSVGString = (data: Point[], width: number, height: number, padding: 
     const scaleY = svgHeight / (maxY - minY)
     return points.map((point) => ({
       x: (point.x - minX) * scaleX,
-      y: (point.y - minY) * scaleY,
+      y: svgHeight - (point.y - minY) * scaleY,
     }))
   }
 
   const scaledPoints = scalePoints(data, width, height)
+  console.log(scaledPoints)
   const minX_scaled = Math.min(...scaledPoints.map((p) => p.x))
   const maxX_scaled = Math.max(...scaledPoints.map((p) => p.x))
   const minY_scaled = Math.min(...scaledPoints.map((p) => p.y))
