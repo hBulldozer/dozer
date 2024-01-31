@@ -145,7 +145,7 @@ export const pricesRouter = createTRPCRouter({
     return Number(data.data.HTR)
   }),
   htrKline: procedure
-    .output(z.array(z.number()))
+    .output(z.array(z.object({ price: z.number(), date: z.number() })))
     .input(z.object({ size: z.number(), period: z.number() }))
     .query(async ({ input }) => {
       const result = await htrKline(input)
