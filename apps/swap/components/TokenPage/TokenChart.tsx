@@ -77,9 +77,9 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
         const priceInHTR = pair.id.includes('native')
           ? 1
           : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
-        // const priceInUSD = priceInHTR * Number(cur.priceHTR)
-        const priceInUSD = priceInHTR * Number(priceKuCoin ? priceKuCoin[idx].price : undefined)
         if (date >= currentDate - chartTimespans[chartPeriod]) {
+          const priceInUSD =
+            priceInHTR * Number(priceKuCoin ? priceKuCoin[priceKuCoin.length - 1 - idx].price : undefined)
           acc[0].push(date / 1000)
           if (chartCurrency === TokenChartCurrency.HTR) {
             acc[1].push(priceInHTR)

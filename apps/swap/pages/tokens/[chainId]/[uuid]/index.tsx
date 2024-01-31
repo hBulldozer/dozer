@@ -34,7 +34,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const uuid = params?.uuid as string
   const chainId = Number(params?.chainId)
   const ssg = generateSSGHelper()
-  const poolDB = await ssg.getPools.HTRPoolbyTokenUuid.fetch({ uuid, chainId })
+  const poolDB = await ssg.getPools.byTokenUuidWithSnaps.fetch({ uuid, chainId })
   if (!poolDB) {
     throw new Error(`Failed to fetch pool, received ${poolDB}`)
   }
@@ -42,6 +42,32 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   if (!poolNC) {
     throw new Error(`Failed to fetch pool, received ${poolNC}`)
   }
+
+  await ssg.getPrices.htrKline.prefetch({
+    size: poolDB.hourSnapshots.length,
+    period: 0,
+  })
+  await ssg.getPrices.htrKline.prefetch({
+    size: poolDB.hourSnapshots.length,
+    period: 1,
+  })
+  await ssg.getPrices.htrKline.prefetch({
+    size: poolDB.hourSnapshots.length,
+    period: 2,
+  })
+
+  await ssg.getPrices.htrKline.prefetch({
+    size: poolDB.daySnapshots.length,
+    period: 0,
+  })
+  await ssg.getPrices.htrKline.prefetch({
+    size: poolDB.daySnapshots.length,
+    period: 1,
+  })
+  await ssg.getPrices.htrKline.prefetch({
+    size: poolDB.daySnapshots.length,
+    period: 2,
+  })
 
   await ssg.getPools.byTokenUuidWithSnaps.prefetch({ uuid, chainId })
   await ssg.getPools.byIdFromContract.prefetch({ id: poolDB.id })
