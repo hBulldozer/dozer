@@ -140,7 +140,14 @@ export const poolRouter = createTRPCRouter({
         token0: true,
         token1: true,
         tokenLP: true,
-        hourSnapshots: { orderBy: { date: 'desc' } },
+        hourSnapshots: {
+          where: {
+            date: {
+              gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 31), //get only one month from 15min snaps
+            },
+          },
+          orderBy: { date: 'desc' },
+        },
         daySnapshots: { orderBy: { date: 'desc' } },
       },
     })
