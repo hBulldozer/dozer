@@ -43,7 +43,8 @@ const Background = () => {
                 >
                   {/* Empower your financial freedom */}
                   {/* Solving the problems of DeFi */}
-                  Overcoming the DeFi challenges
+                  {/* Overcoming the DeFi challenges */}
+                  Unlocking DeFi for everyone
                   {/* Revolutionizing DeFi */}
                   {/* Eliminating the limitations of DeFi */}
                 </Typography>
