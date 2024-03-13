@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma"
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
 model Token {
@@ -116,36 +116,4 @@ model Incentive {
   @@index([poolId])
   @@index([rewardTokenId])
   @@index([chainId, rewardTokenId])
-}
-
-model c013_cf61_5c71_b944_0bf2d41fa1bd_20240118200748_vrepl {
-  id           String   @id
-  name         String
-  apr          Float
-  chainId      Int
-  version      String
-  token0Id     String
-  token1Id     String
-  swapFee      Float
-  feeUSD       Float
-  reserve0     String   @default("0")
-  reserve1     String   @default("0")
-  liquidityUSD Float
-  volumeUSD    Float
-  liquidity    Float
-  volume1d     Float
-  fees1d       Float
-  generatedAt  DateTime @default(now())
-  updatedAt    DateTime
-  tokenLPId    String   @default("0")
-  ncid         String   @default("00")
-
-  @@index([chainId], map: "Pool_chainId_idx")
-  @@index([chainId, version], map: "Pool_chainId_version_idx")
-  @@index([generatedAt], map: "Pool_generatedAt_idx")
-  @@index([id], map: "Pool_id_idx")
-  @@index([token0Id], map: "Pool_token0Id_idx")
-  @@index([token1Id], map: "Pool_token1Id_idx")
-  @@index([tokenLPId], map: "Pool_tokenLPId_idx")
-  @@map("_0517c013_cf61_5c71_b944_0bf2d41fa1bd_20240118200748_vrepl")
 }
