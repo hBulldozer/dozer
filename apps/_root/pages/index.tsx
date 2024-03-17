@@ -22,7 +22,7 @@ const Home = () => {
       <BuildWealth />
       <div className="overflow-x-hidden bg-black">
         <div className="flex flex-col gap-2 border-t border-neutral-200/10"></div>
-        <Roadmap />
+        {/* <Roadmap /> */}
       </div>
     </>
     // </article>
