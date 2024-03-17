@@ -130,7 +130,7 @@ export function Footer(props: FooterProps): JSX.Element {
       <Container maxWidth="5xl" className="mx-auto mt-20 mb-5">
         <div className="flex justify-between py-2 mx-4 border-t border-stone-800">
           <Typography variant="xs" className="text-stone-400">
-            Copyright © 2023 Dozer. All rights reserved.
+            Copyright © 2024 Dozer. All rights reserved.
           </Typography>
           <div className="flex divide-x divide-stone-200/20 gap-">
             <Link.Internal href="https://dozer.finance/terms-of-use" passHref={true}>
