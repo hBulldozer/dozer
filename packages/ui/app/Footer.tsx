@@ -95,7 +95,7 @@ export function Footer(props: FooterProps): JSX.Element {
             <DozerWithTextIcon />
           </div>
           <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-400">
-            Safe, fast and beautiful.
+            Safe, fast and efficient.
           </div>
           <div className="flex items-center gap-4">
             <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">
@@ -133,7 +133,7 @@ export function Footer(props: FooterProps): JSX.Element {
             Copyright © 2023 Dozer. All rights reserved.
           </Typography>
           <div className="flex divide-x divide-stone-200/20 gap-">
-            <Link.Internal href="https://dozer.finance" passHref={true}>
+            <Link.Internal href="https://dozer.finance/terms-of-use" passHref={true}>
               <Typography as="a" variant="xs" weight={500} className="px-3 text-stone-300">
                 Terms of Use
               </Typography>
