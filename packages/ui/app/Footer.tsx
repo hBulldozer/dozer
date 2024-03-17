@@ -26,28 +26,28 @@ const config: Record<
       rel: 'noopener noreferrer',
     },
   },
-  // Help: {
-  //   'About Us': {
-  //     href: 'https://dozer.finance',
-  //     target: '_blank',
-  //     rel: 'noopener noreferrer',
-  //   },
-  //   'Discord Support': {
-  //     href: 'https://discord.gg/',
-  //     target: '_blank',
-  //     rel: 'noopener noreferrer',
-  //   },
-  //   'Twitter Support': {
-  //     href: 'https://twitter.com/DozerProtocol',
-  //     target: '_blank',
-  //     rel: 'noopener noreferrer',
-  //   },
-  // },
+  Help: {
+    'About Us': {
+      href: 'https://docs.dozer.finance',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
+    // 'Discord Support': {
+    //   href: 'https://discord.gg/',
+    //   target: '_blank',
+    //   rel: 'noopener noreferrer',
+    // },
+    // 'Twitter': {
+    //   href: 'https://twitter.com/DozerProtocol',
+    //   target: '_blank',
+    //   rel: 'noopener noreferrer',
+    // },
+  },
 
   Items: [
     {
       Partners: {
-        HathorLabs: {
+        'Hathor Labs': {
           href: 'https://hathor.network',
           target: '_blank',
           rel: 'noopener noreferrer',
@@ -98,15 +98,15 @@ export function Footer(props: FooterProps): JSX.Element {
             Safe, fast and efficient.
           </div>
           <div className="flex items-center gap-4">
-            <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">
+            {/* <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">
               <GithubIcon width={16} className="text-stone-300 hover:text-stone-50" />
-            </a>
+            </a> */}
             <a href="https://twitter.com/DozerProtocol" target="_blank" rel="noopener noreferrer">
               <TwitterIcon width={16} className="text-stone-300 hover:text-stone-50" />
             </a>
-            <a href="https://discord.gg/cYquxw8w" target="_blank" rel="noopener noreferrer">
+            {/* <a href="https://discord.gg/cYquxw8w" target="_blank" rel="noopener noreferrer">
               <DiscordIcon width={16} className="text-stone-300 hover:text-stone-50" />
-            </a>
+            </a> */}
           </div>
         </div>
         <div className="md:px-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mt-[40px] sm:mt-[10px]">
