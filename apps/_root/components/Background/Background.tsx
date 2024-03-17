@@ -50,7 +50,7 @@ const Background = () => {
                 </Typography>
                 <Typography variant="lg" className="mt-3 drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]">
                   {/* DeFi done right: */}
-                  Safe, fast and beautiful.
+                  Safe, fast and efficient.
                 </Typography>
                 <div className="flex">
                   <Typography variant="xxs" className="relative drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)]">
