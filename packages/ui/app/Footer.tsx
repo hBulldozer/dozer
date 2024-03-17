@@ -52,11 +52,11 @@ const config: Record<
           target: '_blank',
           rel: 'noopener noreferrer',
         },
-        NileSwap: {
-          href: 'https://nileswap.com',
-          target: '_blank',
-          rel: 'noopener noreferrer',
-        },
+        // NileSwap: {
+        //   href: 'https://nileswap.com',
+        //   target: '_blank',
+        //   rel: 'noopener noreferrer',
+        // },
       },
     },
   ],
