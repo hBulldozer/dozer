@@ -91,7 +91,7 @@ export function Footer(props: FooterProps): JSX.Element {
     <footer className="hidden sm:flex flex-col border-t border-stone-400/5 pt-[72px]" {...props}>
       <Container maxWidth="5xl" className="grid grid-cols-1 md:grid-cols-[176px_auto] mx-auto px-4 gap-4">
         <div className="flex flex-col gap-5">
-          <div className="flex items-center justify-start w-20 gap-3 pt-2">
+          <div className="items-center justify-start w-32">
             <DozerWithTextIcon />
           </div>
           <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-400">
