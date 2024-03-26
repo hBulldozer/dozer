@@ -94,8 +94,7 @@ const DATA: ExpendableCardData = {
       </p>
       <p>
         Last but certainly not least, we are not reinventing the wheel; rather, we are absorbing the insights from
-        previous DeFi implementations, learning from their shortcomings, and crafting an enhanced journey for both our
-        users and investors.
+        previous DeFi implementations, learning from their shortcomings, and crafting an enhanced journey.
       </p>
     </>
   ),

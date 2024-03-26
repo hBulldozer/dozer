@@ -27,7 +27,7 @@ const config: Record<
     },
   },
   Help: {
-    'About Us': {
+    Documentation: {
       href: 'https://docs.dozer.finance',
       target: '_blank',
       rel: 'noopener noreferrer',
