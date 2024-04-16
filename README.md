@@ -33,7 +33,12 @@ Pnpm installation: <https://pnpm.io/installation>
 
 ### Database Connection
 
-* We migrated from PlanetScale to Vercel, need to update this section
+Vercel Storage doesn't need any installation on the developer machine to run. It generates an URL with user and password to direct access the postgres server from Neon.
+
+The steps are:
+1. Create an .env file in packages/database folder
+2. Define two variables: `POSTGRES_PRISMA_URL` and `POSTGRES_URL_NON_POOLING`
+3. As the value for this variables are sensitive content, ask the Team for the right values to be inserted.
 
 ## Setup and Execution**
 
