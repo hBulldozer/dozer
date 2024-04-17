@@ -36,7 +36,8 @@
     "lint": "TIMING=1 eslint src --fix",
     "prepublishOnly": "pnpm build",
     "studio": "prisma studio",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "seed": "tsx prisma/seed.ts"
   },
   "jest": {
     "preset": "@dozer/jest-config/node"
@@ -58,6 +59,7 @@
     "jest": "29.7.0",
     "prisma": "5.8.1",
     "tsup": "8.0.1",
-    "typescript": "5.3.3"
+    "typescript": "5.3.3",
+    "tsx": "^4.7.2"
   }
 }
