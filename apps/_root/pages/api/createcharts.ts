@@ -19,8 +19,6 @@ export default async function handler(request: NextApiRequest, response: NextApi
         const points: Point[] = snaps.map((snap: number, index: number) => {
           return { x: index, y: snap }
         })
-        console.log(token.id, points)
-
         const svgString = createSVGString(points, 110, 30, 2)
         svgStringArray.push(svgString)
       })

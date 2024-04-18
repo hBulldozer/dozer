@@ -43,8 +43,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     throw new Error(`Failed to fetch pool, received ${poolNC}`)
   }
 
-  console.log(poolDB.hourSnapshots.length)
-
   await ssg.getPrices.htrKline.prefetch({
     size: poolDB.hourSnapshots.length,
     period: 0,
