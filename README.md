@@ -1,5 +1,7 @@
 # DOZER PROTOCOL MONOREPO
 
+This is a MVP for the Dozer Protocol
+
 ## Important Update Warning
 
 Please exercise caution when updating the following dependencies, as they have the potential to introduce breaking changes to the software:
