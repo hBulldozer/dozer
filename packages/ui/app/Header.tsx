@@ -10,16 +10,16 @@ import { classNames, Container, IconButton, Link, MaxWidth, Select, DozerIcon, D
 export enum AppType {
   Root = 'Explore Apps',
   Swap = 'Swap',
-  Invest = 'Pools',
+  // Invest = 'Pools',
   Blog = 'Blog',
-  Tokens = 'Tokens',
+  // Tokens = 'Tokens',
 }
 
 const LINK = {
   [AppType.Root]: '/',
   [AppType.Swap]: '/swap',
-  [AppType.Invest]: '/pool',
-  [AppType.Tokens]: '/tokens',
+  // [AppType.Invest]: '/pool',
+  // [AppType.Tokens]: '/tokens',
 }
 
 export interface HeaderProps extends React.HTMLProps<HTMLElement> {
@@ -82,7 +82,7 @@ export function Header({
             <div className="hidden md:block w-9 h-9 hover:animate-heartbeat">
               <DozerIcon width="100%" height="100%" className="mr-2 " />
             </div>
-            <div className=" md:hidden w-24 ">
+            <div className="w-24 md:hidden">
               <DozerWithTextIcon width="100%" height="100%" />
             </div>
           </a>
@@ -123,7 +123,7 @@ export function Header({
                         The easiest way to trade
                       </Typography>
                     </Select.Option>
-                    <Select.Option
+                    {/* <Select.Option
                       as="a"
                       href="https://dozer.finance/tokens"
                       key={AppType.Tokens}
@@ -147,7 +147,7 @@ export function Header({
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                         Earn fees by providing liquidity
                       </Typography>
-                    </Select.Option>
+                    </Select.Option> */}
                   </div>
                   <div>
                     <Typography
