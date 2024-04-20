@@ -40,7 +40,6 @@ export default async function handler(request: NextApiRequest, response: NextApi
     })
 
     prisma.$disconnect()
-    console.log('snaps', snaps)
     return response.status(200).end('Updated!')
   } else return response.status(401).end(`Not Authorized !`)
 }
