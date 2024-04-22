@@ -1083,6 +1083,46 @@ importers:
         specifier: 5.1.6
         version: 5.1.6
 
+  packages/nanocontracts:
+    dependencies:
+      '@dozer/chain':
+        specifier: workspace:*
+        version: link:../chain
+      '@dozer/currency':
+        specifier: workspace:*
+        version: link:../currency
+      '@dozer/database':
+        specifier: workspace:*
+        version: link:../database
+      '@dozer/math':
+        specifier: workspace:*
+        version: link:../math
+      '@types/react':
+        specifier: ^18.0.0
+        version: 18.2.46
+      react:
+        specifier: 18.2.0
+        version: 18.2.0
+      zod:
+        specifier: ^3.22.4
+        version: 3.22.4
+    devDependencies:
+      '@dozer/eslint-config':
+        specifier: workspace:*
+        version: link:../../config/eslint
+      '@dozer/jest-config':
+        specifier: workspace:*
+        version: link:../../config/jest
+      '@dozer/prettier-config':
+        specifier: workspace:*
+        version: link:../../config/prettier
+      '@dozer/typescript-config':
+        specifier: workspace:*
+        version: link:../../config/typescript
+      typescript:
+        specifier: 5.1.6
+        version: 5.1.6
+
   packages/react-query:
     dependencies:
       '@dozer/chain':

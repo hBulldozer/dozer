@@ -214,7 +214,7 @@ const Add: FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
           <div className="hidden md:block" />
           <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-            <SelectNetworkWidget selectedNetwork={chainId} onSelect={setChainId} />
+            {/* <SelectNetworkWidget selectedNetwork={chainId} onSelect={setChainId} /> */}
             {/* <SelectFeeWidget selectedNetwork={chainId} fee={fee} setFee={setFee} /> */}
 
             <Widget id="addLiquidity" maxWidth={400}>

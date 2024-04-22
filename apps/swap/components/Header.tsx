@@ -27,7 +27,7 @@ export const Header: FC = () => {
       }
     >
       <div className="flex items-center gap-2">
-        <NetworkSelector supportedNetworks={SUPPORTED_CHAIN_IDS} />
+        {/* <NetworkSelector supportedNetworks={SUPPORTED_CHAIN_IDS} /> */}
         <Profile
           client={api}
           // supportedNetworks={SUPPORTED_CHAIN_IDS}

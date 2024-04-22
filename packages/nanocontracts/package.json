@@ -1,0 +1,29 @@
+{
+  "name": "@dozer/nanocontracts",
+  "version": "0.1.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "license": "MIT",
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "eslint .",
+    "lint:fix": "pnpm lint --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dozer/database": "workspace:*",
+    "@dozer/chain": "workspace:*",
+    "@dozer/currency": "workspace:*",
+    "@dozer/math": "workspace:*",
+    "react": "18.2.0",
+    "@types/react": "^18.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@dozer/eslint-config": "workspace:*",
+    "@dozer/jest-config": "workspace:*",
+    "@dozer/prettier-config": "workspace:*",
+    "@dozer/typescript-config": "workspace:*"
+  }
+}
