@@ -1,7 +1,6 @@
-import { Token } from '@dozer/currency'
-import { z } from 'zod'
+import { Token } from '@dozer/database'
 
 export declare class NCTokenBalance {
-  readonly token: typeof Token
+  readonly token: Token
   balance: number
 }

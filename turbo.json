@@ -40,7 +40,11 @@
         "DATABASE_URL",
         "API_KEY",
         "LOCAL_NODE_URL",
-        "PUBLIC_NODE_URL"
+        "PUBLIC_NODE_URL",
+        "LOCAL_WALLET_URL",
+        "WALLET_ID",
+        "LPBLUEPRINT",
+        "ADMIN_ADDRESS"
       ],
       "outputs": [
         ".vercel/**/*",

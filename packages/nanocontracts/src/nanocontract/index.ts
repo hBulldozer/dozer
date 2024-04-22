@@ -1,5 +1,6 @@
+import { Token } from '@dozer/database'
+
 import { NCTokenBalance } from '../types'
-import { Token } from '@dozer/currency'
 import { NCAction, NCArgs } from './types'
 
 export class NanoContract {
@@ -10,7 +11,7 @@ export class NanoContract {
     this.ncid = ncid
     this.reserves = []
   }
-  public deposit(token: typeof Token, amount: number) {
+  public deposit(token: Token, amount: number) {
     const existingToken = this.reserves.find((reserve) => reserve.token === token)
     if (existingToken) {
       existingToken.balance += amount
@@ -18,7 +19,7 @@ export class NanoContract {
       this.reserves.push({ token, balance: amount })
     }
   }
-  public withdraw(token: typeof Token, amount: number) {
+  public withdraw(token: Token, amount: number) {
     const existingToken = this.reserves.find((reserve) => reserve.token === token)
     if (existingToken) {
       if (existingToken.balance >= amount) {

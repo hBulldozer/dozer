@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import { Token } from '@dozer/database'
+
 import { createNCHeadless, executeNCHeadless, NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
 
@@ -20,7 +20,7 @@ export class LiquidityPool extends NanoContract {
     // get info from network: it can be done by the ncid or by the tokens
   }
 
-  public async initialize(token0: Token, token1: Token, fee: number) {
+  public async initialize() {
     // TODO: Create the initialize method if it turns to be important. Right now, it will be done manually.
     if (!process.env.LPBLUEPRINT || !process.env.ADMIN_ADDRESS) throw new Error('Missing environment variables')
     const actions: NCAction[] = []
@@ -33,10 +33,16 @@ export class LiquidityPool extends NanoContract {
     if (!process.env.LPBLUEPRINT || !process.env.ADMIN_ADDRESS) throw new Error('Missing environment variables')
     const actions: NCAction[] = [
       { type: 'deposit', token: token_in.uuid, data: { amount: amount_in } },
-      { type: 'withdraw', token: token_out.uuid, data: { amount: amount_out } },
+      { type: 'withdrawal', token: token_out.uuid, data: { amount: amount_out } },
     ]
     const args: NCArgs[] = []
-    const response = await executeNCHeadless(process.env.LPBLUEPRINT, process.env.ADMIN_ADDRESS, 'swap', actions, args)
+    const response = await executeNCHeadless(
+      process.env.LPBLUEPRINT,
+      process.env.ADMIN_ADDRESS,
+      'swap_tokens_for_exact_tokens',
+      actions,
+      args
+    )
     return response['hash']
   }
 }

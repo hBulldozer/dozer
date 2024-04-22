@@ -2,9 +2,9 @@ import { z } from 'zod'
 
 const transactionType = z.string().refine(
   (value) => {
-    return value === 'deposit' || value === 'withdraw'
+    return value === 'deposit' || value === 'withdrawal'
   },
-  { message: 'Invalid transaction type. Must be "deposit" or "withdraw".' }
+  { message: 'Invalid transaction type. Must be "deposit" or "withdrawal".' }
 )
 
 const argsType = z.string().refine(
