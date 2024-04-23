@@ -45,7 +45,7 @@ export async function createNCHeadless(
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
   }
   try {
-    const localWalletUrl = `${process.env.LOCAL_WALLET_URL}/create`
+    const localWalletUrl = `${process.env.LOCAL_WALLET_URL}/wallet/nano-contracts/create`
     if (localWalletUrl) {
       const requestOptions = {
         method: 'POST',
@@ -81,7 +81,7 @@ export async function executeNCHeadless(
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
   }
   try {
-    const localWalletUrl = `${process.env.LOCAL_WALLET_URL}/execute`
+    const localWalletUrl = `${process.env.LOCAL_WALLET_URL}/wallet/nano-contracts/execute`
     if (localWalletUrl) {
       const requestOptions = {
         method: 'POST',
