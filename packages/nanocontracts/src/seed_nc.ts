@@ -95,8 +95,12 @@ async function main() {
       DZR_uuid = data.configurationString.split(':')[2]
       console.log(`Token DZR Created - UUID: ${DZR_uuid}`)
     } else {
-      throw new Error(`Failed to create DZR token. ${data.message}`)
+      throw new Error(`Failed to create DZR token. ${data.error}`)
     }
+  })
+
+  await delay(2000).then(() => {
+    console.log('Wallet is ready!')
   })
 
   // 3. Create the USDT token
@@ -111,7 +115,7 @@ async function main() {
       USDT_uuid = data.configurationString.split(':')[2]
       console.log(`Token USDT Created - UUID: ${USDT_uuid}`)
     } else {
-      throw new Error(`Failed to create USDT token. ${data.message}`)
+      throw new Error(`Failed to create USDT token. ${data.error}`)
     }
   })
 
@@ -128,9 +132,11 @@ async function main() {
 
   // 5. Create the HTR-DZR Pool
   console.log('Creating HTR-DZR Pool...')
-  if (DZR_uuid) {
-    const HTR_DZR_pool = new LiquidityPool('00', DZR_uuid, 0.5, 'none', admin_address)
+  if (DZR_uuid && admin_address) {
+    const HTR_DZR_pool = new LiquidityPool('00', DZR_uuid, 0.5)
+    const response = await HTR_DZR_pool.initialize(admin_address, 1000000, 10000)
+    console.log(response)
     console.log(`HTR-DZR Pool created. ncid: ${HTR_DZR_pool.ncid}`)
-  } else throw new Error('DZR UUID not found')
+  } else throw new Error('DZR UUID and/or admin_address not found.')
 }
 main()

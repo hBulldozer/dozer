@@ -9,7 +9,7 @@ const transactionType = z.string().refine(
 
 const argsType = z.string().refine(
   (value) => {
-    return value === 'byte' || value === 'int'
+    return value === 'string' || value === 'integer' || value === 'number' || value == 'boolean'
   },
   { message: 'Invalid arguments type. Must be "byte" or "int".' }
 )
@@ -17,9 +17,9 @@ const argsType = z.string().refine(
 export const ZNCAction = z.object({
   type: transactionType,
   token: z.string(),
-  data: z.object({
-    amount: z.number(),
-  }),
+  amount: z.number(),
+  address: z.optional(z.string()),
+  changeAddress: z.optional(z.string()),
 })
 
 export const ZNCArgs = z.object({

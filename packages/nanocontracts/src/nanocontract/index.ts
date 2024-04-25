@@ -2,6 +2,7 @@ import { Token } from '@dozer/database'
 
 import { NCTokenBalance } from '../types'
 import { NCAction, NCArgs } from './types'
+import sanitizedConfig from '../config'
 
 export class NanoContract {
   public ncid: string
@@ -33,24 +34,25 @@ export class NanoContract {
   }
 }
 
-export async function createNCHeadless(blueprint: string, address: string, actions: NCAction[], args: NCArgs[]) {
+export async function createNCHeadless(blueprint_id: string, address: string, actions: NCAction[], args: NCArgs[]) {
   // TODO: Create a validator for Hathor valid address?
-  if (!process.env.LOCAL_WALLET_URL || !process.env.WALLET_ID) {
+  if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
     // If Wallet URL is not given, returns fake data
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
   }
   try {
-    const localWalletUrl = `${process.env.LOCAL_WALLET_URL}/wallet/nano-contracts/create`
+    const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/create`
     if (localWalletUrl) {
       const requestOptions = {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-wallet-id': process.env.WALLET_ID },
+        headers: { 'Content-Type': 'application/json', 'x-wallet-id': sanitizedConfig.WALLET_ID },
         body: JSON.stringify({
-          blueprint: blueprint,
+          blueprint_id: blueprint_id,
           address: address,
           data: { actions: actions, args: args },
         }),
       }
+      console.log('requestOptions', requestOptions)
       try {
         const response = await fetch(localWalletUrl, requestOptions)
         return await response.json()
@@ -71,16 +73,16 @@ export async function executeNCHeadless(
   args: NCArgs[]
 ): Promise<any> {
   // TODO: Create a validator for Hathor valid address?
-  if (!process.env.LOCAL_WALLET_URL || !process.env.WALLET_ID) {
+  if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
     // If Wallet URL is not given, returns fake data
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
   }
   try {
-    const localWalletUrl = `${process.env.LOCAL_WALLET_URL}/wallet/nano-contracts/execute`
+    const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/execute`
     if (localWalletUrl) {
       const requestOptions = {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-wallet-id': process.env.WALLET_ID },
+        headers: { 'Content-Type': 'application/json', 'x-wallet-id': sanitizedConfig.WALLET_ID },
         body: JSON.stringify({
           blueprint: blueprint,
           address: address,
