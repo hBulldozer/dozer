@@ -70,7 +70,6 @@
     "ts-node": "10.9.1",
     "turbo": "1.13.2"
   },
-  "packageManager": "pnpm@9.0.5",
   "engines": {
     "node": ">=16.x",
     "pnpm": ">=8.x"

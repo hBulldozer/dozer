@@ -33,12 +33,7 @@ export class NanoContract {
   }
 }
 
-export async function createNCHeadless(
-  blueprint: string,
-  address: string,
-  actions: NCAction[],
-  args: NCArgs[]
-): Promise<any> {
+export async function createNCHeadless(blueprint: string, address: string, actions: NCAction[], args: NCArgs[]) {
   // TODO: Create a validator for Hathor valid address?
   if (!process.env.LOCAL_WALLET_URL || !process.env.WALLET_ID) {
     // If Wallet URL is not given, returns fake data

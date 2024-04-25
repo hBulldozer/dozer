@@ -44,8 +44,7 @@
         "LOCAL_WALLET_MASTER_URL",
         "LOCAL_WALLET_USERS_URL",
         "WALLET_ID",
-        "LPBLUEPRINT",
-        "ADMIN_ADDRESS"
+        "LPBLUEPRINT"
       ],
       "outputs": [
         ".vercel/**/*",

@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "lint:fix": "pnpm lint --fix",
     "type-check": "tsc --noEmit",
-    "seed_nc": "tsx src/seed_nc.ts"
+    "seed_nc": "dotenv -- tsx src/seed_nc.ts"
   },
   "dependencies": {
     "@dozer/database": "workspace:*",
@@ -22,6 +22,11 @@
   },
   "devDependencies": {
     "typescript": "^5.3.3",
+    "@types/node": "^18.0.0",
+    "dotenv": "16.3.1",
+    "eslint": "8.56.0",
+    "tsup": "8.0.1",
+    "tsx": "^4.7.2",
     "@dozer/eslint-config": "workspace:*",
     "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
