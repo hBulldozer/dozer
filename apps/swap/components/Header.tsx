@@ -6,10 +6,11 @@ import React, { FC } from 'react'
 
 import { SUPPORTED_CHAIN_IDS } from '../config'
 import { api } from 'utils/api'
+import { useAccount } from '@dozer/zustand'
 // import { useNotifications } from '../lib/state/storage'
 
 export const Header: FC = () => {
-  const address = 'meu endereço'
+  const { address } = useAccount()
   // const [notifications, { clearNotifications }] = useNotifications(address)
 
   return (
@@ -18,10 +19,10 @@ export const Header: FC = () => {
       appType={AppType.Swap}
       nav={
         <App.NavItemList>
-          <App.NavItem href="https://dozer.finance/swap" label="Swap" />
-          {/* <App.NavItem href="https://dozer.finance/tokens" label="Tokens" />
-          <App.NavItem href={`https://dozer.finance/pool`} label="Pools" />
-          <App.NavItem href="https://dozer.finance/bridge" label="Bridge" /> */}
+          <App.NavItem href="/" label="Swap" />
+          <App.NavItem href="/tokens" label="Tokens" />
+          {/* <App.NavItem href={`https://dozer.finance/pool`} label="Pools" /> */}
+          {/* <App.NavItem href="https://dozer.finance/bridge" label="Bridge" /> */}
           <BuyCrypto address={address} />
         </App.NavItemList>
       }

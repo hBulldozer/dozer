@@ -11,20 +11,20 @@ const config: Record<
 > = {
   Features: {
     Swap: {
-      href: 'https://dozer.finance',
+      href: 'https://mvp.dozer.finance/swap',
       target: '_blank',
       rel: 'noopener noreferrer',
     },
-    Earn: {
-      href: 'https://dozer.finance',
-      target: '_blank',
-      rel: 'noopener noreferrer',
-    },
-    Borrowing: {
-      href: 'https://dozer.finance',
-      target: '_blank',
-      rel: 'noopener noreferrer',
-    },
+    // Earn: {
+    //   href: 'https://dozer.finance',
+    //   target: '_blank',
+    //   rel: 'noopener noreferrer',
+    // },
+    // Borrowing: {
+    //   href: 'https://dozer.finance',
+    //   target: '_blank',
+    //   rel: 'noopener noreferrer',
+    // },
   },
   // Help: {
   //   'About Us': {
@@ -52,11 +52,11 @@ const config: Record<
           target: '_blank',
           rel: 'noopener noreferrer',
         },
-        NileSwap: {
-          href: 'https://nileswap.com',
-          target: '_blank',
-          rel: 'noopener noreferrer',
-        },
+        // NileSwap: {
+        //   href: 'https://nileswap.com',
+        //   target: '_blank',
+        //   rel: 'noopener noreferrer',
+        // },
       },
     },
   ],
@@ -94,9 +94,7 @@ export function Footer(props: FooterProps): JSX.Element {
           <div className="items-center justify-start w-32 gap-3 pt-2">
             <DozerWithTextIcon />
           </div>
-          <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-300">
-            Safe, fast and beautiful.
-          </div>
+          <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-300">Safe, fast and easy.</div>
           <div className="flex items-center gap-4">
             <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">
               <GithubIcon width={16} className="text-stone-200 hover:text-stone-50" />
