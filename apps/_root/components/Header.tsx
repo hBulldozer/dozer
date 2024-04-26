@@ -1,8 +1,8 @@
 import { App, AppType, Button, Link, Menu } from '@dozer/ui'
 import React, { FC, useEffect, useState } from 'react'
-import { DonateModal } from './DonateModal'
+// import { DonateModal } from './DonateModal'
 export const Header: FC = () => {
-  const [open, setOpen] = useState(false)
+  // const [open, setOpen] = useState(false)
 
   // useEffect(() => {
   //   const handleScroll = () => {
@@ -32,11 +32,11 @@ export const Header: FC = () => {
             Enter App
           </Button>
         </Link.Internal> */}
-        <Button as="a" onClick={() => setOpen(true)} size="sm" className="ml-4 whitespace-nowrap">
-          Donate
+        <Button as="a" href="/swap" size="sm" className="ml-4 whitespace-nowrap">
+          Swap
         </Button>
       </div>
-      <DonateModal open={open} setOpen={setOpen} />
+      {/* <DonateModal open={open} setOpen={setOpen} /> */}
     </App.Header>
   )
 }

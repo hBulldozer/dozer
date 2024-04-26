@@ -45,12 +45,18 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
   // const [usdPrice, setUsdPrice] = useState<number>(0)
   // const balanceAsUsd = prices ? prices['00'] : 0
   const [showBalance, setShowBalance] = useState<number | undefined>(0)
+  const [showUsdtBalance, setShowUsdtBalance] = useState<number | undefined>(0)
   const { isLoading, error, data: priceHTR } = useHtrPrice()
 
   useEffect(() => {
     setShowBalance(
       balance?.find((token) => {
         return token.token_symbol == 'HTR'
+      })?.token_balance
+    )
+    setShowUsdtBalance(
+      balance?.find((token) => {
+        return token.token_symbol == 'USDT'
       })?.token_balance
     )
   }, [balance])
@@ -92,19 +98,36 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
             </IconButton>
           </div>
         </div>
-        <div className="flex flex-col items-center justify-center gap-2">
-          <Typography variant="h1" className="whitespace-nowrap">
-            {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-            {showBalance ? (showBalance / 100).toString() + ' HTR' : ''}
-          </Typography>
-          <Typography weight={600} className="text-stone-400">
-            {/* {showBalance && showBalance != 0  ? '$' + ((showBalance / 100) * priceHTR).toFixed(2) : ''} */}
-            {isLoading
-              ? 'Loading'
-              : showBalance && showBalance != 0
-              ? '$' + ((showBalance / 100) * priceHTR).toFixed(2)
-              : ''}
-          </Typography>
+        <div className="flex justify-center gap-8">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <Typography variant="h3" className="whitespace-nowrap">
+              {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
+              {showBalance ? (showBalance / 100).toString() + ' HTR' : ''}
+            </Typography>
+            <Typography weight={600} className="text-stone-400">
+              {/* {showBalance && showBalance != 0  ? '$' + ((showBalance / 100) * priceHTR).toFixed(2) : ''} */}
+              {isLoading
+                ? 'Loading'
+                : showBalance && showBalance != 0
+                ? '$' + ((showBalance / 100) * priceHTR).toFixed(2)
+                : ''}
+            </Typography>
+          </div>
+
+          <div className="flex flex-col items-center justify-center gap-2">
+            <Typography variant="h3" className="whitespace-nowrap">
+              {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
+              {showUsdtBalance ? (showUsdtBalance / 100).toString() + ' USDT' : ''}
+            </Typography>
+            <Typography weight={600} className="text-stone-400">
+              {/* {showBalance && showBalance != 0  ? '$' + ((showBalance / 100) * priceHTR).toFixed(2) : ''} */}
+              {isLoading
+                ? 'Loading'
+                : showUsdtBalance && showUsdtBalance != 0
+                ? '$' + (showUsdtBalance / 101).toFixed(2)
+                : ''}
+            </Typography>
+          </div>
         </div>
       </div>
       <div className="px-2">
