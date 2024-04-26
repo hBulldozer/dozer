@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
+
+const { USDT_UUID } = process.env
 interface TokenBalance {
   token_uuid: string
   token_symbol: string
@@ -22,6 +24,11 @@ export const useAccount = create<AccountState>()(
           token_uuid: '00',
           token_symbol: 'HTR',
           token_balance: 0,
+        },
+        {
+          token_uuid: USDT_UUID ? USDT_UUID : '',
+          token_symbol: 'USDT',
+          token_balance: 100,
         },
       ],
       setBalance: (balance) => set((state) => ({ balance: balance })),
