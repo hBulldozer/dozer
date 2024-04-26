@@ -1,5 +1,5 @@
 import sanitizedConfig from '../config'
-import { createNCHeadless, executeNCHeadless, NanoContract } from '../nanocontract'
+import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
 
 export class LiquidityPool extends NanoContract {
@@ -27,29 +27,41 @@ export class LiquidityPool extends NanoContract {
       { type: 'deposit', token: this.token0, amount: amount0 },
       { type: 'deposit', token: this.token1, amount: amount1 },
     ]
-    const args: NCArgs[] = [
-      { type: 'string', value: this.token0 },
-      { type: 'string', value: this.token1 },
-      { type: 'integer', value: this.fee.toString() },
-    ]
-    const response = createNCHeadless(sanitizedConfig.LPBLUEPRINT, admin_address, actions, args)
+    const args: NCArgs[] = [this.token0, this.token1, this.fee.toString()]
+    const response = this.create(sanitizedConfig.LPBLUEPRINT, admin_address, actions, args)
     return await response
   }
 
-  public async swap(token_in: string, amount_in: number, token_out: string, amount_out: number, address: string) {
+  public async swap_tokens_for_exact_tokens(
+    token_in: string,
+    amount_in: number,
+    token_out: string,
+    amount_out: number,
+    address: string
+  ) {
     if (!process.env.LPBLUEPRINT) throw new Error('Missing environment variables')
     const actions: NCAction[] = [
       { type: 'deposit', token: token_in, amount: amount_in },
       { type: 'withdrawal', token: token_out, amount: amount_out },
     ]
     const args: NCArgs[] = []
-    const response = await executeNCHeadless(
-      process.env.LPBLUEPRINT,
-      address,
-      'swap_tokens_for_exact_tokens',
-      actions,
-      args
-    )
+    const response = await this.execute(process.env.LPBLUEPRINT, address, 'swap_tokens_for_exact_tokens', actions, args)
+    return response['hash']
+  }
+  public async swap_exact_tokens_for_tokens(
+    token_in: string,
+    amount_in: number,
+    token_out: string,
+    amount_out: number,
+    address: string
+  ) {
+    if (!process.env.LPBLUEPRINT) throw new Error('Missing environment variables')
+    const actions: NCAction[] = [
+      { type: 'deposit', token: token_in, amount: amount_in },
+      { type: 'withdrawal', token: token_out, amount: amount_out },
+    ]
+    const args: NCArgs[] = []
+    const response = await this.execute(process.env.LPBLUEPRINT, address, 'swap_exact_tokens_for_tokens', actions, args)
     return response['hash']
   }
 }

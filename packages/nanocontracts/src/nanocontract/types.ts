@@ -22,10 +22,7 @@ export const ZNCAction = z.object({
   changeAddress: z.optional(z.string()),
 })
 
-export const ZNCArgs = z.object({
-  type: argsType,
-  value: z.string(),
-})
+export const ZNCArgs = z.string()
 
 export type NCAction = z.infer<typeof ZNCAction>
 export type NCArgs = z.infer<typeof ZNCArgs>

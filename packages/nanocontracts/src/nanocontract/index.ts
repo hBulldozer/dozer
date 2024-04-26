@@ -32,72 +32,126 @@ export class NanoContract {
       throw new Error('Token not found')
     }
   }
-}
 
-export async function createNCHeadless(blueprint_id: string, address: string, actions: NCAction[], args: NCArgs[]) {
-  // TODO: Create a validator for Hathor valid address?
-  if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
-    // If Wallet URL is not given, returns fake data
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-  }
-  try {
-    const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/create`
-    if (localWalletUrl) {
-      const requestOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-wallet-id': sanitizedConfig.WALLET_ID },
-        body: JSON.stringify({
-          blueprint_id: blueprint_id,
-          address: address,
-          data: { actions: actions, args: args },
-        }),
-      }
-      console.log('requestOptions', requestOptions)
-      try {
-        const response = await fetch(localWalletUrl, requestOptions)
-        return await response.json()
-      } catch {
-        throw new Error('Failed to post data to local wallet')
-      }
+  public async create(blueprint_id: string, address: string, actions: NCAction[], args: NCArgs[]) {
+    // TODO: Create a validator for Hathor valid address?
+    if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
+      // If Wallet URL is not given, returns fake data
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     }
-  } catch (error: any) {
-    throw new Error('Error posting data: ' + error.message)
+    try {
+      const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/create`
+      if (localWalletUrl) {
+        const requestOptions = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-wallet-id': sanitizedConfig.WALLET_ID },
+          body: JSON.stringify({
+            blueprint_id: blueprint_id,
+            address: address,
+            data: { args: args, actions: actions },
+          }),
+        }
+        console.log('requestOptions', requestOptions)
+        try {
+          const response = await fetch(localWalletUrl, requestOptions)
+          return await response.json()
+        } catch {
+          throw new Error('Failed to post data to local wallet')
+        }
+      }
+    } catch (error: any) {
+      throw new Error('Error posting data: ' + error.message)
+    }
   }
-}
 
-export async function executeNCHeadless(
-  blueprint: string,
-  address: string,
-  method: string,
-  actions: NCAction[],
-  args: NCArgs[]
-): Promise<any> {
-  // TODO: Create a validator for Hathor valid address?
-  if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
-    // If Wallet URL is not given, returns fake data
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-  }
-  try {
-    const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/execute`
-    if (localWalletUrl) {
-      const requestOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-wallet-id': sanitizedConfig.WALLET_ID },
-        body: JSON.stringify({
-          blueprint: blueprint,
-          address: address,
-          method: method,
-          data: { actions: actions, args: args },
-        }),
-      }
-      try {
-        const response = await fetch(localWalletUrl, requestOptions)
-        return await response.json()
-      } catch {
-        throw new Error('Failed to post data to local wallet')
-      }
+  public async execute(
+    blueprint: string,
+    address: string,
+    method: string,
+    actions: NCAction[],
+    args: NCArgs[]
+  ): Promise<any> {
+    // TODO: Create a validator for Hathor valid address?
+    if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
+      // If Wallet URL is not given, returns fake data
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     }
-  } catch (error: any) {
-    throw new Error('Error posting data: ' + error.message)
+    try {
+      const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/execute`
+      if (localWalletUrl) {
+        const requestOptions = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-wallet-id': sanitizedConfig.WALLET_ID },
+          body: JSON.stringify({
+            blueprint: blueprint,
+            address: address,
+            method: method,
+            data: { actions: actions, args: args },
+          }),
+        }
+        try {
+          const response = await fetch(localWalletUrl, requestOptions)
+          return await response.json()
+        } catch {
+          throw new Error('Failed to post data to local wallet')
+        }
+      }
+    } catch (error: any) {
+      throw new Error('Error posting data: ' + error.message)
+    }
+  }
+
+  public async state(ncid: string, balances: string[], fields: string[], calls: string[]): Promise<any> {
+    if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
+      // If Wallet URL is not given, returns fake data
+      return {}
+    }
+    try {
+      const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/state`
+      if (localWalletUrl) {
+        const balances_string = balances.map((token) => `balances[]=${token}&`)
+        const fields_string = fields.map((field) => `fields[]=${field}&`)
+        const calls_string = calls.map((call) => `calls[]=${call}&`)
+        const requestOptions = {
+          method: 'GET',
+          headers: { 'x-wallet-id': sanitizedConfig.WALLET_ID },
+          params: `id=${ncid}&${balances_string}${fields_string}${calls_string}`,
+        }
+        console.log(requestOptions)
+        try {
+          const response = await fetch(localWalletUrl, requestOptions)
+          return await response.json()
+        } catch {
+          throw new Error('Failed to get data from local wallet')
+        }
+      }
+    } catch (error: any) {
+      throw new Error('Error getting nc state: ' + error.message)
+    }
+  }
+
+  public async history(ncid: string): Promise<any> {
+    if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
+      // If Wallet URL is not given, returns fake data
+      return {}
+    }
+    try {
+      const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/history`
+      if (localWalletUrl) {
+        const requestOptions = {
+          method: 'GET',
+          headers: { 'x-wallet-id': sanitizedConfig.WALLET_ID },
+          params: `id=${ncid}`,
+        }
+        try {
+          const response = await fetch(localWalletUrl, requestOptions)
+          return await response.json()
+        } catch {
+          throw new Error('Failed to get data from local wallet')
+        }
+      }
+    } catch (error: any) {
+      throw new Error('Error getting nc state: ' + error.message)
+    }
   }
 }
