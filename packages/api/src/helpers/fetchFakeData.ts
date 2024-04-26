@@ -15,13 +15,13 @@ export function fetchFakeData(endpoint: string, queryParams: string[]): any {
       total_transactions: 4,
       tokens_data: {
         '00': {
-          received: 50000,
-          spent: 10000,
+          received: 500000,
+          spent: 150000,
           name: 'Hathor',
           symbol: 'HTR',
         },
-        // TODO finish...
-        uuid: {
+        // TODO add actual usdt UUID
+        '01': {
           received: 56000,
           spent: 10000,
           name: 'USDT',

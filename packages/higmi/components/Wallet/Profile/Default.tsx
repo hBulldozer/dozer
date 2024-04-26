@@ -124,7 +124,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
               {isLoading
                 ? 'Loading'
                 : showUsdtBalance && showUsdtBalance != 0
-                ? '$' + (showUsdtBalance / 101).toFixed(2)
+                ? '$' + (showUsdtBalance / 100).toFixed(2)
                 : ''}
             </Typography>
           </div>
