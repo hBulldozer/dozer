@@ -149,7 +149,7 @@ export function Header({
                       </Typography>
                     </Select.Option> */}
                   </div>
-                  <div>
+                  {/* <div>
                     <Typography
                       variant="xs"
                       weight={600}
@@ -157,7 +157,7 @@ export function Header({
                     >
                       Products
                     </Typography>
-                  </div>
+                  </div> */}
                   <div>
                     <Typography
                       variant="xs"
@@ -166,7 +166,7 @@ export function Header({
                     >
                       Links
                     </Typography>
-                    <Select.Option
+                    {/* <Select.Option
                       as="a"
                       href="https://dozer.finance/blog"
                       key={AppType.Blog}
@@ -177,7 +177,43 @@ export function Header({
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                         Stay up to date with Dozer
                       </Typography>
+                    </Select.Option> */}
+                    <Select.Option
+                      as="a"
+                      href="www.x.com/DozerProtocol"
+                      key="Check our Tweets"
+                      value="Check our Tweets"
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      Twiter
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Stay up to date with Dozer
+                      </Typography>
                     </Select.Option>
+                    <Select.Option
+                      as="a"
+                      href="www.t.me/h_bulldozer"
+                      key="Contact us!"
+                      value="Contact us!"
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      Contact us!
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Chat with Bulldozer.
+                      </Typography>
+                    </Select.Option>
+                    <Select.Option
+                      as="a"
+                      href="docs.dozer.finance"
+                      key="Check our Docs"
+                      value="Check our Docs"
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      Documentation
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Read our Early Documentation
+                      </Typography>
+                    </Select.Option>{' '}
                   </div>
                 </div>
               </Select.Options>
