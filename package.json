@@ -30,6 +30,7 @@
     "lint:ci": "turbo run lint --parallel --filter=[HEAD^1]",
     "prepare": "is-ci || husky install",
     "publish-packages": "turbo run build --filter=./packages/* && changeset version && changeset publish",
+    "seed_all": "tsx ./seed_all.ts",
     "sort": "sort-package-json 'package.json' 'apis/*/package.json' 'apps/*/package.json' 'config/*/package.json' 'examples/*/package.json' 'packages/{,!(node_modules)/}**/package.json' 'protocols/{,!(node_modules)/}**/package.json' 'scripts/*/package.json'",
     "sort-check": "sort-package-json 'package.json' 'apis/*/package.json' 'apps/*/package.json' 'examples/*/package.json' 'packages/{,!(node_modules)/}**/package.json' 'protocols/{,!(node_modules)/}**/package.json' --check",
     "test": "dotenv -- turbo run test --parallel",
@@ -47,6 +48,8 @@
     "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
+    "@dozer/nanocontracts": "workspace:*",
+    "@dozer/database": "workspace:*",
     "@types/jest": "29.2.5",
     "@types/node": "18.11.18",
     "@typescript-eslint/eslint-plugin": "5.48.1",
@@ -68,6 +71,7 @@
     "sort-package-json": "2.1.0",
     "ts-jest": "29.1.0",
     "ts-node": "10.9.1",
+    "tsx": "^4.7.2",
     "turbo": "1.13.2"
   },
   "engines": {

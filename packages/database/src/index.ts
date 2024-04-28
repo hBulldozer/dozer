@@ -1,6 +1,7 @@
 // import 'dotenv/config'
 
 import { PrismaClient } from '@prisma/client'
+import { seed_db } from './seed_db'
 // import { Prisma, PrismaClient } from '@prisma/client'
 // import { Redis } from 'ioredis'
 // import { createPrismaRedisCache } from 'prisma-redis-middleware'
@@ -53,3 +54,4 @@ if (process.env['NODE_ENV'] === 'production') {
 export default prisma
 // export { Prisma, PrismaClient } from '@prisma/client'
 export * from '@prisma/client'
+export { seed_db } from './seed_db'

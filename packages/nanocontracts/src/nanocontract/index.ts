@@ -51,7 +51,6 @@ export class NanoContract {
             data: { args: args, actions: actions },
           }),
         }
-        console.log('requestOptions', requestOptions)
         try {
           const response = await fetch(localWalletUrl, requestOptions)
           return await response.json()
@@ -117,7 +116,6 @@ export class NanoContract {
           headers: { 'x-wallet-id': sanitizedConfig.WALLET_ID },
           params: `id=${ncid}&${balances_string}${fields_string}${calls_string}`,
         }
-        console.log(requestOptions)
         try {
           const response = await fetch(localWalletUrl, requestOptions)
           return await response.json()

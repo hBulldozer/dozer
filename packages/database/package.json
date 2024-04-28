@@ -37,7 +37,7 @@
     "prepublishOnly": "pnpm build",
     "studio": "prisma studio",
     "test": "jest --passWithNoTests",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx src/seed.ts"
   },
   "jest": {
     "preset": "@dozer/jest-config/node"
