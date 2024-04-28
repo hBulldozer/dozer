@@ -7,7 +7,7 @@ const { USDT_UUID } = process.env
  * @param {string[]} queryParams An array of query parameters to include in the URL.
  * @returns {any} A object with fake data
  */
-const uuid = USDT_UUID ? USDT_UUID : '01'
+// const uuid = USDT_UUID ? USDT_UUID : '01'
 export function fetchFakeData(endpoint: string, queryParams: string[]): any {
   if (endpoint.includes('thin_wallet/address_balance')) {
     return {
@@ -15,13 +15,13 @@ export function fetchFakeData(endpoint: string, queryParams: string[]): any {
       total_transactions: 4,
       tokens_data: {
         '00': {
-          received: 50000,
-          spent: 10000,
+          received: 500000,
+          spent: 150000,
           name: 'Hathor',
           symbol: 'HTR',
         },
-        // TODO finish...
-        uuid: {
+        // TODO add actual usdt UUID
+        '01': {
           received: 56000,
           spent: 10000,
           name: 'USDT',
@@ -57,8 +57,8 @@ export function fetchFakeData(endpoint: string, queryParams: string[]): any {
       calls: {
         [key]: {
           value: {
-            reserve0: 1000,
-            reserve1: 2000,
+            reserve0: 100000,
+            reserve1: 200000,
             fee: 0.1,
             volume: 10000,
             fee0: 10,

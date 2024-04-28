@@ -24,6 +24,7 @@ export const BuyCrypto: FC<BuyCryptoProps> = ({ address, children }) => {
     const params = new URLSearchParams()
     // TODO Activate API key after Company Formation
     // params.append('apiKey', '27633309-e560-41ec-b3de-b32f252c9437')
+    params.append('apiKey', '5baa5495-64a5-4bcb-af71-febf3e54b07e')
     // if (address) {
     params.append('walletAddress', 'HJpA7CTpWqL2p2HRtGkGXjbvAzr3sqi1GP')
     // }
@@ -34,7 +35,7 @@ export const BuyCrypto: FC<BuyCryptoProps> = ({ address, children }) => {
     params.append('isFeeCalculationHidden', 'true')
     // TODO Make HTR work as default
     params.append('defaultCryptoCurrency', 'HTR')
-    params.append('themeColor', '#eab308')
+    // params.append('themeColor', '#eab308')
     return `https://global.transak.com/?${params.toString()}`
   }, [address])
 
