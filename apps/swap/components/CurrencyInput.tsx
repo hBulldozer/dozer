@@ -46,6 +46,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   const srcTokenPrice = trade?.mainCurrency ? prices?.[trade.mainCurrency.uuid] : undefined
   const dstTokenPrice = trade?.otherCurrency ? prices?.[trade.otherCurrency.uuid] : undefined
   const usdPctChange = useMemo(() => {
+    console.log(srcTokenPrice, dstTokenPrice, trade?.amountSpecified, trade?.outputAmount)
     const inputUSD = trade?.amountSpecified && srcTokenPrice ? trade.amountSpecified * srcTokenPrice : undefined
     const outputUSD = trade?.outputAmount && dstTokenPrice ? trade.outputAmount * dstTokenPrice : undefined
     return inputUSD && outputUSD && inputUSD > 0 ? ((outputUSD - inputUSD) / inputUSD) * 100 : undefined

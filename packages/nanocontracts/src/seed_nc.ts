@@ -154,7 +154,7 @@ export async function seed_nc() {
   console.log('Creating HTR-DZR Pool...')
   if (DZR_uuid && admin_address) {
     const HTR_DZR_pool = new LiquidityPool('00', DZR_uuid, 0.5)
-    const response = await HTR_DZR_pool.initialize(admin_address, 1000000, 10000)
+    const response = await HTR_DZR_pool.initialize(admin_address, 10000000, 7000000)
     HTR_DZR_pool.ncid = response.hash
     HTR_DZR_ncid = response.hash
     console.log(`HTR-DZR Pool created. ncid: ${HTR_DZR_pool.ncid}`)
@@ -167,7 +167,7 @@ export async function seed_nc() {
   })
   if (USDT_uuid && admin_address) {
     const HTR_USDT_pool = new LiquidityPool('00', USDT_uuid, 0.5)
-    const response = await HTR_USDT_pool.initialize(admin_address, 1000000, 10000)
+    const response = await HTR_USDT_pool.initialize(admin_address, 5000000, 2500000)
     HTR_USDT_pool.ncid = response.hash
     HTR_USDT_ncid = response.hash
     console.log(`HTR-USDT Pool created. ncid: ${HTR_USDT_pool.ncid}`)

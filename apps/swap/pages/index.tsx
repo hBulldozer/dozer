@@ -157,6 +157,9 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
         setPool({
           token1: token0,
           token2: token1,
+          // this is getting the price from db while the price for usd is being fetched from the NC,
+          // we need to change the method to fetch from nc every key press, maybe explode this useeffect
+          // in many handles for each state changed
           token1_balance:
             selectedPool.token0.uuid == token0.uuid ? Number(selectedPool.reserve0) : Number(selectedPool.reserve1),
           token2_balance:
