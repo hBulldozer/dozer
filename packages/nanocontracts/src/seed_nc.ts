@@ -155,8 +155,8 @@ export async function seed_nc() {
   if (DZR_uuid && admin_address) {
     const HTR_DZR_pool = new LiquidityPool('00', DZR_uuid, 0.5)
     const response = await HTR_DZR_pool.initialize(admin_address, 1000000, 10000)
-    HTR_DZR_pool.ncid = response.id
-    HTR_DZR_ncid = response.id
+    HTR_DZR_pool.ncid = response.hash
+    HTR_DZR_ncid = response.hash
     console.log(`HTR-DZR Pool created. ncid: ${HTR_DZR_pool.ncid}`)
   } else throw new Error('DZR UUID and/or admin_address not found.')
 
@@ -168,8 +168,8 @@ export async function seed_nc() {
   if (USDT_uuid && admin_address) {
     const HTR_USDT_pool = new LiquidityPool('00', USDT_uuid, 0.5)
     const response = await HTR_USDT_pool.initialize(admin_address, 1000000, 10000)
-    HTR_USDT_pool.ncid = response.id
-    HTR_USDT_ncid = response.id
+    HTR_USDT_pool.ncid = response.hash
+    HTR_USDT_ncid = response.hash
     console.log(`HTR-USDT Pool created. ncid: ${HTR_USDT_pool.ncid}`)
   } else throw new Error('USDT UUID and/or admin_address not found.')
 

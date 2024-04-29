@@ -20,15 +20,14 @@ export class LiquidityPool extends NanoContract {
   }
 
   public async initialize(admin_address: string, amount0: number, amount1: number) {
-    // TODO: Create the initialize method if it turns to be important. Right now, it will be done manually.
     if (!sanitizedConfig.LPBLUEPRINT) throw new Error('Missing environment variables')
     const actions: NCAction[] = [
       { type: 'deposit', token: this.token0, amount: amount0 },
       { type: 'deposit', token: this.token1, amount: amount1 },
     ]
     const args: NCArgs[] = [this.token0, this.token1, this.fee]
-    const response = this.create(sanitizedConfig.LPBLUEPRINT, admin_address, actions, args)
-    return await response
+    const response = await this.create(sanitizedConfig.LPBLUEPRINT, admin_address, actions, args)
+    return response
   }
 
   public async swap_tokens_for_exact_tokens(

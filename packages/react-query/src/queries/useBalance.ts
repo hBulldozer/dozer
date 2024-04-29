@@ -4,9 +4,11 @@ export const useBalance = (address: string) => {
   return useQuery({
     queryKey: ['balance_' + address],
     queryFn: async () =>
-      fetch('https://node1.testnet.hathor.network/v1a/thin_wallet/address_balance?address=' + address).then(
-        (response) => response.json()
-      ),
+      fetch(
+        `${
+          process.env.LOCAL_NODE_URL || 'https://node1.testnet.hathor.network/v1a/'
+        }thin_wallet/address_balance?address=${address}`
+      ).then((response) => response.json()),
     staleTime: 100,
     enabled: Boolean(address),
   })
