@@ -59,6 +59,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
   const { data: pools = [] } = api.getPools.all.useQuery()
   const { data: tokens = [] } = api.getTokens.all.useQuery()
   const { data: prices = { '00': 0 } } = api.getPrices.all.useQuery()
+  console.log(prices)
   const router = useRouter()
 
   useEffect(() => {
@@ -99,37 +100,28 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
   const trade = useTrade()
 
   const onInput0 = async (val: string) => {
-    const input = val || '0'
     setInput0(val)
-    const response =
-      selectedPool && token0
-        ? await utils.getPools.quote_exact_tokens_for_tokens.fetch({
-            id: selectedPool?.id,
-            amount_in: parseFloat(input),
-            token_in: token0?.uuid,
-          })
-        : undefined
-    setInput1(response && response.amount_out != 0 ? response.amount_out.toString() : '')
-    setPriceImpact(response ? response.price_impact : 0)
+    if (!val) {
+      setInput1('')
+    }
+    setTradeType(TradeType.EXACT_INPUT)
   }
 
   const onInput1 = async (val: string) => {
-    const input = val || '0'
     setInput1(val)
-    const response =
-      selectedPool && token1
-        ? await utils.getPools.quote_exact_tokens_for_tokens.fetch({
-            id: selectedPool?.id,
-            amount_in: parseFloat(input),
-            token_in: token1?.uuid,
-          })
-        : undefined
-    setInput0(response && response.amount_out != 0 ? response.amount_out.toString() : '')
-    setPriceImpact(response ? response.price_impact : 0)
+    if (!val) {
+      setInput0('')
+    }
+    setTradeType(TradeType.EXACT_OUTPUT)
   }
 
   const switchCurrencies = async () => {
     setTokens(([prevSrc, prevDst]) => [prevDst, prevSrc])
+    if (tradeType == TradeType.EXACT_INPUT) {
+      setInput1('')
+    } else {
+      setInput0('')
+    }
   }
 
   // const onSuccess = () => {
@@ -143,6 +135,37 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
   // }, [inputToken, outputToken])
 
   useEffect(() => {
+    let isSubscribed = true
+    const fetchData = async () => {
+      if (tradeType == TradeType.EXACT_INPUT) {
+        const response =
+          selectedPool && token0
+            ? await utils.getPools.quote_exact_tokens_for_tokens.fetch({
+                id: selectedPool?.id,
+                amount_in: parseFloat(input0),
+                token_in: token0?.uuid,
+              })
+            : undefined
+        // set state with the result if `isSubscribed` is true
+        if (isSubscribed) {
+          setInput1(response && response.amount_out != 0 ? response.amount_out.toString() : '')
+          setPriceImpact(response ? response.price_impact : 0)
+        }
+      } else {
+        const response =
+          selectedPool && token1
+            ? await utils.getPools.quote_exact_tokens_for_tokens.fetch({
+                id: selectedPool?.id,
+                amount_in: parseFloat(input1),
+                token_in: token1?.uuid,
+              })
+            : undefined
+        if (isSubscribed) {
+          setInput0(response && response.amount_out != 0 ? response.amount_out.toString() : '')
+          setPriceImpact(response ? response.price_impact : 0)
+        }
+      }
+    }
     setSelectedPool(
       pools.find((pool: dbPoolWithTokens) => {
         const uuid0 = pool.token0.uuid
@@ -155,15 +178,35 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
         return result
       })
     )
-    trade.setMainCurrency(token0)
-    trade.setOtherCurrency(token1)
-    trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
-    trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
-    trade.setAmountSpecified(parseFloat(input0) || 0)
-    trade.setOutputAmount(parseFloat(input1) || 0)
-    trade.setPriceImpact(priceImpact || 0)
-    if (selectedPool) trade.setPool(selectedPool)
-  }, [pools, token0, token1, input0, input1, prices, network, selectedPool, tokens, priceImpact])
+
+    // call the function
+    if (input1 || input0) {
+      fetchData()
+        .then(() => {
+          trade.setMainCurrency(token0)
+          trade.setOtherCurrency(token1)
+          trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
+          trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
+          trade.setAmountSpecified(parseFloat(input0) || 0)
+          trade.setOutputAmount(parseFloat(input1) || 0)
+          trade.setPriceImpact(priceImpact || 0)
+          if (selectedPool) trade.setPool(selectedPool)
+        })
+        // make sure to catch any error
+        .catch(console.error)
+    } else {
+      trade.setMainCurrencyPrice(0)
+      trade.setOtherCurrencyPrice(0)
+      trade.setAmountSpecified(0)
+      trade.setOutputAmount(0)
+      trade.setPriceImpact(0)
+    }
+
+    // cancel any future `setData`
+    return () => {
+      isSubscribed = false
+    }
+  }, [pools, token0, token1, input0, input1, prices, network, tokens, priceImpact])
 
   const onSuccess = useCallback(() => {
     setInput0('')

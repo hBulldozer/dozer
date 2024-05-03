@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
 import { HTRPoolByTokenUuid, HTRPoolByTokenUuidFromContract, getPoolSnaps24h, idFromHTRPoolByTokenUuid } from './pool'
-import { PrismaClient } from '@dozer/database'
+import prisma, { PrismaClient } from '@dozer/database'
 
 export const htrKline = async (input: { period: number; size: number }) => {
   const now = Math.round(Date.now() / 1000)
@@ -60,20 +60,25 @@ export const pricesRouter = createTRPCRouter({
     const tokens = await ctx.prisma.token.findMany({
       select: {
         uuid: true,
+        symbol: true,
         chainId: true,
       },
     })
     if (!tokens) {
       throw new Error(`Failed to fetch tokens, received ${tokens}`)
     }
-    const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
-    const data = await resp.json()
-    const priceHTR = data.data.HTR
+    const USDT = await prisma.token.findFirst({ where: { symbol: 'USDT' } })
+    if (!USDT) {
+      throw new Error('Failed to get USDT Token')
+    }
+    const pool = await HTRPoolByTokenUuidFromContract(USDT.uuid, USDT.chainId, prisma)
+    const priceHTR = Number(pool?.reserve0) / Number(pool?.reserve1)
     const prices: { [key: string]: number } = {}
 
     await Promise.all(
       tokens.map(async (token) => {
         if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)
+        else if (token.symbol == 'USDT') prices[token.uuid] = 1
         else {
           const poolHTR = await HTRPoolByTokenUuidFromContract(token.uuid, token.chainId, ctx.prisma)
           if (!prices[token.uuid]) {
@@ -140,9 +145,15 @@ export const pricesRouter = createTRPCRouter({
     return prices
   }),
   htr: procedure.output(z.number()).query(async () => {
-    const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
-    const data = await resp.json()
-    return Number(data.data.HTR)
+    // const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
+    // const data = await resp.json()
+    // return Number(data.data.HTR)
+    const USDT = await prisma.token.findFirst({ where: { symbol: 'USDT' } })
+    if (!USDT) {
+      throw new Error('Failed to get USDT Token')
+    }
+    const pool = await HTRPoolByTokenUuidFromContract(USDT?.uuid, USDT?.chainId, prisma)
+    return Number(pool?.reserve0) / Number(pool?.reserve1)
   }),
   htrKline: procedure
     .output(z.array(z.object({ price: z.number(), date: z.number() })))
