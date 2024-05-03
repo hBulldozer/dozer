@@ -34,7 +34,7 @@ export const Rate: FC<Rate> = ({ children, token1, token2, prices }) => {
   }, [])
   const content = (
     <>
-      {token1 && token2 && trade.pool?.token1_balance && trade.pool.token2_balance && trade.amountSpecified ? (
+      {token1 && token2 && trade.amountSpecified ? (
         invert ? (
           <>
             1 {token2?.symbol} ={' '}

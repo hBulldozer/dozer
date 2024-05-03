@@ -19,7 +19,7 @@ interface CurrencyInput extends CurrencyInputProps {
 export const CurrencyInput: FC<CurrencyInput> = ({
   id,
   className,
-  value: _value,
+  value,
   onChange,
   onSelect,
   currency,
@@ -39,14 +39,14 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   const trade = useTrade()
 
   // If output field and (un)wrapping, set to _value
-  let value = inputType === tradeType ? _value.toString() : trade ? trade?.outputAmount?.toFixed(2).toString() : ''
-  value = value ? value : ''
+  // let value = inputType === tradeType ? _value.toString() : trade ? trade?.outputAmount?.toFixed(2).toString() : ''
+  // value = value ? value : ''
   // const value = _value
   // // Usd pct change
   const srcTokenPrice = trade?.mainCurrency ? prices?.[trade.mainCurrency.uuid] : undefined
   const dstTokenPrice = trade?.otherCurrency ? prices?.[trade.otherCurrency.uuid] : undefined
   const usdPctChange = useMemo(() => {
-    console.log(srcTokenPrice, dstTokenPrice, trade?.amountSpecified, trade?.outputAmount)
+    // console.log(srcTokenPrice, dstTokenPrice, trade?.amountSpecified, trade?.outputAmount)
     const inputUSD = trade?.amountSpecified && srcTokenPrice ? trade.amountSpecified * srcTokenPrice : undefined
     const outputUSD = trade?.outputAmount && dstTokenPrice ? trade.outputAmount * dstTokenPrice : undefined
     return inputUSD && outputUSD && inputUSD > 0 ? ((outputUSD - inputUSD) / inputUSD) * 100 : undefined

@@ -2,17 +2,11 @@ import { ChainId } from '@dozer/chain'
 import { Token, getTokens } from '@dozer/currency'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { dbPoolWithTokens } from '@dozer/api'
 
 export enum TradeType {
   EXACT_INPUT,
   EXACT_OUTPUT,
-}
-
-interface PoolType {
-  token1: Token | undefined
-  token2: Token | undefined
-  token1_balance: number | undefined
-  token2_balance: number | undefined
 }
 
 interface TradeProps {
@@ -30,12 +24,10 @@ interface TradeProps {
   setMainCurrencyPrice: (mainCurrencyPrice: number) => void
   otherCurrencyPrice: number | undefined
   setOtherCurrencyPrice: (otherCurrencyPrice: number) => void
-  pool: PoolType | undefined
-  setPool: (pool: PoolType) => void
-  outputAmount: number | undefined
-  setOutputAmount: () => void
-  priceImpact: number
-  setPriceImpact: () => void
+  pool: dbPoolWithTokens | undefined
+  setPool: (pool: dbPoolWithTokens) => void
+  outputAmount: number
+  setOutputAmount: (outputAmount: number) => void
 }
 
 export const useTrade = create<TradeProps>()(
@@ -57,45 +49,10 @@ export const useTrade = create<TradeProps>()(
       otherCurrencyPrice: 0,
       setOtherCurrencyPrice: (otherCurrencyPrice: number) =>
         set((state) => ({ otherCurrencyPrice: otherCurrencyPrice })),
-      pool: {
-        token1: new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 }),
-        token2: new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2 }),
-        token1_balance: 0,
-        token2_balance: 0,
-      },
-      setPool: (pool: PoolType) => set((state) => ({ pool: pool })),
+      pool: undefined,
+      setPool: (pool: dbPoolWithTokens) => set((state) => ({ pool: pool })),
       outputAmount: 0,
-      setOutputAmount: () =>
-        set((state) => ({
-          outputAmount:
-            state.pool?.token1 &&
-            state.pool.token2 &&
-            state.pool.token1_balance &&
-            state.pool.token2_balance &&
-            state.mainCurrency &&
-            state.amountSpecified
-              ? state.pool.token1.uuid === state.mainCurrency.uuid
-                ? (state.amountSpecified * state.pool.token2_balance) /
-                  (state.pool.token1_balance + state.amountSpecified)
-                : (state.amountSpecified * state.pool.token1_balance) /
-                  (state.pool.token2_balance + state.amountSpecified)
-              : 0,
-        })),
-      priceImpact: 0,
-      setPriceImpact: () =>
-        set((state) => ({
-          priceImpact:
-            state.pool?.token1 &&
-            state.pool.token2 &&
-            state.pool.token1_balance &&
-            state.pool.token2_balance &&
-            state.mainCurrency &&
-            state.amountSpecified
-              ? state.pool.token1.uuid === state.mainCurrency.uuid
-                ? (state.amountSpecified / (state.pool.token1_balance + state.amountSpecified)) * 100
-                : (state.amountSpecified / (state.pool.token2_balance + state.amountSpecified)) * 100
-              : 0,
-        })),
+      setOutputAmount: (outputAmount: number) => set((state) => ({ outputAmount: outputAmount })),
     }),
     {
       name: 'trade-storage',

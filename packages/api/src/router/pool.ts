@@ -180,6 +180,46 @@ export const poolRouter = createTRPCRouter({
   HTRPoolbyTokenUuid: procedure.input(z.object({ uuid: z.string(), chainId: z.number() })).query(({ ctx, input }) => {
     return HTRPoolByTokenUuid(input.uuid, input.chainId, ctx.prisma)
   }),
+  quote_exact_tokens_for_tokens: procedure
+    .input(z.object({ id: z.string(), amount_in: z.number(), token_in: z.string() }))
+    .output(z.object({ amount_out: z.number(), price_impact: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const endpoint = 'nano_contract/state'
+      const amount = input.amount_in * 100 // correcting input to the backend
+      const queryParams = [
+        `id=${input.id}`,
+        `calls[]=front_quote_exact_tokens_for_tokens(${amount},\"${input.token_in}\")`,
+      ]
+      const response = await fetchNodeData(endpoint, queryParams)
+      if ('errmsg' in response['calls'][`front_quote_exact_tokens_for_tokens(${amount},\"${input.token_in}\")`])
+        return { amount_out: 0, price_impact: 0 }
+      else {
+        const result =
+          response['calls'][`front_quote_exact_tokens_for_tokens(${amount},\"${input.token_in}\")`]['value']
+        const amount_out = result['amount_out'] / 100 // correcting output to the frontend
+        return { amount_out, price_impact: result['price_impact'] }
+      }
+    }),
+  quote_tokens_for_exact_tokens: procedure
+    .input(z.object({ id: z.string(), amount_in: z.number(), token_in: z.string() }))
+    .output(z.object({ amount_out: z.number(), price_impact: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const endpoint = 'nano_contract/state'
+      const amount = input.amount_in * 100 // correcting input to the backend
+      const queryParams = [
+        `id=${input.id}`,
+        `calls[]=front_quote_tokens_for_exact_tokens(${amount},\"${input.token_in}\")`,
+      ]
+      const response = await fetchNodeData(endpoint, queryParams)
+      if ('errmsg' in response['calls'][`front_quote_tokens_for_exact_tokens(${amount},\"${input.token_in}\")`])
+        return { amount_out: 0, price_impact: 0 }
+      else {
+        const result =
+          response['calls'][`front_quote_tokens_for_exact_tokens(${amount},\"${input.token_in}\")`]['value']
+        const amount_out = result['amount_out'] / 100 // correcting output to the frontend
+        return { amount_out, price_impact: result['price_impact'] }
+      }
+    }),
   byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.pool.findFirst({
       where: { id: input.id },

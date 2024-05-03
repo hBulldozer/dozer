@@ -1344,6 +1344,9 @@ importers:
 
   packages/zustand:
     dependencies:
+      '@dozer/api':
+        specifier: workspace:*
+        version: link:../api
       '@dozer/chain':
         specifier: workspace:*
         version: link:../chain

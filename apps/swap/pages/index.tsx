@@ -93,27 +93,39 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
   const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([initialToken0, initialToken1])
   const [input1, setInput1] = useState<string>('')
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
-  const {
-    outputAmount,
-    setMainCurrency,
-    setOtherCurrency,
-    setMainCurrencyPrice,
-    setOtherCurrencyPrice,
-    setAmountSpecified,
-    setOutputAmount,
-    setPriceImpact,
-    setPool,
-  } = useTrade()
   const [selectedPool, setSelectedPool] = useState<dbPoolWithTokens>()
+  const [priceImpact, setPriceImpact] = useState<number>()
+  const utils = api.useUtils()
+  const trade = useTrade()
 
   const onInput0 = async (val: string) => {
-    setTradeType(TradeType.EXACT_INPUT)
+    const input = val || '0'
     setInput0(val)
+    const response =
+      selectedPool && token0
+        ? await utils.getPools.quote_exact_tokens_for_tokens.fetch({
+            id: selectedPool?.id,
+            amount_in: parseFloat(input),
+            token_in: token0?.uuid,
+          })
+        : undefined
+    setInput1(response && response.amount_out != 0 ? response.amount_out.toString() : '')
+    setPriceImpact(response ? response.price_impact : 0)
   }
 
-  const onInput1 = (val: string) => {
-    // setTradeType(TradeType.EXACT_OUTPUT)
+  const onInput1 = async (val: string) => {
+    const input = val || '0'
     setInput1(val)
+    const response =
+      selectedPool && token1
+        ? await utils.getPools.quote_exact_tokens_for_tokens.fetch({
+            id: selectedPool?.id,
+            amount_in: parseFloat(input),
+            token_in: token1?.uuid,
+          })
+        : undefined
+    setInput0(response && response.amount_out != 0 ? response.amount_out.toString() : '')
+    setPriceImpact(response ? response.price_impact : 0)
   }
 
   const switchCurrencies = async () => {
@@ -143,54 +155,14 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
         return result
       })
     )
-    setMainCurrency(token0 ? token0 : toToken(tokens[0]))
-    setOtherCurrency(token1 ? token1 : toToken(tokens[1]))
-    setPriceImpact()
-    if (!selectedPool) {
-      setInput0('')
-      setAmountSpecified(0)
-      setOutputAmount()
-      // setInput1('')
-    } else {
-      token0 &&
-        token1 &&
-        setPool({
-          token1: token0,
-          token2: token1,
-          // this is getting the price from db while the price for usd is being fetched from the NC,
-          // we need to change the method to fetch from nc every key press, maybe explode this useeffect
-          // in many handles for each state changed
-          token1_balance:
-            selectedPool.token0.uuid == token0.uuid ? Number(selectedPool.reserve0) : Number(selectedPool.reserve1),
-          token2_balance:
-            selectedPool.token1.uuid == token1.uuid ? Number(selectedPool.reserve1) : Number(selectedPool.reserve0),
-        })
-      setAmountSpecified(Number(input0))
-      setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
-      setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
-      setOutputAmount()
-      // setInput1(outputAmount ? outputAmount.toString() : '')
-    }
-  }, [
-    pools,
-    outputAmount,
-    token0,
-    token1,
-    input0,
-    input1,
-    prices,
-    network,
-    selectedPool,
-    tokens,
-    setMainCurrency,
-    setOtherCurrency,
-    setPriceImpact,
-    setAmountSpecified,
-    setOutputAmount,
-    setPool,
-    setMainCurrencyPrice,
-    setOtherCurrencyPrice,
-  ])
+    trade.setMainCurrency(token0)
+    trade.setOtherCurrency(token1)
+    trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
+    trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
+    trade.setAmountSpecified(parseFloat(input0) || 0)
+    trade.setOutputAmount(parseFloat(input1) || 0)
+    if (selectedPool) trade.setPool(selectedPool)
+  }, [pools, token0, token1, input0, input1, prices, network, selectedPool, tokens])
 
   const onSuccess = useCallback(() => {
     setInput0('')
@@ -256,9 +228,9 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
         <div className="bg-stone-800">
           <CurrencyInput
             id={'swap-output-currency1'}
-            disabled={true}
+            // disabled={true}
             className="p-3"
-            value={selectedPool ? (outputAmount ? outputAmount.toString() : '') : ''}
+            value={selectedPool ? (token0?.symbol && token1?.symbol ? input1 : '') : ''}
             onChange={onInput1}
             currency={token1}
             onSelect={_setToken1}
@@ -283,7 +255,13 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
                 <Checker.Amounts fullWidth size="md" amount={Number(input0)} token={token0}>
                   <SwapReviewModalLegacy chainId={network} onSuccess={onSuccess}>
                     {({ setOpen }) => {
-                      return <SwapButton setOpen={setOpen} />
+                      return (
+                        <SwapButton
+                          setOpen={setOpen}
+                          priceImpact={priceImpact || 0}
+                          outputAmount={parseFloat(input1) || 0}
+                        />
+                      )
                     }}
                   </SwapReviewModalLegacy>
                 </Checker.Amounts>
@@ -298,11 +276,12 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
 
 export const SwapButton: FC<{
   setOpen(open: boolean): void
-}> = ({ setOpen }) => {
-  const trade = useTrade()
+  priceImpact: number
+  outputAmount: number
+}> = ({ setOpen, priceImpact, outputAmount }) => {
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
 
-  const priceImpactSeverity = useMemo(() => warningSeverity(trade?.priceImpact), [trade])
+  const priceImpactSeverity = useMemo(() => warningSeverity(priceImpact), [priceImpact])
   const priceImpactTooHigh = priceImpactSeverity > 3
 
   const onClick = useCallback(() => {
@@ -317,16 +296,13 @@ export const SwapButton: FC<{
       disabled={
         priceImpactTooHigh ||
         Number(
-          (trade?.outputAmount
-            ? trade.outputAmount
-            : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)
-          ).toFixed(2)
+          (outputAmount ? outputAmount : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)).toFixed(2)
         ) == 0 ||
-        Boolean(!trade && priceImpactSeverity > 2)
+        Boolean(priceImpactSeverity > 2)
       }
       size="md"
       color={priceImpactTooHigh || priceImpactSeverity > 2 ? 'red' : 'blue'}
-      {...(Boolean(!trade && priceImpactSeverity > 2) && {
+      {...(Boolean(priceImpactSeverity > 2) && {
         title: 'Enable expert mode to swap with high price impact',
       })}
     >
@@ -334,7 +310,7 @@ export const SwapButton: FC<{
         ? 'Finding Best Price'
         : priceImpactTooHigh
         ? 'High Price Impact'
-        : trade && priceImpactSeverity > 2
+        : priceImpactSeverity > 2
         ? 'Swap Anyway'
         : 'Swap'}
     </Button>
