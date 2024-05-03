@@ -161,8 +161,9 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
     trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
     trade.setAmountSpecified(parseFloat(input0) || 0)
     trade.setOutputAmount(parseFloat(input1) || 0)
+    trade.setPriceImpact(priceImpact || 0)
     if (selectedPool) trade.setPool(selectedPool)
-  }, [pools, token0, token1, input0, input1, prices, network, selectedPool, tokens])
+  }, [pools, token0, token1, input0, input1, prices, network, selectedPool, tokens, priceImpact])
 
   const onSuccess = useCallback(() => {
     setInput0('')

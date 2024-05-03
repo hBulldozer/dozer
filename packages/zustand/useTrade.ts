@@ -28,6 +28,8 @@ interface TradeProps {
   setPool: (pool: dbPoolWithTokens) => void
   outputAmount: number
   setOutputAmount: (outputAmount: number) => void
+  priceImpact: number
+  setPriceImpact: (priceImpact: number) => void
 }
 
 export const useTrade = create<TradeProps>()(
@@ -53,6 +55,8 @@ export const useTrade = create<TradeProps>()(
       setPool: (pool: dbPoolWithTokens) => set((state) => ({ pool: pool })),
       outputAmount: 0,
       setOutputAmount: (outputAmount: number) => set((state) => ({ outputAmount: outputAmount })),
+      priceImpact: 0,
+      setPriceImpact: (priceImpact: number) => set((state) => ({ priceImpact: priceImpact })),
     }),
     {
       name: 'trade-storage',
