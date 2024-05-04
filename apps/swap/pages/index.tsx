@@ -98,6 +98,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
   const [priceImpact, setPriceImpact] = useState<number>()
   const utils = api.useUtils()
   const trade = useTrade()
+  const [fetchLoading, setFetchLoading] = useState<boolean>(false)
 
   const onInput0 = async (val: string) => {
     setInput0(val)
@@ -137,6 +138,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
   useEffect(() => {
     let isSubscribed = true
     const fetchData = async () => {
+      setFetchLoading(true)
       if (tradeType == TradeType.EXACT_INPUT) {
         const response =
           selectedPool && token0
@@ -148,7 +150,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
             : undefined
         // set state with the result if `isSubscribed` is true
         if (isSubscribed) {
-          setInput1(response && response.amount_out != 0 ? response.amount_out.toString() : '')
+          setInput1(response && response.amount_out != 0 ? response.amount_out.toFixed(2) : '')
           setPriceImpact(response ? response.price_impact : 0)
         }
       } else {
@@ -161,7 +163,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
               })
             : undefined
         if (isSubscribed) {
-          setInput0(response && response.amount_out != 0 ? response.amount_out.toString() : '')
+          setInput0(response && response.amount_out != 0 ? response.amount_out.toFixed(2) : '')
           setPriceImpact(response ? response.price_impact : 0)
         }
       }
@@ -183,24 +185,22 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
     if (input1 || input0) {
       fetchData()
         .then(() => {
-          trade.setMainCurrency(tradeType == TradeType.EXACT_INPUT ? token0 : token1)
-          trade.setOtherCurrency(tradeType == TradeType.EXACT_INPUT ? token1 : token0)
-          trade.setMainCurrencyPrice(
-            tradeType == TradeType.EXACT_INPUT ? (token0 ? prices[token0?.uuid] : 0) : token1 ? prices[token1?.uuid] : 0
-          )
-          trade.setOtherCurrencyPrice(
-            tradeType == TradeType.EXACT_INPUT ? (token1 ? prices[token1?.uuid] : 0) : token0 ? prices[token0?.uuid] : 0
-          )
-          trade.setAmountSpecified(
-            tradeType == TradeType.EXACT_INPUT ? parseFloat(input0) || 0 : parseFloat(input1) || 0
-          )
-          trade.setOutputAmount(tradeType == TradeType.EXACT_INPUT ? parseFloat(input1) || 0 : parseFloat(input0) || 0)
+          setFetchLoading(false)
+          trade.setMainCurrency(token0)
+          trade.setOtherCurrency(token1)
+          trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
+          trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
+          trade.setAmountSpecified(Number(input0) || 0)
+          trade.setOutputAmount(Number(input1) || 0)
           trade.setPriceImpact(priceImpact || 0)
           trade.setTradeType(tradeType)
           if (selectedPool) trade.setPool(selectedPool)
         })
         // make sure to catch any error
-        .catch(console.error)
+        .catch((err) => {
+          console.error(err)
+          setFetchLoading(false)
+        })
     } else {
       trade.setMainCurrencyPrice(0)
       trade.setOtherCurrencyPrice(0)
@@ -260,7 +260,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
           // tokenMap={tokenMap}
           inputType={TradeType.EXACT_INPUT}
           tradeType={tradeType}
-          loading={!token0}
+          loading={tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
           prices={prices}
           tokens={tokens.map((token) => {
             return new Token(token)
@@ -293,7 +293,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
             // tokenMap={tokenMap}
             inputType={TradeType.EXACT_OUTPUT}
             tradeType={tradeType}
-            loading={!token1}
+            loading={tradeType == TradeType.EXACT_INPUT && fetchLoading}
             prices={prices}
             tokens={tokens.map((token) => {
               return new Token(token)

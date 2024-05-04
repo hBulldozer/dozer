@@ -38,15 +38,13 @@ export class LiquidityPool extends NanoContract {
     wallet?: string
   ) {
     const actions: NCAction[] = [
-      { type: 'deposit', token: token_in, amount: amount_in * 100, address: address },
-      { type: 'withdrawal', token: token_out, amount: amount_out * 100, address: address },
+      { type: 'deposit', token: token_in, amount: Math.ceil(amount_in * 100), changeAddress: address },
+      { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
     ]
     const args: NCArgs[] = []
     console.log('actions', actions)
-
     const response = await this.execute(address, 'swap_tokens_for_exact_tokens', actions, args, wallet)
-    console.log(response)
-    return response['hash']
+    return response
   }
   public async swap_exact_tokens_for_tokens(
     token_in: string,
@@ -57,13 +55,12 @@ export class LiquidityPool extends NanoContract {
     wallet?: string
   ) {
     const actions: NCAction[] = [
-      { type: 'deposit', token: token_in, amount: amount_in * 100, address: address },
-      { type: 'withdrawal', token: token_out, amount: amount_out * 100, address: address },
+      { type: 'deposit', token: token_in, amount: Math.ceil(amount_in * 100), changeAddress: address },
+      { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
     ]
     const args: NCArgs[] = []
     console.log('actions', actions)
     const response = await this.execute(address, 'swap_exact_tokens_for_tokens', actions, args, wallet)
-    console.log(response)
-    return response['hash']
+    return response
   }
 }

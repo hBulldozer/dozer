@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { any, z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
@@ -257,7 +257,6 @@ export const poolRouter = createTRPCRouter({
         address: z.string(),
       })
     )
-    .output(z.object({ hash: z.string() }))
     .query(async ({ input }) => {
       const { ncid, token_in, amount_in, token_out, amount_out, address } = input
       const pool = new LiquidityPool(token_in, token_out, 5, ncid)

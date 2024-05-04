@@ -1,4 +1,4 @@
-import { Button, Dialog } from '@dozer/ui'
+import { Button, createErrorToast, createSuccessToast, Dialog, NotificationData } from '@dozer/ui'
 import { useAccount, useTrade } from '@dozer/zustand'
 import { TradeType } from 'components/utils/TradeType'
 import React, { FC, ReactNode, useCallback, useMemo, useState } from 'react'
@@ -17,19 +17,20 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   const { address } = useAccount()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
-  const [] = useState(Math.floor(Math.random() * 8))
   const utils = api.useUtils()
-
-  const [] = useMemo(() => [amountSpecified, outputAmount], [amountSpecified, outputAmount])
 
   const onCloseCard = useCallback(() => {
     onSuccess()
   }, [onSuccess])
 
   const onClick = async () => {
-    if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency)
-      if (tradeType === TradeType.EXACT_INPUT) {
-        const response = await utils.getPools.swap_exact_tokens_for_tokens.fetch({
+    if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
+      const fetchFunction =
+        tradeType === TradeType.EXACT_INPUT
+          ? utils.getPools.swap_exact_tokens_for_tokens
+          : utils.getPools.swap_tokens_for_exact_tokens
+      const response = await fetchFunction
+        .fetch({
           ncid: pool.id,
           amount_in: amountSpecified,
           token_in: mainCurrency.uuid,
@@ -37,18 +38,32 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
           token_out: otherCurrency.uuid,
           address,
         })
-        console.log(response)
-      } else {
-        const response = await utils.getPools.swap_tokens_for_exact_tokens.fetch({
-          ncid: pool.id,
-          amount_in: amountSpecified,
-          token_in: mainCurrency.uuid,
-          amount_out: outputAmount,
-          token_out: otherCurrency.uuid,
-          address,
+        .then((res) => {
+          console.log(res)
+          if (res['hash']) {
+            const notificationData: Omit<NotificationData, 'promise'> = {
+              type: 'swap',
+              summary: {
+                pending: 'Pending swap',
+                completed: 'Completed swap',
+                failed: 'Failed swap',
+                info: 'Info swap',
+              },
+              txHash: res.hash,
+              groupTimestamp: Math.floor(Date.now() / 1000),
+              timestamp: Math.floor(Date.now() / 1000),
+            }
+            createSuccessToast(notificationData)
+          } else {
+            createErrorToast(`Swap failed.${res.hash.error[0].msg}`, true)
+          }
+          setOpen(false)
         })
-        console.log(response)
-      }
+        .catch((err) => {
+          createErrorToast(`Swap failed.${err}`, true)
+          setOpen(false)
+        })
+    }
   }
 
   return (
