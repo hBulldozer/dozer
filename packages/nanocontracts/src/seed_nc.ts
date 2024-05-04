@@ -158,7 +158,7 @@ export async function seed_nc() {
   })
   if (USDT_uuid && admin_address) {
     const HTR_USDT_pool = new LiquidityPool('00', USDT_uuid, 0)
-    const response = await HTR_USDT_pool.initialize(admin_address, 800, 10000)
+    const response = await HTR_USDT_pool.initialize(admin_address, 100000, 8000)
     HTR_USDT_pool.ncid = response.hash
     HTR_USDT_ncid = response.hash
     console.log(`HTR-USDT Pool created. ncid: ${HTR_USDT_pool.ncid}`)

@@ -72,7 +72,7 @@ export const pricesRouter = createTRPCRouter({
       throw new Error('Failed to get USDT Token')
     }
     const pool = await HTRPoolByTokenUuidFromContract(USDT.uuid, USDT.chainId, prisma)
-    const priceHTR = Number(pool?.reserve0) / Number(pool?.reserve1)
+    const priceHTR = Number(pool?.reserve1) / Number(pool?.reserve0)
     const prices: { [key: string]: number } = {}
 
     await Promise.all(

@@ -261,7 +261,7 @@ export const poolRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       const { ncid, token_in, amount_in, token_out, amount_out, address } = input
-      const pool = new LiquidityPool(token_in, token_out, 5, ncid)
+      const pool = new LiquidityPool(token_in, token_out, 0, ncid)
       const response = await pool.swap_exact_tokens_for_tokens(
         token_in,
         amount_in,
