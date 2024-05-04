@@ -1,4 +1,3 @@
-import sanitizedConfig from '../config'
 import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
 
@@ -20,13 +19,13 @@ export class LiquidityPool extends NanoContract {
   }
 
   public async initialize(admin_address: string, amount0: number, amount1: number) {
-    if (!sanitizedConfig.LPBLUEPRINT) throw new Error('Missing environment variables')
+    if (!process.env.LPBLUEPRINT) throw new Error('Missing environment variables')
     const actions: NCAction[] = [
       { type: 'deposit', token: this.token0, amount: amount0 },
       { type: 'deposit', token: this.token1, amount: amount1 },
     ]
     const args: NCArgs[] = [this.token0, this.token1, this.fee]
-    const response = await this.create(sanitizedConfig.LPBLUEPRINT, admin_address, actions, args)
+    const response = await this.create(process.env.LPBLUEPRINT, admin_address, actions, args)
     return response
   }
 
@@ -35,15 +34,18 @@ export class LiquidityPool extends NanoContract {
     amount_in: number,
     token_out: string,
     amount_out: number,
-    address: string
+    address: string,
+    wallet?: string
   ) {
-    if (!process.env.LPBLUEPRINT) throw new Error('Missing environment variables')
     const actions: NCAction[] = [
-      { type: 'deposit', token: token_in, amount: amount_in },
-      { type: 'withdrawal', token: token_out, amount: amount_out },
+      { type: 'deposit', token: token_in, amount: amount_in * 100 },
+      { type: 'withdrawal', token: token_out, amount: amount_out * 100, address: address },
     ]
     const args: NCArgs[] = []
-    const response = await this.execute(process.env.LPBLUEPRINT, address, 'swap_tokens_for_exact_tokens', actions, args)
+    console.log('actions', actions)
+
+    const response = await this.execute(address, 'swap_tokens_for_exact_tokens', actions, args, wallet)
+    console.log(response)
     return response['hash']
   }
   public async swap_exact_tokens_for_tokens(
@@ -51,15 +53,17 @@ export class LiquidityPool extends NanoContract {
     amount_in: number,
     token_out: string,
     amount_out: number,
-    address: string
+    address: string,
+    wallet?: string
   ) {
-    if (!process.env.LPBLUEPRINT) throw new Error('Missing environment variables')
     const actions: NCAction[] = [
-      { type: 'deposit', token: token_in, amount: amount_in },
-      { type: 'withdrawal', token: token_out, amount: amount_out },
+      { type: 'deposit', token: token_in, amount: amount_in * 100 },
+      { type: 'withdrawal', token: token_out, amount: amount_out * 100, address: address },
     ]
     const args: NCArgs[] = []
-    const response = await this.execute(process.env.LPBLUEPRINT, address, 'swap_exact_tokens_for_tokens', actions, args)
+    console.log('actions', actions)
+    const response = await this.execute(address, 'swap_exact_tokens_for_tokens', actions, args, wallet)
+    console.log(response)
     return response['hash']
   }
 }

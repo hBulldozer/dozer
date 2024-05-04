@@ -1,4 +1,3 @@
-import sanitizedConfig from './config'
 import { LiquidityPool } from './liquiditypool'
 
 function delay(ms: number) {
@@ -15,7 +14,7 @@ async function check_wallet(wallet: string) {
       response = await GetHeadless(
         wallet,
         '/wallet/status',
-        { 'x-wallet-id': wallet == 'master' ? sanitizedConfig.WALLET_ID : 'default' },
+        { 'x-wallet-id': wallet == 'master' ? process.env.WALLET_ID : 'default' },
         {}
       ).then((res) => {
         console.log('Waiting wallet to be ready...')
@@ -31,17 +30,13 @@ async function check_wallet(wallet: string) {
 
 async function PostHeadless(wallet: string, path: string, headers: any, body: any): Promise<any> {
   // TODO: Create a validator for Hathor valid address?
-  if (
-    !sanitizedConfig.LOCAL_WALLET_MASTER_URL ||
-    !sanitizedConfig.WALLET_ID ||
-    !sanitizedConfig.LOCAL_WALLET_USERS_URL
-  ) {
+  if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID || !process.env.LOCAL_WALLET_USERS_URL) {
     // If Wallet URL is not given, returns fake data
     throw new Error('Wallet URL or Wallet ID is not given')
   }
   try {
     const localWalletUrl = `${
-      wallet == 'master' ? sanitizedConfig.LOCAL_WALLET_MASTER_URL : sanitizedConfig.LOCAL_WALLET_USERS_URL
+      wallet == 'master' ? process.env.LOCAL_WALLET_MASTER_URL : process.env.LOCAL_WALLET_USERS_URL
     }${path}`
     const requestOptions = {
       method: 'POST',
@@ -57,17 +52,13 @@ async function PostHeadless(wallet: string, path: string, headers: any, body: an
 
 async function GetHeadless(wallet: string, path: string, headers: any, body: any): Promise<any> {
   // TODO: Create a validator for Hathor valid address?
-  if (
-    !sanitizedConfig.LOCAL_WALLET_MASTER_URL ||
-    !sanitizedConfig.WALLET_ID ||
-    !sanitizedConfig.LOCAL_WALLET_USERS_URL
-  ) {
+  if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID || !process.env.LOCAL_WALLET_USERS_URL) {
     // If Wallet URL is not given, returns fake data
     throw new Error('Wallet URL or Wallet ID is not given')
   }
   try {
     const localWalletUrl = `${
-      wallet == 'master' ? sanitizedConfig.LOCAL_WALLET_MASTER_URL : sanitizedConfig.LOCAL_WALLET_USERS_URL
+      wallet == 'master' ? process.env.LOCAL_WALLET_MASTER_URL : process.env.LOCAL_WALLET_USERS_URL
     }${path}`
     const requestOptions = {
       method: 'GET',
@@ -91,7 +82,7 @@ export async function seed_nc() {
   console.log('*** Starting to seed NanoContracts... ***')
   // 1. Start the master wallet
   console.log('Starting wallet...')
-  await PostHeadless('master', '/start', {}, { 'wallet-id': sanitizedConfig.WALLET_ID, seedKey: 'genesis' }).then(
+  await PostHeadless('master', '/start', {}, { 'wallet-id': process.env.WALLET_ID, seedKey: 'genesis' }).then(
     async (data) => {
       if (data.success || data.errorCode == 'WALLET_ALREADY_STARTED') {
         console.log(data.success ? 'Wallet started!' : 'Wallet was already started')
@@ -109,7 +100,7 @@ export async function seed_nc() {
   await PostHeadless(
     'master',
     '/wallet/create-token',
-    { 'x-wallet-id': sanitizedConfig.WALLET_ID },
+    { 'x-wallet-id': process.env.WALLET_ID },
     { name: 'Dozer', symbol: 'DZR', amount: 100000000 }
   ).then((data) => {
     if (data.success) {
@@ -128,7 +119,7 @@ export async function seed_nc() {
   await PostHeadless(
     'master',
     '/wallet/create-token',
-    { 'x-wallet-id': sanitizedConfig.WALLET_ID },
+    { 'x-wallet-id': process.env.WALLET_ID },
     { name: 'USD Tether', symbol: 'USDT', amount: 1000000 }
   ).then((data) => {
     if (data.success) {
@@ -141,7 +132,7 @@ export async function seed_nc() {
 
   // 4. Get Wallet admin address
   console.log('Getting Wallet admin address...')
-  await GetHeadless('master', '/wallet/address', { 'x-wallet-id': sanitizedConfig.WALLET_ID }, {}).then((data) => {
+  await GetHeadless('master', '/wallet/address', { 'x-wallet-id': process.env.WALLET_ID }, {}).then((data) => {
     if (data.address) {
       admin_address = data.address
       console.log(`Wallet admin address: ${admin_address}`)
@@ -205,7 +196,7 @@ export async function seed_nc() {
       await PostHeadless(
         'master',
         '/wallet/simple-send-tx',
-        { 'x-wallet-id': sanitizedConfig.WALLET_ID },
+        { 'x-wallet-id': process.env.WALLET_ID },
         {
           address: address,
           value: 500000,

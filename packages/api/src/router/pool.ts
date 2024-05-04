@@ -4,6 +4,7 @@ import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { FrontEndApiNCObject } from '../types'
 import { PrismaClient } from '@dozer/database'
+import { LiquidityPool } from '@dozer/nanocontracts'
 
 // Exporting common functions to use in another routers, as is suggested in https://trpc.io/docs/v10/server/server-side-calls
 
@@ -219,6 +220,57 @@ export const poolRouter = createTRPCRouter({
         const amount_out = result['amount_out'] / 100 // correcting output to the frontend
         return { amount_out, price_impact: result['price_impact'] }
       }
+    }),
+  swap_tokens_for_exact_tokens: procedure
+    .input(
+      z.object({
+        ncid: z.string(),
+        token_in: z.string(),
+        amount_in: z.number(),
+        token_out: z.string(),
+        amount_out: z.number(),
+        address: z.string(),
+      })
+    )
+    .output(z.object({ hash: z.string() }))
+    .query(async ({ input }) => {
+      const { ncid, token_in, amount_in, token_out, amount_out, address } = input
+      const pool = new LiquidityPool(token_in, token_out, 5, ncid)
+      const response = await pool.swap_tokens_for_exact_tokens(
+        token_in,
+        amount_in,
+        token_out,
+        amount_out,
+        address,
+        'users'
+      )
+      return { hash: response }
+    }),
+  swap_exact_tokens_for_tokens: procedure
+    .input(
+      z.object({
+        ncid: z.string(),
+        token_in: z.string(),
+        amount_in: z.number(),
+        token_out: z.string(),
+        amount_out: z.number(),
+        address: z.string(),
+      })
+    )
+    .output(z.object({ hash: z.string() }))
+    .query(async ({ input }) => {
+      const { ncid, token_in, amount_in, token_out, amount_out, address } = input
+      const pool = new LiquidityPool(token_in, token_out, 5, ncid)
+      const response = await pool.swap_exact_tokens_for_tokens(
+        token_in,
+        amount_in,
+        token_out,
+        amount_out,
+        address,
+        'users'
+      )
+      console.log(response)
+      return { hash: response }
     }),
   byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.pool.findFirst({

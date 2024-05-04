@@ -18,6 +18,7 @@
     "@dozer/chain": "workspace:*",
     "@dozer/currency": "workspace:*",
     "@dozer/math": "workspace:*",
+    "@dozer/nanocontracts": "workspace:*",
     "react": "18.2.0",
     "@types/react": "^18.0.0",
     "superjson": "1.9.1",

@@ -15,6 +15,7 @@ import { api, RouterOutputs } from 'utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import type { GetStaticProps } from 'next'
 import type { dbPoolWithTokens } from '@dozer/api'
+import { tr } from 'date-fns/locale'
 
 type TokenOutputArray = RouterOutputs['getTokens']['all']
 
@@ -59,7 +60,6 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
   const { data: pools = [] } = api.getPools.all.useQuery()
   const { data: tokens = [] } = api.getTokens.all.useQuery()
   const { data: prices = { '00': 0 } } = api.getPrices.all.useQuery()
-  console.log(prices)
   const router = useRouter()
 
   useEffect(() => {
@@ -183,13 +183,20 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
     if (input1 || input0) {
       fetchData()
         .then(() => {
-          trade.setMainCurrency(token0)
-          trade.setOtherCurrency(token1)
-          trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
-          trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
-          trade.setAmountSpecified(parseFloat(input0) || 0)
-          trade.setOutputAmount(parseFloat(input1) || 0)
+          trade.setMainCurrency(tradeType == TradeType.EXACT_INPUT ? token0 : token1)
+          trade.setOtherCurrency(tradeType == TradeType.EXACT_INPUT ? token1 : token0)
+          trade.setMainCurrencyPrice(
+            tradeType == TradeType.EXACT_INPUT ? (token0 ? prices[token0?.uuid] : 0) : token1 ? prices[token1?.uuid] : 0
+          )
+          trade.setOtherCurrencyPrice(
+            tradeType == TradeType.EXACT_INPUT ? (token1 ? prices[token1?.uuid] : 0) : token0 ? prices[token0?.uuid] : 0
+          )
+          trade.setAmountSpecified(
+            tradeType == TradeType.EXACT_INPUT ? parseFloat(input0) || 0 : parseFloat(input1) || 0
+          )
+          trade.setOutputAmount(tradeType == TradeType.EXACT_INPUT ? parseFloat(input1) || 0 : parseFloat(input0) || 0)
           trade.setPriceImpact(priceImpact || 0)
+          trade.setTradeType(tradeType)
           if (selectedPool) trade.setPool(selectedPool)
         })
         // make sure to catch any error
@@ -200,6 +207,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
       trade.setAmountSpecified(0)
       trade.setOutputAmount(0)
       trade.setPriceImpact(0)
+      trade.setTradeType(tradeType)
     }
 
     // cancel any future `setData`

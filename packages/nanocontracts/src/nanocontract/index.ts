@@ -2,7 +2,6 @@ import { Token } from '@dozer/database'
 
 import { NCTokenBalance } from '../types'
 import { NCAction, NCArgs } from './types'
-import sanitizedConfig from '../config'
 
 export class NanoContract {
   public ncid: string
@@ -35,16 +34,16 @@ export class NanoContract {
 
   public async create(blueprint_id: string, address: string, actions: NCAction[], args: NCArgs[]) {
     // TODO: Create a validator for Hathor valid address?
-    if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
+    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID) {
       // If Wallet URL is not given, returns fake data
       return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     }
     try {
-      const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/create`
+      const localWalletUrl = `${process.env.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/create`
       if (localWalletUrl) {
         const requestOptions = {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-wallet-id': sanitizedConfig.WALLET_ID },
+          headers: { 'Content-Type': 'application/json', 'x-wallet-id': process.env.WALLET_ID },
           body: JSON.stringify({
             blueprint_id: blueprint_id,
             address: address,
@@ -64,25 +63,30 @@ export class NanoContract {
   }
 
   public async execute(
-    blueprint: string,
     address: string,
     method: string,
     actions: NCAction[],
-    args: NCArgs[]
+    args: NCArgs[],
+    wallet?: string
   ): Promise<any> {
     // TODO: Create a validator for Hathor valid address?
-    if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
+    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.LOCAL_WALLET_USERS_URL || !process.env.WALLET_ID) {
       // If Wallet URL is not given, returns fake data
       return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     }
     try {
-      const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/execute`
+      const localWalletUrl = `${
+        wallet == 'users' ? process.env.LOCAL_WALLET_USERS_URL : process.env.LOCAL_WALLET_MASTER_URL
+      }/wallet/nano-contracts/execute`
       if (localWalletUrl) {
         const requestOptions = {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-wallet-id': sanitizedConfig.WALLET_ID },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-wallet-id': wallet == 'users' ? 'default' : process.env.WALLET_ID,
+          },
           body: JSON.stringify({
-            blueprint: blueprint,
+            nc_id: this.ncid,
             address: address,
             method: method,
             data: { actions: actions, args: args },
@@ -101,19 +105,19 @@ export class NanoContract {
   }
 
   public async state(ncid: string, balances: string[], fields: string[], calls: string[]): Promise<any> {
-    if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
+    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID) {
       // If Wallet URL is not given, returns fake data
       return {}
     }
     try {
-      const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/state`
+      const localWalletUrl = `${process.env.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/state`
       if (localWalletUrl) {
         const balances_string = balances.map((token) => `balances[]=${token}&`)
         const fields_string = fields.map((field) => `fields[]=${field}&`)
         const calls_string = calls.map((call) => `calls[]=${call}&`)
         const requestOptions = {
           method: 'GET',
-          headers: { 'x-wallet-id': sanitizedConfig.WALLET_ID },
+          headers: { 'x-wallet-id': process.env.WALLET_ID },
           params: `id=${ncid}&${balances_string}${fields_string}${calls_string}`,
         }
         try {
@@ -129,16 +133,16 @@ export class NanoContract {
   }
 
   public async history(ncid: string): Promise<any> {
-    if (!sanitizedConfig.LOCAL_WALLET_MASTER_URL || !sanitizedConfig.WALLET_ID) {
+    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID) {
       // If Wallet URL is not given, returns fake data
       return {}
     }
     try {
-      const localWalletUrl = `${sanitizedConfig.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/history`
+      const localWalletUrl = `${process.env.LOCAL_WALLET_MASTER_URL}/wallet/nano-contracts/history`
       if (localWalletUrl) {
         const requestOptions = {
           method: 'GET',
-          headers: { 'x-wallet-id': sanitizedConfig.WALLET_ID },
+          headers: { 'x-wallet-id': process.env.WALLET_ID },
           params: `id=${ncid}`,
         }
         try {

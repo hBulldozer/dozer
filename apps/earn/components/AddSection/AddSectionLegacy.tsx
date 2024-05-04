@@ -15,8 +15,8 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
   prices,
 }) => {
   const isMounted = useIsMounted()
-  const token0 = toToken(pool.token0)
-  const token1 = toToken(pool.token1)
+  const token0 = pool.token0
+  const token1 = pool.token1
   const [{ input0, input1 }, setTypedAmounts] = useState<{
     input0: string
     input1: string
@@ -66,13 +66,7 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
   )
 
   useEffect(() => {
-    pool &&
-      setPool({
-        token1: token1,
-        token2: token0,
-        token1_balance: pool.token0.uuid == token1?.uuid ? Number(pool.reserve1) : Number(pool.reserve0),
-        token2_balance: pool.token1.uuid == token0?.uuid ? Number(pool.reserve0) : Number(pool.reserve1),
-      })
+    pool && setPool(pool)
     setMainCurrency(token0 ? token0 : undefined)
     setOtherCurrency(token1 ? token1 : undefined)
     setPriceImpact()
