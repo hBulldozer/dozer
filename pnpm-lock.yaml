@@ -672,6 +672,9 @@ importers:
       '@dozer/math':
         specifier: workspace:*
         version: link:../math
+      '@dozer/nanocontracts':
+        specifier: workspace:*
+        version: link:../nanocontracts
       '@trpc/client':
         specifier: ^10.45.0
         version: 10.45.0(@trpc/server@10.45.0)

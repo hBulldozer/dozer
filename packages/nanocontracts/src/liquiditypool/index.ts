@@ -21,8 +21,8 @@ export class LiquidityPool extends NanoContract {
   public async initialize(admin_address: string, amount0: number, amount1: number) {
     if (!process.env.LPBLUEPRINT) throw new Error('Missing environment variables')
     const actions: NCAction[] = [
-      { type: 'deposit', token: this.token0, amount: amount0 },
-      { type: 'deposit', token: this.token1, amount: amount1 },
+      { type: 'deposit', token: this.token0, amount: 100 * amount0 },
+      { type: 'deposit', token: this.token1, amount: 100 * amount1 },
     ]
     const args: NCArgs[] = [this.token0, this.token1, this.fee]
     const response = await this.create(process.env.LPBLUEPRINT, admin_address, actions, args)
@@ -38,7 +38,7 @@ export class LiquidityPool extends NanoContract {
     wallet?: string
   ) {
     const actions: NCAction[] = [
-      { type: 'deposit', token: token_in, amount: amount_in * 100 },
+      { type: 'deposit', token: token_in, amount: amount_in * 100, address: address },
       { type: 'withdrawal', token: token_out, amount: amount_out * 100, address: address },
     ]
     const args: NCArgs[] = []
@@ -57,7 +57,7 @@ export class LiquidityPool extends NanoContract {
     wallet?: string
   ) {
     const actions: NCAction[] = [
-      { type: 'deposit', token: token_in, amount: amount_in * 100 },
+      { type: 'deposit', token: token_in, amount: amount_in * 100, address: address },
       { type: 'withdrawal', token: token_out, amount: amount_out * 100, address: address },
     ]
     const args: NCArgs[] = []

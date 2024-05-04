@@ -144,8 +144,8 @@ export async function seed_nc() {
   // 5. Create the HTR-DZR Pool
   console.log('Creating HTR-DZR Pool...')
   if (DZR_uuid && admin_address) {
-    const HTR_DZR_pool = new LiquidityPool('00', DZR_uuid, 5)
-    const response = await HTR_DZR_pool.initialize(admin_address, 100000, 70000)
+    const HTR_DZR_pool = new LiquidityPool('00', DZR_uuid, 0)
+    const response = await HTR_DZR_pool.initialize(admin_address, 1000, 700)
     HTR_DZR_pool.ncid = response.hash
     HTR_DZR_ncid = response.hash
     console.log(`HTR-DZR Pool created. ncid: ${HTR_DZR_pool.ncid}`)
@@ -157,8 +157,8 @@ export async function seed_nc() {
     console.log('Creating HTR-USDT Pool...')
   })
   if (USDT_uuid && admin_address) {
-    const HTR_USDT_pool = new LiquidityPool('00', USDT_uuid, 5)
-    const response = await HTR_USDT_pool.initialize(admin_address, 80000, 1000000)
+    const HTR_USDT_pool = new LiquidityPool('00', USDT_uuid, 0)
+    const response = await HTR_USDT_pool.initialize(admin_address, 800, 10000)
     HTR_USDT_pool.ncid = response.hash
     HTR_USDT_ncid = response.hash
     console.log(`HTR-USDT Pool created. ncid: ${HTR_USDT_pool.ncid}`)
@@ -186,25 +186,25 @@ export async function seed_nc() {
     }
   })
 
-  // 9. Sending 5000 HTR for each user
+  // 9. Sending 50 HTR for each user
   console.log('Sending funds to users...')
   if (users_addresses) {
     // for (var i = 0; i < users_addresses.length; i++) {
     for (var i = 0; i < 5; i++) {
       const address = users_addresses[i]
-      console.log(`Sending 500 HTR to ${address}...`)
+      console.log(`Sending 50 HTR to ${address}...`)
       await PostHeadless(
         'master',
         '/wallet/simple-send-tx',
         { 'x-wallet-id': process.env.WALLET_ID },
         {
           address: address,
-          value: 500000,
+          value: 5000,
           token: '00',
         }
       ).then(async (data) => {
         if (data.success) {
-          console.log(`Sent 5000 HTR to ${address}.`)
+          console.log(`Sent 50 HTR to ${address}.`)
         } else {
           throw new Error(`Failed to send HTR to ${address}.` + data)
         }
