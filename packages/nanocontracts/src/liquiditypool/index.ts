@@ -38,7 +38,13 @@ export class LiquidityPool extends NanoContract {
     wallet?: string
   ) {
     const actions: NCAction[] = [
-      { type: 'deposit', token: token_in, amount: Math.ceil(amount_in * 100), changeAddress: address },
+      {
+        type: 'deposit',
+        token: token_in,
+        amount: Math.ceil(amount_in * 100),
+        address: address,
+        changeAddress: address,
+      },
       { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
     ]
     const args: NCArgs[] = []
@@ -55,7 +61,13 @@ export class LiquidityPool extends NanoContract {
     wallet?: string
   ) {
     const actions: NCAction[] = [
-      { type: 'deposit', token: token_in, amount: Math.ceil(amount_in * 100), changeAddress: address },
+      {
+        type: 'deposit',
+        token: token_in,
+        amount: Math.ceil(amount_in * 100),
+        address: address,
+        changeAddress: address,
+      },
       { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
     ]
     const args: NCArgs[] = []

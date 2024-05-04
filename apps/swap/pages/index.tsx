@@ -216,6 +216,23 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
     }
   }, [pools, token0, token1, input0, input1, prices, network, tokens, priceImpact])
 
+  // useEffect(() => {
+  //   let isSubscribed = true
+  //   const fetchData = async () => {}
+
+  //   fetchData()
+  //     .then(() => {})
+  //     // make sure to catch any error
+  //     .catch((err) => {
+  //       console.error(err)
+  //     })
+
+  //   // cancel any future `setData`
+  //   return () => {
+  //     isSubscribed = false
+  //   }
+  // }, [trade.transactions])
+
   const onSuccess = useCallback(() => {
     setInput0('')
     setInput1('')

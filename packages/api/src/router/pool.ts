@@ -7,7 +7,9 @@ import { PrismaClient } from '@dozer/database'
 import { LiquidityPool } from '@dozer/nanocontracts'
 
 // Exporting common functions to use in another routers, as is suggested in https://trpc.io/docs/v10/server/server-side-calls
-
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 export const HTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: PrismaClient) => {
   if (uuid == '00') {
     return await prisma.pool.findFirst({
@@ -244,7 +246,7 @@ export const poolRouter = createTRPCRouter({
         address,
         'users'
       )
-      return { hash: response }
+      return response
     }),
   swap_exact_tokens_for_tokens: procedure
     .input(
@@ -269,7 +271,32 @@ export const poolRouter = createTRPCRouter({
         'users'
       )
       console.log(response)
-      return { hash: response }
+      return response
+    }),
+  waitForTx: procedure
+    // .input(z.object({ address: z.string() }))
+    .input(
+      z.object({
+        hash: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      let response, validation, endpoint
+      while (!(validation == 'full')) {
+        await delay(1000)
+        try {
+          endpoint = 'transaction'
+          response = await fetchNodeData(endpoint, [`id=${input.hash}`]).then((res) => {
+            console.log('Waiting tx validation...')
+            console.log(res)
+            validation = res.meta.validation
+          })
+        } catch (e) {
+          console.log(e)
+        }
+      }
+
+      return response
     }),
   byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.pool.findFirst({

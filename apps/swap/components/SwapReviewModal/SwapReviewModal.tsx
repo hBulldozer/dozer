@@ -1,4 +1,4 @@
-import { Button, createErrorToast, createSuccessToast, Dialog, NotificationData } from '@dozer/ui'
+import { Button, createToast, Dialog, Dots, NotificationData } from '@dozer/ui'
 import { useAccount, useTrade } from '@dozer/zustand'
 import { TradeType } from 'components/utils/TradeType'
 import React, { FC, ReactNode, useCallback, useMemo, useState } from 'react'
@@ -17,6 +17,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   const { address } = useAccount()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
+  const [isWritePending, setIsWritePending] = useState<boolean>(false)
   const utils = api.useUtils()
 
   const onCloseCard = useCallback(() => {
@@ -25,11 +26,12 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
 
   const onClick = async () => {
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
+      setIsWritePending(true)
       const fetchFunction =
         tradeType === TradeType.EXACT_INPUT
           ? utils.getPools.swap_exact_tokens_for_tokens
           : utils.getPools.swap_tokens_for_exact_tokens
-      const response = await fetchFunction
+      const swapPromise = fetchFunction
         .fetch({
           ncid: pool.id,
           amount_in: amountSpecified,
@@ -38,31 +40,34 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
           token_out: otherCurrency.uuid,
           address,
         })
-        .then((res) => {
+        .then(async (res) => {
           console.log(res)
-          if (res['hash']) {
-            const notificationData: Omit<NotificationData, 'promise'> = {
-              type: 'swap',
-              summary: {
-                pending: 'Pending swap',
-                completed: 'Completed swap',
-                failed: 'Failed swap',
-                info: 'Info swap',
-              },
-              txHash: res.hash,
-              groupTimestamp: Math.floor(Date.now() / 1000),
-              timestamp: Math.floor(Date.now() / 1000),
-            }
-            createSuccessToast(notificationData)
+          if (res.hash) {
+            await utils.getPools.waitForTx.fetch({ hash: res.hash })
           } else {
-            createErrorToast(`Swap failed.${res.hash.error[0].msg}`, true)
+            throw new Error('Transaction hash not found. TX has errors.')
           }
+          setIsWritePending(false)
           setOpen(false)
         })
         .catch((err) => {
-          createErrorToast(`Swap failed.${err}`, true)
+          setIsWritePending(false)
           setOpen(false)
         })
+      const notificationData: NotificationData = {
+        type: 'swap',
+        summary: {
+          pending: 'Pending summary',
+          completed: 'Completed summary',
+          failed: 'Failed summary',
+          info: 'Info summary',
+        },
+        txHash: `0x`,
+        groupTimestamp: Math.floor(Date.now() / 1000),
+        timestamp: Math.floor(Date.now() / 1000),
+        promise: swapPromise,
+      }
+      createToast(notificationData)
     }
   }
 
@@ -73,12 +78,11 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
         <Button
           size="md"
           testdata-id="swap-review-confirm-button"
-          // disabled={isWritePending}
+          disabled={isWritePending}
           fullWidth
           onClick={() => onClick()}
         >
-          {/* {isWritePending ? <Dots>Confirm Swap</Dots> : 'Swap'} */}
-          Swap
+          {isWritePending ? <Dots>Confirm Swap</Dots> : 'Swap'}
         </Button>
       </SwapReviewModalBase>
 
