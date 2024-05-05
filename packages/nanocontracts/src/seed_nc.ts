@@ -5,9 +5,7 @@ function delay(ms: number) {
 }
 
 async function check_wallet(wallet: string) {
-  let ok = false,
-    response,
-    statusCode
+  let response, statusCode
   while (!(statusCode == 3)) {
     await delay(1000)
     try {
@@ -101,7 +99,7 @@ export async function seed_nc() {
     'master',
     '/wallet/create-token',
     { 'x-wallet-id': process.env.WALLET_ID },
-    { name: 'Dozer', symbol: 'DZR', amount: 100000000 }
+    { name: 'Dozer', symbol: 'DZR', amount: 700_000_00 }
   ).then((data) => {
     if (data.success) {
       DZR_uuid = data.configurationString.split(':')[2]
@@ -120,7 +118,7 @@ export async function seed_nc() {
     'master',
     '/wallet/create-token',
     { 'x-wallet-id': process.env.WALLET_ID },
-    { name: 'USD Tether', symbol: 'USDT', amount: 1000000 }
+    { name: 'USD Tether', symbol: 'USDT', amount: 140_000_00 }
   ).then((data) => {
     if (data.success) {
       USDT_uuid = data.configurationString.split(':')[2]
@@ -145,7 +143,7 @@ export async function seed_nc() {
   console.log('Creating HTR-DZR Pool...')
   if (DZR_uuid && admin_address) {
     const HTR_DZR_pool = new LiquidityPool('00', DZR_uuid, 0)
-    const response = await HTR_DZR_pool.initialize(admin_address, 1000, 700)
+    const response = await HTR_DZR_pool.initialize(admin_address, 1_000_000, 700_000)
     HTR_DZR_pool.ncid = response.hash
     HTR_DZR_ncid = response.hash
     console.log(`HTR-DZR Pool created. ncid: ${HTR_DZR_pool.ncid}`)
@@ -158,7 +156,7 @@ export async function seed_nc() {
   })
   if (USDT_uuid && admin_address) {
     const HTR_USDT_pool = new LiquidityPool('00', USDT_uuid, 0)
-    const response = await HTR_USDT_pool.initialize(admin_address, 100000, 8000)
+    const response = await HTR_USDT_pool.initialize(admin_address, 1_000_000, 70_000)
     HTR_USDT_pool.ncid = response.hash
     HTR_USDT_ncid = response.hash
     console.log(`HTR-USDT Pool created. ncid: ${HTR_USDT_pool.ncid}`)
@@ -190,21 +188,21 @@ export async function seed_nc() {
   console.log('Sending funds to users...')
   if (users_addresses) {
     // for (var i = 0; i < users_addresses.length; i++) {
-    for (var i = 0; i < 5; i++) {
+    for (let i = 0; i < 5; i++) {
       const address = users_addresses[i]
-      console.log(`Sending 50 HTR to ${address}...`)
+      console.log(`Sending 100k HTR to ${address}...`)
       await PostHeadless(
         'master',
         '/wallet/simple-send-tx',
         { 'x-wallet-id': process.env.WALLET_ID },
         {
           address: address,
-          value: 5000,
+          value: 100_000_00,
           token: '00',
         }
       ).then(async (data) => {
         if (data.success) {
-          console.log(`Sent 50 HTR to ${address}.`)
+          console.log(`Sent 100k HTR to ${address}.`)
         } else {
           throw new Error(`Failed to send HTR to ${address}.` + data)
         }
