@@ -1,4 +1,4 @@
-import { Badge, classNames, Dots, IconButton, Link, Loader, TimeAgo, Typography } from '@dozer/ui'
+import { Badge, classNames, Dots, IconButton, Link, Loader, NotificationData, TimeAgo, Typography } from '@dozer/ui'
 import { Disclosure } from '@headlessui/react'
 import {
   ArrowRightIcon,
@@ -14,7 +14,8 @@ import {
   XIcon,
 } from '@heroicons/react/solid'
 import React, { FC } from 'react'
-// import { useWaitForTransaction } from 'wagmi'
+import { useWaitForTransaction } from './useWaitForTransaction'
+import { ChainId } from '@dozer/chain'
 
 // export const STARGATE_TOKEN = new Token({
 //   chainId: ChainId.ETHEREUM,
@@ -29,12 +30,8 @@ export const Notification: FC<{
   showExtra?: boolean
   hideStatus?: boolean
 }> = ({ data, showExtra = false, hideStatus = false }) => {
-  // const notification: NotificationData = JSON.parse(data)
-  // const { status } = useWaitForTransaction({
-  //   chainId: notification.chainId,
-  //   hash: notification.txHash as `0x${string}`,
-  // })
-
+  const notification: NotificationData = JSON.parse(data)
+  const status = useWaitForTransaction(notification.txHash, notification.chainId || ChainId.HATHOR)
   if (!status)
     return (
       <div className="flex items-center gap-5 px-4 pr-8 rounded-2xl min-h-[82px] w-full">
@@ -151,16 +148,15 @@ export const Notification: FC<{
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
             <Typography as="span" variant="sm" weight={500} className="items-center whitespace-normal text-stone-50">
-              notificação
-              {/* {notification.summary.info ? (
-                  notification.summary.info
-                ) : ['loading'].includes(status) ? (
-                  <Dots>{notification.summary.pending}</Dots>
-                ) : status === 'error' ? (
-                  notification.summary.failed
-                ) : (
-                  notification.summary.completed
-                )} */}
+              {notification.summary.info ? (
+                notification.summary.info
+              ) : status == 'pending' ? (
+                <Dots>{notification.summary.pending}</Dots>
+              ) : status === 'error' ? (
+                notification.summary.failed
+              ) : (
+                notification.summary.completed
+              )}
             </Typography>
           </div>
           <Typography variant="xs" className="text-stone-500">

@@ -10,6 +10,7 @@ import { ToastFailed } from './ToastFailed'
 import { ToastInfo } from './ToastInfo'
 import { ToastInline } from './ToastInline'
 import { ToastPending } from './ToastPending'
+import { ChainId } from '@dozer/chain'
 
 export const TOAST_OPTIONS: ToastOptions = {
   position: 'top-right',
@@ -51,8 +52,9 @@ export interface NotificationData {
     failed: ReactNode | Array<ReactNode>
     info?: ReactNode | Array<ReactNode>
   }
+  chainId?: ChainId
   href?: string
-  txHash: `0x${string}`
+  txHash: string
   groupTimestamp: number
   timestamp: number
   promise: Promise<any>

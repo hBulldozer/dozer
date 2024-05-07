@@ -1,5 +1,5 @@
 import { Button, createToast, Dialog, Dots, NotificationData } from '@dozer/ui'
-import { useAccount, useTrade } from '@dozer/zustand'
+import { useAccount, useNetwork, useTrade } from '@dozer/zustand'
 import { TradeType } from 'components/utils/TradeType'
 import React, { FC, ReactNode, useCallback, useMemo, useState } from 'react'
 import { SwapReviewModalBase } from './SwapReviewModalBase'
@@ -15,9 +15,11 @@ interface SwapReviewModalLegacy {
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
   const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency } = useTrade()
   const { address } = useAccount()
+  const { network } = useNetwork()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
   const [isWritePending, setIsWritePending] = useState<boolean>(false)
+  const [txHash, setTxHash] = useState<string>('')
   const utils = api.useUtils()
 
   const onCloseCard = useCallback(() => {
@@ -43,9 +45,9 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
         .then(async (res) => {
           console.log(res)
           if (res.hash) {
-            await utils.getPools.waitForTx.fetch({ hash: res.hash })
+            setTxHash(res.hash)
           } else {
-            throw new Error('Transaction hash not found. TX has errors.')
+            setTxHash('Error')
           }
           setIsWritePending(false)
           setOpen(false)
@@ -62,10 +64,12 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
           failed: 'Failed summary',
           info: 'Info summary',
         },
-        txHash: `0x`,
+        txHash: txHash,
         groupTimestamp: Math.floor(Date.now() / 1000),
         timestamp: Math.floor(Date.now() / 1000),
-        promise: swapPromise,
+        promise: new Promise((resolve) => {
+          setTimeout(resolve, 1000) // Resolve the promise after a random duration between 1 and 30 seconds
+        }),
       }
       createToast(notificationData)
     }

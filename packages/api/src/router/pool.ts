@@ -278,25 +278,30 @@ export const poolRouter = createTRPCRouter({
     .input(
       z.object({
         hash: z.string(),
+        chainId: z.number(),
       })
     )
     .query(async ({ input }) => {
-      let response, validation, endpoint
-      while (!(validation == 'full')) {
+      let response, endpoint
+      let validation = 'pending'
+      if (input.hash == 'Error') {
+        return 'error'
+      }
+      while (!validation) {
         await delay(1000)
         try {
           endpoint = 'transaction'
           response = await fetchNodeData(endpoint, [`id=${input.hash}`]).then((res) => {
             console.log('Waiting tx validation...')
             console.log(res)
-            validation = res.meta.validation
+            validation = res.success ? (res.meta.first_block ? 'success' : 'pending') : 'failed'
           })
         } catch (e) {
           console.log(e)
         }
       }
 
-      return response
+      return validation
     }),
   byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.pool.findFirst({

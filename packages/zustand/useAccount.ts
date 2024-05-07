@@ -12,6 +12,9 @@ export interface AccountState {
   setAddress: (address: string) => void
   balance: TokenBalance[]
   setBalance: (balance: TokenBalance[]) => void
+  notifications: Record<number, string[]>
+  setNotifications: (notifications: Record<number, string[]>) => void
+  clearNotifications: () => void
 }
 
 export const useAccount = create<AccountState>()(
@@ -32,6 +35,9 @@ export const useAccount = create<AccountState>()(
         },
       ],
       setBalance: (balance) => set((state) => ({ balance: balance })),
+      notifications: [],
+      setNotifications: (notifications) => set((state) => ({ notifications: notifications })),
+      clearNotifications: () => set((state) => ({ notifications: [] })),
     }),
     {
       name: 'account-storage',
