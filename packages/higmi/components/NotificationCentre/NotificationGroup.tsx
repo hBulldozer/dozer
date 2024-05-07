@@ -2,6 +2,7 @@ import { Disclosure } from '@headlessui/react'
 import { FC } from 'react'
 
 import { Notification } from './Notification'
+import { Typography } from '@dozer/ui'
 
 interface NotificationGroupProps {
   notifications: string[]

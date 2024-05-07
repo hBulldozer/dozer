@@ -57,6 +57,7 @@ export interface NotificationData {
   txHash: string
   groupTimestamp: number
   timestamp: number
+  validated: boolean
   promise: Promise<any>
 }
 
@@ -75,7 +76,7 @@ export const createToast = (props: NotificationData) => {
   // Spawn new toasts based on promise result
   props.promise
     .then(() => {
-      setTimeout(onDismiss, 3000)
+      setTimeout(onDismiss, 1000)
 
       // Spawn success notification
       const toastId = `completed:${props.txHash}`

@@ -1,4 +1,4 @@
-import { Button, createToast, Dialog, Dots, NotificationData } from '@dozer/ui'
+import { Button, createErrorToast, createSuccessToast, createToast, Dialog, Dots, NotificationData } from '@dozer/ui'
 import { useAccount, useNetwork, useTrade } from '@dozer/zustand'
 import { TradeType } from 'components/utils/TradeType'
 import React, { FC, ReactNode, useCallback, useMemo, useState } from 'react'
@@ -14,7 +14,7 @@ interface SwapReviewModalLegacy {
 
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
   const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency } = useTrade()
-  const { address } = useAccount()
+  const { address, addNotification, editBalanceOnSwap } = useAccount()
   const { network } = useNetwork()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
@@ -46,32 +46,36 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
           console.log(res)
           if (res.hash) {
             setTxHash(res.hash)
-          } else {
-            setTxHash('Error')
+            const notificationData: NotificationData = {
+              type: 'swap',
+              summary: {
+                pending: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}. Waiting for next block...`,
+                completed: `Success! Traded ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
+                failed: 'Failed summary',
+                info: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
+              },
+              txHash: txHash,
+              groupTimestamp: Math.floor(Date.now() / 1000),
+              timestamp: Math.floor(Date.now() / 1000),
+              validated: false,
+              promise: new Promise((resolve) => {
+                setTimeout(resolve, 500)
+              }),
+            }
+            editBalanceOnSwap(amountSpecified, mainCurrency.uuid, outputAmount, otherCurrency.uuid)
+            const notificationGroup: string[] = []
+            notificationGroup.push(JSON.stringify(notificationData))
+            addNotification(notificationGroup)
+            createSuccessToast(notificationData)
+            setIsWritePending(false)
+            setOpen(false)
           }
-          setIsWritePending(false)
-          setOpen(false)
         })
         .catch((err) => {
+          createErrorToast('Error sending TX', true)
           setIsWritePending(false)
           setOpen(false)
         })
-      const notificationData: NotificationData = {
-        type: 'swap',
-        summary: {
-          pending: 'Pending summary',
-          completed: 'Completed summary',
-          failed: 'Failed summary',
-          info: 'Info summary',
-        },
-        txHash: txHash,
-        groupTimestamp: Math.floor(Date.now() / 1000),
-        timestamp: Math.floor(Date.now() / 1000),
-        promise: new Promise((resolve) => {
-          setTimeout(resolve, 1000) // Resolve the promise after a random duration between 1 and 30 seconds
-        }),
-      }
-      createToast(notificationData)
     }
   }
 

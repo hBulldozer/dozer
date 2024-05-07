@@ -3,6 +3,7 @@ import { Disclosure } from '@headlessui/react'
 import {
   ArrowRightIcon,
   CashIcon,
+  CheckCircleIcon,
   CheckIcon,
   ChevronDownIcon,
   DownloadIcon,
@@ -13,8 +14,8 @@ import {
   UploadIcon,
   XIcon,
 } from '@heroicons/react/solid'
-import React, { FC } from 'react'
-import { useWaitForTransaction } from './useWaitForTransaction'
+import React, { FC, useState } from 'react'
+import useWaitForTransaction from './useWaitForTransaction'
 import { ChainId } from '@dozer/chain'
 
 // export const STARGATE_TOKEN = new Token({
@@ -32,6 +33,9 @@ export const Notification: FC<{
 }> = ({ data, showExtra = false, hideStatus = false }) => {
   const notification: NotificationData = JSON.parse(data)
   const status = useWaitForTransaction(notification.txHash, notification.chainId || ChainId.HATHOR)
+
+  console.log(notification)
+  console.log(status)
   if (!status)
     return (
       <div className="flex items-center gap-5 px-4 pr-8 rounded-2xl min-h-[82px] w-full">
@@ -78,9 +82,9 @@ export const Notification: FC<{
         <Badge badgeContent={<DownloadIcon />}>
           <div className="p-2 bg-stone-600 rounded-full h-[36px] w-[36px] flex justify-center items-center">
             {!hideStatus &&
-              (status === 'loading' ? (
+              (status === 'pending' ? (
                 <Loader size={18} />
-              ) : status === 'error' ? (
+              ) : status === 'failed' ? (
                 <XIcon width={20} height={20} className="text-red-400" />
               ) : (
                 <></>
@@ -142,17 +146,15 @@ export const Notification: FC<{
               {(status === 'success' || notification.summary.info) && notification.type === 'claimRewards' && (
                 <CashIcon width={20} height={20} />
               )} */}
-            {status === 'success' && <CashIcon width={20} height={20} />}
+            {status === 'success' && <CheckCircleIcon width={20} height={20} className="text-green" />}
           </div>
         </Badge>
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
             <Typography as="span" variant="sm" weight={500} className="items-center whitespace-normal text-stone-50">
-              {notification.summary.info ? (
-                notification.summary.info
-              ) : status == 'pending' ? (
+              {notification.summary.info && status == 'pending' ? (
                 <Dots>{notification.summary.pending}</Dots>
-              ) : status === 'error' ? (
+              ) : status === 'failed' ? (
                 notification.summary.failed
               ) : (
                 notification.summary.completed

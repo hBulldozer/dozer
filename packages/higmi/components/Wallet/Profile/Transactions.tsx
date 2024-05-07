@@ -33,8 +33,9 @@ export const Transactions: FC<TransactionsProps> = ({ setView, notifications, cl
         {Object.entries(notifications).length > 0 ? (
           Object.entries(notifications)
             .reverse()
-            .map(([, notifications], index) => {
-              return <NotificationGroup key={index} notifications={notifications} />
+            .map(([, _notifications], index) => {
+              return <NotificationGroup key={index} notifications={_notifications} />
+              // return <Typography>{_notifications}</Typography>
             })
         ) : (
           <Typography variant="sm" className="py-5 text-center text-stone-500">
