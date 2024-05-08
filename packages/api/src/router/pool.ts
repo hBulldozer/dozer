@@ -282,7 +282,8 @@ export const poolRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      let response, endpoint, message
+      let response, endpoint
+      let message = ''
       let validation = 'pending'
       if (input.hash == 'Error') {
         return { status: 'failed', message: 'txHash not defined' }
@@ -293,8 +294,13 @@ export const poolRouter = createTRPCRouter({
           endpoint = 'transaction'
           response = await fetchNodeData(endpoint, [`id=${input.hash}`]).then((res) => {
             console.log('Waiting tx validation...')
-            validation = res.success ? (res.meta.first_block ? 'success' : 'pending') : 'failed'
+            validation = res.success
+              ? res.meta.first_block && !res.meta.voided_by.length
+                ? 'success'
+                : 'pending'
+              : 'failed'
             console.log(res)
+            console.log(validation)
             message = res.message
           })
         } catch (e) {

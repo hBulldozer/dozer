@@ -19,7 +19,6 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
   const [isWritePending, setIsWritePending] = useState<boolean>(false)
-  const [txHash, setTxHash] = useState<string>('')
   const utils = api.useUtils()
 
   const onCloseCard = useCallback(() => {
@@ -45,16 +44,15 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
         .then(async (res) => {
           console.log(res)
           if (res.hash) {
-            setTxHash(res.hash)
             const notificationData: NotificationData = {
               type: 'swap',
               summary: {
-                pending: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}. Waiting for next block...`,
+                pending: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}. Waiting for next block`,
                 completed: `Success! Traded ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
                 failed: 'Failed summary',
                 info: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
               },
-              txHash: txHash,
+              txHash: res.hash,
               groupTimestamp: Math.floor(Date.now() / 1000),
               timestamp: Math.floor(Date.now() / 1000),
               validated: false,
@@ -67,6 +65,10 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             notificationGroup.push(JSON.stringify(notificationData))
             addNotification(notificationGroup)
             createSuccessToast(notificationData)
+            setIsWritePending(false)
+            setOpen(false)
+          } else {
+            createErrorToast(`${res.error}`, true)
             setIsWritePending(false)
             setOpen(false)
           }

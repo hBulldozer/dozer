@@ -32,10 +32,10 @@ export const Notification: FC<{
   hideStatus?: boolean
 }> = ({ data, showExtra = false, hideStatus = false }) => {
   const notification: NotificationData = JSON.parse(data)
-  const status = useWaitForTransaction(notification.txHash, notification.chainId || ChainId.HATHOR)
+  const { status, message } = useWaitForTransaction(notification)
 
   console.log(notification)
-  console.log(status)
+  console.log(status, message)
   if (!status)
     return (
       <div className="flex items-center gap-5 px-4 pr-8 rounded-2xl min-h-[82px] w-full">
@@ -155,14 +155,14 @@ export const Notification: FC<{
               {notification.summary.info && status == 'pending' ? (
                 <Dots>{notification.summary.pending}</Dots>
               ) : status === 'failed' ? (
-                notification.summary.failed
+                message
               ) : (
                 notification.summary.completed
               )}
             </Typography>
           </div>
           <Typography variant="xs" className="text-stone-500">
-            <TimeAgo date={new Date()} />
+            <TimeAgo date={new Date(notification.groupTimestamp * 1000)} />
           </Typography>
         </div>
       </div>

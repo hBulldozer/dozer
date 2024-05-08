@@ -51,18 +51,16 @@ export const useAccount = create<AccountState>()(
       clearNotifications: () => set((state) => ({ notifications: [] })),
       setNotificationValidated: (txHash: string) =>
         set((state) => ({
-          notifications: [
-            state.notifications[0].map((notification) => {
-              const json = JSON.parse(notification)
-              console.log(json)
-              if (json.txHash == txHash) {
-                const new_json = { ...json, validated: true }
-                return JSON.stringify(new_json)
-              } else {
-                return notification
-              }
-            }),
-          ],
+          notifications: Object.keys(state.notifications).map((val: string, idx: number, array) => {
+            const notification = JSON.parse(array[0])
+            if (notification == txHash) {
+              const arr: string[] = []
+              const new_json = { ...notification, validated: true }
+              const new_str = JSON.stringify(new_json)
+              arr.push(new_str)
+              return arr
+            } else return array
+          }),
         })),
       addNotification: (notification: string[]) =>
         set((state) => ({
