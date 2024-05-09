@@ -9,6 +9,7 @@ export default function useWaitForTransaction(notification: NotificationData) {
   const [message, setMessage] = useState<string | undefined>()
   const utils = api.useUtils()
   const { txHash, chainId } = notification
+  const { setNotifications, notifications } = useAccount()
 
   const fetchTx = async () => {
     // The commented parts here have the goal to avoid the already validated notification to send fetch
@@ -19,13 +20,22 @@ export default function useWaitForTransaction(notification: NotificationData) {
         hash: txHash,
         chainId: chainId || ChainId.HATHOR,
       })
-      if (data.status == 'failed') setMessage(data.message)
       setStatus(data.status || 'pending')
-      // if (data.status == 'success' || data.status == 'failed') {
-      //   const { setNotificationValidated } = useAccount()
-      //   setNotificationValidated(txHash)
-      // }
+      if (data.status == 'failed') setMessage(data.message)
+      //   if (data.status == 'success' || data.status == 'failed') {
+      //     const new_notification = { ...notification, validated: true }
+      //     const new_notifications: Record<number, string[]> = [
+      //       Object.keys(notifications).filter((v, i, n) => {
+      //         if (JSON.parse(n[0]).txHash == txHash) return [JSON.stringify(new_notification)]
+      //         else return n
+      //       }),
+      //     ]
+
+      //     setNotifications(new_notifications)
+      //   }
     } catch (e) {
+      console.log(e)
+
       setStatus('failed')
     }
   }

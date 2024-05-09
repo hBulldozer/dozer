@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 
 const { USDT_UUID } = process.env
-interface TokenBalance {
+export interface TokenBalance {
   token_uuid: string
   token_symbol: string
   token_balance: number
@@ -12,7 +12,6 @@ export interface AccountState {
   setAddress: (address: string) => void
   balance: TokenBalance[]
   setBalance: (balance: TokenBalance[]) => void
-  editBalanceOnSwap: (amount_in: number, token_in: string, amount_out: number, token_out: string) => void
   notifications: Record<number, string[]>
   setNotifications: (notifications: Record<number, string[]>) => void
   clearNotifications: () => void
@@ -38,14 +37,7 @@ export const useAccount = create<AccountState>()(
         },
       ],
       setBalance: (balance) => set((state) => ({ balance: balance })),
-      editBalanceOnSwap: (amount_in: number, token_in: string, amount_out: number, token_out: string) =>
-        set((state) => ({
-          balance: state.balance.map((token: TokenBalance) => {
-            if (token.token_uuid == token_in) return { ...token, token_balance: token.token_balance - amount_in }
-            else if (token.token_uuid == token_out) return { ...token, token_balance: token.token_balance + amount_out }
-            else return token
-          }),
-        })),
+
       notifications: [],
       setNotifications: (notifications) => set((state) => ({ notifications: notifications })),
       clearNotifications: () => set((state) => ({ notifications: [] })),

@@ -5,6 +5,7 @@ import React, { FC, ReactNode, useCallback, useMemo, useState } from 'react'
 import { SwapReviewModalBase } from './SwapReviewModalBase'
 import { XIcon } from '@heroicons/react/solid'
 import { api } from 'utils/api'
+import { TokenBalance } from '@dozer/zustand'
 
 interface SwapReviewModalLegacy {
   chainId: number | undefined
@@ -14,7 +15,7 @@ interface SwapReviewModalLegacy {
 
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
   const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency } = useTrade()
-  const { address, addNotification, editBalanceOnSwap } = useAccount()
+  const { address, addNotification, setBalance, balance } = useAccount()
   const { network } = useNetwork()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
@@ -24,6 +25,31 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   const onCloseCard = useCallback(() => {
     onSuccess()
   }, [onSuccess])
+
+  const editBalanceOnSwap = (amount_in: number, token_in: string, amount_out: number, token_out: string) => {
+    const balance_tokens = balance.map((t) => {
+      return t.token_uuid
+    })
+    if (balance_tokens.includes(token_out))
+      setBalance(
+        balance.map((token: TokenBalance) => {
+          if (token.token_uuid == token_in) return { ...token, token_balance: token.token_balance - amount_in * 100 }
+          else if (token.token_uuid == token_out)
+            return { ...token, token_balance: token.token_balance + amount_out * 100 }
+          else return token
+        })
+      )
+    else {
+      const token_out_balance: TokenBalance = {
+        token_balance: amount_out,
+        token_symbol: otherCurrency?.symbol || 'DZR',
+        token_uuid: token_out,
+      }
+      const new_balance: TokenBalance[] = []
+      new_balance.push(token_out_balance)
+      setBalance(new_balance)
+    }
+  }
 
   const onClick = async () => {
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {

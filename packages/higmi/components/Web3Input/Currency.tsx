@@ -123,7 +123,14 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
           </button>
         </div>
         <div className="flex flex-row justify-between h-[24px]">
-          <PricePanel prices={prices} value={value} currency={currency} usdPctChange={usdPctChange} chainId={chainId} />
+          <PricePanel
+            prices={prices}
+            value={value}
+            currency={currency}
+            usdPctChange={usdPctChange}
+            chainId={chainId}
+            loading={loading}
+          />
           <div className="h-6">
             <BalancePanel
               id={id}
@@ -219,13 +226,13 @@ const BalancePanel: FC<BalancePanel> = ({
       className="py-1 text-xs text-stone-400 hover:text-stone-300"
       disabled={disableMaxButton}
     >
-      {isMounted && balance ? `Balance: ${tokenBalance}` : 'Balance: 0'}
+      {isMounted && balance ? `Balance: ${tokenBalance.toFixed(2)}` : 'Balance: 0'}
     </button>
   )
 }
 
-type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange' | 'prices'>
-const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange }) => {
+type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange' | 'prices' | 'loading'>
+const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, loading }) => {
   const isMounted = useIsMounted()
   const [price, setPrice] = useState<number | undefined>(0)
   const [usd, setUsd] = useState<number | undefined>(0)
@@ -237,7 +244,7 @@ const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange }) =
     setUsd(usdPctChange)
   }, [calculatedPrice, usdPctChange])
 
-  if (!prices && isMounted)
+  if ((!prices && isMounted) || loading)
     return (
       <div className="h-[24px] w-[60px] flex items-center">
         <Skeleton.Box className="bg-white/[0.06] h-[12px] w-full" />
