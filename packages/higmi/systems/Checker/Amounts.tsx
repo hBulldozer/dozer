@@ -24,7 +24,7 @@ export const Amounts: FC<AmountsProps> = ({ amount, token, children, className, 
   )
 
   const sufficientBalance = useMemo(() => {
-    return token && amount && token_balance && token_balance / 100 > amount
+    return token && amount && token_balance && token_balance / 100 >= amount
   }, [amount, token, token_balance])
 
   return useMemo(() => {

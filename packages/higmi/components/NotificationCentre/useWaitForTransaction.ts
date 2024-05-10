@@ -22,17 +22,21 @@ export default function useWaitForTransaction(notification: NotificationData) {
       })
       setStatus(data.status || 'pending')
       if (data.status == 'failed') setMessage(data.message)
-      //   if (data.status == 'success' || data.status == 'failed') {
-      //     const new_notification = { ...notification, validated: true }
-      //     const new_notifications: Record<number, string[]> = [
-      //       Object.keys(notifications).filter((v, i, n) => {
-      //         if (JSON.parse(n[0]).txHash == txHash) return [JSON.stringify(new_notification)]
-      //         else return n
-      //       }),
-      //     ]
+      if (data.status == 'success' || data.status == 'failed') {
+        const new_notification: NotificationData = { ...notification, validated: true }
+        const new_notifications: Record<number, string[]> = Object.keys(notifications).map((v, i, n) => {
+          if (JSON.parse(n[0]).txHash == txHash) {
+            console.log('n', n)
+            console.log('n[0]', n[0])
+            console.log('n[0]', JSON.parse(n[0]))
+            const group: string[] = []
+            group.push(JSON.stringify(new_notification))
+            return group
+          } else return n
+        })
 
-      //     setNotifications(new_notifications)
-      //   }
+        setNotifications(new_notifications)
+      }
     } catch (e) {
       console.log(e)
 

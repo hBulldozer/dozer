@@ -41,11 +41,14 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
       )
     else {
       const token_out_balance: TokenBalance = {
-        token_balance: amount_out,
+        token_balance: amount_out * 100,
         token_symbol: otherCurrency?.symbol || 'DZR',
         token_uuid: token_out,
       }
-      const new_balance: TokenBalance[] = []
+      const new_balance: TokenBalance[] = balance.map((token: TokenBalance) => {
+        if (token.token_uuid == token_in) return { ...token, token_balance: token.token_balance - amount_in * 100 }
+        else return token
+      })
       new_balance.push(token_out_balance)
       setBalance(new_balance)
     }
