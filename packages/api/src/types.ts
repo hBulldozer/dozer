@@ -13,6 +13,8 @@ export const FrontEndApiNCObject = z.object({
   volume: z.number(),
   fee0: z.number(),
   fee1: z.number(),
+  slippage0: z.number(),
+  slippage1: z.number(),
   dzr_rewards: z.number(),
   transactions: z.number(),
 })

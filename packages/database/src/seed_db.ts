@@ -227,7 +227,7 @@ export async function main(nano_info: NanoInfoType | undefined) {
       {
         name: 'USDT-HTR',
         apr: 0.15,
-        chainId: 2,
+        chainId: 1,
         version: '0.1',
         token0Id: '0',
         token1Id: '2',
