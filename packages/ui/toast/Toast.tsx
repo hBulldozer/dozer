@@ -57,7 +57,8 @@ export interface NotificationData {
   txHash: string
   groupTimestamp: number
   timestamp: number
-  validated: boolean
+  last_status?: string
+  last_message?: string
   promise: Promise<any>
 }
 

@@ -84,7 +84,6 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
               txHash: res.hash,
               groupTimestamp: Math.floor(Date.now() / 1000),
               timestamp: Math.floor(Date.now() / 1000),
-              validated: false,
               promise: new Promise((resolve) => {
                 setTimeout(resolve, 500)
               }),

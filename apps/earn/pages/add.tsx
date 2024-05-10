@@ -159,34 +159,34 @@ const Add: FC = () => {
         return result
       })
     )
-    selectedPool &&
-      setPool({
-        token1: token1,
-        token2: token0,
-        token1_balance:
-          tokens.find((token: TokenOutput) => {
-            return token.id == selectedPool.token0Id
-          }) == token1?.uuid
-            ? Number(selectedPool.reserve1)
-            : Number(selectedPool.reserve0),
-        token2_balance:
-          tokens.find((token: TokenOutput) => {
-            return token.id == selectedPool.token1Id
-          }) == token0?.uuid
-            ? Number(selectedPool.reserve0)
-            : Number(selectedPool.reserve1),
-      })
+    // selectedPool &&
+    //   setPool({
+    //     token1: token1,
+    //     token2: token0,
+    //     token1_balance:
+    //       tokens.find((token: TokenOutput) => {
+    //         return token.id == selectedPool.token0Id
+    //       }) == token1?.uuid
+    //         ? Number(selectedPool.reserve1)
+    //         : Number(selectedPool.reserve0),
+    //     token2_balance:
+    //       tokens.find((token: TokenOutput) => {
+    //         return token.id == selectedPool.token1Id
+    //       }) == token0?.uuid
+    //         ? Number(selectedPool.reserve0)
+    //         : Number(selectedPool.reserve1),
+    //   })
     if (!selectedPool) {
       setPoolState(PairState.NOT_EXISTS)
     } else {
       setPoolState(PairState.EXISTS)
       setMainCurrency(token0 ? token0 : undefined)
       setOtherCurrency(token1 ? token1 : undefined)
-      setPriceImpact()
+      // setPriceImpact()
       setAmountSpecified(Number(input0))
       setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
       setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
-      setOutputAmount()
+      // setOutputAmount()
     }
     const list0: TokenOutputArray = tokens.filter((token) => {
       return token.uuid !== token1?.uuid

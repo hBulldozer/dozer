@@ -9,25 +9,27 @@ export default function useWaitForTransaction(notification: NotificationData) {
   const [message, setMessage] = useState<string | undefined>()
   const utils = api.useUtils()
   const { txHash, chainId } = notification
-  const { validateNotification } = useAccount()
+  const { updateNotificationLastState } = useAccount()
 
   const fetchTx = async () => {
-    if (!notification.validated)
+    if (!notification.last_status || notification.last_status == 'pending') {
       try {
         const data = await utils.getPools.waitForTx.fetch({
           hash: txHash,
           chainId: chainId || ChainId.HATHOR,
         })
         setStatus(data.status || 'pending')
+        updateNotificationLastState(txHash, data.status, data.message)
         if (data.status == 'failed') setMessage(data.message)
-        if (data.status == 'success' || data.status == 'failed') {
-          validateNotification(txHash)
-        }
       } catch (e) {
         console.log(e)
-
+        setMessage(e as string)
         setStatus('failed')
       }
+    } else {
+      setStatus(notification.last_status || 'pending')
+      setMessage(notification.last_message)
+    }
   }
   useEffect(() => {
     fetchTx()
