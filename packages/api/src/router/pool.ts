@@ -97,15 +97,15 @@ export const getPoolSnaps24h = async (tokenUuid: string, prisma: PrismaClient) =
 export const poolRouter = createTRPCRouter({
   //New procedures enhanced SQL
   allNcids: procedure.query(({ ctx }) => {
-    return ctx.prisma.pool.findMany({
+    const pools = ctx.prisma.pool.findMany({
       select: {
         id: true,
       },
     })
+    return pools
   }),
   contractState: procedure
     .input(z.object({ id: z.string() }))
-    .output(FrontEndApiNCObject)
     .output(FrontEndApiNCObject)
     .query(async ({ ctx, input }) => {
       const endpoint = 'nano_contract/state'
