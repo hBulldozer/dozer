@@ -15,7 +15,7 @@ export interface AccountState {
   notifications: Record<number, string[]>
   setNotifications: (notifications: Record<number, string[]>) => void
   clearNotifications: () => void
-  setNotificationValidated: (txHash: string) => void
+  validateNotification: (txHash: string) => void
   addNotification: (notification: string[]) => void
 }
 
@@ -41,19 +41,25 @@ export const useAccount = create<AccountState>()(
       notifications: [],
       setNotifications: (notifications) => set((state) => ({ notifications: notifications })),
       clearNotifications: () => set((state) => ({ notifications: [] })),
-      setNotificationValidated: (txHash: string) =>
-        set((state) => ({
-          notifications: Object.keys(state.notifications).map((val: string, idx: number, array) => {
-            const notification = JSON.parse(array[0])
-            if (notification == txHash) {
-              const arr: string[] = []
-              const new_json = { ...notification, validated: true }
-              const new_str = JSON.stringify(new_json)
-              arr.push(new_str)
-              return arr
-            } else return array
-          }),
-        })),
+      validateNotification: (txHash: string) =>
+        set((state) => {
+          const updatedNotifications = { ...state.notifications }
+
+          for (const notificationId in updatedNotifications) {
+            const notificationString = updatedNotifications[notificationId]
+            const notification: any = JSON.parse(notificationString[0])
+
+            if (notification.txHash === txHash) {
+              updatedNotifications[notificationId][0] = JSON.stringify({
+                ...notification,
+                validated: true,
+              })
+              break // Only mark the first matching notification as validated
+            }
+          }
+
+          return { notifications: updatedNotifications }
+        }),
       addNotification: (notification: string[]) =>
         set((state) => ({
           notifications: {

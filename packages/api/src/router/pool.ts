@@ -302,8 +302,11 @@ export const poolRouter = createTRPCRouter({
                 : 'pending'
               : 'failed'
             // console.log(res.success, res.meta.first_block, !res.meta.voided_by.length ? true : false)
-            // console.log(validation)
-            message = res.message || 'Error on validating TX.'
+            // console.log(res)
+            message =
+              res.message || res.meta.voided_by.length
+                ? `Error on TX Validation, voided by: ${res.meta.voided_by}`
+                : 'Error on TX Validation'
           })
         } catch (e) {
           console.log(e)

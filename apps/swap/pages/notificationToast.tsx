@@ -41,6 +41,7 @@ const genDummy = (omit?: boolean): NotificationData => {
     txHash: `0x${Math.random().toString(16).slice(2)}`,
     groupTimestamp: Math.floor(Date.now() / 1000),
     timestamp: Math.floor(Date.now() / 1000),
+    validated: false,
     promise: new Promise((resolve) => {
       setTimeout(resolve, Math.floor(Math.random() * 30000) + 1000) // Resolve the promise after a random duration between 1 and 30 seconds
     }),
@@ -60,6 +61,7 @@ const generateRandomDummyData = (): Omit<NotificationData, 'promise'> => {
     },
     txHash: `0x${Math.random().toString(16).slice(2)}`,
     groupTimestamp: Math.floor(Date.now() / 1000),
+    validated: false,
     timestamp: Math.floor(Date.now() / 1000),
   }
 
