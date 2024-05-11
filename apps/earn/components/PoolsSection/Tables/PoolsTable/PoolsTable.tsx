@@ -119,7 +119,7 @@ const COLUMNS = [NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN
 //   },
 // ]
 
-type PoolsOutput = RouterOutputs['getPools']['all']
+type PoolsOutput = RouterOutputs['getPools']['allPoolsFromBlockchain']
 
 export const PoolsTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
@@ -141,15 +141,16 @@ export const PoolsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: pools, isLoading } = api.getPools.all.useQuery()
-  const _pairs_array: Pair[] = pools
-    ? pools.map((pool) => {
-        return pairFromPool(pool)
-      })
-    : []
-  const pairs_array = _pairs_array?.filter((pair: Pair) => {
-    return pair.chainId == rendNetwork
-  })
+  // const { data: pools, isLoading } = api.getPools.all.useQuery()
+  const { data: pools, isLoading } = api.getPools.allPoolsFromBlockchain.useQuery()
+  // const _pairs_array: Pair[] = pools
+  //   ? pools.map((pool) => {
+  //       return pairFromPool(pool)
+  //     })
+  //   : []
+  // const pairs_array = irs_array?.filter((pair: Pair) => {
+  //   return pair.chainId == rendNetwork
+  // })
 
   const args = useMemo(
     () => ({
@@ -168,7 +169,7 @@ export const PoolsTable: FC = () => {
   // console.log({ pools })
 
   const table = useReactTable<Pair>({
-    data: pairs_array || [],
+    data: pools || [],
     columns: COLUMNS,
     state: {
       sorting,

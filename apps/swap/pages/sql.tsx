@@ -4,6 +4,7 @@ import { api } from 'utils/api'
 const sql = () => {
   const { data: test } = api.getPools.sql.useQuery()
   const { data: test2 } = api.getPools.allNcids.useQuery()
+  const { data: test7 } = api.getPools.allPoolsFromBlockchain.useQuery()
   const { data: test3 } = api.getPools.byIdFromContract.useQuery({
     id: '00000172c538f13a610cbb6d384d0548fdb76bcc39f1184a31e7102be09f2e5d',
   })
@@ -21,7 +22,7 @@ const sql = () => {
   return (
     <>
       <Typography variant="h1">SQL query:</Typography>
-      <pre className="text-lg">{JSON.stringify(test3, null, 2)}</pre>
+      <pre className="text-lg">{JSON.stringify(test7, null, 2)}</pre>
       {/* <pre className="text-lg">{JSON.stringify(test4, ['date', 'reserve0', 'priceHTR'], 2)}</pre> */}
     </>
   )

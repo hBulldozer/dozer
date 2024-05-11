@@ -5,7 +5,7 @@ import { fetchNodeData } from '../helpers/fetchFunction'
 import { FrontEndApiNCObject } from '../types'
 import { PrismaClient } from '@dozer/database'
 import { LiquidityPool } from '@dozer/nanocontracts'
-
+import { toToken } from '../functions'
 // Exporting common functions to use in another routers, as is suggested in https://trpc.io/docs/v10/server/server-side-calls
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -94,7 +94,61 @@ export const getPoolSnaps24h = async (tokenUuid: string, prisma: PrismaClient) =
   })
 }
 
+// 1. Modular Function to Fetch and Process Pool Data
+async function fetchAndProcessPoolData(prisma: PrismaClient, poolId: string) {
+  const endpoint = 'nano_contract/state'
+  const queryParams = [`id=${poolId}`, `calls[]=front_end_api_pool()`]
+
+  const rawPoolData = await fetchNodeData(endpoint, queryParams)
+  const poolData = rawPoolData.calls['front_end_api_pool()'].value
+
+  // Assuming you have functions for the calculations, e.g.,
+  // calculateLiquidityUSD, calculateVolumeUSD, etc.
+  const tokens = await prisma.pool.findUnique({
+    where: { id: poolId },
+    select: { token0: true, token1: true, tokenLP: true },
+  })
+  if (!tokens) {
+    throw new Error(`Pool with id ${poolId} not found`)
+  }
+
+  const { token0, token1, tokenLP } = tokens
+
+  return {
+    id: poolId,
+    name: `${token0.symbol}-${token1.symbol}`,
+    liquidityUSD: 5555, //calculateLiquidityUSD(poolData, token0, token1), // Placeholder
+    volumeUSD: 5555, //calculateVolumeUSD(poolData, token0, token1), // Placeholder
+    feeUSD: 5555, // or a calculation using poolData.fee0/fee1
+    swapFee: poolData.fee, // Adjust if needed
+    apr: 5555, //calculateAPR(poolData), // Placeholder
+    token0: toToken(token0),
+    token1: toToken(token1),
+    tokenLP: toToken(tokenLP),
+    reserve0: poolData.reserve0,
+    reserve1: poolData.reserve1,
+    chainId: token0.chainId, // Or another way to get chainId
+    liquidity: 5555, //poolData.reserve0 + poolData.reserve1, // Or a more complex calculation
+    volume1d: 5555, // poolData.volume, // Or calculate based on timestamps
+    fees1d: 5555, //poolData.fee, // Or calculate based on timestamps
+    daySnapshots: [],
+    hourSnapshots: [],
+  }
+}
+
 export const poolRouter = createTRPCRouter({
+  allPoolsFromBlockchain: procedure.query(async ({ ctx }) => {
+    // Fetch all pool IDs from the database
+    const poolIds = await ctx.prisma.pool.findMany({
+      select: { id: true },
+    })
+
+    // Process each pool concurrently (for efficiency)
+    const poolDataPromises = poolIds.map((pool) => fetchAndProcessPoolData(ctx.prisma, pool.id))
+    const allPoolData = await Promise.all(poolDataPromises)
+
+    return allPoolData
+  }),
   //New procedures enhanced SQL
   allNcids: procedure.query(({ ctx }) => {
     const pools = ctx.prisma.pool.findMany({
@@ -107,7 +161,7 @@ export const poolRouter = createTRPCRouter({
   contractState: procedure
     .input(z.object({ id: z.string() }))
     .output(FrontEndApiNCObject)
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
       const queryParams = [`id=${input.id}`, `calls[]=front_end_api_pool()`]
       const response = await fetchNodeData(endpoint, queryParams)
@@ -129,7 +183,7 @@ export const poolRouter = createTRPCRouter({
   byIdFromContract: procedure
     .input(z.object({ id: z.string() }))
     .output(FrontEndApiNCObject)
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
       const queryParams = [`id=${input.id}`, `calls[]=front_end_api_pool()`]
       const response = await fetchNodeData(endpoint, queryParams)
