@@ -1,12 +1,18 @@
 import { Disclosure, Transition } from '@headlessui/react'
 import { ChevronRightIcon, InformationCircleIcon } from '@heroicons/react/outline'
 import { classNames, DEFAULT_INPUT_UNSTYLED, Input, Tab, Tooltip, Typography } from '@dozer/ui'
-import { FC } from 'react'
+import { FC, useState } from 'react'
 
 import { useSettings } from '@dozer/zustand'
 
 export const SlippageToleranceDisclosure: FC = () => {
   const { slippageTolerance, setSlippageTolerance } = useSettings()
+  const [slippage, setSlippage] = useState<string>(slippageTolerance.toFixed(2))
+
+  const onChange = (value: string) => {
+    setSlippage(value)
+    setSlippageTolerance(parseFloat(value || '0'))
+  }
 
   return (
     <Disclosure>
@@ -87,8 +93,8 @@ export const SlippageToleranceDisclosure: FC = () => {
                 <div className="flex items-center gap-2">
                   <Input.Numeric
                     variant="unstyled"
-                    value={slippageTolerance ?? ''}
-                    onUserInput={(val) => setSlippageTolerance(+val)}
+                    value={slippage || '0'}
+                    onUserInput={(val) => onChange(val)}
                     placeholder="1"
                     className={classNames(DEFAULT_INPUT_UNSTYLED, '')}
                   />
