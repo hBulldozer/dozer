@@ -4,14 +4,16 @@ import React, { Dispatch, FC, SetStateAction } from 'react'
 
 import { NotificationGroup } from '../../NotificationCentre'
 import { ProfileView } from './Profile'
+import { client } from '@dozer/api'
 
 interface TransactionsProps {
   setView: Dispatch<SetStateAction<ProfileView>>
   notifications: Record<number, string[]>
   clearNotifications(): void
+  client: typeof client
 }
 
-export const Transactions: FC<TransactionsProps> = ({ setView, notifications, clearNotifications }) => {
+export const Transactions: FC<TransactionsProps> = ({ setView, notifications, clearNotifications, client }) => {
   return (
     <div className="">
       <div className="grid items-center h-12 grid-cols-3 px-2 border-b border-stone-200/20">
@@ -34,7 +36,7 @@ export const Transactions: FC<TransactionsProps> = ({ setView, notifications, cl
           Object.entries(notifications)
             .reverse()
             .map(([, _notifications], index) => {
-              return <NotificationGroup key={index} notifications={_notifications} />
+              return <NotificationGroup key={index} notifications={_notifications} client={client} />
               // return <Typography>{_notifications}</Typography>
             })
         ) : (

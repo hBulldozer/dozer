@@ -288,8 +288,7 @@ export const poolRouter = createTRPCRouter({
         address: z.string(),
       })
     )
-    .output(z.object({ hash: z.string() }))
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       const { ncid, token_in, amount_in, token_out, amount_out, address } = input
       const pool = new LiquidityPool(token_in, token_out, 5, ncid)
       const response = await pool.swap_tokens_for_exact_tokens(
@@ -313,7 +312,7 @@ export const poolRouter = createTRPCRouter({
         address: z.string(),
       })
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       const { ncid, token_in, amount_in, token_out, amount_out, address } = input
       const pool = new LiquidityPool(token_in, token_out, 0, ncid)
       const response = await pool.swap_exact_tokens_for_tokens(
@@ -328,7 +327,6 @@ export const poolRouter = createTRPCRouter({
       return response
     }),
   waitForTx: procedure
-    // .input(z.object({ address: z.string() }))
     .input(
       z.object({
         hash: z.string(),

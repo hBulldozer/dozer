@@ -72,7 +72,12 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
       <Popover.Panel className="w-full sm:w-[320px] fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-[unset] sm:left-[unset] mt-4 sm:rounded-xl rounded-b-none shadow-md shadow-black/[0.3] bg-stone-900 border border-stone-200/20">
         {view === ProfileView.Default && <Default chainId={chainId} address={address} setView={setView} />}
         {view === ProfileView.Transactions && (
-          <Transactions setView={setView} notifications={notifications} clearNotifications={clearNotifications} />
+          <Transactions
+            setView={setView}
+            notifications={notifications}
+            clearNotifications={clearNotifications}
+            client={client}
+          />
         )}
       </Popover.Panel>
     )

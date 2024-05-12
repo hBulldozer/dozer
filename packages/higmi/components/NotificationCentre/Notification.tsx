@@ -1,22 +1,9 @@
-import { Badge, classNames, Dots, IconButton, Link, Loader, NotificationData, TimeAgo, Typography } from '@dozer/ui'
+import { Badge, classNames, Dots, IconButton, Loader, NotificationData, TimeAgo, Typography } from '@dozer/ui'
 import { Disclosure } from '@headlessui/react'
-import {
-  ArrowRightIcon,
-  CashIcon,
-  CheckCircleIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  DownloadIcon,
-  FireIcon,
-  LockOpenIcon,
-  PlusIcon,
-  SwitchVerticalIcon,
-  UploadIcon,
-  XIcon,
-} from '@heroicons/react/solid'
-import React, { FC, useState } from 'react'
+import { CheckCircleIcon, ChevronDownIcon, DownloadIcon, XIcon } from '@heroicons/react/solid'
+import { FC } from 'react'
 import useWaitForTransaction from './useWaitForTransaction'
-import { ChainId } from '@dozer/chain'
+import { client as api_client } from '@dozer/api'
 
 // export const STARGATE_TOKEN = new Token({
 //   chainId: ChainId.ETHEREUM,
@@ -30,9 +17,10 @@ export const Notification: FC<{
   data: string
   showExtra?: boolean
   hideStatus?: boolean
-}> = ({ data, showExtra = false, hideStatus = false }) => {
+  client: typeof api_client
+}> = ({ data, showExtra = false, hideStatus = false, client }) => {
   const notification: NotificationData = JSON.parse(data)
-  const { status, message } = useWaitForTransaction(notification)
+  const { status, message } = useWaitForTransaction(notification, client)
 
   console.log(notification)
   console.log(status, message)
