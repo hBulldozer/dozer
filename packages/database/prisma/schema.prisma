@@ -14,18 +14,18 @@ model Token {
   chainId          Int
   name             String
   symbol           String
-  isFeeOnTransfer  Boolean     @default(false)
-  isCommon         Boolean     @default(false)
-  derivedUSD       Float?
+  // isFeeOnTransfer  Boolean     @default(false)
+  // isCommon         Boolean     @default(false)
+  // derivedUSD       Float?
   generatedAt      DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
-  decimals         Int         @default(2)
-  isLiquidityToken Boolean     @default(false)
+  // decimals         Int         @default(2)
+  // isLiquidityToken Boolean     @default(false)
   miniChartSVG     String      @default("") @db.VarChar(10000)
-  poolsLP          Pool[]      @relation("tokenLP")
+  // poolsLP          Pool[]      @relation("tokenLP")
   pools0           Pool[]      @relation("token0")
   pools1           Pool[]      @relation("token1")
-  incentives       Incentive[]
+  // incentives       Incentive[]
 
   @@unique([chainId, uuid])
   @@index([id])
@@ -35,31 +35,31 @@ model Token {
 }
 
 model Pool {
-  name          String
+  name          String 
   apr           Float
-  chainId       Int
+  chainId       Int 
   version       String
-  token0Id      String
-  token1Id      String
-  swapFee       Float
-  feeUSD        Float
-  reserve0      String         @default("0")
-  reserve1      String         @default("0")
-  liquidityUSD  Float
-  volumeUSD     Float
-  liquidity     Float
-  volume1d      Float
-  fees1d        Float
+  token0Id      String 
+  token1Id      String 
+  // swapFee       Float
+  // feeUSD        Float
+  // reserve0      String         @default("0")
+  // reserve1      String         @default("0")
+  // liquidityUSD  Float
+  // volumeUSD     Float
+  // liquidity     Float
+  // volume1d      Float
+  // fees1d        Float
   generatedAt   DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  tokenLPId     String         @default("0")
+  // tokenLPId     String         @default("0")
   id            String         @id @default(uuid())
   token0        Token          @relation("token0", fields: [token0Id], references: [id])
   token1        Token          @relation("token1", fields: [token1Id], references: [id])
-  tokenLP       Token          @relation("tokenLP", fields: [tokenLPId], references: [id])
+  // tokenLP       Token          @relation("tokenLP", fields: [tokenLPId], references: [id])
   daySnapshots  daySnapshot[]
   hourSnapshots hourSnapshot[]
-  Incentive     Incentive[]
+  // Incentive     Incentive[]
 
   @@index([id])
   @@index([chainId])
@@ -67,7 +67,7 @@ model Pool {
   @@index([token0Id])
   @@index([token1Id])
   @@index([generatedAt])
-  @@index([tokenLPId])
+  // @@index([tokenLPId])
 }
 
 model daySnapshot {
@@ -100,20 +100,20 @@ model hourSnapshot {
   @@index([poolId])
 }
 
-model Incentive {
-  id              String @id
-  chainId         Int
-  apr             Float
-  rewardPerDay    Float
-  rewardTokenId   String
-  poolId          String
-  pid             Int
-  rewarderAddress String
-  rewardToken     Token  @relation(fields: [rewardTokenId], references: [id])
-  pool            Pool   @relation(fields: [poolId], references: [id])
+// model Incentive {
+//   id              String @id
+//   chainId         Int
+//   apr             Float
+//   rewardPerDay    Float
+//   rewardTokenId   String
+//   poolId          String
+//   pid             Int
+//   rewarderAddress String
+//   rewardToken     Token  @relation(fields: [rewardTokenId], references: [id])
+//   pool            Pool   @relation(fields: [poolId], references: [id])
 
-  @@index([id])
-  @@index([poolId])
-  @@index([rewardTokenId])
-  @@index([chainId, rewardTokenId])
-}
+//   @@index([id])
+//   @@index([poolId])
+//   @@index([rewardTokenId])
+//   @@index([chainId, rewardTokenId])
+// }

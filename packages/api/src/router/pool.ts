@@ -245,14 +245,13 @@ export const poolRouter = createTRPCRouter({
       const amount = input.amount_in * 100 // correcting input to the backend
       const queryParams = [
         `id=${input.id}`,
-        `calls[]=front_quote_exact_tokens_for_tokens(${amount},\"${input.token_in}\")`,
+        `calls[]=front_quote_exact_tokens_for_tokens(${amount},"${input.token_in}")`,
       ]
       const response = await fetchNodeData(endpoint, queryParams)
-      if ('errmsg' in response['calls'][`front_quote_exact_tokens_for_tokens(${amount},\"${input.token_in}\")`])
+      if ('errmsg' in response['calls'][`front_quote_exact_tokens_for_tokens(${amount},"${input.token_in}")`])
         return { amount_out: 0, price_impact: 0 }
       else {
-        const result =
-          response['calls'][`front_quote_exact_tokens_for_tokens(${amount},\"${input.token_in}\")`]['value']
+        const result = response['calls'][`front_quote_exact_tokens_for_tokens(${amount},"${input.token_in}")`]['value']
         const amount_out = result['amount_out'] / 100 // correcting output to the frontend
         return { amount_out, price_impact: result['price_impact'] }
       }
@@ -265,14 +264,13 @@ export const poolRouter = createTRPCRouter({
       const amount = input.amount_in * 100 // correcting input to the backend
       const queryParams = [
         `id=${input.id}`,
-        `calls[]=front_quote_tokens_for_exact_tokens(${amount},\"${input.token_in}\")`,
+        `calls[]=front_quote_tokens_for_exact_tokens(${amount},"${input.token_in}")`,
       ]
       const response = await fetchNodeData(endpoint, queryParams)
-      if ('errmsg' in response['calls'][`front_quote_tokens_for_exact_tokens(${amount},\"${input.token_in}\")`])
+      if ('errmsg' in response['calls'][`front_quote_tokens_for_exact_tokens(${amount},"${input.token_in}")`])
         return { amount_out: 0, price_impact: 0 }
       else {
-        const result =
-          response['calls'][`front_quote_tokens_for_exact_tokens(${amount},\"${input.token_in}\")`]['value']
+        const result = response['calls'][`front_quote_tokens_for_exact_tokens(${amount},"${input.token_in}")`]['value']
         const amount_out = result['amount_out'] / 100 // correcting output to the frontend
         return { amount_out, price_impact: result['price_impact'] }
       }

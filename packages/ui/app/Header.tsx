@@ -180,7 +180,7 @@ export function Header({
                     </Select.Option> */}
                     <Select.Option
                       as="a"
-                      href="www.x.com/DozerProtocol"
+                      href="https://www.x.com/DozerProtocol"
                       key="Check our Tweets"
                       value="Check our Tweets"
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -192,7 +192,7 @@ export function Header({
                     </Select.Option>
                     <Select.Option
                       as="a"
-                      href="www.t.me/h_bulldozer"
+                      href="https://www.t.me/h_bulldozer"
                       key="Contact us!"
                       value="Contact us!"
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -204,7 +204,7 @@ export function Header({
                     </Select.Option>
                     <Select.Option
                       as="a"
-                      href="docs.dozer.finance"
+                      href="https://www.docs.dozer.finance"
                       key="Check our Docs"
                       value="Check our Docs"
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
