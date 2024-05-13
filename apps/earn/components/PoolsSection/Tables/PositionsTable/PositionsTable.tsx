@@ -9,7 +9,7 @@ import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
 import { useAccount, useNetwork } from '@dozer/zustand'
 import { PAGE_SIZE } from '../contants'
 import { ChainId } from '@dozer/chain'
-import { Pair, pairFromPool } from '@dozer/api'
+import { Pair } from '@dozer/api'
 import { api } from '../../../../utils/api'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -43,7 +43,7 @@ export const PositionsTable: FC = () => {
   const { data: pools, isLoading } = api.getPools.all.useQuery()
   const _pairs_array: Pair[] = pools
     ? pools.map((pool) => {
-        return pairFromPool(pool)
+        return pool
       })
     : []
   const pairs_array = _pairs_array?.filter((pair: Pair) => {

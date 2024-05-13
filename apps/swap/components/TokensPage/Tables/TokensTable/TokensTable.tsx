@@ -1,4 +1,4 @@
-import { AllTokensDBOutput, FrontEndApiNCOutput, Pair, dbPoolWithTokens, pairFromPoolMerged } from '@dozer/api'
+import { AllTokensDBOutput, Pair, dbPoolWithTokens } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
 import { GenericTable } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
@@ -89,7 +89,7 @@ export const TokensTable: FC = () => {
         apr: 0,
         token0: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
         token1: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
-        tokenLP: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
+        // tokenLP: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
         chainId: token.chainId,
         reserve0: 0,
         reserve1: 0,

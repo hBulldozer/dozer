@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Pair, pairFromPoolMerged, pairFromPoolMergedWithSnaps, pairWithSnapsFromPool } from '@dozer/api'
+import { Pair } from '@dozer/api'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
 
 import {
@@ -20,7 +20,6 @@ import {
 import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../../utils/api'
-import { FrontEndApiNCOutput } from '@dozer/api'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -43,17 +42,19 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
   const ssg = generateSSGHelper()
-  const poolDB = await ssg.getPools.byId.fetch({ id })
-  if (!poolDB) {
-    throw new Error(`Failed to fetch pool, received ${poolDB}`)
+  const pools = await ssg.getPools.all.fetch()
+  if (!pools) {
+    throw new Error(`Failed to fetch pool, received ${pools}`)
   }
-  const poolNC = await ssg.getPools.byIdFromContract.fetch({ id: poolDB.id })
-  if (!poolNC) {
-    throw new Error(`Failed to fetch pool, received ${poolNC}`)
+  const pool = pools.find((pool) => pool.id === id)
+  if (!pool) {
+    throw new Error(`Failed to find pool with id ${id}`)
   }
-  const tokens = [poolDB.token0, poolDB.token1]
-  await ssg.getPools.byIdWithSnaps.prefetch({ id })
-  await ssg.getPools.byIdFromContract.prefetch({ id: poolDB.id })
+  // const poolNC = await ssg.getPools.byIdFromContract.fetch({ id: pool.id })
+  // if (!poolNC) {
+  //   throw new Error(`Failed to fetch pool, received ${poolNC}`)
+  // }
+  const tokens = [pool.token0, pool.token1]
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
   return {
@@ -77,11 +78,9 @@ const Pool = () => {
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
-  const { data: poolDB } = api.getPools.byIdWithSnaps.useQuery({ id })
-  if (!poolDB) return <></>
-  const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ id: poolDB.id })
-  if (!poolNC) return <></>
-  const pair = poolDB && poolNC ? pairFromPoolMergedWithSnaps(poolDB, poolNC) : ({} as Pair)
+  const { data: pools } = api.getPools.all.useQuery()
+  if (!pools) return <></>
+  const pair = pools.find((pool) => pool.id === id)
   if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>

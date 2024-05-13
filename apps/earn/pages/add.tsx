@@ -7,7 +7,7 @@ import { AddSectionMyPosition, AddSectionReviewModalLegacy, Layout, SelectNetwor
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { Checker, Web3Input } from '@dozer/higmi'
 import { GetStaticProps } from 'next'
-import { PairState, pairFromPoolAndTokensList, dbPoolWithTokens } from '@dozer/api'
+import { PairState, Pair } from '@dozer/api'
 import { useTrade } from '@dozer/zustand'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../utils/api'
@@ -79,7 +79,7 @@ const Add: FC = () => {
     return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
   }, [input0, input1])
   const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
-  const [selectedPool, setSelectedPool] = useState<dbPoolWithTokens>()
+  const [selectedPool, setSelectedPool] = useState<Pair>()
   const [listTokens0, setListTokens0] = useState<Token[]>([])
   const [listTokens1, setListTokens1] = useState<Token[]>([])
   const {
@@ -148,7 +148,7 @@ const Add: FC = () => {
 
   useEffect(() => {
     setSelectedPool(
-      pools?.find((pool: dbPoolWithTokens) => {
+      pools?.find((pool: Pair) => {
         const uuid0 = pool.token0.uuid
         const uuid1 = pool.token1.uuid
         const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
@@ -314,7 +314,7 @@ const Add: FC = () => {
       {selectedPool && (
         <div className="order-1 sm:order-3">
           <AppearOnMount>
-            <AddSectionMyPosition pair={pairFromPoolAndTokensList(selectedPool)} />
+            <AddSectionMyPosition pair={selectedPool} />
           </AppearOnMount>
         </div>
       )}

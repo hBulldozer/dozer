@@ -7,20 +7,19 @@ import { FC, useMemo, useState } from 'react'
 
 import { useAccount, useNetwork, useSettings } from '@dozer/zustand'
 import { RemoveSectionWidget } from './RemoveSectionWidget'
-import { toToken } from '@dozer/api'
+import { Pair, toToken } from '@dozer/api'
 import { dbPoolWithTokens } from '@dozer/api'
 import { useUnderlyingTokenBalanceFromPair } from '@dozer/api'
-import { pairFromPool } from '@dozer/api'
 import { usePoolPosition } from '../PoolPositionProvider'
 
 interface RemoveSectionLegacyProps {
-  pool: dbPoolWithTokens
+  pair: Pair
   prices: { [key: string]: number }
 }
 
 const DEFAULT_REMOVE_LIQUIDITY_SLIPPAGE_TOLERANCE = new Percent(5, 100)
 
-export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices }) => {
+export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices }) => {
   const { slippageTolerance } = useSettings()
 
   const slippagePercent = useMemo(
@@ -36,8 +35,8 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
 
   const { underlying0, underlying1, BalanceLPAmount, value0, value1, isLoading, isError } = usePoolPosition()
 
-  const token0 = toToken(pool.token0)
-  const token1 = toToken(pool.token1)
+  const token0 = toToken(pair.token0)
+  const token1 = toToken(pair.token1)
 
   const currencyAToRemove = useMemo(
     () =>
@@ -65,9 +64,9 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
       currencyBToRemove ? Number(currencyBToRemove.toFixed(2)) * (1 - slippageTolerance / 100) * 100 : undefined,
     ]
   }, [currencyAToRemove, slippageTolerance, currencyBToRemove])
-
+  // TODO! FIX TOKEN0
   const amountToRemove = Amount.fromRawAmount(
-    toToken(pool.tokenLP),
+    toToken(pair.token0),
     percentToRemove.multiply(BalanceLPAmount?.quotient || '0').quotient || '0'
   )
 
@@ -203,7 +202,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pool, prices
     <div>
       <RemoveSectionWidget
         // isFarm={!!pair.farm}
-        chainId={pool.chainId}
+        chainId={pair.chainId}
         percentage={percentage}
         token0={token0}
         token1={token1}

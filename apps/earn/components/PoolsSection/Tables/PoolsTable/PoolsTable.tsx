@@ -1,6 +1,6 @@
 // import { ChainId } from '@dozer/chain'
 // import { Pair, PairType, QuerypairsArgs } from '@dozer/graph-client'
-import { Pair, pairFromPool } from '@dozer/api'
+import { Pair } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
 import { GenericTable, Table } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
@@ -119,7 +119,7 @@ const COLUMNS = [NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN
 //   },
 // ]
 
-type PoolsOutput = RouterOutputs['getPools']['allPoolsFromBlockchain']
+type PoolsOutput = RouterOutputs['getPools']['all']
 
 export const PoolsTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
@@ -142,7 +142,7 @@ export const PoolsTable: FC = () => {
   }, [network])
 
   // const { data: pools, isLoading } = api.getPools.all.useQuery()
-  const { data: pools, isLoading } = api.getPools.allPoolsFromBlockchain.useQuery()
+  const { data: pools, isLoading } = api.getPools.all.useQuery()
   // const _pairs_array: Pair[] = pools
   //   ? pools.map((pool) => {
   //       return pairFromPool(pool)

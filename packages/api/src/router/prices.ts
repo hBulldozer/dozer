@@ -1,17 +1,38 @@
+import prisma, { PrismaClient } from '@dozer/database'
 import { z } from 'zod'
 
+import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
-import { HTRPoolByTokenUuid, HTRPoolByTokenUuidFromContract, getPoolSnaps24h, idFromHTRPoolByTokenUuid } from './pool'
-import prisma, { PrismaClient } from '@dozer/database'
 
+export const idFromHTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: PrismaClient) => {
+  if (uuid == '00') {
+    return await prisma.pool.findFirst({
+      where: { token0: { uuid: '00' }, chainId: chainId },
+      select: { id: true },
+    })
+  } else {
+    return await prisma.pool.findFirst({
+      where: { token1: { uuid: uuid, chainId: chainId }, token0: { uuid: '00', chainId: chainId } },
+      select: { id: true },
+    })
+  }
+}
+
+export const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: number, prisma: PrismaClient) => {
+  const poolId = await idFromHTRPoolByTokenUuid(uuid, chainId, prisma)
+  if (!poolId) return {}
+  const endpoint = 'nano_contract/state'
+  const queryParams = [`id=${poolId.id}`, `calls[]=front_end_api_pool()`]
+  const response = await fetchNodeData(endpoint, queryParams)
+  const result = response['calls'][`front_end_api_pool()`]['value']
+  return result
+}
 export const htrKline = async (input: { period: number; size: number }) => {
   const now = Math.round(Date.now() / 1000)
   const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
   const start = (input.size + 1) * (input.period == 0 ? 15 : input.period == 1 ? 60 : 24 * 60) * 60 // in seconds
   const resp = await fetch(
-    `https://api.kucoin.com/api/v1/market/candles\?type\=${period}\&symbol\=HTR-USDT\&startAt\=${
-      now - start
-    }\&endAt\=${now}`
+    `https://api.kucoin.com/api/v1/market/candles?type=${period}&symbol=HTR-USDT&startAt=${now - start}&endAt=${now}`
   )
   const data = await resp.json()
   return data.data

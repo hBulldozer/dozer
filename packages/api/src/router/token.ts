@@ -37,18 +37,18 @@ export const tokenRouter = createTRPCRouter({
             },
           },
         },
-        poolsLP: {
-          select: {
-            id: true,
-            reserve0: true,
-            reserve1: true,
-            tokenLP: {
-              select: {
-                uuid: true,
-              },
-            },
-          },
-        },
+        // poolsLP: {
+        //   select: {
+        //     id: true,
+        //     reserve0: true,
+        //     reserve1: true,
+        //     tokenLP: {
+        //       select: {
+        //         uuid: true,
+        //       },
+        //     },
+        //   },
+        // },
       },
     })
     if (!tokens) {

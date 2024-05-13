@@ -26,7 +26,6 @@ type ElementType<T> = T extends (infer U)[] ? U : never
 export type AllPoolsDBOutput = RouterOutputs['getPools']['all']
 export type AllTokensDBOutputArray = RouterOutputs['getTokens']['all']
 export type AllTokensWithoutLPDBOutputArray = RouterOutputs['getTokens']['allWithoutLP']
-export type FrontEndApiNCOutput = RouterOutputs['getPools']['byIdFromContract']
 
 export type AllTokensDBOutput = ElementType<AllTokensDBOutputArray>
 export type AllTokensWithoutLPDBOutput = ElementType<AllTokensWithoutLPDBOutputArray>
@@ -114,10 +113,10 @@ export type Pair = {
   swapFee: number
   apr: number
   /**  First Token  */
-  token0: Token
+  token0: Token | _Token
   /**  Second Token  */
-  token1: Token
-  tokenLP: Token
+  token1: Token | _Token
+  // tokenLP: Token
   chainId: ChainId
   reserve0: number
   reserve1: number

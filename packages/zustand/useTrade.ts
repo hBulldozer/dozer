@@ -2,7 +2,7 @@ import { ChainId } from '@dozer/chain'
 import { Token, getTokens } from '@dozer/currency'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { dbPoolWithTokens } from '@dozer/api'
+import { Pair, dbPoolWithTokens } from '@dozer/api'
 
 export enum TradeType {
   EXACT_INPUT,
@@ -24,8 +24,8 @@ interface TradeProps {
   setMainCurrencyPrice: (mainCurrencyPrice: number) => void
   otherCurrencyPrice: number | undefined
   setOtherCurrencyPrice: (otherCurrencyPrice: number) => void
-  pool: dbPoolWithTokens | undefined
-  setPool: (pool: dbPoolWithTokens) => void
+  pool: Pair | undefined
+  setPool: (pool: Pair) => void
   outputAmount: number
   setOutputAmount: (outputAmount: number) => void
   priceImpact: number
@@ -52,7 +52,7 @@ export const useTrade = create<TradeProps>()(
       setOtherCurrencyPrice: (otherCurrencyPrice: number) =>
         set((state) => ({ otherCurrencyPrice: otherCurrencyPrice })),
       pool: undefined,
-      setPool: (pool: dbPoolWithTokens) => set((state) => ({ pool: pool })),
+      setPool: (pool: Pair) => set((state) => ({ pool: pool })),
       outputAmount: 0,
       setOutputAmount: (outputAmount: number) => set((state) => ({ outputAmount: outputAmount })),
       priceImpact: 0,

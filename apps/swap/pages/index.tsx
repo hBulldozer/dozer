@@ -14,7 +14,7 @@ import { useRouter } from 'next/router'
 import { api, RouterOutputs } from 'utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import type { GetStaticProps } from 'next'
-import type { dbPoolWithTokens } from '@dozer/api'
+import type { dbPoolWithTokens, Pair } from '@dozer/api'
 import { tr } from 'date-fns/locale'
 
 type TokenOutputArray = RouterOutputs['getTokens']['all']
@@ -94,7 +94,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
   const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([initialToken0, initialToken1])
   const [input1, setInput1] = useState<string>('')
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
-  const [selectedPool, setSelectedPool] = useState<dbPoolWithTokens>()
+  const [selectedPool, setSelectedPool] = useState<Pair>()
   const [priceImpact, setPriceImpact] = useState<number>()
   const utils = api.useUtils()
   const trade = useTrade()
@@ -169,7 +169,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
       }
     }
     setSelectedPool(
-      pools.find((pool: dbPoolWithTokens) => {
+      pools.find((pool: Pair) => {
         const uuid0 = pool.token0.uuid
         const uuid1 = pool.token1.uuid
         const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))

@@ -6,14 +6,10 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { AddSectionReviewModalLegacy } from './AddSectionReviewModalLegacy'
 import { AddSectionWidget } from './AddSectionWidget'
-import { dbPoolWithTokens } from '@dozer/api'
-import { toToken } from '@dozer/api'
+import { Pair, dbPoolWithTokens, toToken } from '@dozer/api'
 import { useTrade } from '@dozer/zustand'
 
-export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: string]: number } }> = ({
-  pool,
-  prices,
-}) => {
+export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number } }> = ({ pool, prices }) => {
   const isMounted = useIsMounted()
   const token0 = toToken(pool.token0)
   const token1 = toToken(pool.token1)

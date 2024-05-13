@@ -1,11 +1,11 @@
-import { z } from 'zod'
+import { any, z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
+import { FrontEndApiNCObject } from '../types'
 import { PrismaClient } from '@dozer/database'
 import { LiquidityPool } from '@dozer/nanocontracts'
 import { toToken } from '../functions'
-import { Pair } from '../..'
 // Exporting common functions to use in another routers, as is suggested in https://trpc.io/docs/v10/server/server-side-calls
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -32,8 +32,70 @@ export const HTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: 
   }
 }
 
+export const idFromHTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: PrismaClient) => {
+  if (uuid == '00') {
+    return await prisma.pool.findFirst({
+      where: { token0: { uuid: '00' }, chainId: chainId },
+      select: { id: true },
+    })
+  } else {
+    return await prisma.pool.findFirst({
+      where: { token1: { uuid: uuid, chainId: chainId }, token0: { uuid: '00', chainId: chainId } },
+      select: { id: true },
+    })
+  }
+}
+
+export const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: number, prisma: PrismaClient) => {
+  const poolId = await idFromHTRPoolByTokenUuid(uuid, chainId, prisma)
+  if (!poolId) return {}
+  const endpoint = 'nano_contract/state'
+  const queryParams = [`id=${poolId.id}`, `calls[]=front_end_api_pool()`]
+  const response = await fetchNodeData(endpoint, queryParams)
+  const result = response['calls'][`front_end_api_pool()`]['value']
+  return result
+}
+
+export const getPoolSnaps24h = async (tokenUuid: string, prisma: PrismaClient) => {
+  const result = await prisma.hourSnapshot.findMany({
+    where: {
+      AND: [
+        { date: { gte: new Date(Date.now() - 60 * 60 * 24 * 1000) } },
+        {
+          pool: {
+            token0: {
+              uuid: '00',
+            },
+          },
+        },
+        {
+          pool: {
+            token1: {
+              uuid: tokenUuid,
+            },
+          },
+        },
+      ],
+    },
+    //we can select vol, liq for example only for the pool page
+    select: {
+      date: true,
+      poolId: true,
+      // volumeUSD: true,
+      // liquidityUSD: true,
+      // apr: true,
+      reserve0: true,
+      reserve1: true,
+      priceHTR: true,
+    },
+  })
+  return result.reverse().map((snap) => {
+    return { date: snap.date, priceToken: (snap.reserve0 / snap.reserve1) * snap.priceHTR, priceHTR: snap.priceHTR }
+  })
+}
+
 // 1. Modular Function to Fetch and Process Pool Data
-const fetchAndProcessPoolData = async (prisma: PrismaClient, poolId: string): Promise<Pair> => {
+async function fetchAndProcessPoolData(prisma: PrismaClient, poolId: string) {
   const endpoint = 'nano_contract/state'
   const queryParams = [`id=${poolId}`, `calls[]=front_end_api_pool()`]
 
@@ -50,7 +112,7 @@ const fetchAndProcessPoolData = async (prisma: PrismaClient, poolId: string): Pr
     throw new Error(`Pool with id ${poolId} not found`)
   }
 
-  const { token0, token1 } = tokens
+  const { token0, token1, tokenLP } = tokens
 
   return {
     id: poolId,
@@ -60,8 +122,9 @@ const fetchAndProcessPoolData = async (prisma: PrismaClient, poolId: string): Pr
     feeUSD: 5555, // or a calculation using poolData.fee0/fee1
     swapFee: poolData.fee, // Adjust if needed
     apr: 5555, //calculateAPR(poolData), // Placeholder
-    token0: token0,
-    token1: token1,
+    token0: toToken(token0),
+    token1: toToken(token1),
+    tokenLP: toToken(tokenLP),
     reserve0: poolData.reserve0,
     reserve1: poolData.reserve1,
     chainId: token0.chainId, // Or another way to get chainId
@@ -74,7 +137,7 @@ const fetchAndProcessPoolData = async (prisma: PrismaClient, poolId: string): Pr
 }
 
 export const poolRouter = createTRPCRouter({
-  all: procedure.query(async ({ ctx }) => {
+  allPoolsFromBlockchain: procedure.query(async ({ ctx }) => {
     // Fetch all pool IDs from the database
     const poolIds = await ctx.prisma.pool.findMany({
       select: { id: true },
@@ -87,7 +150,93 @@ export const poolRouter = createTRPCRouter({
     return allPoolData
   }),
   //New procedures enhanced SQL
-
+  allNcids: procedure.query(({ ctx }) => {
+    const pools = ctx.prisma.pool.findMany({
+      select: {
+        id: true,
+      },
+    })
+    return pools
+  }),
+  contractState: procedure
+    .input(z.object({ id: z.string() }))
+    .output(FrontEndApiNCObject)
+    .query(async ({ input }) => {
+      const endpoint = 'nano_contract/state'
+      const queryParams = [`id=${input.id}`, `calls[]=front_end_api_pool()`]
+      const response = await fetchNodeData(endpoint, queryParams)
+      const result = response['calls'][`front_end_api_pool()`]['value']
+      return result
+    }),
+  hourSnaps: procedure.input(z.object({ tokenUuid: z.string() })).query(async ({ ctx, input }) => {
+    return getPoolSnaps24h(input.tokenUuid, ctx.prisma)
+  }),
+  all: procedure.query(({ ctx }) => {
+    return ctx.prisma.pool.findMany({
+      include: {
+        token0: true,
+        token1: true,
+        tokenLP: true,
+      },
+    })
+  }),
+  byIdFromContract: procedure
+    .input(z.object({ id: z.string() }))
+    .output(FrontEndApiNCObject)
+    .query(async ({ input }) => {
+      const endpoint = 'nano_contract/state'
+      const queryParams = [`id=${input.id}`, `calls[]=front_end_api_pool()`]
+      const response = await fetchNodeData(endpoint, queryParams)
+      const result = response['calls'][`front_end_api_pool()`]['value']
+      return result
+    }),
+  byIdWithSnaps: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
+    return ctx.prisma.pool.findFirst({
+      where: { id: input.id },
+      include: {
+        token0: true,
+        token1: true,
+        tokenLP: true,
+        hourSnapshots: {
+          where: {
+            date: {
+              gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 31), //get only one month from 15min snaps
+            },
+          },
+          orderBy: { date: 'desc' },
+        },
+        daySnapshots: { orderBy: { date: 'desc' } },
+      },
+    })
+  }),
+  byTokenUuidWithSnaps: procedure.input(z.object({ uuid: z.string(), chainId: z.number() })).query(({ ctx, input }) => {
+    if (input.uuid == '00') {
+      return ctx.prisma.pool.findFirst({
+        where: { token0: { uuid: '00' }, chainId: input.chainId },
+        include: {
+          token0: true,
+          token1: true,
+          tokenLP: true,
+          hourSnapshots: { orderBy: { date: 'desc' } },
+          daySnapshots: { orderBy: { date: 'desc' } },
+        },
+      })
+    } else {
+      return ctx.prisma.pool.findFirst({
+        where: { token1: { uuid: input.uuid, chainId: input.chainId }, token0: { uuid: '00', chainId: input.chainId } },
+        include: {
+          token0: true,
+          token1: true,
+          tokenLP: true,
+          hourSnapshots: { orderBy: { date: 'desc' } },
+          daySnapshots: { orderBy: { date: 'desc' } },
+        },
+      })
+    }
+  }),
+  HTRPoolbyTokenUuid: procedure.input(z.object({ uuid: z.string(), chainId: z.number() })).query(({ ctx, input }) => {
+    return HTRPoolByTokenUuid(input.uuid, input.chainId, ctx.prisma)
+  }),
   quote_exact_tokens_for_tokens: procedure
     .input(z.object({ id: z.string(), amount_in: z.number(), token_in: z.string() }))
     .output(z.object({ amount_out: z.number(), price_impact: z.number() }))
@@ -215,4 +364,43 @@ export const poolRouter = createTRPCRouter({
       }
       return { status: validation, message: message }
     }),
+  byId: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
+    return ctx.prisma.pool.findFirst({
+      where: { id: input.id },
+      include: {
+        token0: true,
+        token1: true,
+        tokenLP: true,
+      },
+    })
+  }),
+  sql: procedure.query(({ ctx }) => {
+    const test = ctx.prisma.pool.findMany({
+      where: {
+        token0: { uuid: '00' },
+      },
+      select: {
+        token1: {
+          select: {
+            name: true,
+            uuid: true,
+          },
+        },
+        hourSnapshots: {
+          where: {
+            date: {
+              gte: new Date(Date.now() - 86400 * 1000),
+            },
+          },
+          select: {
+            date: true,
+            reserve0: true,
+            reserve1: true,
+            priceHTR: true,
+          },
+        },
+      },
+    })
+    return test
+  }),
 })
