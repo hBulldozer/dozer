@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink, Button, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { AllTokensWithoutLPDBOutput, Pair } from '@dozer/api'
+import { AllTokensDBOutput, Pair } from '@dozer/api'
 
 import { Layout } from 'components/Layout'
 
@@ -14,13 +14,13 @@ import { TokenStats } from 'components/TokenPage/TokenStats'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
-  const tokens = await ssg.getTokens.allWithoutLP.fetch()
+  const tokens = await ssg.getTokens.all.fetch()
 
   if (!tokens) {
     throw new Error(`Failed to fetch pool, received ${tokens}`)
   }
   // Get the paths we want to pre-render based on pairs
-  const paths = tokens?.map((token: AllTokensWithoutLPDBOutput) => ({
+  const paths = tokens?.map((token: AllTokensDBOutput) => ({
     params: { chainId: `${token.chainId}`, uuid: `${token.uuid}` },
   }))
 
