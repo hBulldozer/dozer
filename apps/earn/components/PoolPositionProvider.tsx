@@ -2,7 +2,7 @@ import { Amount, Token, Type } from '@dozer/currency'
 import { FundSource } from '@dozer/hooks'
 import { createContext, FC, ReactNode, useContext, useEffect, useMemo, useState } from 'react'
 import { useAccount } from '@dozer/zustand'
-import { Pair } from '@dozer/api'
+import { Pair, toToken } from '@dozer/api'
 import { useTokensFromPair } from '@dozer/api'
 import { useUnderlyingTokenBalanceFromPair } from '@dozer/api'
 import { useTotalSupply } from '@dozer/react-query'
@@ -26,9 +26,10 @@ export const PoolPositionProvider: FC<{
   children: ReactNode
   watch?: boolean
 }> = ({ pair, prices, children, watch = true }) => {
-  const token0 = pair.token0
-  const token1 = pair.token1
-  const liquidityToken = pair.tokenLP
+  const token0 = toToken(pair.token0)
+  const token1 = toToken(pair.token1)
+  // !TODO! adjust for liquidity
+  const liquidityToken = pair.token0
   const { balance, address } = useAccount()
 
   const [totalSupply, setTotalSupply] = useState<Amount<Token>>()
@@ -42,12 +43,12 @@ export const PoolPositionProvider: FC<{
 
   useEffect(() => {
     if (data && !isLoading && !isError && data['total']) {
-      setTotalSupply(Amount.fromRawAmount(liquidityToken, data['total']))
+      // setTotalSupply(Amount.fromRawAmount(liquidityToken, data['total']))
 
       const BalanceLPToken = balance.find((token) => {
         return token.token_uuid == liquidityToken.uuid
       })
-      setBalanceLPAmount(Amount.fromRawAmount(liquidityToken, BalanceLPToken ? BalanceLPToken.token_balance : 0))
+      // setBalanceLPAmount(Amount.fromRawAmount(liquidityToken, BalanceLPToken ? BalanceLPToken.token_balance : 0))
     }
   }, [balance, pair, prices, data, isLoading, isError, address])
 

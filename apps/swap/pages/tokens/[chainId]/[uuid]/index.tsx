@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink, Button, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { AllTokensWithoutLPDBOutput, Pair, pairFromPoolMergedWithSnaps } from '@dozer/api'
+import { AllTokensWithoutLPDBOutput, Pair } from '@dozer/api'
 
 import { Layout } from 'components/Layout'
 
@@ -34,43 +34,45 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const uuid = params?.uuid as string
   const chainId = Number(params?.chainId)
   const ssg = generateSSGHelper()
-  const poolDB = await ssg.getPools.byTokenUuidWithSnaps.fetch({ uuid, chainId })
-  if (!poolDB) {
-    throw new Error(`Failed to fetch pool, received ${poolDB}`)
-  }
-  const poolNC = await ssg.getPools.byIdFromContract.fetch({ id: poolDB.id })
-  if (!poolNC) {
-    throw new Error(`Failed to fetch pool, received ${poolNC}`)
+  const pools = await ssg.getPools.all.fetch()
+  const pool =
+    uuid == '00'
+      ? pools.find((pool) => pool.token0.uuid == '00')
+      : pools.find(
+          (pool) =>
+            (pool.token0.uuid == '00' && pool.token1.uuid == uuid) ||
+            (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
+        )
+  if (!pool) {
+    throw new Error(`Failed to fetch pool, received ${pool}`)
   }
 
   await ssg.getPrices.htrKline.prefetch({
-    size: poolDB.hourSnapshots.length,
+    size: pool.hourSnapshots.length,
     period: 0,
   })
   await ssg.getPrices.htrKline.prefetch({
-    size: poolDB.hourSnapshots.length,
+    size: pool.hourSnapshots.length,
     period: 1,
   })
   await ssg.getPrices.htrKline.prefetch({
-    size: poolDB.hourSnapshots.length,
+    size: pool.hourSnapshots.length,
     period: 2,
   })
 
   await ssg.getPrices.htrKline.prefetch({
-    size: poolDB.daySnapshots.length,
+    size: pool.daySnapshots.length,
     period: 0,
   })
   await ssg.getPrices.htrKline.prefetch({
-    size: poolDB.daySnapshots.length,
+    size: pool.daySnapshots.length,
     period: 1,
   })
   await ssg.getPrices.htrKline.prefetch({
-    size: poolDB.daySnapshots.length,
+    size: pool.daySnapshots.length,
     period: 2,
   })
 
-  await ssg.getPools.byTokenUuidWithSnaps.prefetch({ uuid, chainId })
-  await ssg.getPools.byIdFromContract.prefetch({ id: poolDB.id })
   await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
@@ -101,13 +103,12 @@ const Token = () => {
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
 
-  const { data: poolDB } = api.getPools.byTokenUuidWithSnaps.useQuery({ uuid, chainId })
-
-  if (!poolDB) return <></>
-  const { data: poolNC } = api.getPools.byIdFromContract.useQuery({ id: poolDB.id })
-
-  if (!poolNC) return <></>
-  const pair = poolDB && poolNC ? pairFromPoolMergedWithSnaps(poolDB, poolNC) : ({} as Pair)
+  const { data: pools } = api.getPools.all.useQuery()
+  if (!pools) return <></>
+  const pair = pools.find(
+    (pool) =>
+      (pool.token0.uuid == '00' && pool.token1.uuid == uuid) || (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
+  )
   if (!pair) return <></>
   if (uuid == '00') pair.id = 'native'
   const tokens = pair ? [pair.token0, pair.token1] : []

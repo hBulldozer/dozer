@@ -62,22 +62,16 @@ export const TokensTable: FC = () => {
       if (!pool_with_htr) return {} as Pair
       const _poolDB = all_pools.find((pool) => pool.id == pool_with_htr)
       if (!_poolDB) return {} as Pair
-      const poolDB = _poolDB ? _poolDB : ({} as dbPoolWithTokens)
+      const pair = _poolDB ? _poolDB : ({} as Pair)
 
-      const { data: _poolNC } = api.getPools.byIdFromContract.useQuery({ id: poolDB.id })
-      const poolNC = _poolNC ? _poolNC : ({} as FrontEndApiNCOutput)
-      if (!(poolDB && poolNC)) return {} as Pair
-      return pairFromPoolMerged(poolDB, poolNC)
+      return pair
     } else {
       const pairs_htr: Pair[] = all_pools
         .filter((pool) => pool.chainId == rendNetwork)
         .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
         .map((pool) => {
-          const poolDB = pool ? pool : ({} as dbPoolWithTokens)
-          const { data: _poolNC } = api.getPools.byIdFromContract.useQuery({ id: poolDB.id })
-          const poolNC = _poolNC ? _poolNC : ({} as FrontEndApiNCOutput)
-          if (!(poolDB && poolNC)) return {} as Pair
-          return pairFromPoolMerged(poolDB, poolNC)
+          const pair = pool ? pool : ({} as Pair)
+          return pair
         })
       const fakeHTRPair: Pair = {
         id: network == ChainId.HATHOR ? 'native' : 'native-testnet',

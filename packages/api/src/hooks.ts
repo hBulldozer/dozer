@@ -57,22 +57,12 @@ export const useTokensFromPair = (pair: Pair) => {
       chainId: pair.chainId,
     })
 
-    const [token0, token1, liquidityToken] = [
-      _token0,
-      _token1,
-      new Token({
-        uuid: pair.tokenLP.uuid,
-        name: pair.tokenLP.name,
-        decimals: pair.tokenLP.decimals,
-        symbol: pair.tokenLP.symbol,
-        chainId: pair.chainId,
-      }),
-    ]
+    const [token0, token1] = [_token0, _token1]
 
     return {
       token0,
       token1,
-      liquidityToken,
+
       reserve0: Amount.fromRawAmount(token0, Number(pair.reserve0) || 0),
       reserve1: Amount.fromRawAmount(token1, Number(pair.reserve1) || 0),
     }

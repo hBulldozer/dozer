@@ -16,7 +16,7 @@ interface PoolPositionProps {
 }
 
 export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
-  const { token1, token0, liquidityToken } = useTokensFromPair(pair)
+  const { token1, token0 } = useTokensFromPair(pair)
 
   const { underlying1, underlying0, BalanceLPAmount, value1, value0, isLoading, isError } = usePoolPosition()
 
