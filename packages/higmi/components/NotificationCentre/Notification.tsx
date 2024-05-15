@@ -1,9 +1,10 @@
-import { Badge, classNames, Dots, IconButton, Loader, NotificationData, TimeAgo, Typography } from '@dozer/ui'
+import { Badge, classNames, Dots, IconButton, Link, Loader, NotificationData, TimeAgo, Typography } from '@dozer/ui'
 import { Disclosure } from '@headlessui/react'
 import { CheckCircleIcon, ChevronDownIcon, DownloadIcon, XIcon } from '@heroicons/react/solid'
 import { FC } from 'react'
 import useWaitForTransaction from './useWaitForTransaction'
 import { client as api_client } from '@dozer/api'
+import chains, { ChainId } from '@dozer/chain'
 
 // export const STARGATE_TOKEN = new Token({
 //   chainId: ChainId.ETHEREUM,
@@ -57,27 +58,33 @@ export const Notification: FC<{
           }}
         </Disclosure.Button>
       )}
-      {/* <Link.External
-        href={notification.href ? notification.href : chains[notification.chainId].getTxUrl(notification.txHash)}
+      <Link.External
+        href={
+          notification.href
+            ? notification.href
+            : process.env.LOCAL_EXPLORER_URL
+            ? `${process.env.LOCAL_EXPLORER_URL}/transaction/${notification.txHash}`
+            : chains[notification.chainId || ChainId.HATHOR].getTxUrl(notification.txHash)
+        }
         className="!no-underline"
-      > */}
-      <div
-        className={classNames(
-          showExtra ? 'pr-10' : 'pr-4',
-          'relative cursor-pointer flex items-center gap-5 rounded-2xl px-4 py-3'
-        )}
       >
-        <Badge badgeContent={<DownloadIcon />}>
-          <div className="p-2 bg-stone-600 rounded-full h-[36px] w-[36px] flex justify-center items-center">
-            {!hideStatus &&
-              (status === 'pending' ? (
-                <Loader size={18} />
-              ) : status === 'failed' ? (
-                <XIcon width={20} height={20} className="text-red-400" />
-              ) : (
-                <></>
-              ))}
-            {/* {(status === 'success' || notification.summary.info) && notification.type === 'send' && (
+        <div
+          className={classNames(
+            showExtra ? 'pr-10' : 'pr-4',
+            'relative cursor-pointer flex items-center gap-5 rounded-2xl px-4 py-3'
+          )}
+        >
+          <Badge badgeContent={<DownloadIcon />}>
+            <div className="p-2 bg-stone-600 rounded-full h-[36px] w-[36px] flex justify-center items-center">
+              {!hideStatus &&
+                (status === 'pending' ? (
+                  <Loader size={18} />
+                ) : status === 'failed' ? (
+                  <XIcon width={20} height={20} className="text-red-400" />
+                ) : (
+                  <></>
+                ))}
+              {/* {(status === 'success' || notification.summary.info) && notification.type === 'send' && (
                 <ArrowRightIcon width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'stargate' && (
@@ -134,27 +141,27 @@ export const Notification: FC<{
               {(status === 'success' || notification.summary.info) && notification.type === 'claimRewards' && (
                 <CashIcon width={20} height={20} />
               )} */}
-            {status === 'success' && <CheckCircleIcon width={20} height={20} className="text-green" />}
-          </div>
-        </Badge>
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2">
-            <Typography as="span" variant="sm" weight={500} className="items-center whitespace-normal text-stone-50">
-              {notification.summary.info && status == 'pending' ? (
-                <Dots>{notification.summary.pending}</Dots>
-              ) : status === 'failed' ? (
-                message
-              ) : (
-                notification.summary.completed
-              )}
+              {status === 'success' && <CheckCircleIcon width={20} height={20} className="text-green" />}
+            </div>
+          </Badge>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <Typography as="span" variant="sm" weight={500} className="items-center whitespace-normal text-stone-50">
+                {notification.summary.info && status == 'pending' ? (
+                  <Dots>{notification.summary.pending}</Dots>
+                ) : status === 'failed' ? (
+                  message
+                ) : (
+                  notification.summary.completed
+                )}
+              </Typography>
+            </div>
+            <Typography variant="xs" className="text-stone-500">
+              <TimeAgo date={new Date(notification.groupTimestamp * 1000)} />
             </Typography>
           </div>
-          <Typography variant="xs" className="text-stone-500">
-            <TimeAgo date={new Date(notification.groupTimestamp * 1000)} />
-          </Typography>
         </div>
-      </div>
-      {/* </Link.External> */}
+      </Link.External>
     </div>
   )
 }
