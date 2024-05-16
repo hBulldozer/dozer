@@ -40,6 +40,7 @@
         "DATABASE_URL",
         "API_KEY",
         "LOCAL_NODE_URL",
+        "LOCAL_EXPLORER_URL",
         "PUBLIC_NODE_URL",
         "LOCAL_WALLET_MASTER_URL",
         "LOCAL_WALLET_USERS_URL",

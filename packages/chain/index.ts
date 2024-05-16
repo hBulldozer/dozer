@@ -45,7 +45,7 @@ const CHAINS = [
     explorers: [
       {
         name: 'Hathor Explorer',
-        url: 'https://explorer.hathor.network',
+        url: 'http://localhost:3000',
       },
     ],
   },
@@ -71,7 +71,9 @@ export class Chain implements Chain {
     Object.assign(this, data)
   }
   getTxUrl(txHash: string): string {
+    console.log('local explorer', process.env.LOCAL_EXPLORER_URL)
     if (!this.explorers) return ''
+    if (process.env.LOCAL_EXPLORER_URL) return `${process.env.LOCAL_EXPLORER_URL}/transaction/${txHash}`
     for (const explorer of this.explorers) {
       return `${explorer.url}/transaction/${txHash}`
     }

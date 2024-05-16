@@ -62,8 +62,6 @@ export const Notification: FC<{
         href={
           notification.href
             ? notification.href
-            : process.env.LOCAL_EXPLORER_URL
-            ? `${process.env.LOCAL_EXPLORER_URL}/transaction/${notification.txHash}`
             : chains[notification.chainId || ChainId.HATHOR].getTxUrl(notification.txHash)
         }
         className="!no-underline"
