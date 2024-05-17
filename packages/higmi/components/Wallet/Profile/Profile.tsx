@@ -24,7 +24,7 @@ export enum ProfileView {
   Transactions,
 }
 export const Profile: FC<ProfileProps> = ({ client }) => {
-  const { notifications, clearNotifications } = useAccount()
+  const { notifications, clearNotifications, updateNotificationStatus } = useAccount()
   const { isSm } = useBreakpoint('sm')
   const [view, setView] = useState<ProfileView>(ProfileView.Default)
   const { network } = useNetwork()
@@ -76,6 +76,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
             setView={setView}
             notifications={notifications}
             clearNotifications={clearNotifications}
+            updateNotificationStatus={updateNotificationStatus}
             client={client}
           />
         )}

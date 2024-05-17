@@ -11,16 +11,23 @@ interface TransactionsProps {
   setView: Dispatch<SetStateAction<ProfileView>>
   notifications: Record<number, string[]>
   clearNotifications(): void
+  updateNotificationStatus: (txHash: string, state: string, message?: string) => void
   client: typeof client
 }
 
-export const Transactions: FC<TransactionsProps> = ({ setView, notifications, clearNotifications, client }) => {
+export const Transactions: FC<TransactionsProps> = ({
+  setView,
+  notifications,
+  clearNotifications,
+  updateNotificationStatus,
+  client,
+}) => {
   const [messages, setMessages] = useState<BaseEvent[]>([])
   const desiredEventTypes = [EventType.NEW_VERTEX_ACCEPTED, EventType.VERTEX_METADATA_CHANGED]
 
-  const data = useWebSocket(desiredEventTypes, notifications)
+  const data = useWebSocket(desiredEventTypes, notifications, updateNotificationStatus)
   useEffect(() => {
-    console.log('data', data)
+    // console.log('data', data)
     setMessages(data)
   }, [data])
   return (

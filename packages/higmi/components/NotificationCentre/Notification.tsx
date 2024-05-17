@@ -21,7 +21,9 @@ export const Notification: FC<{
   client: typeof api_client
 }> = ({ data, showExtra = false, hideStatus = false, client }) => {
   const notification: NotificationData = JSON.parse(data)
-  const { status, message } = useWaitForTransaction(notification, client)
+  // const { status, message } = useWaitForTransaction(notification, client)
+  const status = notification.status
+  const message = notification.last_message
 
   // console.log(notification)
   // console.log(status, message)

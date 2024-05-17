@@ -16,6 +16,7 @@ export interface AccountState {
   setNotifications: (notifications: Record<number, string[]>) => void
   clearNotifications: () => void
   updateNotificationLastState: (txHash: string, last_status: string, last_message: string) => void
+  updateNotificationStatus: (txHash: string, status: string, message?: string) => void
   addNotification: (notification: string[]) => void
 }
 
@@ -54,6 +55,26 @@ export const useAccount = create<AccountState>()(
                 ...notification,
                 last_status: last_status,
                 last_message: last_message,
+              })
+              break // Only mark the first matching notification as validated
+            }
+          }
+
+          return { notifications: updatedNotifications }
+        }),
+      updateNotificationStatus: (txHash: string, status: string, message?: string) =>
+        set((state) => {
+          const updatedNotifications = { ...state.notifications }
+
+          for (const notificationId in updatedNotifications) {
+            const notificationString = updatedNotifications[notificationId]
+            const notification: any = JSON.parse(notificationString[0])
+
+            if (notification.txHash === txHash) {
+              updatedNotifications[notificationId][0] = JSON.stringify({
+                ...notification,
+                status: status,
+                last_message: message,
               })
               break // Only mark the first matching notification as validated
             }

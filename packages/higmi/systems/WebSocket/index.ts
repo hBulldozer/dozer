@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const WS_URL = 'ws://192.168.0.103:8080/v1a/event_ws'
+const WS_URL = 'ws://localhost:8080/v1a/event_ws'
 
 type EventConstantType = 'EVENT'
 
@@ -87,6 +87,7 @@ export interface SpentOutput {
 export const useWebSocket = (
   types: EventType[],
   notifications: Record<number, string[]>,
+  updateNotificationStatus: (txHash: string, state: string, message?: string) => void,
   last_ack_event_id = 0,
   window_size = 10
 ): BaseEvent[] => {
@@ -98,7 +99,6 @@ export const useWebSocket = (
     return json.txHash
   })
 
-  console.log('txlist', txList)
   useEffect(() => {
     const connect = async () => {
       try {
@@ -127,7 +127,7 @@ export const useWebSocket = (
                 window_size: window_size, // Adjust window size as needed
               })
             )
-            if (types.includes(message.type) && txList.includes(message.data.hash))
+            if (types.includes(message.type) && txList.includes(message.data.hash)) {
               setMessages((prevMessages) =>
                 prevMessages
                   .map((msg) => {
@@ -137,6 +137,20 @@ export const useWebSocket = (
                   ? prevMessages
                   : [...prevMessages, message]
               )
+              const txHash = message.data.hash
+              const voided_by = message.data.metadata.voided_by.length
+              const first_block = message.data.metadata.first_block
+
+              updateNotificationStatus(
+                txHash,
+                voided_by ? 'failed' : first_block ? 'success' : 'pending',
+                voided_by
+                  ? `TX Failed. Voided by ${message.data.metadata.voided_by[0]}`
+                  : first_block
+                  ? 'success'
+                  : 'pending'
+              )
+            }
           }
         }
 
@@ -153,7 +167,7 @@ export const useWebSocket = (
     return () => {
       socket?.close()
     }
-  }, [notifications])
+  }, [Object.values(notifications).length])
 
   return messages
 }

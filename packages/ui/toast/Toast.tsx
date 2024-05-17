@@ -60,6 +60,7 @@ export interface NotificationData {
   last_status?: string
   last_message?: string
   promise: Promise<any>
+  status?: string
 }
 
 export const createInlineToast = (props: NotificationData) => {
