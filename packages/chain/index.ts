@@ -71,7 +71,7 @@ export class Chain implements Chain {
     Object.assign(this, data)
   }
   getTxUrl(txHash: string): string {
-    console.log('local explorer', process.env.LOCAL_EXPLORER_URL)
+    // console.log('local explorer', process.env.LOCAL_EXPLORER_URL)
     if (!this.explorers) return ''
     if (process.env.LOCAL_EXPLORER_URL) return `${process.env.LOCAL_EXPLORER_URL}/transaction/${txHash}`
     for (const explorer of this.explorers) {
