@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 
 const WS_URL = 'ws://localhost:8080/v1a/event_ws'
+const NODE_URL = 'http://localhost:8080/v1a/event'
 
 type EventConstantType = 'EVENT'
 
@@ -170,4 +171,83 @@ export const useWebSocket = (
   }, [Object.values(notifications).length])
 
   return messages
+}
+
+export const useWebSocketGeneric = (
+  onMessage: (message: BaseEvent) => void,
+  real_time = false,
+  last_ack_event_id = 0,
+  window_size = 10
+): [BaseEvent[], boolean] => {
+  const [messages, setMessages] = useState<BaseEvent[]>([])
+  const [socket, setSocket] = useState<WebSocket | null>(null)
+  const [isConnecting, setIsConnecting] = useState(false) // Track connection state
+
+  const get_latest = async () => {
+    const response = await fetch(`${NODE_URL}?size=1`)
+    const result = await response.json()
+    const latest = result.latest_event_id
+    console.log('latest_event_id:', latest)
+    return latest
+  }
+
+  useEffect(() => {
+    let latest: number
+    const connect = async () => {
+      setIsConnecting(true) // Set connecting state
+      try {
+        const ws = new WebSocket(WS_URL)
+        setSocket(ws)
+
+        ws.onopen = () => {
+          console.log('WebSocket connection opened')
+          setIsConnecting(false) // Set connected state
+          // Send start message after connection is established
+          ws.send(
+            JSON.stringify({
+              type: 'START_STREAM',
+              last_ack_event_id: real_time ? (latest - 10 > 0 ? latest - 10 : latest) : last_ack_event_id, // Start from the beginning
+              window_size: window_size, // Adjust window size as needed
+            })
+          )
+        }
+
+        ws.onmessage = (event: MessageEvent) => {
+          const message: BaseEvent = JSON.parse(event.data).event // Extract actual event
+          if (message && message.id && message.type) {
+            ws.send(
+              JSON.stringify({
+                type: 'ACK',
+                ack_event_id: message.id, // Start from the beginning
+                window_size: window_size, // Adjust window size as needed
+              })
+            )
+            onMessage(message)
+          }
+        }
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error)
+          setIsConnecting(false) // Set disconnected state
+          // Implement retry logic here (optional)
+        }
+      } catch (error) {
+        console.error('Error connecting to WebSocket:', error)
+        setIsConnecting(false) // Set disconnected state
+      }
+    }
+
+    if (real_time)
+      get_latest().then((res) => {
+        latest = res
+        connect()
+      })
+    else connect()
+
+    return () => {
+      socket?.close() // Close connection on cleanup
+    }
+  }, []) // Include socket in dependency array
+
+  return [messages, isConnecting] // Return messages and connection state
 }

@@ -7,7 +7,7 @@ import { useState, useCallback, useMemo, useEffect, FC, ReactNode } from 'react'
 import { TradeType } from '../components/utils/TradeType'
 import { useNetwork, useSettings, useTrade } from '@dozer/zustand'
 import { SwapStatsDisclosure, SettingsOverlay } from '../components'
-import { Checker } from '@dozer/higmi'
+import { Checker, EventType, useWebSocketGeneric } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
 import { useRouter } from 'next/router'
@@ -42,11 +42,21 @@ export const getStaticProps: GetStaticProps = async () => {
     props: {
       trpcState: ssg.dehydrate(),
     },
-    revalidate: 3600,
+    // revalidate: 3600,
   }
 }
 
 const Home = () => {
+  const utils = api.useUtils()
+  useWebSocketGeneric((message) => {
+    if (message.type == EventType.NEW_VERTEX_ACCEPTED || message.type == EventType.VERTEX_METADATA_CHANGED) {
+      console.log('new message', message)
+      // TODO! Study how to optimize this invalidate when new block comes.
+      // utils.getPools.all.invalidate()
+      // utils.getTokens.all.invalidate()
+      // utils.getTokens.all.invalidate()
+    }
+  }, true)
   return (
     <Layout>
       <SwapWidget token0_idx={0} token1_idx={1} />

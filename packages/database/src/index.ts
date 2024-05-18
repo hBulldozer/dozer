@@ -53,5 +53,5 @@ if (process.env['NODE_ENV'] === 'production') {
 
 export default prisma
 // export { Prisma, PrismaClient } from '@prisma/client'
-export * from '@prisma/client'
 export { seed_db } from './seed_db'
+export * from '@prisma/client'

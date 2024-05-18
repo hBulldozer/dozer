@@ -72,6 +72,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
               failed: 'Failed summary',
               info: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
             },
+            status: 'pending',
             txHash: res.hash,
             groupTimestamp: Math.floor(Date.now() / 1000),
             timestamp: Math.floor(Date.now() / 1000),
