@@ -10,18 +10,18 @@ import { fetchFakeData } from './fetchFakeData'
  * @throws {Error} If both local and public node fetches fail, or if there are errors during the process.
  */
 export async function fetchNodeData(endpoint: string, queryParams: string[]): Promise<any> {
-  if (!process.env.LOCAL_NODE_URL && !process.env.PUBLIC_NODE_URL) {
+  if (!process.env.NEXT_PUBLIC_LOCAL_NODE_URL && !process.env.NEXT_PUBLIC_PUBLIC_NODE_URL) {
     // If Node URL is not given, returns fake data
     return fetchFakeData(endpoint, queryParams)
   }
   try {
-    const localNodeUrl = `${process.env.LOCAL_NODE_URL}${endpoint}?${queryParams.join('&')}`
+    const localNodeUrl = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}${endpoint}?${queryParams.join('&')}`
     if (localNodeUrl) {
       try {
         const response = await fetch(localNodeUrl)
         return await response.json()
       } catch {
-        const publicNodeUrl = `${process.env.PUBLIC_NODE_URL}${endpoint}?${queryParams.join('&')}`
+        const publicNodeUrl = `${process.env.NEXT_PUBLIC_PUBLIC_NODE_URL}${endpoint}?${queryParams.join('&')}`
         if (publicNodeUrl) {
           const response = await fetch(publicNodeUrl)
           return await response.json()

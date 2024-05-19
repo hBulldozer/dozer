@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 
-const WS_URL = 'ws://localhost:8080/v1a/event_ws'
-const NODE_URL = 'http://localhost:8080/v1a/event'
+const WS_URL = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL?.replace('http', 'ws')}event_ws`
+const NODE_URL = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}event`
 
 type EventConstantType = 'EVENT'
 
@@ -190,7 +190,6 @@ export const useWebSocketGeneric = (
     console.log('latest_event_id:', latest)
     return latest
   }
-
   useEffect(() => {
     let latest: number
     const connect = async () => {

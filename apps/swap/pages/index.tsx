@@ -50,7 +50,7 @@ const Home = () => {
   const utils = api.useUtils()
   useWebSocketGeneric((message) => {
     if (message.type == EventType.NEW_VERTEX_ACCEPTED || message.type == EventType.VERTEX_METADATA_CHANGED) {
-      console.log('new message', message)
+      // console.log('new message', message)
       // TODO! Study how to optimize this invalidate when new block comes.
       // utils.getPools.all.invalidate()
       // utils.getTokens.all.invalidate()

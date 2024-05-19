@@ -6,7 +6,7 @@ export const useBalance = (address: string) => {
     queryFn: async () =>
       fetch(
         `${
-          process.env.LOCAL_NODE_URL || 'https://node1.testnet.hathor.network/v1a/'
+          process.env.NEXT_PUBLIC_LOCAL_NODE_URL || 'https://node1.testnet.hathor.network/v1a/'
         }thin_wallet/address_balance?address=${address}`
       ).then((response) => response.json()),
     staleTime: 100,
