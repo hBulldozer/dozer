@@ -6,7 +6,7 @@ export const useTotalSupply = (uuid: string, chainId: number) => {
     return useQuery({
       queryKey: ['totalSupply' + uuid],
       queryFn: async () =>
-        fetch('https://node1.mainnet.hathor.network/v1a/thin_wallet/token?id=' + uuid).then((response) =>
+        fetch(`${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}thin_wallet/token?id=` + uuid).then((response) =>
           response.json()
         ),
       staleTime: 100,
@@ -16,7 +16,7 @@ export const useTotalSupply = (uuid: string, chainId: number) => {
     return useQuery({
       queryKey: ['totalSupply' + uuid],
       queryFn: async () =>
-        fetch('https://node1.testnet.hathor.network/v1a/thin_wallet/token?id=' + uuid).then((response) =>
+        fetch(`${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}thin_wallet/token?id=` + uuid).then((response) =>
           response.json()
         ),
       staleTime: 100,

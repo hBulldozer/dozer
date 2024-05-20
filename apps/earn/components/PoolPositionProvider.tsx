@@ -6,7 +6,7 @@ import { Pair, toToken } from '@dozer/api'
 import { useTokensFromPair } from '@dozer/api'
 import { useUnderlyingTokenBalanceFromPair } from '@dozer/api'
 import { useTotalSupply } from '@dozer/react-query'
-import { isError } from '@tanstack/react-query'
+import { isError, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 interface PoolPositionContext {
   BalanceLPAmount: Amount<Type> | undefined

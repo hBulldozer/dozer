@@ -11,6 +11,7 @@ import { PoolPositionProvider } from '../../components/PoolPositionProvider'
 import { RouterOutputs } from '@dozer/api'
 import { api } from '../../utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 type PoolsOutputArray = RouterOutputs['getPools']['all']
 
@@ -31,6 +32,7 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 const Remove: NextPage = () => {
   const router = useRouter()
   const id = router.query.id as string
+  const queryClient = new QueryClient()
 
   const { data: pools } = api.getPools.all.useQuery()
   if (!pools) return <></>
@@ -42,33 +44,35 @@ const Remove: NextPage = () => {
   if (!prices) return <></>
 
   return (
-    <PoolPositionProvider pair={pair} prices={prices}>
-      <Layout breadcrumbs={LINKS({ pair })}>
-        <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
-          <div className="hidden md:block" />
-          <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-            <RemoveSectionLegacy pair={pair} prices={prices} />
-            <Container className="flex justify-center">
-              <Link.External
-                href="https://docs.dozer.finance/docs/Products/Dozer/Liquidity%20Pools"
-                className="flex justify-center px-6 py-4 decoration-stone-500 hover:bg-opacity-[0.06] cursor-pointer rounded-2xl"
-              >
-                <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-500">
-                  Learn more about liquidity and yield farming
-                  <ExternalLinkIcon width={16} height={16} className="text-stone-500" />
-                </Typography>
-              </Link.External>
-            </Container>
+    <QueryClientProvider client={queryClient}>
+      <PoolPositionProvider pair={pair} prices={prices}>
+        <Layout breadcrumbs={LINKS({ pair })}>
+          <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
+            <div className="hidden md:block" />
+            <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
+              <RemoveSectionLegacy pair={pair} prices={prices} />
+              <Container className="flex justify-center">
+                <Link.External
+                  href="https://docs.dozer.finance/docs/Products/Dozer/Liquidity%20Pools"
+                  className="flex justify-center px-6 py-4 decoration-stone-500 hover:bg-opacity-[0.06] cursor-pointer rounded-2xl"
+                >
+                  <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-500">
+                    Learn more about liquidity and yield farming
+                    <ExternalLinkIcon width={16} height={16} className="text-stone-500" />
+                  </Typography>
+                </Link.External>
+              </Container>
+            </div>
+            <div className="order-1 sm:order-3">
+              <AppearOnMount>
+                <AddSectionMyPosition pair={pair} />
+              </AppearOnMount>
+            </div>
           </div>
-          <div className="order-1 sm:order-3">
-            <AppearOnMount>
-              <AddSectionMyPosition pair={pair} />
-            </AppearOnMount>
-          </div>
-        </div>
-        <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
-      </Layout>
-    </PoolPositionProvider>
+          <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
+        </Layout>
+      </PoolPositionProvider>
+    </QueryClientProvider>
   )
 }
 
