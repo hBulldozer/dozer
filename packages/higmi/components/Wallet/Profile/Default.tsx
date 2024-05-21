@@ -10,14 +10,16 @@ import { useAccount } from '@dozer/zustand'
 import { shortenAddress } from './Utils'
 import { ChainId } from '@dozer/chain'
 import { api } from '../../../utils/api'
+import { client } from '@dozer/api'
 
 interface DefaultProps {
   chainId: ChainId
   address: string
   setView: Dispatch<SetStateAction<ProfileView>>
+  client: typeof client
 }
 
-export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
+export const Default: FC<DefaultProps> = ({ chainId, address, setView, client }) => {
   const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
   // const { data: avatar } = useEnsAvatar({
@@ -48,7 +50,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
   const [showBalance, setShowBalance] = useState<number | undefined>(0)
   const [showUsdtBalance, setShowUsdtBalance] = useState<number | undefined>(0)
   // const { isLoading, error, data: priceHTR } = useHtrPrice()
-  const { isLoading, error, data } = api.getPrices.htr.useQuery()
+  const { isLoading, error, data } = client.getPrices.htr.useQuery()
   const priceHTR = data ? data : 0.01
 
   useEffect(() => {
