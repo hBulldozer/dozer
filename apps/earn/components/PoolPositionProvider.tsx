@@ -36,13 +36,15 @@ export const PoolPositionProvider: FC<{
 
   const [BalanceLPAmount, setBalanceLPAmount] = useState<Amount<Token> | undefined>(undefined)
 
-  const { data, isLoading, isError } = useTotalSupply(liquidityToken.uuid, pair.chainId)
+  const data = {}
+  const isLoading = false
+  const isError = false
   const [reserve0, reserve1] = useMemo(() => {
     return [Amount.fromRawAmount(token0, Number(pair?.reserve0)), Amount.fromRawAmount(token1, Number(pair?.reserve1))]
   }, [pair?.reserve0, pair?.reserve1])
 
   useEffect(() => {
-    if (data && !isLoading && !isError && data['total']) {
+    if (data && !isLoading && !isError) {
       // setTotalSupply(Amount.fromRawAmount(liquidityToken, data['total']))
 
       const BalanceLPToken = balance.find((token) => {

@@ -9,6 +9,7 @@ import { ProfileView } from './Profile'
 import { useAccount } from '@dozer/zustand'
 import { shortenAddress } from './Utils'
 import { ChainId } from '@dozer/chain'
+import { api } from '../../../utils/api'
 
 interface DefaultProps {
   chainId: ChainId
@@ -46,7 +47,9 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView }) => {
   // const balanceAsUsd = prices ? prices['00'] : 0
   const [showBalance, setShowBalance] = useState<number | undefined>(0)
   const [showUsdtBalance, setShowUsdtBalance] = useState<number | undefined>(0)
-  const { isLoading, error, data: priceHTR } = useHtrPrice()
+  // const { isLoading, error, data: priceHTR } = useHtrPrice()
+  const { isLoading, error, data } = api.getPrices.htr.useQuery()
+  const priceHTR = data ? data : 0.01
 
   useEffect(() => {
     setShowBalance(
