@@ -175,7 +175,7 @@ export const poolRouter = createTRPCRouter({
       console.log(response)
       return response
     }),
-  waitForTx: procedure
+  getTxStatus: procedure
     .input(
       z.object({
         hash: z.string(),

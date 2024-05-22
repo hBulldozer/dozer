@@ -10,12 +10,14 @@ export default function useWaitForTransaction(notification: NotificationData, cl
   const { txHash, chainId } = notification
   const { updateNotificationLastState } = useAccount()
   const utils = client.useUtils()
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [timeLeft, setTimeLeft] = useState(0)
+  const seconds = 2
 
-  const fetchTx = async () => {
-    if (!notification.last_status || notification.last_status == 'pending') {
+  useEffect(() => {
+    // exit early when we reach 0
+    async function fetchTx() {
       try {
-        const data = await utils.getPools.waitForTx.fetch({
+        const data = await utils.getPools.getTxStatus.fetch({
           hash: txHash,
           chainId: chainId || ChainId.HATHOR,
         })
@@ -27,16 +29,30 @@ export default function useWaitForTransaction(notification: NotificationData, cl
         setMessage(e as string)
         setStatus('failed')
       }
-    } else {
-      setStatus(notification.last_status || 'pending')
-      setMessage(notification.last_message)
     }
-  }
-  useEffect(() => {
-    const intervalId = setInterval(fetchTx, 5000)
 
-    return () => clearInterval(intervalId) // Cleanup on component unmount
-  }, [])
+    if (!timeLeft) {
+      console.log('fetching tx')
+      if (!notification.last_status || notification.last_status == 'pending') {
+        fetchTx()
+        setTimeLeft(seconds)
+      } else {
+        setStatus(notification.last_status || 'pending')
+        setMessage(notification.last_message)
+      }
+      return
+    }
+
+    // save intervalId to clear the interval when the
+    // component re-renders
+    const intervalId = setInterval(() => {
+      setTimeLeft(timeLeft - 1)
+    }, 1000)
+
+    // clear interval on re-render to avoid memory leaks
+    return () => clearInterval(intervalId)
+    // add timeLeft as a dependency to re-rer
+  }, [status, timeLeft])
 
   return { status: status, message: message }
 }
