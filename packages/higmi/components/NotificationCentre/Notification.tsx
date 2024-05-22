@@ -21,12 +21,12 @@ export const Notification: FC<{
   client: typeof api_client
 }> = ({ data, showExtra = false, hideStatus = false, client }) => {
   const notification: NotificationData = JSON.parse(data)
-  // const { status, message } = useWaitForTransaction(notification, client)
-  const status = notification.status
-  const message = notification.last_message
+  const { status, message } = useWaitForTransaction(notification, client)
+  // const status = notification.status
+  // const message = notification.last_message
 
-  // console.log(notification)
-  // console.log(status, message)
+  console.log(notification)
+  console.log(status, message)
   if (!status)
     return (
       <div className="flex items-center gap-5 px-4 pr-8 rounded-2xl min-h-[82px] w-full">

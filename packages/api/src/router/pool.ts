@@ -189,30 +189,30 @@ export const poolRouter = createTRPCRouter({
       if (input.hash == 'Error') {
         return { status: 'failed', message: 'txHash not defined' }
       }
-      while (validation == 'pending') {
-        await delay(5000)
-        try {
-          endpoint = 'transaction'
-          response = await fetchNodeData(endpoint, [`id=${input.hash}`]).then((res) => {
-            console.log('Waiting tx validation...')
-            validation = res.success
-              ? res.meta.voided_by.length
-                ? 'failed'
-                : res.meta.first_block
-                ? 'success'
-                : 'pending'
-              : 'failed'
-            // console.log(res.success, res.meta.first_block, !res.meta.voided_by.length ? true : false)
-            // console.log(res)
-            message =
-              res.message || res.meta.voided_by.length
-                ? `Error on TX Validation, voided by: ${res.meta.voided_by}`
-                : 'Error on TX Validation'
-          })
-        } catch (e) {
-          console.log(e)
-        }
+      // while (validation == 'pending') {
+      //   await delay(5000)
+      try {
+        endpoint = 'transaction'
+        response = await fetchNodeData(endpoint, [`id=${input.hash}`]).then((res) => {
+          console.log('Waiting tx validation...')
+          validation = res.success
+            ? res.meta.voided_by.length
+              ? 'failed'
+              : res.meta.first_block
+              ? 'success'
+              : 'pending'
+            : 'failed'
+          // console.log(res.success, res.meta.first_block, !res.meta.voided_by.length ? true : false)
+          // console.log(res)
+          message =
+            res.message || res.meta.voided_by.length
+              ? `Error on TX Validation, voided by: ${res.meta.voided_by}`
+              : 'Error on TX Validation'
+        })
+      } catch (e) {
+        console.log(e)
       }
+      // }
       return { status: validation, message: message }
     }),
 })

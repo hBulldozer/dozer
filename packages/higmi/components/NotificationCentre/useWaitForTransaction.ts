@@ -1,5 +1,5 @@
 import { ChainId } from '@dozer/chain'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAccount } from '@dozer/zustand'
 import { NotificationData } from '@dozer/ui'
 import { client as api_client } from '@dozer/api'
@@ -10,6 +10,7 @@ export default function useWaitForTransaction(notification: NotificationData, cl
   const { txHash, chainId } = notification
   const { updateNotificationLastState } = useAccount()
   const utils = client.useUtils()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchTx = async () => {
     if (!notification.last_status || notification.last_status == 'pending') {
@@ -32,8 +33,10 @@ export default function useWaitForTransaction(notification: NotificationData, cl
     }
   }
   useEffect(() => {
-    fetchTx()
-  }, [txHash, chainId])
+    const intervalId = setInterval(fetchTx, 5000)
+
+    return () => clearInterval(intervalId) // Cleanup on component unmount
+  }, [])
 
   return { status: status, message: message }
 }

@@ -22,14 +22,14 @@ export const Transactions: FC<TransactionsProps> = ({
   updateNotificationStatus,
   client,
 }) => {
-  const [messages, setMessages] = useState<BaseEvent[]>([])
-  const desiredEventTypes = [EventType.NEW_VERTEX_ACCEPTED, EventType.VERTEX_METADATA_CHANGED]
+  // const [messages, setMessages] = useState<BaseEvent[]>([])
+  // const desiredEventTypes = [EventType.NEW_VERTEX_ACCEPTED, EventType.VERTEX_METADATA_CHANGED]
 
-  const data = useWebSocket(desiredEventTypes, notifications, updateNotificationStatus)
-  useEffect(() => {
-    // console.log('data', data)
-    setMessages(data)
-  }, [data])
+  // const data = useWebSocket(desiredEventTypes, notifications, updateNotificationStatus)
+  // useEffect(() => {
+  //   // console.log('data', data)
+  //   setMessages(data)
+  // }, [data])
   return (
     <div className="">
       <div className="grid items-center h-12 grid-cols-3 px-2 border-b border-stone-200/20">
