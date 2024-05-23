@@ -1,5 +1,5 @@
 import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData } from '@dozer/ui'
-import { useAccount, useNetwork, useTrade } from '@dozer/zustand'
+import { useAccount, useNetwork, useSettings, useTrade } from '@dozer/zustand'
 import { TradeType } from 'components/utils/TradeType'
 import React, { FC, ReactNode, useCallback, useState } from 'react'
 import { SwapReviewModalBase } from './SwapReviewModalBase'

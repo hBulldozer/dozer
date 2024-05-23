@@ -7,7 +7,7 @@ import { FC, ReactNode, useMemo } from 'react'
 
 // import { useTokenAmountDollarValues } from '../../lib/hooks'
 import { Rate } from '../Rate'
-import { useTrade } from '@dozer/zustand'
+import { useSettings, useTrade } from '@dozer/zustand'
 
 interface SwapReviewModalBase {
   chainId: number | undefined
@@ -17,12 +17,18 @@ interface SwapReviewModalBase {
 }
 
 export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children, open, setOpen }) => {
+  const { slippageTolerance } = useSettings()
+  const { amountSpecified, outputAmount, tradeType, mainCurrencyPrice, otherCurrencyPrice } = useTrade()
   const input0 = useTrade((state) => state.amountSpecified)
-  const input1 = useTrade((state) => state.outputAmount)
+  // const input1 = useTrade((state) => state.outputAmount)
   const value0 = useTrade((state) => state.mainCurrencyPrice)
-  const value1 = useTrade((state) => state.otherCurrencyPrice)
+  // const value1 = useTrade((state) => state.otherCurrencyPrice)
   const token1 = useTrade((state) => state.mainCurrency)
   const token2 = useTrade((state) => state.otherCurrency)
+  // const input0 = amountSpecified ? amountSpecified * (1 - slippageTolerance) : 0
+  const input1 = outputAmount ? outputAmount * (1 - slippageTolerance / 100) : 0
+  // const value0 = mainCurrencyPrice ? mainCurrencyPrice * (1 - slippageTolerance) : 0
+  const value1 = otherCurrencyPrice ? otherCurrencyPrice * (1 - slippageTolerance / 100) : 0
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>
