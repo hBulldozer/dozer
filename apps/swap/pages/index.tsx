@@ -376,8 +376,7 @@ export const SwapButton: FC<{
         priceImpactTooHigh ||
         Number(
           (outputAmount ? outputAmount : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)).toFixed(2)
-        ) == 0 ||
-        Boolean(priceImpactSeverity > 2)
+        ) == 0
       }
       size="md"
       color={priceImpactTooHigh || priceImpactSeverity > 2 ? 'red' : 'blue'}

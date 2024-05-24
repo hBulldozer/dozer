@@ -1,7 +1,7 @@
 import { Disclosure, Transition } from '@headlessui/react'
 import { ChevronRightIcon, InformationCircleIcon } from '@heroicons/react/outline'
 import { classNames, DEFAULT_INPUT_UNSTYLED, Input, Tab, Tooltip, Typography } from '@dozer/ui'
-import { FC, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 
 import { useSettings } from '@dozer/zustand'
 
@@ -13,6 +13,10 @@ export const SlippageToleranceDisclosure: FC = () => {
     setSlippage(value)
     setSlippageTolerance(parseFloat(value || '0'))
   }
+
+  useEffect(() => {
+    if (slippageToleranceType == 'custom') setSlippageTolerance(parseFloat(slippage))
+  }, [slippageToleranceType])
 
   return (
     <Disclosure>
@@ -61,7 +65,7 @@ export const SlippageToleranceDisclosure: FC = () => {
               </div>
               <div className="flex gap-1">
                 <Typography variant="sm" weight={500} className="group-hover:text-stone-200 text-stone-400">
-                  {slippageToleranceType === 'auto' ? 'Auto' : `Custom (${slippageTolerance}%)`}
+                  {slippageToleranceType === 'auto' ? 'Auto' : `Custom (${slippage}%)`}
                 </Typography>
                 <div
                   className={classNames(
@@ -104,10 +108,9 @@ export const SlippageToleranceDisclosure: FC = () => {
                       <div className="flex items-center gap-2">
                         <Input.Numeric
                           variant="unstyled"
-                          disabled
-                          value={slippage || '0'}
+                          // disabled
+                          value={slippage || ''}
                           onUserInput={(val) => onChange(val)}
-                          placeholder="1"
                           className={classNames(DEFAULT_INPUT_UNSTYLED, '')}
                         />
                         <Typography variant="xs" weight={500} className="text-stone-400">
