@@ -73,7 +73,7 @@ async function GetHeadless(wallet: string, path: string, headers: any, body: any
   }
 }
 
-export async function seed_nc() {
+export async function seed_nc(n_users = 5) {
   // write the script to initialize wallet and create the contract
   let DZR_uuid, USDT_uuid, admin_address, HTR_USDT_ncid, HTR_DZR_ncid
   let users_addresses: string[] | undefined
@@ -173,44 +173,38 @@ export async function seed_nc() {
   })
   await check_wallet('users')
 
-  // 8. Get all users addresses
-  console.log('Getting all users addresses...')
-  await GetHeadless('users', '/wallet/addresses', { 'x-wallet-id': 'default' }, {}).then((data) => {
-    if (data.addresses) {
-      users_addresses = data.addresses
-      console.log(`Returned ${users_addresses?.length} adressess from wallet.`)
-    } else {
-      throw new Error(`Failed to get users addresses. ${data.message}`)
-    }
-  })
-
-  // 9. Sending 50 HTR for each user
+  // 8. Sending 50 HTR for each user
   console.log('Sending funds to users...')
-  if (users_addresses) {
-    // for (var i = 0; i < users_addresses.length; i++) {
-    for (let i = 0; i < 5; i++) {
-      const address = users_addresses[i]
-      console.log(`Sending 100k HTR to ${address}...`)
-      await PostHeadless(
-        'master',
-        '/wallet/simple-send-tx',
-        { 'x-wallet-id': process.env.WALLET_ID },
-        {
-          address: address,
-          value: 100_000_00,
-          token: '00',
-        }
-      ).then(async (data) => {
-        if (data.success) {
-          console.log(`Sent 100k HTR to ${address}.`)
-        } else {
-          throw new Error(`Failed to send HTR to ${address}.` + data)
-        }
-      })
-      await delay(2000)
-    }
-  } else {
-    throw new Error('No users addresses found.')
+  for (var i = 0; i < n_users; i++) {
+    // Get user address
+    console.log(`Get address of #${i + 1} user...`)
+    let address = ''
+    await GetHeadless('users', `/wallet/address?index=${i}`, { 'x-wallet-id': 'default' }, {}).then((data) => {
+      if (data.address) {
+        address = data.address
+        console.log(`User #${i + 1} address: ${address}`)
+      } else {
+        throw new Error(`Failed to get user address. ${data.message}`)
+      }
+    })
+    console.log(`Sending 100k HTR to ${address}...`)
+    await PostHeadless(
+      'master',
+      '/wallet/simple-send-tx',
+      { 'x-wallet-id': process.env.WALLET_ID },
+      {
+        address: address,
+        value: 100_000_00,
+        token: '00',
+      }
+    ).then(async (data) => {
+      if (data.success) {
+        console.log(`Sent 100k HTR to ${address}.`)
+      } else {
+        throw new Error(`Failed to send HTR to ${address}.` + data)
+      }
+    })
+    await delay(2000)
   }
 
   console.log('Users funding complete!')
