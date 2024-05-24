@@ -1,5 +1,5 @@
 import { ChevronDoubleDownIcon } from '@heroicons/react/outline'
-import { AppearOnMount, ButtonProps, Menu } from '@dozer/ui'
+import { AppearOnMount, ButtonProps, Menu, Typography } from '@dozer/ui'
 import React, { ReactNode, useMemo, useState } from 'react'
 import { Address } from '@dozer/ui/input/Address'
 import { useAccount } from '@dozer/zustand'
@@ -50,8 +50,19 @@ export const Button = <C extends React.ElementType>({
     setAddress(input)
   }
 
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key == 'Enter') {
+      if (input.length == 34) connect()
+      else event.preventDefault()
+    }
+  }
+
   function onChange(x: string) {
-    setInput(x)
+    if (x.length > 34) {
+      setInput(x.slice(0, 34))
+    } else {
+      setInput(x)
+    }
   }
 
   return (
@@ -83,18 +94,32 @@ export const Button = <C extends React.ElementType>({
               <Address
                 id="connect_address"
                 value={input}
+                error={input.length != 34}
                 onChange={onChange}
-                onKeyDown={() => setInput('WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr')}
-                placeholder="WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr"
+                onKeyDown={handleKeyDown}
+                // onKeyDown={() => setInput('WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr')}
+                // placeholder="WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr"
               />
               <div>
                 {isMounted && (
-                  <Menu.Item key="htr_connector" onClick={() => connect()} className="flex items-center gap-3 group">
-                    <div className="-ml-[6px] group-hover:bg-yellow-700 rounded-full group-hover:ring-[1px] group-hover:ring-yellow-100">
-                      {Icons['Injected'] && Icons['Injected']}
-                    </div>{' '}
-                    Hathor Wallet
-                  </Menu.Item>
+                  <>
+                    {input.length == 34 ? (
+                      <Menu.Item
+                        key="htr_connector"
+                        onClick={() => connect()}
+                        className="flex items-center gap-3 group"
+                      >
+                        <div className="-ml-[6px] group-hover:bg-yellow-700 rounded-full group-hover:ring-[1px] group-hover:ring-yellow-100">
+                          {Icons['Injected'] && Icons['Injected']}
+                        </div>{' '}
+                        {input.length != 34 ? 'Wrong address' : 'Connect'}
+                      </Menu.Item>
+                    ) : (
+                      <Typography variant="sm" className="my-2 text-center text-stone-200">
+                        Wrong address
+                      </Typography>
+                    )}
+                  </>
                 )}
               </div>
             </Menu.Items>

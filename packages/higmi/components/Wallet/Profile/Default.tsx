@@ -1,16 +1,18 @@
-import { BuyCrypto, CopyHelper, IconButton, JazzIcon, Typography } from '@dozer/ui'
+import { BuyCrypto, CopyHelper, Currency, IconButton, JazzIcon, Typography } from '@dozer/ui'
 // import { useBalance, useDisconnect, useEnsAvatar } from '@dozer/zustand'
 import { CreditCardIcon, DuplicateIcon, ExternalLinkIcon, LogoutIcon } from '@heroicons/react/outline'
 import { ChevronRightIcon } from '@heroicons/react/solid'
-import { Dispatch, FC, SetStateAction, useCallback, useEffect, useState } from 'react'
+import { Dispatch, FC, SetStateAction, useCallback, useEffect, useRef, useState } from 'react'
 
 import { useHtrPrice } from '@dozer/react-query'
 import { ProfileView } from './Profile'
-import { useAccount } from '@dozer/zustand'
+import { useAccount, useNetwork } from '@dozer/zustand'
 import { shortenAddress } from './Utils'
-import { ChainId } from '@dozer/chain'
+import chains, { ChainId } from '@dozer/chain'
 import { api } from '../../../utils/api'
 import { client } from '@dozer/api'
+import { Token } from '@dozer/currency'
+import { useInViewport } from '@dozer/hooks'
 
 interface DefaultProps {
   chainId: ChainId
@@ -22,6 +24,7 @@ interface DefaultProps {
 export const Default: FC<DefaultProps> = ({ chainId, address, setView, client }) => {
   const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
+  const { network } = useNetwork()
   // const { data: avatar } = useEnsAvatar({
   //   address: address,
   // })
@@ -49,6 +52,8 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
   // const balanceAsUsd = prices ? prices['00'] : 0
   const [showBalance, setShowBalance] = useState<number | undefined>(0)
   const [showUsdtBalance, setShowUsdtBalance] = useState<number | undefined>(0)
+  const ref = useRef<HTMLDivElement>(null)
+  const inViewport = useInViewport(ref)
   // const { isLoading, error, data: priceHTR } = useHtrPrice()
   const { isLoading, error, data } = client.getPrices.htr.useQuery()
   const priceHTR = data ? data : 0.01
@@ -92,7 +97,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
             <IconButton
               as="a"
               target="_blank"
-              // href={chains[chainId].getAccountUrl(address)}
+              href={chains[chainId].getAccountUrl(address)}
               className="p-0.5"
               description="Explore"
             >
@@ -104,35 +109,58 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
           </div>
         </div>
         <div className="flex justify-center gap-8">
-          <div className="flex flex-col items-center justify-center gap-2">
-            <Typography variant="h3" className="whitespace-nowrap">
-              {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-              {showBalance ? (showBalance / 100).toString() + ' HTR' : ''}
+          {!isLoading && !showBalance && !showUsdtBalance ? (
+            <Typography variant="sm" className="text-center text-stone-500">
+              No balances in HTR or USDT
             </Typography>
-            <Typography weight={600} className="text-stone-400">
-              {/* {showBalance && showBalance != 0  ? '$' + ((showBalance / 100) * priceHTR).toFixed(2) : ''} */}
-              {isLoading
-                ? 'Loading'
-                : showBalance && showBalance != 0
-                ? '$' + ((showBalance / 100) * priceHTR).toFixed(2)
-                : ''}
-            </Typography>
-          </div>
+          ) : null}
+          {showBalance ? (
+            <div className="flex flex-col items-center justify-center gap-2">
+              <Currency.Icon
+                width={20}
+                height={20}
+                currency={new Token({ chainId: network, uuid: '00', symbol: 'HTR', name: 'Hathor', decimals: 2 })}
+                priority={inViewport}
+              />
 
-          <div className="flex flex-col items-center justify-center gap-2">
-            <Typography variant="h3" className="whitespace-nowrap">
-              {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-              {showUsdtBalance ? (showUsdtBalance / 100).toString() + ' USDT' : ''}
-            </Typography>
-            <Typography weight={600} className="text-stone-400">
-              {/* {showBalance && showBalance != 0  ? '$' + ((showBalance / 100) * priceHTR).toFixed(2) : ''} */}
-              {isLoading
-                ? 'Loading'
-                : showUsdtBalance && showUsdtBalance != 0
-                ? '$' + (showUsdtBalance / 100).toFixed(2)
-                : ''}
-            </Typography>
-          </div>
+              <Typography variant="h3" className="whitespace-nowrap">
+                {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
+                {showBalance ? (showBalance / 100).toLocaleString() : ''}
+              </Typography>
+              <Typography weight={600} className="text-stone-400">
+                {/* {showBalance && showBalance != 0  ? '$' + ((showBalance / 100) * priceHTR).toFixed(2) : ''} */}
+                {isLoading
+                  ? 'Loading'
+                  : showBalance && showBalance != 0
+                  ? '$' + ((showBalance / 100) * priceHTR).toLocaleString()
+                  : ''}
+              </Typography>
+            </div>
+          ) : null}
+
+          {showUsdtBalance ? (
+            <div className="flex flex-col items-center justify-center gap-2">
+              <Currency.Icon
+                width={20}
+                height={20}
+                currency={new Token({ chainId: network, uuid: 'xx', symbol: 'USDT', name: 'USD Tether', decimals: 2 })}
+                priority={inViewport}
+              />
+
+              <Typography variant="h3" className="whitespace-nowrap">
+                {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
+                {showUsdtBalance ? (showUsdtBalance / 100).toLocaleString() : ''}
+              </Typography>
+              <Typography weight={600} className="text-stone-400">
+                {/* {showBalance && showBalance != 0  ? '$' + ((showBalance / 100) * priceHTR).toFixed(2) : ''} */}
+                {isLoading
+                  ? 'Loading'
+                  : showUsdtBalance && showUsdtBalance != 0
+                  ? '$' + (showUsdtBalance / 100).toLocaleString()
+                  : ''}
+              </Typography>
+            </div>
+          ) : null}
         </div>
       </div>
       <div className="px-2">

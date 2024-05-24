@@ -36,14 +36,14 @@ export const Address = forwardRef<HTMLInputElement, AddressProps>(
           title={title}
           placeholder={placeholder}
           value={value}
-          type="search"
+          type="text"
           className={
             variant === 'default'
               ? classNames(DEFAULT_INPUT_CLASSNAME, error ? ERROR_INPUT_CLASSNAME : '', className)
               : className
           }
           onChange={(event) => onChange && onChange(event.target.value.replace(matchSpaces, ''))}
-          inputMode="search"
+          inputMode="text"
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
