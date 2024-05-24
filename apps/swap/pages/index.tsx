@@ -146,7 +146,6 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
   // }, [inputToken, outputToken])
 
   useEffect(() => {
-    let isSubscribed = true
     const fetchData = async () => {
       setFetchLoading(true)
       if (tradeType == TradeType.EXACT_INPUT) {
@@ -159,23 +158,21 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
               })
             : undefined
         // set state with the result if `isSubscribed` is true
-        if (isSubscribed) {
-          setInput1(response && response.amount_out != 0 ? response.amount_out.toFixed(2) : '')
-          setPriceImpact(response ? response.price_impact : 0)
-        }
+
+        setInput1(response && response.amount_out != 0 ? response.amount_out.toFixed(2) : '')
+        setPriceImpact(response ? response.price_impact : 0)
       } else {
         const response =
-          selectedPool && token1
-            ? await utils.getPools.quote_exact_tokens_for_tokens.fetch({
+          selectedPool && token0
+            ? await utils.getPools.quote_tokens_for_exact_tokens.fetch({
                 id: selectedPool?.id,
-                amount_in: parseFloat(input1),
-                token_in: token1?.uuid,
+                amount_out: parseFloat(input1),
+                token_in: token0?.uuid,
               })
             : undefined
-        if (isSubscribed) {
-          setInput0(response && response.amount_out != 0 ? response.amount_out.toFixed(2) : '')
-          setPriceImpact(response ? response.price_impact : 0)
-        }
+
+        setInput0(response && response.amount_in != 0 ? response.amount_in.toFixed(2) : '')
+        setPriceImpact(response ? response.price_impact : 0)
       }
     }
     setSelectedPool(
@@ -218,11 +215,6 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
       trade.setOutputAmount(0)
       trade.setPriceImpact(0)
       trade.setTradeType(tradeType)
-    }
-
-    // cancel any future `setData`
-    return () => {
-      isSubscribed = false
     }
   }, [pools, token0, token1, input0, input1, prices, network, tokens, priceImpact])
 
