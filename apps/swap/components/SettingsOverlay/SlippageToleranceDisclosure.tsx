@@ -10,8 +10,11 @@ export const SlippageToleranceDisclosure: FC = () => {
   const [slippage, setSlippage] = useState<string>(slippageTolerance.toFixed(2))
 
   const onChange = (value: string) => {
-    setSlippage(value)
-    setSlippageTolerance(parseFloat(value || '0') / 100)
+    let slip: string
+    if (parseFloat(value) > 100) slip = '100'
+    else slip = value
+    setSlippage(slip)
+    setSlippageTolerance(parseFloat(slip || '0') / 100)
   }
 
   useEffect(() => {
