@@ -299,7 +299,7 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
         <div className="bg-stone-800">
           <CurrencyInput
             id={'swap-output-currency1'}
-            // disabled={true}
+            disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
             className="p-3"
             value={selectedPool ? (token0?.symbol && token1?.symbol ? input1 : '') : ''}
             onChange={onInput1}

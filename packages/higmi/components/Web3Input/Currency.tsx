@@ -269,7 +269,7 @@ const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, loa
           )}
         >
           {' '}
-          {`${usd === 0 ? '' : usd > 0 ? '(+' : '('}${usd === 0 ? '0.00' : usd?.toFixed(2)}%)`}
+          {/* {`${usd === 0 ? '' : usd > 0 ? '(+' : '('}${usd === 0 ? '0.00' : usd?.toFixed(2)}%)`} */}
         </span>
       )}
     </Typography>

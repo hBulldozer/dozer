@@ -34,7 +34,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
           'text-right truncate'
         )}
       >
-        {trade?.priceImpact?.toFixed(2)}%
+        -{trade?.priceImpact?.toFixed(2)}%
       </Typography>
       <div className="col-span-2 border-t border-stone-200/5 w-full py-0.5" />
       <Typography variant="sm" className="text-stone-400">
