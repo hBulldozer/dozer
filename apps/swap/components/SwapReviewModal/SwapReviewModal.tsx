@@ -107,7 +107,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
       mutation.mutate({
         amount_in: amountSpecified,
         token_in: mainCurrency.uuid,
-        amount_out: outputAmount * (1 - slippageTolerance / 100),
+        amount_out: outputAmount * (1 - slippageTolerance),
         ncid: pool.id,
         token_out: otherCurrency.uuid,
         address,

@@ -174,7 +174,7 @@ export const pricesRouter = createTRPCRouter({
       throw new Error('Failed to get USDT Token')
     }
     const pool = await HTRPoolByTokenUuidFromContract(USDT?.uuid, USDT?.chainId, prisma)
-    return Number(pool?.reserve0) / Number(pool?.reserve1)
+    return Number(pool?.reserve1) / Number(pool?.reserve0)
   }),
   htrKline: procedure
     .output(z.array(z.object({ price: z.number(), date: z.number() })))
