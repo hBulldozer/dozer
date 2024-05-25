@@ -11,11 +11,11 @@ export const SlippageToleranceDisclosure: FC = () => {
 
   const onChange = (value: string) => {
     setSlippage(value)
-    setSlippageTolerance(parseFloat(value || '0'))
+    setSlippageTolerance(parseFloat(value || '0') / 100)
   }
 
   useEffect(() => {
-    if (slippageToleranceType == 'custom') setSlippageTolerance(parseFloat(slippage))
+    if (slippageToleranceType == 'custom') setSlippageTolerance(parseFloat(slippage) / 100)
   }, [slippageToleranceType])
 
   return (
