@@ -12,7 +12,10 @@ async function check_wallet(wallet: string) {
       response = await GetHeadless(
         wallet,
         '/wallet/status',
-        { 'x-wallet-id': wallet == 'master' ? process.env.WALLET_ID : 'default' },
+        {
+          'x-wallet-id': wallet == 'master' ? process.env.WALLET_ID : 'default',
+          'X-API-Key': process.env.WALLET_API_KEY,
+        },
         {}
       ).then((res) => {
         console.log('Waiting wallet to be ready...')
@@ -28,9 +31,14 @@ async function check_wallet(wallet: string) {
 
 async function PostHeadless(wallet: string, path: string, headers: any, body: any): Promise<any> {
   // TODO: Create a validator for Hathor valid address?
-  if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID || !process.env.LOCAL_WALLET_USERS_URL) {
+  if (
+    !process.env.LOCAL_WALLET_MASTER_URL ||
+    !process.env.WALLET_ID ||
+    !process.env.LOCAL_WALLET_USERS_URL ||
+    !process.env.WALLET_API_KEY
+  ) {
     // If Wallet URL is not given, returns fake data
-    throw new Error('Wallet URL or Wallet ID is not given')
+    throw new Error('Wallet URL, Wallet ID or Wallet API Key is not given')
   }
   try {
     const localWalletUrl = `${
@@ -38,7 +46,7 @@ async function PostHeadless(wallet: string, path: string, headers: any, body: an
     }${path}`
     const requestOptions = {
       method: 'POST',
-      headers: { ...headers, 'Content-Type': 'application/json' },
+      headers: { ...headers, 'Content-Type': 'application/json', 'X-API-Key': process.env.WALLET_API_KEY },
       body: JSON.stringify(body),
     }
     const response = await fetch(localWalletUrl, requestOptions)
@@ -50,9 +58,14 @@ async function PostHeadless(wallet: string, path: string, headers: any, body: an
 
 async function GetHeadless(wallet: string, path: string, headers: any, body: any): Promise<any> {
   // TODO: Create a validator for Hathor valid address?
-  if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID || !process.env.LOCAL_WALLET_USERS_URL) {
+  if (
+    !process.env.LOCAL_WALLET_MASTER_URL ||
+    !process.env.WALLET_ID ||
+    !process.env.LOCAL_WALLET_USERS_URL ||
+    !process.env.WALLET_API_KEY
+  ) {
     // If Wallet URL is not given, returns fake data
-    throw new Error('Wallet URL or Wallet ID is not given')
+    throw new Error('Wallet URL, Wallet ID or Wallet API Key is not given')
   }
   try {
     const localWalletUrl = `${
@@ -60,7 +73,7 @@ async function GetHeadless(wallet: string, path: string, headers: any, body: any
     }${path}`
     const requestOptions = {
       method: 'GET',
-      headers: { ...headers, 'Content-Type': 'application/json' },
+      headers: { ...headers, 'Content-Type': 'application/json', 'X-API-Key': process.env.WALLET_API_KEY },
     }
     try {
       const response = await fetch(localWalletUrl, requestOptions)

@@ -44,6 +44,7 @@
         "NEXT_PUBLIC_PUBLIC_NODE_URL",
         "LOCAL_WALLET_MASTER_URL",
         "LOCAL_WALLET_USERS_URL",
+        "WALLET_API_KEY",
         "WALLET_ID",
         "LPBLUEPRINT"
       ],

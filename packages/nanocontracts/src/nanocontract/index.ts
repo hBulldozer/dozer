@@ -34,7 +34,7 @@ export class NanoContract {
 
   public async create(blueprint_id: string, address: string, actions: NCAction[], args: NCArgs[]) {
     // TODO: Create a validator for Hathor valid address?
-    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID) {
+    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID || !process.env.WALLET_API_KEY) {
       // If Wallet URL is not given, returns fake data
       return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     }
@@ -43,7 +43,11 @@ export class NanoContract {
       if (localWalletUrl) {
         const requestOptions = {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-wallet-id': process.env.WALLET_ID },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-wallet-id': process.env.WALLET_ID,
+            'X-API-Key': process.env.WALLET_API_KEY,
+          },
           body: JSON.stringify({
             blueprint_id: blueprint_id,
             address: address,
@@ -70,7 +74,12 @@ export class NanoContract {
     wallet?: string
   ): Promise<any> {
     // TODO: Create a validator for Hathor valid address?
-    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.LOCAL_WALLET_USERS_URL || !process.env.WALLET_ID) {
+    if (
+      !process.env.LOCAL_WALLET_MASTER_URL ||
+      !process.env.LOCAL_WALLET_USERS_URL ||
+      !process.env.WALLET_ID ||
+      !process.env.WALLET_API_KEY
+    ) {
       // If Wallet URL is not given, returns fake data
       return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     }
@@ -82,6 +91,7 @@ export class NanoContract {
         const requestOptions = {
           method: 'POST',
           headers: {
+            'X-API-Key': process.env.WALLET_API_KEY,
             'Content-Type': 'application/json',
             'x-wallet-id': wallet == 'users' ? 'default' : process.env.WALLET_ID,
           },
@@ -105,7 +115,7 @@ export class NanoContract {
   }
 
   public async state(ncid: string, balances: string[], fields: string[], calls: string[]): Promise<any> {
-    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID) {
+    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID || !process.env.WALLET_API_KEY) {
       // If Wallet URL is not given, returns fake data
       return {}
     }
@@ -117,7 +127,7 @@ export class NanoContract {
         const calls_string = calls.map((call) => `calls[]=${call}&`)
         const requestOptions = {
           method: 'GET',
-          headers: { 'x-wallet-id': process.env.WALLET_ID },
+          headers: { 'x-wallet-id': process.env.WALLET_ID, 'X-API-Key': process.env.WALLET_API_KEY },
           params: `id=${ncid}&${balances_string}${fields_string}${calls_string}`,
         }
         try {
@@ -133,7 +143,7 @@ export class NanoContract {
   }
 
   public async history(ncid: string): Promise<any> {
-    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID) {
+    if (!process.env.LOCAL_WALLET_MASTER_URL || !process.env.WALLET_ID || !process.env.WALLET_API_KEY) {
       // If Wallet URL is not given, returns fake data
       return {}
     }
@@ -142,7 +152,7 @@ export class NanoContract {
       if (localWalletUrl) {
         const requestOptions = {
           method: 'GET',
-          headers: { 'x-wallet-id': process.env.WALLET_ID },
+          headers: { 'x-wallet-id': process.env.WALLET_ID, 'X-API-Key': process.env.WALLET_API_KEY },
           params: `id=${ncid}`,
         }
         try {
