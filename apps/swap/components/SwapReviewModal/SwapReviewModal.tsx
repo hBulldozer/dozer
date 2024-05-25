@@ -19,6 +19,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   const { network } = useNetwork()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
+  const { slippageTolerance } = useSettings()
   const [isWritePending, setIsWritePending] = useState<boolean>(false)
 
   const onCloseCard = useCallback(() => {
@@ -106,7 +107,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
       mutation.mutate({
         amount_in: amountSpecified,
         token_in: mainCurrency.uuid,
-        amount_out: outputAmount,
+        amount_out: outputAmount * (1 - slippageTolerance / 100),
         ncid: pool.id,
         token_out: otherCurrency.uuid,
         address,

@@ -131,6 +131,7 @@ const Token = () => {
                 About
               </Typography>
               <Typography variant="lg" weight={400} className="pb-16 md:pb-0">
+                {}
                 Cathor is the original Hathor Network community coin. Minted in February 2021 by the CEO of Hathor for
                 the community, Cathor’s mission is to support and grow awareness for the Hathor Network and projects
                 building on Hathor.
