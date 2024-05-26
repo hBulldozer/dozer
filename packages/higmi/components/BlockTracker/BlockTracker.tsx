@@ -55,11 +55,7 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
               </div>
             </span>
           }
-          panel={
-            <div className="text-xs rounded-2xl text-stone-300">
-              The most recent block number on this network. Prices update on every block.
-            </div>
-          }
+          panel={<div className="text-xs rounded-2xl text-stone-300">Latest synced block</div>}
         />
       </Link.External>
     </div>

@@ -102,7 +102,7 @@ export function Header({
               }
             >
               <Select.Options className="w-[max-content] !bg-stone-700 -ml-5 mt-5 !max-h-[unset]">
-                <div className="grid grid-cols-1 gap-1 px-2 py-2 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-1 px-2 py-2 md:grid-cols-2">
                   <div>
                     <Typography
                       variant="xs"
@@ -183,7 +183,7 @@ export function Header({
                       href="https://www.x.com/DozerProtocol"
                       key="Check our Tweets"
                       value="Check our Tweets"
-                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                      className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
                     >
                       Twiter
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
@@ -195,7 +195,7 @@ export function Header({
                       href="https://www.t.me/h_bulldozer"
                       key="Contact us!"
                       value="Contact us!"
-                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                      className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
                     >
                       Contact us!
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
@@ -207,7 +207,7 @@ export function Header({
                       href="https://www.docs.dozer.finance"
                       key="Check our Docs"
                       value="Check our Docs"
-                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                      className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
                     >
                       Documentation
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
