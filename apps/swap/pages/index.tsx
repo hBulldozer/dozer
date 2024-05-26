@@ -16,6 +16,7 @@ import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import type { GetStaticProps } from 'next'
 import type { dbPoolWithTokens, Pair } from '@dozer/api'
 import { tr } from 'date-fns/locale'
+import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
 type TokenOutputArray = RouterOutputs['getTokens']['all']
 
@@ -60,6 +61,7 @@ const Home = () => {
   return (
     <Layout>
       <SwapWidget token0_idx={0} token1_idx={1} />
+      <BlockTracker client={api} />
     </Layout>
   )
 }

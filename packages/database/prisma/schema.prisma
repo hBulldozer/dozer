@@ -26,6 +26,7 @@ model Token {
   pools0           Pool[]      @relation("token0")
   pools1           Pool[]      @relation("token1")
   incentives       Incentive[]//
+  about            String      @default("teste about")
 
   @@unique([chainId, uuid])
   @@index([id])

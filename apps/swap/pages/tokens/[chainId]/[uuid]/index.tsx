@@ -11,6 +11,8 @@ import { TokenChart } from '../../../../components/TokenPage/TokenChart'
 import { SwapWidget } from 'pages'
 import { Fragment } from 'react'
 import { TokenStats } from 'components/TokenPage/TokenStats'
+import ReadMore from '@dozer/ui/readmore/ReadMore'
+import { dbToken } from 'interfaces'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -111,7 +113,7 @@ const Token = () => {
   )
   if (!pair) return <></>
   if (uuid == '00') pair.id = 'native'
-  const tokens = pair ? [pair.token0, pair.token1] : []
+  const tokens = pair ? ([pair.token0, pair.token1] as dbToken[]) : []
   if (!tokens) return <></>
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -130,12 +132,7 @@ const Token = () => {
               <Typography weight={500} className="flex flex-col " variant="h2">
                 About
               </Typography>
-              <Typography variant="lg" weight={400} className="pb-16 md:pb-0">
-                {}
-                Cathor is the original Hathor Network community coin. Minted in February 2021 by the CEO of Hathor for
-                the community, Cathor’s mission is to support and grow awareness for the Hathor Network and projects
-                building on Hathor.
-              </Typography>
+              <ReadMore text={tokens[0].uuid == '00' ? tokens[1].about : tokens[0].about} />
             </div>
           </div>
           <div className="flex-col order-2 hidden gap-4 lg:flex">

@@ -87,7 +87,6 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
           addNotification(notificationGroup)
           createSuccessToast(notificationData)
           setIsWritePending(false)
-          setOpen(false)
         } else {
           createErrorToast(`${res.error}`, true)
           setIsWritePending(false)
@@ -104,6 +103,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   const onClick = async () => {
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
       setIsWritePending(true)
+      setOpen(false)
       mutation.mutate({
         amount_in: amountSpecified,
         token_in: mainCurrency.uuid,
