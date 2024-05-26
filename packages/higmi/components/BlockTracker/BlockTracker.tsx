@@ -41,7 +41,7 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
   const animationClasses = `animate-pulse ${animationDuration}ms ease-in-out infinite` // One-time animation
 
   return (
-    <div className="fixed flex items-center bottom-10 right-10">
+    <div className="fixed flex items-center bottom-5 right-5">
       <Link.External href={hash ? chains[network].getTxUrl(hash) : ''} className="!no-underline">
         <Tooltip
           placement="left"
