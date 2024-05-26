@@ -6,7 +6,7 @@ import { FC, useState } from 'react'
 
 // import { CarbonOffsetOverlay } from './CarbonOffsetOverlay'
 // import { CustomTokensOverlay } from './CustomTokensOverlay'
-// import { ExpertMode } from './ExpertMode'
+import { ExpertMode } from './ExpertMode'
 import { SlippageToleranceDisclosure } from './SlippageToleranceDisclosure'
 
 interface SettingsOverlay {
@@ -29,6 +29,7 @@ export const SettingsOverlay: FC<SettingsOverlay> = ({ chainId }) => {
               <Overlay.Header onClose={() => setOpen(false)} title="Settings" />
               <div className="px-1 py-1">
                 <SlippageToleranceDisclosure />
+                <ExpertMode />
               </div>
             </div>
           </Overlay.Content>

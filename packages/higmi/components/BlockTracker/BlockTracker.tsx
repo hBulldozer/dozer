@@ -10,8 +10,9 @@ interface Props {
 }
 
 const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => {
-  const [number, setNumber] = useState<string | undefined>('')
-  const [previousNumber, setPreviousNumber] = useState<string | undefined>()
+  const [number, setNumber] = useState<number | undefined>(0)
+  const [previousNumber, setPreviousNumber] = useState<number | undefined>()
+  const [hash, setHash] = useState<string | undefined>('')
   const { network } = useNetwork()
 
   const { data } = client.getNetwork.getBestBlock.useQuery(undefined, { refetchInterval: 30000 })
@@ -21,10 +22,11 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
     const fetchData = async () => {
       console.log('fetch frontend')
       try {
-        const newNumber = await utils.getNetwork.getBestBlock.ensureData(undefined)
+        const { number: newNumber, hash } = await utils.getNetwork.getBestBlock.ensureData(undefined)
         if (newNumber !== previousNumber) {
           setPreviousNumber(number) // Update previous number after animation
           setNumber(newNumber)
+          setHash(hash)
         }
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -36,14 +38,11 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
     return () => clearInterval(intervalId) // Cleanup on unmount
   }, [data, previousNumber])
 
-  const animationClasses =
-    number !== previousNumber
-      ? `animate-spin` // One-time animation
-      : `animate-pulse ${animationDuration}ms ease-in-out infinite` // One-time animation
+  const animationClasses = `animate-pulse ${animationDuration}ms ease-in-out infinite` // One-time animation
 
   return (
     <div className="fixed flex items-center bottom-10 right-10">
-      <Link.External href={number ? chains[network].getTxUrl(number) : ''} className="!no-underline">
+      <Link.External href={hash ? chains[network].getTxUrl(hash) : ''} className="!no-underline">
         <Tooltip
           placement="left"
           button={
@@ -51,7 +50,7 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
               <div className="flex items-center ">
                 <div className={`bg-green-500 rounded-full p-1 ${animationClasses}`}></div>
                 <Typography className="ml-2 text-green-500 text-bold" variant="sm">
-                  {number?.slice(-6) || 'Loading...'}
+                  {number || 'Loading...'}
                 </Typography>
               </div>
             </span>

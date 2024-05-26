@@ -222,7 +222,7 @@ const BalancePanel: FC<BalancePanel> = ({
     <button
       data-testid={`${id}-balance-button`}
       type="button"
-      onClick={() => onChange('')}
+      onClick={() => onChange(tokenBalance.toFixed(2))}
       className="py-1 text-xs text-stone-400 hover:text-stone-300"
       disabled={disableMaxButton}
     >

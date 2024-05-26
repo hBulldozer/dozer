@@ -339,6 +339,7 @@ export const SwapButton: FC<{
 
   const priceImpactSeverity = useMemo(() => warningSeverity(priceImpact), [priceImpact])
   const priceImpactTooHigh = priceImpactSeverity > 3
+  const { expertMode } = useSettings()
 
   const onClick = useCallback(() => {
     setOpen(true)
@@ -350,20 +351,20 @@ export const SwapButton: FC<{
       fullWidth
       onClick={onClick}
       disabled={
-        priceImpactTooHigh ||
+        (priceImpactTooHigh && !expertMode) ||
         Number(
           (outputAmount ? outputAmount : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)).toFixed(2)
         ) == 0
       }
       size="md"
-      color={priceImpactTooHigh || priceImpactSeverity > 2 ? 'red' : 'blue'}
+      color={(priceImpactTooHigh && !expertMode) || priceImpactSeverity > 2 ? 'red' : 'blue'}
       {...(Boolean(priceImpactSeverity > 2) && {
         title: 'Enable expert mode to swap with high price impact',
       })}
     >
       {false
         ? 'Finding Best Price'
-        : priceImpactTooHigh
+        : priceImpactTooHigh && !expertMode
         ? 'High Price Impact'
         : priceImpactSeverity > 2
         ? 'Swap Anyway'

@@ -28,7 +28,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
   // const input0 = amountSpecified ? amountSpecified * (1 - slippageTolerance) : 0
   const input1 = outputAmount ? outputAmount * (1 - slippageTolerance) : 0
   // const value0 = mainCurrencyPrice ? mainCurrencyPrice * (1 - slippageTolerance) : 0
-  const value1 = otherCurrencyPrice ? otherCurrencyPrice * (1 - slippageTolerance / 100) : 0
+  const value1 = otherCurrencyPrice ? otherCurrencyPrice * (1 - slippageTolerance) : 0
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>

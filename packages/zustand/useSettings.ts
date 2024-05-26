@@ -6,6 +6,8 @@ interface SettingsProps {
   setSlippageTolerance: (slippageTolerance: number) => void
   slippageToleranceType: 'auto' | 'custom'
   setSlippageToleranceType: (slippageToleranceType: 'auto' | 'custom') => void
+  expertMode: boolean
+  updateExpertMode: (expertMode: boolean) => void
 }
 
 export const useSettings = create<SettingsProps>()(
@@ -19,6 +21,8 @@ export const useSettings = create<SettingsProps>()(
           slippageToleranceType: slippageToleranceType,
           slippageTolerance: slippageToleranceType == 'auto' ? 0.5 / 100 : state.slippageTolerance,
         })),
+      expertMode: false,
+      updateExpertMode: (expertMode: boolean) => set((state) => ({ expertMode })),
     }),
     {
       name: 'settings-storage',
