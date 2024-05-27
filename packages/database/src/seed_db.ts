@@ -7,11 +7,15 @@ interface NanoInfoType {
   HTR_DZR_ncid: string
 }
 const prisma = new PrismaClient()
-export async function main(nano_info: NanoInfoType | undefined) {
+export async function main(nano_info: NanoInfoType | undefined, snaps_period: number) {
   console.log('*** Starting to seed DB... ***')
-  const delete1 = await prisma.pool.deleteMany()
+  const delete1 = await prisma.hourSnapshot.deleteMany()
+  console.log('Deleted hourSnapshot Table')
+  const delete2 = await prisma.daySnapshot.deleteMany()
+  console.log('Deleted daySnapshot Table')
+  const delete3 = await prisma.pool.deleteMany()
   console.log('Deleted Pool Table')
-  const delete2 = await prisma.token.deleteMany()
+  const delete4 = await prisma.token.deleteMany()
   console.log('Deleted Token Table')
   const tokens = await prisma.token.createMany({
     data: [
@@ -276,6 +280,58 @@ export async function main(nano_info: NanoInfoType | undefined) {
   })
   console.log('Created Pools')
 
+  if (snaps_period) {
+    console.log(`Creating snapshots for ${snaps_period} days...`)
+    const allPools = await prisma.pool.findMany()
+    const snapshots = []
+
+    for (const pool of allPools) {
+      for (let j = 0; j < snaps_period * 24 * 4; j++) {
+        const snapshotTime = Date.now() - j * 15 * 60 * 1000
+        const snapshotDate = new Date(snapshotTime)
+
+        const isNinePM = snapshotDate.getHours() === 21 && snapshotDate.getMinutes() <= 15 // Check if hour is 9 PM
+
+        snapshots.push({
+          poolId: pool.id,
+          apr: pool.apr + Math.random() * 0.1,
+          date: snapshotDate,
+          liquidityUSD: pool.liquidityUSD + Math.random() * 100,
+          volumeUSD: pool.volumeUSD + Math.random() * 10000,
+          reserve0: parseInt(pool.reserve0) + Math.random() * 1000,
+          reserve1: parseInt(pool.reserve1) + Math.random() * 1000,
+          priceHTR: 0.7 + 0.01 * Math.random(),
+        })
+
+        // Push data to daySnapshot if it's 9 PM
+        if (isNinePM) {
+          await prisma.daySnapshot.create({
+            data: {
+              poolId: pool.id,
+              apr: pool.apr + Math.random() * 0.1,
+              date: snapshotDate,
+              liquidityUSD: pool.liquidityUSD + Math.random() * 100,
+              volumeUSD: pool.volumeUSD + Math.random() * 10000,
+              reserve0: parseInt(pool.reserve0) + Math.random() * 1000,
+              reserve1: parseInt(pool.reserve1) + Math.random() * 1000,
+              priceHTR: 0.7 + 0.01 * Math.random(),
+            },
+          })
+        }
+      }
+    }
+
+    // Batch insert hourSnapshots (consider adjusting chunk size)
+    const chunkSize = 1000
+    for (let i = 0; i < snapshots.length; i += chunkSize) {
+      const chunk = snapshots.slice(i, i + chunkSize)
+      await prisma.hourSnapshot.createMany({
+        data: chunk,
+      })
+    }
+  }
+
+  console.log('Created snapshots')
   if (nano_info) {
     console.log('Updating nano contracts info...')
     await prisma.token.update({
@@ -309,8 +365,8 @@ export async function main(nano_info: NanoInfoType | undefined) {
   }
 }
 
-export async function seed_db(nano_info?: NanoInfoType) {
-  main(nano_info)
+export async function seed_db(nano_info?: NanoInfoType, snaps_period = 0) {
+  main(nano_info, snaps_period)
     .then(async () => {
       await prisma.$disconnect()
     })
