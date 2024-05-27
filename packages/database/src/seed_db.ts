@@ -286,7 +286,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
     const snapshots = []
 
     for (const pool of allPools) {
-      for (let j = 0; j < snaps_period * 24 * 4; j++) {
+      for (let j = -24 * 4; j < (snaps_period - 1) * 24 * 4; j++) {
         const snapshotTime = Date.now() - j * 15 * 60 * 1000
         const snapshotDate = new Date(snapshotTime)
 
