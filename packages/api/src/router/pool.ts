@@ -86,6 +86,22 @@ export const poolRouter = createTRPCRouter({
 
     return allPoolData
   }),
+  snapsById: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
+    return ctx.prisma.pool.findFirst({
+      where: { id: input.id },
+      include: {
+        hourSnapshots: {
+          where: {
+            date: {
+              gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 31), //get only one month from 15min snaps
+            },
+          },
+          orderBy: { date: 'desc' },
+        },
+        daySnapshots: { orderBy: { date: 'desc' } },
+      },
+    })
+  }),
   //New procedures enhanced SQL
 
   quote_exact_tokens_for_tokens: procedure

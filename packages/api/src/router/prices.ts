@@ -27,19 +27,48 @@ export const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: numb
   const result = response['calls'][`front_end_api_pool()`]['value']
   return result
 }
-export const htrKline = async (input: { period: number; size: number }) => {
+export const htrKline = async (input: { period: number; size: number; prisma: PrismaClient }) => {
+  // const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
+
+  // const now = Math.round(Date.now() / 1000)
+  // const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
+  // const start = (input.size + 1) * (input.period == 0 ? 15 : input.period == 1 ? 60 : 24 * 60) * 60 // in seconds
+  // const resp = await fetch(
+  //   `https://api.kucoin.com/api/v1/market/candles?type=${period}&symbol=HTR-USDT&startAt=${now - start}&endAt=${now}`
+  // )
+  // const data = await resp.json()
+  // return data.data
+  //   .sort((a: number[], b: number[]) => (a[0] && b[0] ? a[0] - b[0] : null))
+  //   .map((item: number[]) => {
+  //     return { price: Number(item[2]), date: Number(item[0]) }})
+
+  // Filter pools by token symbols
+  const pool = await prisma.pool.findFirst({
+    where: {
+      token0: { symbol: 'HTR' },
+      token1: { symbol: 'USDT' },
+    },
+  })
+  if (!pool) {
+    throw new Error('Pool with HTR-USDT pair not found')
+  }
+
   const now = Math.round(Date.now() / 1000)
-  const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
   const start = (input.size + 1) * (input.period == 0 ? 15 : input.period == 1 ? 60 : 24 * 60) * 60 // in seconds
-  const resp = await fetch(
-    `https://api.kucoin.com/api/v1/market/candles?type=${period}&symbol=HTR-USDT&startAt=${now - start}&endAt=${now}`
-  )
-  const data = await resp.json()
-  return data.data
-    .sort((a: number[], b: number[]) => (a[0] && b[0] ? a[0] - b[0] : null))
-    .map((item: number[]) => {
-      return { price: Number(item[2]), date: Number(item[0]) }
-    })
+  console.log(input.period, input.size, new Date(now * 1000), new Date((now - start) * 1000))
+
+  const snapshots = await prisma.hourSnapshot.findMany({
+    where: {
+      poolId: pool.id,
+      date: {
+        gte: new Date((now - start) * 1000), // convert to milliseconds
+        lte: new Date(now * 1000),
+      },
+    },
+    orderBy: { date: 'asc' }, // sort by date ascending
+  })
+  console.log(snapshots)
+  return snapshots.map((snapshot) => ({ price: snapshot.reserve0 / snapshot.reserve1, date: snapshot.date.getTime() }))
 }
 export const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
   const result = await prisma.hourSnapshot.findMany({
@@ -126,7 +155,7 @@ export const pricesRouter = createTRPCRouter({
       throw new Error(`Failed to fetch tokens, received ${tokens}`)
     }
     const prices24hUSD: { [key: string]: number[] } = {}
-    const prices24hHTR: { price: number; date: number }[] = await htrKline({ period: 0, size: 4 * 24 }) // get 1 day ticks with 15 min period
+    const prices24hHTR: { price: number; date: number }[] = await htrKline({ period: 0, size: 4 * 24, prisma }) // get 1 day ticks with 15 min period
     await Promise.all(
       tokens.map(async (token) => {
         const token_prices24hUSD: number[] = []
@@ -179,8 +208,8 @@ export const pricesRouter = createTRPCRouter({
   htrKline: procedure
     .output(z.array(z.object({ price: z.number(), date: z.number() })))
     .input(z.object({ size: z.number(), period: z.number() }))
-    .query(async ({ input }) => {
-      const result = await htrKline(input)
+    .query(async ({ ctx, input }) => {
+      const result = await htrKline({ ...input, prisma: ctx.prisma })
       return result
     }),
 })

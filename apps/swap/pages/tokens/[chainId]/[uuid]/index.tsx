@@ -1,7 +1,7 @@
 import { AppearOnMount, BreadcrumbLink, Button, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { AllTokensDBOutput, Pair } from '@dozer/api'
+import { AllTokensDBOutput, Pair, PairDaySnapshot } from '@dozer/api'
 
 import { Layout } from 'components/Layout'
 
@@ -13,6 +13,7 @@ import { Fragment } from 'react'
 import { TokenStats } from 'components/TokenPage/TokenStats'
 import ReadMore from '@dozer/ui/readmore/ReadMore'
 import { dbToken } from 'interfaces'
+import { daySnapshot, hourSnapshot } from '@dozer/database'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -112,6 +113,10 @@ const Token = () => {
       (pool.token0.uuid == '00' && pool.token1.uuid == uuid) || (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
   )
   if (!pair) return <></>
+
+  const { data: snaps } = api.getPools.snapsById.useQuery({ id: pair.id })
+  pair.daySnapshots = snaps ? snaps.daySnapshots : ([] as Array<daySnapshot>)
+  pair.hourSnapshots = snaps ? snaps.hourSnapshots : ([] as Array<hourSnapshot>)
   if (uuid == '00') pair.id = 'native'
   const tokens = pair ? ([pair.token0, pair.token1] as dbToken[]) : []
   if (!tokens) return <></>

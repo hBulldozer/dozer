@@ -1,5 +1,5 @@
 import { formatHTR, formatPercentChange, formatUSD5Digit } from '@dozer/format'
-import { Pair, useTokensFromPair } from '@dozer/api'
+import { Pair, PairHourSnapshot, useTokensFromPair } from '@dozer/api'
 import { AppearOnMount, ArrowIcon, classNames, Currency, Skeleton, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
 import ReactECharts from 'echarts-for-react'
@@ -8,7 +8,7 @@ import { FC, useCallback, useMemo, useState } from 'react'
 import resolveConfig from 'tailwindcss/resolveConfig'
 
 import tailwindConfig from '../../tailwind.config.js'
-import { Token } from '@dozer/database'
+import { hourSnapshot, Token } from '@dozer/database'
 import { api } from '../../utils/api'
 
 const tailwind = resolveConfig(tailwindConfig)
@@ -39,10 +39,29 @@ const chartTimespans: Record<TokenChartPeriod, number> = {
   [TokenChartPeriod.All]: Infinity,
 }
 
+function getFirstPerHour(snapshots: PairHourSnapshot[]): PairHourSnapshot[] {
+  // Sort snapshots by date in ascending order
+  snapshots.sort((a, b) => a.date.getTime() - b.date.getTime())
+
+  const hourlySnapshots: PairHourSnapshot[] = []
+  let currentHour = -1 // Initialize with an invalid hour
+
+  for (const snap of snapshots) {
+    const snapHour = snap.date.getHours()
+
+    // Check if we moved to a new hour
+    if (snapHour !== currentHour) {
+      currentHour = snapHour
+      hourlySnapshots.push(snap) // Add first snapshot of the new hour
+    }
+  }
+
+  return hourlySnapshots
+}
 export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(TokenChartCurrency.USD)
   const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Day)
-  const hourSnapshots = pair.hourSnapshots.filter((snap) => new Date(snap.date).getMinutes() === 0)
+  const hourSnapshots = getFirstPerHour(pair.hourSnapshots)
   const { token0, token1 } = useTokensFromPair(pair)
   const token = pair.id.includes('native') ? token0 : token1
   const fifteenMinSnapshots = pair.hourSnapshots
@@ -61,7 +80,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       ? pair.daySnapshots
       : hourSnapshots
   }, [chartPeriod, fifteenMinSnapshots, hourSnapshots, pair.daySnapshots])
-  const { data: priceKuCoin, isLoading } = api.getPrices.htrKline.useQuery({
+  const { data: priceHTRPool, isLoading } = api.getPrices.htrKline.useQuery({
     size: data.length,
     period: chartPeriod == TokenChartPeriod.Day ? 0 : chartPeriod >= TokenChartPeriod.Year ? 2 : 1,
   })
@@ -79,7 +98,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
         if (date >= currentDate - chartTimespans[chartPeriod]) {
           const priceInUSD =
-            priceInHTR * Number(priceKuCoin ? priceKuCoin[priceKuCoin.length - 1 - idx].price : undefined)
+            priceInHTR * Number(priceHTRPool ? priceHTRPool[priceHTRPool.length - 1 - idx].price : undefined)
           acc[0].push(date / 1000)
           if (chartCurrency === TokenChartCurrency.HTR) {
             acc[1].push(priceInHTR)
@@ -101,7 +120,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
     }
 
     return [x.reverse(), y.reverse()]
-  }, [data, _priceHTRNow, pair.id, priceKuCoin, chartPeriod, chartCurrency, priceInHTRNow])
+  }, [data, _priceHTRNow, pair.id, priceHTRPool, chartPeriod, chartCurrency, priceInHTRNow])
   const [priceChange, setPriceChange] = useState<number>(
     (yData[yData.length - 1] - yData[0]) / (yData[0] != 0 ? yData[0] : 1)
   )

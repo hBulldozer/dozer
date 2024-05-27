@@ -80,27 +80,9 @@ export type Scalars = {
   deprecated_Bytes: any
 }
 
-export type PairHourSnapshot = {
-  id: string
-  date: Date
-  volumeUSD: number
-  liquidityUSD: number
-  apr: number
-  reserve0: string
-  reserve1: string
-  priceHTR: string
-}
+export type PairHourSnapshot = hourSnapshot
 
-export type PairDaySnapshot = {
-  id: string
-  date: Date
-  volumeUSD: number
-  liquidityUSD: number
-  apr: number
-  reserve0: string
-  reserve1: string
-  priceHTR: string
-}
+export type PairDaySnapshot = daySnapshot
 
 export type Pair = {
   id: string
