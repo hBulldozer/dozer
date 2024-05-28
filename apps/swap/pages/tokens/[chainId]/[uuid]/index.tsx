@@ -9,11 +9,13 @@ import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../../utils/api'
 import { TokenChart } from '../../../../components/TokenPage/TokenChart'
 import { SwapWidget } from 'pages'
-import { Fragment } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { TokenStats } from 'components/TokenPage/TokenStats'
 import ReadMore from '@dozer/ui/readmore/ReadMore'
 import { dbToken } from 'interfaces'
 import { daySnapshot, hourSnapshot } from '@dozer/database'
+import { useNetwork } from '@dozer/zustand'
+import { ChainId } from '@dozer/chain'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -102,22 +104,95 @@ const Token = () => {
   const router = useRouter()
   const uuid = router.query.uuid as string
   const chainId = Number(router.query.chainId)
+  const [rendNetwork, setRendNetwork] = useState<number>(ChainId.HATHOR)
+  const { network } = useNetwork()
+  const { data: USDT_uuid } = api.getTokens.bySymbol.useQuery({ symbol: 'USDT' })
+
+  useEffect(() => {
+    setRendNetwork(network)
+  }, [network])
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
 
   const { data: pools } = api.getPools.all.useQuery()
+  let pair: Pair | undefined
   if (!pools) return <></>
-  const pair = pools.find(
-    (pool) =>
-      (pool.token0.uuid == '00' && pool.token1.uuid == uuid) || (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
-  )
+  const pair_usdt_htr = pools.find((pool) => {
+    return (
+      (pool.token0.uuid == '00' && pool.token1.symbol == 'USDT') ||
+      (pool.token1.uuid == '00' && pool.token0.symbol == 'USDT')
+    )
+  })
+  if (!pair_usdt_htr) return <>Didn't fount the USDT/HTR pool</>
+  const { data: snaps_usdt_htr } = api.getPools.snapsById.useQuery({ id: pair_usdt_htr.id })
+  if (uuid == USDT_uuid?.uuid) {
+    const pairs_usdt: Pair[] = pools
+      .filter((pool) => pool.chainId == rendNetwork)
+      .filter((pool) => pool.token0.symbol == 'USDT' || pool.token1.symbol == 'USDT')
+      .map((pool) => {
+        const pair = pool ? pool : ({} as Pair)
+        return pair
+      })
+    pair = {
+      id: network == ChainId.HATHOR ? 'usdt' : 'usdt-testnet',
+      name: network == ChainId.HATHOR ? 'USDT' : 'USDT testnet',
+      liquidityUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) : 0,
+      volumeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
+      feeUSD: 0,
+      swapFee: 0,
+      apr: 0,
+      token0: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
+      token1: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
+      chainId: rendNetwork,
+      reserve0: 0,
+      reserve1: 0,
+      liquidity: 0,
+      volume1d: 0,
+      fees1d: 0,
+      hourSnapshots: snaps_usdt_htr ? snaps_usdt_htr.hourSnapshots : ([] as Array<hourSnapshot>),
+      daySnapshots: snaps_usdt_htr ? snaps_usdt_htr.daySnapshots : ([] as Array<daySnapshot>),
+    }
+  } else if (uuid == '00') {
+    const pairs_htr: Pair[] = pools
+      .filter((pool) => pool.chainId == rendNetwork)
+      .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
+      .map((pool) => {
+        const pair = pool ? pool : ({} as Pair)
+        return pair
+      })
+    pair = {
+      id: network == ChainId.HATHOR ? 'native' : 'native-testnet',
+      name: network == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
+      liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) : 0,
+      volumeUSD: pairs_htr ? pairs_htr.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
+      feeUSD: 0,
+      swapFee: 0,
+      apr: 0,
+      token0: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
+      token1: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
+      chainId: rendNetwork,
+      reserve0: 0,
+      reserve1: 0,
+      liquidity: 0,
+      volume1d: 0,
+      fees1d: 0,
+      hourSnapshots: snaps_usdt_htr ? snaps_usdt_htr.hourSnapshots : ([] as Array<hourSnapshot>),
+      daySnapshots: snaps_usdt_htr ? snaps_usdt_htr.daySnapshots : ([] as Array<daySnapshot>),
+    }
+  } else {
+    pair = pools.find(
+      (pool) =>
+        (pool.token0.uuid == '00' && pool.token1.uuid == uuid) || (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
+    )
+    if (pair) {
+      const { data: snaps } = api.getPools.snapsById.useQuery({ id: pair.id })
+      pair.daySnapshots = snaps ? snaps.daySnapshots : ([] as Array<daySnapshot>)
+      pair.hourSnapshots = snaps ? snaps.hourSnapshots : ([] as Array<hourSnapshot>)
+    }
+  }
   if (!pair) return <></>
 
-  const { data: snaps } = api.getPools.snapsById.useQuery({ id: pair.id })
-  pair.daySnapshots = snaps ? snaps.daySnapshots : ([] as Array<daySnapshot>)
-  pair.hourSnapshots = snaps ? snaps.hourSnapshots : ([] as Array<hourSnapshot>)
-  if (uuid == '00') pair.id = 'native'
   const tokens = pair ? ([pair.token0, pair.token1] as dbToken[]) : []
   if (!tokens) return <></>
 

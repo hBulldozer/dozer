@@ -55,7 +55,6 @@ export const htrKline = async (input: { period: number; size: number; prisma: Pr
 
   const now = Math.round(Date.now() / 1000)
   const start = (input.size + 1) * (input.period == 0 ? 15 : input.period == 1 ? 60 : 24 * 60) * 60 // in seconds
-  console.log(input.period, input.size, new Date(now * 1000), new Date((now - start) * 1000))
 
   const snapshots = await prisma.hourSnapshot.findMany({
     where: {
@@ -67,7 +66,6 @@ export const htrKline = async (input: { period: number; size: number; prisma: Pr
     },
     orderBy: { date: 'asc' }, // sort by date ascending
   })
-  console.log(snapshots)
   return snapshots.map((snapshot) => ({ price: snapshot.reserve0 / snapshot.reserve1, date: snapshot.date.getTime() }))
 }
 export const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
@@ -155,7 +153,11 @@ export const pricesRouter = createTRPCRouter({
       throw new Error(`Failed to fetch tokens, received ${tokens}`)
     }
     const prices24hUSD: { [key: string]: number[] } = {}
-    const prices24hHTR: { price: number; date: number }[] = await htrKline({ period: 0, size: 4 * 24, prisma }) // get 1 day ticks with 15 min period
+    const prices24hHTR: { price: number; date: number }[] = await htrKline({
+      period: 0,
+      size: 4 * 24,
+      prisma: ctx.prisma,
+    }) // get 1 day ticks with 15 min period
     await Promise.all(
       tokens.map(async (token) => {
         const token_prices24hUSD: number[] = []

@@ -57,6 +57,6 @@ export const tokenRouter = createTRPCRouter({
     return tokens
   }),
   bySymbol: procedure.input(z.object({ symbol: z.string().max(8).min(3) })).query(({ ctx, input }) => {
-    return ctx.prisma.token.findFirst({ where: { symbol: input.symbol } })
+    return ctx.prisma.token.findFirst({ select: { uuid: true }, where: { symbol: input.symbol } })
   }),
 })

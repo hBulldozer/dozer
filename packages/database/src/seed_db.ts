@@ -290,8 +290,6 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         const snapshotTime = Date.now() - j * 15 * 60 * 1000
         const snapshotDate = new Date(snapshotTime)
 
-        const isNinePM = snapshotDate.getHours() === 21 && snapshotDate.getMinutes() <= 15 // Check if hour is 9 PM
-
         snapshots.push({
           poolId: pool.id,
           apr: pool.apr + Math.random() * 0.1,
@@ -304,7 +302,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         })
 
         // Push data to daySnapshot if it's 9 PM
-        if (isNinePM) {
+        if (j % (24 * 4) == 0) {
           await prisma.daySnapshot.create({
             data: {
               poolId: pool.id,

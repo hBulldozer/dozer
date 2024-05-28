@@ -56,16 +56,7 @@ export const TokensTable: FC = () => {
     const pools_idx = []
     htr_pools0 ? pools_idx.push(htr_pools0.id) : null
     htr_pools1 ? pools_idx.push(htr_pools1.id) : null
-    if (token.uuid !== '00') {
-      const pool_with_htr = pools_idx[0]
-
-      if (!pool_with_htr) return {} as Pair
-      const _poolDB = all_pools.find((pool) => pool.id == pool_with_htr)
-      if (!_poolDB) return {} as Pair
-      const pair = _poolDB ? _poolDB : ({} as Pair)
-
-      return pair
-    } else {
+    if (token.uuid == '00') {
       const pairs_htr: Pair[] = all_pools
         .filter((pool) => pool.chainId == rendNetwork)
         .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
@@ -83,7 +74,6 @@ export const TokensTable: FC = () => {
         apr: 0,
         token0: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
         token1: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
-        // tokenLP: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
         chainId: token.chainId,
         reserve0: 0,
         reserve1: 0,
@@ -94,6 +84,43 @@ export const TokensTable: FC = () => {
         daySnapshots: [],
       }
       return fakeHTRPair
+    } else if (token.symbol == 'USDT') {
+      const pairs_usdt: Pair[] = all_pools
+        .filter((pool) => pool.chainId == rendNetwork)
+        .filter((pool) => pool.token0.symbol == 'USDT' || pool.token1.symbol == 'USDT')
+        .map((pool) => {
+          const pair = pool ? pool : ({} as Pair)
+          return pair
+        })
+      const fakeUSDTPair: Pair = {
+        id: network == ChainId.HATHOR ? 'usdt' : 'usdt-testnet',
+        name: network == ChainId.HATHOR ? 'USDT' : 'USDT testnet',
+        liquidityUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) : 0,
+        volumeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
+        feeUSD: 0,
+        swapFee: 0,
+        apr: 0,
+        token0: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
+        token1: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
+        chainId: token.chainId,
+        reserve0: 0,
+        reserve1: 0,
+        liquidity: 0,
+        volume1d: 0,
+        fees1d: 0,
+        hourSnapshots: [],
+        daySnapshots: [],
+      }
+      return fakeUSDTPair
+    } else {
+      const pool_with_htr = pools_idx[0]
+
+      if (!pool_with_htr) return {} as Pair
+      const _poolDB = all_pools.find((pool) => pool.id == pool_with_htr)
+      if (!_poolDB) return {} as Pair
+      const pair = _poolDB ? _poolDB : ({} as Pair)
+
+      return pair
     }
   })
 

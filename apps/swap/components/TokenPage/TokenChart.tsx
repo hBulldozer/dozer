@@ -59,7 +59,9 @@ function getFirstPerHour(snapshots: PairHourSnapshot[]): PairHourSnapshot[] {
   return hourlySnapshots
 }
 export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
-  const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(TokenChartCurrency.USD)
+  const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(
+    pair.id.includes('usdt') ? TokenChartCurrency.HTR : TokenChartCurrency.USD
+  )
   const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Day)
   const hourSnapshots = getFirstPerHour(pair.hourSnapshots)
   const { token0, token1 } = useTokensFromPair(pair)
@@ -75,10 +77,10 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const { data: _priceHTRNow } = api.getPrices.htr.useQuery()
   const data = useMemo(() => {
     return chartPeriod == TokenChartPeriod.Day
-      ? fifteenMinSnapshots
+      ? fifteenMinSnapshots.filter((snap) => snap.date < new Date(Date.now()))
       : chartPeriod >= TokenChartPeriod.Year
-      ? pair.daySnapshots
-      : hourSnapshots
+      ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now()))
+      : hourSnapshots.filter((snap) => snap.date < new Date(Date.now()))
   }, [chartPeriod, fifteenMinSnapshots, hourSnapshots, pair.daySnapshots])
   const { data: priceHTRPool, isLoading } = api.getPrices.htrKline.useQuery({
     size: data.length,
@@ -97,8 +99,9 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           ? 1
           : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
         if (date >= currentDate - chartTimespans[chartPeriod]) {
-          const priceInUSD =
-            priceInHTR * Number(priceHTRPool ? priceHTRPool[priceHTRPool.length - 1 - idx].price : undefined)
+          const priceInUSD = pair.id.includes('usdt')
+            ? 1
+            : priceInHTR * Number(priceHTRPool ? priceHTRPool[priceHTRPool.length - 1 - idx].price : undefined)
           acc[0].push(date / 1000)
           if (chartCurrency === TokenChartCurrency.HTR) {
             acc[1].push(priceInHTR)
@@ -111,15 +114,15 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       [[], []]
     )
     if (_priceHTRNow) {
-      x.unshift(Math.round(Date.now()) / 1000)
+      x.push(Math.round(Date.now()) / 1000)
       if (chartCurrency === TokenChartCurrency.HTR) {
-        y.unshift(priceInHTRNow)
+        y.push(priceInHTRNow)
       } else {
-        y.unshift(priceInHTRNow * _priceHTRNow)
+        y.push(priceInHTRNow * _priceHTRNow)
       }
     }
 
-    return [x.reverse(), y.reverse()]
+    return [x, y]
   }, [data, _priceHTRNow, pair.id, priceHTRPool, chartPeriod, chartCurrency, priceInHTRNow])
   const [priceChange, setPriceChange] = useState<number>(
     (yData[yData.length - 1] - yData[0]) / (yData[0] != 0 ? yData[0] : 1)
@@ -294,16 +297,18 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           )}
         </div>
         <div className="flex gap-4">
-          <button
-            onClick={() => setChartCurrency(TokenChartCurrency.USD)}
-            className={classNames(
-              'font-semibold text-xl',
-              chartCurrency === TokenChartCurrency.USD ? 'text-yellow-500' : 'text-stone-500'
-            )}
-          >
-            USD
-          </button>
-          {pair.id != 'native' ? (
+          {!pair.id.includes('usdt') ? (
+            <button
+              onClick={() => setChartCurrency(TokenChartCurrency.USD)}
+              className={classNames(
+                'font-semibold text-xl',
+                chartCurrency === TokenChartCurrency.USD ? 'text-yellow-500' : 'text-stone-500'
+              )}
+            >
+              USD
+            </button>
+          ) : null}
+          {!pair.id.includes('native') ? (
             <button
               onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
               className={classNames(
