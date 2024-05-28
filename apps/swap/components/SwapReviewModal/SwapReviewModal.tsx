@@ -81,7 +81,12 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
               setTimeout(resolve, 500)
             }),
           }
-          editBalanceOnSwap(amountSpecified, mainCurrency.uuid, outputAmount, otherCurrency.uuid)
+          editBalanceOnSwap(
+            amountSpecified,
+            mainCurrency.uuid,
+            outputAmount * (1 - slippageTolerance),
+            otherCurrency.uuid
+          )
           const notificationGroup: string[] = []
           notificationGroup.push(JSON.stringify(notificationData))
           addNotification(notificationGroup)

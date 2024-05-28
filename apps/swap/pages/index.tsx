@@ -60,7 +60,7 @@ const Home = () => {
   // }, true)
   return (
     <Layout>
-      <SwapWidget token0_idx={0} token1_idx={1} />
+      <SwapWidget token0_idx={'0'} token1_idx={'2'} />
       <BlockTracker client={api} />
     </Layout>
   )
@@ -68,7 +68,7 @@ const Home = () => {
 
 export default Home
 
-export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ token0_idx, token1_idx }) => {
+export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ token0_idx, token1_idx }) => {
   const { data: pools = [] } = api.getPools.all.useQuery()
   const { data: tokens = [] } = api.getTokens.all.useQuery()
   const { data: prices = { '00': 0 } } = api.getPrices.all.useQuery()
@@ -94,9 +94,21 @@ export const SwapWidget: FC<{ token0_idx: number; token1_idx: number }> = ({ tok
 
   const network = useNetwork((state) => state.network)
 
-  const [initialToken0, setInitialToken0] = useState(toToken(tokens[token0_idx]))
+  const [initialToken0, setInitialToken0] = useState(
+    toToken(
+      tokens.filter((token) => {
+        return token.id == token0_idx
+      })[0]
+    )
+  )
 
-  const [initialToken1, setInitialToken1] = useState(toToken(tokens[token1_idx]))
+  const [initialToken1, setInitialToken1] = useState(
+    toToken(
+      tokens.filter((token) => {
+        return token.id == token1_idx
+      })[0]
+    )
+  )
 
   useEffect(() => {
     setTokens([initialToken0, initialToken1])
