@@ -1,5 +1,5 @@
 import { formatHTR, formatPercentChange, formatUSD5Digit } from '@dozer/format'
-import { Pair, PairHourSnapshot, useTokensFromPair } from '@dozer/api'
+import { Pair, PairHourSnapshot, toToken, useTokensFromPair } from '@dozer/api'
 import { AppearOnMount, ArrowIcon, classNames, Currency, Skeleton, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
 import ReactECharts from 'echarts-for-react'
@@ -64,7 +64,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   )
   const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Day)
   const hourSnapshots = getFirstPerHour(pair.hourSnapshots)
-  const { token0, token1 } = useTokensFromPair(pair)
+  const { token0, token1 } = pair
   const token = pair.id.includes('native') ? token0 : token1
   const fifteenMinSnapshots = pair.hourSnapshots
   const tokenReserveNow: { reserve0: number; reserve1: number } = {
@@ -267,7 +267,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       <div className="flex justify-between gap-5 mr-3">
         <div className="flex flex-col gap-1 ">
           <div className="flex items-center gap-2">
-            <Currency.Icon currency={token} width={32} height={32} />
+            <Currency.Icon currency={toToken(token)} width={32} height={32} />
             <Typography variant="lg" weight={600}>
               {token.name}
             </Typography>

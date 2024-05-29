@@ -32,7 +32,6 @@ export default function useWaitForTransaction(notification: NotificationData, cl
     }
 
     if (!timeLeft) {
-      console.log('fetching tx')
       if (!notification.last_status || notification.last_status == 'pending') {
         fetchTx()
         setTimeLeft(seconds)

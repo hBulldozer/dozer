@@ -50,17 +50,15 @@ const fetchAndProcessPoolData = async (
   const queryParams = [`id=${pool.id}`, `calls[]=pool_data()`]
 
   const rawPoolData = await fetchNodeData(endpoint, queryParams)
-  console.log(rawPoolData)
   const poolData = rawPoolData.calls['pool_data()'].value
-  console.log(poolData)
   const { fee, reserve0, reserve1, fee0, fee1, volume0, volume1 } = poolData
 
   const { id, chainId, token0, token1 } = pool
 
-  const liquidityUSD = 2 * priceHTR * reserve0
-
-  const volumeUSD = volume0 * priceHTR + (volume1 * priceHTR * reserve0) / reserve1
-  const feeUSD = fee0 * priceHTR + (fee1 * priceHTR * reserve0) / reserve1
+  const liquidityUSD = (2 * priceHTR * reserve0) / 100
+  console.log(pool.id, pool.hourSnapshots)
+  const volumeUSD = (volume0 * priceHTR + (volume1 * priceHTR * reserve0) / reserve1) / 100
+  const feeUSD = (fee0 * priceHTR + (fee1 * priceHTR * reserve0) / reserve1) / 100
   const volume1d = volumeUSD - (pool.hourSnapshots[0]?.liquidityUSD || 0)
   return {
     id: id,
@@ -72,11 +70,11 @@ const fetchAndProcessPoolData = async (
     apr: 100 * Math.pow(1 + (volume1d * fee) / liquidityUSD, 365) - 1,
     token0: token0,
     token1: token1,
-    reserve0: reserve0,
-    reserve1: reserve1,
+    reserve0: reserve0 / 100,
+    reserve1: reserve1 / 100,
     chainId: chainId, // Or another way to get chainId
-    liquidity: 2 * reserve0, //poolData.reserve0 + poolData.reserve1, // Or a more complex calculation
-    volume1d: volumeUSD - (pool.hourSnapshots[0]?.liquidityUSD || 0),
+    liquidity: (2 * reserve0) / 100, //poolData.reserve0 + poolData.reserve1, // Or a more complex calculation
+    volume1d: volume1d,
     fees1d: feeUSD - (pool.hourSnapshots[0]?.volumeUSD || 0),
     daySnapshots: [],
     hourSnapshots: [],

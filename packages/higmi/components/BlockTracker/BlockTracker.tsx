@@ -20,7 +20,6 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log('fetch frontend')
       try {
         const { number: newNumber, hash } = await utils.getNetwork.getBestBlock.ensureData(undefined)
         if (newNumber !== previousNumber) {

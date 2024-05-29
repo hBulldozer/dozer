@@ -64,10 +64,11 @@ export const TokensTable: FC = () => {
           const pair = pool ? pool : ({} as Pair)
           return pair
         })
+      console.log(pairs_htr)
       const fakeHTRPair: Pair = {
         id: network == ChainId.HATHOR ? 'native' : 'native-testnet',
         name: network == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
-        liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) : 0,
+        liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
         volumeUSD: pairs_htr ? pairs_htr.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
         feeUSD: 0,
         swapFee: 0,
@@ -95,7 +96,7 @@ export const TokensTable: FC = () => {
       const fakeUSDTPair: Pair = {
         id: network == ChainId.HATHOR ? 'usdt' : 'usdt-testnet',
         name: network == ChainId.HATHOR ? 'USDT' : 'USDT testnet',
-        liquidityUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) : 0,
+        liquidityUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
         volumeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
         feeUSD: 0,
         swapFee: 0,
@@ -119,7 +120,7 @@ export const TokensTable: FC = () => {
       const _poolDB = all_pools.find((pool) => pool.id == pool_with_htr)
       if (!_poolDB) return {} as Pair
       const pair = _poolDB ? _poolDB : ({} as Pair)
-
+      pair.liquidityUSD = pair.liquidityUSD / 2
       return pair
     }
   })
