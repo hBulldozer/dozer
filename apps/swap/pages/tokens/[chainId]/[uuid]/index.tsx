@@ -36,12 +36,21 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const uuid = params?.uuid as string
-  const chainId = Number(params?.chainId)
+
   const ssg = generateSSGHelper()
   const pools = await ssg.getPools.all.fetch()
+  const USDT_token = await ssg.getTokens.bySymbol.fetch({ symbol: 'USDT' })
+  if (!USDT_token) {
+    throw new Error(`Failed to fetch USDT Token`)
+  }
+  const UUID_USDT = USDT_token.uuid
   const pool =
-    uuid == '00'
-      ? pools.find((pool) => pool.token0.uuid == '00')
+    uuid == '00' || uuid == UUID_USDT
+      ? pools.find(
+          (pool) =>
+            (pool.token0.uuid == '00' && pool.token1.uuid == UUID_USDT) ||
+            (pool.token1.uuid == '00' && pool.token0.uuid == UUID_USDT)
+        )
       : pools.find(
           (pool) =>
             (pool.token0.uuid == '00' && pool.token1.uuid == uuid) ||
@@ -50,6 +59,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   if (!pool) {
     throw new Error(`Failed to fetch pool, received ${pool}`)
   }
+
+  await ssg.getTokens.bySymbol.prefetch({ symbol: 'USDT' })
+
+  await ssg.getPools.snapsById.prefetch({ id: pool.id })
 
   await ssg.getPrices.htrKline.prefetch({
     size: pool.hourSnapshots.length,
@@ -104,6 +117,7 @@ const Token = () => {
   const uuid = router.query.uuid as string
   const chainId = Number(router.query.chainId)
   const { data: USDT_uuid } = api.getTokens.bySymbol.useQuery({ symbol: 'USDT' })
+  if (!USDT_uuid) return <></>
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
@@ -118,8 +132,8 @@ const Token = () => {
     )
   })
   if (!pair_usdt_htr) return <Typography>Did not found the USDT/HTR pool</Typography>
-  const { data: snaps_usdt_htr } = api.getPools.snapsById.useQuery({ id: pair_usdt_htr.id })
-  if (USDT_uuid && uuid == USDT_uuid?.uuid) {
+
+  if (uuid == USDT_uuid?.uuid) {
     const pairs_usdt: Pair[] = pools
       .filter((pool) => pool.chainId == chainId)
       .filter((pool) => pool.token0.symbol == 'USDT' || pool.token1.symbol == 'USDT')
@@ -128,6 +142,9 @@ const Token = () => {
         return pair
       })
     console.log('pairs_usdt', pairs_usdt)
+    const { data: snaps_usdt_htr } = api.getPools.snapsById.useQuery({ id: pair_usdt_htr.id })
+    if (!snaps_usdt_htr) return <></>
+
     pair = {
       id: chainId == ChainId.HATHOR ? 'usdt' : 'usdt-testnet',
       name: chainId == ChainId.HATHOR ? 'USDT' : 'USDT testnet',
@@ -155,6 +172,9 @@ const Token = () => {
         const pair = pool ? pool : ({} as Pair)
         return pair
       })
+    const { data: snaps_usdt_htr } = api.getPools.snapsById.useQuery({ id: pair_usdt_htr.id })
+    if (!snaps_usdt_htr) return <></>
+
     pair = {
       id: chainId == ChainId.HATHOR ? 'native' : 'native-testnet',
       name: chainId == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
@@ -179,11 +199,13 @@ const Token = () => {
       (pool) =>
         (pool.token0.uuid == '00' && pool.token1.uuid == uuid) || (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
     )
-    if (pair) {
-      const { data: snaps } = api.getPools.snapsById.useQuery({ id: pair.id })
-      pair.daySnapshots = snaps ? snaps.daySnapshots : ([] as Array<daySnapshot>)
-      pair.hourSnapshots = snaps ? snaps.hourSnapshots : ([] as Array<hourSnapshot>)
-    }
+    if (!pair) return <></>
+
+    const { data: snaps } = api.getPools.snapsById.useQuery({ id: pair.id })
+    if (!snaps) return <></>
+
+    pair.daySnapshots = snaps ? snaps.daySnapshots : ([] as Array<daySnapshot>)
+    pair.hourSnapshots = snaps ? snaps.hourSnapshots : ([] as Array<hourSnapshot>)
   }
   if (!pair) return <></>
 
@@ -206,7 +228,15 @@ const Token = () => {
               <Typography weight={500} className="flex flex-col " variant="h2">
                 About
               </Typography>
-              <ReadMore text={tokens[0].uuid == '00' ? tokens[1].about : tokens[0].about} />
+              <ReadMore
+                text={
+                  uuid == '00' && tokens[0].uuid == '00'
+                    ? tokens[0].about
+                    : tokens[0].uuid == '00'
+                    ? tokens[1].about
+                    : tokens[0].about
+                }
+              />
             </div>
           </div>
           <div className="flex-col order-2 hidden gap-4 lg:flex">

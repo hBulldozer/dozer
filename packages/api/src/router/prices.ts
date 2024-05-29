@@ -72,7 +72,7 @@ export const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, si
   const result = await prisma.hourSnapshot.findMany({
     where: {
       AND: [
-        { date: { gte: new Date(since * 1000) } },
+        { date: { gte: new Date(since) } },
         {
           pool: {
             token0: {
