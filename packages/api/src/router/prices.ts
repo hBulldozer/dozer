@@ -66,7 +66,7 @@ export const htrKline = async (input: { period: number; size: number; prisma: Pr
     },
     orderBy: { date: 'asc' }, // sort by date ascending
   })
-  return snapshots.map((snapshot) => ({ price: snapshot.reserve0 / snapshot.reserve1, date: snapshot.date.getTime() }))
+  return snapshots.map((snapshot) => ({ price: snapshot.reserve1 / snapshot.reserve0, date: snapshot.date.getTime() }))
 }
 export const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
   const result = await prisma.hourSnapshot.findMany({

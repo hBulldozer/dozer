@@ -188,7 +188,7 @@ export async function seed_nc(n_users = 5) {
 
   // 8. Sending 50 HTR for each user
   console.log('Sending funds to users...')
-  for (var i = 0; i < n_users; i++) {
+  for (let i = 0; i < n_users; i++) {
     // Get user address
     console.log(`Get address of #${i + 1} user...`)
     let address = ''

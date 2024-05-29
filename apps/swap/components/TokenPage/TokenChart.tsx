@@ -101,6 +101,8 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
         if (date >= currentDate - chartTimespans[chartPeriod]) {
           const priceInUSD = pair.id.includes('usdt')
             ? 1
+            : pair.id.includes('native')
+            ? Number(tokenReserve.reserve1) / Number(tokenReserve.reserve0)
             : priceInHTR * Number(priceHTRPool ? priceHTRPool[priceHTRPool.length - 1 - idx].price : undefined)
           acc[0].push(date / 1000)
           if (chartCurrency === TokenChartCurrency.HTR) {
