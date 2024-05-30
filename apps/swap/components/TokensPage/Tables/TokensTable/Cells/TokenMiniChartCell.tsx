@@ -2,7 +2,7 @@ import { FC } from 'react'
 
 import { CellProps } from './types'
 import { api } from 'utils/api'
-import { Skeleton } from '@dozer/ui'
+import { Skeleton, Typography } from '@dozer/ui'
 
 interface Point {
   x: number
@@ -64,11 +64,15 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
     <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
       <Skeleton.Box className="w-[120px] h-[22px] bg-white/[0.06] rounded-full" />
     </div>
-  ) : (
+  ) : chartSVG && !chartSVG.includes('NaN') ? (
     <div
       dangerouslySetInnerHTML={{
-        __html: chartSVG ? chartSVG : <span>Failed to fetch</span>,
+        __html: chartSVG,
       }}
     />
+  ) : (
+    <Typography variant="sm" weight={300}>
+      Failed to fetch
+    </Typography>
   )
 }
