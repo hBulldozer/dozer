@@ -9,6 +9,7 @@ import { CHANGE_COLUMN, PRICE_COLUMN, CHART_COLUMN, NAME_COLUMN, TVL_COLUMN, VOL
 import { ChainId } from '@dozer/chain'
 import { useNetwork } from '@dozer/zustand'
 import { api } from '../../../../utils/api'
+import { set } from 'date-fns'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -26,23 +27,31 @@ export const TokensTable: FC = () => {
     pageIndex: 0,
     pageSize: PAGE_SIZE,
   })
-
   const [rendNetwork, setRendNetwork] = useState<number>(ChainId.HATHOR)
   const { network } = useNetwork()
+
+  const [all_pools, setAll_pools] = useState<Pair[]>([])
+  const [tokens_array, setTokens_array] = useState<AllTokensDBOutput[]>([])
+
+  const { data: _all_pools, isLoading: isLoadingPools } = api.getPools.all.useQuery()
+  const { data: tokens, isLoading } = api.getTokens.all.useQuery()
+
+  useEffect(() => {
+    // without useeffect it was giving hydration error,
+    // because the two fetchs above can be lazy and cause a difference between server render and client render
+    setAll_pools(_all_pools ? _all_pools : [])
+    setTokens_array(
+      tokens
+        ? tokens.filter((token: AllTokensDBOutput) => {
+            return token.chainId == rendNetwork
+          })
+        : []
+    )
+  }, [tokens, _all_pools])
 
   useEffect(() => {
     setRendNetwork(network)
   }, [network])
-
-  const { data: _all_pools } = api.getPools.all.useQuery()
-  const all_pools = _all_pools ? _all_pools : []
-
-  const { data: tokens, isLoading } = api.getTokens.all.useQuery()
-  const tokens_array = tokens
-    ? tokens.filter((token: AllTokensDBOutput) => {
-        return token.chainId == rendNetwork
-      })
-    : []
 
   const _pairs_array: Pair[] = tokens_array.map((token: AllTokensDBOutput) => {
     const pools0 = token.pools0
@@ -64,23 +73,22 @@ export const TokensTable: FC = () => {
           const pair = pool ? pool : ({} as Pair)
           return pair
         })
-      console.log(pairs_htr)
       const fakeHTRPair: Pair = {
         id: network == ChainId.HATHOR ? 'native' : 'native-testnet',
         name: network == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
         liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
         volumeUSD: pairs_htr ? pairs_htr.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-        feeUSD: 0,
-        swapFee: 0,
+        feeUSD: pairs_htr ? pairs_htr.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
+        swapFee: pairs_htr[0].swapFee,
         apr: 0,
         token0: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
         token1: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
         chainId: token.chainId,
         reserve0: 0,
         reserve1: 0,
-        liquidity: 0,
-        volume1d: 0,
-        fees1d: 0,
+        liquidity: pairs_htr ? pairs_htr.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
+        volume1d: pairs_htr ? pairs_htr.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
+        fees1d: pairs_htr ? pairs_htr.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
         hourSnapshots: [],
         daySnapshots: [],
       }
@@ -98,17 +106,17 @@ export const TokensTable: FC = () => {
         name: network == ChainId.HATHOR ? 'USDT' : 'USDT testnet',
         liquidityUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
         volumeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-        feeUSD: 0,
-        swapFee: 0,
+        feeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
+        swapFee: pairs_usdt[0].swapFee,
         apr: 0,
         token0: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
         token1: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
         chainId: token.chainId,
         reserve0: 0,
         reserve1: 0,
-        liquidity: 0,
-        volume1d: 0,
-        fees1d: 0,
+        liquidity: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
+        volume1d: pairs_usdt ? pairs_usdt.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
+        fees1d: pairs_usdt ? pairs_usdt.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
         hourSnapshots: [],
         daySnapshots: [],
       }
@@ -179,14 +187,14 @@ export const TokensTable: FC = () => {
   }, [isMd, isSm])
 
   const rowLink = useCallback((row: Pair) => {
-    return `/tokens/${row.token1.chainId}/${row.token1.uuid}`
+    return `./tokens/${row.token1.chainId}/${row.token1.uuid}`
   }, [])
 
   return (
     <>
       <GenericTable<Pair>
         table={table}
-        loading={isLoading}
+        loading={isLoading || isLoadingPools}
         placeholder={'No tokens found'}
         pageSize={PAGE_SIZE}
         linkFormatter={rowLink}
