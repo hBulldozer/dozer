@@ -66,7 +66,10 @@ export const htrKline = async (input: { period: number; size: number; prisma: Pr
     },
     orderBy: { date: 'asc' }, // sort by date ascending
   })
-  return snapshots.map((snapshot) => ({ price: snapshot.reserve1 / snapshot.reserve0, date: snapshot.date.getTime() }))
+  return snapshots.map((snapshot) => ({
+    price: parseFloat((snapshot.reserve1 / snapshot.reserve0).toFixed(6)),
+    date: snapshot.date.getTime(),
+  }))
 }
 export const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
   const result = await prisma.hourSnapshot.findMany({
@@ -99,7 +102,7 @@ export const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, si
   return result
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .map((snap) => {
-      return snap.reserve0 / snap.reserve1
+      return parseFloat((snap.reserve0 / snap.reserve1).toFixed(6))
     })
 }
 
@@ -120,7 +123,7 @@ export const pricesRouter = createTRPCRouter({
       throw new Error('Failed to get USDT Token')
     }
     const pool = await HTRPoolByTokenUuidFromContract(USDT.uuid, USDT.chainId, prisma)
-    const priceHTR = Number(pool?.reserve1) / Number(pool?.reserve0)
+    const priceHTR = parseFloat((Number(pool?.reserve1) / Number(pool?.reserve0)).toFixed(6))
     const prices: { [key: string]: number } = {}
 
     await Promise.all(
@@ -131,7 +134,9 @@ export const pricesRouter = createTRPCRouter({
           const poolHTR = await HTRPoolByTokenUuidFromContract(token.uuid, token.chainId, ctx.prisma)
           if (!prices[token.uuid]) {
             // console.log(token.uuid, poolHTR ? (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR : 0)
-            prices[token.uuid] = poolHTR ? (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR : 0
+            prices[token.uuid] = poolHTR
+              ? parseFloat(((Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR).toFixed(6))
+              : 0
           }
         }
       })
