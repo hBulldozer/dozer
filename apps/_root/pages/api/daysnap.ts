@@ -18,8 +18,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
         poolId: pool.id,
         apr: pool.apr + Math.random(),
         date: new Date(),
-        liquidityUSD: pool.liquidityUSD + Math.random() * 10,
-        volumeUSD: pool.volumeUSD + Math.random() * 1000,
+        liquidityUSD: pool.liquidityUSD,
+        volumeUSD: pool.volumeUSD,
         reserve0: Number(pool.reserve0),
         reserve1: Number(pool.reserve1),
       })

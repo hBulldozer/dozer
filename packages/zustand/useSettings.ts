@@ -13,13 +13,13 @@ interface SettingsProps {
 export const useSettings = create<SettingsProps>()(
   persist(
     (set) => ({
-      slippageTolerance: 0.5 / 100,
+      slippageTolerance: 1.5 / 100,
       setSlippageTolerance: (slippageTolerance: number) => set((state) => ({ slippageTolerance: slippageTolerance })),
       slippageToleranceType: 'auto',
       setSlippageToleranceType: (slippageToleranceType: 'auto' | 'custom') =>
         set((state) => ({
           slippageToleranceType: slippageToleranceType,
-          slippageTolerance: slippageToleranceType == 'auto' ? 0.5 / 100 : state.slippageTolerance,
+          slippageTolerance: slippageToleranceType == 'auto' ? 1.5 / 100 : state.slippageTolerance,
         })),
       expertMode: false,
       updateExpertMode: (expertMode: boolean) => set((state) => ({ expertMode })),

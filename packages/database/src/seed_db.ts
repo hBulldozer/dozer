@@ -252,7 +252,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         updatedAt: new Date(),
         tokenLPId: '0',
         // id: 'd14e4ef9-01ca-4cc6-8b27-06a0145ab067',
-        id: '000001e79cbb9ae86bb1bec0fb79f248cc78133e4ffcee51643495f34f5d6c3e',
+        id: '1',
       },
       {
         name: 'DZR-HTR',
@@ -274,7 +274,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         updatedAt: new Date(),
         tokenLPId: '0',
         // id: '16c056e5-322d-4b80-bdad-58f399fbdc9e',
-        id: '000000eb34def6cea586e915ee378ed2cd4076f74a8c42ca024aca3dcd4e694c',
+        id: '0',
       },
     ],
   })
@@ -295,8 +295,8 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         const snapshotDate = new Date(snapshotTime)
 
         // Calculate changes with continuity
-        const reserve0Change = (Math.random() - 0.15) * 100 // Smaller, more gradual changes
-        const reserve1Change = (Math.random() - 0.15) * 100
+        const reserve0Change = (Math.random() - 0.5) * 100 // Smaller, more gradual changes
+        const reserve1Change = (parseInt(pool.reserve0) * parseInt(pool.reserve1)) / reserve0Change
 
         prevReserve0 += reserve0Change
         prevReserve1 += reserve1Change
@@ -320,7 +320,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
           await prisma.daySnapshot.create({
             data: {
               poolId: pool.id,
-              apr: pool.apr + (Math.random() - 0.15) * 0.05, // Smaller APR fluctuations
+              apr: pool.apr + (Math.random() + 0.15) * 0.05, // Smaller APR fluctuations
               date: snapshotDate,
               liquidityUSD: prevLiquidityUSD,
               volumeUSD: 0, // pool.volumeUSD + Math.random() * 5000, // Reduced randomness
