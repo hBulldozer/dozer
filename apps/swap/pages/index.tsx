@@ -255,7 +255,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
       <Widget.Content>
         <div className={classNames('p-3 mx-0.5 grid grid-cols-2 items-center pb-4 font-medium')}>
           <App.NavItemList hideOnMobile={false}>
-            <App.NavItem href="https://dozer.finance/swap" label="Swap" />
+            <App.NavItem href="https://mvp.dozer.finance/swap" label="Swap" />
           </App.NavItemList>
           <div className="flex justify-end">
             <SettingsOverlay chainId={network} />

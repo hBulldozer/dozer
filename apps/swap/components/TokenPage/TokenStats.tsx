@@ -9,7 +9,6 @@ interface TokenStats {
 }
 
 export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
-  console.log(pair)
   const priceArray = pair.daySnapshots.map((snap) =>
     pair.id.includes('native') ? snap.reserve1 / snap.reserve0 : (snap.priceHTR * snap.reserve1) / snap.reserve0
   )

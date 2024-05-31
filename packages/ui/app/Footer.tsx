@@ -16,19 +16,19 @@ const config: Record<
       rel: 'noopener noreferrer',
     },
     // Earn: {
-    //   href: 'https://dozer.finance',
+    //   href: 'https://mvp.dozer.finance',
     //   target: '_blank',
     //   rel: 'noopener noreferrer',
     // },
     // Borrowing: {
-    //   href: 'https://dozer.finance',
+    //   href: 'https://mvp.dozer.finance',
     //   target: '_blank',
     //   rel: 'noopener noreferrer',
     // },
   },
   // Help: {
   //   'About Us': {
-  //     href: 'https://dozer.finance',
+  //     href: 'https://mvp.dozer.finance',
   //     target: '_blank',
   //     rel: 'noopener noreferrer',
   //   },
@@ -131,7 +131,7 @@ export function Footer(props: FooterProps): JSX.Element {
             Copyright © 2024 Dozer. All rights reserved.
           </Typography>
           <div className="flex divide-x divide-stone-100/20 gap-">
-            <Link.Internal href="https://dozer.finance" passHref={true}>
+            <Link.Internal href="https://mvp.dozer.finance" passHref={true}>
               <Typography as="a" variant="xs" weight={500} className="px-3 text-stone-200">
                 Terms of Use
               </Typography>

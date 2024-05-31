@@ -104,7 +104,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
-    href: `/swap/tokens`,
+    href: `/tokens`,
     label: 'Tokens',
   },
   {

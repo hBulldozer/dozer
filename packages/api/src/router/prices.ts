@@ -12,7 +12,7 @@ export const idFromHTRPoolByTokenUuid = async (uuid: string, chainId: number, pr
     })
   } else {
     return await prisma.pool.findFirst({
-      where: { token1: { uuid: uuid, chainId: chainId }, token0: { uuid: '00', chainId: chainId } },
+      where: { token1: { uuid: uuid, chainId: chainId } },
       select: { id: true },
     })
   }
@@ -22,9 +22,9 @@ export const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: numb
   const poolId = await idFromHTRPoolByTokenUuid(uuid, chainId, prisma)
   if (!poolId) return {}
   const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${poolId.id}`, `calls[]=front_end_api_pool()`]
+  const queryParams = [`id=${poolId.id}`, `calls[]=pool_data()`]
   const response = await fetchNodeData(endpoint, queryParams)
-  const result = response['calls'][`front_end_api_pool()`]['value']
+  const result = response['calls'][`pool_data()`]['value']
   return result
 }
 export const htrKline = async (input: { period: number; size: number; prisma: PrismaClient }) => {
@@ -118,12 +118,30 @@ export const pricesRouter = createTRPCRouter({
     if (!tokens) {
       throw new Error(`Failed to fetch tokens, received ${tokens}`)
     }
-    const USDT = await prisma.token.findFirst({ where: { symbol: 'USDT' } })
-    if (!USDT) {
-      throw new Error('Failed to get USDT Token')
-    }
-    const pool = await HTRPoolByTokenUuidFromContract(USDT.uuid, USDT.chainId, prisma)
-    const priceHTR = parseFloat((Number(pool?.reserve1) / Number(pool?.reserve0)).toFixed(6))
+    const pools = await ctx.prisma.pool.findMany({
+      select: {
+        id: true,
+        chainId: true,
+        token0: { select: { symbol: true } },
+        token1: { select: { symbol: true } },
+      },
+    })
+    const htrUsdtPool = pools.find((pool) => {
+      const symbols = [pool.token0.symbol, pool.token1.symbol]
+      return symbols.includes('HTR') && symbols.includes('USDT')
+    })
+    console.log(htrUsdtPool)
+
+    const endpoint = 'nano_contract/state'
+    const queryParams = [`id=${htrUsdtPool?.id}`, `calls[]=pool_data()`]
+
+    const rawPoolData = await fetchNodeData(endpoint, queryParams)
+    const poolData = rawPoolData.calls['pool_data()'].value
+    const priceHTR = htrUsdtPool
+      ? htrUsdtPool.token0.symbol === 'HTR'
+        ? poolData.reserve1 / poolData.reserve0
+        : poolData.reserve0 / poolData.reserve1
+      : 1
     const prices: { [key: string]: number } = {}
 
     await Promise.all(

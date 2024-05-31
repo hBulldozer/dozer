@@ -158,7 +158,7 @@ export const Hero: FC = () => {
                         <Button
                           disabled={true}
                           // as="a"
-                          // href="https://dozer.finance/swap"
+                          // href="https://mvp.dozer.finance/swap"
                           size="md"
                           fullWidth
                           className="relative z-10"

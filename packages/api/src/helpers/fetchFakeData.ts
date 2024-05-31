@@ -51,7 +51,7 @@ export function fetchFakeData(endpoint: string, queryParams: string[]): any {
         },
       },
     }
-  } else if (queryParams[1]?.includes('front_end_api_pool()')) {
+  } else if (queryParams[1]?.includes('pool_data()')) {
     const key = queryParams[1]?.split('=')[1] || 'defaultKey'
     return {
       calls: {

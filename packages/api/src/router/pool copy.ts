@@ -50,9 +50,9 @@ export const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: numb
   const poolId = await idFromHTRPoolByTokenUuid(uuid, chainId, prisma)
   if (!poolId) return {}
   const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${poolId.id}`, `calls[]=front_end_api_pool()`]
+  const queryParams = [`id=${poolId.id}`, `calls[]=pool_data()`]
   const response = await fetchNodeData(endpoint, queryParams)
-  const result = response['calls'][`front_end_api_pool()`]['value']
+  const result = response['calls'][`pool_data()`]['value']
   return result
 }
 
@@ -97,10 +97,10 @@ export const getPoolSnaps24h = async (tokenUuid: string, prisma: PrismaClient) =
 // 1. Modular Function to Fetch and Process Pool Data
 async function fetchAndProcessPoolData(prisma: PrismaClient, poolId: string) {
   const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${poolId}`, `calls[]=front_end_api_pool()`]
+  const queryParams = [`id=${poolId}`, `calls[]=pool_data()`]
 
   const rawPoolData = await fetchNodeData(endpoint, queryParams)
-  const poolData = rawPoolData.calls['front_end_api_pool()'].value
+  const poolData = rawPoolData.calls['pool_data()'].value
 
   // Assuming you have functions for the calculations, e.g.,
   // calculateLiquidityUSD, calculateVolumeUSD, etc.
@@ -163,9 +163,9 @@ export const poolRouter = createTRPCRouter({
     .output(FrontEndApiNCObject)
     .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
-      const queryParams = [`id=${input.id}`, `calls[]=front_end_api_pool()`]
+      const queryParams = [`id=${input.id}`, `calls[]=pool_data()`]
       const response = await fetchNodeData(endpoint, queryParams)
-      const result = response['calls'][`front_end_api_pool()`]['value']
+      const result = response['calls'][`pool_data()`]['value']
       return result
     }),
   hourSnaps: procedure.input(z.object({ tokenUuid: z.string() })).query(async ({ ctx, input }) => {
@@ -185,9 +185,9 @@ export const poolRouter = createTRPCRouter({
     .output(FrontEndApiNCObject)
     .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
-      const queryParams = [`id=${input.id}`, `calls[]=front_end_api_pool()`]
+      const queryParams = [`id=${input.id}`, `calls[]=pool_data()`]
       const response = await fetchNodeData(endpoint, queryParams)
-      const result = response['calls'][`front_end_api_pool()`]['value']
+      const result = response['calls'][`pool_data()`]['value']
       return result
     }),
   byIdWithSnaps: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {

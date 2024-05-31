@@ -113,7 +113,7 @@ export function Header({
                     </Typography>
                     <Select.Option
                       as="a"
-                      href="https://dozer.finance/swap"
+                      href="https://mvp.dozer.finance/swap"
                       key={AppType.Swap}
                       value={AppType.Swap}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -125,7 +125,7 @@ export function Header({
                     </Select.Option>
                     <Select.Option
                       as="a"
-                      href="https://dozer.finance/swap/tokens"
+                      href="https://mvp.dozer.finance/swap/tokens"
                       key={AppType.Tokens}
                       value={AppType.Tokens}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -138,7 +138,7 @@ export function Header({
 
                     {/* <Select.Option
                       as="a"
-                      href="https://dozer.finance/pool"
+                      href="https://mvp.dozer.finance/pool"
                       key={AppType.Invest}
                       value={AppType.Invest}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -168,7 +168,7 @@ export function Header({
                     </Typography>
                     {/* <Select.Option
                       as="a"
-                      href="https://dozer.finance/blog"
+                      href="https://mvp.dozer.finance/blog"
                       key={AppType.Blog}
                       value={AppType.Blog}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
