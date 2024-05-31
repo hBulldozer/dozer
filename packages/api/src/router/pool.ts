@@ -59,7 +59,7 @@ const fetchAndProcessPoolData = async (
   console.log(pool.id, pool.hourSnapshots)
   const volumeUSD = (volume0 * priceHTR + (volume1 * priceHTR * reserve0) / reserve1) / 100
   const feeUSD = (fee0 * priceHTR + (fee1 * priceHTR * reserve0) / reserve1) / 100
-  const volume1d = volumeUSD - (pool.hourSnapshots[0]?.liquidityUSD || 0)
+  const volume1d = volumeUSD - (pool.hourSnapshots[0]?.volumeUSD || 0)
   return {
     id: id,
     name: `${token0.symbol}-${token1.symbol}`,
@@ -113,16 +113,16 @@ export const poolRouter = createTRPCRouter({
     })
 
     const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrUsdtPool?.id}`, `calls[]=front_end_api_pool()`]
+    const queryParams = [`id=${htrUsdtPool?.id}`, `calls[]=pool_data()`]
 
     const rawPoolData = await fetchNodeData(endpoint, queryParams)
-    const poolData = rawPoolData.calls['front_end_api_pool()'].value
+    const poolData = rawPoolData.calls['pool_data()'].value
     const htrPrice = htrUsdtPool
       ? htrUsdtPool.token0.symbol === 'HTR'
-        ? poolData.reserve0 / poolData.reserve1
-        : poolData.reserve1 / poolData.reserve0
+        ? poolData.reserve1 / poolData.reserve0
+        : poolData.reserve0 / poolData.reserve1
       : 1 // Default to 1 if htrUsdtPool is undefined
-
+    console.log(htrPrice)
     // Process each pool concurrently (for efficiency)
     const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice))
     const allPoolData = await Promise.all(poolDataPromises)

@@ -36,7 +36,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
       },
       {
         id: '1',
-        uuid: '00b1b246cb512515c5258cb0301afcf83e74eb595dbe655d14e11782db4b70c5',
+        uuid: '0000018844a71bca14d62f0e8cd2f304885d4b77069ad47c8e49905d9ef913d2',
         chainId: 1,
         name: 'Dozer',
         symbol: 'DZR',
@@ -252,7 +252,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         updatedAt: new Date(),
         tokenLPId: '0',
         // id: 'd14e4ef9-01ca-4cc6-8b27-06a0145ab067',
-        id: '1',
+        id: '000001e79cbb9ae86bb1bec0fb79f248cc78133e4ffcee51643495f34f5d6c3e',
       },
       {
         name: 'DZR-HTR',
@@ -274,7 +274,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         updatedAt: new Date(),
         tokenLPId: '0',
         // id: '16c056e5-322d-4b80-bdad-58f399fbdc9e',
-        id: '0',
+        id: '000000eb34def6cea586e915ee378ed2cd4076f74a8c42ca024aca3dcd4e694c',
       },
     ],
   })
@@ -286,19 +286,33 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
     const snapshots = []
 
     for (const pool of allPools) {
-      for (let j = -24 * 4; j < (snaps_period - 1) * 24 * 4; j++) {
+      let prevReserve0 = parseInt(pool.reserve0)
+      let prevReserve1 = parseInt(pool.reserve1)
+      let prevLiquidityUSD = pool.liquidityUSD
+
+      for (let j = 0; j < snaps_period * 24 * 4; j++) {
         const snapshotTime = Date.now() - j * 15 * 60 * 1000
         const snapshotDate = new Date(snapshotTime)
 
+        // Calculate changes with continuity
+        const reserve0Change = (Math.random() - 0.15) * 100 // Smaller, more gradual changes
+        const reserve1Change = (Math.random() - 0.15) * 100
+
+        prevReserve0 += reserve0Change
+        prevReserve1 += reserve1Change
+
+        // Ensure rules are followed
+        prevLiquidityUSD = 2 * prevReserve0
+
         snapshots.push({
           poolId: pool.id,
-          apr: pool.apr + Math.random() * 0.1,
+          apr: pool.apr + (Math.random() - 0.15) * 0.05, // Smaller APR fluctuations
           date: snapshotDate,
-          liquidityUSD: pool.liquidityUSD + Math.random() * 100,
-          volumeUSD: pool.volumeUSD + Math.random() * 10000,
-          reserve0: parseInt(pool.reserve0) + Math.random() * 1000,
-          reserve1: parseInt(pool.reserve1) + Math.random() * 1000,
-          priceHTR: 0.7 + 0.01 * Math.random(),
+          liquidityUSD: prevLiquidityUSD,
+          volumeUSD: 0, // pool.volumeUSD + Math.random() * 5000, // Reduced randomness
+          reserve0: prevReserve0,
+          reserve1: prevReserve1,
+          priceHTR: prevReserve1 / prevReserve0, // Calculate price based on reserves
         })
 
         // Push data to daySnapshot if it's 9 PM
@@ -306,13 +320,13 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
           await prisma.daySnapshot.create({
             data: {
               poolId: pool.id,
-              apr: pool.apr + Math.random() * 0.1,
+              apr: pool.apr + (Math.random() - 0.15) * 0.05, // Smaller APR fluctuations
               date: snapshotDate,
-              liquidityUSD: pool.liquidityUSD + Math.random() * 100,
-              volumeUSD: pool.volumeUSD + Math.random() * 10000,
-              reserve0: parseInt(pool.reserve0) + Math.random() * 1000,
-              reserve1: parseInt(pool.reserve1) + Math.random() * 1000,
-              priceHTR: 0.7 + 0.01 * Math.random(),
+              liquidityUSD: prevLiquidityUSD,
+              volumeUSD: 0, // pool.volumeUSD + Math.random() * 5000, // Reduced randomness
+              reserve0: prevReserve0,
+              reserve1: prevReserve1,
+              priceHTR: prevReserve1 / prevReserve0, // Calculate price based on reserves
             },
           })
         }
@@ -374,3 +388,4 @@ export async function seed_db(nano_info?: NanoInfoType, snaps_period = 0) {
       process.exit(1)
     })
 }
+// seed_db(undefined, 5)
