@@ -17,7 +17,8 @@ export const NavItem: FC<NavItemProps> = ({ href, label, external }) => {
       <Link.External href={href} className="decoration-transparent">
         <span
           className={classNames(
-            href.includes(basePath) ? 'text-stone-200' : 'text-stone-400',
+            // href.includes(basePath) ? 'text-stone-200' : 'text-stone-400', TODO!! Edited for MVP
+            'text-stone-400',
             'text-sm font-semibold hover:text-white cursor-pointer'
           )}
         >
