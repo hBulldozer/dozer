@@ -51,6 +51,20 @@ const createSVGString = (data: Point[], width: number, height: number, padding: 
   `
 }
 
+function generateHorizontalLineSvg(width: number, height: number, padding: number): string {
+  // Calculate the center y-coordinate
+  const centerY = height / 2
+
+  // Define the SVG string with a line element
+  const svgString = `
+  <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+    <line x1="${padding}" y1="${centerY}" x2="${width - padding}" y2="${centerY}" stroke="#4ade80" stroke-width="1.5" />
+  </svg>
+  `
+
+  return svgString
+}
+
 export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   const { data: prices24h, isLoading } = api.getPrices.all24h.useQuery()
   const { data: lastPrices, isLoading: isLoadingLast } = api.getPrices.all.useQuery()
@@ -62,7 +76,7 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   }
   price24h.push(lastPrice ? lastPrice : price24h[0])
   const points = price24h.map((p, i) => ({ x: i, y: p }))
-  const chartSVG = createSVGString(points, 110, 30, 6)
+  const chartSVG = row.id == 'usdt' ? generateHorizontalLineSvg(110, 30, 6) : createSVGString(points, 110, 30, 6)
   return isLoading || isLoadingLast ? (
     <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
       <Skeleton.Box className="w-[120px] h-[22px] bg-white/[0.06] rounded-full" />

@@ -295,7 +295,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         const snapshotDate = new Date(snapshotTime)
 
         // Calculate changes with continuity
-        const reserve0Change = (Math.random() - 0.5) * 1500 // Smaller, more gradual changes
+        const reserve0Change = (Math.random() - 0.15) * 1500 // Smaller, more gradual changes
         const reserve1Change = (reserve0Change * prevReserve1) / (prevReserve0 + reserve0Change)
 
         prevReserve0 += reserve0Change
