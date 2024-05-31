@@ -297,7 +297,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         const snapshotDate = new Date(snapshotTime)
 
         // Calculate changes with continuity
-        const reserve0Change = (Math.random() - 0.15) * 1500 // Smaller, more gradual changes
+        const reserve0Change = (Math.random() - 0.65) * 1500 // Smaller, more gradual changes
         const reserve1Change = (reserve0Change * prevReserve1) / (prevReserve0 + reserve0Change)
 
         prevReserve0 += reserve0Change
@@ -328,7 +328,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
               volumeUSD: 0, // pool.volumeUSD + Math.random() * 5000, // Reduced randomness
               reserve0: prevReserve0,
               reserve1: prevReserve1,
-              priceHTR: prevReserve1 / prevReserve0, // Calculate price based on reserves
+              priceHTR: 0.1, // Calculate price based on reserves
             },
           })
         }

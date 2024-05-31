@@ -123,7 +123,7 @@ export function Header({
                         The easiest way to trade
                       </Typography>
                     </Select.Option>
-                    <Select.Option
+                    {/* <Select.Option
                       as="a"
                       href="https://mvp.dozer.finance/swap/tokens"
                       key={AppType.Tokens}
@@ -134,7 +134,7 @@ export function Header({
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                         Top tokens on Dozer
                       </Typography>
-                    </Select.Option>
+                    </Select.Option> */}
 
                     {/* <Select.Option
                       as="a"

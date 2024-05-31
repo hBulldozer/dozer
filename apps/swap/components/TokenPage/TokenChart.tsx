@@ -79,7 +79,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
     return chartPeriod == TokenChartPeriod.Day
       ? fifteenMinSnapshots.filter((snap) => snap.date < new Date(Date.now()))
       : chartPeriod >= TokenChartPeriod.Year
-      ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now()))
+      ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now())).reverse()
       : hourSnapshots.filter((snap) => snap.date < new Date(Date.now()))
   }, [chartPeriod, fifteenMinSnapshots, hourSnapshots, pair.daySnapshots])
   const { data: priceHTRPool, isLoading } = api.getPrices.htrKline.useQuery({
@@ -103,7 +103,8 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
             ? 1
             : pair.id.includes('native')
             ? Number(tokenReserve.reserve1) / Number(tokenReserve.reserve0)
-            : priceInHTR * Number(priceHTRPool ? priceHTRPool[priceHTRPool.length - 1 - idx].price : undefined)
+            : priceInHTR * Number(priceHTRPool ? priceHTRPool[idx].price : undefined)
+          // priceInHTR * 0.07
           acc[0].push(date / 1000)
           if (chartCurrency === TokenChartCurrency.HTR) {
             acc[1].push(priceInHTR)
