@@ -104,7 +104,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
-    href: `/tokens`,
+    href: `https://mvp.dozer.finance/swap/tokens`,
     label: 'Tokens',
   },
   {
