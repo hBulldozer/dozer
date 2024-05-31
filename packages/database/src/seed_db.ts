@@ -33,6 +33,8 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         decimals: 2,
         isLiquidityToken: false,
         miniChartSVG: '',
+        about:
+          'Hathor arranges its transactions in a DAG - outside the blocks - which are confirmed by the blocks. This design reportedly allows Hathor to be highly scalable and decentralized. Hathor aims to tackle the complexity of creating a new token. Tokens in the network will reportedly operate with the same scalability and security parameters as the native HTR token. The team started the development of the project on 27 Aug 2018 and the mainnet network was launched on 3 Jan 2020. The project is public and open-source, with anyone welcome to join.',
       },
       {
         id: '1',
@@ -48,6 +50,8 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         decimals: 2,
         isLiquidityToken: false,
         miniChartSVG: '',
+        about:
+          'DZR is the native utility token of Dozer Finance, a decentralized finance (DeFi) platform built on the Hathor Network. DZR token holders can participate in platform governance, earn staking rewards, and access exclusive features within the Dozer ecosystem. With zero gas fees and instant finality, DZR is designed to facilitate seamless transactions and empower users to take control of their financial future.',
       },
       {
         id: '2',
@@ -64,9 +68,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         isLiquidityToken: false,
         miniChartSVG: '',
         about:
-          'Tether (USDT) is a cryptocurrency with a value meant to mirror the value of the U.S. dollar. The idea was to create a stable cryptocurrency that can be used like digital dollars. Coins that serve this purpose of being a stable dollar substitute are called “stable coins.” Tether is the most popular stable coin and even acts as a dollar replacement on many popular exchanges! According to their site, Tether converts cash into digital currency, to anchor or “tether” the value of the coin to the price of national currencies like the US dollar, the Euro, and the Yen. Like other cryptos it uses blockchain. Unlike other cryptos, it is [according to the official Tether site] “100% backed by USD” (USD is held in reserve). The primary use of Tether is that it offers some stability to the otherwise volatile crypto space and offers liquidity to exchanges who can’t deal in dollars and with banks (for example to the sometimes controversial but leading exchange Bitfinex).\
-        The digital coins are issued by a company called Tether Limited that is governed by the laws of the British Virgin Islands, according to the legal part of its website. It is incorporated in Hong Kong. It has emerged that Jan Ludovicus van der Velde is the CEO of cryptocurrency exchange Bitfinex, which has been accused of being involved in the price manipulation of bitcoin, as well as tether. Many people trading on exchanges, including Bitfinex, will use tether to buy other cryptocurrencies like bitcoin. Tether Limited argues that using this method to buy virtual currencies allows users to move fiat in and out of an exchange more quickly and cheaply. Also, exchanges typically have rocky relationships with banks, and using Tether is a way to circumvent that.\
-        USDT is fairly simple to use. Once on exchanges like Poloniex or Bittrex, it can be used to purchase Bitcoin and other cryptocurrencies. It can be easily transferred from an exchange to any Omni Layer enabled wallet. Tether has no transaction fees, although external wallets and exchanges may charge one. In order to convert USDT to USD and vise versa through the Tether.to Platform, users must pay a small fee. Buying and selling Tether for Bitcoin can be done through a variety of exchanges like the ones mentioned previously or through the Tether.to platform, which also allows the conversion between USD to and from your bank account.',
+          'Tether (USDT) is a cryptocurrency with a value meant to mirror the value of the U.S. dollar. The idea was to create a stable cryptocurrency that can be used like digital dollars. Coins that serve this purpose of being a stable dollar substitute are called “stable coins.” Tether is the most popular stable coin and even acts as a dollar replacement on many popular exchanges! According to their site, Tether converts cash into digital currency, to anchor or “tether” the value of the coin to the price of national currencies like the US dollar, the Euro, and the Yen. Like other cryptos it uses blockchain. Unlike other cryptos, it is [according to the official Tether site] “100% backed by USD” (USD is held in reserve). The primary use of Tether is that it offers some stability to the otherwise volatile crypto space and offers liquidity to exchanges who can’t deal in dollars and with banks',
       },
       // {
       //   id: '3',

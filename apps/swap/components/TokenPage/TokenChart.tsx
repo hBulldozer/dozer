@@ -225,7 +225,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
             interval: 'auto',
             showMinLabel: false,
             inside: true,
-            margin: 5,
+            margin: 0,
           },
           axisTick: {
             show: false,

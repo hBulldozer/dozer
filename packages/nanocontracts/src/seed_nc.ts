@@ -131,7 +131,7 @@ export async function seed_nc(n_users = 5) {
     'master',
     '/wallet/create-token',
     { 'x-wallet-id': process.env.WALLET_ID },
-    { name: 'USD Tether', symbol: 'USDT', amount: 140_000_00 }
+    { name: 'USD Tether', symbol: 'USDT', amount: 1_400_000_00 }
   ).then((data) => {
     if (data.success) {
       USDT_uuid = data.configurationString.split(':')[2]
@@ -200,19 +200,19 @@ export async function seed_nc(n_users = 5) {
         throw new Error(`Failed to get user address. ${data.message}`)
       }
     })
-    console.log(`Sending 100k HTR to ${address}...`)
+    console.log(`Sending 2.5k USDT to ${address}...`)
     await PostHeadless(
       'master',
       '/wallet/simple-send-tx',
       { 'x-wallet-id': process.env.WALLET_ID },
       {
         address: address,
-        value: 100_000_00,
-        token: '00',
+        value: 2_500_00,
+        token: USDT_uuid,
       }
     ).then(async (data) => {
       if (data.success) {
-        console.log(`Sent 100k HTR to ${address}.`)
+        console.log(`Sent 2.5k USDT to ${address}.`)
       } else {
         throw new Error(`Failed to send HTR to ${address}.` + data)
       }

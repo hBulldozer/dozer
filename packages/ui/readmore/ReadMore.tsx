@@ -10,7 +10,7 @@ interface ReadMoreProps {
 
 const ReadMore: React.FC<ReadMoreProps> = ({
   text,
-  maxLength = 100,
+  maxLength = 300,
   readMoreText = 'Read more',
   readLessText = 'Read less',
 }) => {

@@ -130,7 +130,6 @@ export const pricesRouter = createTRPCRouter({
       const symbols = [pool.token0.symbol, pool.token1.symbol]
       return symbols.includes('HTR') && symbols.includes('USDT')
     })
-    console.log(htrUsdtPool)
 
     const endpoint = 'nano_contract/state'
     const queryParams = [`id=${htrUsdtPool?.id}`, `calls[]=pool_data()`]
