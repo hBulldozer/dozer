@@ -56,7 +56,10 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   const { data: lastPrices, isLoading: isLoadingLast } = api.getPrices.all.useQuery()
   const tokenUuid = row.id.includes('native') ? row.token0.uuid : row.token1.uuid
   const lastPrice = lastPrices?.[tokenUuid]
-  const price24h = prices24h ? prices24h[tokenUuid] : []
+  let price24h: number[] = []
+  if (prices24h) {
+    price24h = prices24h[tokenUuid]
+  }
   price24h.push(lastPrice ? lastPrice : price24h[0])
   const points = price24h.map((p, i) => ({ x: i, y: p }))
   const chartSVG = createSVGString(points, 110, 30, 6)
