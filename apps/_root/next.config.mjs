@@ -40,14 +40,6 @@ const nextConfig = {
         destination: `${SWAP_URL}/swap/:path*`,
       },
       {
-        source: '/tokens',
-        destination: `${SWAP_URL}/swap/tokens`,
-      },
-      {
-        source: '/tokens/:path*',
-        destination: `${SWAP_URL}/swap/tokens/:path*`,
-      },
-      {
         source: '/pool',
         destination: `${EARN_URL}/pool`,
       },

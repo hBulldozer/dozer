@@ -12,14 +12,14 @@ export enum AppType {
   Swap = 'Swap',
   // Invest = 'Pools',
   Blog = 'Blog',
-  // Tokens = 'Tokens',
+  Tokens = 'Tokens',
 }
 
 const LINK = {
   [AppType.Root]: '/',
   [AppType.Swap]: '/swap',
   // [AppType.Invest]: '/pool',
-  // [AppType.Tokens]: '/tokens',
+  [AppType.Tokens]: '/swap/tokens',
 }
 
 export interface HeaderProps extends React.HTMLProps<HTMLElement> {
@@ -123,9 +123,9 @@ export function Header({
                         The easiest way to trade
                       </Typography>
                     </Select.Option>
-                    {/* <Select.Option
+                    <Select.Option
                       as="a"
-                      href="https://dozer.finance/tokens"
+                      href="https://dozer.finance/swap/tokens"
                       key={AppType.Tokens}
                       value={AppType.Tokens}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -136,7 +136,7 @@ export function Header({
                       </Typography>
                     </Select.Option>
 
-                    <Select.Option
+                    {/* <Select.Option
                       as="a"
                       href="https://dozer.finance/pool"
                       key={AppType.Invest}

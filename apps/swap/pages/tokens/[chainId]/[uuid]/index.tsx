@@ -15,6 +15,7 @@ import ReadMore from '@dozer/ui/readmore/ReadMore'
 import { dbToken } from 'interfaces'
 import { daySnapshot, hourSnapshot } from '@dozer/database'
 import { ChainId } from '@dozer/chain'
+import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -103,7 +104,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
-    href: `/tokens`,
+    href: `/swap/tokens`,
     label: 'Tokens',
   },
   {
@@ -148,19 +149,19 @@ const Token = () => {
     pair = {
       id: chainId == ChainId.HATHOR ? 'usdt' : 'usdt-testnet',
       name: chainId == ChainId.HATHOR ? 'USDT' : 'USDT testnet',
-      liquidityUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) : 0,
+      liquidityUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
       volumeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-      feeUSD: 0,
-      swapFee: 0,
+      feeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
+      swapFee: pairs_usdt[0].swapFee,
       apr: 0,
       token0: pair_usdt_htr.token0.uuid == '00' ? pair_usdt_htr.token0 : pair_usdt_htr.token1,
       token1: pair_usdt_htr.token0.uuid == '00' ? pair_usdt_htr.token1 : pair_usdt_htr.token0,
       chainId: chainId,
       reserve0: pair_usdt_htr.reserve0,
       reserve1: pair_usdt_htr.reserve1,
-      liquidity: 0,
-      volume1d: 0,
-      fees1d: 0,
+      liquidity: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
+      volume1d: pairs_usdt ? pairs_usdt.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
+      fees1d: pairs_usdt ? pairs_usdt.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
       hourSnapshots: snaps_usdt_htr ? snaps_usdt_htr.hourSnapshots : ([] as Array<hourSnapshot>),
       daySnapshots: snaps_usdt_htr ? snaps_usdt_htr.daySnapshots : ([] as Array<daySnapshot>),
     }
@@ -178,19 +179,19 @@ const Token = () => {
     pair = {
       id: chainId == ChainId.HATHOR ? 'native' : 'native-testnet',
       name: chainId == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
-      liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) : 0,
+      liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
       volumeUSD: pairs_htr ? pairs_htr.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-      feeUSD: 0,
-      swapFee: 0,
+      feeUSD: pairs_htr ? pairs_htr.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
+      swapFee: pairs_htr[0].swapFee,
       apr: 0,
       token0: pair_usdt_htr.token0.uuid == '00' ? pair_usdt_htr.token0 : pair_usdt_htr.token1,
       token1: pair_usdt_htr.token0.uuid == '00' ? pair_usdt_htr.token1 : pair_usdt_htr.token0,
       chainId: chainId,
       reserve0: pair_usdt_htr.reserve0,
       reserve1: pair_usdt_htr.reserve1,
-      liquidity: 0,
-      volume1d: 0,
-      fees1d: 0,
+      liquidity: pairs_htr ? pairs_htr.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
+      volume1d: pairs_htr ? pairs_htr.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
+      fees1d: pairs_htr ? pairs_htr.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
       hourSnapshots: snaps_usdt_htr ? snaps_usdt_htr.hourSnapshots : ([] as Array<hourSnapshot>),
       daySnapshots: snaps_usdt_htr ? snaps_usdt_htr.daySnapshots : ([] as Array<daySnapshot>),
     }
@@ -216,6 +217,7 @@ const Token = () => {
   return (
     <>
       <Layout breadcrumbs={LINKS({ pair })}>
+        <BlockTracker client={api} />
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-6">
             <TokenChart pair={pair} />
@@ -253,7 +255,7 @@ const Token = () => {
               <Button
                 size="md"
                 as="a"
-                href={`../../swap?token0=${pair.token0.uuid}&token1=${pair.token1.uuid}&chainId=${pair.chainId}`}
+                href={`../../?token0=${pair.token0.uuid}&token1=${pair.token1.uuid}&chainId=${pair.chainId}`}
               >
                 Swap
               </Button>

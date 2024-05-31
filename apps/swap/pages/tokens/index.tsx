@@ -6,6 +6,8 @@ import { FC } from 'react'
 import { Layout } from 'components/Layout'
 import { TokensSection } from 'components/TokensPage'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+import { api } from 'utils/api'
+import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
 export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
@@ -36,6 +38,7 @@ const Tokens: FC = () => {
         </section>
         <TokensSection />
       </div>
+      <BlockTracker client={api} />
     </Layout>
   )
 }

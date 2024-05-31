@@ -238,8 +238,8 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           type: 'value',
           scale: true,
           name: 'Price',
-          max: 'dataMax',
-          min: Math.min(...yData) - 0.001,
+          // max: 'dataMax',
+          // min: Math.min(...yData) - 0.001,
         },
       ],
       series: [

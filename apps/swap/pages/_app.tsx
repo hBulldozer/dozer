@@ -46,7 +46,7 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
   }, [isLoading, router])
   return (
     <>
-      {/* <LoadingOverlay show={isLoading} /> */}
+      <LoadingOverlay show={isLoading} />
       <Head>
         <title>Dozer - The future of finance - Coming soon</title>
         <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=1" />

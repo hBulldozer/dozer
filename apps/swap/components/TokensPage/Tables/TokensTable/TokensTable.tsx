@@ -127,8 +127,7 @@ export const TokensTable: FC = () => {
       if (!pool_with_htr) return {} as Pair
       const _poolDB = all_pools.find((pool) => pool.id == pool_with_htr)
       if (!_poolDB) return {} as Pair
-      const pair = _poolDB ? _poolDB : ({} as Pair)
-      pair.liquidityUSD = pair.liquidityUSD / 2
+      const pair = _poolDB ? { ..._poolDB, liquidityUSD: _poolDB.liquidityUSD / 2 } : ({} as Pair)
       return pair
     }
   })

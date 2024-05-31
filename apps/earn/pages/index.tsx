@@ -5,6 +5,8 @@ import { FC } from 'react'
 
 import { Layout, PoolsSection } from '../components'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
+import { api } from '../utils/api'
 
 export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
@@ -50,6 +52,7 @@ const Pools: FC = () => {
         <PoolsSection />
         {/* </PoolsFiltersProvider> */}
       </div>
+      <BlockTracker client={api} />
     </Layout>
   )
 }
