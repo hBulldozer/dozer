@@ -295,11 +295,11 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         const snapshotDate = new Date(snapshotTime)
 
         // Calculate changes with continuity
-        const reserve0Change = (Math.random() - 0.5) * 100 // Smaller, more gradual changes
-        const reserve1Change = (parseInt(pool.reserve0) * parseInt(pool.reserve1)) / reserve0Change
+        const reserve0Change = (Math.random() - 0.5) * 1500 // Smaller, more gradual changes
+        const reserve1Change = (reserve0Change * prevReserve1) / (prevReserve0 + reserve0Change)
 
         prevReserve0 += reserve0Change
-        prevReserve1 += reserve1Change
+        prevReserve1 -= reserve1Change
 
         // Ensure rules are followed
         prevLiquidityUSD = 2 * prevReserve0
@@ -312,7 +312,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
           volumeUSD: 0, // pool.volumeUSD + Math.random() * 5000, // Reduced randomness
           reserve0: prevReserve0,
           reserve1: prevReserve1,
-          priceHTR: prevReserve1 / prevReserve0, // Calculate price based on reserves
+          priceHTR: 0.1,
         })
 
         // Push data to daySnapshot if it's 9 PM

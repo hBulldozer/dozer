@@ -12,7 +12,9 @@ export default async function handler(request: NextApiRequest, response: NextApi
       volumeUSD: number
       reserve0: number
       reserve1: number
+      priceHTR: number
     }[] = []
+    const priceHTR = await client.getPrices.htr.query()
     pools.map((pool) => {
       pools_array.push({
         poolId: pool.id,
@@ -22,6 +24,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
         volumeUSD: pool.volumeUSD,
         reserve0: Number(pool.reserve0),
         reserve1: Number(pool.reserve1),
+        priceHTR: priceHTR,
       })
     })
 
