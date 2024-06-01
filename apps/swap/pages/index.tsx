@@ -60,7 +60,7 @@ const Home = () => {
   // }, true)
   return (
     <Layout>
-      <SwapWidget token0_idx={'0'} token1_idx={'2'} />
+      <SwapWidget token0_idx={'2'} token1_idx={'0'} />
       <BlockTracker client={api} />
     </Layout>
   )
