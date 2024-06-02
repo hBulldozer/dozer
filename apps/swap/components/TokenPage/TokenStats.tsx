@@ -50,8 +50,11 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
           Min (52W)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {formatUSD5Digit(Math.min(...priceArray))}
-          {/* {0.2} */}
+          {pair.id.includes('usdt')
+            ? formatUSD(1)
+            : Math.min(...priceArray) > 10
+            ? formatUSD(Math.min(...priceArray))
+            : formatUSD5Digit(Math.min(...priceArray))}
         </Typography>
         {/* {pair.volume1dChange ? (
           <Typography variant="xs" weight={500} className={pair.volume1dChange > 0 ? 'text-green' : 'text-red'}>
@@ -65,9 +68,11 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
           Max (52W)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {/* Don't need decimals for a count */}
-          {/* {formatNumber(pair.txCount1d).replace('.00', '')} */}
-          {formatUSD5Digit(Math.max(...priceArray))}
+          {pair.id.includes('usdt')
+            ? formatUSD(1)
+            : Math.max(...priceArray) > 10
+            ? formatUSD(Math.max(...priceArray))
+            : formatUSD5Digit(Math.max(...priceArray))}
         </Typography>
         {/* {pair.txCount1dChange ? (
           <Typography variant="xs" weight={500} className={pair.txCount1dChange > 0 ? 'text-green' : 'text-red'}>

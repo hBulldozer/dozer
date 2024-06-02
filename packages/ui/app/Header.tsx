@@ -113,7 +113,7 @@ export function Header({
                     </Typography>
                     <Select.Option
                       as="a"
-                      href="https://mvp.dozer.finance/swap"
+                      href="/swap"
                       key={AppType.Swap}
                       value={AppType.Swap}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -123,9 +123,9 @@ export function Header({
                         The easiest way to trade
                       </Typography>
                     </Select.Option>
-                    {/* <Select.Option
+                    <Select.Option
                       as="a"
-                      href="https://mvp.dozer.finance/swap/tokens"
+                      href="/swap/tokens"
                       key={AppType.Tokens}
                       value={AppType.Tokens}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -134,7 +134,7 @@ export function Header({
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                         Top tokens on Dozer
                       </Typography>
-                    </Select.Option> */}
+                    </Select.Option>
 
                     {/* <Select.Option
                       as="a"

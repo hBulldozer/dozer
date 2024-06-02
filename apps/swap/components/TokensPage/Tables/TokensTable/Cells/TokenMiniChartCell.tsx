@@ -76,7 +76,10 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   }
   price24h.push(lastPrice ? lastPrice : price24h[0])
   const points = price24h.map((p, i) => ({ x: i, y: p }))
-  const chartSVG = row.id == 'usdt' ? generateHorizontalLineSvg(110, 30, 6) : createSVGString(points, 110, 30, 6)
+  const chartSVG =
+    row.id.includes('usdt') || Math.min(...price24h) == Math.max(...price24h)
+      ? generateHorizontalLineSvg(110, 30, 6)
+      : createSVGString(points, 110, 30, 6)
   return isLoading || isLoadingLast ? (
     <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
       <Skeleton.Box className="w-[120px] h-[22px] bg-white/[0.06] rounded-full" />

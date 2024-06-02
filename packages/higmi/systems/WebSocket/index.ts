@@ -107,7 +107,7 @@ export const useWebSocket = (
         setSocket(ws)
 
         ws.onopen = () => {
-          console.log('WebSocket connection opened')
+          // console.log('WebSocket connection opened')
           // Send start message after connection is established
           ws.send(
             JSON.stringify({
@@ -187,7 +187,7 @@ export const useWebSocketGeneric = (
     const response = await fetch(`${NODE_URL}?size=1`)
     const result = await response.json()
     const latest = result.latest_event_id
-    console.log('latest_event_id:', latest)
+    
     return latest
   }
   useEffect(() => {
@@ -199,7 +199,7 @@ export const useWebSocketGeneric = (
         setSocket(ws)
 
         ws.onopen = () => {
-          console.log('WebSocket connection opened')
+          // console.log('WebSocket connection opened')
           setIsConnecting(false) // Set connected state
           // Send start message after connection is established
           ws.send(

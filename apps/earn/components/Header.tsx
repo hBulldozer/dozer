@@ -18,8 +18,8 @@ export const Header: FC = () => {
       appType={AppType.Root}
       nav={
         <App.NavItemList>
-          <App.NavItem href="https://mvp.dozer.finance/swap" label="Swap" />
-          {/* <App.NavItem href="https://mvp.dozer.finance/swap/tokens" label="Tokens" /> */}
+          <App.NavItem href="/swap" label="Swap" />
+          <App.NavItem href="/swap/tokens" label="Tokens" />
           {/* <App.NavItem href={`https://mvp.dozer.finance/pool`} label="Pools" /> */}
           {/* <App.NavItem href="https://mvp.dozer.finance/bridge" label="Bridge" /> */}
           {/* <BuyCrypto address={address} /> */}

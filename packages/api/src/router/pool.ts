@@ -56,7 +56,6 @@ const fetchAndProcessPoolData = async (
   const { id, chainId, token0, token1 } = pool
 
   const liquidityUSD = (2 * priceHTR * reserve0) / 100
-  console.log(pool.id, pool.hourSnapshots)
   const volumeUSD = (volume0 * priceHTR + (volume1 * priceHTR * reserve0) / reserve1) / 100
   const feeUSD = (fee0 * priceHTR + (fee1 * priceHTR * reserve0) / reserve1) / 100
   const volume1d = volumeUSD - (pool.hourSnapshots[0]?.volumeUSD || 0)
@@ -122,7 +121,6 @@ export const poolRouter = createTRPCRouter({
         ? poolData.reserve1 / poolData.reserve0
         : poolData.reserve0 / poolData.reserve1
       : 1 // Default to 1 if htrUsdtPool is undefined
-    console.log(htrPrice)
     // Process each pool concurrently (for efficiency)
     const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice))
     const allPoolData = await Promise.all(poolDataPromises)
@@ -134,11 +132,11 @@ export const poolRouter = createTRPCRouter({
       where: { id: input.id },
       include: {
         hourSnapshots: {
-          where: {
-            date: {
-              gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 31), //get only one month from 15min snaps
-            },
-          },
+          // where: {
+          //   date: {
+          //     gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 31), //get only one month from 15min snaps
+          //   },
+          // },
           orderBy: { date: 'desc' },
         },
         daySnapshots: { orderBy: { date: 'desc' } },
@@ -231,7 +229,7 @@ export const poolRouter = createTRPCRouter({
         address,
         'users'
       )
-      console.log(response)
+
       return response
     }),
   getTxStatus: procedure
@@ -253,7 +251,6 @@ export const poolRouter = createTRPCRouter({
       try {
         endpoint = 'transaction'
         response = await fetchNodeData(endpoint, [`id=${input.hash}`]).then((res) => {
-          console.log('Waiting tx validation...')
           validation = res.success
             ? res.meta.voided_by.length
               ? 'failed'

@@ -48,7 +48,7 @@ export class LiquidityPool extends NanoContract {
       { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
     ]
     const args: NCArgs[] = []
-    console.log('actions', actions)
+    // console.log('actions', actions)
     const response = await this.execute(address, 'swap_tokens_for_exact_tokens', actions, args, wallet)
     return response
   }
@@ -71,7 +71,7 @@ export class LiquidityPool extends NanoContract {
       { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
     ]
     const args: NCArgs[] = []
-    console.log('actions', actions)
+    // console.log('actions', actions)
     const response = await this.execute(address, 'swap_exact_tokens_for_tokens', actions, args, wallet)
     return response
   }

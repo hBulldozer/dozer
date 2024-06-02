@@ -321,7 +321,7 @@ export const poolRouter = createTRPCRouter({
         address,
         'users'
       )
-      console.log(response)
+    
       return response
     }),
   waitForTx: procedure
@@ -343,7 +343,7 @@ export const poolRouter = createTRPCRouter({
         try {
           endpoint = 'transaction'
           response = await fetchNodeData(endpoint, [`id=${input.hash}`]).then((res) => {
-            console.log('Waiting tx validation...')
+            
             validation = res.success
               ? res.meta.voided_by.length
                 ? 'failed'

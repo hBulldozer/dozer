@@ -96,7 +96,7 @@ const EventsPage = () => {
         setSocket(ws)
 
         ws.onopen = () => {
-          console.log('WebSocket connection opened')
+          // console.log('WebSocket connection opened')
           // Send start message after connection is established
           ws.send(
             JSON.stringify({

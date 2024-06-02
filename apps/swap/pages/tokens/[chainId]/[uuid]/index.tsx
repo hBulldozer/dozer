@@ -45,13 +45,19 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     throw new Error(`Failed to fetch USDT Token`)
   }
   const UUID_USDT = USDT_token.uuid
+  const HTR_USDT_pool = pools.find(
+    (pool) =>
+      (pool.token0.uuid == '00' && pool.token1.uuid == UUID_USDT) ||
+      (pool.token1.uuid == '00' && pool.token0.uuid == UUID_USDT)
+  )
+
+  if (!HTR_USDT_pool) {
+    throw new Error(`Failed to fetch HTR/USDT pool.`)
+  }
+
   const pool =
     uuid == '00' || uuid == UUID_USDT
-      ? pools.find(
-          (pool) =>
-            (pool.token0.uuid == '00' && pool.token1.uuid == UUID_USDT) ||
-            (pool.token1.uuid == '00' && pool.token0.uuid == UUID_USDT)
-        )
+      ? HTR_USDT_pool
       : pools.find(
           (pool) =>
             (pool.token0.uuid == '00' && pool.token1.uuid == uuid) ||
@@ -64,32 +70,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   await ssg.getTokens.bySymbol.prefetch({ symbol: 'USDT' })
 
   await ssg.getPools.snapsById.prefetch({ id: pool.id })
-
-  await ssg.getPrices.htrKline.prefetch({
-    size: pool.hourSnapshots.length,
-    period: 0,
-  })
-  await ssg.getPrices.htrKline.prefetch({
-    size: pool.hourSnapshots.length,
-    period: 1,
-  })
-  await ssg.getPrices.htrKline.prefetch({
-    size: pool.hourSnapshots.length,
-    period: 2,
-  })
-
-  await ssg.getPrices.htrKline.prefetch({
-    size: pool.daySnapshots.length,
-    period: 0,
-  })
-  await ssg.getPrices.htrKline.prefetch({
-    size: pool.daySnapshots.length,
-    period: 1,
-  })
-  await ssg.getPrices.htrKline.prefetch({
-    size: pool.daySnapshots.length,
-    period: 2,
-  })
+  await ssg.getPools.snapsById.prefetch({ id: HTR_USDT_pool.id })
 
   await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
@@ -104,7 +85,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
-    href: `https://mvp.dozer.finance/swap/tokens`,
+    href: `/tokens`,
     label: 'Tokens',
   },
   {
@@ -142,7 +123,6 @@ const Token = () => {
         const pair = pool ? pool : ({} as Pair)
         return pair
       })
-    console.log('pairs_usdt', pairs_usdt)
     const { data: snaps_usdt_htr } = api.getPools.snapsById.useQuery({ id: pair_usdt_htr.id })
     if (!snaps_usdt_htr) return <></>
 

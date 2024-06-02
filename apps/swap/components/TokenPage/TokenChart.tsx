@@ -74,37 +74,49 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const priceInHTRNow = pair.id.includes('native')
     ? 1
     : Number(tokenReserveNow.reserve0) / Number(tokenReserveNow.reserve1)
-  const { data: _priceHTRNow } = api.getPrices.htr.useQuery()
+  const { data: _priceHTRNow, isLoading } = api.getPrices.htr.useQuery()
   const data = useMemo(() => {
     return chartPeriod == TokenChartPeriod.Day
       ? fifteenMinSnapshots.filter((snap) => snap.date < new Date(Date.now()))
       : chartPeriod >= TokenChartPeriod.Year
-      ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now())).reverse()
+      ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now()))
       : hourSnapshots.filter((snap) => snap.date < new Date(Date.now()))
   }, [chartPeriod, fifteenMinSnapshots, hourSnapshots, pair.daySnapshots])
-  const { data: priceHTRPool, isLoading } = api.getPrices.htrKline.useQuery({
-    size: data.length,
-    period: chartPeriod == TokenChartPeriod.Day ? 0 : chartPeriod >= TokenChartPeriod.Year ? 2 : 1,
-  })
+  // const { data: pools } = api.getPools.all.useQuery()
+  // if (!pools) return <Typography>Can't fetch pools</Typography>
+  // const poolHTR = pools.find((pool) => {
+  //   const symbols = [pool.token0.symbol, pool.token1.symbol]
+  //   return symbols.includes('HTR') && symbols.includes('USDT')
+  // })
+  // if (!poolHTR) return <Typography>Can't fetch HTR/USDT pool</Typography>
+  // const { data: snapsHTRPool, isLoading } = api.getPools.snapsById.useQuery({ id: poolHTR.id })
+  // if (!snapsHTRPool) return <Typography>Can't fetch HTR/USDT pool snaps</Typography>
+  // const priceHTRPool = snapsHTRPool.hourSnapshots.map((snap) => {
+  //   const date = snap.date
+  //   const price = poolHTR.token0.symbol === 'HTR' ? snap.reserve1 / snap.reserve0 : snap.reserve0 / snap.reserve1
+  //   return { date, price }
+  // })
+  // console.log(priceHTRPool?.length, data.length)
+  // console.log('htr', priceHTRPool ? new Date(priceHTRPool[0].date) : '', 'token', data[0]?.date)
+
   const [xData, yData] = useMemo(() => {
     const currentDate = Math.round(Date.now())
     const [x, y] = data.reduce<[number[], number[]]>(
       (acc, cur, idx) => {
         const date = new Date(cur.date).getTime()
-        const tokenReserve: { reserve0: number; reserve1: number } = {
-          reserve0: Number(cur.reserve0),
-          reserve1: Number(cur.reserve1),
-        }
-        const priceInHTR = pair.id.includes('native')
-          ? 1
-          : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
         if (date >= currentDate - chartTimespans[chartPeriod]) {
+          const tokenReserve: { reserve0: number; reserve1: number } = {
+            reserve0: Number(cur.reserve0),
+            reserve1: Number(cur.reserve1),
+          }
+          const priceInHTR = pair.id.includes('native')
+            ? 1
+            : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
           const priceInUSD = pair.id.includes('usdt')
             ? 1
             : pair.id.includes('native')
             ? Number(tokenReserve.reserve1) / Number(tokenReserve.reserve0)
-            : priceInHTR * Number(priceHTRPool ? priceHTRPool[idx].price : undefined)
-          // priceInHTR * 0.07
+            : priceInHTR * cur.priceHTR
           acc[0].push(date / 1000)
           if (chartCurrency === TokenChartCurrency.HTR) {
             acc[1].push(priceInHTR)
@@ -126,7 +138,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
     }
 
     return [x, y]
-  }, [data, _priceHTRNow, pair.id, priceHTRPool, chartPeriod, chartCurrency, priceInHTRNow])
+  }, [data, _priceHTRNow, pair.id, chartPeriod, chartCurrency, priceInHTRNow])
   const [priceChange, setPriceChange] = useState<number>(
     (yData[yData.length - 1] - yData[0]) / (yData[0] != 0 ? yData[0] : 1)
   )
