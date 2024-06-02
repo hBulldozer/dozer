@@ -20,37 +20,37 @@ import { api } from '../utils/api'
 // const queryClient = new QueryClient()
 
 const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  useEffect(() => {
-    const handler = (page: any) => {
-      window.dataLayer.push({
-        event: 'pageview',
-        page,
-      })
-    }
-    return () => {
-      router.events.off('routeChangeComplete', handler)
-      router.events.off('hashChangeComplete', handler)
-    }
-  }, [router.events])
+  // const router = useRouter()
+  // const [isLoading, setIsLoading] = useState(false)
+  // useEffect(() => {
+  //   const handler = (page: any) => {
+  //     window.dataLayer.push({
+  //       event: 'pageview',
+  //       page,
+  //     })
+  //   }
+  //   return () => {
+  //     router.events.off('routeChangeComplete', handler)
+  //     router.events.off('hashChangeComplete', handler)
+  //   }
+  // }, [router.events])
 
-  useEffect(() => {
-    router.events.on('routeChangeStart', () => {
-      setIsLoading(true)
-    })
+  // useEffect(() => {
+  //   router.events.on('routeChangeStart', () => {
+  //     setIsLoading(true)
+  //   })
 
-    router.events.on('routeChangeComplete', () => {
-      setIsLoading(false)
-    })
+  //   router.events.on('routeChangeComplete', () => {
+  //     setIsLoading(false)
+  //   })
 
-    router.events.on('routeChangeError', () => {
-      setIsLoading(false)
-    })
-  }, [isLoading, router])
+  //   router.events.on('routeChangeError', () => {
+  //     setIsLoading(false)
+  //   })
+  // }, [isLoading, router])
   return (
     <>
-      <LoadingOverlay show={isLoading} />
+      {/* <LoadingOverlay show={isLoading} /> */}
       <Head>
         <title>Dozer - The future of finance - Coming soon</title>
         <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=1" />

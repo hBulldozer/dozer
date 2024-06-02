@@ -38,7 +38,7 @@ export const GenericTable = <T extends { id: string }>({
 
   return (
     <>
-      {/* <LoadingOverlay show={showOverlay} /> */}
+      <LoadingOverlay show={showOverlay} />
       <Table.container>
         <Table.table style={{ minHeight: (pageSize + 1) * 52 }}>
           <Table.thead>
