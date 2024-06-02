@@ -223,7 +223,6 @@ export const pricesRouter = createTRPCRouter({
 
         const since = Date.now() - 24 * 60 * 60 * 1000 // 24 hours ago
         const snaps24h = await getPricesSince(token.uuid, ctx.prisma, since) //from db snaps
-        console.log('length', snaps24h.length)
         snaps24h.forEach((snaps) => {
           const priceHTR = snaps.priceHTR
           token_prices24hUSD.push((token.uuid == '00' ? 1 : snaps.price) * priceHTR)
