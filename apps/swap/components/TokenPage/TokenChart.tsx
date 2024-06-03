@@ -79,7 +79,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
     return chartPeriod == TokenChartPeriod.Day
       ? fifteenMinSnapshots.filter((snap) => snap.date < new Date(Date.now()))
       : chartPeriod >= TokenChartPeriod.Year
-      ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now()))
+      ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now())).reverse()
       : hourSnapshots.filter((snap) => snap.date < new Date(Date.now()))
   }, [chartPeriod, fifteenMinSnapshots, hourSnapshots, pair.daySnapshots])
   // const { data: pools } = api.getPools.all.useQuery()
