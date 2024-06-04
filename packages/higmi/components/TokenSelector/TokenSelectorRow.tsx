@@ -60,10 +60,10 @@ const _TokenSelectorRow: FC<TokenSelectorRow> = ({
         {balance && balance?.greaterThan(ZERO) && (
           <div className="flex flex-col">
             <Typography variant="xs" weight={500} className="text-right text-stone-200">
-              {balance?.toSignificant(6)}
+              {balance?.toFixed(2)}
             </Typography>
             <Typography variant="xxs" className="text-right text-stone-400">
-              {price ? `$${balance?.multiply(price).toFixed(2)}` : '-'}
+              {price ? `$${(parseFloat(balance?.toFixed(2)) * price).toFixed(2)}` : '-'}
             </Typography>
           </div>
         )}

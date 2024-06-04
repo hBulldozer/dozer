@@ -150,6 +150,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             variant="dialog"
             onClose={handleClose}
             open={tokenSelectorOpen}
+            pricesMap={prices}
             // fundSource={FundSource.WALLET}
             chainId={chainId}
             currency={currency}

@@ -6,6 +6,8 @@ import { useAccount } from '@dozer/zustand'
 
 import { TokenSelectorDialog } from './TokenSelectorDialog'
 import { ChainId } from '@dozer/chain'
+import { useBalance } from '@dozer/react-query'
+import { api } from '../../utils/api'
 
 export type TokenSelectorProps = {
   id?: string
@@ -22,6 +24,7 @@ export type TokenSelectorProps = {
   // fundSource?: FundSource
   includeNative?: boolean
   tokens?: Token[]
+  pricesMap?: { [key: string]: number }
 }
 
 export const TokenSelector: FC<TokenSelectorProps> = memo(
@@ -36,6 +39,7 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
     // customTokenMap = {},
     includeNative,
     tokens,
+    pricesMap,
     ...props
   }) => {
     const { address } = useAccount()
@@ -53,17 +57,19 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
     //   return Object.values(_tokenMap)
     // }, [_tokenMap])
 
-    const balances = [
-      {
-        token_uuid: '00',
-        token_symbol: 'HTR',
-        token_balance: 0,
-      },
-    ]
+    // const balances = [
+    //   {
+    //     token_uuid: '00',
+    //     token_symbol: 'HTR',
+    //     token_balance: 0,
+    //   },
+    // ]
 
-    const pricesMap = {
-      HTR_UUID: 0.008,
-    }
+    // const pricesMap = {
+    //   HTR_UUID: 0.008,
+    // }
+
+    const { balance: balances } = useAccount()
 
     return useMemo(() => {
       if (!isMounted) return <></>
