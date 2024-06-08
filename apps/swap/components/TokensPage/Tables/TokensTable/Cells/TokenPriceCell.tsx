@@ -1,4 +1,4 @@
-import { formatUSD } from '@dozer/format'
+import { formatUSD, formatUSD5Digit } from '@dozer/format'
 import { Skeleton, Typography } from '@dozer/ui'
 import { FC } from 'react'
 
@@ -15,7 +15,11 @@ export const TokenPriceCell: FC<CellProps> = ({ row }) => {
     </div>
   ) : (
     <Typography variant="sm" weight={600} className="text-right text-stone-50">
-      {formatUSD(price)}
+      {row.id.includes('usdt')
+        ? formatUSD(1)
+        : Math.min(price) > 1
+        ? formatUSD(Math.min(price))
+        : formatUSD5Digit(Math.min(price))}
     </Typography>
   )
 }

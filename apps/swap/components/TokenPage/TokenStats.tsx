@@ -9,7 +9,7 @@ interface TokenStats {
 }
 
 export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
-  const priceArray = pair.daySnapshots.map((snap) =>
+  const priceArray = pair.hourSnapshots.map((snap) =>
     pair.id.includes('native') ? snap.reserve1 / snap.reserve0 : (snap.priceHTR * snap.reserve1) / snap.reserve0
   )
   priceArray.push(pair.id.includes('native') ? prices['00'] : prices[pair.token1.uuid])
@@ -52,7 +52,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
         <Typography weight={500} className="text-stone-50">
           {pair.id.includes('usdt')
             ? formatUSD(1)
-            : Math.min(...priceArray) > 10
+            : Math.min(...priceArray) > 1
             ? formatUSD(Math.min(...priceArray))
             : formatUSD5Digit(Math.min(...priceArray))}
         </Typography>
@@ -70,7 +70,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
         <Typography weight={500} className="text-stone-50">
           {pair.id.includes('usdt')
             ? formatUSD(1)
-            : Math.max(...priceArray) > 10
+            : Math.max(...priceArray) > 1
             ? formatUSD(Math.max(...priceArray))
             : formatUSD5Digit(Math.max(...priceArray))}
         </Typography>

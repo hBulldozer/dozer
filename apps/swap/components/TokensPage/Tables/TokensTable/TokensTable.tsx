@@ -152,7 +152,7 @@ export const TokensTable: FC = () => {
     data: pairs_array || [],
     columns: COLUMNS,
     state: {
-      sorting,
+      // sorting,
       columnVisibility,
     },
     // pageCount: Math.ceil((poolCount || 0) / PAGE_SIZE),
