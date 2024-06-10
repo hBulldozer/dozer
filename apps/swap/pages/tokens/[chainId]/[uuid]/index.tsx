@@ -75,6 +75,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
+  await ssg.getNetwork.getBestBlock.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),

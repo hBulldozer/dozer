@@ -45,7 +45,7 @@ export const NAME_COLUMN: ColumnDef<Pair, unknown> = {
 export const TVL_COLUMN: ColumnDef<Pair, unknown> = {
   header: 'TVL',
   id: 'liquidityUSD',
-  accessorFn: (row) => row.liquidityUSD,
+  // accessorFn: (row) => row.liquidityUSD,
   cell: (props) => <TokenTVLCell row={props.row.original} />,
   size: 100,
   meta: {
