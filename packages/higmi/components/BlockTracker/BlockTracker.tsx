@@ -10,13 +10,13 @@ interface Props {
 }
 
 const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => {
-  const [number, setNumber] = useState<number | undefined>(0)
   const [previousNumber, setPreviousNumber] = useState<number | undefined>()
-  const [hash, setHash] = useState<string | undefined>('')
   const { network } = useNetwork()
 
   const { data } = client.getNetwork.getBestBlock.useQuery(undefined, { refetchInterval: 30000 })
   const utils = client.useUtils()
+  const [number, setNumber] = useState<number | undefined>(data?.number)
+  const [hash, setHash] = useState<string | undefined>(data?.hash)
 
   useEffect(() => {
     const fetchData = async () => {
