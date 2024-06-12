@@ -18,7 +18,7 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
           <div className="relative flex flex-col col-span-12 gap-1 p-2 my-4 border sm:p-4 rounded-2xl bg-stone-700/40 border-stone-200/5">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
-                <Image className="rounded-2xl" alt="qrcode" src={qrcold} />
+                <Image className="rounded-2xl" alt="qrcode" src={qrcode} />
               </div>
             </div>
           </div>
