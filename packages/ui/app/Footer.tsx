@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 
 import { Container, DiscordIcon, GithubIcon, InstagramIcon, Link, DozerWithTextIcon, TwitterIcon, Typography } from '..'
+import { TelegramIcon } from '../icons/TelegramIcon'
 
 export type FooterProps = React.HTMLProps<HTMLDivElement>
 
@@ -102,8 +103,8 @@ export function Footer(props: FooterProps): JSX.Element {
             <a href="https://twitter.com/DozerProtocol" target="_blank" rel="noopener noreferrer">
               <TwitterIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
-            <a href="https://discord.gg/cYquxw8w" target="_blank" rel="noopener noreferrer">
-              <DiscordIcon width={16} className="text-stone-200 hover:text-stone-50" />
+            <a href="https://t.me/DozerFinance" target="_blank" rel="noopener noreferrer">
+              <TelegramIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
           </div>
         </div>
