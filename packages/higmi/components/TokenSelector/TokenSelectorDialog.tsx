@@ -146,8 +146,11 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                         // fundSource={fundSource}
                         balance={Amount.fromFractionalAmount(
                           currency,
-                          (balancesMap?.find((balance) => balance.token_uuid == currency.uuid)?.token_balance || 0) *
-                            100,
+                          Number(
+                            balancesMap
+                              ?.find((balance) => balance.token_uuid == currency.uuid)
+                              ?.token_balance.toFixed(2) || '0'
+                          ) * 100,
                           100
                         )}
                         price={pricesMap?.[currency.uuid]}
