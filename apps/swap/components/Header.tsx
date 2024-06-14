@@ -8,7 +8,7 @@ import { SUPPORTED_CHAIN_IDS } from '../config'
 import { api } from 'utils/api'
 import { useAccount } from '@dozer/zustand'
 import { useRouter } from 'next/router'
-import { DonateModal } from './DonateModal'
+
 // import { useNotifications } from '../lib/state/storage'
 
 export const Header: FC = () => {
@@ -29,7 +29,7 @@ export const Header: FC = () => {
           {/* <App.NavItem href="https://mvp.dozer.finance/bridge" label="Bridge" /> */}
           {/* <BuyCrypto address={address} /> */}
           <App.OpenModal label="Donate" setOpen={setOpen} />
-          <DonateModal open={open} setOpen={setOpen} />
+          <App.DonateModal open={open} setOpen={setOpen} />
         </App.NavItemList>
       }
     >

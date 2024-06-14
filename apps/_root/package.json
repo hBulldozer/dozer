@@ -23,6 +23,7 @@
     "@dozer/zustand": "workspace:*",
     "@tailwindcss/typography": "^0.5.10",
     "superjson": "1.9.1",
+    "@headlessui/react": "^1.7.3",
     "@trpc/client": "^10.45.0",
     "@trpc/next": "^10.45.0",
     "@trpc/react-query": "^10.45.0",

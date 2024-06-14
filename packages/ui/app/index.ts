@@ -6,6 +6,7 @@ import { NavItem, NavItemProps } from './NavItem'
 import { NavItemList, NavItemListProps } from './NavItemList'
 import { type ShellProps, Shell } from './Shell'
 import { OpenModal, OpenModalProps } from './OpenModal'
+import { DonateModal, DonateModalInterface } from './DonateModal'
 
 export type AppProps = {
   Header: HeaderProps
@@ -16,6 +17,7 @@ export type AppProps = {
   NavItem: NavItemProps
   OpenModal: OpenModalProps
   NavItemList: NavItemListProps
+  DonateModal: DonateModalInterface
 }
 
 export const App = {
@@ -25,6 +27,7 @@ export const App = {
   NavItem,
   NavItemList,
   OpenModal,
+  DonateModal,
   Main,
   Footer,
 }

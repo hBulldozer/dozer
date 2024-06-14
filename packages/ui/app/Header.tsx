@@ -3,9 +3,20 @@ import { ChevronDownIcon, ExternalLinkIcon } from '@heroicons/react/outline'
 import useScrollPosition from '@react-hook/window-scroll'
 import { useBreakpoint, useIsMounted } from '@dozer/hooks'
 import Image from 'next/legacy/image'
-import React, { Fragment } from 'react'
+import React, { Fragment, useState } from 'react'
 
-import { classNames, Container, IconButton, Link, MaxWidth, Select, DozerIcon, DozerWithTextIcon, Typography } from '..'
+import {
+  classNames,
+  Container,
+  IconButton,
+  Link,
+  MaxWidth,
+  Select,
+  DozerIcon,
+  DozerWithTextIcon,
+  Typography,
+  App,
+} from '..'
 
 export enum AppType {
   Root = 'Explore Apps',
@@ -44,6 +55,7 @@ export function Header({
 }: HeaderProps): JSX.Element {
   const isMounted = useIsMounted()
   const scrollY = useScrollPosition()
+  const [open, setOpen] = useState<boolean>(false)
 
   const { isMd } = useBreakpoint('md')
 
@@ -214,6 +226,25 @@ export function Header({
                         Read our Early Documentation
                       </Typography>
                     </Select.Option>{' '}
+                    {/* <Select.Option
+                      as="a"
+                      // href="https://www.docs.dozer.finance"
+                      key="Donate"
+                      value="Donate"
+                      className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
+                    >
+                      <a
+                        onClick={() => {
+                          setOpen(true)
+                        }}
+                      >
+                        <App.DonateModal open={open && !hide} setOpen={setOpen} />
+                        Donate
+                        <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                          Support us
+                        </Typography>
+                      </a>
+                    </Select.Option>{' '} */}
                   </div>
                 </div>
               </Select.Options>
