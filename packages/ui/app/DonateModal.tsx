@@ -31,8 +31,8 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
           <Typography className="items-center mt-2 mb-2 text-center">Select a network</Typography>
           <Tab.Group selectedIndex={network} onChange={setNetwork}>
             <Tab.List>
-              <Tab>HTR</Tab>
-              <Tab>USDT/USDC</Tab>
+              <Tab>Hathor</Tab>
+              <Tab>EVM</Tab>
             </Tab.List>
             <Tab.Panels>
               <Tab.Panel>
