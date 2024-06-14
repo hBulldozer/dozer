@@ -1,14 +1,7 @@
-import { string } from 'zod'
 import { LiquidityPool } from './liquiditypool'
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-interface TxOutput {
-  address: string
-  value: number
-  token: string
 }
 
 async function check_wallet(wallet: string) {
@@ -195,7 +188,6 @@ export async function seed_nc(n_users = 5) {
 
   // 8. Sending 50 HTR for each user
   console.log('Sending funds to users...')
-  const outputs: TxOutput[] = []
   for (let i = 0; i < n_users; i++) {
     // Get user address
     console.log(`Get address of #${i + 1} user...`)
@@ -208,27 +200,25 @@ export async function seed_nc(n_users = 5) {
         throw new Error(`Failed to get user address. ${data.message}`)
       }
     })
-    outputs.push({
-      address: address,
-      value: 2_500_00,
-      token: USDT_uuid,
+    console.log(`Sending 2.5k USDT to ${address}...`)
+    await PostHeadless(
+      'master',
+      '/wallet/simple-send-tx',
+      { 'x-wallet-id': process.env.WALLET_ID },
+      {
+        address: address,
+        value: 2_500_00,
+        token: USDT_uuid,
+      }
+    ).then(async (data) => {
+      if (data.success) {
+        console.log(`Sent 2.5k USDT to ${address}.`)
+      } else {
+        throw new Error(`Failed to send HTR to ${address}.` + data)
+      }
     })
+    await delay(2000)
   }
-  console.log(`Sending 2.5k USDT to everyone...`)
-  await PostHeadless(
-    'master',
-    '/wallet/send-tx',
-    { 'x-wallet-id': process.env.WALLET_ID },
-    {
-      outputs: outputs,
-    }
-  ).then(async (data) => {
-    if (data.success) {
-      console.log(`Sent 2.5k USDT to everyone.`)
-    } else {
-      throw new Error(`Failed to send USDT.` + data)
-    }
-  })
 
   console.log('Users funding complete!')
   console.log('Seed Complete!')
