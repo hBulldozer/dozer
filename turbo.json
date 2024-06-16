@@ -13,16 +13,24 @@
     ".prettierrc.js",
     "tsconfig.json"
   ],
-  "pipeline": {
+  "tasks": {
     "db:init": {
-      "outputs": ["prisma/**/*"],
+      "outputs": [
+        "prisma/**/*"
+      ],
       "cache": false
     },
     "db:pull": {
-      "outputs": ["prisma/**/*"],
-      "dependsOn": ["db:init"],
+      "outputs": [
+        "prisma/**/*"
+      ],
+      "dependsOn": [
+        "db:init"
+      ],
       "cache": false,
-      "env": ["DATABASE_URL"]
+      "env": [
+        "DATABASE_URL"
+      ]
     },
     "db:generate": {
       "dependsOn": [],
@@ -32,7 +40,11 @@
       "cache": false
     },
     "build": {
-      "dependsOn": ["^db:generate", "^build", "db:generate"],
+      "dependsOn": [
+        "^db:generate",
+        "^build",
+        "db:generate"
+      ],
       "env": [
         "ROOT_URL",
         "SWAP_URL",
@@ -62,25 +74,51 @@
     },
     "//#build-config": {
       "dependsOn": [],
-      "outputs": ["dist/**/*"],
+      "outputs": [
+        "dist/**/*"
+      ],
       "inputs": []
     },
     "//#build-packages": {
       "dependsOn": [],
-      "outputs": ["dist/**/*"],
+      "outputs": [
+        "dist/**/*"
+      ],
       "inputs": []
     },
     "lint": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "outputs": []
     },
     "start": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": false,
       "persistent": true
     },
     "dev": {
-      "dependsOn": ["^build", "^db:generate"],
+      "dependsOn": [
+        "^build",
+        "^db:generate"
+      ],
+      "env": [
+        "ROOT_URL",
+        "SWAP_URL",
+        "EARN_URL",
+        "DATABASE_URL",
+        "API_KEY",
+        "NEXT_PUBLIC_LOCAL_NODE_URL",
+        "NEXT_PUBLIC_LOCAL_EXPLORER_URL",
+        "NEXT_PUBLIC_PUBLIC_NODE_URL",
+        "LOCAL_WALLET_MASTER_URL",
+        "LOCAL_WALLET_USERS_URL",
+        "WALLET_API_KEY",
+        "WALLET_ID",
+        "LPBLUEPRINT"
+      ],
       "cache": false,
       "persistent": true
     },

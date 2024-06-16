@@ -8,6 +8,7 @@ export const networkRouter = createTRPCRouter({
     const response = await fetchNodeData('status', [])
     const hash = z.string().parse(response.dag.best_block.hash)
     const number = z.number().parse(response.dag.best_block.height)
+    // console.log('getBestBlock backend', number)
     return { hash: hash, number: number }
   }),
 })

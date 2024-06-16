@@ -24,12 +24,25 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
 
   const slippagePercent = useMemo(
     () =>
-      slippageTolerance ? new Percent(slippageTolerance * 100, 10_000) : DEFAULT_REMOVE_LIQUIDITY_SLIPPAGE_TOLERANCE,
+      slippageTolerance
+        ? new Percent(
+            // slippageTolerance * 100, 10_000
+            10
+          )
+        : DEFAULT_REMOVE_LIQUIDITY_SLIPPAGE_TOLERANCE,
     [slippageTolerance]
   )
 
   const [percentage, setPercentage] = useState<string>('')
-  const percentToRemove = useMemo(() => new Percent(percentage, 100), [percentage])
+  const percentToRemove = useMemo(
+    () =>
+      new Percent(
+        // percentage
+        10,
+        100
+      ),
+    [percentage]
+  )
 
   const poolState = 1
 
@@ -42,7 +55,11 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
     () =>
       token0
         ? percentToRemove && percentToRemove.greaterThan('0') && underlying0
-          ? Amount.fromRawAmount(token0, percentToRemove.multiply(underlying0.quotient).quotient || '0')
+          ? Amount.fromRawAmount(
+              token0,
+              10
+              // percentToRemove.multiply(underlying0.quotient).quotient || '0'
+            )
           : Amount.fromRawAmount(token0, '0')
         : undefined,
     [percentToRemove, token0, underlying0]
@@ -52,7 +69,11 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
     () =>
       token1
         ? percentToRemove && percentToRemove.greaterThan('0') && underlying1
-          ? Amount.fromRawAmount(token1, percentToRemove.multiply(underlying1.quotient).quotient || '0')
+          ? Amount.fromRawAmount(
+              token1,
+              10
+              // percentToRemove.multiply(underlying1.quotient).quotient || '0'
+            )
           : Amount.fromRawAmount(token1, '0')
         : undefined,
     [percentToRemove, token1, underlying1]
@@ -67,7 +88,8 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   // TODO! FIX TOKEN0
   const amountToRemove = Amount.fromRawAmount(
     toToken(pair.token0),
-    percentToRemove.multiply(BalanceLPAmount?.quotient || '0').quotient || '0'
+    10
+    // percentToRemove.multiply(BalanceLPAmount?.quotient || '0').quotient || '0'
   )
 
   // useMemo(

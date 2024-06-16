@@ -72,7 +72,7 @@
     "ts-jest": "29.1.0",
     "ts-node": "10.9.1",
     "tsx": "^4.7.2",
-    "turbo": "1.13.3"
+    "turbo": "2.0.4"
   },
   "engines": {
     "packageManager": "pnpm@9.1.0",
@@ -83,5 +83,6 @@
     "overrides": {
       "typescript": "5.1.6"
     }
-  }
+  },
+  "packageManager": "pnpm@9.1.0"
 }

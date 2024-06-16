@@ -22,10 +22,13 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
     const fetchData = async () => {
       try {
         const { number: newNumber, hash } = await utils.getNetwork.getBestBlock.ensureData(undefined)
+        // console.log('getBestBlock frontend', newNumber)
         if (newNumber !== previousNumber) {
-          setPreviousNumber(number) // Update previous number after animation
           setNumber(newNumber)
+          setPreviousNumber(newNumber) // Update previous number after animation
           setHash(hash)
+          utils.getPrices.all.invalidate()
+          utils.getPrices.all24h.invalidate()
         }
       } catch (error) {
         console.error('Error fetching data:', error)
