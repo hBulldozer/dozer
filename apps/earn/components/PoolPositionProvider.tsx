@@ -40,7 +40,7 @@ export const PoolPositionProvider: FC<{
   const isLoading = false
   const isError = false
   const [reserve0, reserve1] = useMemo(() => {
-    return [Amount.fromRawAmount(token0, Number(pair?.reserve0)), Amount.fromRawAmount(token1, Number(pair?.reserve1))]
+    return [Amount.fromRawAmount(token0, 10), Amount.fromRawAmount(token1, 10)]
   }, [pair?.reserve0, pair?.reserve1])
 
   useEffect(() => {
