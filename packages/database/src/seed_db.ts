@@ -3,8 +3,14 @@ import { PrismaClient } from '@prisma/client'
 interface NanoInfoType {
   DZR_uuid: string
   USDT_uuid: string
+  NST_uuid: string
+  KELB_uuid: string
+  CTHOR_uuid: string
   HTR_USDT_ncid: string
   HTR_DZR_ncid: string
+  HTR_KELB_ncid: string
+  HTR_NST_ncid: string
+  HTR_CTHOR_ncid: string
 }
 const prisma = new PrismaClient()
 export async function main(nano_info: NanoInfoType | undefined, snaps_period: number) {
@@ -70,170 +76,131 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         about:
           'Tether (USDT) is a cryptocurrency with a value meant to mirror the value of the U.S. dollar. The idea was to create a stable cryptocurrency that can be used like digital dollars. Coins that serve this purpose of being a stable dollar substitute are called “stable coins.” Tether is the most popular stable coin and even acts as a dollar replacement on many popular exchanges! According to their site, Tether converts cash into digital currency, to anchor or “tether” the value of the coin to the price of national currencies like the US dollar, the Euro, and the Yen. Like other cryptos it uses blockchain. Unlike other cryptos, it is [according to the official Tether site] “100% backed by USD” (USD is held in reserve). The primary use of Tether is that it offers some stability to the otherwise volatile crypto space and offers liquidity to exchanges who can’t deal in dollars and with banks',
       },
-      // {
-      //   id: '3',
-      //   uuid: '00000000f76262bb1cca969d952ac2f0e85f88ec34c31f26a13eb3c31e29d4ed',
-      //   chainId: 1,
-      //   name: 'Cathor',
-      //   symbol: 'CTHOR',
-      //   isFeeOnTransfer: false,
-      //   isCommon: false,
-      //   derivedUSD: null,
-      //   generatedAt: new Date(),
-      //   updatedAt: new Date(),
-      //   decimals: 2,
-      //   isLiquidityToken: false,
-      //   miniChartSVG: '',
-      // },
-      // {
-      //   id: '4',
-      //   uuid: '00',
-      //   chainId: 2,
-      //   name: 'Hathor',
-      //   symbol: 'HTR',
-      //   isFeeOnTransfer: false,
-      //   isCommon: false,
-      //   derivedUSD: null,
-      //   generatedAt: new Date(),
-      //   updatedAt: new Date(),
-      //   decimals: 2,
-      //   isLiquidityToken: false,
-      //   miniChartSVG: '',
-      // },
-      // {
-      //   id: '5',
-      //   uuid: '00b1b246cb512515c5258cb0301afcf83e74eb595dbe655d14e11782db4b70c6',
-      //   chainId: 2,
-      //   name: 'Dozer testnet',
-      //   symbol: 'DZR',
-      //   isFeeOnTransfer: false,
-      //   isCommon: false,
-      //   derivedUSD: null,
-      //   generatedAt: new Date(),
-      //   updatedAt: new Date(),
-      //   decimals: 2,
-      //   isLiquidityToken: false,
-      //   miniChartSVG: '',
-      // },
-      // {
-      //   id: '6',
-      //   uuid: '000000007d74aaa2d49ed93e62cdefea665a25ecf7cd1a02330fea13ba40c823',
-      //   chainId: 2,
-      //   name: 'NilseSwap Token testnet',
-      //   symbol: 'NST',
-      //   isFeeOnTransfer: false,
-      //   isCommon: false,
-      //   derivedUSD: null,
-      //   generatedAt: new Date(),
-      //   updatedAt: new Date(),
-      //   decimals: 2,
-      //   isLiquidityToken: false,
-      //   miniChartSVG: '',
-      // },
-      // {
-      //   id: '7',
-      //   uuid: '000000002e55df1a7cf4daaf79dc3929e5a89929ae6b5173714f90b47cf13723',
-      //   chainId: 2,
-      //   name: 'Cathor testnet',
-      //   symbol: 'CTHOR',
-      //   isFeeOnTransfer: false,
-      //   isCommon: false,
-      //   derivedUSD: null,
-      //   generatedAt: new Date(),
-      //   updatedAt: new Date(),
-      //   decimals: 2,
-      //   isLiquidityToken: false,
-      //   miniChartSVG: '',
-      // },
+      {
+        id: '3',
+        uuid: '00000000f76262bb1cca969d952ac2f0e85f88ec34c31f26a13eb3c31e29',
+        chainId: 1,
+        name: 'Cathor',
+        symbol: 'CTHOR',
+        isFeeOnTransfer: false,
+        isCommon: false,
+        derivedUSD: null,
+        generatedAt: new Date(),
+        updatedAt: new Date(),
+        decimals: 2,
+        isLiquidityToken: false,
+        miniChartSVG: '',
+        about:
+          'Cathor is the original Hathor Network community coin. Minted in February 2021 by the CEO of Hathor for the community, Cathor’s mission is to support and grow awareness for the Hathor Network and projects building on Hathor.  CTHOR has a fixed supply of 30,000, the majority of which have been gifted to the community.',
+      },
+      {
+        id: '4',
+        uuid: '00000000f76262bb1cca969d952ac2f0e85f88ec346a13eb3c31e29d4ed',
+        chainId: 1,
+        name: 'Nileswap Token',
+        symbol: 'NST',
+        isFeeOnTransfer: false,
+        isCommon: false,
+        derivedUSD: null,
+        generatedAt: new Date(),
+        updatedAt: new Date(),
+        decimals: 2,
+        isLiquidityToken: false,
+        miniChartSVG: '',
+        about:
+          "NileSwap Token  is the designated rewards token for the NileSwap platform. \
+        Holders of a predetermined quantity of NST are eligible to receive monthly rewards based on the platform's trading fees.\
+        NST holders may be entitled to additional benefits in the future.",
+      },
+      {
+        id: '5',
+        uuid: '00000000f76262bb1cca969d952ac5f88ec34c31f26a13eb3c31e29d4ed',
+        chainId: 1,
+        name: 'Kelbcoin',
+        symbol: 'KELB',
+        isFeeOnTransfer: false,
+        isCommon: false,
+        derivedUSD: null,
+        generatedAt: new Date(),
+        updatedAt: new Date(),
+        decimals: 2,
+        isLiquidityToken: false,
+        miniChartSVG: '',
+        about:
+          'Kelbcoin ($KELB) is a meme coin with utility on the Hathor network. Inspired by the Kelb tal-Fenek dog, it has a total supply of 30,420. Kelbcoin offers two key products: Kelbtools and Kelbswap. \
+        Kelbtools provides a range of tools for the Layer 1 Hathor ecosystem, including an NFT screener, an in-depth tokenomics page, and a list of Hathor projects. These tools offer valuable insights and data for users. \
+        Kelbswap is the first community-built swap on Hathor, currently supporting seven token pairs with liquidity over 100,000 HTR. In over a year of operations, it has processed thousands of transactions with a strong focus on ease of use and security.\
+        Kelbcoin holders of 100 tokens or more can join an exclusive private Telegram group. This group offers governance, exclusive benefits, and access to a trading alert bot. Additionally, all holders receive fees generated from Kelbswap.\
+        Kelbcoin provides practical services to Hathorians, bridging finance and fun.',
+      },
     ],
   })
   console.log('Created Tokens')
   const pools = await prisma.pool.createMany({
     data: [
-      // {
-      //   name: 'CTHOR-HTR',
-      //   apr: 0.1,
-      //   chainId: 1,
-      //   version: '0.1',
-      //   token0Id: '0',
-      //   token1Id: '3',
-      //   swapFee: 0.05,
-      //   feeUSD: 250,
-      //   reserve0: '100000',
-      //   reserve1: '90000',
-      //   liquidityUSD: 3900,
-      //   volumeUSD: 390,
-      //   liquidity: 3900,
-      //   volume1d: 3900,
-      //   fees1d: 30,
-      //   generatedAt: new Date(),
-      //   updatedAt: new Date(),
-      //   tokenLPId: '0',
-      //   id: '34677623-d338-4623-957c-137a111dbf45',
-      // },
-      // {
-      //   name: 'NST-HTR (testnet)',
-      //   apr: 0.2,
-      //   chainId: 2,
-      //   version: '0.1',
-      //   token0Id: '4',
-      //   token1Id: '6',
-      //   swapFee: 0.1,
-      //   feeUSD: 150,
-      //   reserve0: '100000',
-      //   reserve1: '43000',
-      //   liquidityUSD: 5000,
-      //   volumeUSD: 500,
-      //   liquidity: 5000,
-      //   volume1d: 5000,
-      //   fees1d: 40,
-      //   generatedAt: new Date(),
-      //   updatedAt: new Date(),
-      //   tokenLPId: '0',
-      //   id: '5be0a3a4-c1ab-45fa-b050-8e367e751faf',
-      // },
-      // {
-      //   name: 'CTHOR-HTR (testnet)',
-      //   apr: 0.1,
-      //   chainId: 2,
-      //   version: '0.1',
-      //   token0Id: '4',
-      //   token1Id: '7',
-      //   swapFee: 0.05,
-      //   feeUSD: 50,
-      //   reserve0: '100000',
-      //   reserve1: '45000',
-      //   liquidityUSD: 4000,
-      //   volumeUSD: 400,
-      //   liquidity: 4000,
-      //   volume1d: 4000,
-      //   fees1d: 30,
-      //   generatedAt: new Date(),
-      //   updatedAt: new Date(),
-      //   tokenLPId: '0',
-      //   id: '73d63845-6d7c-44db-b2a3-c1c68dc9d0ad',
-      // },
-      // {
-      //   name: 'NST-HTR',
-      //   apr: 0.2,
-      //   chainId: 1,
-      //   version: '0.1',
-      //   token0Id: '0',
-      //   token1Id: '2',
-      //   swapFee: 0.5,
-      //   feeUSD: 300,
-      //   reserve0: '100000',
-      //   reserve1: '85000',
-      //   liquidityUSD: 5000,
-      //   volumeUSD: 500,
-      //   liquidity: 5000,
-      //   volume1d: 5000,
-      //   fees1d: 40,
-      //   generatedAt: new Date(),
-      //   updatedAt: new Date(),
-      //   tokenLPId: '0',
-      //   id: '8510a655-d67d-4c92-ba78-807eaf31ce67',
-      // },
+      {
+        name: 'CTHOR-HTR',
+        apr: 0.1,
+        chainId: 1,
+        version: '0.1',
+        token0Id: '0',
+        token1Id: '3',
+        swapFee: 0.05,
+        feeUSD: 250,
+        reserve0: '1000000',
+        reserve1: '78000',
+        liquidityUSD: 3900,
+        volumeUSD: 390,
+        liquidity: 3900,
+        volume1d: 3900,
+        fees1d: 30,
+        generatedAt: new Date(),
+        updatedAt: new Date(),
+        tokenLPId: '0',
+        id: '4',
+      },
+      {
+        name: 'NST-HTR',
+        apr: 0.2,
+        chainId: 1,
+        version: '0.1',
+        token0Id: '0',
+        token1Id: '4',
+        swapFee: 0.5,
+        feeUSD: 300,
+        reserve0: '1000000',
+        reserve1: '827000',
+        liquidityUSD: 5000,
+        volumeUSD: 500,
+        liquidity: 5000,
+        volume1d: 5000,
+        fees1d: 40,
+        generatedAt: new Date(),
+        updatedAt: new Date(),
+        tokenLPId: '0',
+        id: '3',
+      },
+      {
+        name: 'KELB-HTR',
+        apr: 0.2,
+        chainId: 1,
+        version: '0.1',
+        token0Id: '0',
+        token1Id: '5',
+        swapFee: 0.5,
+        feeUSD: 300,
+        reserve0: '1000000',
+        reserve1: '58000',
+        liquidityUSD: 5000,
+        volumeUSD: 500,
+        liquidity: 5000,
+        volume1d: 5000,
+        fees1d: 40,
+        generatedAt: new Date(),
+        updatedAt: new Date(),
+        tokenLPId: '0',
+        id: '2',
+      },
       {
         name: 'USDT-HTR',
         apr: 0.15,
@@ -265,8 +232,8 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         token1Id: '1',
         swapFee: 0.5,
         feeUSD: 0,
-        reserve0: '1000000',
-        reserve1: '700000',
+        reserve0: '2000000',
+        reserve1: '1400000',
         liquidityUSD: 0,
         volumeUSD: 0,
         liquidity: 0,
@@ -349,6 +316,24 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
   if (nano_info) {
     console.log('Updating nano contracts info...')
     await prisma.token.update({
+      where: { id: '5' },
+      data: {
+        uuid: nano_info.KELB_uuid,
+      },
+    })
+    await prisma.token.update({
+      where: { id: '4' },
+      data: {
+        uuid: nano_info.NST_uuid,
+      },
+    })
+    await prisma.token.update({
+      where: { id: '3' },
+      data: {
+        uuid: nano_info.CTHOR_uuid,
+      },
+    })
+    await prisma.token.update({
       where: { id: '2' },
       data: {
         uuid: nano_info.USDT_uuid,
@@ -376,6 +361,27 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
       },
     })
     console.log('Updated HTR-USDT nano contract ID.')
+    await prisma.pool.update({
+      where: { id: '2' },
+      data: {
+        id: nano_info.HTR_KELB_ncid,
+      },
+    })
+    console.log('Updated HTR-KELB nano contract ID.')
+    await prisma.pool.update({
+      where: { id: '3' },
+      data: {
+        id: nano_info.HTR_NST_ncid,
+      },
+    })
+    console.log('Updated HTR-NST nano contract ID.')
+    await prisma.pool.update({
+      where: { id: '4' },
+      data: {
+        id: nano_info.HTR_CTHOR_ncid,
+      },
+    })
+    console.log('Updated HTR-CTHOR nano contract ID.')
   }
 }
 

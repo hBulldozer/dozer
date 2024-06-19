@@ -88,7 +88,17 @@ async function GetHeadless(wallet: string, path: string, headers: any, body: any
 
 export async function seed_nc(n_users = 5) {
   // write the script to initialize wallet and create the contract
-  let DZR_uuid, USDT_uuid, admin_address, HTR_USDT_ncid, HTR_DZR_ncid
+  let DZR_uuid,
+    USDT_uuid,
+    CTHOR_uuid,
+    NST_uuid,
+    KELB_uuid,
+    admin_address,
+    HTR_USDT_ncid,
+    HTR_DZR_ncid,
+    HTR_KELB_ncid,
+    HTR_NST_ncid,
+    HTR_CTHOR_ncid
   let users_addresses: string[] | undefined
   console.log('*** Starting to seed NanoContracts... ***')
   // 1. Start the master wallet
@@ -112,7 +122,7 @@ export async function seed_nc(n_users = 5) {
     'master',
     '/wallet/create-token',
     { 'x-wallet-id': process.env.WALLET_ID },
-    { name: 'Dozer', symbol: 'DZR', amount: 700_000_00 }
+    { name: 'Dozer', symbol: 'DZR', amount: 1_400_000_00 }
   ).then((data) => {
     if (data.success) {
       DZR_uuid = data.configurationString.split(':')[2]
@@ -131,13 +141,70 @@ export async function seed_nc(n_users = 5) {
     'master',
     '/wallet/create-token',
     { 'x-wallet-id': process.env.WALLET_ID },
-    { name: 'USD Tether', symbol: 'USDT', amount: 1_400_000_00 }
+    { name: 'USD Tether', symbol: 'USDT', amount: 2_800_000_00 }
   ).then((data) => {
     if (data.success) {
       USDT_uuid = data.configurationString.split(':')[2]
       console.log(`Token USDT Created - UUID: ${USDT_uuid}`)
     } else {
       throw new Error(`Failed to create USDT token. ${data.error}`)
+    }
+  })
+
+  await check_wallet('master')
+  // 3. Create the NST token
+  await delay(2000).then(() => {
+    console.log('Creating NST Token...')
+  })
+  await PostHeadless(
+    'master',
+    '/wallet/create-token',
+    { 'x-wallet-id': process.env.WALLET_ID },
+    { name: 'NileSwap Token', symbol: 'NST', amount: 1_000_000_00 }
+  ).then((data) => {
+    if (data.success) {
+      NST_uuid = data.configurationString.split(':')[2]
+      console.log(`Token NST Created - UUID: ${NST_uuid}`)
+    } else {
+      throw new Error(`Failed to create NST token. ${data.error}`)
+    }
+  })
+
+  await check_wallet('master')
+  // 3. Create the CTHOR token
+  await delay(2000).then(() => {
+    console.log('Creating CTHOR Token...')
+  })
+  await PostHeadless(
+    'master',
+    '/wallet/create-token',
+    { 'x-wallet-id': process.env.WALLET_ID },
+    { name: 'Cathor', symbol: 'CTHOR', amount: 1_000_000_00 }
+  ).then((data) => {
+    if (data.success) {
+      CTHOR_uuid = data.configurationString.split(':')[2]
+      console.log(`Token CTHOR Created - UUID: ${CTHOR_uuid}`)
+    } else {
+      throw new Error(`Failed to create CTHOR token. ${data.error}`)
+    }
+  })
+
+  await check_wallet('master')
+  // 3. Create the KELB token
+  await delay(2000).then(() => {
+    console.log('Creating KELB Token...')
+  })
+  await PostHeadless(
+    'master',
+    '/wallet/create-token',
+    { 'x-wallet-id': process.env.WALLET_ID },
+    { name: 'Kelbcoin', symbol: 'KELB', amount: 1_000_000_00 }
+  ).then((data) => {
+    if (data.success) {
+      KELB_uuid = data.configurationString.split(':')[2]
+      console.log(`Token KELB Created - UUID: ${KELB_uuid}`)
+    } else {
+      throw new Error(`Failed to create KELB token. ${data.error}`)
     }
   })
 
@@ -156,7 +223,7 @@ export async function seed_nc(n_users = 5) {
   console.log('Creating HTR-DZR Pool...')
   if (DZR_uuid && admin_address) {
     const HTR_DZR_pool = new LiquidityPool('00', DZR_uuid, 0)
-    const response = await HTR_DZR_pool.initialize(admin_address, 1_000_000, 700_000)
+    const response = await HTR_DZR_pool.initialize(admin_address, 2_000_000, 1400_000)
     HTR_DZR_pool.ncid = response.hash
     HTR_DZR_ncid = response.hash
     console.log(`HTR-DZR Pool created. ncid: ${HTR_DZR_pool.ncid}`)
@@ -169,11 +236,50 @@ export async function seed_nc(n_users = 5) {
   })
   if (USDT_uuid && admin_address) {
     const HTR_USDT_pool = new LiquidityPool('00', USDT_uuid, 2)
-    const response = await HTR_USDT_pool.initialize(admin_address, 1_000_000, 70_000)
+    const response = await HTR_USDT_pool.initialize(admin_address, 2_000_000, 140_000)
     HTR_USDT_pool.ncid = response.hash
     HTR_USDT_ncid = response.hash
     console.log(`HTR-USDT Pool created. ncid: ${HTR_USDT_pool.ncid}`)
   } else throw new Error('USDT UUID and/or admin_address not found.')
+
+  await check_wallet('master')
+  // 6. Create the HTR-NST Pool
+  await delay(2000).then(() => {
+    console.log('Creating HTR-NST Pool...')
+  })
+  if (NST_uuid && admin_address) {
+    const HTR_NST_pool = new LiquidityPool('00', NST_uuid, 2)
+    const response = await HTR_NST_pool.initialize(admin_address, 1_000_000, 827_000)
+    HTR_NST_pool.ncid = response.hash
+    HTR_NST_ncid = response.hash
+    console.log(`HTR-NST Pool created. ncid: ${HTR_NST_pool.ncid}`)
+  } else throw new Error('NST UUID and/or admin_address not found.')
+
+  await check_wallet('master')
+  // 6. Create the HTR-USDT Pool
+  await delay(2000).then(() => {
+    console.log('Creating HTR-CTHOR Pool...')
+  })
+  if (CTHOR_uuid && admin_address) {
+    const HTR_CTHOR_pool = new LiquidityPool('00', CTHOR_uuid, 2)
+    const response = await HTR_CTHOR_pool.initialize(admin_address, 1_000_000, 78_000)
+    HTR_CTHOR_pool.ncid = response.hash
+    HTR_CTHOR_ncid = response.hash
+    console.log(`HTR-CTHOR Pool created. ncid: ${HTR_CTHOR_pool.ncid}`)
+  } else throw new Error('CTHOR UUID and/or admin_address not found.')
+
+  await check_wallet('master')
+  // 6. Create the HTR-USDT Pool
+  await delay(2000).then(() => {
+    console.log('Creating HTR-KELB Pool...')
+  })
+  if (KELB_uuid && admin_address) {
+    const HTR_KELB_pool = new LiquidityPool('00', KELB_uuid, 2)
+    const response = await HTR_KELB_pool.initialize(admin_address, 1_000_000, 58_000)
+    HTR_KELB_pool.ncid = response.hash
+    HTR_KELB_ncid = response.hash
+    console.log(`HTR-KELB Pool created. ncid: ${HTR_KELB_pool.ncid}`)
+  } else throw new Error('KELB UUID and/or admin_address not found.')
 
   // 7. Start the users wallet
   console.log('Starting users wallet...')
@@ -200,19 +306,19 @@ export async function seed_nc(n_users = 5) {
         throw new Error(`Failed to get user address. ${data.message}`)
       }
     })
-    console.log(`Sending 2.5k USDT to ${address}...`)
+    console.log(`Sending 5k USDT to ${address}...`)
     await PostHeadless(
       'master',
       '/wallet/simple-send-tx',
       { 'x-wallet-id': process.env.WALLET_ID },
       {
         address: address,
-        value: 2_500_00,
+        value: 5_000_00,
         token: USDT_uuid,
       }
     ).then(async (data) => {
       if (data.success) {
-        console.log(`Sent 2.5k USDT to ${address}.`)
+        console.log(`Sent 5k USDT to ${address}.`)
       } else {
         throw new Error(`Failed to send HTR to ${address}.` + data)
       }
@@ -226,7 +332,13 @@ export async function seed_nc(n_users = 5) {
   return {
     DZR_uuid: DZR_uuid,
     USDT_uuid: USDT_uuid,
+    NST_uuid: NST_uuid,
+    KELB_uuid: KELB_uuid,
+    CTHOR_uuid: CTHOR_uuid,
     HTR_USDT_ncid: HTR_USDT_ncid,
     HTR_DZR_ncid: HTR_DZR_ncid,
+    HTR_KELB_ncid: HTR_KELB_ncid,
+    HTR_NST_ncid: HTR_NST_ncid,
+    HTR_CTHOR_ncid: HTR_CTHOR_ncid,
   }
 }

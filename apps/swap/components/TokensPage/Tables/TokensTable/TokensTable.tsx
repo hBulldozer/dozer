@@ -151,16 +151,16 @@ export const TokensTable: FC = () => {
   const table = useReactTable<Pair>({
     data: pairs_array || [],
     columns: COLUMNS,
-    // state: {
-    //   sorting,
-    //   columnVisibility,
-    // },
+    state: {
+      sorting,
+      //   columnVisibility,
+    },
     // pageCount: Math.ceil((poolCount || 0) / PAGE_SIZE),
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    // manualSorting: true,
+    manualSorting: false,
     manualPagination: true,
   })
 
