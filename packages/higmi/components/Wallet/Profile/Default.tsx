@@ -6,11 +6,11 @@ import { Dispatch, FC, SetStateAction, useCallback, useEffect, useRef, useState 
 
 import { useHtrPrice } from '@dozer/react-query'
 import { ProfileView } from './Profile'
-import { useAccount, useNetwork } from '@dozer/zustand'
+import { TokenBalance, useAccount, useNetwork } from '@dozer/zustand'
 import { shortenAddress } from './Utils'
 import chains, { ChainId } from '@dozer/chain'
-import { api } from '../../../utils/api'
-import { client } from '@dozer/api'
+
+import { client, toToken } from '@dozer/api'
 import { Token } from '@dozer/currency'
 import { useInViewport } from '@dozer/hooks'
 
@@ -21,9 +21,17 @@ interface DefaultProps {
   client: typeof client
 }
 
+interface BalanceProps {
+  balance: number
+  balanceUSD: number
+  token: Token | undefined
+}
+
 export const Default: FC<DefaultProps> = ({ chainId, address, setView, client }) => {
   const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
+  const { data: prices } = client.getPrices.all.useQuery()
+  const { data: tokens } = client.getTokens.all.useQuery()
   const { network } = useNetwork()
   // const { data: avatar } = useEnsAvatar({
   //   address: address,
@@ -50,8 +58,8 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
 
   // const [usdPrice, setUsdPrice] = useState<number>(0)
   // const balanceAsUsd = prices ? prices['00'] : 0
-  const [showBalance, setShowBalance] = useState<number | undefined>(0)
-  const [showUsdtBalance, setShowUsdtBalance] = useState<number | undefined>(0)
+  const [showBalance1, setShowBalance1] = useState<BalanceProps | undefined>(undefined)
+  const [showBalance2, setShowBalance2] = useState<BalanceProps | undefined>(undefined)
   const ref = useRef<HTMLDivElement>(null)
   const inViewport = useInViewport(ref)
   // const { isLoading, error, data: priceHTR } = useHtrPrice()
@@ -59,16 +67,18 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
   const priceHTR = data ? data : 0.01
 
   useEffect(() => {
-    setShowBalance(
-      balance?.find((token) => {
-        return token.token_symbol == 'HTR'
-      })?.token_balance
-    )
-    setShowUsdtBalance(
-      balance?.find((token) => {
-        return token.token_symbol == 'USDT'
-      })?.token_balance
-    )
+    const balance_user: BalanceProps[] = balance
+      .map((b: TokenBalance) => {
+        return {
+          token: tokens ? toToken(tokens.find((t) => t.uuid === b.token_uuid)) : undefined,
+          balance: b.token_balance / 100,
+          balanceUSD: prices ? (prices[b.token_uuid] * b.token_balance) / 100 : 0,
+        }
+      })
+      .sort((a: BalanceProps, b: BalanceProps) => b.balanceUSD - a.balanceUSD)
+
+    setShowBalance1(balance_user[0])
+    setShowBalance2(balance_user[1])
   }, [balance])
 
   return (
@@ -109,54 +119,70 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
           </div>
         </div>
         <div className="flex justify-center gap-8">
-          {!isLoading && !showBalance && !showUsdtBalance ? (
+          {!isLoading && !showBalance1 && !showBalance2 ? (
             <Typography variant="sm" className="text-center text-stone-500">
               No balances in HTR or USDT
             </Typography>
           ) : null}
-          {showBalance ? (
+          {showBalance1 ? (
             <div className="flex flex-col items-center justify-center gap-2">
               <Currency.Icon
                 width={20}
                 height={20}
-                currency={new Token({ chainId: network, uuid: '00', symbol: 'HTR', name: 'Hathor', decimals: 2 })}
+                currency={
+                  new Token({
+                    chainId: network,
+                    uuid: showBalance1.token?.uuid || 'HTR',
+                    symbol: showBalance1.token?.symbol,
+                    name: showBalance1.token?.name,
+                    decimals: 2,
+                  })
+                }
                 priority={inViewport}
               />
 
               <Typography variant="h3" className="whitespace-nowrap">
                 {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-                {showBalance ? (showBalance / 100).toLocaleString() : ''}
+                {showBalance1 ? showBalance1.balance.toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
               </Typography>
               <Typography weight={600} className="text-stone-400">
-                {/* {showBalance && showBalance != 0  ? '$' + ((showBalance / 100) * priceHTR).toFixed(2) : ''} */}
+                {/* {showBalance1 && showBalance1 != 0  ? '$' + ((showBalance1 / 100) * priceHTR).toFixed(2) : ''} */}
                 {isLoading
                   ? 'Loading'
-                  : showBalance && showBalance != 0
-                  ? '$' + ((showBalance / 100) * priceHTR).toLocaleString()
+                  : showBalance1 && showBalance1.balance && showBalance1.balanceUSD != 0
+                  ? '$' + showBalance1.balanceUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })
                   : ''}
               </Typography>
             </div>
           ) : null}
 
-          {showUsdtBalance ? (
+          {showBalance2 ? (
             <div className="flex flex-col items-center justify-center gap-2">
               <Currency.Icon
                 width={20}
                 height={20}
-                currency={new Token({ chainId: network, uuid: 'xx', symbol: 'USDT', name: 'USD Tether', decimals: 2 })}
+                currency={
+                  new Token({
+                    chainId: network,
+                    decimals: 2,
+                    uuid: showBalance2.token?.uuid || 'USDT',
+                    symbol: showBalance2.token?.symbol,
+                    name: showBalance2.token?.name,
+                  })
+                }
                 priority={inViewport}
               />
 
               <Typography variant="h3" className="whitespace-nowrap">
                 {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-                {showUsdtBalance ? (showUsdtBalance / 100).toLocaleString() : ''}
+                {showBalance2 ? showBalance2.balance.toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
               </Typography>
               <Typography weight={600} className="text-stone-400">
-                {/* {showBalance && showBalance != 0  ? '$' + ((showBalance / 100) * priceHTR).toFixed(2) : ''} */}
+                {/* {showBalance1 && showBalance1 != 0  ? '$' + ((showBalance1 / 100) * priceHTR).toFixed(2) : ''} */}
                 {isLoading
                   ? 'Loading'
-                  : showUsdtBalance && showUsdtBalance != 0
-                  ? '$' + (showUsdtBalance / 100).toLocaleString()
+                  : showBalance2 && showBalance2.balance && showBalance2.balanceUSD != 0
+                  ? '$' + showBalance2.balanceUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })
                   : ''}
               </Typography>
             </div>

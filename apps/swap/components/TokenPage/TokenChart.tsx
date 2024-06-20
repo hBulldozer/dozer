@@ -60,7 +60,7 @@ function getFirstPerHour(snapshots: PairHourSnapshot[]): PairHourSnapshot[] {
 }
 export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(
-    pair.id.includes('usdt') ? TokenChartCurrency.HTR : TokenChartCurrency.USD
+    pair.id.includes('native') ? TokenChartCurrency.USD : TokenChartCurrency.HTR
   )
   const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Day)
   const hourSnapshots = getFirstPerHour(pair.hourSnapshots)

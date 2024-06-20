@@ -153,7 +153,7 @@ export const TokensTable: FC = () => {
     columns: COLUMNS,
     state: {
       sorting,
-      //   columnVisibility,
+      columnVisibility,
     },
     // pageCount: Math.ceil((poolCount || 0) / PAGE_SIZE),
     onSortingChange: setSorting,
@@ -176,11 +176,12 @@ export const TokensTable: FC = () => {
       setColumnVisibility({})
     } else {
       setColumnVisibility({
-        volume: false,
         network: false,
+        price: false,
         rewards: false,
         liquidityUSD: false,
         fees: false,
+        chart: false,
       })
     }
   }, [isMd, isSm])

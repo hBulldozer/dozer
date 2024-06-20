@@ -32,11 +32,12 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
   return (
     <div className="flex items-center gap-3 ">
       <Currency.Icon width={ICON_SIZE} height={ICON_SIZE} currency={token} priority={inViewport} />
+
       <div className="flex flex-col ">
         <Typography variant="sm" weight={500} className="flex items-center gap-2 text-stone-50">
           {token.symbol}
         </Typography>
-        <span className="text-stone-500">{token.name}</span>
+        <span className="hidden sm:flex text-stone-500">{token.name}</span>
       </div>
     </div>
   )
