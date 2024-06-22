@@ -103,8 +103,8 @@ export type Pair = {
   liquidity: number
   volume1d: number
   fees1d: number
-  volume0: number
-  volume1: number
+  volume0?: number
+  volume1?: number
   hourSnapshots: Array<PairHourSnapshot>
   daySnapshots: Array<PairDaySnapshot>
 }
