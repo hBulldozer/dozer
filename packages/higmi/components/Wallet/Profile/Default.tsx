@@ -121,7 +121,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
         <div className="flex justify-center gap-8">
           {!isLoading && !showBalance1 && !showBalance2 ? (
             <Typography variant="sm" className="text-center text-stone-500">
-              No balances in HTR or USDT
+              No balances in this address
             </Typography>
           ) : null}
           {showBalance1 ? (
