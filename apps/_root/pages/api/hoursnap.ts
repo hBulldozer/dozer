@@ -12,6 +12,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
       volumeUSD: number
       reserve0: number
       reserve1: number
+      volume0: number
+      volume1: number
       priceHTR: number
     }[] = []
     const priceHTR = await client.getPrices.htr.query()
@@ -24,6 +26,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
         volumeUSD: pool.volumeUSD,
         reserve0: Number(pool.reserve0),
         reserve1: Number(pool.reserve1),
+        volume0: Number(pool.volume0),
+        volume1: Number(pool.volume1),
         priceHTR: priceHTR,
       })
     })

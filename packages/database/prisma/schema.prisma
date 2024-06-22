@@ -81,6 +81,8 @@ model daySnapshot {
   priceHTR     Float    @default(0)
   reserve0     Float    @default(0)
   reserve1     Float    @default(0)
+  volume0     Float    @default(0)
+  volume1     Float    @default(0)
   pool         Pool     @relation(fields: [poolId], references: [id])
 
   @@index([poolId])
@@ -96,6 +98,8 @@ model hourSnapshot {
   priceHTR     Float    @default(0)
   reserve0     Float    @default(0)
   reserve1     Float    @default(0)
+  volume0     Float    @default(0)
+  volume1     Float    @default(0)
   pool         Pool     @relation(fields: [poolId], references: [id])
 
   @@index([poolId])

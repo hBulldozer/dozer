@@ -42,6 +42,11 @@ const fetchAndProcessPoolData = async (
     hourSnapshots: {
       liquidityUSD: number
       volumeUSD: number
+      priceHTR: number
+      reserve0: number
+      reserve1: number
+      volume0: number
+      volume1: number
     }[]
   },
   priceHTR: number
@@ -57,12 +62,21 @@ const fetchAndProcessPoolData = async (
 
   const liquidityUSD = (2 * priceHTR * reserve0) / 100
   const volumeUSD = (volume0 * priceHTR + (volume1 * priceHTR * reserve0) / reserve1) / 100
+  const priceHTRold = pool.hourSnapshots[0]?.priceHTR || 1
+  const volume0old = pool.hourSnapshots[0]?.volume0 || 0
+  const volume1old = pool.hourSnapshots[0]?.volume1 || 0
+  const reserve0old = pool.hourSnapshots[0]?.reserve0 || 0
+  const reserve1old = pool.hourSnapshots[0]?.reserve1 || 0
+  const volume1d =
+    (volume0 * priceHTR - volume0old * priceHTRold) / 100 +
+    ((volume1 * priceHTR * reserve0) / reserve1 - (volume1old * priceHTRold * reserve0old) / reserve1old) / 100
   const feeUSD = (fee0 * priceHTR + (fee1 * priceHTR * reserve0) / reserve1) / 100
-  const volume1d = volumeUSD - (pool.hourSnapshots[0]?.volumeUSD || 0)
   return {
     id: id,
     name: `${token0.symbol}-${token1.symbol}`,
     liquidityUSD: liquidityUSD, //calculateLiquidityUSD(poolData, token0, token1), // Placeholder
+    volume0: volume0,
+    volume1: volume1,
     volumeUSD: volumeUSD,
     feeUSD: feeUSD,
     swapFee: fee, // !!TODO remove hardcoded
@@ -92,7 +106,12 @@ export const poolRouter = createTRPCRouter({
         hourSnapshots: {
           select: {
             volumeUSD: true,
+            volume0: true,
+            volume1: true,
+            reserve0: true,
+            reserve1: true,
             liquidityUSD: true,
+            priceHTR: true,
           },
           where: {
             date: {
