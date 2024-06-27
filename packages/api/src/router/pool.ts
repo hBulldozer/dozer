@@ -87,7 +87,7 @@ const fetchAndProcessPoolData = async (
     reserve1: reserve1 / 100,
     chainId: chainId, // Or another way to get chainId
     liquidity: (2 * reserve0) / 100, //poolData.reserve0 + poolData.reserve1, // Or a more complex calculation
-    volume1d: volume1d,
+    volume1d: volume1d > 0.00001 ? volume1d : 0,
     fees1d: feeUSD - (pool.hourSnapshots[0]?.volumeUSD || 0),
     daySnapshots: [],
     hourSnapshots: [],
