@@ -63,8 +63,8 @@ export const useTokensFromPair = (pair: Pair) => {
       token0,
       token1,
 
-      reserve0: Amount.fromFractionalAmount(token0, Number(pair.reserve0)*100,100 || 0),
-      reserve1: Amount.fromFractionalAmount(token1, Number(pair.reserve1)*100,100 || 0),
+      reserve0: Amount.fromFractionalAmount(token0, Math.floor(Number(pair.reserve0) * 100), 100 || 0),
+      reserve1: Amount.fromFractionalAmount(token1, Math.floor(Number(pair.reserve1) * 100), 100 || 0),
     }
   }, [
     pair.chainId,
