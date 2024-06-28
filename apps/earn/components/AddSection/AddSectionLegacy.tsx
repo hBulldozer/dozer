@@ -7,26 +7,24 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { AddSectionReviewModalLegacy } from './AddSectionReviewModalLegacy'
 import { AddSectionWidget } from './AddSectionWidget'
 import { Pair, dbPoolWithTokens, toToken } from '@dozer/api'
-import { useTrade } from '@dozer/zustand'
+import { client as api_client } from '@dozer/api'
+import { TradeType, useTrade } from '@dozer/zustand'
 
-export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number } }> = ({ pool, prices }) => {
+export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number }; client: typeof api_client }> = ({
+  pool,
+  prices,
+  client,
+}) => {
   const isMounted = useIsMounted()
   const token0 = toToken(pool.token0)
   const token1 = toToken(pool.token1)
-  const [{ input0, input1 }, setTypedAmounts] = useState<{
-    input0: string
-    input1: string
-  }>({ input0: '', input1: '' })
-  const {
-    setMainCurrency,
-    setOtherCurrency,
-    setMainCurrencyPrice,
-    setOtherCurrencyPrice,
-    setAmountSpecified,
-    setOutputAmount,
-    setPriceImpact,
-    setPool,
-  } = useTrade()
+  const [input0, setInput0] = useState<string>('')
+  const [input1, setInput1] = useState<string>('')
+  const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
+  const trade = useTrade()
+  const utils = client.useUtils()
+  const [fetchLoading, setFetchLoading] = useState<boolean>(false)
+
   // const {
   //   data: [poolState, pool],
   // } = usePair(pair.chainId, token0, token1)
@@ -35,42 +33,76 @@ export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number 
     return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
   }, [input0, input1])
 
-  const onChangeToken0TypedAmount = useCallback(
-    (value: string) => {
-      const parsedAmount = Number(value)
-      setTypedAmounts({
-        input0: value,
-        input1: parsedAmount
-          ? ((parsedAmount * Number(pool.reserve1)) / (Number(pool.reserve0) + parsedAmount)).toFixed(2)
-          : '',
-      })
-    },
-    [pool]
-  )
+  const onInput0 = async (val: string) => {
+    setInput0(val)
+    if (!val) {
+      setInput1('')
+    }
+    setTradeType(TradeType.EXACT_INPUT)
+  }
 
-  const onChangeToken1TypedAmount = useCallback(
-    (value: string) => {
-      const parsedAmount = Number(value)
-      setTypedAmounts({
-        input0: parsedAmount
-          ? ((parsedAmount * Number(pool.reserve0)) / (Number(pool.reserve1) + parsedAmount)).toFixed(2)
-          : '',
-        input1: value,
-      })
-    },
-    [pool]
-  )
+  const onInput1 = async (val: string) => {
+    setInput1(val)
+    if (!val) {
+      setInput0('')
+    }
+    setTradeType(TradeType.EXACT_OUTPUT)
+  }
 
   useEffect(() => {
-    pool && setPool(pool)
-    setMainCurrency(token0 ? token0 : undefined)
-    setOtherCurrency(token1 ? token1 : undefined)
-    // setPriceImpact()
-    setAmountSpecified(Number(input0))
-    setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
-    setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
-    // setOutputAmount()
-  }, [input0, input1])
+    const fetchData = async () => {
+      setFetchLoading(true)
+      if (tradeType == TradeType.EXACT_INPUT) {
+        const response = token0
+          ? await utils.getPools.front_quote_add_liquidity_in.fetch({
+              id: pool.id,
+              amount_in: parseFloat(input0),
+              token_in: token0?.uuid,
+            })
+          : undefined
+        // set state with the result if `isSubscribed` is true
+
+        setInput1(response && response != 0 ? response.toFixed(2) : '')
+      } else {
+        const response = token0
+          ? await utils.getPools.front_quote_add_liquidity_out.fetch({
+              id: pool?.id,
+              amount_out: parseFloat(input1),
+              token_in: token0?.uuid,
+            })
+          : undefined
+
+        setInput0(response && response != 0 ? response.toFixed(2) : '')
+      }
+    }
+
+    // call the function
+    if (input1 || input0) {
+      fetchData()
+        .then(() => {
+          setFetchLoading(false)
+          trade.setMainCurrency(token0)
+          trade.setOtherCurrency(token1)
+          trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
+          trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
+          trade.setAmountSpecified(Number(input0) || 0)
+          trade.setOutputAmount(Number(input1) || 0)
+          trade.setTradeType(tradeType)
+        })
+        // make sure to catch any error
+        .catch((err) => {
+          console.error(err)
+          setFetchLoading(false)
+        })
+    } else {
+      trade.setMainCurrencyPrice(0)
+      trade.setOtherCurrencyPrice(0)
+      trade.setAmountSpecified(0)
+      trade.setOutputAmount(0)
+      trade.setPriceImpact(0)
+      trade.setTradeType(tradeType)
+    }
+  }, [input0, input1, prices])
 
   return useMemo(() => {
     return (
@@ -92,8 +124,8 @@ export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number 
             token0={token0}
             token1={token1}
             prices={prices}
-            onInput0={onChangeToken0TypedAmount}
-            onInput1={onChangeToken1TypedAmount}
+            onInput0={onInput0}
+            onInput1={onInput1}
           >
             <Checker.Connected fullWidth size="md">
               {/* <Checker.Custom
@@ -132,8 +164,8 @@ export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number 
     input0,
     input1,
     isMounted,
-    onChangeToken0TypedAmount,
-    onChangeToken1TypedAmount,
+    onInput0,
+    onInput1,
     pool.chainId,
     // pair.farm,
     parsedInput0,

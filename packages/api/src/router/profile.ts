@@ -21,7 +21,7 @@ export const profileRouter = createTRPCRouter({
       const response = await fetchNodeData(endpoint, [`address=${input.address}`])
       return response
     }),
-  pool: procedure
+  poolInfo: procedure
     .input(
       z.object({
         address: z.string(),
@@ -30,17 +30,17 @@ export const profileRouter = createTRPCRouter({
     )
     .output(
       z.object({
-        user_deposit_a: z.number(),
-        user_deposit_b: z.number(),
-        rewards_user_dzr: z.number(),
+        balance_a: z.number(),
+        balance_b: z.number(),
+        liquidity: z.number(),
       })
     )
     .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
-      const queryParams = [`id=${input.contractId}`, `calls[]=front_end_api_user("a'${input.address}'")`]
+      const queryParams = [`id=${input.contractId}`, `calls[]=user_info("a'${input.address}'")`]
 
       const response = await fetchNodeData(endpoint, queryParams)
-      const result = response['calls'][`front_end_api_user("a'${input.address}'")`]['value']
+      const result = response['calls'][`user_info("a'${input.address}'")`]['value']
       return result
     }),
 })

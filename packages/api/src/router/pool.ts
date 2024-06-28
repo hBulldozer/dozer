@@ -156,6 +156,37 @@ export const poolRouter = createTRPCRouter({
     })
   }),
 
+  front_quote_add_liquidity_in: procedure
+    .input(z.object({ id: z.string(), amount_in: z.number(), token_in: z.string() }))
+    .output(z.number())
+    .query(async ({ ctx, input }) => {
+      const endpoint = 'nano_contract/state'
+      const amount = input.amount_in * 100 // correcting input to the backend
+      const queryParams = [`id=${input.id}`, `calls[]=front_quote_add_liquidity_in(${amount},"${input.token_in}")`]
+      const response = await fetchNodeData(endpoint, queryParams)
+      if ('errmsg' in response['calls'][`front_quote_add_liquidity_in(${amount},"${input.token_in}")`]) return 0
+      else {
+        const result = response['calls'][`front_quote_add_liquidity_in(${amount},"${input.token_in}")`]['value']
+        const quote = result / 100 // correcting output to the frontend
+        return quote
+      }
+    }),
+  front_quote_add_liquidity_out: procedure
+    .input(z.object({ id: z.string(), amount_out: z.number(), token_in: z.string() }))
+    .output(z.number())
+    .query(async ({ ctx, input }) => {
+      const endpoint = 'nano_contract/state'
+      const amount = input.amount_out * 100 // correcting input to the backend
+      const queryParams = [`id=${input.id}`, `calls[]=front_quote_add_liquidity_out(${amount},"${input.token_in}")`]
+      const response = await fetchNodeData(endpoint, queryParams)
+      if ('errmsg' in response['calls'][`front_quote_add_liquidity_out(${amount},"${input.token_in}")`]) return 0
+      else {
+        const result = response['calls'][`front_quote_add_liquidity_out(${amount},"${input.token_in}")`]['value']
+        const quote = result / 100 // correcting output to the frontend
+        return quote
+      }
+    }),
+
   quote_exact_tokens_for_tokens: procedure
     .input(z.object({ id: z.string(), amount_in: z.number(), token_in: z.string() }))
     .output(z.object({ amount_out: z.number(), price_impact: z.number() }))
@@ -241,6 +272,23 @@ export const poolRouter = createTRPCRouter({
         'users'
       )
 
+      return response
+    }),
+  add_liquidity: procedure
+    .input(
+      z.object({
+        ncid: z.string(),
+        token_in: z.string(),
+        amount_in: z.number(),
+        token_out: z.string(),
+        amount_out: z.number(),
+        address: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { ncid, token_in, amount_in, token_out, amount_out, address } = input
+      const pool = new LiquidityPool(token_in, token_out, 5, ncid)
+      const response = await pool.add_liquidity(token_in, amount_in, token_out, amount_out, address, 'users')
       return response
     }),
   getTxStatus: procedure

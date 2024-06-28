@@ -12,7 +12,7 @@ const Nanostate = () => {
     contractId: contractIdStake,
   })
   // const { data: data3 } = api.getNanoState.api.useQuery()
-  const { data: data4 } = api.getProfile.pool.useQuery({ address: address, contractId: contractIdLP })
+  // const { data: data4 } = api.getProfile.pool.useQuery({ address: address, contractId: contractIdLP })
 
   // console.log(data2, data4) // Log all data for debugging
 

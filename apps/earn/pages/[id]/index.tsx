@@ -20,6 +20,7 @@ import {
 import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../../utils/api'
+import { useAccount } from '@dozer/zustand'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -84,6 +85,12 @@ const Pool = () => {
   if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
+
+  const { address } = useAccount()
+
+  const { data: poolInfo } = api.getProfile.poolInfo.useQuery({ address: address, contractId: pair.id })
+
+  console.log(poolInfo)
 
   return (
     <PoolPositionProvider pair={pair} prices={prices}>
