@@ -86,10 +86,6 @@ const Pool = () => {
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
 
-  const { address } = useAccount()
-
-  const { data: poolInfo } = api.getProfile.poolInfo.useQuery({ address: address, contractId: pair.id })
-
   return (
     <PoolPositionProvider pair={pair} prices={prices}>
       <>
@@ -105,15 +101,16 @@ const Pool = () => {
                 <PoolStats pair={pair} prices={prices} />
                 {/* liquidityusd, volume1d, swapfee  */}
               </AppearOnMount>
-              <PoolComposition pair={pair} prices={prices} />
+
               {/* uses token0 token1 reserve0 reserve1 */}
-              <PoolRewards pair={pair} />
+              {/* <PoolRewards pair={pair} /> */}
             </div>
 
             <div className="flex flex-col order-2 gap-4">
               <AppearOnMount>
                 <div className="flex flex-col gap-10">
-                  <PoolMyRewards pair={pair} />
+                  <PoolComposition pair={pair} prices={prices} />
+                  {/* <PoolMyRewards pair={pair} /> */}
                   <PoolPosition pair={pair} />
                 </div>
               </AppearOnMount>

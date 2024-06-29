@@ -8,6 +8,7 @@ import { classNames } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
 import { Web3Input } from '@dozer/higmi'
 import { FC, ReactNode } from 'react'
+import { TradeType } from '@dozer/zustand'
 
 // import { useCustomTokens } from '../../lib/state/storage'
 // import { useTokens } from '../../lib/state/token-lists'
@@ -20,6 +21,8 @@ interface AddSectionWidgetProps {
   input1: string
   token0: Type | undefined
   token1: Type | undefined
+  isLoading: boolean
+  tradeType: TradeType
   onSelectToken0?(currency: Type): void
   onSelectToken1?(currency: Type): void
   onInput0(value: string): void
@@ -41,6 +44,8 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
   onInput1,
   prices,
   children,
+  isLoading,
+  tradeType,
 }) => {
   const isMounted = useIsMounted()
   // const [customTokensMap, { addCustomToken, removeCustomToken }] = useCustomTokens(chainId)
@@ -88,7 +93,7 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
                 <Disclosure.Panel unmount={false}>
                   <Web3Input.Currency
                     className="p-3"
-                    loading={false}
+                    loading={tradeType == TradeType.EXACT_OUTPUT && isLoading}
                     value={input0}
                     onChange={onInput0}
                     onSelect={onSelectToken0}
@@ -108,6 +113,7 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
                   <div className="bg-stone-800">
                     <Web3Input.Currency
                       className="p-3 !pb-1"
+                      loading={tradeType == TradeType.EXACT_INPUT && isLoading}
                       value={input1}
                       onChange={onInput1}
                       currency={token1}

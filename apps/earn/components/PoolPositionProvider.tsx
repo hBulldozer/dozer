@@ -7,13 +7,15 @@ import { useTokensFromPair } from '@dozer/api'
 import { useUnderlyingTokenBalanceFromPair } from '@dozer/api'
 import { useTotalSupply } from '@dozer/react-query'
 import { isError, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { api } from '../utils/api'
+import { max } from 'date-fns'
+import { MAX_SAFE_INTEGER } from '@dozer/math'
 
 interface PoolPositionContext {
-  BalanceLPAmount: Amount<Type> | undefined
   value0: number
   value1: number
-  underlying0: Amount<Type> | undefined
-  underlying1: Amount<Type> | undefined
+  max_withdraw_a: Amount<Type> | undefined
+  max_withdraw_b: Amount<Type> | undefined
   isLoading: boolean
   isError: boolean
 }
@@ -28,59 +30,49 @@ export const PoolPositionProvider: FC<{
 }> = ({ pair, prices, children, watch = true }) => {
   const token0 = toToken(pair.token0)
   const token1 = toToken(pair.token1)
-  // !TODO! adjust for liquidity
-  const liquidityToken = pair.token0
-  const { balance, address } = useAccount()
 
-  const [totalSupply, setTotalSupply] = useState<Amount<Token>>()
+  const { address } = useAccount()
 
-  const [BalanceLPAmount, setBalanceLPAmount] = useState<Amount<Token> | undefined>(undefined)
+  const {
+    data: poolInfo,
+    isLoading,
+    isError,
+  } = api.getProfile.poolInfo.useQuery({ address: address, contractId: pair.id })
 
-  const data = {}
-  const isLoading = false
-  const isError = false
-  const [reserve0, reserve1] = useMemo(() => {
-    return [Amount.fromRawAmount(token0, 10), Amount.fromRawAmount(token1, 10)]
-  }, [pair?.reserve0, pair?.reserve1])
+  console.log('poolInfo', poolInfo)
 
-  useEffect(() => {
-    if (data && !isLoading && !isError) {
-      // setTotalSupply(Amount.fromRawAmount(liquidityToken, data['total']))
+  const { liquidity, max_withdraw_a, max_withdraw_b } = poolInfo || {
+    liquidity: undefined,
+    max_withdraw_a: undefined,
+    max_withdraw_b: undefined,
+  }
 
-      const BalanceLPToken = balance.find((token) => {
-        return token.token_uuid == liquidityToken.uuid
-      })
-      // setBalanceLPAmount(Amount.fromRawAmount(liquidityToken, BalanceLPToken ? BalanceLPToken.token_balance : 0))
-    }
-  }, [balance, pair, prices, data, isLoading, isError, address])
-
-  const [underlying0, underlying1] = useUnderlyingTokenBalanceFromPair({
-    reserve0,
-    reserve1,
-    totalSupply,
-    balance: BalanceLPAmount,
-  })
+  const _max_withdraw_a: Amount<Type> | undefined = max_withdraw_a
+    ? Amount.fromRawAmount(token0, max_withdraw_a)
+    : undefined
+  const _max_withdraw_b: Amount<Type> | undefined = max_withdraw_b
+    ? Amount.fromRawAmount(token1, max_withdraw_b)
+    : undefined
 
   const value0 = useMemo(() => {
-    return prices[token0.uuid] * Number(underlying0?.toFixed(2))
-  }, [prices, token0, underlying0])
+    return prices[token0.uuid] * Number(_max_withdraw_a?.toFixed(2))
+  }, [prices, token0, max_withdraw_a])
   const value1 = useMemo(() => {
-    return prices[token1.uuid] * Number(underlying1?.toFixed(2))
-  }, [prices, token1, underlying1])
+    return prices[token1.uuid] * Number(_max_withdraw_b?.toFixed(2))
+  }, [prices, token1, max_withdraw_b])
 
   return (
     <Context.Provider
       value={useMemo(
         () => ({
-          BalanceLPAmount,
           value0,
           value1,
-          underlying0,
-          underlying1,
+          max_withdraw_a: _max_withdraw_a,
+          max_withdraw_b: _max_withdraw_b,
           isLoading,
           isError,
         }),
-        [BalanceLPAmount, isError, isLoading, underlying0, underlying1, value0, value1]
+        [isError, isLoading, _max_withdraw_a, _max_withdraw_b, value0, value1]
       )}
     >
       {children}

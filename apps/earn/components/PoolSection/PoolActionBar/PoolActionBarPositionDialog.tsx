@@ -21,18 +21,7 @@ interface PoolActionBarPositionDialogProps {
 
 export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> = ({ pair, open, setOpen }) => {
   const { token0, token1 } = useTokensFromPair(pair)
-  const { isError, isLoading, value0, value1, underlying1, underlying0 } = usePoolPosition()
-
-  const address = useAccount((state) => state.address)
-  // const {
-  //   balance: stakedBalance,
-  //   value0: stakedValue0,
-  //   value1: stakedValue1,
-  //   underlying0: stakedUnderlying0,
-  //   underlying1: stakedUnderlying1,
-  //   isLoading: isStakedLoading,
-  //   isError: isStakedError,
-  // } = usePoolPositionStaked()
+  const { isError, isLoading, value0, value1, max_withdraw_a, max_withdraw_b } = usePoolPosition()
 
   const handleClose = useCallback(() => {
     setOpen(false)
@@ -74,7 +63,7 @@ export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> =
               <div className="flex items-center gap-2">
                 <Currency.Icon currency={token0} width={20} height={20} />
                 <Typography variant="sm" weight={500} className="text-stone-300">
-                  {underlying0?.toFixed(0) || '0'} {token0.symbol}
+                  {max_withdraw_a?.toFixed(2) || '0'} {token0.symbol}
                   {/* {1000} */}
                 </Typography>
               </div>
@@ -88,7 +77,7 @@ export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> =
                 <Currency.Icon currency={token1} width={20} height={20} />
                 <Typography variant="sm" weight={500} className="text-stone-300">
                   {/* {1000} */}
-                  {underlying1?.toFixed(0) || '0'} {token1.symbol}
+                  {max_withdraw_b?.toFixed(2) || '0'} {token1.symbol}
                 </Typography>
               </div>
               <Typography variant="xs" weight={500} className="text-stone-400">

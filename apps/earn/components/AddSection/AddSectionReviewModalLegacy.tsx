@@ -1,12 +1,9 @@
 import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
-import { Percent } from '@dozer/math'
 import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } from '@dozer/ui'
-import { Approve } from '@dozer/higmi'
-import { FC, ReactNode, useMemo, useState } from 'react'
-import { useSettings, useAccount, useNetwork, useTrade, TokenBalance } from '@dozer/zustand'
+import { FC, ReactNode, useState } from 'react'
+import { useAccount, useNetwork, useTrade, TokenBalance } from '@dozer/zustand'
 import { AddSectionReviewModal } from './AddSectionReviewModal'
-import { client as api_client } from '@dozer/api'
 import { api } from '../../utils/api'
 
 interface AddSectionReviewModalLegacyProps {
@@ -16,7 +13,7 @@ interface AddSectionReviewModalLegacyProps {
   token1: Type | undefined
   input0: Amount<Type> | undefined
   input1: Amount<Type> | undefined
-  children({ isWritePending, setOpen }: { isWritePending: boolean; setOpen(open: boolean): void }): ReactNode
+  children({ setOpen }: { setOpen(open: boolean): void }): ReactNode
   prices: { [key: string]: number }
 }
 
@@ -29,7 +26,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   prices,
 }) => {
   const [open, setOpen] = useState(false)
-  const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency } = useTrade()
+  const { amountSpecified, outputAmount, pool, mainCurrency, otherCurrency } = useTrade()
   const { address, addNotification, setBalance, balance } = useAccount()
   const { network } = useNetwork()
   const [isWritePending, setIsWritePending] = useState<boolean>(false)
@@ -120,7 +117,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
 
   return (
     <>
-      {children({ isWritePending, setOpen })}
+      {children({ setOpen })}
       <AddSectionReviewModal
         chainId={chainId}
         input0={input0}

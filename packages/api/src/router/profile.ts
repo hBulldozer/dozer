@@ -33,6 +33,8 @@ export const profileRouter = createTRPCRouter({
         balance_a: z.number(),
         balance_b: z.number(),
         liquidity: z.number(),
+        max_withdraw_a: z.number(),
+        max_withdraw_b: z.number(),
       })
     )
     .query(async ({ input }) => {

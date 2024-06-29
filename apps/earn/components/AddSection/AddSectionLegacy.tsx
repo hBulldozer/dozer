@@ -1,12 +1,12 @@
 import { Amount } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
-import { Button, Dots } from '@dozer/ui'
+import { Button } from '@dozer/ui'
 import { Checker } from '@dozer/higmi'
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 
 import { AddSectionReviewModalLegacy } from './AddSectionReviewModalLegacy'
 import { AddSectionWidget } from './AddSectionWidget'
-import { Pair, dbPoolWithTokens, toToken } from '@dozer/api'
+import { Pair, toToken } from '@dozer/api'
 import { TradeType, useTrade } from '@dozer/zustand'
 import { api } from '../../utils/api'
 
@@ -112,8 +112,10 @@ export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number 
         input1={Amount.fromFractionalAmount(token1, parsedInput1, 100)}
         prices={prices}
       >
-        {({ isWritePending, setOpen }) => (
+        {({ setOpen }) => (
           <AddSectionWidget
+            isLoading={fetchLoading}
+            tradeType={tradeType}
             isFarm={false}
             chainId={pool.chainId}
             input0={input0}
@@ -146,8 +148,8 @@ export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number 
                 amount={Number(input0)}
                 token={token0}
               >
-                <Button fullWidth onClick={() => setOpen(true)} disabled={isWritePending} size="md">
-                  {isWritePending ? <Dots>Confirm transaction</Dots> : 'Add Liquidity'}
+                <Button fullWidth onClick={() => setOpen(true)} disabled={!input0 || !input1} size="md">
+                  {input0 && input1 ? 'Add Liquidity' : 'Enter an amount'}
                 </Button>
               </Checker.Amounts>
               {/* </Checker.Network> */}
