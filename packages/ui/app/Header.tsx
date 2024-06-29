@@ -21,7 +21,7 @@ import {
 export enum AppType {
   Root = 'Explore Apps',
   Swap = 'Swap',
-  // Invest = 'Pools',
+  Invest = 'Pools',
   Blog = 'Blog',
   Tokens = 'Tokens',
 }
@@ -29,7 +29,7 @@ export enum AppType {
 const LINK = {
   [AppType.Root]: '/',
   [AppType.Swap]: '/swap',
-  // [AppType.Invest]: '/pool',
+  [AppType.Invest]: '/pool',
   [AppType.Tokens]: '/swap/tokens',
 }
 
@@ -148,9 +148,9 @@ export function Header({
                       </Typography>
                     </Select.Option>
 
-                    {/* <Select.Option
+                    <Select.Option
                       as="a"
-                      href="https://mvp.dozer.finance/pool"
+                      href="/pool"
                       key={AppType.Invest}
                       value={AppType.Invest}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -159,7 +159,7 @@ export function Header({
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                         Earn fees by providing liquidity
                       </Typography>
-                    </Select.Option> */}
+                    </Select.Option>
                   </div>
                   {/* <div>
                     <Typography

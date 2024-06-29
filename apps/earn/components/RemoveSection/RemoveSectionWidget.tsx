@@ -32,7 +32,6 @@ interface RemoveSectionWidgetProps {
   currency1?: Token
   setPercentage(percentage: string): void
   prices: { [key: string]: number }
-  BalanceLPAmount: Amount<Token> | undefined
   children: ReactNode
 }
 
@@ -47,7 +46,6 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
   currency0,
   currency1,
   prices,
-  BalanceLPAmount,
   children,
 }) => {
   const isMounted = useIsMounted()
@@ -61,7 +59,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
   return (
     <div className="relative" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <Transition
-        show={Boolean(hover && (!address || !BalanceLPAmount?.greaterThan(ZERO)))}
+        show={Boolean(hover && !address)}
         as={Fragment}
         enter="transition duration-300 origin-center ease-out"
         enterFrom="transform opacity-0"
@@ -164,7 +162,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                             weight={500}
                             className="truncate text-stone-300 hover:text-stone-200"
                           >
-                            Balance: {BalanceLPAmount?.toFixed(2)}
+                            Balance: {token0Minimum?.toFixed(2)}
                           </Typography>
                         </AppearOnMount>
                       </div>

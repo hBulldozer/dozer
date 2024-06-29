@@ -6,6 +6,7 @@ import { FC, ReactNode, useMemo } from 'react'
 
 // import { useTokenAmountDollarValues } from '../../lib/hooks'
 import { Rate } from '../Rate'
+import { useSettings } from '@dozer/zustand'
 
 interface AddSectionReviewModal {
   chainId: ChainId
@@ -30,6 +31,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
   //   chainId,
   //   amounts: [input0, input1],
   // })
+  const slippageTolerance = useSettings((state) => state.slippageTolerance)
 
   const [price0, price1] = useMemo(() => {
     return input0 && input1 ? [prices[input0?.currency.uuid], prices[input1?.currency.uuid]] : [0, 0]
@@ -44,7 +46,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {input0?.multiply(100).toSignificant(6)}{' '}
+                  {input0?.multiply(100).toFixed(2)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input0 && (
@@ -59,7 +61,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {price0 && input0 ? `$${(price0 * Number(input0.multiply(100).toSignificant(6))).toFixed(2)}` : '-'}
+              {price0 && input0 ? `$${(price0 * Number(input0.multiply(100).toFixed(2))).toFixed(2)}` : '-'}
             </Typography>
           </div>
           <div className="flex items-center justify-center col-span-12 -mt-2.5 -mb-2.5">
@@ -71,7 +73,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {input1?.multiply(100).toSignificant(6)}{' '}
+                  {(Number(input1?.multiply(100).toFixed(2)) * (1 - slippageTolerance)).toFixed(2)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input1 && (
@@ -86,7 +88,9 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {price1 && input1 ? `$${(price1 * Number(input1.multiply(100).toSignificant(6))).toFixed(2)}` : '-'}
+              {price1 && input1
+                ? `$${(Number(price1 * Number(input1.multiply(100).toFixed(2))) * (1 - slippageTolerance)).toFixed(2)}`
+                : '-'}
             </Typography>
           </div>
         </div>

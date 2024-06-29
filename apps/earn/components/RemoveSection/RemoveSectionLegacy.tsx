@@ -46,7 +46,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
 
   const poolState = 1
 
-  const { underlying0, underlying1, BalanceLPAmount, value0, value1, isLoading, isError } = usePoolPosition()
+  const { max_withdraw_a, max_withdraw_b, value0, value1, isLoading, isError } = usePoolPosition()
 
   const token0 = toToken(pair.token0)
   const token1 = toToken(pair.token1)
@@ -54,29 +54,29 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   const currencyAToRemove = useMemo(
     () =>
       token0
-        ? percentToRemove && percentToRemove.greaterThan('0') && underlying0
+        ? percentToRemove && percentToRemove.greaterThan('0') && max_withdraw_a
           ? Amount.fromRawAmount(
               token0,
               10
-              // percentToRemove.multiply(underlying0.quotient).quotient || '0'
+              // percentToRemove.multiply(max_withdraw_a.quotient).quotient || '0'
             )
           : Amount.fromRawAmount(token0, '0')
         : undefined,
-    [percentToRemove, token0, underlying0]
+    [percentToRemove, token0, max_withdraw_a]
   )
 
   const currencyBToRemove = useMemo(
     () =>
       token1
-        ? percentToRemove && percentToRemove.greaterThan('0') && underlying1
+        ? percentToRemove && percentToRemove.greaterThan('0') && max_withdraw_b
           ? Amount.fromRawAmount(
               token1,
               10
-              // percentToRemove.multiply(underlying1.quotient).quotient || '0'
+              // percentToRemove.multiply(max_withdraw_b.quotient).quotient || '0'
             )
           : Amount.fromRawAmount(token1, '0')
         : undefined,
-    [percentToRemove, token1, underlying1]
+    [percentToRemove, token1, max_withdraw_b]
   )
 
   const [minAmount0, minAmount1] = useMemo(() => {
@@ -127,7 +127,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   //         !chain?.id ||
   //         !contract ||
   //         !underlying0 ||
-  //         !underlying1 ||
+  //         !max_withdraw_b ||
   //         !address ||
   //         !pool ||
   //         !balance?.[FundSource.WALLET] ||
@@ -202,7 +202,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   //     chain?.id,
   //     contract,
   //     underlying0,
-  //     underlying1,
+  //     max_withdraw_b,
   //     address,
   //     pool,
   //     balance,
@@ -234,7 +234,6 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
         currency1={currencyBToRemove?.currency}
         setPercentage={setPercentage}
         prices={prices}
-        BalanceLPAmount={BalanceLPAmount}
       >
         <Checker.Connected fullWidth size="md">
           {/* <Checker.Custom

@@ -43,7 +43,7 @@ export const PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ 
 const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row }) => {
   const { token0, token1 } = useTokensFromPair(row)
 
-  const { underlying0, underlying1, BalanceLPAmount, value1, value0, isLoading, isError } = usePoolPosition()
+  const { max_withdraw_a, max_withdraw_b, value1, value0, isLoading, isError } = usePoolPosition()
   // const {
   //   underlying1: stakedUnderlying1,
   //   underlying0: stakedUnderlying0,
@@ -102,7 +102,7 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
         </div>
       </div>
       <hr className="my-3 border-t border-slate-200/10" />
-      {!isLoading && !isError && underlying0 && underlying1 ? (
+      {!isLoading && !isError && max_withdraw_a && max_withdraw_b ? (
         <div className="flex flex-col gap-1.5">
           <Typography variant="xs" className="mb-1 text-slate-500">
             Position
@@ -111,7 +111,7 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
             <div className="flex items-center gap-2">
               <Currency.Icon currency={token0} width={18} height={18} />
               <Typography variant="sm" weight={600} className="text-slate-50">
-                {underlying0?.toSignificant(6) || '0.00'} {token0?.symbol}
+                {max_withdraw_a?.toSignificant(6) || '0.00'} {token0?.symbol}
               </Typography>
             </div>
             <Typography variant="xs" className="text-slate-400">
@@ -122,7 +122,7 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
             <div className="flex items-center gap-2">
               <Currency.Icon currency={token1} width={18} height={18} />
               <Typography variant="sm" weight={600} className="text-slate-50">
-                {underlying1?.toSignificant(6) || '0.00'} {token1?.symbol}
+                {max_withdraw_b?.toSignificant(6) || '0.00'} {token1?.symbol}
               </Typography>
             </div>
             <Typography variant="xs" className="text-slate-400">

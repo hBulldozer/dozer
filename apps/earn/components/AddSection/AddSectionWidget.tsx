@@ -8,7 +8,8 @@ import { classNames } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
 import { Web3Input } from '@dozer/higmi'
 import { FC, ReactNode } from 'react'
-import { TradeType } from '@dozer/zustand'
+import { TradeType, useNetwork } from '@dozer/zustand'
+import { SettingsOverlay } from '../SettingsOverlay'
 
 // import { useCustomTokens } from '../../lib/state/storage'
 // import { useTokens } from '../../lib/state/token-lists'
@@ -48,6 +49,7 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
   tradeType,
 }) => {
   const isMounted = useIsMounted()
+  const { network } = useNetwork()
   // const [customTokensMap, { addCustomToken, removeCustomToken }] = useCustomTokens(chainId)
   return (
     <Widget id="addLiquidity" maxWidth={400}>
@@ -58,7 +60,7 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
               {isFarm && isMounted ? (
                 <Widget.Header title="1. Add Liquidity" className="!pb-3 ">
                   <div className="flex gap-3">
-                    {/* <SettingsOverlay variant="dialog" /> */}
+                    <SettingsOverlay chainId={network} />
                     <Disclosure.Button className="w-full pr-0.5">
                       <div className="flex items-center justify-between">
                         <div

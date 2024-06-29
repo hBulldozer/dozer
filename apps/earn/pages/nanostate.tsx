@@ -25,7 +25,7 @@ const Nanostate = () => {
       <h2>Nanostate API:</h2>
       {/* <pre>{JSON.stringify(data3, null, 2)}</pre> */}
       <h2>Profile Pool:</h2>
-      <pre>{JSON.stringify(data4, null, 2)}</pre>
+      {/* <pre>{JSON.stringify(data4, null, 2)}</pre> */}
     </div>
   )
 }

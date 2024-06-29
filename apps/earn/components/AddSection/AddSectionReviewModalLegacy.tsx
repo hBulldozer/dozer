@@ -2,7 +2,7 @@ import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
 import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } from '@dozer/ui'
 import { FC, ReactNode, useState } from 'react'
-import { useAccount, useNetwork, useTrade, TokenBalance } from '@dozer/zustand'
+import { useAccount, useNetwork, useTrade, TokenBalance, useSettings } from '@dozer/zustand'
 import { AddSectionReviewModal } from './AddSectionReviewModal'
 import { api } from '../../utils/api'
 
@@ -25,6 +25,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   children,
   prices,
 }) => {
+  const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const [open, setOpen] = useState(false)
   const { amountSpecified, outputAmount, pool, mainCurrency, otherCurrency } = useTrade()
   const { address, addNotification, setBalance, balance } = useAccount()
@@ -81,7 +82,12 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
               setTimeout(resolve, 500)
             }),
           }
-          editBalanceOnAddLiquidity(amountSpecified, mainCurrency.uuid, outputAmount, otherCurrency.uuid)
+          editBalanceOnAddLiquidity(
+            amountSpecified,
+            mainCurrency.uuid,
+            outputAmount * (1 - slippageTolerance),
+            otherCurrency.uuid
+          )
           const notificationGroup: string[] = []
           notificationGroup.push(JSON.stringify(notificationData))
           addNotification(notificationGroup)
@@ -107,7 +113,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
       mutation.mutate({
         amount_in: amountSpecified,
         token_in: mainCurrency.uuid,
-        amount_out: outputAmount,
+        amount_out: outputAmount * (1 - slippageTolerance),
         ncid: pool.id,
         token_out: otherCurrency.uuid,
         address,
