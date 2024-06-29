@@ -91,7 +91,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
           </div>
         </div>
         <div className="flex justify-center p-4">
-          <Rate token1={input0?.currency} token2={input1?.currency} prices={prices}>
+          <Rate token1={input0?.currency} token2={input1?.currency}>
             {({ toggleInvert, content, usdPrice }) => (
               <Typography
                 as="button"
@@ -100,8 +100,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
                 weight={600}
                 className="flex items-center gap-1 text-stone-100"
               >
-                {content}{' '}
-                {usdPrice && <span className="font-normal text-stone-300">(${Number(usdPrice).toFixed(2)})</span>}
+                {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
               </Typography>
             )}
           </Rate>

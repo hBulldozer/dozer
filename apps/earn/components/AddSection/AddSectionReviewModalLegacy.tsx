@@ -1,11 +1,13 @@
 import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
 import { Percent } from '@dozer/math'
-import { Button, Dots } from '@dozer/ui'
+import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } from '@dozer/ui'
 import { Approve } from '@dozer/higmi'
 import { FC, ReactNode, useMemo, useState } from 'react'
-import { useSettings, useAccount, useNetwork } from '@dozer/zustand'
+import { useSettings, useAccount, useNetwork, useTrade, TokenBalance } from '@dozer/zustand'
 import { AddSectionReviewModal } from './AddSectionReviewModal'
+import { client as api_client } from '@dozer/api'
+import { api } from '../../utils/api'
 
 interface AddSectionReviewModalLegacyProps {
   poolState: number
@@ -26,167 +28,118 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   children,
   prices,
 }) => {
-  // const deadline = useTransactionDeadline(chainId)
   const [open, setOpen] = useState(false)
-  const { address } = useAccount()
+  const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency } = useTrade()
+  const { address, addNotification, setBalance, balance } = useAccount()
+  const { network } = useNetwork()
+  const [isWritePending, setIsWritePending] = useState<boolean>(false)
 
-  // const [, { createNotification }] = useNotifications(address)
-  const { slippageTolerance } = useSettings()
+  const editBalanceOnAddLiquidity = (amount_in: number, token_in: string, amount_out: number, token_out: string) => {
+    const balance_tokens = balance.map((t) => {
+      return t.token_uuid
+    })
+    if (balance_tokens.includes(token_out))
+      setBalance(
+        balance.map((token: TokenBalance) => {
+          if (token.token_uuid == token_in) return { ...token, token_balance: token.token_balance - amount_in * 100 }
+          else if (token.token_uuid == token_out)
+            return { ...token, token_balance: token.token_balance - amount_out * 100 }
+          else return token
+        })
+      )
+    else {
+      const token_out_balance: TokenBalance = {
+        token_balance: amount_out * 100,
+        token_symbol: otherCurrency?.symbol || 'DZR',
+        token_uuid: token_out,
+      }
+      const new_balance: TokenBalance[] = balance.map((token: TokenBalance) => {
+        if (token.token_uuid == token_in) return { ...token, token_balance: token.token_balance - amount_in * 100 }
+        else return token
+      })
+      new_balance.push(token_out_balance)
+      setBalance(new_balance)
+    }
+  }
 
-  // const onSettled = useCallback(
-  //   (data: SendTransactionResult | undefined) => {
-  //     if (!data || !token0 || !token1) return
+  const mutation = api.getPools.add_liquidity.useMutation({
+    onSuccess: (res) => {
+      console.log(res)
+      if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
+        if (res.hash) {
+          const notificationData: NotificationData = {
+            type: 'swap',
+            chainId: network,
+            summary: {
+              pending: `Waiting for next block`,
+              completed: `Success! Added ${amountSpecified} ${mainCurrency.symbol} and ${outputAmount} ${otherCurrency.symbol} in ${pool.name} pool.`,
+              failed: 'Failed summary',
+              info: `Adding Liquidity in ${pool.name} pool: ${amountSpecified} ${mainCurrency.symbol} and ${outputAmount} ${otherCurrency.symbol}.`,
+            },
+            status: 'pending',
+            txHash: res.hash,
+            groupTimestamp: Math.floor(Date.now() / 1000),
+            timestamp: Math.floor(Date.now() / 1000),
+            promise: new Promise((resolve) => {
+              setTimeout(resolve, 500)
+            }),
+          }
+          editBalanceOnAddLiquidity(amountSpecified, mainCurrency.uuid, outputAmount, otherCurrency.uuid)
+          const notificationGroup: string[] = []
+          notificationGroup.push(JSON.stringify(notificationData))
+          addNotification(notificationGroup)
+          createSuccessToast(notificationData)
+          setOpen(false)
+          setIsWritePending(false)
+        } else {
+          createErrorToast(`${res.error}`, true)
+          setIsWritePending(false)
+          setOpen(false)
+        }
+      }
+    },
+    onError: (error) => {
+      createErrorToast(`Error sending TX. \n${error}`, true)
+      setIsWritePending(false)
+      setOpen(false)
+    },
+  })
+  const onClick = async () => {
+    if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
+      setIsWritePending(true)
+      mutation.mutate({
+        amount_in: amountSpecified,
+        token_in: mainCurrency.uuid,
+        amount_out: outputAmount,
+        ncid: pool.id,
+        token_out: otherCurrency.uuid,
+        address,
+      })
+    }
+  }
 
-  //     const ts = new Date().getTime()
-  //     createNotification({
-  //       type: 'mint',
-  //       chainId,
-  //       txHash: data.hash,
-  //       promise: data.wait(),
-  //       summary: {
-  //         pending: `Adding liquidity to the ${token0.symbol}/${token1.symbol} pair`,
-  //         completed: `Successfully added liquidity to the ${token0.symbol}/${token1.symbol} pair`,
-  //         failed: 'Something went wrong when adding liquidity',
-  //       },
-  //       timestamp: ts,
-  //       groupTimestamp: ts,
-  //     })
-  //   },
-  //   [chainId, createNotification, token0, token1]
-  // )
-
-  // const slippagePercent = useMemo(() => {
-  //   return new Percent(Math.floor(slippageTolerance * 100), 10_000)
-  // }, [slippageTolerance])
-
-  // const [minAmount0, minAmount1] = useMemo(() => {
-  //   return [
-  //     input0 ? (poolState === 0 ? input0 : undefined) : undefined,
-  //     input1 ? (poolState === 0 ? input1 : undefined) : undefined,
-  //   ]
-  // }, [
-  //   poolState,
-  //   input0,
-  //   input1,
-  //   // slippagePercent
-  // ])
-
-  // const prepare = useCallback(
-  //   async (setRequest: Dispatch<SetStateAction<(TransactionRequest & { to: string }) | undefined>>) => {
-  //     try {
-  //       if (
-  //         !token0 ||
-  //         !token1 ||
-  //         !chain?.id ||
-  //         !contract ||
-  //         !input0 ||
-  //         !input1 ||
-  //         !address ||
-  //         !minAmount0 ||
-  //         !minAmount1 ||
-  //         !deadline
-  //       )
-  //         return
-  //       const withNative = token0.isNative || token1.isNative
-
-  //       if (withNative) {
-  //         const value = BigNumber.from((token1.isNative ? input1 : input0).quotient.toString())
-  //         const args = [
-  //           (token1.isNative ? token0 : token1).wrapped.address as Address,
-  //           BigNumber.from((token1.isNative ? input0 : input1).quotient.toString()),
-  //           BigNumber.from((token1.isNative ? minAmount0 : minAmount1).quotient.toString()),
-  //           BigNumber.from((token1.isNative ? minAmount1 : minAmount0).quotient.toString()),
-  //           address,
-  //           BigNumber.from(deadline.toHexString()),
-  //         ] as const
-
-  //         const gasLimit = await contract.estimateGas.addLiquidityETH(...args, {
-  //           value,
-  //         })
-  //         setRequest({
-  //           from: address,
-  //           to: contract.address,
-  //           data: contract.interface.encodeFunctionData('addLiquidityETH', args),
-  //           value,
-  //           gasLimit: calculateGasMargin(gasLimit),
-  //         })
-  //       } else {
-  //         const args = [
-  //           token0.wrapped.address as Address,
-  //           token1.wrapped.address as Address,
-  //           BigNumber.from(input0.quotient.toString()),
-  //           BigNumber.from(input1.quotient.toString()),
-  //           BigNumber.from(minAmount0.quotient.toString()),
-  //           BigNumber.from(minAmount1.quotient.toString()),
-  //           address,
-  //           BigNumber.from(deadline.toHexString()),
-  //         ] as const
-
-  //         const gasLimit = await contract.estimateGas.addLiquidity(...args, {})
-  //         setRequest({
-  //           from: address,
-  //           to: contract.address,
-  //           data: contract.interface.encodeFunctionData('addLiquidity', args),
-  //           gasLimit: calculateGasMargin(gasLimit),
-  //         })
-  //       }
-  //     } catch (e: unknown) {
-  //       //
-  //     }
-  //   },
-  //   [token0, token1, chain?.id, contract, input0, input1, address, minAmount0, minAmount1, deadline]
-  // )
-
-  // const { sendTransaction, isLoading: isWritePending } = useSendTransaction({
-  //   chainId,
-  //   prepare,
-  //   onSettled,
-  //   onSuccess: () => setOpen(false),
-  // })
-  const isWritePending = false
-
-  return useMemo(
-    () => (
-      <>
-        {children({ isWritePending, setOpen })}
-        <AddSectionReviewModal
-          chainId={chainId}
-          input0={input0}
-          input1={input1}
-          open={open}
-          setOpen={setOpen}
-          prices={prices}
+  return (
+    <>
+      {children({ isWritePending, setOpen })}
+      <AddSectionReviewModal
+        chainId={chainId}
+        input0={input0}
+        input1={input1}
+        open={open}
+        setOpen={setOpen}
+        prices={prices}
+      >
+        <Button
+          size="md"
+          disabled={isWritePending}
+          fullWidth
+          onClick={() => {
+            onClick()
+          }}
         >
-          <Approve
-            onSuccess={() => {
-              console.log('success')
-            }}
-            className="flex-grow !justify-end"
-            components={
-              <Approve.Components>
-                <Approve.Token size="md" className="whitespace-nowrap" fullWidth amount={input0} address={address} />
-                <Approve.Token size="md" className="whitespace-nowrap" fullWidth amount={input1} address={address} />
-              </Approve.Components>
-            }
-            render={({ approved }) => {
-              // console.log({ approved, isWritePending })
-              return (
-                <Button
-                  size="md"
-                  disabled={!approved}
-                  fullWidth
-                  onClick={() => {
-                    console.log('click')
-                  }}
-                >
-                  {<Dots>Confirm transaction</Dots>}
-                </Button>
-              )
-            }}
-          />
-        </AddSectionReviewModal>
-      </>
-    ),
-    [chainId, children, input0, input1, open, address, isWritePending, prices]
+          {isWritePending ? <Dots>Confirm transaction</Dots> : <>Add Liquidity</>}
+        </Button>
+      </AddSectionReviewModal>
+    </>
   )
 }

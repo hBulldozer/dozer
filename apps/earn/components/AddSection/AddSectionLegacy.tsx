@@ -7,14 +7,10 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { AddSectionReviewModalLegacy } from './AddSectionReviewModalLegacy'
 import { AddSectionWidget } from './AddSectionWidget'
 import { Pair, dbPoolWithTokens, toToken } from '@dozer/api'
-import { client as api_client } from '@dozer/api'
 import { TradeType, useTrade } from '@dozer/zustand'
+import { api } from '../../utils/api'
 
-export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number }; client: typeof api_client }> = ({
-  pool,
-  prices,
-  client,
-}) => {
+export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number } }> = ({ pool, prices }) => {
   const isMounted = useIsMounted()
   const token0 = toToken(pool.token0)
   const token1 = toToken(pool.token1)
@@ -22,7 +18,7 @@ export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number 
   const [input1, setInput1] = useState<string>('')
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
   const trade = useTrade()
-  const utils = client.useUtils()
+  const utils = api.useUtils()
   const [fetchLoading, setFetchLoading] = useState<boolean>(false)
 
   // const {
@@ -88,6 +84,7 @@ export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number 
           trade.setAmountSpecified(Number(input0) || 0)
           trade.setOutputAmount(Number(input1) || 0)
           trade.setTradeType(tradeType)
+          trade.setPool(pool)
         })
         // make sure to catch any error
         .catch((err) => {

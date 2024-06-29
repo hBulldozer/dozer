@@ -92,7 +92,13 @@ export class LiquidityPool extends NanoContract {
         address: address,
         changeAddress: address,
       },
-      { type: 'deposit', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
+      {
+        type: 'deposit',
+        token: token_out,
+        amount: Math.ceil(amount_out * 100),
+        address: address,
+        changeAddress: address,
+      },
     ]
     const args: NCArgs[] = []
     // console.log('actions', actions)

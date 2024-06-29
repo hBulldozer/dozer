@@ -9,6 +9,7 @@ import { AddSectionLegacy, AddSectionMyPosition, Layout } from '../../components
 
 import { RouterOutputs, api } from '../../utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
 type PoolsOutputArray = RouterOutputs['getPools']['all']
 
@@ -45,10 +46,11 @@ const Add: NextPage = () => {
     <>
       {/* <PoolPositionStakedProvider pair={pair}> */}
       <Layout breadcrumbs={LINKS(pair)}>
+        <BlockTracker client={api} />
         <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
           <div className="hidden md:block" />
           <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-            <AddSectionLegacy pool={pair} prices={prices} client={api} />
+            <AddSectionLegacy pool={pair} prices={prices} />
             {/* <AddSectionStake poolAddress={pair.id} /> */}
             <Container className="flex justify-center">
               <Link.External

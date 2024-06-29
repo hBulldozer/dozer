@@ -90,8 +90,6 @@ const Pool = () => {
 
   const { data: poolInfo } = api.getProfile.poolInfo.useQuery({ address: address, contractId: pair.id })
 
-  console.log(poolInfo)
-
   return (
     <PoolPositionProvider pair={pair} prices={prices}>
       <>
