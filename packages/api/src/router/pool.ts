@@ -278,17 +278,34 @@ export const poolRouter = createTRPCRouter({
     .input(
       z.object({
         ncid: z.string(),
-        token_in: z.string(),
-        amount_in: z.number(),
-        token_out: z.string(),
-        amount_out: z.number(),
+        token_a: z.string(),
+        amount_a: z.number(),
+        token_b: z.string(),
+        amount_b: z.number(),
         address: z.string(),
       })
     )
     .mutation(async ({ input }) => {
-      const { ncid, token_in, amount_in, token_out, amount_out, address } = input
-      const pool = new LiquidityPool(token_in, token_out, 5, ncid)
-      const response = await pool.add_liquidity(token_in, amount_in, token_out, amount_out, address, 'users')
+      const { ncid, token_a, amount_a, token_b, amount_b, address } = input
+      const pool = new LiquidityPool(token_a, token_b, 5, ncid)
+      const response = await pool.add_liquidity(token_a, amount_a, token_b, amount_b, address, 'users')
+      return response
+    }),
+  remove_liquidity: procedure
+    .input(
+      z.object({
+        ncid: z.string(),
+        token_a: z.string(),
+        amount_a: z.number(),
+        token_b: z.string(),
+        amount_b: z.number(),
+        address: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { ncid, token_a, amount_a, token_b, amount_b, address } = input
+      const pool = new LiquidityPool(token_a, token_b, 5, ncid)
+      const response = await pool.remove_liquidity(token_a, amount_a, token_b, amount_b, address, 'users')
       return response
     }),
   getTxStatus: procedure

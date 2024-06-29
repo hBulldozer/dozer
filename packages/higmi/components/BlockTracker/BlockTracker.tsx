@@ -30,6 +30,7 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
           utils.getPrices.all.invalidate()
           utils.getPrices.all24h.invalidate()
           utils.getProfile.balance.invalidate()
+          utils.getProfile.poolInfo.invalidate()
         }
       } catch (error) {
         console.error('Error fetching data:', error)

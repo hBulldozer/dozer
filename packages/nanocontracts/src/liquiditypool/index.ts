@@ -77,25 +77,25 @@ export class LiquidityPool extends NanoContract {
   }
 
   public async add_liquidity(
-    token_in: string,
-    amount_in: number,
-    token_out: string,
-    amount_out: number,
+    token_a: string,
+    amount_a: number,
+    token_b: string,
+    amount_b: number,
     address: string,
     wallet?: string
   ) {
     const actions: NCAction[] = [
       {
         type: 'deposit',
-        token: token_in,
-        amount: Math.ceil(amount_in * 100),
+        token: token_a,
+        amount: Math.ceil(amount_a * 100),
         address: address,
         changeAddress: address,
       },
       {
         type: 'deposit',
-        token: token_out,
-        amount: Math.ceil(amount_out * 100),
+        token: token_b,
+        amount: Math.ceil(amount_b * 100),
         address: address,
         changeAddress: address,
       },
@@ -103,6 +103,34 @@ export class LiquidityPool extends NanoContract {
     const args: NCArgs[] = []
     // console.log('actions', actions)
     const response = await this.execute(address, 'add_liquidity', actions, args, wallet)
+    return response
+  }
+
+  public async remove_liquidity(
+    token_a: string,
+    amount_a: number,
+    token_b: string,
+    amount_b: number,
+    address: string,
+    wallet?: string
+  ) {
+    const actions: NCAction[] = [
+      {
+        type: 'withdrawal',
+        token: token_a,
+        amount: Math.ceil(amount_a * 100),
+        address: address,
+      },
+      {
+        type: 'withdrawal',
+        token: token_b,
+        amount: Math.ceil(amount_b * 100),
+        address: address,
+      },
+    ]
+    const args: NCArgs[] = []
+    // console.log('actions', actions)
+    const response = await this.execute(address, 'remove_liquidity', actions, args, wallet)
     return response
   }
 }

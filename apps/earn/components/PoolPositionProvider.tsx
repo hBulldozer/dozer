@@ -16,6 +16,7 @@ interface PoolPositionContext {
   value1: number
   max_withdraw_a: Amount<Type> | undefined
   max_withdraw_b: Amount<Type> | undefined
+  liquidity: number | undefined
   isLoading: boolean
   isError: boolean
 }
@@ -39,8 +40,6 @@ export const PoolPositionProvider: FC<{
     isError,
   } = api.getProfile.poolInfo.useQuery({ address: address, contractId: pair.id })
 
-  console.log('poolInfo', poolInfo)
-
   const { liquidity, max_withdraw_a, max_withdraw_b } = poolInfo || {
     liquidity: undefined,
     max_withdraw_a: undefined,
@@ -48,10 +47,10 @@ export const PoolPositionProvider: FC<{
   }
 
   const _max_withdraw_a: Amount<Type> | undefined = max_withdraw_a
-    ? Amount.fromRawAmount(token0, max_withdraw_a)
+    ? Amount.fromFractionalAmount(token0, max_withdraw_a * 100, 100)
     : undefined
   const _max_withdraw_b: Amount<Type> | undefined = max_withdraw_b
-    ? Amount.fromRawAmount(token1, max_withdraw_b)
+    ? Amount.fromFractionalAmount(token1, max_withdraw_b * 100, 100)
     : undefined
 
   const value0 = useMemo(() => {
@@ -65,6 +64,7 @@ export const PoolPositionProvider: FC<{
     <Context.Provider
       value={useMemo(
         () => ({
+          liquidity,
           value0,
           value1,
           max_withdraw_a: _max_withdraw_a,
@@ -72,7 +72,7 @@ export const PoolPositionProvider: FC<{
           isLoading,
           isError,
         }),
-        [isError, isLoading, _max_withdraw_a, _max_withdraw_b, value0, value1]
+        [liquidity, isError, isLoading, _max_withdraw_a, _max_withdraw_b, value0, value1]
       )}
     >
       {children}

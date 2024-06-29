@@ -111,11 +111,11 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
       setIsWritePending(true)
       mutation.mutate({
-        amount_in: amountSpecified,
-        token_in: mainCurrency.uuid,
-        amount_out: outputAmount * (1 - slippageTolerance),
+        amount_a: amountSpecified,
+        token_a: mainCurrency.uuid,
+        amount_b: outputAmount * (1 - slippageTolerance),
         ncid: pool.id,
-        token_out: otherCurrency.uuid,
+        token_b: otherCurrency.uuid,
         address,
       })
     }
