@@ -47,7 +47,11 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   const token0 = toToken(pair.token0)
   const token1 = toToken(pair.token1)
 
-  const liquidityAmount = Amount.fromFractionalAmount(token0, Number(liquidity?.toFixed(5)) * 100000 || 0, 100000)
+  const liquidityAmount = Amount.fromFractionalAmount(
+    token0,
+    Math.floor(Number(liquidity?.toFixed(5)) * 100000) || 0,
+    100000
+  )
 
   const currencyAToRemove = useMemo(
     () =>
