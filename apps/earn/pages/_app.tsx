@@ -1,6 +1,6 @@
 import '@dozer/ui/index.css'
 
-import { App, LoadingOverlay, ThemeProvider } from '@dozer/ui'
+import { App, LoadingOverlay, ThemeProvider, ToastContainer } from '@dozer/ui'
 // import { client } from '@dozer/wagmi'
 import { Analytics } from '@vercel/analytics/react'
 import { Header } from '../components'
@@ -67,7 +67,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
           {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
           <Component {...pageProps} />
           <App.Footer />
-          {/* <ToastContainer className="mt-[50px]" /> */}
+          <ToastContainer className="mt-[50px]" />
         </App.Shell>
       </ThemeProvider>
       <Analytics />
