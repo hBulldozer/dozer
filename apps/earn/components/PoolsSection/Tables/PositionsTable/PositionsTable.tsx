@@ -11,6 +11,7 @@ import { PAGE_SIZE } from '../contants'
 import { ChainId } from '@dozer/chain'
 import { Pair } from '@dozer/api'
 import { api } from '../../../../utils/api'
+import { usePoolPosition } from '../../../PoolPositionProvider'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -18,7 +19,7 @@ const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, VALUE_COLUMN, APR_COLUMN]
 // VOLUME_COLUMN
 
 export const PositionsTable: FC = () => {
-  const { address, balance } = useAccount()
+  const { address } = useAccount()
   const { isSm } = useBreakpoint('sm')
   const { isMd } = useBreakpoint('md')
 
@@ -32,20 +33,21 @@ export const PositionsTable: FC = () => {
   const [rendNetwork, setRendNetwork] = useState<number>(ChainId.HATHOR)
   const { network } = useNetwork()
 
-  const userTokens = balance.map((token) => {
-    return token.token_uuid
-  })
-
   useEffect(() => {
     setRendNetwork(network)
   }, [network])
 
   const { data: pools, isLoading } = api.getPools.all.useQuery()
-  const _pairs_array: Pair[] = pools
-    ? pools.map((pool) => {
-        return pool
+  const _pairs_array: Pair[] = []
+  if (pools)
+    pools.map((pool) => {
+      const { data: userInfo } = api.getProfile.poolInfo.useQuery({
+        contractId: pool.id,
+        address,
       })
-    : []
+      if (userInfo && userInfo.liquidity > 0) _pairs_array.push(pool)
+    })
+
   const pairs_array = _pairs_array?.filter((pair: Pair) => {
     return pair.chainId == rendNetwork
   })

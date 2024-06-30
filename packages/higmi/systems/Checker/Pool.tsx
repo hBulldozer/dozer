@@ -22,12 +22,6 @@ export const Pool: FC<PoolProps> = ({
   size,
 }): ReactElement<any, any> | null => {
   return useMemo(() => {
-    if (!token0 || !token1)
-      return (
-        <Button disabled={true} className={className} variant={variant} as={as} fullWidth={fullWidth} size={size}>
-          Choose Tokens
-        </Button>
-      )
     if (!poolExist)
       return (
         <Button disabled={true} className={className} variant={variant} as={as} fullWidth={fullWidth} size={size}>
