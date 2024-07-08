@@ -80,7 +80,7 @@ const fetchAndProcessPoolData = async (
     volumeUSD: volumeUSD,
     feeUSD: feeUSD,
     swapFee: fee, // !!TODO remove hardcoded
-    apr: 100 * Math.pow(1 + (volume1d * fee) / liquidityUSD, 365) - 1,
+    apr: Math.pow(1 + (volume1d * fee) / liquidityUSD / 100, 365) - 1,
     token0: token0,
     token1: token1,
     reserve0: reserve0 / 100,

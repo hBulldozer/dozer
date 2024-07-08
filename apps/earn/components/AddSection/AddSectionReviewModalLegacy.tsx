@@ -85,7 +85,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
           editBalanceOnAddLiquidity(
             amountSpecified,
             mainCurrency.uuid,
-            outputAmount * (1 - slippageTolerance),
+            outputAmount * (1 + slippageTolerance),
             otherCurrency.uuid
           )
           const notificationGroup: string[] = []
@@ -113,7 +113,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
       mutation.mutate({
         amount_a: amountSpecified,
         token_a: mainCurrency.uuid,
-        amount_b: outputAmount * (1 - slippageTolerance),
+        amount_b: outputAmount * (1 + slippageTolerance),
         ncid: pool.id,
         token_b: otherCurrency.uuid,
         address,

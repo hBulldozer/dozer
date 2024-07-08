@@ -73,7 +73,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {(Number(input1?.multiply(100).toFixed(2)) * (1 - slippageTolerance)).toFixed(2)}{' '}
+                  {(Number(input1?.multiply(100).toFixed(2)) * (1 + slippageTolerance)).toFixed(2)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input1 && (
@@ -89,7 +89,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
               {price1 && input1
-                ? `$${(Number(price1 * Number(input1.multiply(100).toFixed(2))) * (1 - slippageTolerance)).toFixed(2)}`
+                ? `$${(Number(price1 * Number(input1.multiply(100).toFixed(2))) * (1 + slippageTolerance)).toFixed(2)}`
                 : '-'}
             </Typography>
           </div>
