@@ -1,5 +1,5 @@
 import { useInterval } from '@dozer/hooks'
-import formatDistanceToNow from 'date-fns/formatDistanceToNow'
+import { formatDistanceToNow } from 'date-fns/formatDistanceToNow'
 import React, { FC, useState } from 'react'
 
 export const TimeAgo: FC<{ date: Date }> = ({ date }) => {

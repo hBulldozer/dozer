@@ -64,7 +64,9 @@ export const SlippageToleranceDisclosure: FC = () => {
                       </Typography>
                     </div>
                   }
-                />
+                >
+                  <></>
+                </Tooltip>
               </div>
               <div className="flex gap-1">
                 <Typography variant="sm" weight={500} className="group-hover:text-stone-200 text-stone-400">

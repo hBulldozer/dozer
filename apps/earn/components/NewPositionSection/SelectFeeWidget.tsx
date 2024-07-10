@@ -46,7 +46,9 @@ export const SelectFeeWidget: FC<SelectFeeWidgetProps> = memo(({ fee, setFee }) 
                     This network does not allow changing the default fee of 0.3%
                   </Typography>
                 }
-              ></Tooltip>
+              >
+                <></>
+              </Tooltip>
               <Transition
                 unmount={false}
                 className="transition-[max-height] overflow-hidden"

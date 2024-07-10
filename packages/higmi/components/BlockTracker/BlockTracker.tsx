@@ -60,7 +60,9 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
             </span>
           }
           panel={<div className="text-xs rounded-2xl text-stone-300">Latest synced block</div>}
-        />
+        >
+          <></>
+        </Tooltip>
       </Link.External>
     </div>
   )

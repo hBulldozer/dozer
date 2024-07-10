@@ -37,7 +37,9 @@ export const ExpertMode = () => {
                   trades. ONLY use if you are an advanced user and know what you are doing. Use at your own risk.
                 </Typography>
               }
-            />
+            >
+              <> </>
+            </Tooltip>
           </div>
           <div className="flex gap-1">
             <Switch checked={expertMode} onChange={() => updateExpertMode(!expertMode)} size="sm" />

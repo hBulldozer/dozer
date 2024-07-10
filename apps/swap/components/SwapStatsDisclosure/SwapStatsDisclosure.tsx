@@ -75,7 +75,9 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                       <Tooltip
                         panel={<div className="grid grid-cols-2 gap-1">{stats}</div>}
                         button={<InformationCircleIcon width={16} height={16} />}
-                      />{' '}
+                      >
+                        <></>
+                      </Tooltip>{' '}
                       {content}{' '}
                       {usdPrice && trade.amountSpecified ? (
                         <span className="font-medium text-stone-500">(${Number(usdPrice).toFixed(2)})</span>

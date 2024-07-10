@@ -147,7 +147,9 @@ export const GenericTable = <T extends { id: string }>({
                         </Table.tr>
                       }
                       panel={<HoverElement row={row.original} />}
-                    />
+                    >
+                      <></>
+                    </Tooltip>
                   )
                 }
 
