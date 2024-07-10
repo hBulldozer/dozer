@@ -1,29 +1,14 @@
 {
   "name": "@dozer/zustand",
-  "version": "0.0.0",
-  "private": true,
   "description": "Zustand Stores",
-  "keywords": [
-    "zustand",
-    "localstorage",
-    "local storage"
-  ],
-  "license": "MIT",
+  "version": "0.0.0",
   "author": "Dozer",
-  "main": "./index.ts",
-  "source": "./index.ts",
-  "scripts": {
-    "check": "tsc --pretty --noEmit",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "lint": "TIMING=1 eslint ./**/*.ts* --fix",
-    "test": "jest --passWithNoTests"
-  },
   "dependencies": {
-    "@dozer/react-query": "workspace:*",
+    "@dozer/api": "workspace:*",
     "@dozer/chain": "workspace:*",
     "@dozer/currency": "workspace:*",
     "@dozer/math": "workspace:*",
-    "@dozer/api": "workspace:*"
+    "@dozer/react-query": "workspace:*"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
@@ -39,12 +24,27 @@
     "fast-json-stable-stringify": "2.1.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "zustand": "4.4.7",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "zustand": "4.4.7"
   },
+  "keywords": [
+    "local storage",
+    "localstorage",
+    "zustand"
+  ],
+  "license": "MIT",
+  "main": "./index.ts",
   "peerDependencies": {
-    "zustand": "4.4.7",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
-  }
+    "react-dom": "18.2.0",
+    "zustand": "4.4.7"
+  },
+  "private": true,
+  "scripts": {
+    "check": "tsc --pretty --noEmit",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "lint": "TIMING=1 eslint ./**/*.ts* --fix",
+    "test": "jest --passWithNoTests"
+  },
+  "source": "./index.ts"
 }

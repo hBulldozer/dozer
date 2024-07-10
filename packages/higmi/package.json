@@ -1,37 +1,23 @@
 {
   "name": "@dozer/higmi",
-  "version": "0.0.0",
-  "private": true,
   "description": "Dozer Higmi",
-  "keywords": [
-    "Dozer",
-    "higmi"
-  ],
-  "license": "MIT",
+  "version": "0.0.0",
   "author": "Dozer",
-  "source": "./index.ts",
-  "scripts": {
-    "check": "tsc --pretty --noEmit",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "generate": "typechain --target ethers-v5 --out-dir typechain './node_modules/@uniswap/v3-periphery/artifacts/contracts/lens/UniswapInterfaceMulticall.sol/UniswapInterfaceMulticall.json'",
-    "lint": "TIMING=1 eslint . --fix",
-    "test": "jest --passWithNoTests"
-  },
   "dependencies": {
-    "@headlessui/react": "^1.7.3",
-    "@heroicons/react": "^1.0.6",
-    "@dozer/hooks": "workspace:*",
+    "@dozer/api": "workspace:*",
+    "@dozer/chain": "workspace:*",
     "@dozer/currency": "workspace:*",
     "@dozer/format": "workspace:*",
+    "@dozer/hooks": "workspace:*",
     "@dozer/math": "workspace:*",
-    "@dozer/chain": "workspace:*",
-    "@dozer/api": "workspace:*",
-    "@dozer/zustand": "workspace:*",
     "@dozer/react-query": "workspace:*",
     "@dozer/ui": "workspace:*",
-    "superjson": "1.9.1",
+    "@dozer/zustand": "workspace:*",
+    "@headlessui/react": "^1.7.3",
+    "@heroicons/react": "^1.0.6",
     "@trpc/client": "^10.45.0",
-    "@trpc/next": "^10.45.0"
+    "@trpc/next": "^10.45.0",
+    "superjson": "1.9.1"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
@@ -49,11 +35,25 @@
     "typechain": "^8.3.2",
     "typescript": "^5.3.3"
   },
+  "keywords": [
+    "Dozer",
+    "higmi"
+  ],
+  "license": "MIT",
+  "optionalDependencies": {
+    "next": "13.1.1"
+  },
   "peerDependencies": {
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
-  "optionalDependencies": {
-    "next": "13.1.1"
-  }
+  "private": true,
+  "scripts": {
+    "check": "tsc --pretty --noEmit",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "generate": "typechain --target ethers-v5 --out-dir typechain './node_modules/@uniswap/v3-periphery/artifacts/contracts/lens/UniswapInterfaceMulticall.sol/UniswapInterfaceMulticall.json'",
+    "lint": "TIMING=1 eslint . --fix",
+    "test": "jest --passWithNoTests"
+  },
+  "source": "./index.ts"
 }

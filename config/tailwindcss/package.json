@@ -1,33 +1,7 @@
 {
   "name": "@dozer/tailwindcss-config",
-  "version": "0.0.0",
-  "private": true,
   "description": "Dozer Tailwind Config",
-  "keywords": [
-    "dozer",
-    "tailwindcss",
-    "config"
-  ],
-  "homepage": "https://dozer.finance",
-  "repository": {
-    "type": "git",
-    "directory": "packages/config/tailwindcss"
-  },
-  "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "source": "src/index.ts",
-  "typings": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
-  },
-  "jest": {
-    "preset": "@dozer/jest-config/node"
-  },
+  "version": "0.0.0",
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.7",
@@ -43,7 +17,33 @@
     "tsup": "8.0.1",
     "typescript": "^5.3.3"
   },
+  "files": [
+    "dist"
+  ],
+  "homepage": "https://dozer.finance",
+  "jest": {
+    "preset": "@dozer/jest-config/node"
+  },
+  "keywords": [
+    "config",
+    "dozer",
+    "tailwindcss"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "peerDependencies": {
     "tailwindcss": "3.2.4"
-  }
+  },
+  "private": true,
+  "repository": {
+    "type": "git",
+    "directory": "packages/config/tailwindcss"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
+  },
+  "source": "src/index.ts",
+  "typings": "dist/index.d.ts"
 }

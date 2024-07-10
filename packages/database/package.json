@@ -1,47 +1,7 @@
 {
   "name": "@dozer/database",
-  "version": "0.0.0",
-  "private": true,
   "description": "Dozer Database",
-  "keywords": [
-    "dozer",
-    "database"
-  ],
-  "repository": {
-    "type": "git",
-    "directory": "packages/database"
-  },
-  "license": "MIT",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.js",
-  "module": "dist/index.js",
-  "source": "src/index.ts",
-  "typings": "dist/index.d.ts",
-  "files": [
-    "dist/**"
-  ],
-  "scripts": {
-    "prebuild": "npm run db:generate",
-    "build": "tsc",
-    "check": "tsc --pretty --noEmit",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "db:generate": "prisma generate",
-    "db:pull": "prisma db pull",
-    "db:push": "prisma db push --skip-generate",
-    "predev": "npm run db:generate",
-    "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
-    "generate": "prisma generate",
-    "postinstall": "prisma generate",
-    "lint": "TIMING=1 eslint src --fix",
-    "prepublishOnly": "pnpm build",
-    "studio": "prisma studio",
-    "test": "jest --passWithNoTests",
-    "seed": "dotenv -- tsx src/seed_db.ts"
-  },
-  "jest": {
-    "preset": "@dozer/jest-config/node"
-  },
+  "version": "0.0.0",
   "dependencies": {
     "@prisma/client": "5.14.0",
     "ioredis": "5.3.2",
@@ -61,5 +21,45 @@
     "tsup": "8.0.1",
     "tsx": "^4.7.2",
     "typescript": "^5.3.3"
-  }
+  },
+  "files": [
+    "dist/**"
+  ],
+  "jest": {
+    "preset": "@dozer/jest-config/node"
+  },
+  "keywords": [
+    "database",
+    "dozer"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "directory": "packages/database"
+  },
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --pretty --noEmit",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "db:generate": "prisma generate",
+    "db:pull": "prisma db pull",
+    "db:push": "prisma db push --skip-generate",
+    "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
+    "generate": "prisma generate",
+    "lint": "TIMING=1 eslint src --fix",
+    "postinstall": "prisma generate",
+    "prebuild": "npm run db:generate",
+    "predev": "npm run db:generate",
+    "prepublishOnly": "pnpm build",
+    "seed": "dotenv -- tsx src/seed_db.ts",
+    "studio": "prisma studio",
+    "test": "jest --passWithNoTests"
+  },
+  "source": "src/index.ts",
+  "type": "module",
+  "types": "dist/index.js",
+  "typings": "dist/index.d.ts"
 }

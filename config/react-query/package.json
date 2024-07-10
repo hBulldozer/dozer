@@ -1,37 +1,8 @@
 {
   "name": "@dozer/react-query-config",
-  "version": "0.1.0",
   "description": "Dozer React Query Config",
-  "keywords": [
-    "dozer",
-    "wagmi",
-    "config"
-  ],
-  "homepage": "https://dozer.finance",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dozer/dozer.git",
-    "directory": "packages/config/react-query"
-  },
-  "license": "MIT",
+  "version": "0.1.0",
   "author": "Dozer",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "source": "src/index.ts",
-  "typings": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts",
-    "check": "tsc --pretty --noEmit",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "lint": "TIMING=1 eslint ./**/*.ts* --fix",
-    "test": "jest --passWithNoTests"
-  },
-  "jest": {
-    "preset": "@dozer/jest-config/node"
-  },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
     "@dozer/jest-config": "workspace:*",
@@ -40,8 +11,37 @@
     "tsup": "8.0.1",
     "typescript": "^5.3.3"
   },
+  "files": [
+    "dist"
+  ],
+  "homepage": "https://dozer.finance",
+  "jest": {
+    "preset": "@dozer/jest-config/node"
+  },
+  "keywords": [
+    "config",
+    "dozer",
+    "wagmi"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "peerDependencies": {
     "@tanstack/react-query": "4.35.7",
     "@tanstack/react-query-devtools": "4.20.4"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dozer/dozer.git",
+    "directory": "packages/config/react-query"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "check": "tsc --pretty --noEmit",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "lint": "TIMING=1 eslint ./**/*.ts* --fix",
+    "test": "jest --passWithNoTests"
+  },
+  "source": "src/index.ts",
+  "typings": "dist/index.d.ts"
 }

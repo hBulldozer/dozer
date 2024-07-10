@@ -1,21 +1,7 @@
 {
   "name": "@dozer/eslint-config",
-  "version": "0.1.1",
   "description": "Dozer Config",
-  "keywords": [
-    "dozer",
-    "config",
-    "eslint"
-  ],
-  "license": "MIT",
-  "main": "index.js",
-  "files": [
-    "index.js",
-    "base/index.js",
-    "hardhat/index.js",
-    "nextjs/index.js",
-    "react/index.js"
-  ],
+  "version": "0.1.1",
   "dependencies": {
     "eslint-config-next": "*",
     "eslint-config-prettier": "*",
@@ -36,6 +22,20 @@
     "eslint-plugin-testing-library": "*",
     "eslint-plugin-unused-imports": "*"
   },
+  "files": [
+    "index.js",
+    "base/index.js",
+    "hardhat/index.js",
+    "nextjs/index.js",
+    "react/index.js"
+  ],
+  "keywords": [
+    "config",
+    "dozer",
+    "eslint"
+  ],
+  "license": "MIT",
+  "main": "index.js",
   "peerDependencies": {
     "eslint": "*",
     "eslint-config-next": "*",

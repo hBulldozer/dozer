@@ -1,31 +1,8 @@
 {
   "name": "@dozer/chain",
-  "version": "0.1.0",
   "description": "Dozer Chain",
-  "keywords": [
-    "dozer",
-    "chain"
-  ],
-  "license": "MIT",
+  "version": "0.1.0",
   "author": "Dozer",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "source": "./index.ts",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsup index.ts --format esm,cjs --dts",
-    "check": "tsc --pretty --noEmit",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "dev": "tsup index.ts --format esm,cjs --watch --dts",
-    "lint": "TIMING=1 eslint ./index.ts --fix",
-    "test": "jest --passWithNoTests"
-  },
-  "jest": {
-    "preset": "@dozer/jest-config/node"
-  },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
     "@dozer/jest-config": "workspace:*",
@@ -38,5 +15,28 @@
     "node-fetch": "^3.3.2",
     "tsup": "8.0.1",
     "typescript": "^5.3.3"
-  }
+  },
+  "files": [
+    "dist"
+  ],
+  "jest": {
+    "preset": "@dozer/jest-config/node"
+  },
+  "keywords": [
+    "chain",
+    "dozer"
+  ],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "scripts": {
+    "build": "tsup index.ts --format esm,cjs --dts",
+    "check": "tsc --pretty --noEmit",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "dev": "tsup index.ts --format esm,cjs --watch --dts",
+    "lint": "TIMING=1 eslint ./index.ts --fix",
+    "test": "jest --passWithNoTests"
+  },
+  "source": "./index.ts",
+  "types": "./dist/index.d.ts"
 }

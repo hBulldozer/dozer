@@ -1,16 +1,8 @@
 {
   "name": "earn",
   "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "build": "next build",
-    "check": "tsc --pretty --noEmit",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf .next && rm -rf .swc",
-    "dev": "next dev --port 9002",
-    "lint": "next lint",
-    "start": "next start"
-  },
   "dependencies": {
+    "@dozer/api": "workspace:*",
     "@dozer/chain": "workspace:*",
     "@dozer/currency": "workspace:*",
     "@dozer/database": "workspace:*",
@@ -20,7 +12,6 @@
     "@dozer/math": "workspace:*",
     "@dozer/react-query": "workspace:*",
     "@dozer/ui": "workspace:*",
-    "@dozer/api": "workspace:*",
     "@dozer/zustand": "workspace:*",
     "@headlessui/react": "^1.7.3",
     "@heroicons/react": "^1.0.6",
@@ -67,5 +58,14 @@
     "postcss": "8.4.32",
     "tailwindcss": "3.2.4",
     "typescript": "^5.3.3"
+  },
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "check": "tsc --pretty --noEmit",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf .next && rm -rf .swc",
+    "dev": "next dev --port 9002",
+    "lint": "next lint",
+    "start": "next start"
   }
 }

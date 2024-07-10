@@ -1,27 +1,13 @@
 {
   "name": "@dozer/react-query",
-  "version": "0.0.0",
-  "private": true,
   "description": "Dozer React Query",
-  "keywords": [
-    "dozer",
-    "react",
-    "query"
-  ],
-  "license": "MIT",
+  "version": "0.0.0",
   "author": "Dozer",
-  "sideEffects": false,
-  "scripts": {
-    "check": "tsc --pretty --noEmit",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "lint": "TIMING=1 eslint ./**/*.ts* --fix",
-    "test": "jest --passWithNoTests"
-  },
   "dependencies": {
+    "@dozer/chain": "workspace:*",
     "@tanstack/react-query": "4.35.7",
     "@tanstack/react-query-devtools": "4.20.4",
-    "@tanstack/react-query-persist-client": "4.20.4",
-    "@dozer/chain": "workspace:*"
+    "@tanstack/react-query-persist-client": "4.20.4"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
@@ -38,9 +24,23 @@
     "tsup": "8.0.1",
     "typescript": "^5.3.3"
   },
+  "keywords": [
+    "dozer",
+    "query",
+    "react"
+  ],
+  "license": "MIT",
   "peerDependencies": {
     "next": "13.1.1",
     "react": "18.2.0",
     "react-dom": "18.2.0"
-  }
+  },
+  "private": true,
+  "scripts": {
+    "check": "tsc --pretty --noEmit",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "lint": "TIMING=1 eslint ./**/*.ts* --fix",
+    "test": "jest --passWithNoTests"
+  },
+  "sideEffects": false
 }

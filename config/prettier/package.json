@@ -1,38 +1,7 @@
 {
   "name": "@dozer/prettier-config",
-  "version": "0.1.1",
   "description": "Dozer Prettier Config",
-  "keywords": [
-    "dozer",
-    "config",
-    "prettier"
-  ],
-  "homepage": "https://dozer.finance",
-  "repository": {
-    "type": "git",
-    "directory": "packages/config/prettier"
-  },
-  "license": "MIT",
-  "sideEffects": false,
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "source": "src/index.ts",
-  "typings": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts",
-    "build2": "tsup src/index.ts --format esm,cjs --dts --external prettier,prettier-plugin-solidity,prettier-plugin-tailwindcss",
-    "check": "tsc --pretty --noEmit",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "postinstall": "pnpm build",
-    "lint": "TIMING=1 eslint ./**/*.ts* --fix",
-    "test": "jest --passWithNoTests"
-  },
-  "jest": {
-    "preset": "@dozer/jest-config/node"
-  },
+  "version": "0.1.1",
   "devDependencies": {
     "@dozer/typescript-config": "workspace:*",
     "@types/prettier": "2.7.1",
@@ -42,14 +11,45 @@
     "tsup": "8.0.1",
     "typescript": "^5.3.3"
   },
-  "peerDependencies": {
-    "prettier": "*"
+  "files": [
+    "dist"
+  ],
+  "homepage": "https://dozer.finance",
+  "jest": {
+    "preset": "@dozer/jest-config/node"
   },
+  "keywords": [
+    "config",
+    "dozer",
+    "prettier"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "optionalDependencies": {
     "prettier-plugin-solidity": "*",
     "prettier-plugin-tailwindcss": "*"
   },
+  "peerDependencies": {
+    "prettier": "*"
+  },
+  "repository": {
+    "type": "git",
+    "directory": "packages/config/prettier"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "build2": "tsup src/index.ts --format esm,cjs --dts --external prettier,prettier-plugin-solidity,prettier-plugin-tailwindcss",
+    "check": "tsc --pretty --noEmit",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "lint": "TIMING=1 eslint ./**/*.ts* --fix",
+    "postinstall": "pnpm build",
+    "test": "jest --passWithNoTests"
+  },
+  "sideEffects": false,
+  "source": "src/index.ts",
   "typescript": {
     "definition": "dist/index.d.ts"
-  }
+  },
+  "typings": "dist/index.d.ts"
 }
