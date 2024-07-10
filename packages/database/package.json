@@ -52,14 +52,14 @@
     "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
-    "@types/jest": "^29.2.0",
-    "@types/node": "^18.0.0",
+    "@types/jest": "^29.5.11",
+    "@types/node": "20.8.0",
     "dotenv": "16.3.1",
-    "eslint": "8.56.0",
+    "eslint": "*",
     "jest": "29.7.0",
     "prisma": "5.14.0",
     "tsup": "8.0.1",
     "tsx": "^4.7.2",
-    "typescript": "5.3.3"
+    "typescript": "^5.3.3"
   }
 }

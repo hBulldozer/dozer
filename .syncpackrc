@@ -1,0 +1,10 @@
+{
+    "versionGroups": [
+      {
+        "label": "Use workspace protocol when developing local packages",
+        "dependencies": ["@dozer/*"],
+        "dependencyTypes": ["dev", "peer", "prod"],
+        "pinVersion": "workspace:*"
+      }
+    ]
+  }

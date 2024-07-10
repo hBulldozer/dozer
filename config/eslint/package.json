@@ -17,24 +17,24 @@
     "react/index.js"
   ],
   "dependencies": {
-    "eslint-config-next": "13.1.2",
-    "eslint-config-prettier": "9.0.0",
-    "eslint-config-turbo": "1.10.14",
-    "eslint-plugin-prettier": "4.2.1",
-    "eslint-plugin-simple-import-sort": "8.0.0",
-    "eslint-plugin-testing-library": "5.9.1",
-    "eslint-plugin-unused-imports": "2.0.0"
+    "eslint-config-next": "*",
+    "eslint-config-prettier": "*",
+    "eslint-config-turbo": "*",
+    "eslint-plugin-prettier": "*",
+    "eslint-plugin-simple-import-sort": "*",
+    "eslint-plugin-testing-library": "*",
+    "eslint-plugin-unused-imports": "*"
   },
   "devDependencies": {
     "@types/eslint": "8.40.2",
-    "@types/node": "^16.0.0",
-    "eslint-config-next": "13.1.2",
-    "eslint-config-prettier": "9.0.0",
-    "eslint-config-turbo": "1.10.14",
-    "eslint-plugin-prettier": "4.2.1",
-    "eslint-plugin-simple-import-sort": "8.0.0",
-    "eslint-plugin-testing-library": "5.9.1",
-    "eslint-plugin-unused-imports": "2.0.0"
+    "@types/node": "20.8.0",
+    "eslint-config-next": "*",
+    "eslint-config-prettier": "*",
+    "eslint-config-turbo": "*",
+    "eslint-plugin-prettier": "*",
+    "eslint-plugin-simple-import-sort": "*",
+    "eslint-plugin-testing-library": "*",
+    "eslint-plugin-unused-imports": "*"
   },
   "peerDependencies": {
     "eslint": "*",

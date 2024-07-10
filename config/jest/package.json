@@ -18,6 +18,6 @@
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
-    "@types/node": "^17.0.34"
+    "@types/node": "20.8.0"
   }
 }
