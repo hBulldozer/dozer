@@ -12,7 +12,7 @@
     "eslint-plugin-unused-imports": "*"
   },
   "devDependencies": {
-    "@types/eslint": "8.40.2",
+    "@types/eslint": "8.56.10",
     "@types/node": "20.8.0",
     "eslint-config-next": "*",
     "eslint-config-prettier": "*",

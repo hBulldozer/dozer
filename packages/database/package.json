@@ -3,8 +3,8 @@
   "description": "Dozer Database",
   "version": "0.0.0",
   "dependencies": {
-    "@prisma/client": "5.14.0",
-    "ioredis": "5.3.2",
+    "@prisma/client": "5.16.2",
+    "ioredis": "5.4.1",
     "prisma-redis-middleware": "4.8.0"
   },
   "devDependencies": {
@@ -14,10 +14,10 @@
     "@dozer/typescript-config": "workspace:*",
     "@types/jest": "^29.5.11",
     "@types/node": "20.8.0",
-    "dotenv": "16.3.1",
+    "dotenv": "16.4.5",
     "eslint": "*",
     "jest": "29.7.0",
-    "prisma": "5.14.0",
+    "prisma": "5.16.2",
     "tsup": "8.0.1",
     "tsx": "^4.7.2",
     "typescript": "^5.3.3"

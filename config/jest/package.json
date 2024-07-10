@@ -3,7 +3,7 @@
   "description": "Dozer Jest Config",
   "version": "0.1.0",
   "dependencies": {
-    "jest-environment-jsdom": "29.3.1"
+    "jest-environment-jsdom": "29.7.0"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
