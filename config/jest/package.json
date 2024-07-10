@@ -7,7 +7,7 @@
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
-    "@types/node": "20.8.0"
+    "@types/node": "20.14.10"
   },
   "homepage": "https://dozer.finance",
   "keywords": [

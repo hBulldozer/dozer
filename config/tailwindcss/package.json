@@ -7,14 +7,14 @@
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/typography": "^0.5.10",
-    "tailwindcss": "3.2.4"
+    "tailwindcss": "3.4.4"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
     "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
-    "tsup": "8.0.1",
+    "tsup": "8.1.0",
     "typescript": "^5.3.3"
   },
   "files": [
@@ -33,7 +33,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "tailwindcss": "3.2.4"
+    "tailwindcss": "3.4.4"
   },
   "private": true,
   "repository": {
