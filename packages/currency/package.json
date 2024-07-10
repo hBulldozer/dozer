@@ -15,7 +15,7 @@
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
     "@types/jest": "^29.5.11",
-    "@types/lodash.flatmap": "4.5.7",
+    "@types/lodash.flatmap": "4.5.9",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "eslint": "*",

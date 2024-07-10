@@ -29,9 +29,9 @@
     "prettier-plugin-tailwindcss": "0.2.1",
     "sort-package-json": "2.1.0",
     "ts-jest": "29.1.0",
-    "ts-node": "10.9.1",
+    "ts-node": "10.9.2",
     "tsx": "^4.7.2",
-    "turbo": "2.0.4"
+    "turbo": "2.0.6"
   },
   "engines": {
     "packageManager": "pnpm@9.1.0",
