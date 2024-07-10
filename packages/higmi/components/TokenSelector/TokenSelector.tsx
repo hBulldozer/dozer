@@ -6,7 +6,6 @@ import { useAccount } from '@dozer/zustand'
 
 import { TokenSelectorDialog } from './TokenSelectorDialog'
 import { ChainId } from '@dozer/chain'
-import { useBalance } from '@dozer/react-query'
 import { api } from '../../utils/api'
 
 export type TokenSelectorProps = {

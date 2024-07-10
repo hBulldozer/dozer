@@ -13,7 +13,6 @@ import { FC, useEffect, useState } from 'react'
 // import { WagmiConfig } from 'wagmi'
 // import SEO from '../next-seo.config.mjs'
 
-// import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Head from 'next/head'
 import { api } from '../utils/api'
 

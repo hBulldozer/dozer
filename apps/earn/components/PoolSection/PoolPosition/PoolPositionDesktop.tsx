@@ -6,7 +6,6 @@ import { FC, useEffect, useMemo, useState } from 'react'
 
 // import { useTokensFromPair } from '../../../lib/hooks'
 import { useTokensFromPair } from '@dozer/api'
-import { isError } from '@tanstack/react-query'
 import { Amount, Token } from '@dozer/currency'
 import { usePoolPosition } from '../../PoolPositionProvider'
 // import { usePoolPosition } from '../../PoolPositionProvider'

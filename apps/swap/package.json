@@ -10,7 +10,6 @@
     "@dozer/higmi": "workspace:*",
     "@dozer/hooks": "workspace:*",
     "@dozer/math": "workspace:*",
-    "@dozer/react-query": "workspace:*",
     "@dozer/ui": "workspace:*",
     "@dozer/zustand": "workspace:*",
     "@headlessui/react": "^1.7.3",

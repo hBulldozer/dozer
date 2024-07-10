@@ -10,7 +10,6 @@ import type { AppContext, AppProps } from 'next/app'
 import { useRouter } from 'next/router'
 // import { DefaultSeo } from 'next-seo'
 import React, { FC, useEffect } from 'react'
-// import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import type { AppType } from 'next/app'
 import { api } from 'utils/api'

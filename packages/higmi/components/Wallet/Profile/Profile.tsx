@@ -12,7 +12,6 @@ import { Default } from './Default'
 import { Transactions } from './Transactions'
 import { Portal } from './Portal'
 import { shortenAddress } from './Utils'
-import { useBalance } from '@dozer/react-query'
 // import { api } from '../../../utils/api'
 import { client } from '@dozer/api'
 

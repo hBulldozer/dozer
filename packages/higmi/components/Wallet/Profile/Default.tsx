@@ -4,7 +4,6 @@ import { CreditCardIcon, DuplicateIcon, ExternalLinkIcon, LogoutIcon } from '@he
 import { ChevronRightIcon } from '@heroicons/react/solid'
 import { Dispatch, FC, SetStateAction, useCallback, useEffect, useRef, useState } from 'react'
 
-import { useHtrPrice } from '@dozer/react-query'
 import { ProfileView } from './Profile'
 import { TokenBalance, useAccount, useNetwork } from '@dozer/zustand'
 import { shortenAddress } from './Utils'
