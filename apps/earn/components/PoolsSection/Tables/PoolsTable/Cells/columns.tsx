@@ -9,10 +9,10 @@ import { PairNameCell } from './PairNameCell'
 import { PairTVLCell } from './PairTVLCell'
 import { PairVolume24hCell } from './PairVolume24hCell'
 
-export const ICON_SIZE = 26
-export const PAGE_SIZE = 20
+const ICON_SIZE = 26
+const PAGE_SIZE = 20
 
-export const NETWORK_COLUMN: ColumnDef<Pair, unknown> = {
+const NETWORK_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'network',
   header: 'Network',
   cell: (props) => <PairChainCell row={props.row.original} />,

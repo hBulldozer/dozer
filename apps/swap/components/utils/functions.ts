@@ -1,11 +1,11 @@
 // used for warning states
-export const ALLOWED_PRICE_IMPACT_LOW = 1
-export const ALLOWED_PRICE_IMPACT_MEDIUM = 3
-export const ALLOWED_PRICE_IMPACT_HIGH = 5
+const ALLOWED_PRICE_IMPACT_LOW = 1
+const ALLOWED_PRICE_IMPACT_MEDIUM = 3
+const ALLOWED_PRICE_IMPACT_HIGH = 5
 // if the price slippage exceeds this number, force the user to type 'confirm' to execute
-export const PRICE_IMPACT_WITHOUT_FEE_CONFIRM_MIN = 10
+const PRICE_IMPACT_WITHOUT_FEE_CONFIRM_MIN = 10
 // for non expert mode disable swaps above this
-export const BLOCKED_PRICE_IMPACT_NON_EXPERT = 15
+const BLOCKED_PRICE_IMPACT_NON_EXPERT = 15
 
 const IMPACT_TIERS = [
   BLOCKED_PRICE_IMPACT_NON_EXPERT,

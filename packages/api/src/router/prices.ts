@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 
-export const idFromHTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: PrismaClient) => {
+const idFromHTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: PrismaClient) => {
   if (uuid == '00') {
     return await prisma.pool.findFirst({
       where: { token0: { uuid: '00' }, chainId: chainId },
@@ -18,7 +18,7 @@ export const idFromHTRPoolByTokenUuid = async (uuid: string, chainId: number, pr
   }
 }
 
-export const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: number, prisma: PrismaClient) => {
+const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: number, prisma: PrismaClient) => {
   const poolId = await idFromHTRPoolByTokenUuid(uuid, chainId, prisma)
   if (!poolId) return {}
   const endpoint = 'nano_contract/state'
@@ -27,7 +27,7 @@ export const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: numb
   const result = response['calls'][`pool_data()`]['value']
   return result
 }
-export const htrKline = async (input: { period: number; size: number; prisma: PrismaClient }) => {
+const htrKline = async (input: { period: number; size: number; prisma: PrismaClient }) => {
   // const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
 
   // const now = Math.round(Date.now() / 1000)
@@ -71,7 +71,7 @@ export const htrKline = async (input: { period: number; size: number; prisma: Pr
     date: snapshot.date.getTime(),
   }))
 }
-export const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
+const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
   let result
   if (tokenUuid == '00') {
     result = await prisma.hourSnapshot.findMany({

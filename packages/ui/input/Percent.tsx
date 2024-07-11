@@ -57,4 +57,3 @@ export const Input = forwardRef<HTMLInputElement, PercentProps>(
 
 Input.displayName = 'PercentInput'
 
-export default Input

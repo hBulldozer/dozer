@@ -10,7 +10,7 @@ import { Pair } from '../..'
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
-export const HTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: PrismaClient) => {
+const HTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: PrismaClient) => {
   if (uuid == '00') {
     return await prisma.pool.findFirst({
       where: { token0: { uuid: '00' }, chainId: chainId },

@@ -22,9 +22,9 @@ interface SelectFeeWidgetProps {
   setFee(fee: number): void
 }
 
-export const FEE_MAP = [Fee.LOW, Fee.MEDIUM, Fee.DEFAULT, Fee.HIGH]
+const FEE_MAP = [Fee.LOW, Fee.MEDIUM, Fee.DEFAULT, Fee.HIGH]
 
-export const SelectFeeWidget: FC<SelectFeeWidgetProps> = memo(({ fee, setFee }) => {
+const SelectFeeWidget: FC<SelectFeeWidgetProps> = memo(({ fee, setFee }) => {
   return (
     <Widget id="selectFee" maxWidth={400} className="!bg-stone-800">
       <Widget.Content>

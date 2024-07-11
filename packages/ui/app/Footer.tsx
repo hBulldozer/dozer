@@ -148,4 +148,3 @@ export function Footer(props: FooterProps): JSX.Element {
   )
 }
 
-export default Footer

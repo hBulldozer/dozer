@@ -7,7 +7,7 @@ const transactionType = z.string().refine(
   { message: 'Invalid transaction type. Must be "deposit" or "withdrawal".' }
 )
 
-export const ZNCAction = z.object({
+const ZNCAction = z.object({
   type: transactionType,
   token: z.string(),
   amount: z.number(),
@@ -15,7 +15,7 @@ export const ZNCAction = z.object({
   changeAddress: z.optional(z.string()),
 })
 
-export const ZNCArgs = z.string().or(z.number())
+const ZNCArgs = z.string().or(z.number())
 
 export type NCAction = z.infer<typeof ZNCAction>
 export type NCArgs = z.infer<typeof ZNCArgs>

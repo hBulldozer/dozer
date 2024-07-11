@@ -9,8 +9,8 @@ import { TokenNameCell } from './TokenNameCell'
 import { TokenTVLCell } from './TokenTVLCell'
 import { TokenVolume24hCell } from './TokenVolume24hCell'
 
-export const ICON_SIZE = 26
-export const PAGE_SIZE = 20
+const ICON_SIZE = 26
+const PAGE_SIZE = 20
 
 export const CHART_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'chart',

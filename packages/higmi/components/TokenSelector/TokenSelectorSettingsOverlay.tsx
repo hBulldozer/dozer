@@ -7,7 +7,7 @@ import { TokenSelectorProps } from './TokenSelector'
 
 type TokenSelectorSettingsOverlayProps = TokenSelectorProps
 
-export const TokenSelectorSettingsOverlay: FC<TokenSelectorSettingsOverlayProps> = () => {
+const TokenSelectorSettingsOverlay: FC<TokenSelectorSettingsOverlayProps> = () => {
   const [open, setOpen] = useState(false)
 
   return (

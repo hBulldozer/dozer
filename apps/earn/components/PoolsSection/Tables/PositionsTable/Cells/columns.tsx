@@ -65,7 +65,7 @@ export const VALUE_COLUMN: ColumnDef<TData, unknown> = {
   },
 }
 
-export const VOLUME_COLUMN: ColumnDef<TData, unknown> = {
+const VOLUME_COLUMN: ColumnDef<TData, unknown> = {
   id: 'volume',
   header: 'Volume (24h)',
   cell: (props) => <PairVolume24hCell row={props.row.original} />,

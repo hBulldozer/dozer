@@ -15,7 +15,7 @@ interface TokenHeader {
   prices: { [key: string]: number }
 }
 
-export const TokenHeader: FC<TokenHeader> = ({ pair, prices }) => {
+const TokenHeader: FC<TokenHeader> = ({ pair, prices }) => {
   // console.log({ pair })
   const { token0, token1, reserve1, reserve0 } = useTokensFromPair(pair)
   // const price = useMemo(() => new Price({ baseAmount: reserve0, quoteAmount: reserve1 }), [reserve0, reserve1])
