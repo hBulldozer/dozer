@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { FC, ReactNode } from 'react'
 
-export interface OverlayActionProps {
+interface OverlayActionProps {
   className?: string
   children: ReactNode | ReactNode[]
 }

@@ -6,7 +6,7 @@ import { escapeRegExp, inputRegex } from './utils'
 
 const defaultClassName = 'w-0 p-0 text-2xl bg-transparent'
 
-export type PercentProps = Omit<React.HTMLProps<HTMLInputElement>, 'onChange' | 'as'> & {
+type PercentProps = Omit<React.HTMLProps<HTMLInputElement>, 'onChange' | 'as'> & {
   onUserInput?: (input: string) => void
   error?: boolean
   fontSize?: string

@@ -12,7 +12,7 @@ export interface StepDetails {
   _last?: boolean
 }
 
-export interface VerticalStepperInterface {
+interface VerticalStepperInterface {
   children: React.ReactElement<StepInterface> | Array<React.ReactElement<StepInterface>>
   activeStep: number
   setActiveStep(x: number): void

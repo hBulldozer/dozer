@@ -6,7 +6,7 @@ const COLOR = {
   yellow: 'text-yellow',
 }
 
-export type Color = 'primary' | 'yellow'
+type Color = 'primary' | 'yellow'
 
 export interface ExternalLinkProps extends Omit<HTMLProps<HTMLAnchorElement>, 'as' | 'ref' | 'onClick'> {
   color?: Color

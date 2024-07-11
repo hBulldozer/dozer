@@ -1,5 +1,5 @@
 import { UserWithFarm } from '@dozer/api'
 
-export interface CellProps {
+interface CellProps {
   row: UserWithFarm
 }

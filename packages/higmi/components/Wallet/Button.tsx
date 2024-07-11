@@ -17,7 +17,7 @@ const Icons: Record<string, ReactNode> = {
   //   Safe: <GnosisSafeIcon width={16} height={16} />,
 }
 
-export type Props<C extends React.ElementType> = ButtonProps<C> & {
+type Props<C extends React.ElementType> = ButtonProps<C> & {
   // TODO ramin: remove param when wagmi adds onConnecting callback to useAccount
   //   hack?: ReturnType<typeof useConnect>
   //   supportedNetworks?: ChainId[]
