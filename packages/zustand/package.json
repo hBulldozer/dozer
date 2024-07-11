@@ -6,23 +6,16 @@
   "dependencies": {
     "@dozer/api": "workspace:*",
     "@dozer/chain": "workspace:*",
-    "@dozer/currency": "workspace:*",
-    "@dozer/math": "workspace:*"
+    "@dozer/currency": "workspace:*"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
-    "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
-    "@dozer/ui": "workspace:*",
     "@types/node": "20.14.10",
     "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
-    "@uniswap/token-lists": "^1.0.0-beta.31",
     "eslint": "*",
-    "fast-json-stable-stringify": "2.1.0",
     "react": "18.3.1",
-    "react-dom": "18.3.1",
     "typescript": "^5.3.3",
     "zustand": "4.5.4"
   },

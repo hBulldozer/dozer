@@ -2,25 +2,10 @@
   "name": "@dozer/eslint-config",
   "description": "Dozer Config",
   "version": "0.1.1",
-  "dependencies": {
-    "eslint-config-next": "*",
-    "eslint-config-prettier": "*",
-    "eslint-config-turbo": "*",
-    "eslint-plugin-prettier": "*",
-    "eslint-plugin-simple-import-sort": "*",
-    "eslint-plugin-testing-library": "*",
-    "eslint-plugin-unused-imports": "*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/eslint": "8.56.10",
-    "@types/node": "20.14.10",
-    "eslint-config-next": "*",
-    "eslint-config-prettier": "*",
-    "eslint-config-turbo": "*",
-    "eslint-plugin-prettier": "*",
-    "eslint-plugin-simple-import-sort": "*",
-    "eslint-plugin-testing-library": "*",
-    "eslint-plugin-unused-imports": "*"
+    "@types/node": "20.14.10"
   },
   "files": [
     "index.js",

@@ -10,7 +10,6 @@
     "@dozer/hooks": "workspace:*",
     "@dozer/ui": "workspace:*",
     "@dozer/zustand": "workspace:*",
-    "@headlessui/react": "^1.7.3",
     "@tailwindcss/typography": "^0.5.10",
     "@trpc/client": "^10.45.0",
     "@trpc/next": "^10.45.0",
@@ -20,15 +19,12 @@
     "framer-motion": "11.3.2",
     "nanoid": "5.0.7",
     "next": "14.2.5",
-    "next-seo": "6.5.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "superjson": "1.9.1",
-    "zod": "^3.22.4"
+    "superjson": "1.9.1"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
-    "@dozer/jest-config": "workspace:*",
     "@dozer/nextjs-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",

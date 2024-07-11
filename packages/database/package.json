@@ -3,18 +3,14 @@
   "description": "Dozer Database",
   "version": "0.0.0",
   "dependencies": {
-    "@prisma/client": "5.16.2",
-    "ioredis": "5.4.1",
-    "prisma-redis-middleware": "4.8.0"
+    "@prisma/client": "5.16.2"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
     "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
-    "@types/jest": "^29.5.11",
     "@types/node": "20.14.10",
-    "dotenv": "16.4.5",
     "eslint": "*",
     "jest": "29.7.0",
     "prisma": "5.16.2",
