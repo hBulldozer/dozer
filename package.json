@@ -28,7 +28,7 @@
     "prettier": "*",
     "prettier-plugin-tailwindcss": "0.6.5",
     "sort-package-json": "2.10.0",
-    "ts-jest": "29.2.1",
+    "ts-jest": "29.2.2",
     "ts-node": "10.9.2",
     "tsx": "^4.7.2",
     "turbo": "2.0.6"
