@@ -114,7 +114,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                     onClick={() => onInput('')}
                   />
                 ) : (
-                  <SearchIcon className="text-stone-500" strokeWidth={2} width={20} height={20} />
+                  <MagnifyingGlassIcon className="text-stone-500" strokeWidth={2} width={20} height={20} />
                 )}
               </div>
               <Typography className="px-6 pb-1 text-left text-stone-400" variant="xs">

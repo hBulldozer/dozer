@@ -1,6 +1,6 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { InformationCircleIcon } from '@heroicons/react/outline'
-import { ChevronDownIcon } from '@heroicons/react/solid'
+import { InformationCircleIcon } from '@heroicons/react/24/outline'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { classNames, Tooltip, Typography } from '@dozer/ui'
 import React, { FC, useMemo } from 'react'
 

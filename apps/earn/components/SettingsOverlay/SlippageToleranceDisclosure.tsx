@@ -1,5 +1,5 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { ChevronRightIcon, InformationCircleIcon } from '@heroicons/react/outline'
+import { ChevronRightIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import { classNames, DEFAULT_INPUT_UNSTYLED, Input, Tab, Tooltip, Typography } from '@dozer/ui'
 import { FC, useEffect, useState } from 'react'
 

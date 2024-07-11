@@ -1,4 +1,4 @@
-import { PlusIcon } from '@heroicons/react/solid'
+import { PlusIcon } from '@heroicons/react/24/solid'
 import { ChainId } from '@dozer/chain'
 import { Amount, Token } from '@dozer/currency'
 import { AppearOnMount, BreadcrumbLink, Button, Dots } from '@dozer/ui'

@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { Amount, Price, Type, getTokens } from '@dozer/currency'
 import { ZERO } from '@dozer/math'
 import { Dialog, Typography } from '@dozer/ui'

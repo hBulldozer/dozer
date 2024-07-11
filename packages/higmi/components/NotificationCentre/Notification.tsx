@@ -1,6 +1,6 @@
 import { Badge, classNames, Dots, IconButton, Link, Loader, NotificationData, TimeAgo, Typography } from '@dozer/ui'
 import { Disclosure } from '@headlessui/react'
-import { CheckCircleIcon, ChevronDownIcon, DownloadIcon, XIcon } from '@heroicons/react/solid'
+import { CheckCircleIcon, ChevronDownIcon, ArrowDownTrayIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { FC } from 'react'
 import useWaitForTransaction from './useWaitForTransaction'
 import { client as api_client } from '@dozer/api'
@@ -74,13 +74,13 @@ export const Notification: FC<{
             'relative cursor-pointer flex items-center gap-5 rounded-2xl px-4 py-3'
           )}
         >
-          <Badge badgeContent={<DownloadIcon />}>
+          <Badge badgeContent={<ArrowDownTrayIcon />}>
             <div className="p-2 bg-stone-600 rounded-full h-[36px] w-[36px] flex justify-center items-center">
               {!hideStatus &&
                 (status === 'pending' ? (
                   <Loader size={18} />
                 ) : status === 'failed' ? (
-                  <XIcon width={20} height={20} className="text-red-400" />
+                  <XMarkIcon width={20} height={20} className="text-red-400" />
                 ) : (
                   <></>
                 ))}
@@ -91,7 +91,7 @@ export const Notification: FC<{
                 <UICurrency.Icon currency={STARGATE_TOKEN} width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'swap' && (
-                <SwitchVerticalIcon width={20} height={20} />
+                <ArrowsUpDownIcon width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'approval' && (
                 <LockOpenIcon width={20} height={20} />
@@ -103,7 +103,7 @@ export const Notification: FC<{
                 <FireIcon width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'enterBar' && (
-                <DownloadIcon width={20} height={20} />
+                <ArrowDownTrayIcon width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'transferStream' && (
                 <ArrowRightIcon width={20} height={20} />
@@ -127,19 +127,19 @@ export const Notification: FC<{
                 <CheckIcon width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'updateStream' && (
-                <DownloadIcon width={20} height={20} />
+                <ArrowDownTrayIcon width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'withdrawStream' && (
-                <UploadIcon width={20} height={20} />
+                <ArrowUpTrayIcon width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'withdrawVesting' && (
-                <UploadIcon width={20} height={20} />
+                <ArrowUpTrayIcon width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'leaveBar' && (
-                <UploadIcon width={20} height={20} />
+                <ArrowUpTrayIcon width={20} height={20} />
               )}
               {(status === 'success' || notification.summary.info) && notification.type === 'claimRewards' && (
-                <CashIcon width={20} height={20} />
+                <BanknotesIcon width={20} height={20} />
               )} */}
               {status === 'success' && <CheckCircleIcon width={20} height={20} className="text-green" />}
             </div>

@@ -1,5 +1,5 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/outline'
+import { ChevronDownIcon } from '@heroicons/react/24/outline'
 import { ChainId } from '@dozer/chain'
 import { Amount, Token, Type } from '@dozer/currency'
 import { formatUSD } from '@dozer/format'

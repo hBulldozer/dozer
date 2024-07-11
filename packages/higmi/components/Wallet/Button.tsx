@@ -1,4 +1,4 @@
-import { ChevronDoubleDownIcon } from '@heroicons/react/outline'
+import { ChevronDoubleDownIcon } from '@heroicons/react/24/outline'
 import { AppearOnMount, ButtonProps, Menu, Typography } from '@dozer/ui'
 import React, { ReactNode, useMemo, useState } from 'react'
 import { Address } from '@dozer/ui/input/Address'

@@ -1,7 +1,12 @@
 import { BuyCrypto, CopyHelper, Currency, IconButton, JazzIcon, Typography } from '@dozer/ui'
 // import { useBalance, useDisconnect, useEnsAvatar } from '@dozer/zustand'
-import { CreditCardIcon, DuplicateIcon, ExternalLinkIcon, LogoutIcon } from '@heroicons/react/outline'
-import { ChevronRightIcon } from '@heroicons/react/solid'
+import {
+  CreditCardIcon,
+  Square2StackIcon,
+  ArrowTopRightOnSquareIcon,
+  ArrowRightOnRectangleIcon,
+} from '@heroicons/react/24/outline'
+import { ChevronRightIcon } from '@heroicons/react/24/solid'
 import { Dispatch, FC, SetStateAction, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ProfileView } from './Profile'
@@ -99,7 +104,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
             <CopyHelper toCopy={address} hideIcon>
               {(isCopied) => (
                 <IconButton className="p-0.5" description={isCopied ? 'Copied!' : 'Copy'}>
-                  <DuplicateIcon width={18} height={18} />
+                  <Square2StackIcon width={18} height={18} />
                 </IconButton>
               )}
             </CopyHelper>
@@ -110,10 +115,10 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
               className="p-0.5"
               description="Explore"
             >
-              <ExternalLinkIcon width={18} height={18} />
+              <ArrowTopRightOnSquareIcon width={18} height={18} />
             </IconButton>
             <IconButton as="button" onClick={() => disconnect()} className="p-0.5" description="Disconnect">
-              <LogoutIcon width={18} height={18} />
+              <ArrowRightOnRectangleIcon width={18} height={18} />
             </IconButton>
           </div>
         </div>

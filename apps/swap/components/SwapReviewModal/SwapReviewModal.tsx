@@ -3,7 +3,7 @@ import { useAccount, useNetwork, useSettings, useTrade } from '@dozer/zustand'
 import { TradeType } from 'components/utils/TradeType'
 import React, { FC, ReactNode, useCallback, useState } from 'react'
 import { SwapReviewModalBase } from './SwapReviewModalBase'
-import { XIcon } from '@heroicons/react/solid'
+import { XMarkIcon } from '@heroicons/react/24/solid'
 import { api } from 'utils/api'
 import { TokenBalance } from '@dozer/zustand'
 
@@ -142,7 +142,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             onClick={onCloseCard}
             className=" absolute right-[-12px] top-[-12px] z-10 bg-stone-700 p-2 rounded-full flex items-center justify-center hover:bg-stone-600 cursor-pointer"
           >
-            <XIcon width={20} height={20} />
+            <XMarkIcon width={20} height={20} />
           </div>
         </div>
       </Dialog>

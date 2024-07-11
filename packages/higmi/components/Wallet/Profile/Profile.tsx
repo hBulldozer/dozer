@@ -1,5 +1,5 @@
 import { Popover } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { useBreakpoint } from '@dozer/hooks'
 import { classNames, DEFAULT_INPUT_UNSTYLED, JazzIcon } from '@dozer/ui'
 import Image from 'next/legacy/image'

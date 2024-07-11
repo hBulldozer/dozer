@@ -1,4 +1,4 @@
-import { ChevronRightIcon } from '@heroicons/react/solid'
+import { ChevronRightIcon } from '@heroicons/react/24/solid'
 import { Button, Container, Typography } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { FC } from 'react'

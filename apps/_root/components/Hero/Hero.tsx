@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { ChainId } from '@dozer/chain'
 // import { Native, SUSHI } from '@dozer/currency'
 import { getTokens } from '@dozer/currency'

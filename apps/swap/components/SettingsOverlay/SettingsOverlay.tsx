@@ -1,4 +1,4 @@
-import { CogIcon } from '@heroicons/react/outline'
+import { CogIcon } from '@heroicons/react/24/outline'
 import { ChainId } from '@dozer/chain'
 import { classNames, IconButton, Overlay, SlideIn } from '@dozer/ui'
 import { useSettings } from '@dozer/zustand'

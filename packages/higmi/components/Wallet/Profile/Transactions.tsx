@@ -1,4 +1,4 @@
-import { ChevronLeftIcon } from '@heroicons/react/solid'
+import { ChevronLeftIcon } from '@heroicons/react/24/solid'
 import { Button, IconButton, Typography } from '@dozer/ui'
 import React, { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
 

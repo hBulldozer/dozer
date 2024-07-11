@@ -1,4 +1,4 @@
-import { ExternalLinkIcon } from '@heroicons/react/solid'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
 import chains from '@dozer/chain'
 import { Price } from '@dozer/currency'
 import { formatPercent, formatUSD } from '@dozer/format'
@@ -49,7 +49,11 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices }) => {
                   weight={600}
                 >
                   {token0.symbol}/{token1.symbol}
-                  <ExternalLinkIcon width={20} height={20} className="text-stone-400 group-hover:text-yellow-400" />
+                  <ArrowTopRightOnSquareIcon
+                    width={20}
+                    height={20}
+                    className="text-stone-400 group-hover:text-yellow-400"
+                  />
                 </Typography>
               </div>
               <Typography variant="xs" className="text-stone-300">

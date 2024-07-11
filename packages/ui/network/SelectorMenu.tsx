@@ -1,4 +1,4 @@
-import { CheckIcon, XCircleIcon } from '@heroicons/react/solid'
+import { CheckIcon, XCircleIcon } from '@heroicons/react/24/solid'
 import { ChainId, chainName } from '@dozer/chain'
 import { FC } from 'react'
 

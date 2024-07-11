@@ -1,4 +1,4 @@
-import { QuestionMarkCircleIcon } from '@heroicons/react/solid'
+import { QuestionMarkCircleIcon } from '@heroicons/react/24/solid'
 import chains, { ChainId } from '@dozer/chain'
 import { Currency } from '@dozer/currency'
 // import { WrappedTokenInfo } from '@dozer/token-lists'

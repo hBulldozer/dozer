@@ -1,4 +1,4 @@
-import { PlusIcon } from '@heroicons/react/solid'
+import { PlusIcon } from '@heroicons/react/24/solid'
 import { Button, Typography } from '@dozer/ui'
 import type { GetStaticProps, InferGetStaticPropsType } from 'next'
 import { FC } from 'react'

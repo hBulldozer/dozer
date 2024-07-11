@@ -1,5 +1,5 @@
 import { Popover } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { ChainId, chainName } from '@dozer/chain'
 import { classNames, DEFAULT_INPUT_UNSTYLED, NetworkIcon, Typography } from '@dozer/ui'
 import { FC, useEffect, useState } from 'react'
@@ -29,7 +29,7 @@ export const NetworkSelector: FC<NetworkSelectorNewProps> = ({ supportedNetworks
   const panel = (
     <Popover.Panel className="flex flex-col w-full sm:w-[320px] fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-[unset] sm:left-[unset] mt-4 sm:rounded-xl rounded-b-none shadow-md shadow-black/[0.3] bg-stone-900 border border-stone-200/20">
       {/* <div className="flex items-center gap-2 p-4 pb-3">
-        <SearchIcon width={20} height={20} className="text-stone-500" />
+        <MagnifyingGlassIcon width={20} height={20} className="text-stone-500" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}

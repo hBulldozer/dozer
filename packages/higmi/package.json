@@ -13,7 +13,7 @@
     "@dozer/ui": "workspace:*",
     "@dozer/zustand": "workspace:*",
     "@headlessui/react": "^1.7.3",
-    "@heroicons/react": "^1.0.6",
+    "@heroicons/react": "^2.1.5",
     "@trpc/client": "^10.45.0",
     "@trpc/next": "^10.45.0",
     "superjson": "1.9.1"

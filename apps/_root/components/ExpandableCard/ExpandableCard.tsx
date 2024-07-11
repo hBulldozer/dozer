@@ -1,4 +1,4 @@
-import { ChevronRightIcon, ExternalLinkIcon } from '@heroicons/react/solid'
+import { ChevronRightIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
 import { Button, Link, Typography } from '@dozer/ui'
 import { AnimatePresence, AnimateSharedLayout, motion } from 'framer-motion'
 import { nanoid } from 'nanoid'
@@ -94,7 +94,7 @@ export const ExpandableCard: FC<ExpandableCardProps> = ({ children, title, capti
                     href={link}
                     className="!p-0 mt-3 !no-underline"
                     variant="empty"
-                    endIcon={<ExternalLinkIcon width={16} height={16} />}
+                    endIcon={<ArrowTopRightOnSquareIcon width={16} height={16} />}
                   >
                     {linkText}
                   </Button> */}

@@ -1,6 +1,6 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/outline'
-import { PlusIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon } from '@heroicons/react/24/outline'
+import { PlusIcon } from '@heroicons/react/24/solid'
 import { ChainId } from '@dozer/chain'
 import { Type, getTokens } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'

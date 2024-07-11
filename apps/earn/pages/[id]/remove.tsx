@@ -1,4 +1,4 @@
-import { ExternalLinkIcon } from '@heroicons/react/solid'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
 import { formatPercent } from '@dozer/format'
 import { Pair } from '@dozer/api'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
@@ -57,7 +57,7 @@ const Remove: NextPage = () => {
               >
                 <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-500">
                   Learn more about liquidity and yield farming
-                  <ExternalLinkIcon width={16} height={16} className="text-stone-500" />
+                  <ArrowTopRightOnSquareIcon width={16} height={16} className="text-stone-500" />
                 </Typography>
               </Link.External>
             </Container>

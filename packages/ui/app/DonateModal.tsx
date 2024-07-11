@@ -4,7 +4,7 @@ import React, { FC, useState } from 'react'
 import qrcode from './qrcode.png'
 import qrcode_eth from './qrcode_eth.png'
 import Image from 'next/image'
-import { DuplicateIcon } from '@heroicons/react/solid'
+import { Square2StackIcon } from '@heroicons/react/24/solid'
 
 export interface DonateModalInterface {
   open: boolean
@@ -49,7 +49,7 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
                       {(isCopied) => (
                         <IconButton className="p-1" altColor description={isCopied ? 'Copied!' : 'Copy'}>
                           <div className="grid items-center grid-cols-10 gap-1">
-                            <DuplicateIcon width={25} height={25} color="black" />
+                            <Square2StackIcon width={25} height={25} color="black" />
                             <Typography className="col-span-2 text-xs text-black md:text-sm">{address}</Typography>
                           </div>
                         </IconButton>
@@ -72,7 +72,7 @@ export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
                       {(isCopied) => (
                         <IconButton className="p-1" altColor description={isCopied ? 'Copied!' : 'Copy'}>
                           <div className="grid items-center grid-cols-10 gap-1">
-                            <DuplicateIcon width={25} height={25} color="black" />
+                            <Square2StackIcon width={25} height={25} color="black" />
                             <Typography className="col-span-2 text-xs text-black md:text-xs">{address_eth}</Typography>
                           </div>
                         </IconButton>

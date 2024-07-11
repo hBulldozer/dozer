@@ -1,4 +1,4 @@
-import { ChevronRightIcon } from '@heroicons/react/solid'
+import { ChevronRightIcon } from '@heroicons/react/24/solid'
 import { Button, Container, Typography } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { FC } from 'react'
@@ -33,9 +33,7 @@ export const Guard: FC = () => {
     <section className="py-20 sm:py-40">
       <Container maxWidth="5xl" className="px-4 mx-auto space-y-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 justify-center gap-x-[100px] gap-y-[40px]">
-          <div>
-            {/* <GuardImage /> */}
-          </div>
+          <div>{/* <GuardImage /> */}</div>
           <div className="flex flex-col justify-center gap-3">
             <ExpandableCard
               title={DATA.title}

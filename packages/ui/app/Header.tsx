@@ -1,5 +1,5 @@
 import { Listbox, Transition } from '@headlessui/react'
-import { ChevronDownIcon, ExternalLinkIcon } from '@heroicons/react/outline'
+import { ChevronDownIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import useScrollPosition from '@react-hook/window-scroll'
 import { useBreakpoint, useIsMounted } from '@dozer/hooks'
 import Image from 'next/legacy/image'
