@@ -21,8 +21,8 @@
     "@uniswap/token-lists": "^1.0.0-beta.31",
     "eslint": "*",
     "fast-json-stable-stringify": "2.1.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "typescript": "^5.3.3",
     "zustand": "4.5.4"
   },
@@ -34,8 +34,8 @@
   "license": "MIT",
   "main": "./index.ts",
   "peerDependencies": {
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "zustand": "4.5.4"
   },
   "private": true,
