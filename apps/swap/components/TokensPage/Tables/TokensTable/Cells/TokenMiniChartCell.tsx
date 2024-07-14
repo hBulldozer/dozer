@@ -72,9 +72,9 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   const lastPrice = lastPrices?.[tokenUuid]
   let price24h: number[] = []
   if (prices24h) {
-    price24h = prices24h[tokenUuid]
+    price24h = prices24h[tokenUuid].map((p) => Number(p.toPrecision(5)))
   }
-  price24h.push(lastPrice ? lastPrice : price24h[0])
+  price24h.push(lastPrice ? Number(lastPrice.toPrecision(5)) : price24h[0])
   const points = price24h.map((p, i) => ({ x: i, y: p }))
   const chartSVG =
     row.id.includes('usdt') || Math.min(...price24h) == Math.max(...price24h)
