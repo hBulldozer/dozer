@@ -5,13 +5,15 @@ export class LiquidityPool extends NanoContract {
   public readonly token0: string
   public readonly token1: string
   public fee: number
+  public protocol_fee: number
 
-  public constructor(token0: string, token1: string, fee: number, ncid?: string) {
+  public constructor(token0: string, token1: string, fee: number, protocol_fee: number, ncid?: string) {
     if (ncid) super(ncid)
     else super('fake')
     this.token0 = token0
     this.token1 = token1
     this.fee = fee
+    this.protocol_fee = protocol_fee
   }
 
   public async getInfo() {
@@ -24,7 +26,7 @@ export class LiquidityPool extends NanoContract {
       { type: 'deposit', token: this.token0, amount: 100 * amount0 },
       { type: 'deposit', token: this.token1, amount: 100 * amount1 },
     ]
-    const args: NCArgs[] = [this.token0, this.token1, this.fee]
+    const args: NCArgs[] = [this.token0, this.token1, this.fee, this.protocol_fee]
     const response = await this.create(process.env.LPBLUEPRINT, admin_address, actions, args)
     return response
   }

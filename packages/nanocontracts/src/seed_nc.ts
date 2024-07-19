@@ -222,7 +222,7 @@ export async function seed_nc(n_users = 5) {
   // 5. Create the HTR-DZR Pool
   console.log('Creating HTR-DZR Pool...')
   if (DZR_uuid && admin_address) {
-    const HTR_DZR_pool = new LiquidityPool('00', DZR_uuid, 0)
+    const HTR_DZR_pool = new LiquidityPool('00', DZR_uuid, 5, 50)
     const response = await HTR_DZR_pool.initialize(admin_address, 2_000_000, 1400_000)
     HTR_DZR_pool.ncid = response.hash
     HTR_DZR_ncid = response.hash
@@ -235,7 +235,7 @@ export async function seed_nc(n_users = 5) {
     console.log('Creating HTR-USDT Pool...')
   })
   if (USDT_uuid && admin_address) {
-    const HTR_USDT_pool = new LiquidityPool('00', USDT_uuid, 2)
+    const HTR_USDT_pool = new LiquidityPool('00', USDT_uuid, 5, 50)
     const response = await HTR_USDT_pool.initialize(admin_address, 2_000_000, 140_000)
     HTR_USDT_pool.ncid = response.hash
     HTR_USDT_ncid = response.hash
@@ -248,7 +248,7 @@ export async function seed_nc(n_users = 5) {
     console.log('Creating HTR-NST Pool...')
   })
   if (NST_uuid && admin_address) {
-    const HTR_NST_pool = new LiquidityPool('00', NST_uuid, 2)
+    const HTR_NST_pool = new LiquidityPool('00', NST_uuid, 5, 50)
     const response = await HTR_NST_pool.initialize(admin_address, 1_000_000, 827_000)
     HTR_NST_pool.ncid = response.hash
     HTR_NST_ncid = response.hash
@@ -261,7 +261,7 @@ export async function seed_nc(n_users = 5) {
     console.log('Creating HTR-CTHOR Pool...')
   })
   if (CTHOR_uuid && admin_address) {
-    const HTR_CTHOR_pool = new LiquidityPool('00', CTHOR_uuid, 2)
+    const HTR_CTHOR_pool = new LiquidityPool('00', CTHOR_uuid, 5, 50)
     const response = await HTR_CTHOR_pool.initialize(admin_address, 1_000_000, 78_000)
     HTR_CTHOR_pool.ncid = response.hash
     HTR_CTHOR_ncid = response.hash
@@ -274,7 +274,7 @@ export async function seed_nc(n_users = 5) {
     console.log('Creating HTR-KELB Pool...')
   })
   if (KELB_uuid && admin_address) {
-    const HTR_KELB_pool = new LiquidityPool('00', KELB_uuid, 2)
+    const HTR_KELB_pool = new LiquidityPool('00', KELB_uuid, 5, 50)
     const response = await HTR_KELB_pool.initialize(admin_address, 1_000_000, 58_000)
     HTR_KELB_pool.ncid = response.hash
     HTR_KELB_ncid = response.hash

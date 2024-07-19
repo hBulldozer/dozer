@@ -238,7 +238,7 @@ export const poolRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const { ncid, token_in, amount_in, token_out, amount_out, address } = input
-      const pool = new LiquidityPool(token_in, token_out, 5, ncid)
+      const pool = new LiquidityPool(token_in, token_out, 5, 50, ncid)
       const response = await pool.swap_tokens_for_exact_tokens(
         token_in,
         amount_in,
@@ -262,7 +262,7 @@ export const poolRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const { ncid, token_in, amount_in, token_out, amount_out, address } = input
-      const pool = new LiquidityPool(token_in, token_out, 0, ncid)
+      const pool = new LiquidityPool(token_in, token_out, 5, 50, ncid)
       const response = await pool.swap_exact_tokens_for_tokens(
         token_in,
         amount_in,
@@ -287,7 +287,7 @@ export const poolRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const { ncid, token_a, amount_a, token_b, amount_b, address } = input
-      const pool = new LiquidityPool(token_a, token_b, 5, ncid)
+      const pool = new LiquidityPool(token_a, token_b, 5, 50, ncid)
       const response = await pool.add_liquidity(token_a, amount_a, token_b, amount_b, address, 'users')
       return response
     }),
@@ -304,7 +304,7 @@ export const poolRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const { ncid, token_a, amount_a, token_b, amount_b, address } = input
-      const pool = new LiquidityPool(token_a, token_b, 5, ncid)
+      const pool = new LiquidityPool(token_a, token_b, 5, 50, ncid)
       const response = await pool.remove_liquidity(token_a, amount_a, token_b, amount_b, address, 'users')
       return response
     }),

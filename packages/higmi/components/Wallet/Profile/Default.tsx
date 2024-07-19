@@ -128,7 +128,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
               No balances in this address
             </Typography>
           ) : null}
-          {showBalance1 ? (
+          {showBalance1 && showBalance1.balanceUSD != 0 ? (
             <div className="flex flex-col items-center justify-center gap-2">
               <Currency.Icon
                 width={20}
@@ -160,7 +160,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
             </div>
           ) : null}
 
-          {showBalance2 ? (
+          {showBalance2 && showBalance2.balanceUSD != 0 ? (
             <div className="flex flex-col items-center justify-center gap-2">
               <Currency.Icon
                 width={20}
