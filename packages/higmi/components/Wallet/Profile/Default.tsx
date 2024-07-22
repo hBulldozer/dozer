@@ -17,12 +17,13 @@ import chains, { ChainId } from '@dozer/chain'
 import { client, toToken } from '@dozer/api'
 import { Token } from '@dozer/currency'
 import { useInViewport } from '@dozer/hooks'
+import { useChainData, useJsonRpc, useWalletConnectClient } from '../../contexts'
 
 interface DefaultProps {
   chainId: ChainId
   address: string
   setView: Dispatch<SetStateAction<ProfileView>>
-  client: typeof client
+  api_client: typeof client
 }
 
 interface BalanceProps {
@@ -31,12 +32,32 @@ interface BalanceProps {
   token: Token | undefined
 }
 
-export const Default: FC<DefaultProps> = ({ chainId, address, setView, client }) => {
+export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_client }) => {
   const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
-  const { data: prices } = client.getPrices.all.useQuery()
-  const { data: tokens } = client.getTokens.all.useQuery()
+  const { data: prices } = api_client.getPrices.all.useQuery()
+  const { data: tokens } = api_client.getTokens.all.useQuery()
   const { network } = useNetwork()
+
+  const {
+    client,
+    pairings,
+    session,
+    connect,
+    disconnect,
+    relayerRegion,
+    accounts,
+    isFetchingBalances,
+    isInitializing,
+    setChains,
+    setRelayerRegion,
+  } = useWalletConnectClient()
+
+  // Use `JsonRpcContext` to provide us with relevant RPC methods and states.
+  const { hathorRpc, isRpcRequestPending, rpcResult, isTestnet, setIsTestnet } = useJsonRpc()
+
+  const { chainData } = useChainData()
+
   // const { data: avatar } = useEnsAvatar({
   //   address: address,
   // })
@@ -54,9 +75,10 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
   //   [_balance, chainId]
   // )
 
-  function disconnect() {
+  function logout() {
     setAddress('')
     setBalance([])
+    disconnect()
   }
   // useDisconnect()
 
@@ -67,7 +89,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
   const ref = useRef<HTMLDivElement>(null)
   const inViewport = useInViewport(ref)
   // const { isLoading, error, data: priceHTR } = useHtrPrice()
-  const { isLoading, error, data } = client.getPrices.htr.useQuery()
+  const { isLoading, error, data } = api_client.getPrices.htr.useQuery()
   const priceHTR = data ? data : 0.01
 
   useEffect(() => {
@@ -117,7 +139,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, client })
             >
               <ArrowTopRightOnSquareIcon width={18} height={18} />
             </IconButton>
-            <IconButton as="button" onClick={() => disconnect()} className="p-0.5" description="Disconnect">
+            <IconButton as="button" onClick={() => logout()} className="p-0.5" description="Disconnect">
               <ArrowRightOnRectangleIcon width={18} height={18} />
             </IconButton>
           </div>

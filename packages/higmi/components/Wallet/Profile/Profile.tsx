@@ -70,7 +70,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
     const panel = (
       <Popover.Panel className="w-full sm:w-[320px] fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-[unset] sm:left-[unset] mt-4 sm:rounded-xl rounded-b-none shadow-md shadow-black/[0.3] bg-stone-900 border border-stone-200/20">
         {view === ProfileView.Default && (
-          <Default client={client} chainId={chainId} address={address} setView={setView} />
+          <Default api_client={client} chainId={chainId} address={address} setView={setView} />
         )}
         {view === ProfileView.Transactions && (
           <Transactions

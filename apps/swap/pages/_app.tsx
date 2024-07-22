@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { api } from 'utils/api'
 import { Header } from '../components'
 import Head from 'next/head'
+import { ChainDataContextProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 
 // declare global {
 //   interface Window {
@@ -58,10 +59,16 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
       </Head>
       <ThemeProvider>
         <App.Shell>
-          <Header />
-          <Component {...pageProps} />
-          <App.Footer />
-          <ToastContainer className="mt-[50px]" />
+          <ChainDataContextProvider>
+            <ClientContextProvider>
+              <JsonRpcContextProvider>
+                <Header />
+                <Component {...pageProps} />
+                <App.Footer />
+                <ToastContainer className="mt-[50px]" />
+              </JsonRpcContextProvider>
+            </ClientContextProvider>
+          </ChainDataContextProvider>
         </App.Shell>
       </ThemeProvider>
       <Analytics />
