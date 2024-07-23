@@ -176,7 +176,7 @@ export const Button = <C extends React.ElementType>({
         if (typeof client === 'undefined') {
           throw new Error('WalletConnect is not initialized')
         }
-        return <PairingModal pairings={pairings} connect={connect} />
+        return <PairingModal pairings={pairings} connect={connect} client={client} />
       case 'request':
         return <RequestModal pending={isRpcRequestPending} result={rpcResult} />
       default:

@@ -45,8 +45,13 @@ const web3Modal = new Web3Modal({
   themeMode: 'dark',
   walletConnectVersion: 2,
   themeVariables: {
+    '--w3m-font-family': 'Inter',
     '--w3m-z-index': '99999',
+    '--w3m-background-color': '#000000',
+    '--w3m-accent-color': '#eab308',
   },
+  mobileWallets: [],
+  desktopWallets: [],
 })
 
 /**
@@ -228,7 +233,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
         logger: 'debug',
         relayUrl: relayerRegion,
         projectId: process.env.NEXT_PUBLIC_PROJECT_ID || '',
-        metadata: getAppMetadata() || DEFAULT_APP_METADATA,
+        metadata: DEFAULT_APP_METADATA,
       })
 
       console.log('CREATED CLIENT: ', _client)
