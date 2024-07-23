@@ -111,7 +111,6 @@ export const Button = <C extends React.ElementType>({
       throw new Error('WalletConnect is not initialized')
     }
     // Suggest existing pairings (if any).
-    console.log('pairings', pairings, 'session', session)
     if (pairings.length) {
       openPairingModal()
     } else {
@@ -167,7 +166,6 @@ export const Button = <C extends React.ElementType>({
   useEffect(() => {
     if (accounts.length > 0) {
       const [namespace, reference, address] = accounts[0].split(':')
-      console.log(accounts[0])
       setAddress(address)
     }
   }, [accounts])
@@ -187,32 +185,22 @@ export const Button = <C extends React.ElementType>({
   }
   return (
     <>
-      <AppearOnMount enabled={appearOnMount}>
-        {(isMounted) => {
-          // Pending confirmation state
-          // Awaiting wallet confirmation
-          // if (pendingConnection) {
-          //   return (
-          //     <UIButton endIcon={<Loader />} variant="filled" color="amber" disabled {...rest}>
-          //       Authorize Wallet
-          //     </UIButton>
-          //   )
-          // }
-
-          // Disconnected state
-          // We are mounted on the client, but we're not connected, and we're not reconnecting (address is not available)
-          // if (!isConnected && !reconnecting && isMounted) {
-          return (
-            <Menu
-              className={rest.fullWidth ? 'w-full' : ''}
-              button={
-                <Menu.Button {...rest} as="div">
-                  {children || 'Connect Wallet'}
-                </Menu.Button>
-              }
-            >
-              <Menu.Items className="z-[100]">
-                <Address
+      <Menu
+        className={rest.fullWidth ? 'w-full' : ''}
+        button={
+          <Menu.Button {...rest} as="div">
+            {children || 'Connect Wallet'}
+          </Menu.Button>
+        }
+      >
+        <Menu.Items className="z-[100]">
+          <div>
+            <Menu.Item key="wallet_connect" onClick={onConnect} className="flex items-center gap-3 group">
+              <div>{Icons['WalletConnect'] && Icons['WalletConnect']}</div>{' '}
+              {isInitializing ? 'Loading...' : 'WalletConnect'}
+            </Menu.Item>
+          </div>
+          {/* <Address
                   id="connect_address"
                   value={input}
                   error={input.length != 34}
@@ -242,30 +230,19 @@ export const Button = <C extends React.ElementType>({
                       )}
                     </>
                   )}
-                </div>
-                <div>
-                  {isMounted && (
-                    <Menu.Item key="wallet_connect" onClick={onConnect} className="flex items-center gap-3 group">
-                      <div className="-ml-[6px] group-hover:bg-yellow-700 rounded-full group-hover:ring-[1px] group-hover:ring-yellow-100">
-                        {Icons['WalletConnect'] && Icons['WalletConnect']}
-                      </div>{' '}
-                      {isInitializing ? 'Loading...' : 'WalletConnect'}
-                    </Menu.Item>
-                  )}
-                </div>
-              </Menu.Items>
-            </Menu>
-          )
-
-          // return <UIButton {...rest}>{children || 'Connect Wallet'}</UIButton>
-        }}
-      </AppearOnMount>
-      {/* <Dialog show={!!modal} onClose={closeModal}>
-        <Dialog.Content>
-          <Dialog.Header border={false} title="Wallet Connect" onClose={() => setModal('')} /> */}
-      {renderModal()}
-      {/* </Dialog.Content>
-      </Dialog> */}
+                </div> */}
+        </Menu.Items>
+      </Menu>
+      <Dialog open={!!modal} onClose={closeModal}>
+        <Dialog.Content className="max-w-sm !pb-4">
+          <Dialog.Header
+            border={false}
+            title={modal === 'pairing' ? 'Pairing' : 'Request Modal'}
+            onClose={closeModal}
+          />
+          {renderModal()}
+        </Dialog.Content>
+      </Dialog>
     </>
   )
 }

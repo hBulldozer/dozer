@@ -1,12 +1,7 @@
-import * as React from 'react'
-
 import { PairingTypes } from '@walletconnect/types'
 
-import { Button } from '@dozer/ui'
+import { Button, Typography } from '@dozer/ui'
 import Pairing from './Pairing'
-import { STable } from './shared'
-
-import { SModalContainer, SModalTitle } from './shared'
 
 interface PairingModalProps {
   pairings: PairingTypes.Struct[]
@@ -16,15 +11,17 @@ interface PairingModalProps {
 const PairingModal = (props: PairingModalProps) => {
   const { pairings, connect } = props
   return (
-    <SModalContainer>
-      <SModalTitle>{'Select available pairing or create new one'}</SModalTitle>
-      <STable>
+    <div className="relative w-full break-words">
+      <Typography variant="sm" weight={600}>
+        {'Select available pairing or create new one'}
+      </Typography>
+      <div className="flex flex-col my-4 text-left">
         {pairings.map((pairing) => (
           <Pairing key={pairing.topic} pairing={pairing} onClick={() => connect({ topic: pairing.topic })} />
         ))}
-      </STable>
+      </div>
       <Button onClick={() => connect()}>{`New Pairing`}</Button>
-    </SModalContainer>
+    </div>
   )
 }
 

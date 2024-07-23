@@ -1,9 +1,6 @@
 import * as React from 'react'
 
 import { Loader } from '@dozer/ui'
-import { SContainer, STable, SRow, SKey, SValue } from './shared'
-
-import { SModalContainer, SModalTitle, SModalParagraph } from './shared'
 
 interface RequestModalProps {
   pending: boolean
@@ -15,29 +12,31 @@ const RequestModal = (props: RequestModalProps) => {
   return (
     <>
       {pending ? (
-        <SModalContainer>
-          <SModalTitle>{'Pending JSON-RPC Request'}</SModalTitle>
-          <SContainer>
+        <div className="relative w-full break-words">
+          <div className="my-4 text-2xl font-bold">{'Pending JSON-RPC Request'}</div>
+          <div className="flex flex-col text-left">
             <Loader />
-            <SModalParagraph>{'Approve or reject request using your wallet'}</SModalParagraph>
-          </SContainer>
-        </SModalContainer>
+            <div className="my-4 text-2xl font-bold">{'Approve or reject request using your wallet'}</div>
+          </div>
+        </div>
       ) : result ? (
-        <SModalContainer>
-          <SModalTitle>{result.valid ? 'JSON-RPC Request Approved' : 'JSON-RPC Request Failed'}</SModalTitle>
-          <STable>
+        <div className="relative w-full break-words">
+          <div className="my-4 text-2xl font-bold">
+            {result.valid ? 'JSON-RPC Request Approved' : 'JSON-RPC Request Failed'}
+          </div>
+          <div className="flex flex-col text-left">
             {Object.keys(result).map((key) => (
-              <SRow key={key}>
-                <SKey>{key}</SKey>
-                <SValue>{result[key].toString()}</SValue>
-              </SRow>
+              <div className="flex items-center justify-between" key={key}>
+                <div className="text-sm text-gray-400">{key}</div>
+                <div className="text-sm">{result[key].toString()}</div>
+              </div>
             ))}
-          </STable>
-        </SModalContainer>
+          </div>
+        </div>
       ) : (
-        <SModalContainer>
-          <SModalTitle>{'JSON-RPC Request Rejected'}</SModalTitle>
-        </SModalContainer>
+        <div className="relative w-full break-words">
+          <div className="my-4 text-2xl font-bold">{'JSON-RPC Request Rejected'}</div>
+        </div>
       )}
     </>
   )

@@ -1,5 +1,4 @@
 import { BuyCrypto, CopyHelper, Currency, IconButton, JazzIcon, Typography } from '@dozer/ui'
-// import { useBalance, useDisconnect, useEnsAvatar } from '@dozer/zustand'
 import {
   CreditCardIcon,
   Square2StackIcon,
@@ -78,7 +77,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
   function logout() {
     setAddress('')
     setBalance([])
-    disconnect()
+    if (accounts.length > 0) disconnect()
   }
   // useDisconnect()
 

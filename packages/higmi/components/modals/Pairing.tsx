@@ -1,33 +1,21 @@
-import * as React from "react";
-import styled from "styled-components";
+import * as React from 'react'
 
-import { PairingTypes } from "@walletconnect/types";
+import { PairingTypes } from '@walletconnect/types'
 
-import Peer from "./Peer";
+import Peer from './Peer'
 
 interface PairingProps {
-  pairing: PairingTypes.Struct;
-  onClick?: any;
+  pairing: PairingTypes.Struct
+  onClick?: any
 }
 
-const SPairingContainer = styled.div`
-  width: 100%;
-  cursor: pointer;
-`;
-
 const Pairing = (props: PairingProps) => {
-  const { peerMetadata } = props.pairing;
+  const { peerMetadata } = props.pairing
   return (
-    <SPairingContainer onClick={props.onClick}>
-      <div>
-        {typeof peerMetadata !== "undefined" ? (
-          <Peer oneLiner metadata={peerMetadata} />
-        ) : (
-          <div>{`Unknown Wallet`}</div>
-        )}
-      </div>
-    </SPairingContainer>
-  );
-};
+    <div className="w-full py-1 cursor-pointer" onClick={props.onClick}>
+      {typeof peerMetadata !== 'undefined' ? <Peer oneLiner metadata={peerMetadata} /> : <div>{`Unknown Wallet`}</div>}
+    </div>
+  )
+}
 
-export default Pairing;
+export default Pairing

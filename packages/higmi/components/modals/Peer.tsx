@@ -1,55 +1,6 @@
+import { Typography } from '@dozer/ui'
 import { SignClientTypes } from '@walletconnect/types'
 import * as React from 'react'
-import styled from 'styled-components'
-import { colors, fonts } from './styles'
-
-const SPeerOneLiner = styled.div`
-  display: flex;
-  align-items: center;
-  border-radius: 8px;
-  border: 2px solid rgb(${colors.darkGrey});
-  padding: 5px;
-
-  & img {
-    width: 40px;
-    height: 40px;
-  }
-  & > div {
-    margin-left: 10px;
-  }
-`
-
-const SPeerCard = styled.div`
-  align-items: center;
-  justify-content: center;
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  border-radius: 8px;
-  border: 2px solid rgb(${colors.darkGrey});
-  padding: 5px;
-  & > div {
-    margin: 4px auto;
-  }
-`
-
-const SIcon = styled.img`
-  width: 100px;
-  margin: 0 auto;
-`
-
-const SCenter = styled.div`
-  text-align: center;
-`
-
-const SUrl = styled(SCenter as any)`
-  font-size: ${fonts.size.small};
-  opacity: 0.8;
-`
-
-const SName = styled(SCenter as any)`
-  font-weight: bold;
-`
 
 interface PeerProps {
   oneLiner?: boolean
@@ -58,17 +9,26 @@ interface PeerProps {
 
 const Peer = (props: PeerProps) =>
   props.oneLiner ? (
-    <SPeerOneLiner>
-      <img src={props.metadata.icons[0]} alt={props.metadata.name} />
-      <div>{props.metadata.name}</div>
-    </SPeerOneLiner>
+    <div className="flex items-center p-2 border-2 rounded-md hover:ring-1 border-opacity-20 ring-offset-2 ring-offset-neutral-600 rounded-xl">
+      <img
+        className="w-8 h-8 mr-2 rounded-full"
+        src={'https://avatars.githubusercontent.com/u/40426718?s=200&v=4'}
+        alt={props.metadata.name}
+      />
+      <div className="flex flex-col ">
+        <Typography weight={500}>{props.metadata.name}</Typography>
+        <Typography variant="xxs" className="text-neutral-400" weight={300}>
+          {props.metadata.description}
+        </Typography>
+      </div>
+    </div>
   ) : (
-    <SPeerCard>
-      <SIcon src={props.metadata.icons[0]} alt={props.metadata.name} />
-      <SName>{props.metadata.name}</SName>
-      <SCenter>{props.metadata.description}</SCenter>
-      <SUrl>{props.metadata.url}</SUrl>
-    </SPeerCard>
+    <div className="flex flex-col items-center justify-center w-full p-2 border-2 border-gray-400 rounded-md">
+      <img className="w-24 mx-auto" src={props.metadata.icons[0]} alt={props.metadata.name} />
+      <div className="font-bold text-center">{props.metadata.name}</div>
+      <div className="text-center">{props.metadata.description}</div>
+      <div className="text-sm text-center opacity-80">{props.metadata.url}</div>
+    </div>
   )
 
 export default Peer

@@ -11,7 +11,7 @@ export const DEFAULT_APP_METADATA = {
   name: 'Dozer App',
   description: 'Dozer Finance',
   url: 'https://dozer.finance/',
-  icons: ['https://avatars.githubusercontent.com/u/37784886'],
+  icons: ['https://avatars.githubusercontent.com/u/123419528'],
 }
 
 /**
@@ -44,6 +44,9 @@ const web3Modal = new Web3Modal({
   projectId: process.env.NEXT_PUBLIC_PROJECT_ID || '',
   themeMode: 'dark',
   walletConnectVersion: 2,
+  themeVariables: {
+    '--w3m-z-index': '99999',
+  },
 })
 
 /**
