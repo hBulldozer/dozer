@@ -80,6 +80,7 @@ export const Button = <C extends React.ElementType>({
     pairings,
     session,
     connect,
+    isWaitingApproval,
     disconnect,
     chains,
     relayerRegion,
@@ -176,7 +177,9 @@ export const Button = <C extends React.ElementType>({
         if (typeof client === 'undefined') {
           throw new Error('WalletConnect is not initialized')
         }
-        return <PairingModal pairings={pairings} connect={connect} client={client} />
+        return (
+          <PairingModal pairings={pairings} connect={connect} client={client} isWaitingApproval={isWaitingApproval} />
+        )
       case 'request':
         return <RequestModal pending={isRpcRequestPending} result={rpcResult} />
       default:

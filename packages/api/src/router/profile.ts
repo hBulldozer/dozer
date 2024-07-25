@@ -43,6 +43,6 @@ export const profileRouter = createTRPCRouter({
 
       const response = await fetchNodeData(endpoint, queryParams)
       const result = response['calls'][`user_info("a'${input.address}'")`]['value']
-      return result
+      return result || { balance_a: 0, balance_b: 0, liquidity: 0, max_withdraw_a: 0, max_withdraw_b: 0 }
     }),
 })

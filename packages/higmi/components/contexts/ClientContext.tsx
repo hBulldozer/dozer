@@ -1,6 +1,6 @@
 import Client from '@walletconnect/sign-client'
 import { PairingTypes, SessionTypes } from '@walletconnect/types'
-import { getAppMetadata, getSdkError } from '@walletconnect/utils'
+import { getSdkError } from '@walletconnect/utils'
 import { Web3Modal } from '@web3modal/standalone'
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState, useRef } from 'react'
@@ -23,6 +23,7 @@ interface IContext {
   connect: (pairing?: { topic: string }) => Promise<void>
   disconnect: () => Promise<void>
   isInitializing: boolean
+  isWaitingApproval: boolean
   chains: string[]
   relayerRegion: string
   pairings: PairingTypes.Struct[]
@@ -45,7 +46,7 @@ const web3Modal = new Web3Modal({
   themeMode: 'dark',
   walletConnectVersion: 2,
   themeVariables: {
-    '--w3m-font-family': 'Inter',
+    '--w3m-font-family': 'Inter, sans-serif',
     '--w3m-z-index': '99999',
     '--w3m-background-color': '#000000',
     '--w3m-accent-color': '#eab308',
@@ -64,6 +65,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
 
   const [isFetchingBalances, setIsFetchingBalances] = useState(false)
   const [isInitializing, setIsInitializing] = useState(false)
+  const [isWaitingApproval, setIsWaitingApproval] = useState(false)
   const prevRelayerValue = useRef<string>('')
 
   const [accounts, setAccounts] = useState<string[]>([])
@@ -113,6 +115,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
 
   const connect = useCallback(
     async (pairing: any) => {
+      setIsWaitingApproval(true)
       if (typeof client === 'undefined') {
         throw new Error('WalletConnect is not initialized')
       }
@@ -141,15 +144,17 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
         await onSessionConnected(session)
         // Update known pairings after session is connected.
         setPairings(client.pairing.getAll({ active: true }))
+        setIsWaitingApproval(false)
       } catch (e) {
         console.error(e)
         // ignore rejection
       } finally {
         // close modal in case it was open
         web3Modal.closeModal()
+        setIsWaitingApproval(false)
       }
     },
-    [chains, client, onSessionConnected]
+    [chains, client, onSessionConnected, setIsWaitingApproval]
   )
 
   const disconnect = useCallback(async () => {
@@ -259,6 +264,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
     () => ({
       pairings,
       isInitializing,
+      isWaitingApproval,
       isFetchingBalances,
       accounts,
       chains,
@@ -273,6 +279,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
     [
       pairings,
       isInitializing,
+      isWaitingApproval,
       isFetchingBalances,
       accounts,
       chains,
