@@ -228,6 +228,7 @@ export const poolRouter = createTRPCRouter({
   swap_tokens_for_exact_tokens: procedure
     .input(
       z.object({
+        hathorRpc: z.any(),
         ncid: z.string(),
         token_in: z.string(),
         amount_in: z.number(),
@@ -237,21 +238,24 @@ export const poolRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const { ncid, token_in, amount_in, token_out, amount_out, address } = input
+      const { hathorRpc, ncid, token_in, amount_in, token_out, amount_out, address } = input
       const pool = new LiquidityPool(token_in, token_out, 5, 50, ncid)
       const response = await pool.swap_tokens_for_exact_tokens(
+        hathorRpc,
+        address,
+        ncid,
         token_in,
         amount_in,
         token_out,
-        amount_out,
-        address,
-        'users'
+        amount_out
       )
+
       return response
     }),
   swap_exact_tokens_for_tokens: procedure
     .input(
       z.object({
+        hathorRpc: z.any(),
         ncid: z.string(),
         token_in: z.string(),
         amount_in: z.number(),
@@ -261,15 +265,16 @@ export const poolRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const { ncid, token_in, amount_in, token_out, amount_out, address } = input
+      const { hathorRpc, ncid, token_in, amount_in, token_out, amount_out, address } = input
       const pool = new LiquidityPool(token_in, token_out, 5, 50, ncid)
       const response = await pool.swap_exact_tokens_for_tokens(
+        hathorRpc,
+        address,
+        ncid,
         token_in,
         amount_in,
         token_out,
-        amount_out,
-        address,
-        'users'
+        amount_out
       )
 
       return response

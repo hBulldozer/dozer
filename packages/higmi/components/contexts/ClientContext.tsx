@@ -50,6 +50,8 @@ const web3Modal = new Web3Modal({
     '--w3m-accent-color': '#eab308',
   },
   explorerAllowList: [],
+  mobileWallets: [{ id: 'hathor-wallet', name: 'HathorWallet', links: { universal: 'hator-wallet://wallet/open' } }],
+  walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
 })
 
 /**

@@ -6,6 +6,9 @@ import { SwapReviewModalBase } from './SwapReviewModalBase'
 import { XMarkIcon } from '@heroicons/react/24/solid'
 import { api } from 'utils/api'
 import { TokenBalance } from '@dozer/zustand'
+import { LiquidityPool } from '@dozer/nanocontracts'
+import { main } from '@dozer/database/dist/seed_db'
+import { useJsonRpc } from '@dozer/higmi'
 
 interface SwapReviewModalLegacy {
   chainId: number | undefined
@@ -21,6 +24,9 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   const [card, setCard] = useState(false)
   const { slippageTolerance } = useSettings()
   const [isWritePending, setIsWritePending] = useState<boolean>(false)
+  const liquiditypool = new LiquidityPool(mainCurrency?.uuid || '', otherCurrency?.uuid || '', 5, 50, pool?.id || '')
+
+  const { hathorRpc } = useJsonRpc()
 
   const onCloseCard = useCallback(() => {
     onSuccess()
@@ -54,69 +60,71 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
     }
   }
 
-  const mutateFunction =
+  const swapFunction =
     tradeType === TradeType.EXACT_INPUT
-      ? api.getPools.swap_exact_tokens_for_tokens
-      : api.getPools.swap_tokens_for_exact_tokens
+      ? liquiditypool.swap_tokens_for_exact_tokens
+      : liquiditypool.swap_tokens_for_exact_tokens
 
-  const mutation = mutateFunction.useMutation({
-    onSuccess: (res) => {
-      console.log(res)
-      if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
-        if (res.hash) {
-          const notificationData: NotificationData = {
-            type: 'swap',
-            chainId: network,
-            summary: {
-              pending: `Waiting for next block`,
-              completed: `Success! Traded ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
-              failed: 'Failed summary',
-              info: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
-            },
-            status: 'pending',
-            txHash: res.hash,
-            groupTimestamp: Math.floor(Date.now() / 1000),
-            timestamp: Math.floor(Date.now() / 1000),
-            promise: new Promise((resolve) => {
-              setTimeout(resolve, 500)
-            }),
-          }
-          editBalanceOnSwap(
-            amountSpecified,
-            mainCurrency.uuid,
-            outputAmount * (1 - slippageTolerance),
-            otherCurrency.uuid
-          )
-          const notificationGroup: string[] = []
-          notificationGroup.push(JSON.stringify(notificationData))
-          addNotification(notificationGroup)
-          createSuccessToast(notificationData)
-          setOpen(false)
-          setIsWritePending(false)
-        } else {
-          createErrorToast(`${res.error}`, true)
-          setIsWritePending(false)
-          setOpen(false)
-        }
-      }
-    },
-    onError: (error) => {
-      createErrorToast(`Error sending TX. \n${error}`, true)
-      setIsWritePending(false)
-      setOpen(false)
-    },
-  })
+  // const mutation = mutateFunction({
+  //   onSuccess: (res) => {
+  //     console.log(res)
+  //     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
+  //       if (res.hash) {
+  //         const notificationData: NotificationData = {
+  //           type: 'swap',
+  //           chainId: network,
+  //           summary: {
+  //             pending: `Waiting for next block`,
+  //             completed: `Success! Traded ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
+  //             failed: 'Failed summary',
+  //             info: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
+  //           },
+  //           status: 'pending',
+  //           txHash: res.hash,
+  //           groupTimestamp: Math.floor(Date.now() / 1000),
+  //           timestamp: Math.floor(Date.now() / 1000),
+  //           promise: new Promise((resolve) => {
+  //             setTimeout(resolve, 500)
+  //           }),
+  //         }
+  //         editBalanceOnSwap(
+  //           amountSpecified,
+  //           mainCurrency.uuid,
+  //           outputAmount * (1 - slippageTolerance),
+  //           otherCurrency.uuid
+  //         )
+  //         const notificationGroup: string[] = []
+  //         notificationGroup.push(JSON.stringify(notificationData))
+  //         addNotification(notificationGroup)
+  //         createSuccessToast(notificationData)
+  //         setOpen(false)
+  //         setIsWritePending(false)
+  //       } else {
+  //         createErrorToast(`${res.error}`, true)
+  //         setIsWritePending(false)
+  //         setOpen(false)
+  //       }
+  //     }
+  //   },
+  //   onError: (error) => {
+  //     createErrorToast(`Error sending TX. \n${error}`, true)
+  //     setIsWritePending(false)
+  //     setOpen(false)
+  //   },
+  // })
   const onClick = async () => {
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
       setIsWritePending(true)
-      mutation.mutate({
-        amount_in: amountSpecified,
-        token_in: mainCurrency.uuid,
-        amount_out: outputAmount * (1 - slippageTolerance),
-        ncid: pool.id,
-        token_out: otherCurrency.uuid,
+      const response = await swapFunction(
+        hathorRpc,
         address,
-      })
+        pool.id,
+        mainCurrency.uuid,
+        amountSpecified,
+        otherCurrency.uuid,
+        outputAmount * (1 - slippageTolerance)
+      )
+      console.log(response)
     }
   }
 

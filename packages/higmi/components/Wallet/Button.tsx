@@ -137,6 +137,9 @@ export const Button = <C extends React.ElementType>({
     if (accounts.length > 0) {
       const [namespace, reference, address] = accounts[0].split(':')
       setAddress(address)
+    } else {
+      // disconnect()
+      setAddress('')
     }
   }, [accounts])
 
