@@ -11,7 +11,7 @@ import { useEffect } from 'react'
 
 import SignClient from '@walletconnect/sign-client'
 import { Web3Modal } from '@web3modal/standalone'
-import { DEFAULT_HATHOR_METHODS, useChainData, useJsonRpc, useWalletConnectClient } from '../contexts'
+import { useJsonRpc, useWalletConnectClient } from '../contexts'
 import PairingModal from '../modals/PairingModal'
 import RequestModal from '../modals/RequestModal'
 
@@ -85,7 +85,7 @@ export const Button = <C extends React.ElementType>({
     chains,
     relayerRegion,
     accounts,
-    isFetchingBalances,
+    // isFetchingBalances,
     isInitializing,
     setChains,
     setRelayerRegion,
@@ -93,8 +93,6 @@ export const Button = <C extends React.ElementType>({
 
   // Use `JsonRpcContext` to provide us with relevant RPC methods and states.
   const { hathorRpc, isRpcRequestPending, rpcResult, isTestnet, setIsTestnet } = useJsonRpc()
-
-  const { chainData } = useChainData()
 
   function connectWithAddress() {
     setAddress(input)
@@ -133,35 +131,6 @@ export const Button = <C extends React.ElementType>({
     } else {
       setInput(x)
     }
-  }
-
-  const getHathorActions = (): AccountAction[] => {
-    const onSignMessage = async (chainId: string, address: string) => {
-      openRequestModal()
-      await hathorRpc.testSignMessage(chainId, address)
-    }
-    const onSendNanoTx = async (chainId: string, address: string) => {
-      openRequestModal()
-      await hathorRpc.testSendNanoContractTx(chainId, address)
-    }
-    const onSignOracleData = async (chainId: string, address: string) => {
-      openRequestModal()
-      await hathorRpc.testSignOracleData(chainId, address)
-    }
-    return [
-      {
-        method: DEFAULT_HATHOR_METHODS.HATHOR_SIGN_MESSAGE,
-        callback: onSignMessage,
-      },
-      {
-        method: DEFAULT_HATHOR_METHODS.HATHOR_SEND_NANO_TX,
-        callback: onSendNanoTx,
-      },
-      {
-        method: DEFAULT_HATHOR_METHODS.HATHOR_SIGN_ORACLE_DATA,
-        callback: onSignOracleData,
-      },
-    ]
   }
 
   useEffect(() => {

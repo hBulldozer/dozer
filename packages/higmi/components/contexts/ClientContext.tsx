@@ -22,6 +22,7 @@ interface IContext {
   connect: (pairing?: { topic: string }) => Promise<void>
   disconnect: () => Promise<void>
   isInitializing: boolean
+  isWaitingApproval: boolean
   chains: string[]
   relayerRegion: string
   pairings: PairingTypes.Struct[]
@@ -58,6 +59,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
   const [client, setClient] = useState<Client>()
   const [pairings, setPairings] = useState<PairingTypes.Struct[]>([])
   const [session, setSession] = useState<SessionTypes.Struct>()
+  const [isWaitingApproval, setisWaitingApproval] = useState(false)
 
   const [isInitializing, setIsInitializing] = useState(false)
   const prevRelayerValue = useRef<string>('')
@@ -86,6 +88,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
 
   const connect = useCallback(
     async (pairing: any) => {
+      setisWaitingApproval(true)
       if (typeof client === 'undefined') {
         throw new Error('WalletConnect is not initialized')
       }
@@ -117,10 +120,13 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
         await onSessionConnected(session)
         // Update known pairings after session is connected.
         setPairings(client.pairing.getAll({ active: true }))
+        setisWaitingApproval(false)
       } catch (e) {
+        setisWaitingApproval(false)
         console.error(e)
         // ignore rejection
       } finally {
+        setisWaitingApproval(false)
         // close modal in case it was open
         web3Modal.closeModal()
       }
@@ -231,6 +237,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
     () => ({
       pairings,
       isInitializing,
+      isWaitingApproval,
       accounts,
       chains,
       relayerRegion,
@@ -244,6 +251,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
     [
       pairings,
       isInitializing,
+      isWaitingApproval,
       accounts,
       chains,
       relayerRegion,

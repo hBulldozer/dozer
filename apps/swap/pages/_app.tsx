@@ -9,16 +9,16 @@ import { api } from 'utils/api'
 import { Header } from '../components'
 import Head from 'next/head'
 import { ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
-// import { config } from '@hathor/wallet-lib'
+import { config } from '@hathor/wallet-lib'
 
-// config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
-// config.setNetwork('testnet')
+config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
+config.setNetwork('testnet')
 
-// declare global {
-//   interface Window {
-//     dataLayer: Record<string, any>[]
-//   }
-// }
+declare global {
+  interface Window {
+    dataLayer: Record<string, any>[]
+  }
+}
 
 const MyApp = ({ Component, pageProps }: AppProps) => {
   // const router = useRouter()

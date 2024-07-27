@@ -16,7 +16,7 @@ import chains, { ChainId } from '@dozer/chain'
 import { client, toToken } from '@dozer/api'
 import { Token } from '@dozer/currency'
 import { useInViewport } from '@dozer/hooks'
-import { useChainData, useJsonRpc, useWalletConnectClient } from '../../contexts'
+import { useJsonRpc, useWalletConnectClient } from '../../contexts'
 
 interface DefaultProps {
   chainId: ChainId
@@ -46,7 +46,6 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
     disconnect,
     relayerRegion,
     accounts,
-    isFetchingBalances,
     isInitializing,
     setChains,
     setRelayerRegion,
@@ -54,8 +53,6 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
 
   // Use `JsonRpcContext` to provide us with relevant RPC methods and states.
   const { hathorRpc, isRpcRequestPending, rpcResult, isTestnet, setIsTestnet } = useJsonRpc()
-
-  const { chainData } = useChainData()
 
   // const { data: avatar } = useEnsAvatar({
   //   address: address,

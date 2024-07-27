@@ -14789,6 +14789,7 @@ snapshots:
       - encoding
       - supports-color
       - utf-8-validate
+    optional: true
 
   metro-config@0.80.3(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
@@ -14889,6 +14890,7 @@ snapshots:
       - encoding
       - supports-color
       - utf-8-validate
+    optional: true
 
   metro-transform-worker@0.80.3(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
@@ -14960,6 +14962,7 @@ snapshots:
       - encoding
       - supports-color
       - utf-8-validate
+    optional: true
 
   metro@0.80.3(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
@@ -14987,7 +14990,7 @@ snapshots:
       metro-babel-transformer: 0.80.3
       metro-cache: 0.80.3
       metro-cache-key: 0.80.3
-      metro-config: 0.80.3
+      metro-config: 0.80.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       metro-core: 0.80.3
       metro-file-map: 0.80.3
       metro-minify-terser: 0.80.3
