@@ -54,29 +54,29 @@ export class LiquidityPool extends NanoContract {
     const response = await this.execute(address, 'swap_tokens_for_exact_tokens', actions, args, wallet)
     return response
   }
-  public async swap_exact_tokens_for_tokens(
-    token_in: string,
-    amount_in: number,
-    token_out: string,
-    amount_out: number,
-    address: string,
-    wallet?: string
-  ) {
-    const actions: NCAction[] = [
-      {
-        type: 'deposit',
-        token: token_in,
-        amount: Math.ceil(amount_in * 100),
-        address: address,
-        changeAddress: address,
-      },
-      { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
-    ]
-    const args: NCArgs[] = []
-    // console.log('actions', actions)
-    const response = await this.execute(address, 'swap_exact_tokens_for_tokens', actions, args, wallet)
-    return response
-  }
+  // public async swap_exact_tokens_for_tokens(
+  //   token_in: string,
+  //   amount_in: number,
+  //   token_out: string,
+  //   amount_out: number,
+  //   address: string,
+  //   wallet?: string
+  // ) {
+  //   const actions: NCAction[] = [
+  //     {
+  //       type: 'deposit',
+  //       token: token_in,
+  //       amount: Math.ceil(amount_in * 100),
+  //       address: address,
+  //       changeAddress: address,
+  //     },
+  //     { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
+  //   ]
+  //   const args: NCArgs[] = []
+  //   // console.log('actions', actions)
+  //   const response = await this.execute(address, 'swap_exact_tokens_for_tokens', actions, args, wallet)
+  //   return response
+  // }
 
   public async add_liquidity(
     token_a: string,
@@ -136,3 +136,5 @@ export class LiquidityPool extends NanoContract {
     return response
   }
 }
+
+export * from './functions'

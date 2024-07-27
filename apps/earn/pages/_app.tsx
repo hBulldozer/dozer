@@ -15,7 +15,7 @@ import { FC, useEffect, useState } from 'react'
 
 import Head from 'next/head'
 import { api } from '../utils/api'
-import { ChainDataContextProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
+import { ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 
 // const queryClient = new QueryClient()
 
@@ -63,17 +63,15 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
       <ThemeProvider>
         <App.Shell>
           {/* <DefaultSeo {...SEO} /> */}
-          <ChainDataContextProvider>
-            <ClientContextProvider>
-              <JsonRpcContextProvider>
-                <Header />
-                {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
-                <Component {...pageProps} />
-                <App.Footer />
-                <ToastContainer className="mt-[50px]" />
-              </JsonRpcContextProvider>
-            </ClientContextProvider>
-          </ChainDataContextProvider>
+          <ClientContextProvider>
+            <JsonRpcContextProvider>
+              <Header />
+              {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
+              <Component {...pageProps} />
+              <App.Footer />
+              <ToastContainer className="mt-[50px]" />
+            </JsonRpcContextProvider>
+          </ClientContextProvider>
         </App.Shell>
       </ThemeProvider>
       <Analytics />

@@ -1,11 +1,10 @@
 import Client from '@walletconnect/sign-client'
 import { PairingTypes, SessionTypes } from '@walletconnect/types'
-import { getSdkError } from '@walletconnect/utils'
 import { Web3Modal } from '@web3modal/standalone'
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState, useRef } from 'react'
 
-import { getRequiredNamespaces } from './namespaces'
+import { getAppMetadata, getSdkError } from '@walletconnect/utils'
 
 export const DEFAULT_APP_METADATA = {
   name: 'Dozer App',
@@ -23,12 +22,10 @@ interface IContext {
   connect: (pairing?: { topic: string }) => Promise<void>
   disconnect: () => Promise<void>
   isInitializing: boolean
-  isWaitingApproval: boolean
   chains: string[]
   relayerRegion: string
   pairings: PairingTypes.Struct[]
   accounts: string[]
-  isFetchingBalances: boolean
   setChains: any
   setRelayerRegion: any
 }
@@ -51,8 +48,7 @@ const web3Modal = new Web3Modal({
     '--w3m-background-color': '#000000',
     '--w3m-accent-color': '#eab308',
   },
-  mobileWallets: [],
-  desktopWallets: [],
+  explorerAllowList: [],
 })
 
 /**
@@ -63,66 +59,44 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
   const [pairings, setPairings] = useState<PairingTypes.Struct[]>([])
   const [session, setSession] = useState<SessionTypes.Struct>()
 
-  const [isFetchingBalances, setIsFetchingBalances] = useState(false)
   const [isInitializing, setIsInitializing] = useState(false)
-  const [isWaitingApproval, setIsWaitingApproval] = useState(false)
   const prevRelayerValue = useRef<string>('')
 
   const [accounts, setAccounts] = useState<string[]>([])
   const [chains, setChains] = useState<string[]>([])
-  const [relayerRegion, setRelayerRegion] = useState<string>(process.env.DEFAULT_RELAY_URL || '')
+  const [relayerRegion, setRelayerRegion] = useState<string>(process.env.NEXT_PUBLIC_RELAY_URL!)
 
   const reset = () => {
     setSession(undefined)
     setAccounts([])
     setChains([])
-    setRelayerRegion(process.env.DEFAULT_RELAY_URL || '')
-  }
-
-  const getAccountBalances = async (_accounts: string[]) => {
-    setIsFetchingBalances(true)
-    try {
-      const arr = await Promise.all(
-        _accounts.map(async (account) => {
-          const [namespace, reference, address] = account.split(':')
-          const chainId = `${namespace}:${reference}`
-          console.log('will get account balance')
-          // const assets = await apiGetAccountBalance(address, chainId)
-          return {
-            account,
-            // assets: [assets]
-          }
-        })
-      )
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsFetchingBalances(false)
-    }
+    setRelayerRegion(process.env.NEXT_PUBLIC_RELAY_URL!)
   }
 
   const onSessionConnected = useCallback(async (_session: SessionTypes.Struct) => {
     const allNamespaceAccounts = Object.values(_session.namespaces)
-      .map((namespace: any) => namespace.accounts)
+      .map((namespace) => namespace.accounts)
       .flat()
     const allNamespaceChains = Object.keys(_session.namespaces)
 
     setSession(_session)
     setChains(allNamespaceChains)
     setAccounts(allNamespaceAccounts)
-    await getAccountBalances(allNamespaceAccounts)
   }, [])
 
   const connect = useCallback(
     async (pairing: any) => {
-      setIsWaitingApproval(true)
       if (typeof client === 'undefined') {
         throw new Error('WalletConnect is not initialized')
       }
-      console.log('connect, pairing topic is:', pairing?.topic)
       try {
-        const requiredNamespaces = getRequiredNamespaces(chains)
-        console.log('requiredNamespaces config for connect:', requiredNamespaces)
+        const requiredNamespaces = {
+          hathor: {
+            methods: ['htr_signWithAddress', 'htr_sendNanoContractTx'],
+            chains: ['hathor:testnet'],
+            events: [],
+          },
+        }
 
         const { uri, approval } = await client.connect({
           pairingTopic: pairing?.topic,
@@ -133,28 +107,25 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
         if (uri) {
           // Create a flat array of all requested chains across namespaces.
           const standaloneChains = Object.values(requiredNamespaces)
-            .map((namespace: any) => namespace.chains)
+            .map((namespace) => namespace.chains)
             .flat() as string[]
 
           web3Modal.openModal({ uri, standaloneChains })
         }
 
         const session = await approval()
-        console.log('Established session:', session)
         await onSessionConnected(session)
         // Update known pairings after session is connected.
         setPairings(client.pairing.getAll({ active: true }))
-        setIsWaitingApproval(false)
       } catch (e) {
         console.error(e)
         // ignore rejection
       } finally {
         // close modal in case it was open
         web3Modal.closeModal()
-        setIsWaitingApproval(false)
       }
     },
-    [chains, client, onSessionConnected, setIsWaitingApproval]
+    [client, onSessionConnected]
   )
 
   const disconnect = useCallback(async () => {
@@ -215,14 +186,12 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       }
       // populates existing pairings to state
       setPairings(_client.pairing.getAll({ active: true }))
-      console.log('RESTORED PAIRINGS: ', _client.pairing.getAll({ active: true }))
 
       if (typeof session !== 'undefined') return
       // populates (the last) existing session to state
       if (_client.session.length) {
         const lastKeyIndex = _client.session.keys.length - 1
         const _session = _client.session.get(_client.session.keys[lastKeyIndex])
-        console.log('RESTORED SESSION:', _session)
         await onSessionConnected(_session)
         return _session
       }
@@ -241,8 +210,6 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
         metadata: DEFAULT_APP_METADATA,
       })
 
-      console.log('CREATED CLIENT: ', _client)
-      console.log('relayerRegion ', relayerRegion)
       setClient(_client)
       prevRelayerValue.current = relayerRegion
       await _subscribeToEvents(_client)
@@ -264,8 +231,6 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
     () => ({
       pairings,
       isInitializing,
-      isWaitingApproval,
-      isFetchingBalances,
       accounts,
       chains,
       relayerRegion,
@@ -279,8 +244,6 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
     [
       pairings,
       isInitializing,
-      isWaitingApproval,
-      isFetchingBalances,
       accounts,
       chains,
       relayerRegion,

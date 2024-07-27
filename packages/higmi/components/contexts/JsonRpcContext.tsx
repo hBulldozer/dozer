@@ -1,42 +1,40 @@
-import { createContext, ReactNode, useContext, useState } from 'react'
+import { createContext, ReactNode, useCallback, useContext, useState } from 'react'
 import { useWalletConnectClient } from './ClientContext'
-import { useChainData } from './ChainDataContext'
+import {
+  RpcMethods,
+  SendNanoContractRpcRequest,
+  SendNanoContractTxResponse,
+  SignOracleDataResponse,
+  SignOracleDataRpcRequest,
+} from 'hathor-rpc-handler-test'
 
-export enum DEFAULT_HATHOR_METHODS {
-  HATHOR_SIGN_MESSAGE = 'htr_signWithAddress',
-  HATHOR_SEND_NANO_TX = 'htr_sendNanoContractTx',
-  HATHOR_SIGN_ORACLE_DATA = 'htr_signOracleData',
-}
-
-export enum DEFAULT_HATHOR_EVENTS {}
-
-export const DEFAULT_MAIN_CHAINS = [
-  // mainnets
-  'hathor:testnet',
-]
+const HATHOR_TESTNET_CHAIN = 'hathor:testnet'
 
 /**
  * Types
  */
-interface IFormattedRpcResponse {
+export interface IFormattedRpcResponse<T> {
   method?: string
   address?: string
   valid: boolean
-  result: string
+  result: T
 }
 
-type TRpcRequestCallback = (chainId: string, address: string) => Promise<void>
+export interface IHathorRpc {
+  sendNanoContractTx: (ncTxRpcReq: SendNanoContractRpcRequest) => Promise<SendNanoContractTxResponse>
+  signOracleData: (signOracleDataReq: SignOracleDataRpcRequest) => Promise<SignOracleDataResponse>
+}
 
-interface IContext {
-  hathorRpc: {
-    testSignMessage: TRpcRequestCallback
-    testSendNanoContractTx: TRpcRequestCallback
-    testSignOracleData: TRpcRequestCallback
-  }
-  rpcResult?: IFormattedRpcResponse | null
+export interface IContext {
+  ping: () => Promise<void>
+  hathorRpc: IHathorRpc
+  rpcResult?: IFormattedRpcResponse<
+    SignOracleDataResponse | SendNanoContractTxResponse | string | null | undefined
+  > | null
   isRpcRequestPending: boolean
   isTestnet: boolean
   setIsTestnet: (isTestnet: boolean) => void
+  reset: () => void
 }
 
 /**
@@ -49,205 +47,137 @@ export const JsonRpcContext = createContext<IContext>({} as IContext)
  */
 export function JsonRpcContextProvider({ children }: { children: ReactNode | ReactNode[] }) {
   const [pending, setPending] = useState(false)
-  const [result, setResult] = useState<IFormattedRpcResponse | null>()
-  const [isTestnet, setIsTestnet] = useState(false)
+  const [result, setResult] = useState<IFormattedRpcResponse<
+    SignOracleDataResponse | SendNanoContractTxResponse | string | null | undefined
+  > | null>()
+  const [isTestnet, setIsTestnet] = useState(true)
 
-  const { client, session, accounts } = useWalletConnectClient()
+  const { client, session } = useWalletConnectClient()
 
-  const { chainData } = useChainData()
+  const reset = useCallback(() => {
+    setPending(false)
+    setResult(null)
+    setIsTestnet(true)
+  }, [])
 
-  const _createJsonRpcRequestHandler =
-    (rpcRequest: (chainId: string, address: string) => Promise<IFormattedRpcResponse>) =>
-    async (chainId: string, address: string) => {
-      if (typeof client === 'undefined') {
-        throw new Error('WalletConnect is not initialized')
-      }
-      if (typeof session === 'undefined') {
-        throw new Error('Session is not connected')
-      }
-
-      try {
-        setPending(true)
-        const result = await rpcRequest(chainId, address)
-        setResult(result)
-      } catch (err: any) {
-        console.error('RPC request failed: ', err)
-        setResult({
-          address,
-          valid: false,
-          result: err?.message ?? err,
-        })
-      } finally {
-        setPending(false)
-      }
+  const ping = async () => {
+    if (typeof client === 'undefined') {
+      throw new Error('WalletConnect is not initialized')
+    }
+    if (typeof session === 'undefined') {
+      throw new Error('Session is not connected')
     }
 
-  // -------- HATHOR RPC METHODS --------
+    try {
+      setPending(true)
 
-  const initialize = {
-    id: 3,
-    topic: '6514868878fe1dadd648a495692d5ab9d458c7d45876f2c63e1e7274640a53d4',
-    jsonrpc: '2.0',
-    params: {
-      request: {
-        method: 'htr_sendNanoContractTx',
-        params: {
-          push_tx: true,
-          network: 'testnet',
-          method: 'initialize',
-          blueprint_id: '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771595',
-          args: ['76a914969647cffd30891b1444944ff228f3bd7582fa4588ac', '00', Math.ceil(new Date().getTime() / 1000)],
-        },
-      },
-    },
+      let valid = false
+
+      try {
+        await client.ping({ topic: session.topic })
+        valid = true
+      } catch (e) {
+        valid = false
+      }
+
+      // display result
+      setResult({
+        method: 'ping',
+        valid,
+        result: valid ? 'Ping succeeded' : 'Ping failed',
+      })
+    } catch (e) {
+      console.error(e)
+      setResult(null)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  const walletClientGuard = () => {
+    if (client == null) {
+      throw new Error('WalletConnect is not initialized')
+    }
+    if (session == null) {
+      throw new Error('Session is not connected')
+    }
   }
 
   const hathorRpc = {
-    testCreateNanoContract: _createJsonRpcRequestHandler(
-      async (chainId: string, address: string): Promise<IFormattedRpcResponse> => {
-        try {
-          const result = await client!.request<{ result: any }>({
-            chainId,
-            topic: session!.topic,
-            request: {
-              method: 'htr_sendNanoContractTx',
-              params: {
-                push_tx: true,
-                network: 'testnet',
-                method: 'bet',
-                blueprint_id: '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771595',
-                actions: [
-                  {
-                    type: 'deposit',
-                    token: '00',
-                    amount: 1,
-                  },
-                ],
-                args: ['49a2f4c21b3f3219345eeaebf44ece0cbfaa13859577246ce5', 'true'],
-              },
-            },
-          })
+    sendNanoContractTx: async (ncTxRpcReq: SendNanoContractRpcRequest): Promise<SendNanoContractTxResponse> => {
+      walletClientGuard()
 
-          console.log('result: ', result)
+      try {
+        setPending(true)
 
-          return {
-            method: DEFAULT_HATHOR_METHODS.HATHOR_SEND_NANO_TX,
-            address,
-            valid: true,
-            result: JSON.stringify(result) as unknown as string,
-          }
-        } catch (error: any) {
-          console.log('Error: ', error)
-          throw new Error(error)
-        }
+        const result: SendNanoContractTxResponse = await client!.request<SendNanoContractTxResponse>({
+          chainId: HATHOR_TESTNET_CHAIN,
+          topic: session!.topic,
+          request: ncTxRpcReq,
+        })
+
+        setResult({
+          method: RpcMethods.SendNanoContractTx,
+          valid: true,
+          result,
+        })
+
+        return result
+      } catch (error: any) {
+        setResult({
+          valid: false,
+          result: error?.message ?? error,
+        })
+
+        // Still propagate the error
+        throw error
+      } finally {
+        setPending(false)
       }
-    ),
-    testSendNanoContractTx: _createJsonRpcRequestHandler(
-      async (chainId: string, address: string): Promise<IFormattedRpcResponse> => {
-        try {
-          const result = await client!.request<{ result: any }>({
-            chainId,
-            topic: session!.topic,
-            request: {
-              method: 'htr_sendNanoContractTx',
-              params: {
-                push_tx: true,
-                network: 'testnet',
-                method: 'bet',
-                blueprint_id: '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771595',
-                nc_id: '00002a71944472852754ed2f53dbd366b90b090bb319715e82f7fe0e786f0553',
-                actions: [
-                  {
-                    type: 'deposit',
-                    token: '00',
-                    amount: 1,
-                  },
-                ],
-                args: ['49a2f4c21b3f3219345eeaebf44ece0cbfaa13859577246ce5', 'true'],
-              },
-            },
-          })
+    },
+    signOracleData: async (signOracleDataReq: SignOracleDataRpcRequest): Promise<SignOracleDataResponse> => {
+      walletClientGuard()
 
-          console.log('result: ', result)
+      try {
+        setPending(true)
 
-          return {
-            method: DEFAULT_HATHOR_METHODS.HATHOR_SEND_NANO_TX,
-            address,
-            valid: true,
-            result: JSON.stringify(result) as unknown as string,
-          }
-        } catch (error: any) {
-          console.log('Error: ', error)
-          throw new Error(error)
-        }
+        const result: SignOracleDataResponse = await client!.request<SignOracleDataResponse>({
+          chainId: HATHOR_TESTNET_CHAIN,
+          topic: session!.topic,
+          request: signOracleDataReq,
+        })
+
+        setResult({
+          method: RpcMethods.SignOracleData,
+          valid: true,
+          result,
+        })
+
+        return result
+      } catch (error: any) {
+        setResult({
+          valid: false,
+          result: error?.message ?? error,
+        })
+
+        // Still propagate the error
+        throw error
+      } finally {
+        setPending(false)
       }
-    ),
-    testSignMessage: _createJsonRpcRequestHandler(
-      async (chainId: string, address: string): Promise<IFormattedRpcResponse> => {
-        try {
-          const result = await client!.request<{ result: any }>({
-            chainId,
-            topic: session!.topic,
-            request: {
-              method: DEFAULT_HATHOR_METHODS.HATHOR_SIGN_MESSAGE,
-              params: {
-                network: 'testnet',
-                addressIndex: 0,
-                message: 'Please sign me!',
-              },
-            },
-          })
-
-          return {
-            method: DEFAULT_HATHOR_METHODS.HATHOR_SIGN_MESSAGE,
-            address,
-            valid: true,
-            result: result as unknown as string,
-          }
-        } catch (error: any) {
-          console.log('Error: ', error)
-          throw new Error(error)
-        }
-      }
-    ),
-    testSignOracleData: _createJsonRpcRequestHandler(
-      async (chainId: string, address: string): Promise<IFormattedRpcResponse> => {
-        try {
-          const result = await client!.request<{ result: any }>({
-            chainId,
-            topic: session!.topic,
-            request: {
-              method: DEFAULT_HATHOR_METHODS.HATHOR_SIGN_ORACLE_DATA,
-              params: {
-                network: 'testnet',
-                oracle: address,
-                data: '2x0',
-              },
-            },
-          })
-
-          return {
-            method: DEFAULT_HATHOR_METHODS.HATHOR_SIGN_ORACLE_DATA,
-            address,
-            valid: true,
-            result: JSON.stringify(result),
-          }
-        } catch (error: any) {
-          console.log('Error: ', error)
-          throw new Error(error)
-        }
-      }
-    ),
+    },
   }
 
   return (
     <JsonRpcContext.Provider
       value={{
+        ping,
         hathorRpc,
         rpcResult: result,
         isRpcRequestPending: pending,
         isTestnet,
         setIsTestnet,
+        reset,
       }}
     >
       {children}

@@ -8,7 +8,11 @@ import { useEffect, useState } from 'react'
 import { api } from 'utils/api'
 import { Header } from '../components'
 import Head from 'next/head'
-import { ChainDataContextProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
+import { ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
+// import { config } from '@hathor/wallet-lib'
+
+// config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
+// config.setNetwork('testnet')
 
 // declare global {
 //   interface Window {
@@ -59,16 +63,14 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
       </Head>
       <ThemeProvider>
         <App.Shell>
-          <ChainDataContextProvider>
-            <ClientContextProvider>
-              <JsonRpcContextProvider>
-                <Header />
-                <Component {...pageProps} />
-                <App.Footer />
-                <ToastContainer className="mt-[50px]" />
-              </JsonRpcContextProvider>
-            </ClientContextProvider>
-          </ChainDataContextProvider>
+          <ClientContextProvider>
+            <JsonRpcContextProvider>
+              <Header />
+              <Component {...pageProps} />
+              <App.Footer />
+              <ToastContainer className="mt-[50px]" />
+            </JsonRpcContextProvider>
+          </ClientContextProvider>
         </App.Shell>
       </ThemeProvider>
       <Analytics />

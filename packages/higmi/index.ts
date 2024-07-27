@@ -18,3 +18,11 @@ export * from './systems'
 
 // Re-export wagmi
 // export * from '@wagmi/core'
+
+// import {
+//   SendNanoContractRpcRequest,
+//   sendNanoContractTxRpcRequest,
+//   SendNanoContractTxResponse,
+// } from 'hathor-rpc-handler-test'
+
+// export type { SendNanoContractRpcRequest, sendNanoContractTxRpcRequest, SendNanoContractTxResponse }
