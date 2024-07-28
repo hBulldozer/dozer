@@ -7,6 +7,7 @@ import { useAccount } from '@dozer/zustand'
 import { TokenSelectorDialog } from './TokenSelectorDialog'
 import { ChainId } from '@dozer/chain'
 import { api } from '../../utils/api'
+import { useWalletConnectClient } from '../contexts'
 
 export type TokenSelectorProps = {
   id?: string
@@ -41,7 +42,9 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
     pricesMap,
     ...props
   }) => {
-    const { address } = useAccount()
+    // const { address } = useAccount()
+    const { accounts } = useWalletConnectClient()
+    const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
     const isMounted = useIsMounted()
 
     // const _tokenMap: Record<string, Token> = useMemo(

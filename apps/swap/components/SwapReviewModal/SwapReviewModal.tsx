@@ -8,7 +8,7 @@ import { api } from 'utils/api'
 import { TokenBalance } from '@dozer/zustand'
 import { LiquidityPool } from '@dozer/nanocontracts'
 import { main } from '@dozer/database/dist/seed_db'
-import { useJsonRpc } from '@dozer/higmi'
+import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { get } from 'lodash'
 
 interface SwapReviewModalLegacy {
@@ -20,7 +20,14 @@ interface SwapReviewModalLegacy {
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
   const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency } = useTrade()
   const [sentTX, setSentTX] = useState(false)
-  const { address, addNotification, setBalance, balance } = useAccount()
+  const {
+    // address,
+    addNotification,
+    setBalance,
+    balance,
+  } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { network } = useNetwork()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)

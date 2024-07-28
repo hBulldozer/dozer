@@ -8,6 +8,7 @@ import { useUnderlyingTokenBalanceFromPair } from '@dozer/api'
 import { api } from '../utils/api'
 import { max } from 'date-fns'
 import { MAX_SAFE_INTEGER } from '@dozer/math'
+import { useWalletConnectClient } from '@dozer/higmi'
 
 interface PoolPositionContext {
   value0: number
@@ -30,7 +31,9 @@ export const PoolPositionProvider: FC<{
   const token0 = toToken(pair.token0)
   const token1 = toToken(pair.token1)
 
-  const { address } = useAccount()
+  // const { address } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
 
   const {
     data: poolInfo,

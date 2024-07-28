@@ -6,17 +6,21 @@ import { useAccount } from '@dozer/zustand'
 
 import { PoolsTable, PositionsTable } from './Tables'
 import { Pair } from '@dozer/api'
+import { useWalletConnectClient } from '@dozer/higmi'
 // import { PoolsTable, PositionsTable } from './Tables'
 // import { TableFilters } from './Tables/TableFilters'
 
 export const PoolsSection: FC = () => {
-  const accountAddress = useAccount((state) => state.address)
+  // const accountAddress = useAccount((state) => state.address)
   const [tab, setTab] = useState<number>(0)
-  const [address, setAddress] = useState('')
+  // const [address, setAddress] = useState('')
 
-  useEffect(() => {
-    setAddress(accountAddress)
-  }, [accountAddress])
+  // useEffect(() => {
+  //   setAddress(accountAddress)
+  // }, [accountAddress])
+
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
 
   return (
     <section className="flex flex-col">

@@ -12,6 +12,7 @@ import { ChainId } from '@dozer/chain'
 import { Pair } from '@dozer/api'
 import { api } from '../../../../utils/api'
 import { usePoolPosition } from '../../../PoolPositionProvider'
+import { useWalletConnectClient } from '@dozer/higmi'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -19,7 +20,9 @@ const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, VALUE_COLUMN, APR_COLUMN]
 // VOLUME_COLUMN
 
 export const PositionsTable: FC = () => {
-  const { address } = useAccount()
+  // const { address } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { isSm } = useBreakpoint('sm')
   const { isMd } = useBreakpoint('md')
 

@@ -2,7 +2,7 @@ import { Amount } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
 import { Percent } from '@dozer/math'
 import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } from '@dozer/ui'
-import { Approve, Checker } from '@dozer/higmi'
+import { Approve, Checker, useWalletConnectClient } from '@dozer/higmi'
 import { FC, useMemo, useState } from 'react'
 
 import { TokenBalance, useAccount, useNetwork, useSettings } from '@dozer/zustand'
@@ -22,7 +22,14 @@ const DEFAULT_REMOVE_LIQUIDITY_SLIPPAGE_TOLERANCE = new Percent(5, 100)
 
 export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices }) => {
   const { slippageTolerance } = useSettings()
-  const { address, addNotification, setBalance, balance } = useAccount()
+  const {
+    // address,
+    addNotification,
+    setBalance,
+    balance,
+  } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { network } = useNetwork()
   const [isWritePending, setIsWritePending] = useState<boolean>(false)
 

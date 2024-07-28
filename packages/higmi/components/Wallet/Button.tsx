@@ -2,7 +2,7 @@ import { ChevronDoubleDownIcon } from '@heroicons/react/24/outline'
 import { AppearOnMount, ButtonProps, Menu, Typography, WalletConnectIcon, Dialog } from '@dozer/ui'
 import React, { ReactNode, useMemo, useState } from 'react'
 import { Address } from '@dozer/ui/input/Address'
-import { useAccount } from '@dozer/zustand'
+// import { useAccount } from '@dozer/zustand'
 import { useEffect } from 'react'
 
 // import { useConnect } from 'wagmi'
@@ -67,7 +67,7 @@ export const Button = <C extends React.ElementType>({
   //   }
 
   const [input, setInput] = useState('')
-  const setAddress = useAccount((state) => state.setAddress)
+  // const setAddress = useAccount((state) => state.setAddress)
   const [modal, setModal] = useState('')
 
   const closeModal = () => setModal('')
@@ -94,9 +94,9 @@ export const Button = <C extends React.ElementType>({
   // Use `JsonRpcContext` to provide us with relevant RPC methods and states.
   const { hathorRpc, isRpcRequestPending, rpcResult, isTestnet, setIsTestnet } = useJsonRpc()
 
-  function connectWithAddress() {
-    setAddress(input)
-  }
+  // function connectWithAddress() {
+  //   setAddress(input)
+  // }
 
   // Close the pairing modal after a session is established.
   useEffect(() => {
@@ -118,12 +118,12 @@ export const Button = <C extends React.ElementType>({
     }
   }
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key == 'Enter') {
-      if (input.length == 34) connectWithAddress()
-      else event.preventDefault()
-    }
-  }
+  // function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+  //   if (event.key == 'Enter') {
+  //     if (input.length == 34) connectWithAddress()
+  //     else event.preventDefault()
+  //   }
+  // }
 
   function onChange(x: string) {
     if (x.length > 34) {
@@ -133,15 +133,15 @@ export const Button = <C extends React.ElementType>({
     }
   }
 
-  useEffect(() => {
-    if (accounts.length > 0) {
-      const [namespace, reference, address] = accounts[0].split(':')
-      setAddress(address)
-    } else {
-      // disconnect()
-      setAddress('')
-    }
-  }, [accounts])
+  // useEffect(() => {
+  //   if (accounts.length > 0) {
+  //     const [namespace, reference, address] = accounts[0].split(':')
+  //     setAddress(address)
+  //   } else {
+  //     // disconnect()
+  //     setAddress('')
+  //   }
+  // }, [accounts])
 
   const renderModal = () => {
     switch (modal) {

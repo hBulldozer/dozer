@@ -14,6 +14,7 @@ import { Portal } from './Portal'
 import { shortenAddress } from './Utils'
 // import { api } from '../../../utils/api'
 import { client } from '@dozer/api'
+import { useWalletConnectClient } from '../../contexts'
 
 interface ProfileProps {
   client: typeof client
@@ -27,16 +28,18 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   const { isSm } = useBreakpoint('sm')
   const [view, setView] = useState<ProfileView>(ProfileView.Default)
   const { network } = useNetwork()
-  const accountAddress = useAccount((state) => state.address)
+  // const accountAddress = useAccount((state) => state.address)
   // const utils = api.useContext()
   // const htr = utils.getTokens.all.getData()
   // console.log(htr)
-  const [address, setAddress] = useState('')
+  // const [address, setAddress] = useState('')
   const chainId = network
   // const { data, isLoading, isError, error } = useBalance(accountAddress)
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { data, isLoading, isError, error } = client.getProfile.balance.useQuery(
-    { address: accountAddress },
-    { enabled: Boolean(accountAddress) }
+    { address: address },
+    { enabled: Boolean(address) }
   )
   const { setBalance } = useAccount()
 
@@ -44,9 +47,9 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   //   address,
   // })
 
-  useEffect(() => {
-    setAddress(accountAddress)
-  }, [accountAddress])
+  // useEffect(() => {
+  //   setAddress(accountAddress)
+  // }, [accountAddress])
 
   useEffect(() => {
     if (address && data && !isLoading && !isError) {

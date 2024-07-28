@@ -6,7 +6,7 @@ import { useAccount, useNetwork, useTrade, TokenBalance, useSettings } from '@do
 import { AddSectionReviewModal } from './AddSectionReviewModal'
 import { LiquidityPool } from '@dozer/nanocontracts'
 import { api } from '../../utils/api'
-import { useJsonRpc } from '@dozer/higmi'
+import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { get } from 'lodash'
 
 interface AddSectionReviewModalLegacyProps {
@@ -32,8 +32,16 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   const [open, setOpen] = useState(false)
   const { amountSpecified, outputAmount, pool, mainCurrency, otherCurrency } = useTrade()
   const [sentTX, setSentTX] = useState(false)
-  const { address, addNotification, setBalance, balance } = useAccount()
+  const {
+    //  address,
+    addNotification,
+    setBalance,
+    balance,
+  } = useAccount()
   const { network } = useNetwork()
+
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
 
   const liquiditypool = new LiquidityPool(mainCurrency?.uuid || '', otherCurrency?.uuid || '', 5, 50, pool?.id || '')
 

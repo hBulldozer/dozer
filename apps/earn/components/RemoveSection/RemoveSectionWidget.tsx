@@ -20,6 +20,7 @@ import { useAccount, useNetwork } from '@dozer/zustand'
 
 // import { usePoolPosition } from '../PoolPositionProvider'
 import { SettingsOverlay } from '../SettingsOverlay'
+import { useWalletConnectClient } from '@dozer/higmi'
 
 interface RemoveSectionWidgetProps {
   chainId: ChainId
@@ -50,7 +51,12 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
 }) => {
   const isMounted = useIsMounted()
   const [hover, setHover] = useState(false)
-  const { address, balance } = useAccount()
+  const {
+    // address,
+    balance,
+  } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const value0 = prices[token0.uuid]
   const value1 = prices[token1.uuid]
 

@@ -32,7 +32,7 @@ interface BalanceProps {
 }
 
 export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_client }) => {
-  const setAddress = useAccount((state) => state.setAddress)
+  // const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
   const { data: prices } = api_client.getPrices.all.useQuery()
   const { data: tokens } = api_client.getTokens.all.useQuery()
@@ -72,7 +72,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
   // )
 
   function logout() {
-    setAddress('')
+    // setAddress('')
     setBalance([])
     if (accounts.length > 0) disconnect()
   }

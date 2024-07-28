@@ -1,5 +1,5 @@
 import { App, AppType, BuyCrypto } from '@dozer/ui'
-import { NetworkSelector } from '@dozer/higmi'
+import { NetworkSelector, useWalletConnectClient } from '@dozer/higmi'
 import { Profile } from '@dozer/higmi/components/Wallet/Profile'
 import React, { FC, useState } from 'react'
 // import { useAccount } from 'higmi'
@@ -12,7 +12,9 @@ import { useRouter } from 'next/router'
 // import { useNotifications } from '../lib/state/storage'
 
 export const Header: FC = () => {
-  const { address } = useAccount()
+  // const { address } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const [open, setOpen] = useState(false)
   // const [notifications, { clearNotifications }] = useNotifications(address)
 
