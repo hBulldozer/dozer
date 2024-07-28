@@ -202,7 +202,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
             onClick()
           }}
         >
-          {isRpcRequestPending ? <Dots>Confirm transaction</Dots> : <>Add Liquidity</>}
+          {isRpcRequestPending ? <Dots>Confirm transactionin your wallet</Dots> : <>Add Liquidity</>}
         </Button>
       </AddSectionReviewModal>
     </>
