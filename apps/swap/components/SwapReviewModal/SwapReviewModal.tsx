@@ -19,7 +19,7 @@ interface SwapReviewModalLegacy {
 
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
   const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency } = useTrade()
-  const [didReset, setDidReset] = useState(false)
+  const [sentTX, setSentTX] = useState(false)
   const { address, addNotification, setBalance, balance } = useAccount()
   const { network } = useNetwork()
   const [open, setOpen] = useState(false)
@@ -115,6 +115,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   //   },
   // })
   const onClick = async () => {
+    setSentTX(true)
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
       const response = await swapFunction(
         hathorRpc,
@@ -125,17 +126,12 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
         otherCurrency.uuid,
         outputAmount * (1 - slippageTolerance)
       )
-      console.log(response)
+      // console.log(response)
     }
   }
 
   useEffect(() => {
-    reset()
-    setDidReset(true)
-  }, [reset])
-
-  useEffect(() => {
-    if (rpcResult?.valid && rpcResult?.result) {
+    if (rpcResult?.valid && rpcResult?.result && sentTX) {
       console.log(rpcResult)
       if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
         const hash = get(rpcResult, 'result.response.hash') as string
@@ -168,10 +164,11 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
           addNotification(notificationGroup)
           createSuccessToast(notificationData)
           setOpen(false)
+          setSentTX(false)
         } else {
-          createErrorToast(`asdasdas`, true)
-
+          createErrorToast(`Error`, true)
           setOpen(false)
+          setSentTX(false)
         }
       }
     }

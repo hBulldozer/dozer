@@ -172,33 +172,42 @@ export class LiquidityPool extends NanoContract {
   }
 
   public async add_liquidity(
+    hathorRpc: IHathorRpc,
+    ncId: string,
     token_a: string,
     amount_a: number,
     token_b: string,
     amount_b: number,
-    address: string,
-    wallet?: string
+    address: string
   ) {
-    const actions: NCAction[] = [
-      {
-        type: 'deposit',
-        token: token_a,
-        amount: Math.ceil(amount_a * 100),
-        address: address,
-        changeAddress: address,
-      },
-      {
-        type: 'deposit',
-        token: token_b,
-        amount: Math.ceil(amount_b * 100),
-        address: address,
-        changeAddress: address,
-      },
-    ]
-    const args: NCArgs[] = []
-    // console.log('actions', actions)
-    const response = await this.execute(address, 'add_liquidity', actions, args, wallet)
-    return response
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'add_liquidity',
+      '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771596',
+      [
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: token_a,
+          amount: Math.ceil(amount_a * 100),
+          address: address,
+          changeAddress: address,
+        },
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: token_b,
+          amount: Math.ceil(amount_b * 100),
+          address: address,
+          changeAddress: address,
+        },
+      ],
+      [],
+      true,
+      ncId
+    )
+    console.log('Will send rpc req: ', ncTxRpcReq)
+
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+
+    return rpcResponse
   }
 
   public async remove_liquidity(

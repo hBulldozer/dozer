@@ -258,6 +258,9 @@ importers:
       fast-json-stable-stringify:
         specifier: 2.1.0
         version: 2.1.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       next:
         specifier: 14.2.5
         version: 14.2.5(@babel/core@7.23.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -289,6 +292,9 @@ importers:
       '@tanstack/react-query':
         specifier: 4.35.7
         version: 4.35.7(react-dom@18.3.1(react@18.3.1))(react-native@0.73.1(@babel/core@7.23.7)(react@18.3.1))(react@18.3.1)
+      '@types/lodash':
+        specifier: ^4.17.7
+        version: 4.17.7
       '@types/node':
         specifier: 20.14.10
         version: 20.14.10
