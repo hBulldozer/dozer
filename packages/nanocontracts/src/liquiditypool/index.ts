@@ -102,7 +102,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'swap_exact_tokens_for_tokens',
-      process.env.LP_BLUEPRINT || '',
+      '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771596',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -142,7 +142,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'swap_tokens_for_exact_tokens',
-      process.env.LP_BLUEPRINT || '',
+      '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771596',
       [
         {
           type: NanoContractActionType.DEPOSIT,

@@ -1,7 +1,7 @@
 import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData } from '@dozer/ui'
 import { useAccount, useNetwork, useSettings, useTrade } from '@dozer/zustand'
 import { TradeType } from 'components/utils/TradeType'
-import React, { FC, ReactNode, useCallback, useState } from 'react'
+import React, { FC, ReactNode, useCallback, useEffect, useState } from 'react'
 import { SwapReviewModalBase } from './SwapReviewModalBase'
 import { XMarkIcon } from '@heroicons/react/24/solid'
 import { api } from 'utils/api'
@@ -9,6 +9,7 @@ import { TokenBalance } from '@dozer/zustand'
 import { LiquidityPool } from '@dozer/nanocontracts'
 import { main } from '@dozer/database/dist/seed_db'
 import { useJsonRpc } from '@dozer/higmi'
+import { get } from 'lodash'
 
 interface SwapReviewModalLegacy {
   chainId: number | undefined
@@ -18,15 +19,16 @@ interface SwapReviewModalLegacy {
 
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
   const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency } = useTrade()
+  const [didReset, setDidReset] = useState(false)
   const { address, addNotification, setBalance, balance } = useAccount()
   const { network } = useNetwork()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
   const { slippageTolerance } = useSettings()
-  const [isWritePending, setIsWritePending] = useState<boolean>(false)
+
   const liquiditypool = new LiquidityPool(mainCurrency?.uuid || '', otherCurrency?.uuid || '', 5, 50, pool?.id || '')
 
-  const { hathorRpc } = useJsonRpc()
+  const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
   const onCloseCard = useCallback(() => {
     onSuccess()
@@ -114,7 +116,6 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   // })
   const onClick = async () => {
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
-      setIsWritePending(true)
       const response = await swapFunction(
         hathorRpc,
         address,
@@ -128,6 +129,54 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
     }
   }
 
+  useEffect(() => {
+    reset()
+    setDidReset(true)
+  }, [reset])
+
+  useEffect(() => {
+    if (rpcResult?.valid && rpcResult?.result) {
+      console.log(rpcResult)
+      if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
+        const hash = get(rpcResult, 'result.response.hash') as string
+        if (hash) {
+          const notificationData: NotificationData = {
+            type: 'swap',
+            chainId: network,
+            summary: {
+              pending: `Waiting for next block`,
+              completed: `Success! Traded ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
+              failed: 'Failed summary',
+              info: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
+            },
+            status: 'pending',
+            txHash: hash,
+            groupTimestamp: Math.floor(Date.now() / 1000),
+            timestamp: Math.floor(Date.now() / 1000),
+            promise: new Promise((resolve) => {
+              setTimeout(resolve, 500)
+            }),
+          }
+          editBalanceOnSwap(
+            amountSpecified,
+            mainCurrency.uuid,
+            outputAmount * (1 - slippageTolerance),
+            otherCurrency.uuid
+          )
+          const notificationGroup: string[] = []
+          notificationGroup.push(JSON.stringify(notificationData))
+          addNotification(notificationGroup)
+          createSuccessToast(notificationData)
+          setOpen(false)
+        } else {
+          createErrorToast(`asdasdas`, true)
+
+          setOpen(false)
+        }
+      }
+    }
+  }, [rpcResult])
+
   return (
     <>
       {children({ setOpen })}
@@ -135,11 +184,11 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
         <Button
           size="md"
           testdata-id="swap-review-confirm-button"
-          disabled={isWritePending}
+          disabled={isRpcRequestPending}
           fullWidth
           onClick={() => onClick()}
         >
-          {isWritePending ? <Dots>Confirm Swap</Dots> : 'Swap'}
+          {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Swap'}
         </Button>
       </SwapReviewModalBase>
 
