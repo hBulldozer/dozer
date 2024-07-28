@@ -2,8 +2,8 @@ import { Amount } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
 import { Percent } from '@dozer/math'
 import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } from '@dozer/ui'
-import { Approve, Checker, useWalletConnectClient } from '@dozer/higmi'
-import { FC, useMemo, useState } from 'react'
+import { Approve, Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { FC, useEffect, useMemo, useState } from 'react'
 
 import { TokenBalance, useAccount, useNetwork, useSettings } from '@dozer/zustand'
 import { RemoveSectionWidget } from './RemoveSectionWidget'
@@ -12,6 +12,8 @@ import { dbPoolWithTokens } from '@dozer/api'
 import { useUnderlyingTokenBalanceFromPair } from '@dozer/api'
 import { usePoolPosition } from '../PoolPositionProvider'
 import { api } from '../../utils/api'
+import { LiquidityPool } from '@dozer/nanocontracts'
+import { get } from 'lodash'
 
 interface RemoveSectionLegacyProps {
   pair: Pair
@@ -31,7 +33,8 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { network } = useNetwork()
-  const [isWritePending, setIsWritePending] = useState<boolean>(false)
+
+  const [sentTX, setSentTX] = useState(false)
 
   const slippagePercent = useMemo(
     () =>
@@ -53,6 +56,10 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
 
   const token0 = toToken(pair.token0)
   const token1 = toToken(pair.token1)
+
+  const liquiditypool = new LiquidityPool(token0?.uuid || '', token1?.uuid || '', 5, 50, pair?.id || '')
+
+  const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
   const liquidityAmount = Amount.fromFractionalAmount(
     token0,
@@ -115,11 +122,27 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
     }
   }
 
-  const mutation = api.getPools.remove_liquidity.useMutation({
-    onSuccess: (res) => {
-      console.log(res)
+  const onClick = async () => {
+    setSentTX(true)
+    if (currencyAToRemove && currencyBToRemove && percentage) {
+      liquiditypool.remove_liquidity(
+        hathorRpc,
+        pair.id,
+        token0.uuid,
+        Number(currencyAToRemove?.toFixed(2) || 0),
+        token1.uuid,
+        Number(currencyBToRemove?.toFixed(2) || 0),
+        address
+      )
+    }
+  }
+
+  useEffect(() => {
+    if (rpcResult?.valid && rpcResult?.result && sentTX) {
+      console.log(rpcResult)
       if (minAmount0 && minAmount1 && percentage) {
-        if (res.hash) {
+        const hash = get(rpcResult, 'result.response.hash') as string
+        if (hash) {
           const notificationData: NotificationData = {
             type: 'swap',
             chainId: network,
@@ -134,7 +157,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
               } and ${currencyBToRemove?.toFixed(2)} ${token1.symbol}.`,
             },
             status: 'pending',
-            txHash: res.hash,
+            txHash: hash,
             groupTimestamp: Math.floor(Date.now() / 1000),
             timestamp: Math.floor(Date.now() / 1000),
             promise: new Promise((resolve) => {
@@ -151,32 +174,15 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
           notificationGroup.push(JSON.stringify(notificationData))
           addNotification(notificationGroup)
           createSuccessToast(notificationData)
-          setIsWritePending(false)
+          setSentTX(false)
         } else {
-          createErrorToast(`${res.error}`, true)
-          setIsWritePending(false)
+          createErrorToast(`Error`, true)
+          setSentTX(false)
         }
       }
-    },
-    onError: (error) => {
-      createErrorToast(`Error sending TX. \n${error}`, true)
-      setIsWritePending(false)
-    },
-  })
-
-  const onClick = async () => {
-    if (currencyAToRemove && currencyBToRemove && percentage) {
-      setIsWritePending(true)
-      mutation.mutate({
-        amount_a: Number(currencyAToRemove?.toFixed(2) || 0),
-        token_a: token0.uuid,
-        amount_b: Number(currencyBToRemove?.toFixed(2) || 0),
-        ncid: pair.id,
-        token_b: token1.uuid,
-        address,
-      })
     }
-  }
+  }, [rpcResult])
+
   return (
     <div>
       <RemoveSectionWidget
@@ -192,8 +198,14 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
         prices={prices}
       >
         <Checker.Connected fullWidth size="md">
-          <Button onClick={onClick} fullWidth size="md" variant="filled" disabled={!percentage}>
-            {!percentage ? 'Enter a percentage' : isWritePending ? <Dots>Removing Liquidity</Dots> : 'Remove Liquidity'}
+          <Button onClick={onClick} fullWidth size="md" variant="filled" disabled={!percentage || isRpcRequestPending}>
+            {!percentage ? (
+              'Enter a percentage'
+            ) : isRpcRequestPending ? (
+              <Dots>Confirm transaction in your wallet</Dots>
+            ) : (
+              'Remove Liquidity'
+            )}
           </Button>
 
           {/* </Checker.Custom>
