@@ -86,6 +86,7 @@ model daySnapshot {
   fee0     Float    @default(0)
   fee1     Float    @default(0)
   feeUSD    Float    @default(0)
+  txCount    Int      @default(0)
   pool         Pool     @relation(fields: [poolId], references: [id])
 
   @@index([poolId])
@@ -106,6 +107,7 @@ model hourSnapshot {
   fee0     Float    @default(0)
   fee1     Float    @default(0)
   feeUSD    Float    @default(0)
+  txCount    Int      @default(0)
   pool         Pool     @relation(fields: [poolId], references: [id])
 
   @@index([poolId])

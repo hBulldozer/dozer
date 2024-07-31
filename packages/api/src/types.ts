@@ -107,6 +107,8 @@ export type Pair = {
   volumeUSD: number
   fee0: number
   fee1: number
+  txCount: number
+  txCount1d: number
   hourSnapshots: Array<PairHourSnapshot>
   daySnapshots: Array<PairDaySnapshot>
 }

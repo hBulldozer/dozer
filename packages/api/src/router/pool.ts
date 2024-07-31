@@ -50,6 +50,7 @@ const fetchAndProcessPoolData = async (
       fee0: number
       fee1: number
       feeUSD: number
+      txCount: number
     }[]
   },
   priceHTR: number
@@ -59,7 +60,8 @@ const fetchAndProcessPoolData = async (
 
   const rawPoolData = await fetchNodeData(endpoint, queryParams)
   const poolData = rawPoolData.calls['pool_data()'].value
-  const { fee, reserve0, reserve1, fee0, fee1, volume0, volume1 } = poolData
+  console.log(poolData)
+  const { fee, reserve0, reserve1, fee0, fee1, volume0, volume1, transactions } = poolData
 
   const { id, chainId, token0, token1 } = pool
 
@@ -69,16 +71,18 @@ const fetchAndProcessPoolData = async (
   const volume1old = pool.hourSnapshots[0]?.volume1 || 0
   const fee0old = pool.hourSnapshots[0]?.fee0 || 0
   const fee1old = pool.hourSnapshots[0]?.fee1 || 0
+  const txCountold = pool.hourSnapshots[0]?.txCount || 0
   const reserve0old = pool.hourSnapshots[0]?.reserve0 || 0
-  const reserve1old = pool.hourSnapshots[0]?.reserve1 || 0
+  const reserve1old = pool.hourSnapshots[0]?.reserve1 || 1
   const volume1d =
     (volume0 * priceHTR - volume0old * priceHTRold) / 100 +
     ((volume1 * priceHTR * reserve0) / reserve1 - (volume1old * priceHTRold * reserve0old) / reserve1old) / 100
-  const fee1d =
+  const fees1d =
     (fee0 * priceHTR - fee0old * priceHTRold) / 100 +
     ((fee1 * priceHTR * reserve0) / reserve1 - (fee1old * priceHTRold * reserve0old) / reserve1old) / 100
-  const feeUSD = fee1d * priceHTR + (pool.hourSnapshots[0]?.feeUSD || 0)
+  const feeUSD = fees1d * priceHTR + (pool.hourSnapshots[0]?.feeUSD || 0)
   const volumeUSD = volume1d * priceHTR + (pool.hourSnapshots[0]?.volumeUSD || 0)
+  const txCount1d = transactions - txCountold
   return {
     id: id,
     name: `${token0.symbol}-${token1.symbol}`,
@@ -98,7 +102,9 @@ const fetchAndProcessPoolData = async (
     volume1d: volume1d > 0.00001 ? volume1d : 0,
     fee0: fee0,
     fee1: fee1,
-    fees1d: volume1d * fee,
+    fees1d: fees1d,
+    txCount: transactions,
+    txCount1d: txCount1d,
     daySnapshots: [],
     hourSnapshots: [],
   }
@@ -125,6 +131,7 @@ export const poolRouter = createTRPCRouter({
             reserve1: true,
             liquidityUSD: true,
             priceHTR: true,
+            txCount: true,
           },
           where: {
             date: {
