@@ -60,7 +60,6 @@ const fetchAndProcessPoolData = async (
 
   const rawPoolData = await fetchNodeData(endpoint, queryParams)
   const poolData = rawPoolData.calls['pool_data()'].value
-  console.log(poolData)
   const { fee, reserve0, reserve1, fee0, fee1, volume0, volume1, transactions } = poolData
 
   const { id, chainId, token0, token1 } = pool
