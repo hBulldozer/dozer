@@ -88,7 +88,6 @@ export type Pair = {
   id: string
   name: string
   liquidityUSD: number
-  volumeUSD: number
   feeUSD: number
   swapFee: number
   apr: number
@@ -105,6 +104,9 @@ export type Pair = {
   fees1d: number
   volume0?: number
   volume1?: number
+  volumeUSD: number
+  fee0: number
+  fee1: number
   hourSnapshots: Array<PairHourSnapshot>
   daySnapshots: Array<PairDaySnapshot>
 }

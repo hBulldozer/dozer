@@ -9,11 +9,14 @@ export default async function handler(request: NextApiRequest, response: NextApi
       apr: number
       date: Date
       liquidityUSD: number
-      volumeUSD: number
       reserve0: number
       reserve1: number
       volume0: number
       volume1: number
+      volumeUSD: number
+      fee0: number
+      fee1: number
+      feeUSD: number
       priceHTR: number
     }[] = []
     const priceHTR = await client.getPrices.htr.query()
@@ -23,11 +26,14 @@ export default async function handler(request: NextApiRequest, response: NextApi
         apr: pool.apr + Math.random(),
         date: new Date(),
         liquidityUSD: pool.liquidityUSD,
-        volumeUSD: pool.volumeUSD,
         reserve0: Number(pool.reserve0),
         reserve1: Number(pool.reserve1),
         volume0: Number(pool.volume0),
         volume1: Number(pool.volume1),
+        volumeUSD: pool.volumeUSD,
+        fee0: Number(pool.fee0),
+        fee1: Number(pool.fee1),
+        feeUSD: pool.feeUSD,
         priceHTR: priceHTR,
       })
     })
