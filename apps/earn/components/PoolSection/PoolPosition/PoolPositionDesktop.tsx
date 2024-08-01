@@ -17,7 +17,8 @@ interface PoolPositionProps {
 export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
   const { token1, token0 } = useTokensFromPair(pair)
 
-  const { max_withdraw_a, max_withdraw_b, value1, value0, isLoading, isError } = usePoolPosition()
+  const { max_withdraw_a, max_withdraw_b, user_deposited_a, user_deposited_b, value1, value0, isLoading, isError } =
+    usePoolPosition()
 
   // console.log('max_withdraw_a', max_withdraw_a)
 

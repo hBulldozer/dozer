@@ -35,6 +35,8 @@ export const profileRouter = createTRPCRouter({
         liquidity: z.number(),
         max_withdraw_a: z.number(),
         max_withdraw_b: z.number(),
+        user_deposited_a: z.number(),
+        user_deposited_b: z.number(),
       })
     )
     .query(async ({ input }) => {
