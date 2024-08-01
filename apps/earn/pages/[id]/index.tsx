@@ -21,6 +21,7 @@ import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../../utils/api'
 import { useAccount } from '@dozer/zustand'
+import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -125,6 +126,7 @@ const Pool = () => {
               </div>
             </div>
           </div>
+          <BlockTracker client={api} />
         </Layout>
         <PoolActionBar pair={pair} />
       </>
