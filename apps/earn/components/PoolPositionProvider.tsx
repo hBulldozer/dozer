@@ -16,6 +16,7 @@ interface PoolPositionContext {
   max_withdraw_b: Amount<Type> | undefined
   user_deposited_a: Amount<Type> | undefined
   user_deposited_b: Amount<Type> | undefined
+  last_tx: number
   changeUSD0: number
   changeUSD1: number
   liquidity: number | undefined
@@ -42,12 +43,13 @@ export const PoolPositionProvider: FC<{
     isError,
   } = api.getProfile.poolInfo.useQuery({ address: address, contractId: pair.id })
 
-  const { liquidity, max_withdraw_a, max_withdraw_b, user_deposited_a, user_deposited_b } = poolInfo || {
+  const { liquidity, max_withdraw_a, max_withdraw_b, user_deposited_a, user_deposited_b, last_tx } = poolInfo || {
     liquidity: undefined,
     max_withdraw_a: undefined,
     max_withdraw_b: undefined,
     user_deposited_a: undefined,
     user_deposited_b: undefined,
+    last_tx: 0,
   }
 
   const _max_withdraw_a: Amount<Type> | undefined = max_withdraw_a
@@ -90,6 +92,7 @@ export const PoolPositionProvider: FC<{
           max_withdraw_b: _max_withdraw_b,
           user_deposited_a: _user_deposited_a,
           user_deposited_b: _user_deposited_b,
+          last_tx: last_tx,
           changeUSD0,
           changeUSD1,
           isLoading,
@@ -103,6 +106,7 @@ export const PoolPositionProvider: FC<{
           _max_withdraw_b,
           _user_deposited_a,
           _user_deposited_b,
+          last_tx,
           changeUSD0,
           changeUSD1,
           value0,

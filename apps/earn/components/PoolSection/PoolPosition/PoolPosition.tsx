@@ -16,11 +16,7 @@ export const PoolPosition: FC<PoolPositionProps> = ({ pair }) => {
 
   const { value0, value1, user_deposited_a, user_deposited_b, max_withdraw_a, max_withdraw_b, changeUSD0, changeUSD1 } =
     usePoolPosition()
-  // const data = usePoolPosition()
-  // console.log(data)
-  const positionChange = useMemo(() => {
-    return (changeUSD0 + changeUSD1) / (value0 + value1)
-  }, [changeUSD0, changeUSD1, value0, value1])
+
   if (!isLg) return <></>
 
   return (
@@ -33,20 +29,9 @@ export const PoolPosition: FC<PoolPositionProps> = ({ pair }) => {
           <Typography variant="sm" weight={600} className="text-right text-stone-50">
             {formatUSD(value0 + value1)}
           </Typography>
-          {positionChange > 0 && (
-            <>
-              <Typography variant="sm" weight={400} className="ml-2 text-stone-400">
-                {formatPercentChange(positionChange * 100)}
-              </Typography>
-              <ArrowIcon
-                type={positionChange < 0 ? 'down' : 'up'}
-                className={positionChange < 0 ? 'text-red-500' : 'text-green-500'}
-              />
-            </>
-          )}
         </div>
       </div>
-      <PoolPositionDesktop pair={pair} />
+      {value0 + value1 > 0 && <PoolPositionDesktop pair={pair} />}
     </div>
   )
 }

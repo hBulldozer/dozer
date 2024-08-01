@@ -37,6 +37,7 @@ export const profileRouter = createTRPCRouter({
         max_withdraw_b: z.number(),
         user_deposited_a: z.number(),
         user_deposited_b: z.number(),
+        last_tx: z.number(),
       })
     )
     .query(async ({ input }) => {
@@ -45,6 +46,14 @@ export const profileRouter = createTRPCRouter({
 
       const response = await fetchNodeData(endpoint, queryParams)
       const result = response['calls'][`user_info("a'${input.address}'")`]['value']
-      return result
+
+      const endpoint_lasttx = 'nano_contract/history'
+      const queryParams_lasttx = [`id=${input.contractId}`]
+      const response_lasttx = await fetchNodeData(endpoint_lasttx, queryParams_lasttx)
+      const result_lasttx = response_lasttx['history'].filter(
+        (tx: any) => tx['inputs'][0]['decoded']['address'] == input.address
+      )[0]['timestamp']
+
+      return { ...result, last_tx: result_lasttx }
     }),
 })
