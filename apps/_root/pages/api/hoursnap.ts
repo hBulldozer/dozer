@@ -36,7 +36,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
         fee1: Number(pool.fee1),
         feeUSD: pool.feeUSD,
         priceHTR: priceHTR,
-        txCount: pool.txCount,
+        txCount: pool.txCount || 0,
       })
     })
 
