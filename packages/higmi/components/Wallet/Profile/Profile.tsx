@@ -3,7 +3,7 @@ import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { useBreakpoint } from '@dozer/hooks'
 import { classNames, DEFAULT_INPUT_UNSTYLED, JazzIcon } from '@dozer/ui'
 import Image from 'next/legacy/image'
-import React, { FC, useState, useRef, useEffect } from 'react'
+import React, { FC, useState, useRef, useEffect, useMemo } from 'react'
 import ReactDOM from 'react-dom'
 import { useAccount, useNetwork } from '@dozer/zustand'
 
@@ -40,6 +40,20 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   )
   const { setBalance } = useAccount()
 
+  const filteredNotifications = useMemo<Record<number, string[]>>(() => {
+    const filteredEntries = Object.entries(notifications)
+      .reverse()
+      .filter(([, _notifications], index: number) => {
+        const json_notification = JSON.parse(_notifications[0])
+        console.log(json_notification)
+        return json_notification.account === accountAddress
+      })
+    return filteredEntries.reduce<Record<number, string[]>>((result, [key, value]) => {
+      result[parseInt(key, 10)] = value
+      return result
+    }, {})
+  }, [notifications, accountAddress])
+
   // const { data: avatar } = useEnsAvatar({
   //   address,
   // })
@@ -75,7 +89,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
         {view === ProfileView.Transactions && (
           <Transactions
             setView={setView}
-            notifications={notifications}
+            notifications={filteredNotifications}
             clearNotifications={clearNotifications}
             updateNotificationStatus={updateNotificationStatus}
             client={client}

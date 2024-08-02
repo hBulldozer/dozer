@@ -133,6 +133,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
             promise: new Promise((resolve) => {
               setTimeout(resolve, 500)
             }),
+            account: address,
           }
           editBalanceOnRemoveLiquidity(
             Number(currencyAToRemove?.toFixed(2) || 0),

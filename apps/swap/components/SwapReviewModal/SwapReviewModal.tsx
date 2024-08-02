@@ -80,6 +80,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             promise: new Promise((resolve) => {
               setTimeout(resolve, 500)
             }),
+            account: address,
           }
           editBalanceOnSwap(
             amountSpecified,
