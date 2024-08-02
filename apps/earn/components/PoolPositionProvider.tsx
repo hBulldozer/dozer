@@ -16,6 +16,8 @@ interface PoolPositionContext {
   max_withdraw_b: Amount<Type> | undefined
   user_deposited_a: Amount<Type> | undefined
   user_deposited_b: Amount<Type> | undefined
+  depositedUSD0: number
+  depositedUSD1: number
   last_tx: number
   changeUSD0: number
   changeUSD1: number
@@ -39,7 +41,7 @@ export const PoolPositionProvider: FC<{
 
   const {
     data: poolInfo,
-    isLoading,
+    isLoading: isLoadingPoolInfo,
     isError,
   } = api.getProfile.poolInfo.useQuery({ address: address, contractId: pair.id })
 
@@ -52,7 +54,13 @@ export const PoolPositionProvider: FC<{
     last_tx: 0,
   }
 
-  const { data: pricesAtTimestamp } = api.getPrices.allAtTimestamp.useQuery({ timestamp: last_tx })
+  const { data: pricesAtTimestamp, isLoading: isLoadingPricesAtTimestamp } = api.getPrices.allAtTimestamp.useQuery({
+    timestamp: last_tx,
+  })
+
+  const isLoading = useMemo(() => {
+    return isLoadingPoolInfo || isLoadingPricesAtTimestamp
+  }, [isLoadingPoolInfo, isLoadingPricesAtTimestamp])
 
   const _max_withdraw_a: Amount<Type> | undefined = max_withdraw_a
     ? Amount.fromFractionalAmount(token0, max_withdraw_a * 100, 100)
@@ -69,25 +77,27 @@ export const PoolPositionProvider: FC<{
     : undefined
 
   const value0 = useMemo(() => {
-    return prices[token0.uuid] * Number(_max_withdraw_a?.toFixed(2))
+    return (prices[token0.uuid] * Number(max_withdraw_a?.toFixed(2))) / 100
   }, [prices, token0, max_withdraw_a])
   const value1 = useMemo(() => {
-    return prices[token1.uuid] * Number(_max_withdraw_b?.toFixed(2))
+    return (prices[token1.uuid] * Number(max_withdraw_b?.toFixed(2))) / 100
   }, [prices, token1, max_withdraw_b])
 
+  const depositedUSD0 = useMemo(() => {
+    return ((pricesAtTimestamp ? pricesAtTimestamp[token0.uuid] : 0) * Number(user_deposited_a?.toFixed(2))) / 100
+  }, [pricesAtTimestamp, token0, _user_deposited_a])
+
+  const depositedUSD1 = useMemo(() => {
+    return ((pricesAtTimestamp ? pricesAtTimestamp[token1.uuid] : 0) * Number(user_deposited_b?.toFixed(2))) / 100
+  }, [pricesAtTimestamp, token1, _user_deposited_b])
+
   const changeUSD0 = useMemo(() => {
-    return (
-      Number(max_withdraw_a?.toFixed(2)) * prices[token0.uuid] -
-      Number(user_deposited_a?.toFixed(2)) * (pricesAtTimestamp ? pricesAtTimestamp[token0.uuid] : 0)
-    )
-  }, [prices, token0, max_withdraw_a, user_deposited_a, pricesAtTimestamp])
+    return value0 - depositedUSD0
+  }, [value0, depositedUSD0])
 
   const changeUSD1 = useMemo(() => {
-    return (
-      Number(max_withdraw_b?.toFixed(2)) * prices[token1.uuid] -
-      Number(user_deposited_b?.toFixed(2)) * (pricesAtTimestamp ? pricesAtTimestamp[token1.uuid] : 0)
-    )
-  }, [prices, token1, max_withdraw_b, user_deposited_b, pricesAtTimestamp])
+    return value1 - depositedUSD1
+  }, [value1, depositedUSD1])
 
   return (
     <Context.Provider
@@ -103,6 +113,8 @@ export const PoolPositionProvider: FC<{
           last_tx: last_tx,
           changeUSD0,
           changeUSD1,
+          depositedUSD0,
+          depositedUSD1,
           isLoading,
           isError,
         }),
@@ -115,6 +127,8 @@ export const PoolPositionProvider: FC<{
           _user_deposited_a,
           _user_deposited_b,
           last_tx,
+          depositedUSD0,
+          depositedUSD1,
           changeUSD0,
           changeUSD1,
           value0,

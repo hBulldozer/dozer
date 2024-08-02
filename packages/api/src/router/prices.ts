@@ -202,7 +202,12 @@ const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, s
       take: 1,
     })
   }
-  return result[0]?.priceHTR
+
+  return result
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map((snap) => {
+      return { price: parseFloat((snap.reserve0 / snap.reserve1).toFixed(6)), priceHTR: snap.priceHTR }
+    })[0]
 }
 export const pricesRouter = createTRPCRouter({
   all: procedure.query(async ({ ctx }) => {
@@ -301,6 +306,7 @@ export const pricesRouter = createTRPCRouter({
     const tokens = await ctx.prisma.token.findMany({
       select: {
         uuid: true,
+        symbol: true,
         chainId: true,
       },
     })
@@ -311,8 +317,15 @@ export const pricesRouter = createTRPCRouter({
     await Promise.all(
       tokens.map(async (token) => {
         const price_old = await getPriceHTRAtTimestamp(token.uuid, ctx.prisma, input.timestamp) //from db snaps
-
-        if (!prices[token.uuid]) prices[token.uuid] = price_old || 0
+        if (!prices[token.uuid])
+          prices[token.uuid] =
+            price_old && price_old.price && price_old.priceHTR
+              ? token.uuid == '00'
+                ? price_old.priceHTR
+                : token.symbol == 'USDT'
+                ? 1
+                : price_old.price * price_old.priceHTR
+              : 0
       })
     )
     return prices

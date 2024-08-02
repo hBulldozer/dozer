@@ -47,6 +47,8 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
     max_withdraw_b,
     user_deposited_a,
     user_deposited_b,
+    depositedUSD0,
+    depositedUSD1,
     value1,
     value0,
     changeUSD0,
@@ -77,9 +79,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
     )
   }
 
-  const positionChange = useMemo(() => {
-    return (100 * (changeUSD0 + changeUSD1)) / (value0 + value1)
-  }, [changeUSD0, changeUSD1, value0, value1])
+  const positionChange = (100 * (changeUSD0 + changeUSD1)) / (depositedUSD0 + depositedUSD1)
 
   if (!isLoading && !isError) {
     return (
