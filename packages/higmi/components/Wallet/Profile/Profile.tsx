@@ -49,13 +49,13 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
       .filter(([, _notifications], index: number) => {
         const json_notification = JSON.parse(_notifications[0])
         console.log(json_notification)
-        return json_notification.account === accountAddress
+        return json_notification.account === address
       })
     return filteredEntries.reduce<Record<number, string[]>>((result, [key, value]) => {
       result[parseInt(key, 10)] = value
       return result
     }, {})
-  }, [notifications, accountAddress])
+  }, [notifications, address])
 
   // const { data: avatar } = useEnsAvatar({
   //   address,
