@@ -161,6 +161,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
             promise: new Promise((resolve) => {
               setTimeout(resolve, 500)
             }),
+            account: address,
           }
           editBalanceOnAddLiquidity(
             amountSpecified,

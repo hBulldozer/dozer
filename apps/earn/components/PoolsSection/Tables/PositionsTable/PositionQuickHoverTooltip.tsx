@@ -66,12 +66,12 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
               <Typography variant="sm" weight={500} className="flex gap-1 text-slate-50">
                 {token0.symbol} <span className="text-slate-500">/</span> {token1.symbol}
               </Typography>
-              <Typography variant="xxs" className="text-slate-400">
+              {/* <Typography variant="xxs" className="text-slate-400">
                 Dozer Farm
-              </Typography>
+              </Typography> */}
             </div>
           </div>
-          <Typography variant="xs" weight={600} className="flex gap-1.5 items-end text-slate-400">
+          <Typography variant="xs" weight={600} className="flex gap-1.5 items-end text-slate-400 mt-2">
             {/* <Chip
               color="gray"
               size="sm"
@@ -86,19 +86,19 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
                   : ''
               }
             /> */}
-            Fee {row.feeUSD / 100}%
+            Fee {row.swapFee}%
           </Typography>
         </div>
         <div className="flex flex-col gap-1">
           <Typography variant="sm" weight={600} className="flex gap-3 text-slate-50">
             <span className="text-slate-400">APR:</span> {formatPercent(row.apr)}
           </Typography>
-          <Typography variant="xxs" weight={600} className="flex justify-end gap-1 text-slate-50">
+          {/* <Typography variant="xxs" weight={600} className="flex justify-end gap-1 text-slate-50">
             <span className="text-slate-400">Rewards:</span> {formatPercent(row.apr)}
           </Typography>
           <Typography variant="xxs" weight={600} className="flex justify-end gap-1 text-slate-50">
             <span className="text-slate-400">Fees:</span> {formatPercent(row.apr)}
-          </Typography>
+          </Typography> */}
         </div>
       </div>
       <hr className="my-3 border-t border-slate-200/10" />

@@ -113,7 +113,7 @@ export function Header({
                 </Listbox.Button>
               }
             >
-              <Select.Options className="w-[max-content] !bg-stone-700 -ml-5 mt-5 !max-h-[unset]">
+              <Select.Options className=" !bg-stone-700 -ml-5 mt-5 !max-h-[unset]">
                 <div className="grid grid-cols-1 gap-1 px-2 py-2 md:grid-cols-2">
                   <div>
                     <Typography

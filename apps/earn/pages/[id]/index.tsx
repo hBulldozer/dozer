@@ -21,6 +21,7 @@ import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../../utils/api'
 import { useAccount } from '@dozer/zustand'
+import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
@@ -81,7 +82,13 @@ const Pool = () => {
   if (!prices) return <></>
   const { data: pools } = api.getPools.all.useQuery()
   if (!pools) return <></>
-  const pair = pools.find((pool) => pool.id === id)
+  const pair_without_snaps = pools.find((pool) => pool.id === id)
+  if (!pair_without_snaps) return <></>
+  const snaps = api.getPools.snapsById.useQuery({ id: pair_without_snaps.id })
+  if (!snaps || !snaps.data) return <></>
+  const pair = pair_without_snaps
+    ? { ...pair_without_snaps, hourSnapshots: snaps.data.hourSnapshots, daySnapshots: snaps.data.daySnapshots }
+    : undefined
   if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
@@ -119,6 +126,7 @@ const Pool = () => {
               </div>
             </div>
           </div>
+          <BlockTracker client={api} />
         </Layout>
         <PoolActionBar pair={pair} />
       </>

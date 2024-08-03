@@ -1,5 +1,5 @@
 import { formatPercent, formatUSD } from '@dozer/format'
-import { Pair } from '@dozer/api'
+import { Pair, PairHourSnapshot } from '@dozer/api'
 import { AppearOnMount, classNames, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
 import ReactECharts from 'echarts-for-react'
@@ -38,12 +38,38 @@ const chartTimespans: Record<PoolChartPeriod, number> = {
   [PoolChartPeriod.All]: Infinity,
 }
 
+function getFirstPerHour(snapshots: PairHourSnapshot[]): PairHourSnapshot[] {
+  // Sort snapshots by date in ascending order
+  snapshots.sort((a, b) => a.date.getTime() - b.date.getTime())
+
+  const hourlySnapshots: PairHourSnapshot[] = []
+  let currentHour = -1 // Initialize with an invalid hour
+
+  for (const snap of snapshots) {
+    const snapHour = snap.date.getHours()
+
+    // Check if we moved to a new hour
+    if (snapHour !== currentHour) {
+      currentHour = snapHour
+      hourlySnapshots.push(snap) // Add first snapshot of the new hour
+    }
+  }
+
+  return hourlySnapshots
+}
+
 export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
   const [chartType, setChartType] = useState<PoolChartType>(PoolChartType.Volume)
   const [chartPeriod, setChartPeriod] = useState<PoolChartPeriod>(PoolChartPeriod.Week)
+  const hourSnapshots = getFirstPerHour(pair.hourSnapshots)
+  const fifteenMinSnapshots = pair.hourSnapshots
   const [xData, yData] = useMemo(() => {
     const data =
-      chartTimespans[chartPeriod] <= chartTimespans[PoolChartPeriod.Week] ? pair.hourSnapshots : pair.daySnapshots
+      chartPeriod == PoolChartPeriod.Day
+        ? fifteenMinSnapshots.filter((snap) => snap.date < new Date(Date.now()))
+        : chartPeriod >= PoolChartPeriod.Year
+        ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now())).reverse()
+        : hourSnapshots.filter((snap) => snap.date < new Date(Date.now()))
     const currentDate = Math.round(Date.now())
     const [x, y] = data.reduce<[number[], any]>(
       (acc, cur) => {
@@ -64,9 +90,8 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
       },
       [[], []]
     )
-
-    return [x.reverse(), y.reverse()]
-  }, [chartPeriod, pair.hourSnapshots, pair.daySnapshots, pair.swapFee, chartType])
+    return [x, y]
+  }, [chartPeriod, fifteenMinSnapshots, hourSnapshots, pair.daySnapshots, pair.swapFee, chartType])
 
   // Transient update for performance
   const onMouseOver = useCallback(

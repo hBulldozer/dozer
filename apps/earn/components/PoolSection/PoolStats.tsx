@@ -16,7 +16,7 @@ export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
           Liquidity
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {formatUSD(pair.liquidityUSD * Number(prices['00']))}
+          {formatUSD(pair.liquidityUSD)}
           {/* {123} */}
         </Typography>
         {/* {pair.liquidity1dChange ? (
@@ -45,7 +45,7 @@ export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
           Fees (24h)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {formatUSD(pair.volume1d * (pair.swapFee / 10000))}
+          {formatUSD(pair.fees1d)}
           {/* {0.2} */}
         </Typography>
         {/* {pair.volume1dChange ? (
@@ -60,9 +60,7 @@ export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
           Transactions (24h)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {/* Don't need decimals for a count */}
-          {/* {formatNumber(pair.txCount1d).replace('.00', '')} */}
-          {10}
+          {pair.txCount1d}
         </Typography>
         {/* {pair.txCount1dChange ? (
           <Typography variant="xs" weight={500} className={pair.txCount1dChange > 0 ? 'text-green' : 'text-red'}>

@@ -139,6 +139,76 @@ const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: nu
     })
 }
 
+const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
+  let result
+  if (tokenUuid == '00') {
+    result = await prisma.hourSnapshot.findMany({
+      where: {
+        AND: [
+          { date: { gte: new Date(since) } },
+          {
+            pool: {
+              token0: {
+                uuid: '00',
+              },
+            },
+          },
+          {
+            pool: {
+              token1: {
+                symbol: 'USDT',
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        date: true,
+        poolId: true,
+        reserve0: true,
+        reserve1: true,
+        priceHTR: true,
+      },
+      take: 1,
+    })
+  } else {
+    result = await prisma.hourSnapshot.findMany({
+      where: {
+        AND: [
+          { date: { gte: new Date(since) } },
+          {
+            pool: {
+              token0: {
+                uuid: '00',
+              },
+            },
+          },
+          {
+            pool: {
+              token1: {
+                uuid: tokenUuid,
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        date: true,
+        poolId: true,
+        reserve0: true,
+        reserve1: true,
+        priceHTR: true,
+      },
+      take: 1,
+    })
+  }
+
+  return result
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map((snap) => {
+      return { price: parseFloat((snap.reserve0 / snap.reserve1).toFixed(6)), priceHTR: snap.priceHTR }
+    })[0]
+}
 export const pricesRouter = createTRPCRouter({
   all: procedure.query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
@@ -232,6 +302,35 @@ export const pricesRouter = createTRPCRouter({
     )
     return prices24hUSD
   }),
+  allAtTimestamp: procedure.input(z.object({ timestamp: z.number() })).query(async ({ ctx, input }) => {
+    const tokens = await ctx.prisma.token.findMany({
+      select: {
+        uuid: true,
+        symbol: true,
+        chainId: true,
+      },
+    })
+    if (!tokens) {
+      throw new Error(`Failed to fetch tokens, received ${tokens}`)
+    }
+    const prices: { [key: string]: number } = {}
+    await Promise.all(
+      tokens.map(async (token) => {
+        const price_old = await getPriceHTRAtTimestamp(token.uuid, ctx.prisma, input.timestamp) //from db snaps
+        if (!prices[token.uuid])
+          prices[token.uuid] =
+            price_old && price_old.price && price_old.priceHTR
+              ? token.uuid == '00'
+                ? price_old.priceHTR
+                : token.symbol == 'USDT'
+                ? 1
+                : price_old.price * price_old.priceHTR
+              : 0
+      })
+    )
+    return prices
+  }),
+
   htr: procedure.output(z.number()).query(async () => {
     // const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
     // const data = await resp.json()
