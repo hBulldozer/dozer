@@ -298,40 +298,40 @@ export const poolRouter = createTRPCRouter({
 
       return response
     }),
-  add_liquidity: procedure
-    .input(
-      z.object({
-        ncid: z.string(),
-        token_a: z.string(),
-        amount_a: z.number(),
-        token_b: z.string(),
-        amount_b: z.number(),
-        address: z.string(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const { ncid, token_a, amount_a, token_b, amount_b, address } = input
-      const pool = new LiquidityPool(token_a, token_b, 5, 50, ncid)
-      const response = await pool.add_liquidity(token_a, amount_a, token_b, amount_b, address, 'users')
-      return response
-    }),
-  remove_liquidity: procedure
-    .input(
-      z.object({
-        ncid: z.string(),
-        token_a: z.string(),
-        amount_a: z.number(),
-        token_b: z.string(),
-        amount_b: z.number(),
-        address: z.string(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const { ncid, token_a, amount_a, token_b, amount_b, address } = input
-      const pool = new LiquidityPool(token_a, token_b, 5, 50, ncid)
-      const response = await pool.remove_liquidity(token_a, amount_a, token_b, amount_b, address, 'users')
-      return response
-    }),
+  // add_liquidity: procedure
+  //   .input(
+  //     z.object({
+  //       ncid: z.string(),
+  //       token_a: z.string(),
+  //       amount_a: z.number(),
+  //       token_b: z.string(),
+  //       amount_b: z.number(),
+  //       address: z.string(),
+  //     })
+  //   )
+  //   .mutation(async ({ input }) => {
+  //     const { ncid, token_a, amount_a, token_b, amount_b, address } = input
+  //     const pool = new LiquidityPool(token_a, token_b, 5, 50, ncid)
+  //     const response = await pool.add_liquidity(undefined, token_a, amount_a, token_b, amount_b, address, 'users')
+  //     return response
+  //   }),
+  // remove_liquidity: procedure
+  //   .input(
+  //     z.object({
+  //       ncid: z.string(),
+  //       token_a: z.string(),
+  //       amount_a: z.number(),
+  //       token_b: z.string(),
+  //       amount_b: z.number(),
+  //       address: z.string(),
+  //     })
+  //   )
+  //   .mutation(async ({ input }) => {
+  //     const { ncid, token_a, amount_a, token_b, amount_b, address } = input
+  //     const pool = new LiquidityPool(token_a, token_b, 5, 50, ncid)
+  //     const response = await pool.remove_liquidity(token_a, amount_a, token_b, amount_b, address, 'users')
+  //     return response
+  //   }),
   getTxStatus: procedure
     .input(
       z.object({
