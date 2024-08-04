@@ -45,14 +45,14 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
   const {
     max_withdraw_a,
     max_withdraw_b,
-    user_deposited_a,
-    user_deposited_b,
-    depositedUSD0,
-    depositedUSD1,
+    // user_deposited_a,
+    // user_deposited_b,
+    // depositedUSD0,
+    // depositedUSD1,
     value1,
     value0,
-    changeUSD0,
-    changeUSD1,
+    // changeUSD0,
+    // changeUSD1,
     last_tx,
     isLoading,
     isError,
@@ -79,7 +79,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
     )
   }
 
-  const positionChange = (100 * (changeUSD0 + changeUSD1)) / (depositedUSD0 + depositedUSD1)
+  // const positionChange = (100 * (changeUSD0 + changeUSD1)) / (depositedUSD0 + depositedUSD1)
 
   if (!isLoading && !isError) {
     return (
@@ -120,13 +120,16 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
               </Typography>
             </div>
             <div className="flex flex-row">
-              <Typography variant="xs" weight={500} className="text-stone-400">
+              {/* <Typography variant="xs" weight={500} className="text-stone-400">
                 {formatPercentChange(positionChange)}{' '}
               </Typography>
               <ArrowIcon
                 type={positionChange < 0 ? 'down' : 'up'}
                 className={positionChange < 0 ? 'text-red-400' : 'text-green-400'}
-              />
+              /> */}
+              <Typography variant="xs" weight={500} className="text-stone-400">
+                Coming soon
+              </Typography>
             </div>
           </div>
           <div className="flex items-center justify-between">

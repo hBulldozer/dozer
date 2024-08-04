@@ -35,8 +35,8 @@ export const profileRouter = createTRPCRouter({
         liquidity: z.number(),
         max_withdraw_a: z.number(),
         max_withdraw_b: z.number(),
-        user_deposited_a: z.number(),
-        user_deposited_b: z.number(),
+        // user_deposited_a: z.number(),
+        // user_deposited_b: z.number(),
         last_tx: z.number(),
       })
     )
@@ -51,7 +51,7 @@ export const profileRouter = createTRPCRouter({
       const queryParams_lasttx = [`id=${input.contractId}`]
       const response_lasttx = await fetchNodeData(endpoint_lasttx, queryParams_lasttx)
       const result_lasttx = response_lasttx['history']
-        .filter((tx: any) => tx['inputs'][0]['decoded']['address'] == input.address)
+        .filter((tx: any) => tx['nc_context']['address'] == input.address)
         .filter((tx: any) => tx['nc_method'] == 'add_liquidity' || tx['nc_method'] == 'remove_liquidity')[0][
         'timestamp'
       ]

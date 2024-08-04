@@ -14,8 +14,7 @@ interface PoolPositionProps {
 export const PoolPosition: FC<PoolPositionProps> = ({ pair }) => {
   const isLg = useBreakpoint('lg')
 
-  const { value0, value1, user_deposited_a, user_deposited_b, max_withdraw_a, max_withdraw_b, changeUSD0, changeUSD1 } =
-    usePoolPosition()
+  const { value0, value1 } = usePoolPosition()
 
   if (!isLg) return <></>
 
