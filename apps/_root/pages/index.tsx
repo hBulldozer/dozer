@@ -14,7 +14,7 @@ const Home = () => {
   return (
     // <article className="w-full my-20">
     <>
-      <Background />
+      {/* <Background />
       <Hathor />
       <Move />
       <Custody />
@@ -23,7 +23,8 @@ const Home = () => {
       <div className="overflow-x-hidden bg-black">
         <div className="flex flex-col gap-2 border-t border-neutral-200/10"></div>
         <Roadmap />
-      </div>
+      </div> */}
+      Hello
     </>
     // </article>
   )
