@@ -41,10 +41,8 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
         Min. Received
       </Typography>
       <Typography variant="sm" weight={500} className="text-right truncate text-stone-400">
-        {trade.outputAmount && slippageTolerance
-          ? (trade?.outputAmount * (1 - slippageTolerance / 100)).toFixed(2)
-          : ''}{' '}
-        {trade.outputAmount && slippageTolerance ? trade?.otherCurrency?.symbol : ''}
+        {trade.outputAmount ? (trade?.outputAmount * (1 - slippageTolerance / 100)).toFixed(2) : ''}{' '}
+        {trade.outputAmount ? trade?.otherCurrency?.symbol : ''}
       </Typography>
     </>
   )
