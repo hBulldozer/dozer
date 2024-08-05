@@ -86,10 +86,10 @@ export const PoolPositionProvider: FC<{
   //   : undefined
 
   const value0 = useMemo(() => {
-    return prices[token0.uuid] * Number(max_withdraw_a?.toFixed(2))
+    return (prices[token0.uuid] * Number(max_withdraw_a?.toFixed(2))) / 100
   }, [prices, token0, max_withdraw_a])
   const value1 = useMemo(() => {
-    return prices[token1.uuid] * Number(max_withdraw_b?.toFixed(2))
+    return (prices[token1.uuid] * Number(max_withdraw_b?.toFixed(2))) / 100
   }, [prices, token1, max_withdraw_b])
 
   // const depositedUSD0 = useMemo(() => {

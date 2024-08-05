@@ -1,4 +1,4 @@
-import { formatPercent, formatUSD } from '@dozer/format'
+import { formatPercent, formatUSD, formatUSD5Digit } from '@dozer/format'
 import { Pair, PairHourSnapshot } from '@dozer/api'
 import { AppearOnMount, classNames, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
@@ -72,14 +72,20 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
         : hourSnapshots.filter((snap) => snap.date < new Date(Date.now()))
     const currentDate = Math.round(Date.now())
     const [x, y] = data.reduce<[number[], any]>(
-      (acc, cur) => {
+      (acc, cur, idx, arr) => {
         const date = new Date(cur.date).getTime()
         if (date >= currentDate - chartTimespans[chartPeriod]) {
           acc[0].push(date / 1000)
           if (chartType === PoolChartType.Fees) {
-            acc[1].push(Number(cur.volumeUSD * (pair.swapFee / 100)))
+            idx == 0
+              ? acc[1].push(Number(cur.volumeUSD * (pair.swapFee / 100)))
+              : acc[1].push(
+                  Number(cur.volumeUSD * (pair.swapFee / 100)) - Number(arr[idx - 1].volumeUSD * (pair.swapFee / 100))
+                )
           } else if (chartType === PoolChartType.Volume) {
-            acc[1].push(Number(cur.volumeUSD))
+            idx == 0
+              ? acc[1].push(Number(cur.volumeUSD))
+              : acc[1].push(Number(cur.volumeUSD) - Number(arr[idx - 1].volumeUSD))
           } else if (chartType === PoolChartType.TVL) {
             acc[1].push(Number(cur.liquidityUSD))
           } else if (chartType === PoolChartType.APR) {
@@ -102,7 +108,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
       if (chartType === PoolChartType.APR) {
         valueNodes[0].innerHTML = formatPercent(value)
       } else {
-        valueNodes[0].innerHTML = formatUSD(value)
+        valueNodes[0].innerHTML = formatUSD5Digit(value)
       }
 
       if (chartType === PoolChartType.Volume) {
@@ -136,7 +142,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           const date = new Date(Number(params[0].name * 1000))
           return `<div class="flex flex-col gap-0.5">
             <span class="text-sm text-stone-50 font-semibold">${
-              chartType === PoolChartType.APR ? formatPercent(params[0].value) : formatUSD(params[0].value)
+              chartType === PoolChartType.APR ? formatPercent(params[0].value) : formatUSD5Digit(params[0].value)
             }</span>
             <span class="text-xs text-stone-400 font-medium">${
               date instanceof Date && !isNaN(date?.getTime()) ? format(date, 'dd MMM yyyy HH:mm') : ''
@@ -308,12 +314,14 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           <span className="hoveredItemValue">
             {chartType === PoolChartType.APR
               ? formatPercent(yData[yData.length - 1])
-              : formatUSD(yData[yData.length - 1])}
+              : formatUSD5Digit(yData[yData.length - 1])}
           </span>{' '}
           {chartType === PoolChartType.Volume && (
             <span className="text-sm font-medium text-stone-300">
               <span className="text-xs top-[-2px] relative">•</span>{' '}
-              <span className="hoveredItemValue">{formatUSD(yData[yData.length - 1] * (pair.swapFee / 100))}</span>{' '}
+              <span className="hoveredItemValue">
+                {formatUSD5Digit(yData[yData.length - 1] * (pair.swapFee / 100))}
+              </span>{' '}
               earned
             </span>
           )}

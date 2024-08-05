@@ -1,7 +1,7 @@
 import { ChevronDoubleDownIcon } from '@heroicons/react/24/outline'
 import { AppearOnMount, ButtonProps, Menu, Typography, WalletConnectIcon, Dialog } from '@dozer/ui'
 import React, { ReactNode, useMemo, useState } from 'react'
-import { Address } from '@dozer/ui/input/Address'
+// import { Address } from '@dozer/ui/input/Address'
 // import { useAccount } from '@dozer/zustand'
 import { useEffect } from 'react'
 
@@ -19,17 +19,6 @@ export interface AccountAction {
   method: string
   callback: (chainId: string, address: string) => Promise<void>
 }
-
-// 1. Get projectID at https://cloud.walletconnect.com
-if (!process.env.NEXT_PUBLIC_PROJECT_ID) {
-  throw new Error('You need to provide NEXT_PUBLIC_PROJECT_ID env variable')
-}
-
-// 2. Configure web3Modal
-const web3Modal = new Web3Modal({
-  projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
-  walletConnectVersion: 2,
-})
 
 const Icons: Record<string, ReactNode> = {
   Injected: <ChevronDoubleDownIcon width={16} height={16} />,
@@ -66,7 +55,7 @@ export const Button = <C extends React.ElementType>({
   //     return <></>
   //   }
 
-  const [input, setInput] = useState('')
+  // const [input, setInput] = useState('')
   // const setAddress = useAccount((state) => state.setAddress)
   const [modal, setModal] = useState('')
 
@@ -118,31 +107,6 @@ export const Button = <C extends React.ElementType>({
     }
   }
 
-  // function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-  //   if (event.key == 'Enter') {
-  //     if (input.length == 34) connectWithAddress()
-  //     else event.preventDefault()
-  //   }
-  // }
-
-  function onChange(x: string) {
-    if (x.length > 34) {
-      setInput(x.slice(0, 34))
-    } else {
-      setInput(x)
-    }
-  }
-
-  // useEffect(() => {
-  //   if (accounts.length > 0) {
-  //     const [namespace, reference, address] = accounts[0].split(':')
-  //     setAddress(address)
-  //   } else {
-  //     // disconnect()
-  //     setAddress('')
-  //   }
-  // }, [accounts])
-
   const renderModal = () => {
     switch (modal) {
       case 'pairing':
@@ -163,50 +127,15 @@ export const Button = <C extends React.ElementType>({
       <Menu
         className={rest.fullWidth ? 'w-full' : ''}
         button={
-          <Menu.Button {...rest} as="div">
-            {children || 'Connect Wallet'}
+          <Menu.Button {...rest} as="div" key="wallet_connect" onClick={onConnect}>
+            <div className="flex flex-row items-center gap-3 px-1 py-1 bg-opacity-30 bg-stone-700 rounded-xl">
+              {Icons['WalletConnect'] && Icons['WalletConnect']}
+            </div>{' '}
+            {isInitializing ? 'Loading...' : 'WalletConnect'}
           </Menu.Button>
         }
       >
-        <Menu.Items className="z-[100]">
-          <div>
-            <Menu.Item key="wallet_connect" onClick={onConnect} className="flex items-center gap-3 group">
-              <div>{Icons['WalletConnect'] && Icons['WalletConnect']}</div>{' '}
-              {isInitializing ? 'Loading...' : 'WalletConnect'}
-            </Menu.Item>
-          </div>
-          {/* <Address
-                  id="connect_address"
-                  value={input}
-                  error={input.length != 34}
-                  onChange={onChange}
-                  onKeyDown={handleKeyDown}
-                  // onKeyDown={() => setInput('WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr')}
-                  // placeholder="WX2vejKjzdW1ftnLA2q3vmCLh8k5f6bahr"
-                />
-                <div>
-                  {isMounted && (
-                    <>
-                      {input.length == 34 ? (
-                        <Menu.Item
-                          key="htr_connector"
-                          onClick={() => connectWithAddress()}
-                          className="flex items-center gap-3 group"
-                        >
-                          <div className="-ml-[6px] group-hover:bg-yellow-700 rounded-full group-hover:ring-[1px] group-hover:ring-yellow-100">
-                            {Icons['Injected'] && Icons['Injected']}
-                          </div>{' '}
-                          {input.length != 34 ? 'Wrong address' : 'Connect'}
-                        </Menu.Item>
-                      ) : (
-                        <Typography variant="sm" className="my-2 text-center text-stone-200">
-                          Wrong address
-                        </Typography>
-                      )}
-                    </>
-                  )}
-                </div> */}
-        </Menu.Items>
+        <div></div>
       </Menu>
       <Dialog open={!!modal} onClose={closeModal}>
         <Dialog.Content className="max-w-sm !pb-4">

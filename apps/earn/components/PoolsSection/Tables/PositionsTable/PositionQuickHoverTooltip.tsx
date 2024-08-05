@@ -102,7 +102,7 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
         </div>
       </div>
       <hr className="my-3 border-t border-slate-200/10" />
-      {!isLoading && !isError && max_withdraw_a && max_withdraw_b ? (
+      {!isLoading && !isError ? (
         <div className="flex flex-col gap-1.5">
           <Typography variant="xs" className="mb-1 text-slate-500">
             Position
