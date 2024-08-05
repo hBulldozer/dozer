@@ -12,7 +12,12 @@ export const TokenChangeCell: FC<CellProps> = ({ row }) => {
   const prices24h_token = prices24h?.[tokenUuid]
   const lastPrice = lastPrices?.[tokenUuid]
   const previousPrice = prices24h_token?.[0]
-  const change = lastPrice && previousPrice ? (lastPrice - previousPrice) / lastPrice : 0
+  const change =
+    lastPrice && previousPrice
+      ? (lastPrice - previousPrice) / lastPrice < 0.001
+        ? 0
+        : (lastPrice - previousPrice) / lastPrice
+      : 0
   return !(isLoading || isLoadingLast) ? (
     row.id.includes('usdt') ? (
       <div className="flex items-center gap-1">

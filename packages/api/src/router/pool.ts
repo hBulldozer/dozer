@@ -101,7 +101,7 @@ const fetchAndProcessPoolData = async (
     volume1d: volume1d > 0.00001 ? volume1d : 0,
     fee0: fee0,
     fee1: fee1,
-    fees1d: fees1d,
+    fees1d: fees1d > 0.00001 ? fees1d : 0,
     txCount: transactions,
     txCount1d: txCount1d,
     daySnapshots: [],
