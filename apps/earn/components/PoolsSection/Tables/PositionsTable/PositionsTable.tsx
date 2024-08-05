@@ -48,7 +48,7 @@ export const PositionsTable: FC = () => {
         contractId: pool.id,
         address,
       })
-      if (userInfo && userInfo.liquidity > 0) _pairs_array.push(pool)
+      if (userInfo && (userInfo.max_withdraw_a > 0 || userInfo.max_withdraw_b > 0)) _pairs_array.push(pool)
     })
 
   const pairs_array = _pairs_array?.filter((pair: Pair) => {

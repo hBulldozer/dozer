@@ -131,7 +131,7 @@ export const Button = <C extends React.ElementType>({
             <div className="flex flex-row items-center gap-3 px-1 py-1 bg-opacity-30 bg-stone-700 rounded-xl">
               {Icons['WalletConnect'] && Icons['WalletConnect']}
             </div>{' '}
-            {isInitializing ? 'Loading...' : 'WalletConnect'}
+            {isInitializing ? 'Loading...' : 'Connect'}
           </Menu.Button>
         }
       >
