@@ -241,7 +241,10 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
             Fees
           </button>
           <button
-            onClick={() => setChartType(PoolChartType.APR)}
+            onClick={() => {
+              setChartType(PoolChartType.APR)
+              if (chartPeriod < PoolChartPeriod.Month) setChartPeriod(PoolChartPeriod.Month)
+            }}
             className={classNames(
               'border-b-[3px] pb-2 font-semibold text-sm',
               chartType === PoolChartType.APR ? 'text-stone-50 border-yellow' : 'text-stone-500 border-transparent'
@@ -262,6 +265,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           </button>
           <button
             onClick={() => setChartPeriod(PoolChartPeriod.Week)}
+            disabled={chartType == PoolChartType.APR}
             className={classNames(
               'font-semibold text-sm',
               chartPeriod === PoolChartPeriod.Week ? 'text-yellow' : 'text-stone-500'
@@ -271,6 +275,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           </button>
           <button
             onClick={() => setChartPeriod(PoolChartPeriod.Month)}
+            disabled={chartType == PoolChartType.APR}
             className={classNames(
               'font-semibold text-sm',
               chartPeriod === PoolChartPeriod.Month ? 'text-yellow' : 'text-stone-500'

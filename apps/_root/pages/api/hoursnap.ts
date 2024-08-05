@@ -24,7 +24,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     pools.map((pool) => {
       pools_array.push({
         poolId: pool.id,
-        apr: pool.apr + Math.random(),
+        apr: pool.apr,
         date: new Date(),
         liquidityUSD: pool.liquidityUSD,
         reserve0: Number(pool.reserve0),
