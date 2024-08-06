@@ -4,10 +4,7 @@ import { Profile } from '@dozer/higmi/components/Wallet/Profile'
 import React, { FC, useState } from 'react'
 // import { useAccount } from 'higmi'
 
-import { SUPPORTED_CHAIN_IDS } from '../config'
 import { api } from 'utils/api'
-import { useAccount } from '@dozer/zustand'
-import { useRouter } from 'next/router'
 
 // import { useNotifications } from '../lib/state/storage'
 
@@ -16,6 +13,7 @@ export const Header: FC = () => {
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const [open, setOpen] = useState(false)
+
   // const [notifications, { clearNotifications }] = useNotifications(address)
 
   return (
@@ -27,7 +25,7 @@ export const Header: FC = () => {
           <App.NavItem href="https://forms.gle/8cEKvsaNrTP4c8Ef6" label="MVP Form" external />
           <App.NavItem href="/" label="Swap" />
           <App.NavItem href="/tokens" label="Tokens" />
-          <App.NavItem href={'../pool'} label="Pools" external />
+          <App.NavItem href="../pool" label="Pools" external target="_self" />
           {/* <App.NavItem href="https://mvp.dozer.finance/bridge" label="Bridge" /> */}
           {/* <BuyCrypto address={address} /> */}
           <App.OpenModal label="Donate" setOpen={setOpen} />

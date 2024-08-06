@@ -12,6 +12,7 @@ export interface ExternalLinkProps extends Omit<HTMLProps<HTMLAnchorElement>, 'a
   color?: Color
   startIcon?: JSX.Element
   endIcon?: JSX.Element
+  target?: string
 }
 
 export const External: FC<ExternalLinkProps> = ({

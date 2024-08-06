@@ -7,14 +7,15 @@ export interface NavItemProps {
   href: string
   label: string
   external?: boolean
+  target?: string
 }
 
-export const NavItem: FC<NavItemProps> = ({ href, label, external }) => {
+export const NavItem: FC<NavItemProps> = ({ href, label, external, target }) => {
   const { basePath, pathname } = useRouter()
 
   if (external) {
     return (
-      <Link.External href={href} className="decoration-transparent">
+      <Link.External target={target} href={href} className="decoration-transparent">
         <span
           className={classNames(
             href.includes(basePath) || href == '/' ? 'text-stone-200' : 'text-stone-400',
