@@ -2,7 +2,7 @@
 // import { Pair, PairType, QuerypairsArgs } from '@dozer/graph-client'
 import { Pair } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
-import { GenericTable, Table } from '@dozer/ui'
+import { GenericTable, IconButton, Table, classNames, DEFAULT_INPUT_UNSTYLED, FilterPools } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 // import stringify from 'fast-json-stable-stringify'
@@ -15,6 +15,8 @@ import { ChainId, Network } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
 import { RouterOutputs, api } from '../../../../utils/api'
+import { Transition } from '@headlessui/react'
+import { XCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -136,13 +138,19 @@ export const PoolsTable: FC = () => {
 
   const [rendNetwork, setRendNetwork] = useState<number>(ChainId.HATHOR)
   const { network } = useNetwork()
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     setRendNetwork(network)
   }, [network])
 
-  // const { data: pools, isLoading } = api.getPools.all.useQuery()
-  const { data: pools, isLoading } = api.getPools.all.useQuery()
+  const { data: _pools, isLoading } = api.getPools.all.useQuery()
+
+  const pools = useMemo(() => {
+    return _pools?.filter((pool) => {
+      return pool.name?.toLowerCase().includes(query.toLowerCase())
+    })
+  }, [_pools, query])
   // const _pairs_array: Pair[] = pools
   //   ? pools.map((pool) => {
   //       return pairFromPool(pool)
@@ -211,6 +219,7 @@ export const PoolsTable: FC = () => {
 
   return (
     <>
+      <FilterPools search={query} setSearch={setQuery} />
       <GenericTable<Pair>
         table={table}
         loading={isLoading}
