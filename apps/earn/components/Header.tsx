@@ -21,8 +21,8 @@ export const Header: FC = () => {
       nav={
         <App.NavItemList>
           <App.NavItem href="https://forms.gle/8cEKvsaNrTP4c8Ef6" label="MVP Form" external />
-          <App.NavItem href="../../swap" label="Swap" external target="_self" />
-          <App.NavItem href="../../swap/tokens" label="Tokens" external target="_self" />
+          <App.NavItem href="../../swap" label="Swap" external target="_blank" />
+          <App.NavItem href="../../swap/tokens" label="Tokens" external target="_blank" />
           <App.NavItem href={'/'} label="Pools" />
           {/* <App.NavItem href={`https://mvp.dozer.finance/pool`} label="Pools" /> */}
           {/* <App.NavItem href="https://mvp.dozer.finance/bridge" label="Bridge" /> */}

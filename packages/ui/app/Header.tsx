@@ -197,7 +197,7 @@ export function Header({
                       value="Check our Tweets"
                       className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
                     >
-                      Twiter
+                      Twitter
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                         Stay up to date with Dozer
                       </Typography>

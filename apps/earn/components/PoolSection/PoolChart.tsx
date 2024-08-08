@@ -264,14 +264,15 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
             onClick={() => setChartPeriod(PoolChartPeriod.Day)}
             className={classNames(
               'font-semibold text-sm',
-              chartPeriod === PoolChartPeriod.Day ? 'text-yellow' : 'text-stone-500'
+              chartPeriod === PoolChartPeriod.Day ? 'text-yellow' : 'text-stone-500',
+              chartType == PoolChartType.APR ? 'hidden' : ''
             )}
           >
             1D
           </button>
           <button
             onClick={() => setChartPeriod(PoolChartPeriod.Week)}
-            disabled={chartType == PoolChartType.APR}
+            // disabled={chartType == PoolChartType.APR}
             className={classNames(
               'font-semibold text-sm',
               chartPeriod === PoolChartPeriod.Week ? 'text-yellow' : 'text-stone-500'
@@ -281,7 +282,6 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           </button>
           <button
             onClick={() => setChartPeriod(PoolChartPeriod.Month)}
-            disabled={chartType == PoolChartType.APR}
             className={classNames(
               'font-semibold text-sm',
               chartPeriod === PoolChartPeriod.Month ? 'text-yellow' : 'text-stone-500'
