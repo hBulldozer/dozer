@@ -1,6 +1,6 @@
 import { AllTokensDBOutput, Pair, dbPoolWithTokens } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
-import { GenericTable } from '@dozer/ui'
+import { FilterTokens, FiltersTokens, GenericTable } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -10,6 +10,7 @@ import { ChainId } from '@dozer/chain'
 import { useNetwork } from '@dozer/zustand'
 import { api } from '../../../../utils/api'
 import { set } from 'date-fns'
+import { getTokens } from '@dozer/currency'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -35,6 +36,13 @@ export const TokensTable: FC = () => {
 
   const { data: _all_pools, isLoading: isLoadingPools } = api.getPools.all.useQuery()
   const { data: tokens, isLoading } = api.getTokens.all.useQuery()
+
+  const [query, setQuery] = useState('')
+  const [filters, setFilters] = useState<FiltersTokens>({
+    tvl: { min: undefined, max: undefined },
+    volume: { min: undefined, max: undefined },
+    price: { min: undefined, max: undefined },
+  })
 
   useEffect(() => {
     // without useeffect it was giving hydration error,
@@ -132,7 +140,45 @@ export const TokensTable: FC = () => {
     }
   })
 
-  const pairs_array = _pairs_array.filter((pair) => (pair.name ? pair : null))
+  const { data: prices } = api.getPrices.all.useQuery()
+
+  const pairs_array = useMemo(() => {
+    const allPools = _pairs_array?.filter((pair) => (pair.name ? pair : null))
+    const maxPrice = Math.max(
+      ...(allPools?.map((pool) =>
+        prices ? (pool.id.includes('native') ? prices[pool.token0.uuid] : prices[pool.token1.uuid]) : 0
+      ) || [])
+    )
+    const maxTVL = Math.max(...(allPools?.map((pool) => pool.liquidityUSD) || []))
+    const maxVolume = Math.max(...(allPools?.map((pool) => pool.volume1d) || []))
+    return allPools
+      ?.filter((pool) => {
+        const poolName = pool.id.includes('native') ? pool.token0.name : pool.token1.name
+        return (
+          poolName?.toLowerCase().includes(query.toLowerCase()) ||
+          pool.name?.toLowerCase().includes(query.toLowerCase())
+        )
+      })
+      .filter((pool) => {
+        if (filters.price.min || filters.price.max) {
+          const poolPrice = prices
+            ? pool.id.includes('native')
+              ? prices[pool.token0.uuid]
+              : prices[pool.token1.uuid]
+            : 0
+          return poolPrice >= (filters.price.min || 0) && poolPrice <= (filters.price.max || maxPrice)
+        }
+        if (filters.tvl.min || filters.tvl.max) {
+          return pool.liquidityUSD >= (filters.tvl.min || 0) && pool.liquidityUSD <= (filters.tvl.max || maxTVL)
+        }
+
+        if (filters.volume.min || filters.volume.max) {
+          return pool.volume1d >= (filters.volume.min || 0) && pool.volume1d <= (filters.volume.max || maxVolume)
+        }
+        return true
+      })
+  }, [_pairs_array, query, filters])
+  // const pairs_array = _pairs_array.filter((pair) => (pair.name ? pair : null))
 
   const args = useMemo(
     () => ({
@@ -190,8 +236,25 @@ export const TokensTable: FC = () => {
     return `./tokens/${row.token1.chainId}/${row.token1.uuid}`
   }, [])
 
+  const maxValues = useMemo(() => {
+    const allPairs = _pairs_array?.filter((pair) => (pair.name ? pair : null))
+    const maxTVL = Math.max(...(allPairs?.map((pool) => pool.liquidityUSD) || []))
+    const maxVolume = Math.max(...(allPairs?.map((pool) => pool.volume1d) || []))
+    const maxPrice = Math.max(
+      ...(allPairs?.map((pool) =>
+        prices ? (pool.id.includes('native') ? prices[pool.token0.uuid] : prices[pool.token1.uuid]) : 0
+      ) || [])
+    )
+    return {
+      tvl: maxTVL,
+      volume: maxVolume,
+      price: maxPrice,
+    }
+  }, [_pairs_array])
+
   return (
     <>
+      <FilterTokens maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
       <GenericTable<Pair>
         table={table}
         loading={isLoading || isLoadingPools}

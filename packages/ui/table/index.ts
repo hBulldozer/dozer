@@ -36,3 +36,4 @@ export const Table: TableProps = {
 
 export * from './GenericTable'
 export * from './FilterPools'
+export * from './FilterTokens'
