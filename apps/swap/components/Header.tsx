@@ -25,7 +25,7 @@ export const Header: FC = () => {
           <App.NavItem href="https://forms.gle/8cEKvsaNrTP4c8Ef6" label="MVP Form" external />
           <App.NavItem href="/" label="Swap" />
           <App.NavItem href="/tokens" label="Tokens" />
-          <App.NavItem href="../pool" label="Pools" external target="_blank" />
+          <App.NavItem href="../../../pool" label="Pools" external target="_blank" />
           {/* <App.NavItem href="https://mvp.dozer.finance/bridge" label="Bridge" /> */}
           {/* <BuyCrypto address={address} /> */}
           <App.OpenModal label="Donate" setOpen={setOpen} />
