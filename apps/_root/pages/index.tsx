@@ -15,7 +15,7 @@ const Home = () => {
   return (
     // <article className="w-full my-20">
     <>
-      {/* <Background />
+      <Background />
       <Hathor />
       <Move />
       <Custody />
