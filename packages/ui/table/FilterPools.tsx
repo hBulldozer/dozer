@@ -1,11 +1,19 @@
-import React, { useRef, useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { MagnifyingGlassIcon, XCircleIcon, AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline'
 import classNames from 'classnames'
-import { DEFAULT_INPUT_UNSTYLED } from '../input'
+import {
+  DEFAULT_INPUT_APPEARANCE,
+  DEFAULT_INPUT_BG,
+  DEFAULT_INPUT_CLASSNAME_NO_PADDING,
+  DEFAULT_INPUT_PADDING,
+  DEFAULT_INPUT_RING,
+  DEFAULT_INPUT_UNSTYLED,
+} from '../input'
 import { Transition, Popover } from '@headlessui/react'
 import { IconButton } from '../iconbutton'
 import { Button } from '../button'
 import { useBreakpoint } from '@dozer/hooks'
+import { Slider } from '..'
 
 export interface Filters {
   tvl: { min?: number; max?: number }
@@ -18,6 +26,7 @@ export type FilterPoolsProps = {
   search: string
   setSearch: (search: string) => void
   setFilters: (filters: Filters) => void
+  maxValues: Record<string, number>
 }
 
 interface FilterInputProps {
@@ -28,43 +37,97 @@ interface FilterInputProps {
   setMax: (max: number | undefined) => void
   onEnter(): void
   close: () => void
+  sliderMax: number
 }
 
-const FilterInput = ({ label, min, setMin, max, setMax, onEnter, close }: FilterInputProps) => (
-  <div className="flex flex-col gap-1 mb-2">
-    <label className="text-sm text-stone-400">{label}</label>
-    <div className="flex gap-1">
-      <input
-        type="number"
-        placeholder="Min"
-        value={min ?? ''}
-        onChange={(e) => setMin(e.target.value ? Number(e.target.value) : undefined)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            onEnter()
-            close()
-          }
-        }}
-        className={`${DEFAULT_INPUT_UNSTYLED} w-1/2 bg-stone-800 rounded px-1 py-0.5 text-xs`}
-      />
-      <input
-        type="number"
-        placeholder="Max"
-        value={max ?? ''}
-        onChange={(e) => setMax(e.target.value ? Number(e.target.value) : undefined)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            onEnter()
-            close()
-          }
-        }}
-        className={`${DEFAULT_INPUT_UNSTYLED} w-1/2 bg-stone-800 rounded px-1 py-2 text-xs`}
-      />
-    </div>
-  </div>
-)
+const FilterInput = ({ label, min, setMin, max, setMax, onEnter, close, sliderMax }: FilterInputProps) => {
+  const [minSliderValue, setMinSliderValue] = useState<number>(min ?? 0)
+  const [maxSliderValue, setMaxSliderValue] = useState<number>(max ?? sliderMax)
 
-export function FilterPools({ search, setSearch, setFilters }: FilterPoolsProps) {
+  useEffect(() => {
+    setMinSliderValue(min ?? 0)
+  }, [min])
+
+  useEffect(() => {
+    setMaxSliderValue(max ?? sliderMax)
+  }, [max, sliderMax])
+
+  const handleMinSliderChange = (value: number) => {
+    setMinSliderValue(value)
+    setMin(value)
+  }
+
+  const handleMaxSliderChange = (value: number) => {
+    setMaxSliderValue(value)
+    setMax(value)
+  }
+
+  return (
+    <div className="flex flex-col gap-2 mb-4">
+      <label className="text-sm text-stone-400">{label}</label>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <span className="w-8 text-xs text-stone-400">Min:</span>
+          <Slider
+            min={0}
+            max={sliderMax}
+            step={sliderMax / 100}
+            value={[minSliderValue]}
+            onValueChange={(value) => handleMinSliderChange(value[0])}
+            className="flex-grow"
+          />
+          <input
+            type="number"
+            placeholder="Min"
+            value={min ?? ''}
+            onChange={(e) => {
+              const value = e.target.value ? Number(e.target.value) : undefined
+              setMin(value)
+              setMinSliderValue(value ?? 0)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                onEnter()
+                close()
+              }
+            }}
+            className={`${DEFAULT_INPUT_BG} w-20 bg-stone-800 rounded px-2 py-1 text-xs`}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-8 text-xs text-stone-400">Max:</span>
+          <Slider
+            min={0}
+            max={sliderMax}
+            step={sliderMax / 100}
+            value={[maxSliderValue]}
+            onValueChange={(value) => handleMaxSliderChange(value[0])}
+            className="flex-grow"
+          />
+          <input
+            type="number"
+            placeholder="Max"
+            value={max ?? ''}
+            onChange={(e) => {
+              const value = e.target.value ? Number(e.target.value) : undefined
+              setMax(value)
+              setMaxSliderValue(value ?? sliderMax)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                onEnter()
+                close()
+              }
+            }}
+            className={`${DEFAULT_INPUT_BG} w-20 bg-stone-800 rounded px-2 py-1 text-xs`}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function FilterPools({ search, setSearch, setFilters, maxValues }: FilterPoolsProps) {
   const [localFilters, setLocalFilters] = useState<Filters>({
     tvl: {},
     volume: {},
@@ -82,6 +145,21 @@ export function FilterPools({ search, setSearch, setFilters }: FilterPoolsProps)
   const applyFilters = () => {
     setFilters(localFilters)
   }
+
+  const resetFilters = () => {
+    const resetFilters: Filters = {
+      tvl: {},
+      volume: {},
+      fees: {},
+      apr: {},
+    }
+    setLocalFilters(resetFilters)
+    setFilters(resetFilters)
+  }
+
+  useEffect(() => {
+    setFilters(localFilters)
+  }, [localFilters])
 
   const noFilters = Object.values(localFilters).every((filter) => !filter.min && !filter.max)
 
@@ -143,8 +221,8 @@ export function FilterPools({ search, setSearch, setFilters }: FilterPoolsProps)
               className={classNames(
                 'z-50',
                 isSm
-                  ? ' bg-stone-900 border border-stone-800 absolute w-48 rounded-xl px-3 py-3'
-                  : ' bg-stone-800 border border-stone-700 fixed inset-x-0 bottom-0 rounded-t-xl py-4 px-5 w-full'
+                  ? 'bg-stone-900 border border-stone-800 absolute w-72 rounded-xl px-4 py-4'
+                  : 'bg-stone-800 border border-stone-700 fixed inset-x-0 bottom-0 rounded-t-xl py-4 px-5 w-full'
               )}
               style={{
                 maxHeight: isSm ? 'calc(100vh - 100px)' : '80vh',
@@ -159,6 +237,7 @@ export function FilterPools({ search, setSearch, setFilters }: FilterPoolsProps)
                 setMax={(value: number | undefined) => updateFilter('apr', 'max', value)}
                 onEnter={applyFilters}
                 close={close}
+                sliderMax={maxValues.apr * 100}
               />
               <FilterInput
                 label="TVL ($)"
@@ -168,6 +247,7 @@ export function FilterPools({ search, setSearch, setFilters }: FilterPoolsProps)
                 setMax={(value: number | undefined) => updateFilter('tvl', 'max', value)}
                 onEnter={applyFilters}
                 close={close}
+                sliderMax={maxValues.tvl}
               />
               <FilterInput
                 label="Fees ($)"
@@ -177,6 +257,7 @@ export function FilterPools({ search, setSearch, setFilters }: FilterPoolsProps)
                 setMax={(value: number | undefined) => updateFilter('fees', 'max', value)}
                 onEnter={applyFilters}
                 close={close}
+                sliderMax={maxValues.fees}
               />
               <FilterInput
                 label="Volume ($)"
@@ -186,17 +267,20 @@ export function FilterPools({ search, setSearch, setFilters }: FilterPoolsProps)
                 setMax={(value: number | undefined) => updateFilter('volume', 'max', value)}
                 onEnter={applyFilters}
                 close={close}
+                sliderMax={maxValues.volume}
               />
-              <Button
-                className="w-full"
-                size={isSm ? 'xs' : 'sm'}
-                onClick={() => {
-                  applyFilters()
-                  close()
-                }}
-              >
-                Apply Filters
-              </Button>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  className="flex-1"
+                  size={isSm ? 'xs' : 'sm'}
+                  onClick={() => {
+                    resetFilters()
+                    close()
+                  }}
+                >
+                  Reset Filters
+                </Button>
+              </div>
             </Popover.Panel>
           </>
         )}
