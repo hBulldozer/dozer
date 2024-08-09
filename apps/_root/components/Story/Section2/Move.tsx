@@ -1,3 +1,4 @@
+'use client'
 import { ChevronRightIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
 import { Button, Container, Typography } from '@dozer/ui'
 import { FC } from 'react'

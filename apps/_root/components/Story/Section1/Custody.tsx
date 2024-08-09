@@ -1,3 +1,4 @@
+'use client'
 import { ChevronRightIcon } from '@heroicons/react/24/solid'
 import { Button, Container, Typography } from '@dozer/ui'
 import { motion } from 'framer-motion'

@@ -1,3 +1,4 @@
+'use client'
 import { Container, Typography } from '@dozer/ui'
 import Image from 'next/image'
 import React from 'react'

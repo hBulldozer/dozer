@@ -1,3 +1,4 @@
+'use client'
 import { Button, Switch } from '@dozer/ui'
 import Background from 'components/Background/Background'
 import { BuildWealth } from 'components/BuildWealth/BuildWealth'
@@ -9,12 +10,6 @@ import { Custody } from 'components/Story/Section1/Custody'
 import { Move } from 'components/Story/Section2/Move'
 import { Story } from 'components/Story/Story'
 // import { generateSSGHelper } from "~/server/helpers/ssgHelper";
-import dynamic from 'next/dynamic'
-
-const DynamicHero = dynamic(() => import('components/Hero/Hero').then((mod) => mod.Hero), {
-  ssr: false,
-  loading: () => <p>Loading...</p>, // Optional loading component
-})
 
 const Home = () => {
   return (
@@ -24,14 +19,12 @@ const Home = () => {
       <Hathor />
       <Move />
       <Custody />
-      <Hero />
-      <DynamicHero />
+      {/* <Hero /> */}
       <BuildWealth />
-      <div className="overflow-x-hidden bg-black">
+      {/* <div className="overflow-x-hidden bg-black">
         <div className="flex flex-col gap-2 border-t border-neutral-200/10"></div>
         <Roadmap />
       </div> */}
-      Hello
     </>
     // </article>
   )
