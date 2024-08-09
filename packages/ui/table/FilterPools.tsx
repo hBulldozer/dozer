@@ -79,6 +79,7 @@ const FilterInput = ({ label, min, setMin, max, setMax, onEnter, close, sliderMa
           <input
             type="number"
             placeholder="Min"
+            disabled={true}
             value={min ?? ''}
             onChange={(e) => {
               const value = e.target.value ? Number(e.target.value) : undefined
@@ -107,6 +108,7 @@ const FilterInput = ({ label, min, setMin, max, setMax, onEnter, close, sliderMa
           <input
             type="number"
             placeholder="Max"
+            disabled={true}
             value={max ?? ''}
             onChange={(e) => {
               const value = e.target.value ? Number(e.target.value) : undefined
@@ -134,6 +136,7 @@ export function FilterPools({ search, setSearch, setFilters, maxValues }: Filter
     fees: {},
     apr: {},
   })
+  const [activeFilter, setActiveFilter] = useState<keyof Filters>('apr')
 
   const updateFilter = (category: keyof Filters, type: 'min' | 'max', value: number | undefined) => {
     setLocalFilters((prev) => ({
@@ -164,6 +167,45 @@ export function FilterPools({ search, setSearch, setFilters, maxValues }: Filter
   const noFilters = Object.values(localFilters).every((filter) => !filter.min && !filter.max)
 
   const { isSm } = useBreakpoint('sm')
+
+  const filterOptions: Array<{ key: keyof Filters; label: string }> = [
+    { key: 'apr', label: 'APR' },
+    { key: 'tvl', label: 'TVL' },
+    { key: 'fees', label: 'Fees' },
+    { key: 'volume', label: 'Volume' },
+  ]
+
+  const renderFilterInputs = (close: () => void) => {
+    if (isSm) {
+      return filterOptions.map((option) => (
+        <FilterInput
+          key={option.key}
+          label={option.label}
+          min={localFilters[option.key].min}
+          max={localFilters[option.key].max}
+          setMin={(value: number | undefined) => updateFilter(option.key, 'min', value)}
+          setMax={(value: number | undefined) => updateFilter(option.key, 'max', value)}
+          onEnter={applyFilters}
+          close={close}
+          sliderMax={option.key === 'apr' ? maxValues[option.key] * 100 : maxValues[option.key]}
+        />
+      ))
+    } else {
+      const currentFilter = filterOptions.find((option) => option.key === activeFilter)!
+      return (
+        <FilterInput
+          label={currentFilter.label}
+          min={localFilters[currentFilter.key].min}
+          max={localFilters[currentFilter.key].max}
+          setMin={(value: number | undefined) => updateFilter(currentFilter.key, 'min', value)}
+          setMax={(value: number | undefined) => updateFilter(currentFilter.key, 'max', value)}
+          onEnter={applyFilters}
+          close={close}
+          sliderMax={currentFilter.key === 'apr' ? maxValues[currentFilter.key] * 100 : maxValues[currentFilter.key]}
+        />
+      )
+    }
+  }
 
   return (
     <div className="flex items-center w-full gap-3 mb-3">
@@ -225,50 +267,28 @@ export function FilterPools({ search, setSearch, setFilters, maxValues }: Filter
                   : 'bg-stone-800 border border-stone-700 fixed inset-x-0 bottom-0 rounded-t-xl py-4 px-5 w-full'
               )}
               style={{
-                maxHeight: isSm ? 'calc(100vh - 100px)' : '80vh',
+                maxHeight: isSm ? 'calc(100vh - 100px)' : '60vh',
                 overflowY: 'auto',
               }}
             >
-              <FilterInput
-                label="APR (%)"
-                min={localFilters.apr.min}
-                max={localFilters.apr.max}
-                setMin={(value: number | undefined) => updateFilter('apr', 'min', value)}
-                setMax={(value: number | undefined) => updateFilter('apr', 'max', value)}
-                onEnter={applyFilters}
-                close={close}
-                sliderMax={maxValues.apr * 100}
-              />
-              <FilterInput
-                label="TVL ($)"
-                min={localFilters.tvl.min}
-                max={localFilters.tvl.max}
-                setMin={(value: number | undefined) => updateFilter('tvl', 'min', value)}
-                setMax={(value: number | undefined) => updateFilter('tvl', 'max', value)}
-                onEnter={applyFilters}
-                close={close}
-                sliderMax={maxValues.tvl}
-              />
-              <FilterInput
-                label="Fees ($)"
-                min={localFilters.fees.min}
-                max={localFilters.fees.max}
-                setMin={(value: number | undefined) => updateFilter('fees', 'min', value)}
-                setMax={(value: number | undefined) => updateFilter('fees', 'max', value)}
-                onEnter={applyFilters}
-                close={close}
-                sliderMax={maxValues.fees}
-              />
-              <FilterInput
-                label="Volume ($)"
-                min={localFilters.volume.min}
-                max={localFilters.volume.max}
-                setMin={(value: number | undefined) => updateFilter('volume', 'min', value)}
-                setMax={(value: number | undefined) => updateFilter('volume', 'max', value)}
-                onEnter={applyFilters}
-                close={close}
-                sliderMax={maxValues.volume}
-              />
+              {!isSm && (
+                <div className="flex gap-2 pb-2 mb-4 overflow-x-auto">
+                  {filterOptions.map((option) => (
+                    <Button
+                      key={option.key}
+                      size="xs"
+                      className={classNames(
+                        'whitespace-nowrap',
+                        activeFilter === option.key ? 'bg-yellow-700' : 'bg-stone-700'
+                      )}
+                      onClick={() => setActiveFilter(option.key)}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
+              {renderFilterInputs(close)}
               <div className="flex gap-2 mt-4">
                 <Button
                   className="flex-1"
