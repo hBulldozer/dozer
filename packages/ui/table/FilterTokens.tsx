@@ -204,7 +204,7 @@ export function FilterTokens({ search, setSearch, setFilters, maxValues }: Filte
   }
 
   return (
-    <div className="flex items-center w-full gap-3 mb-3">
+    <div className="flex items-center w-full gap-3 -mb-5 sm:-mb-12">
       <div
         className={classNames(
           'flex flex-grow sm:flex-grow-0 transform-all items-center gap-3 bg-stone-900 rounded-xl h-[44px] border border-stone-800'
@@ -216,7 +216,7 @@ export function FilterTokens({ search, setSearch, setFilters, maxValues }: Filte
           </div>
           <input
             value={search}
-            placeholder="Filter pools"
+            placeholder="Filter tokens"
             className={classNames(DEFAULT_INPUT_UNSTYLED, 'flex flex-grow !text-base placeholder:text-sm')}
             type="text"
             onInput={(e) => setSearch(e.currentTarget.value)}

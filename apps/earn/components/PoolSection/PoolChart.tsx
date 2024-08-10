@@ -103,7 +103,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
       // } else if (chartType === PoolChartType.Fees) {
       //   y.push(pair.feeUSD)
     } else if (chartType === PoolChartType.Volume) {
-      y.push(pair.volumeUSD)
+      y.push(pair.volumeUSD - Number(y[y.length - 1]))
     }
 
     return [x, y]
