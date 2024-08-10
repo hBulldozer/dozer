@@ -88,8 +88,8 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             data-testid={`${id}-button`}
             className={classNames(
               onSelect ? 'shadow-md hover:ring-2' : 'cursor-default text-2xl',
-              (currency || loading) && onSelect ? 'bg-white bg-opacity-[0.12]' : '',
-              currency || loading ? 'ring-stone-500' : 'bg-yellow ring-yellow-700',
+              'bg-white bg-opacity-[0.12]',
+              'ring-stone-500',
               'h-[36px] text-stone-200 hover:text-stone-100 transition-all flex flex-row items-center gap-1 text-xl font-semibold rounded-full px-2 py-1'
             )}
           >

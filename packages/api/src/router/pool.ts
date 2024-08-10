@@ -74,11 +74,10 @@ const fetchAndProcessPoolData = async (
   const reserve0old = pool.hourSnapshots[0]?.reserve0 || 0
   const reserve1old = pool.hourSnapshots[0]?.reserve1 || 1
   const volume1d =
-    (volume0 * priceHTR - volume0old * priceHTRold) / 100 +
-    ((volume1 * priceHTR * reserve0) / reserve1 - (volume1old * priceHTRold * reserve0old) / reserve1old) / 100
-  const fees1d =
-    (fee0 * priceHTR - fee0old * priceHTRold) / 100 +
-    ((fee1 * priceHTR * reserve0) / reserve1 - (fee1old * priceHTRold * reserve0old) / reserve1old) / 100
+    (volume0 - volume0old) / 100 + ((volume1 * reserve0) / reserve1 - (volume1old * reserve0old) / reserve1old) / 100
+  const fees1d = (volume1d * fee) / 100
+  // (fee0 * priceHTR - fee0old * priceHTRold) / 100 +
+  // ((fee1 * priceHTR * reserve0) / reserve1 - (fee1old * priceHTRold * reserve0old) / reserve1old) / 100
   const feeUSD = fees1d * priceHTR + (pool.hourSnapshots[0]?.feeUSD || 0)
   const volumeUSD = volume1d * priceHTR + (pool.hourSnapshots[0]?.volumeUSD || 0)
   const txCount1d = transactions - txCountold
@@ -91,7 +90,7 @@ const fetchAndProcessPoolData = async (
     volumeUSD: volumeUSD,
     feeUSD: feeUSD,
     swapFee: fee, // !!TODO remove hardcoded
-    apr: Math.pow(1 + fees1d / liquidityUSD / 100, 365) - 1,
+    apr: Math.exp(((fees1d * priceHTR) / liquidityUSD) * 365) - 1,
     token0: token0,
     token1: token1,
     reserve0: reserve0 / 100,
@@ -132,11 +131,11 @@ export const poolRouter = createTRPCRouter({
             priceHTR: true,
             txCount: true,
           },
-          where: {
-            date: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
-            },
-          },
+          // where: {
+          //   date: {
+          //     gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
+          //   },
+          // },
           orderBy: {
             date: 'asc',
           },
@@ -358,10 +357,7 @@ export const poolRouter = createTRPCRouter({
               : 'pending'
             : 'failed'
 
-          message =
-            res.message || res.meta.voided_by.length
-              ? `Error on TX Validation, voided by: ${res.meta.voided_by}`
-              : 'Error on TX Validation'
+          message = 'Transaction failed: Low Slippage.'
         })
       } catch (e) {
         console.log(e)

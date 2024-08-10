@@ -135,7 +135,7 @@ export const Button = <C extends React.ElementType>({
           </Menu.Button>
         }
       >
-        <div></div>
+        <div key="menu"></div>
       </Menu>
       <Dialog open={!!modal} onClose={closeModal}>
         <Dialog.Content className="max-w-sm !pb-4">

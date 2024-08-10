@@ -1,4 +1,4 @@
-import { formatUSD, formatUSD5Digit } from '@dozer/format'
+import { formatUSD } from '@dozer/format'
 import { Pair } from '@dozer/api'
 import { Typography } from '@dozer/ui'
 import { FC } from 'react'
@@ -54,7 +54,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
             ? formatUSD(1)
             : Math.min(...priceArray) > 1
             ? formatUSD(Math.min(...priceArray))
-            : formatUSD5Digit(Math.min(...priceArray))}
+            : formatUSD(Math.min(...priceArray))}
         </Typography>
         {/* {pair.volume1dChange ? (
           <Typography variant="xs" weight={500} className={pair.volume1dChange > 0 ? 'text-green' : 'text-red'}>
@@ -72,7 +72,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
             ? formatUSD(1)
             : Math.max(...priceArray) > 1
             ? formatUSD(Math.max(...priceArray))
-            : formatUSD5Digit(Math.max(...priceArray))}
+            : formatUSD(Math.max(...priceArray))}
         </Typography>
         {/* {pair.txCount1dChange ? (
           <Typography variant="xs" weight={500} className={pair.txCount1dChange > 0 ? 'text-green' : 'text-red'}>

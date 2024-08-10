@@ -19,7 +19,7 @@ type PoolsOutput = ElementType<PoolsOutputArray>
 const LINKS = (pool: PoolsOutput): BreadcrumbLink[] => [
   {
     href: `/${pool.id}`,
-    label: `${pool.name} - ${formatPercent(pool.swapFee / 10000)}`,
+    label: `${pool.name}`,
   },
   {
     href: `/${pool.id}/add`,
@@ -64,11 +64,11 @@ const Add: NextPage = () => {
               </Link.External>
             </Container>
           </div>
-          <div className="order-1 sm:order-3">
+          {/* <div className="order-1 sm:order-3">
             <AppearOnMount>
               <AddSectionMyPosition pair={pair} />
             </AppearOnMount>
-          </div>
+          </div> */}
         </div>
         <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
       </Layout>

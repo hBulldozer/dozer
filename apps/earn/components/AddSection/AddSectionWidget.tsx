@@ -57,11 +57,11 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
         <Disclosure defaultOpen={true}>
           {({ open }) => (
             <>
-              {isFarm && isMounted ? (
-                <Widget.Header title="1. Add Liquidity" className="!pb-3 ">
-                  <div className="flex gap-3">
-                    <SettingsOverlay chainId={network} />
-                    <Disclosure.Button className="w-full pr-0.5">
+              {isMounted ? (
+                <Widget.Header title="Add Liquidity" className="!pb-3 ">
+                  {/* <div className="flex gap-3"> */}
+                  <SettingsOverlay chainId={network} />
+                  {/* <Disclosure.Button className="w-full pr-0.5">
                       <div className="flex items-center justify-between">
                         <div
                           className={classNames(
@@ -72,12 +72,12 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
                           <ChevronDownIcon
                             width={24}
                             height={24}
-                            className="group-hover:text-stone-200 text-stone-300"
+                            className="hidden group-hover:text-stone-200 text-stone-300"
                           />
                         </div>
                       </div>
-                    </Disclosure.Button>
-                  </div>
+                    </Disclosure.Button> */}
+                  {/* </div> */}
                 </Widget.Header>
               ) : (
                 <Widget.Header title="Add Liquidity" className="!pb-3" />

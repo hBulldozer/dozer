@@ -70,7 +70,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
     href: `/${pair.id}`,
-    label: `${pair.name} - ${formatPercent(pair.swapFee / 10000)}`,
+    label: `${pair.name}`,
   },
 ]
 

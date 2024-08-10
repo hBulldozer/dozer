@@ -196,7 +196,7 @@ const Add: FC = () => {
 
             <Widget id="addLiquidity" maxWidth={400}>
               <Widget.Content>
-                <Widget.Header title="1. Add Liquidity">
+                <Widget.Header title="Add Liquidity">
                   <SettingsOverlay chainId={network} />
                 </Widget.Header>
                 <Web3Input.Currency
@@ -306,13 +306,13 @@ const Add: FC = () => {
         </div>
       </Layout>
 
-      {selectedPool && (
+      {/* {selectedPool && (
         <div className="order-1 sm:order-3">
           <AppearOnMount>
             <AddSectionMyPosition pair={selectedPool} />
           </AppearOnMount>
         </div>
-      )}
+      )} */}
     </>
   )
 }

@@ -1,4 +1,4 @@
-import { formatHTR, formatPercentChange, formatUSD5Digit } from '@dozer/format'
+import { formatHTR, formatPercentChange, formatUSD } from '@dozer/format'
 import { Pair, PairHourSnapshot, toToken, useTokensFromPair } from '@dozer/api'
 import { AppearOnMount, ArrowIcon, classNames, Currency, Skeleton, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
@@ -82,23 +82,6 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now())).reverse()
       : hourSnapshots.filter((snap) => snap.date < new Date(Date.now()))
   }, [chartPeriod, fifteenMinSnapshots, hourSnapshots, pair.daySnapshots])
-  // const { data: pools } = api.getPools.all.useQuery()
-  // if (!pools) return <Typography>Can't fetch pools</Typography>
-  // const poolHTR = pools.find((pool) => {
-  //   const symbols = [pool.token0.symbol, pool.token1.symbol]
-  //   return symbols.includes('HTR') && symbols.includes('USDT')
-  // })
-  // if (!poolHTR) return <Typography>Can't fetch HTR/USDT pool</Typography>
-  // const { data: snapsHTRPool, isLoading } = api.getPools.snapsById.useQuery({ id: poolHTR.id })
-  // if (!snapsHTRPool) return <Typography>Can't fetch HTR/USDT pool snaps</Typography>
-  // const priceHTRPool = snapsHTRPool.hourSnapshots.map((snap) => {
-  //   const date = snap.date
-  //   const price = poolHTR.token0.symbol === 'HTR' ? snap.reserve1 / snap.reserve0 : snap.reserve0 / snap.reserve1
-  //   return { date, price }
-  // })
-  // console.log(priceHTRPool?.length, data.length)
-  // console.log('htr', priceHTRPool ? new Date(priceHTRPool[0].date) : '', 'token', data[0]?.date)
-
   const [xData, yData] = useMemo(() => {
     const currentDate = Math.round(Date.now())
     const [x, y] = data.reduce<[number[], number[]]>(
@@ -150,7 +133,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       const changeNodes = document.getElementsByClassName('hoveredItemChange')
 
       if (chartCurrency === TokenChartCurrency.USD) {
-        valueNodes[0].innerHTML = formatUSD5Digit(value)
+        valueNodes[0].innerHTML = formatUSD(value)
       } else {
         valueNodes[0].innerHTML = formatHTR(value)
       }
@@ -170,10 +153,10 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
         extraCssText: 'z-index: 1000',
         responsive: true,
         // @ts-ignore
-        backgroundColor: tailwind.theme.colors.slate['700'],
+        backgroundColor: tailwind.theme.colors.stone['700'],
         textStyle: {
           // @ts-ignore
-          color: tailwind.theme.colors.slate['50'],
+          color: tailwind.theme.colors.stone['50'],
           fontSize: 12,
           fontWeight: 600,
         },
@@ -187,7 +170,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           const date = new Date(Number(params[0].name * 1000))
           return `<div class="flex flex-col gap-0.5">
             <span class="text-sm text-stone-50 font-semibold">${
-              chartCurrency == TokenChartCurrency.USD ? formatUSD5Digit(params[0].value) : formatHTR(params[0].value)
+              chartCurrency == TokenChartCurrency.USD ? formatUSD(params[0].value) : formatHTR(params[0].value)
             }</span>
             <span class="text-xs text-stone-400 font-medium">${
               date instanceof Date && !isNaN(date?.getTime()) ? format(date, 'dd MMM yyyy HH:mm') : ''
@@ -200,10 +183,10 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
         show: false,
       },
       grid: {
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        top: 40,
+        left: 20,
+        right: 20,
+        bottom: 60,
         containLabel: false,
       },
       dataZoom: {
@@ -220,7 +203,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
         {
           // show: false,
           type: 'category',
-          boundaryGap: false,
+          boundaryGap: true,
           data: xData,
           axisLabel: {
             formatter: function (value: number) {
@@ -236,9 +219,12 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
               )
             },
             interval: 'auto',
-            showMinLabel: false,
-            inside: true,
-            margin: 0,
+            showMinLabel: true, // Changed: Show the first label
+            showMaxLabel: true, // Changed: Show the last label
+            inside: false, // Changed: Place labels outside the chart area
+            margin: 48, // Changed: Adjust margin for better positioning
+            rotate: 0, // Added: Ensure labels are not rotated
+            hideOverlap: true, // Added: Prevent hiding overlapping labels
           },
           axisTick: {
             show: false,
@@ -291,7 +277,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
           <Typography variant="h2" weight={600} className="text-stone-50">
             <span className="hoveredItemValue">
               {chartCurrency === TokenChartCurrency.USD
-                ? formatUSD5Digit(yData[yData.length - 1])
+                ? formatUSD(yData[yData.length - 1])
                 : formatHTR(yData[yData.length - 1])}
             </span>
           </Typography>

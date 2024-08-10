@@ -49,8 +49,15 @@ const web3Modal = new Web3Modal({
     '--w3m-background-color': '#000000',
     '--w3m-accent-color': '#eab308',
   },
-  explorerAllowList: [],
-  mobileWallets: [{ id: 'hathor-wallet', name: 'HathorWallet', links: { universal: 'hator-wallet://wallet/open' } }],
+  explorerAllowList: ['hathor-wallet'],
+  enableExplorer: false,
+  mobileWallets: [
+    {
+      id: 'hathor-wallet',
+      name: 'HathorWallet',
+      links: { universal: 'https://apps.apple.com/br/app/hathor-play/id6557030964' },
+    },
+  ],
   walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
 })
 
