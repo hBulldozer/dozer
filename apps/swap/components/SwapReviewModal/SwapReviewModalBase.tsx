@@ -1,7 +1,7 @@
-import { ChevronDownIcon } from '@heroicons/react/24/solid'
+import { ChevronDownIcon, Square2StackIcon } from '@heroicons/react/24/solid'
 import { Amount, Price, Type, getTokens } from '@dozer/currency'
 import { ZERO } from '@dozer/math'
-import { Dialog, Typography } from '@dozer/ui'
+import { CopyHelper, Dialog, IconButton, Typography } from '@dozer/ui'
 import { Currency } from '@dozer/ui'
 import { FC, ReactNode, useMemo } from 'react'
 
@@ -18,7 +18,7 @@ interface SwapReviewModalBase {
 
 export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children, open, setOpen }) => {
   const { slippageTolerance } = useSettings()
-  const { amountSpecified, outputAmount, tradeType, mainCurrencyPrice, otherCurrencyPrice } = useTrade()
+  const { amountSpecified, outputAmount, tradeType, mainCurrencyPrice, otherCurrencyPrice, pool } = useTrade()
   const input0 = useTrade((state) => state.amountSpecified)
   // const input1 = useTrade((state) => state.outputAmount)
   const value0 = useTrade((state) => state.mainCurrencyPrice)
@@ -99,6 +99,20 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
               </Typography>
             )}
           </Rate>
+        </div>
+        <div className="flex justify-center ">
+          <CopyHelper className="mb-7 " toCopy={pool?.id || ''} hideIcon={true}>
+            {(isCopied) => (
+              <IconButton className="p-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy contract ID'}>
+                <div className="flex flex-row justify-center gap-1">
+                  <Square2StackIcon width={20} height={20} color="stone-500" />
+                  <Typography variant="xs" className="text-stone-200">
+                    Register the contract to interact with it.
+                  </Typography>
+                </div>
+              </IconButton>
+            )}
+          </CopyHelper>
         </div>
         {children}
       </Dialog.Content>

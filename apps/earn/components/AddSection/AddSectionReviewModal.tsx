@@ -1,12 +1,12 @@
-import { PlusIcon } from '@heroicons/react/24/solid'
+import { PlusIcon, Square2StackIcon } from '@heroicons/react/24/solid'
 import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
-import { Currency, Dialog, Typography } from '@dozer/ui'
+import { CopyHelper, Currency, Dialog, IconButton, Typography } from '@dozer/ui'
 import { FC, ReactNode, useMemo } from 'react'
 
 // import { useTokenAmountDollarValues } from '../../lib/hooks'
 import { Rate } from '../Rate'
-import { useSettings } from '@dozer/zustand'
+import { useSettings, useTrade } from '@dozer/zustand'
 
 interface AddSectionReviewModal {
   chainId: ChainId
@@ -32,6 +32,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
   //   amounts: [input0, input1],
   // })
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
+  const { pool } = useTrade()
 
   const [price0, price1] = useMemo(() => {
     return input0 && input1 ? [prices[input0?.currency.uuid], prices[input1?.currency.uuid]] : [0, 0]
@@ -108,6 +109,20 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
               </Typography>
             )}
           </Rate>
+        </div>
+        <div className="flex justify-center ">
+          <CopyHelper className="mb-7 " toCopy={pool?.id || ''} hideIcon={true}>
+            {(isCopied) => (
+              <IconButton className="p-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy contract ID'}>
+                <div className="flex flex-row justify-center gap-1">
+                  <Square2StackIcon width={20} height={20} color="stone-500" />
+                  <Typography variant="xs" className="text-stone-200">
+                    Register the contract to interact with it.
+                  </Typography>
+                </div>
+              </IconButton>
+            )}
+          </CopyHelper>
         </div>
         {children}
       </Dialog.Content>

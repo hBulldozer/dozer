@@ -1,10 +1,10 @@
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
+import { ArrowTopRightOnSquareIcon, Square2StackIcon } from '@heroicons/react/24/solid'
 import chains from '@dozer/chain'
 import { Price } from '@dozer/currency'
 import { formatPercent, formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
 import { Pair } from '@dozer/api'
-import { AppearOnMount, Currency, Link, NetworkIcon, Typography } from '@dozer/ui'
+import { AppearOnMount, CopyHelper, Currency, IconButton, Link, NetworkIcon, Typography } from '@dozer/ui'
 import { FC, useMemo } from 'react'
 
 // import { useTokensFromPair } from '../../lib/hooks'
@@ -38,29 +38,38 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices }) => {
               <Currency.Icon currency={token0} />
               <Currency.Icon currency={token1} />
             </Currency.IconList>
-            <Link.External
-              className="flex flex-col !no-underline group"
-              // href={chains[pair.chainId].getTokenUrl(liquidityToken.uuid)}
-            >
-              <div className="flex items-center gap-2">
-                <Typography
-                  variant="lg"
-                  className="flex items-center gap-1 text-stone-50 group-hover:text-yellow-400"
-                  weight={600}
-                >
-                  {token0.symbol}/{token1.symbol}
-                  <ArrowTopRightOnSquareIcon
-                    width={20}
-                    height={20}
-                    className="text-stone-400 group-hover:text-yellow-400"
-                  />
+            <div className="flex flex-row gap-2">
+              <Link.External
+                className="flex flex-col !no-underline group"
+                href={chains[pair.chainId].getNanoContractDetailsUrl(pair.id)}
+              >
+                <div className="flex items-center gap-2">
+                  <Typography
+                    variant="lg"
+                    className="flex items-center gap-1 text-stone-50 group-hover:text-yellow-400"
+                    weight={600}
+                  >
+                    {token0.symbol}/{token1.symbol}
+                    <ArrowTopRightOnSquareIcon
+                      width={20}
+                      height={20}
+                      className="text-stone-400 group-hover:text-yellow-400"
+                    />
+                  </Typography>
+                </div>
+                <Typography variant="xs" className="text-stone-300">
+                  {/* Fee: 1% */}
+                  Fee: {pair.swapFee}%
                 </Typography>
-              </div>
-              <Typography variant="xs" className="text-stone-300">
-                {/* Fee: 1% */}
-                Fee: {pair.swapFee}%
-              </Typography>
-            </Link.External>
+              </Link.External>
+              <CopyHelper toCopy={pair.id} hideIcon={true}>
+                {(isCopied) => (
+                  <IconButton className="p-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy'}>
+                    <Square2StackIcon width={20} height={20} color="stone-500" />
+                  </IconButton>
+                )}
+              </CopyHelper>
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <Typography weight={400} as="span" className="text-stone-400 sm:text-right">

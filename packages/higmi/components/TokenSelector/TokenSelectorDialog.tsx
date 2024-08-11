@@ -80,7 +80,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
     // >
     <>
       <Dialog open={open} unmount={false} onClose={onClose}>
-        <Dialog.Content className="!max-w-md overflow-y-auto overflow-x-hidden h-[60vh] sm:h-[640px] pb-[116px]">
+        <Dialog.Content className="!max-w-md overflow-y-auto overflow-x-hidden h-[60vh] sm:h-[480px] pb-[116px]">
           <SlideIn>
             <Dialog.Header onClose={onClose} title="Select Token">
               {/* {customTokenMap && (
