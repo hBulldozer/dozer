@@ -69,6 +69,7 @@ export const VOLUME_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'volume',
   header: 'Volume (24h)',
   cell: (props) => <TokenVolume24hCell row={props.row.original} />,
+  accessorFn: (row) => row.volumeUSD,
   size: 100,
   meta: {
     className: 'justify-end',

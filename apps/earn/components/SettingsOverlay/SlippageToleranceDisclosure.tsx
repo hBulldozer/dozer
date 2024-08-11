@@ -113,9 +113,9 @@ export const SlippageToleranceDisclosure: FC = () => {
                       <div className="flex items-center gap-2">
                         <Input.Numeric
                           variant="unstyled"
-                          value={slippageTolerance ?? ''}
-                          onUserInput={(val) => setSlippageTolerance(+val)}
-                          placeholder="1"
+                          value={slippage ?? ''}
+                          onUserInput={(val) => onChange(val)}
+                          placeholder="0.5"
                           className={classNames(DEFAULT_INPUT_UNSTYLED, '')}
                         />
                         <Typography variant="xs" weight={500} className="text-stone-400">

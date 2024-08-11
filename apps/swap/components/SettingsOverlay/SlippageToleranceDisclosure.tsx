@@ -115,6 +115,7 @@ export const SlippageToleranceDisclosure: FC = () => {
                           variant="unstyled"
                           // disabled
                           value={slippage || ''}
+                          placeholder="0.5"
                           onUserInput={(val) => onChange(val)}
                           className={classNames(DEFAULT_INPUT_UNSTYLED, '')}
                         />
