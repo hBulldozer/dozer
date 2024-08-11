@@ -13,15 +13,15 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
   const inViewport = useInViewport(ref)
   return (
     <div className="flex items-center gap-3 sm:gap-0">
-      <div className="hidden sm:flex">
+      <div className="flex">
         <Currency.IconList iconWidth={ICON_SIZE} iconHeight={ICON_SIZE}>
           <Currency.Icon currency={token0} priority={inViewport} />
           <Currency.Icon currency={token1} priority={inViewport} />
         </Currency.IconList>
       </div>
-      <div className="flex sm:hidden">
+      {/* <div className="flex sm:hidden">
         <NetworkIcon chainId={row.chainId} width={ICON_SIZE} height={ICON_SIZE} />
-      </div>
+      </div> */}
       <div className="flex flex-col">
         <Typography variant="sm" weight={500} className="flex items-center gap-1 text-stone-50">
           {token0.symbol} <span className="text-stone-500">/</span> {token1.symbol}{' '}

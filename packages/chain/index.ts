@@ -90,6 +90,8 @@ export class Chain implements Chain {
   }
   getTokenUrl(tokenUUID: string): string {
     if (!this.explorers) return ''
+    if (process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL)
+      return `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/token_detail/${tokenUUID}`
     for (const explorer of this.explorers) {
       return `${explorer.url}/token_detail/${tokenUUID}`
     }

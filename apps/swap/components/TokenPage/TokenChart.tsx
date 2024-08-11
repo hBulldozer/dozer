@@ -1,6 +1,16 @@
 import { formatHTR, formatPercentChange, formatUSD } from '@dozer/format'
 import { Pair, PairHourSnapshot, toToken, useTokensFromPair } from '@dozer/api'
-import { AppearOnMount, ArrowIcon, classNames, Currency, Skeleton, Typography } from '@dozer/ui'
+import {
+  AppearOnMount,
+  ArrowIcon,
+  classNames,
+  CopyHelper,
+  Currency,
+  IconButton,
+  Link,
+  Skeleton,
+  Typography,
+} from '@dozer/ui'
 import { format } from 'date-fns'
 import ReactECharts from 'echarts-for-react'
 import { EChartsOption } from 'echarts-for-react/lib/types'
@@ -10,6 +20,9 @@ import resolveConfig from 'tailwindcss/resolveConfig'
 import tailwindConfig from '../../tailwind.config.js'
 import { hourSnapshot, Token } from '@dozer/database'
 import { api } from '../../utils/api'
+import { ArrowTopRightOnSquareIcon, Square2StackIcon } from '@heroicons/react/24/outline'
+import chains from '@dozer/chain'
+import { hathorLib } from '@dozer/nanocontracts'
 
 const tailwind = resolveConfig(tailwindConfig)
 
@@ -273,6 +286,35 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
             <Typography variant="lg" weight={600} className="text-stone-400">
               {token.symbol}
             </Typography>
+            <div className="flex flex-row items-center gap-2 ml-2">
+              <CopyHelper
+                toCopy={
+                  pair.id == 'native'
+                    ? hathorLib.tokensUtils.getConfigurationString(
+                        pair.token0.uuid,
+                        pair.token0.name || '',
+                        pair.token0.symbol || ''
+                      )
+                    : hathorLib.tokensUtils.getConfigurationString(
+                        pair.token1.uuid,
+                        pair.token1.name || '',
+                        pair.token1.symbol || ''
+                      )
+                }
+                hideIcon={true}
+              >
+                {(isCopied) => (
+                  <IconButton className="p-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy'}>
+                    <Square2StackIcon width={20} height={20} color="stone-500" />
+                  </IconButton>
+                )}
+              </CopyHelper>
+              <Link.External href={chains[pair.chainId].getTokenUrl(pair.id == 'native' ? token0.uuid : token1.uuid)}>
+                <IconButton className="p-1 text-stone-400" description={'View on explorer'}>
+                  <ArrowTopRightOnSquareIcon width={20} height={20} color="stone-500" />
+                </IconButton>
+              </Link.External>
+            </div>
           </div>
           <Typography variant="h2" weight={600} className="text-stone-50">
             <span className="hoveredItemValue">

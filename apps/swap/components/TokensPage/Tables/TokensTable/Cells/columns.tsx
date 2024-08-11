@@ -8,6 +8,7 @@ import { TokenPriceCell } from './TokenPriceCell'
 import { TokenNameCell } from './TokenNameCell'
 import { TokenTVLCell } from './TokenTVLCell'
 import { TokenVolume24hCell } from './TokenVolume24hCell'
+import { TokenMarketCapCell } from './TokenMarketCapCell'
 
 const ICON_SIZE = 26
 const PAGE_SIZE = 20
@@ -70,6 +71,17 @@ export const VOLUME_COLUMN: ColumnDef<Pair, unknown> = {
   header: 'Volume (24h)',
   cell: (props) => <TokenVolume24hCell row={props.row.original} />,
   accessorFn: (row) => row.volumeUSD,
+  size: 100,
+  meta: {
+    className: 'justify-end',
+    skeleton: <div className="rounded-full bg-stone-700 w-full h-[20px] animate-pulse" />,
+  },
+}
+
+export const MARKETCAP_COLUMN: ColumnDef<Pair, unknown> = {
+  id: 'marketcap',
+  header: 'Market Cap',
+  cell: (props) => <TokenMarketCapCell row={props.row.original} />,
   size: 100,
   meta: {
     className: 'justify-end',

@@ -5,7 +5,15 @@ import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useR
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { PAGE_SIZE } from '../contants'
-import { CHANGE_COLUMN, PRICE_COLUMN, CHART_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN } from './Cells/columns'
+import {
+  CHANGE_COLUMN,
+  PRICE_COLUMN,
+  CHART_COLUMN,
+  NAME_COLUMN,
+  TVL_COLUMN,
+  VOLUME_COLUMN,
+  MARKETCAP_COLUMN,
+} from './Cells/columns'
 import { ChainId } from '@dozer/chain'
 import { useNetwork } from '@dozer/zustand'
 import { api } from '../../../../utils/api'
@@ -14,7 +22,7 @@ import { getTokens } from '@dozer/currency'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, TVL_COLUMN, VOLUME_COLUMN, CHART_COLUMN]
+const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, MARKETCAP_COLUMN, TVL_COLUMN, VOLUME_COLUMN, CHART_COLUMN]
 
 export const TokensTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
@@ -42,6 +50,7 @@ export const TokensTable: FC = () => {
     tvl: { min: undefined, max: undefined },
     volume: { min: undefined, max: undefined },
     price: { min: undefined, max: undefined },
+    marketcap: { min: undefined, max: undefined },
   })
 
   useEffect(() => {
@@ -141,6 +150,7 @@ export const TokensTable: FC = () => {
   })
 
   const { data: prices } = api.getPrices.all.useQuery()
+  const { data: totalSupplies } = api.getTokens.allTotalSupply.useQuery()
 
   const pairs_array = useMemo(() => {
     const allPools = _pairs_array?.filter((pair) => (pair.name ? pair : null))
@@ -151,6 +161,15 @@ export const TokensTable: FC = () => {
     )
     const maxTVL = Math.max(...(allPools?.map((pool) => pool.liquidityUSD) || []))
     const maxVolume = Math.max(...(allPools?.map((pool) => pool.volume1d) || []))
+    const maxMarketCap = Math.max(
+      ...(allPools?.map((pool) =>
+        totalSupplies && prices
+          ? pool.id.includes('native')
+            ? totalSupplies[pool.token0.uuid] * prices[pool.token0.uuid]
+            : totalSupplies[pool.token1.uuid] * prices[pool.token1.uuid]
+          : 0
+      ) || [])
+    )
     return allPools
       ?.filter((pool) => {
         const poolName = pool.id.includes('native') ? pool.token0.name : pool.token1.name
@@ -167,6 +186,17 @@ export const TokensTable: FC = () => {
               : prices[pool.token1.uuid]
             : 0
           return poolPrice >= (filters.price.min || 0) && poolPrice <= (filters.price.max || maxPrice)
+        }
+        if (filters.marketcap.min || filters.marketcap.max) {
+          const poolMarketCap =
+            totalSupplies && prices
+              ? pool.id.includes('native')
+                ? totalSupplies[pool.token0.uuid] * prices[pool.token0.uuid]
+                : totalSupplies[pool.token1.uuid] * prices[pool.token1.uuid]
+              : 0
+          return (
+            poolMarketCap >= (filters.marketcap.min || 0) && poolMarketCap <= (filters.marketcap.max || maxMarketCap)
+          )
         }
         if (filters.tvl.min || filters.tvl.max) {
           return pool.liquidityUSD >= (filters.tvl.min || 0) && pool.liquidityUSD <= (filters.tvl.max || maxTVL)
@@ -228,6 +258,7 @@ export const TokensTable: FC = () => {
         liquidityUSD: false,
         fees: false,
         chart: false,
+        marketcap: false,
       })
     }
   }, [isMd, isSm])
@@ -245,10 +276,20 @@ export const TokensTable: FC = () => {
         prices ? (pool.id.includes('native') ? prices[pool.token0.uuid] : prices[pool.token1.uuid]) : 0
       ) || [])
     )
+    const maxMarketCap = Math.max(
+      ...(allPairs?.map((pool) =>
+        totalSupplies && prices
+          ? pool.id.includes('native')
+            ? totalSupplies[pool.token0.uuid] * prices[pool.token0.uuid]
+            : totalSupplies[pool.token1.uuid] * prices[pool.token1.uuid]
+          : 0
+      ) || [])
+    )
     return {
       tvl: maxTVL,
       volume: maxVolume,
       price: maxPrice,
+      marketcap: maxMarketCap,
     }
   }, [_pairs_array])
 

@@ -2,7 +2,7 @@
 import { formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
 import { Pair } from '@dozer/api'
-import { AppearOnMount, Currency, Table, Typography } from '@dozer/ui'
+import { AppearOnMount, Currency, Link, Table, Typography } from '@dozer/ui'
 import { FC } from 'react'
 
 // import { useTokensFromPair } from '../../lib/hooks'
@@ -57,12 +57,17 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices }) => {
           <Table.tbody>
             <Table.tr>
               <Table.td>
-                <div className="flex items-center gap-3">
-                  <Currency.Icon currency={token0} width={24} height={24} />
-                  <Typography weight={600} variant="sm" className="text-stone-50">
-                    {token0.symbol}
-                  </Typography>
-                </div>
+                <Link.External
+                  style={{ textDecoration: 'none' }}
+                  href={`../../../swap/tokens/${token0.chainId}/${token0.uuid}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Currency.Icon currency={token0} width={24} height={24} />
+                    <Typography weight={600} variant="sm" className="text-stone-50">
+                      {token0.symbol}
+                    </Typography>
+                  </div>
+                </Link.External>
               </Table.td>
               <Table.td>
                 <Typography weight={500} variant="sm" className="text-stone-400">
@@ -79,12 +84,17 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices }) => {
             </Table.tr>
             <Table.tr>
               <Table.td>
-                <div className="flex items-center gap-3">
-                  <Currency.Icon currency={token1} width={24} height={24} />
-                  <Typography weight={600} variant="sm" className="text-stone-50">
-                    {token1.symbol}
-                  </Typography>
-                </div>
+                <Link.External
+                  style={{ textDecoration: 'none' }}
+                  href={`../../../swap/tokens/${token1.chainId}/${token1.uuid}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Currency.Icon currency={token1} width={24} height={24} />
+                    <Typography weight={600} variant="sm" className="text-stone-50">
+                      {token1.symbol}
+                    </Typography>
+                  </div>
+                </Link.External>
               </Table.td>
               <Table.td>
                 <Typography weight={500} variant="sm" className="text-stone-400">

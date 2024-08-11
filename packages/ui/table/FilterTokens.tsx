@@ -19,6 +19,7 @@ export interface FiltersTokens {
   tvl: { min?: number; max?: number }
   volume: { min?: number; max?: number }
   price: { min?: number; max?: number }
+  marketcap: { min?: number; max?: number }
 }
 
 export type FilterTokensProps = {
@@ -133,6 +134,7 @@ export function FilterTokens({ search, setSearch, setFilters, maxValues }: Filte
     tvl: {},
     volume: {},
     price: {},
+    marketcap: {},
   })
   const [activeFilter, setActiveFilter] = useState<keyof FiltersTokens>('price')
 
@@ -152,6 +154,7 @@ export function FilterTokens({ search, setSearch, setFilters, maxValues }: Filte
       tvl: {},
       volume: {},
       price: {},
+      marketcap: {},
     }
     setLocalFilters(resetFilters)
     setFilters(resetFilters)
@@ -169,6 +172,7 @@ export function FilterTokens({ search, setSearch, setFilters, maxValues }: Filte
     { key: 'tvl', label: 'TVL' },
     { key: 'price', label: 'Price' },
     { key: 'volume', label: 'Volume' },
+    { key: 'marketcap', label: 'Market Cap' },
   ]
 
   const renderFilterInputs = (close: () => void) => {
