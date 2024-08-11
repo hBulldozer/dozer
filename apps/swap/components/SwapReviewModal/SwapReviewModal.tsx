@@ -186,15 +186,28 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
     <>
       {children({ setOpen })}
       <SwapReviewModalBase chainId={chainId} open={open} setOpen={setOpen}>
-        <Button
-          size="md"
-          testdata-id="swap-review-confirm-button"
-          disabled={isRpcRequestPending}
-          fullWidth
-          onClick={() => onClick()}
-        >
-          {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Swap'}
-        </Button>
+        <div className="flex flex-col justify-between gap-2">
+          <Button
+            size="md"
+            testdata-id="swap-review-confirm-button"
+            disabled={isRpcRequestPending}
+            fullWidth
+            onClick={() => onClick()}
+          >
+            {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Swap'}
+          </Button>
+          {isRpcRequestPending && (
+            <Button
+              size="md"
+              testdata-id="swap-review-reset-button"
+              fullWidth
+              variant="outlined"
+              onClick={() => reset()}
+            >
+              Reset
+            </Button>
+          )}
+        </div>
       </SwapReviewModalBase>
 
       <Dialog open={card} onClose={onCloseCard}>

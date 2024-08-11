@@ -199,16 +199,34 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
         prices={prices}
       >
         <Checker.Connected fullWidth size="md">
-          <Button onClick={onClick} fullWidth size="md" variant="filled" disabled={!percentage || isRpcRequestPending}>
-            {!percentage ? (
-              'Enter a percentage'
-            ) : isRpcRequestPending ? (
-              <Dots>Confirm transaction in your wallet</Dots>
-            ) : (
-              'Remove Liquidity'
+          <div className="flex flex-col justify-between gap-2">
+            <Button
+              onClick={onClick}
+              fullWidth
+              size="md"
+              variant="filled"
+              disabled={!percentage || isRpcRequestPending}
+            >
+              {!percentage ? (
+                'Enter a percentage'
+              ) : isRpcRequestPending ? (
+                <Dots>Confirm transaction in your wallet</Dots>
+              ) : (
+                'Remove Liquidity'
+              )}
+            </Button>
+            {isRpcRequestPending && (
+              <Button
+                size="md"
+                testdata-id="swap-review-reset-button"
+                fullWidth
+                variant="outlined"
+                onClick={() => reset()}
+              >
+                Reset
+              </Button>
             )}
-          </Button>
-
+          </div>
           {/* </Checker.Custom>
             </Checker.Network>
           </Checker.Custom> */}

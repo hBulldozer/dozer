@@ -195,16 +195,29 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
         setOpen={setOpen}
         prices={prices}
       >
-        <Button
-          size="md"
-          disabled={isRpcRequestPending}
-          fullWidth
-          onClick={() => {
-            onClick()
-          }}
-        >
-          {isRpcRequestPending ? <Dots>Confirm transactionin your wallet</Dots> : <>Add Liquidity</>}
-        </Button>
+        <div className="flex flex-col justify-between gap-2">
+          <Button
+            size="md"
+            disabled={isRpcRequestPending}
+            fullWidth
+            onClick={() => {
+              onClick()
+            }}
+          >
+            {isRpcRequestPending ? <Dots>Confirm transactionin your wallet</Dots> : <>Add Liquidity</>}
+          </Button>
+          {isRpcRequestPending && (
+            <Button
+              size="md"
+              testdata-id="swap-review-reset-button"
+              fullWidth
+              variant="outlined"
+              onClick={() => reset()}
+            >
+              Reset
+            </Button>
+          )}
+        </div>
       </AddSectionReviewModal>
     </>
   )
