@@ -212,9 +212,10 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
               testdata-id="swap-review-reset-button"
               fullWidth
               variant="outlined"
+              color="red"
               onClick={() => reset()}
             >
-              Reset
+              Cancel Transaction
             </Button>
           )}
         </div>

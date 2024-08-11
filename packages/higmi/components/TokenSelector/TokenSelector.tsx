@@ -72,6 +72,23 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
     // }
 
     const { balance: balances } = useAccount()
+    const _tokens = useMemo(() => {
+      return tokens?.sort((a: Token, b: Token) => {
+        const balanceA = balances.find((balance) => balance.token_uuid === a.uuid)?.token_balance || 0
+        const balanceB = balances.find((balance) => balance.token_uuid === b.uuid)?.token_balance || 0
+
+        if (balanceA === 0 && balanceB === 0) {
+          return 0 // Both tokens have no balance, keep original order
+        }
+        if (balanceA === 0) {
+          return 1 // A has no balance, move it to the end
+        }
+        if (balanceB === 0) {
+          return -1 // B has no balance, move it to the end
+        }
+        return balanceB - balanceA // Sort by balance in descending order
+      })
+    }, [tokens, balances])
 
     return useMemo(() => {
       if (!isMounted) return <></>

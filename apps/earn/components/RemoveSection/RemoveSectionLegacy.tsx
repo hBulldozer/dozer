@@ -221,9 +221,10 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
                 testdata-id="swap-review-reset-button"
                 fullWidth
                 variant="outlined"
+                color="red"
                 onClick={() => reset()}
               >
-                Reset
+                Cancel Transaction
               </Button>
             )}
           </div>

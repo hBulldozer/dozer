@@ -6,7 +6,8 @@ export const BUTTON_CLASSES: Record<string, string> = {
   'btn-filled': 'text-stone-50',
   'btn-empty': '!ring-0',
   'btn-outlined': 'border-2 hover:ring-2 border-opacity-20 ring-offset-2 ring-offset-stone-900 rounded-xl',
-  'btn-outlined-red': 'border-2 hover:ring-2 border-opacity-20 ring-offset-2 ring-offset-stone-900 rounded-xl',
+  'btn-outlined-red':
+    'border-2 border-red-600 text-red-600 hover:ring-2 border-opacity-20 ring-red-900 ring-offset-2 ring-offset-stone-900 rounded-xl',
   'btn-outlined-yellow': 'border-yellow ring-yellow-700 text-yellow',
   'btn-outlined-amber': 'border-amber ring-amber-700 text-amber',
   'btn-outlined-gradient':
