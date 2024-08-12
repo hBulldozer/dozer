@@ -23,9 +23,9 @@ export const Header: FC = () => {
       nav={
         <App.NavItemList>
           <App.NavItem
-            className=" bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-yellow to-green-400 !hover:text-transparent"
+            className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500"
             href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
-            label="Join Dozer"
+            label="Pre-Sale"
             external
           />
           <App.NavItem href="/" label="Swap" />

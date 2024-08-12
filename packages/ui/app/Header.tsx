@@ -2,7 +2,6 @@ import { Listbox, Transition } from '@headlessui/react'
 import { ChevronDownIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import useScrollPosition from '@react-hook/window-scroll'
 import { useBreakpoint, useIsMounted } from '@dozer/hooks'
-import Image from 'next/legacy/image'
 import React, { Fragment, useState } from 'react'
 
 import {
@@ -19,7 +18,7 @@ import {
 } from '..'
 
 export enum AppType {
-  Root = 'Explore Apps',
+  Root = 'Explore',
   Swap = 'Swap',
   Invest = 'Pools',
   Blog = 'Blog',
@@ -185,8 +184,8 @@ export function Header({
                       value={AppType.Blog}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
                     >
-                      <div className=" bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-yellow to-green-400 !hover:text-transparent">
-                        Join Dozer
+                      <div className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500 !hover:text-transparent">
+                        Pre Sale
                       </div>
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                         Don't be late anon!
