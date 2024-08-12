@@ -12,43 +12,53 @@ const config: Record<
 > = {
   Features: {
     Swap: {
-      href: 'https://mvp.dozer.finance/swap',
+      href: 'https://testnet.dozer.finance/swap',
       target: '_blank',
       rel: 'noopener noreferrer',
     },
-    // Earn: {
-    //   href: 'https://mvp.dozer.finance',
-    //   target: '_blank',
-    //   rel: 'noopener noreferrer',
-    // },
+    Earn: {
+      href: 'https://testnet.dozer.finance/pool',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
     // Borrowing: {
     //   href: 'https://mvp.dozer.finance',
     //   target: '_blank',
     //   rel: 'noopener noreferrer',
     // },
   },
-  // Help: {
-  //   'About Us': {
-  //     href: 'https://mvp.dozer.finance',
-  //     target: '_blank',
-  //     rel: 'noopener noreferrer',
-  //   },
-  //   'Discord Support': {
-  //     href: 'https://discord.gg/',
-  //     target: '_blank',
-  //     rel: 'noopener noreferrer',
-  //   },
-  //   'Twitter Support': {
-  //     href: 'https://twitter.com/DozerProtocol',
-  //     target: '_blank',
-  //     rel: 'noopener noreferrer',
-  //   },
-  // },
+  Help: {
+    // 'About Us': {
+    //   href: 'https://mvp.dozer.finance',
+    //   target: '_blank',
+    //   rel: 'noopener noreferrer',
+    // },
+    Docs: {
+      href: 'https://docs.dozer.finance',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
+    // 'Discord Support': {
+    //   href: 'https://discord.gg/',
+    //   target: '_blank',
+    //   rel: 'noopener noreferrer',
+    // },
+    Support: {
+      href: 'https://t.me/dozerfinance',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
+    // 'Twitter Support': {
+    //   href: 'https://twitter.com/DozerProtocol',
+    //   target: '_blank',
+    //   rel: 'noopener noreferrer',
+    // },
+  },
 
   Items: [
     {
       Partners: {
-        HathorLabs: {
+        'Hathor Network': {
           href: 'https://hathor.network',
           target: '_blank',
           rel: 'noopener noreferrer',
@@ -89,14 +99,16 @@ export function Footer(props: FooterProps): JSX.Element {
   )
 
   return (
-    <footer className="hidden md:flex flex-col border-t border-stone-300/5 mt-auto pt-[32px]" {...props}>
+    <footer className="hidden md:flex flex-col border-t border-stone-300/5 mt-auto pt-[26px]" {...props}>
       <Container maxWidth="5xl" className="grid grid-cols-1 md:grid-cols-[176px_auto] mx-auto px-4 gap-4">
-        <div className="flex flex-col gap-5">
-          <div className="items-center justify-start w-32 gap-3 pt-2">
+        <div className="flex flex-col gap-3">
+          <div className="items-center justify-start w-32">
             <DozerWithTextIcon />
           </div>
-          <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-300">Safe, fast and easy.</div>
-          <div className="flex items-center gap-4">
+          <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-300 pl-2">
+            Safe, fast and easy.
+          </div>
+          <div className="flex items-center gap-4 pl-2">
             <a href="https://twitter.com/DozerProtocol" target="_blank" rel="noopener noreferrer">
               <TwitterIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>

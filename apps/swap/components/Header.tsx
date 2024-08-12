@@ -22,7 +22,12 @@ export const Header: FC = () => {
       appType={AppType.Swap}
       nav={
         <App.NavItemList>
-          <App.NavItem href="https://forms.gle/8cEKvsaNrTP4c8Ef6" label="MVP Form" external />
+          <App.NavItem
+            className=" bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-yellow to-green-400 !hover:text-transparent"
+            href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
+            label="Join Dozer"
+            external
+          />
           <App.NavItem href="/" label="Swap" />
           <App.NavItem href="/tokens" label="Tokens" />
           <App.NavItem href="../../../pool" label="Pools" external target="_blank" />

@@ -178,6 +178,20 @@ export function Header({
                     >
                       Links
                     </Typography>
+                    <Select.Option
+                      as="a"
+                      href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
+                      key={AppType.Blog}
+                      value={AppType.Blog}
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      <div className=" bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-yellow to-green-400 !hover:text-transparent">
+                        Join Dozer
+                      </div>
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Don't be late anon!
+                      </Typography>
+                    </Select.Option>
                     {/* <Select.Option
                       as="a"
                       href="https://mvp.dozer.finance/blog"
@@ -202,7 +216,7 @@ export function Header({
                         Stay up to date with Dozer
                       </Typography>
                     </Select.Option>
-                    <Select.Option
+                    {/* <Select.Option
                       as="a"
                       href="https://www.t.me/h_bulldozer"
                       key="Contact us!"
@@ -211,9 +225,9 @@ export function Header({
                     >
                       Contact us!
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
-                        Chat with Bulldozer.
+                        DM us!
                       </Typography>
-                    </Select.Option>
+                    </Select.Option> */}
                     <Select.Option
                       as="a"
                       href="https://www.docs.dozer.finance"

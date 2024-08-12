@@ -95,34 +95,36 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             </Typography>
           </div>
         </div>
-        <div className="flex justify-center p-4">
-          <Rate token1={input0?.currency} token2={input1?.currency}>
-            {({ toggleInvert, content, usdPrice }) => (
-              <Typography
-                as="button"
-                onClick={() => toggleInvert()}
-                variant="sm"
-                weight={600}
-                className="flex items-center gap-1 text-stone-100"
-              >
-                {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
-              </Typography>
-            )}
-          </Rate>
-        </div>
-        <div className="flex justify-center ">
-          <CopyHelper className="mb-7 " toCopy={pool?.id || ''} hideIcon={true}>
-            {(isCopied) => (
-              <IconButton className="p-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy contract ID'}>
-                <div className="flex flex-row justify-center gap-1">
-                  <Square2StackIcon width={20} height={20} color="stone-500" />
-                  <Typography variant="xs" className="text-stone-200">
-                    Register the contract to interact with it.
-                  </Typography>
-                </div>
-              </IconButton>
-            )}
-          </CopyHelper>
+        <div className="flex justify-between items-center pl-4 gap-2 py-6 ">
+          <div className="flex-1">
+            <Rate token1={input0?.currency} token2={input1?.currency}>
+              {({ toggleInvert, content, usdPrice }) => (
+                <Typography
+                  as="button"
+                  onClick={() => toggleInvert()}
+                  // variant="sm"
+                  weight={600}
+                  className="flex items-center gap-1 text-stone-100"
+                >
+                  {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
+                </Typography>
+              )}
+            </Rate>
+          </div>
+          <div className="flex-1 text-right ">
+            <CopyHelper className="" toCopy={pool?.id || ''} hideIcon={true}>
+              {(isCopied) => (
+                <IconButton className="px-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy contract ID'}>
+                  <div className="flex flex-row justify-center gap-1">
+                    <Square2StackIcon width={20} height={20} color="stone-500" />
+                    <Typography variant="sm" className="text-stone-100">
+                      Register Contract
+                    </Typography>
+                  </div>
+                </IconButton>
+              )}
+            </CopyHelper>
+          </div>
         </div>
         {children}
       </Dialog.Content>

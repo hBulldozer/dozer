@@ -8,9 +8,10 @@ export interface NavItemProps {
   label: string
   external?: boolean
   target?: string
+  className?: string
 }
 
-export const NavItem: FC<NavItemProps> = ({ href, label, external, target }) => {
+export const NavItem: FC<NavItemProps> = ({ href, label, external, target, className }) => {
   const { basePath, pathname } = useRouter()
 
   if (external) {
@@ -19,7 +20,8 @@ export const NavItem: FC<NavItemProps> = ({ href, label, external, target }) => 
         <span
           className={classNames(
             href.includes(basePath) || href == '/' ? 'text-stone-200' : 'text-stone-400',
-            'text-sm font-semibold hover:text-white cursor-pointer'
+            'text-sm font-semibold hover:text-white cursor-pointer',
+            className
           )}
         >
           {label}
