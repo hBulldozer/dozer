@@ -23,7 +23,7 @@ export const Header: FC = () => {
           <App.NavItem
             className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500"
             href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
-            label="Pre-Sale"
+            label="Presale"
             external
           />
           <App.NavItem href="../../swap" label="Swap" external target="_blank" />
