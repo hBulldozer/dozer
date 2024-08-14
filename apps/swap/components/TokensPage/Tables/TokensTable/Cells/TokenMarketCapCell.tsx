@@ -6,25 +6,11 @@ import { CellProps } from './types'
 import { api } from 'utils/api'
 
 export const TokenMarketCapCell: FC<CellProps> = ({ row }) => {
-  const { data: allTotalSupply, isLoading } = api.getTokens.allTotalSupply.useQuery()
-  const { data: prices, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
+  const marketCap = row.marketCap || 0
 
-  if (!allTotalSupply || !prices)
-    return (
-      <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
-        <Skeleton.Box className="ml-4 h-[22px] bg-white/[0.06] rounded-full" />
-      </div>
-    )
-  const totalSupply = row.id.includes('native') ? allTotalSupply[row.token0.uuid] : allTotalSupply[row.token1.uuid]
-  const price = row.id.includes('native') ? prices[row.token0.uuid] : prices[row.token1.uuid]
-
-  return isLoading || isLoadingPrices ? (
-    <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
-      <Skeleton.Box className="ml-4 h-[22px] bg-white/[0.06] rounded-full" />
-    </div>
-  ) : (
+  return (
     <Typography variant="sm" weight={600} className="text-right text-stone-50">
-      {formatUSD((totalSupply / 100) * price)}
+      {formatUSD(marketCap)}
     </Typography>
   )
 }

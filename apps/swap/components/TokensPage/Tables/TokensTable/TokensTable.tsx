@@ -24,6 +24,12 @@ import { getTokens } from '@dozer/currency'
 // @ts-ignore
 const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, MARKETCAP_COLUMN, TVL_COLUMN, VOLUME_COLUMN, CHART_COLUMN]
 
+export interface ExtendedPair extends Pair {
+  price?: number
+  marketCap?: number
+  change?: number
+}
+
 export const TokensTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
   // usePoolFilters()
@@ -44,6 +50,8 @@ export const TokensTable: FC = () => {
 
   const { data: _all_pools, isLoading: isLoadingPools } = api.getPools.all.useQuery()
   const { data: tokens, isLoading } = api.getTokens.all.useQuery()
+  const { data: prices24h, isLoading: isLoadingPrices24h } = api.getPrices.all24h.useQuery()
+  const { data: lastPrices, isLoading: isLoadingLastPrice } = api.getPrices.all.useQuery()
 
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<FiltersTokens>({
@@ -172,10 +180,11 @@ export const TokensTable: FC = () => {
     )
     return allPools
       ?.filter((pool) => {
-        const poolName = pool.id.includes('native') ? pool.token0.name : pool.token1.name
+        const tokenName = pool.id.includes('native') ? pool.token0.name : pool.token1.name
+        const tokenSymbol = pool.id.includes('native') ? pool.token0.symbol : pool.token1.symbol
         return (
-          poolName?.toLowerCase().includes(query.toLowerCase()) ||
-          pool.name?.toLowerCase().includes(query.toLowerCase())
+          tokenName?.toLowerCase().includes(query.toLowerCase()) ||
+          tokenSymbol?.toLowerCase().includes(query.toLowerCase())
         )
       })
       .filter((pool) => {
@@ -224,8 +233,31 @@ export const TokensTable: FC = () => {
     // [sorting, pagination, selectedNetworks, selectedPoolTypes, farmsOnly, query, extraQuery]
   )
 
-  const table = useReactTable<Pair>({
-    data: pairs_array || [],
+  const extended_pairs_array = pairs_array.map((pair) => {
+    const tokenUuid = pair.id.includes('native') ? pair.token0.uuid : pair.token1.uuid
+    const prices24h_token = prices24h?.[tokenUuid]
+    const lastPrice = lastPrices?.[tokenUuid]
+    const previousPrice = prices24h_token?.[0]
+    const change =
+      lastPrice && previousPrice
+        ? (lastPrice - previousPrice) / lastPrice < 0.001
+          ? 0
+          : (lastPrice - previousPrice) / lastPrice
+        : 0
+    const extendedPair: ExtendedPair = { ...pair }
+    extendedPair.price = prices ? (pair.id.includes('native') ? prices[pair.token0.uuid] : prices[pair.token1.uuid]) : 0
+    extendedPair.marketCap =
+      totalSupplies && prices
+        ? pair.id.includes('native')
+          ? totalSupplies[pair.token0.uuid] * prices[pair.token0.uuid]
+          : totalSupplies[pair.token1.uuid] * prices[pair.token1.uuid]
+        : 0
+    extendedPair.change = change
+    return extendedPair
+  })
+
+  const table = useReactTable<ExtendedPair>({
+    data: extended_pairs_array || [],
     columns: COLUMNS,
     state: {
       sorting,
@@ -296,9 +328,9 @@ export const TokensTable: FC = () => {
   return (
     <>
       <FilterTokens maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
-      <GenericTable<Pair>
+      <GenericTable<ExtendedPair>
         table={table}
-        loading={isLoading || isLoadingPools}
+        loading={isLoading || isLoadingPools || isLoadingPrices24h || isLoadingLastPrice}
         placeholder={'No tokens found'}
         pageSize={PAGE_SIZE}
         linkFormatter={rowLink}

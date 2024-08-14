@@ -9,11 +9,12 @@ import { TokenNameCell } from './TokenNameCell'
 import { TokenTVLCell } from './TokenTVLCell'
 import { TokenVolume24hCell } from './TokenVolume24hCell'
 import { TokenMarketCapCell } from './TokenMarketCapCell'
+import { ExtendedPair } from '../TokensTable'
 
 const ICON_SIZE = 26
 const PAGE_SIZE = 20
 
-export const CHART_COLUMN: ColumnDef<Pair, unknown> = {
+export const CHART_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   id: 'chart',
   header: '',
   cell: (props) => <TokenMiniChartCell row={props.row.original} />,
@@ -23,7 +24,7 @@ export const CHART_COLUMN: ColumnDef<Pair, unknown> = {
   },
 }
 
-export const NAME_COLUMN: ColumnDef<Pair, unknown> = {
+export const NAME_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   id: 'name',
   header: 'Name',
   cell: (props) => <TokenNameCell row={props.row.original} />,
@@ -43,7 +44,7 @@ export const NAME_COLUMN: ColumnDef<Pair, unknown> = {
   },
 }
 
-export const TVL_COLUMN: ColumnDef<Pair, unknown> = {
+export const TVL_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   header: 'TVL',
   id: 'liquidityUSD',
   accessorFn: (row) => row.liquidityUSD,
@@ -55,9 +56,10 @@ export const TVL_COLUMN: ColumnDef<Pair, unknown> = {
   },
 }
 
-export const CHANGE_COLUMN: ColumnDef<Pair, unknown> = {
+export const CHANGE_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   id: 'change',
   header: 'Change',
+  accessorFn: (row) => row.change,
   cell: (props) => <TokenChangeCell row={props.row.original} />,
   size: 100,
   meta: {
@@ -66,7 +68,7 @@ export const CHANGE_COLUMN: ColumnDef<Pair, unknown> = {
   },
 }
 
-export const VOLUME_COLUMN: ColumnDef<Pair, unknown> = {
+export const VOLUME_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   id: 'volume',
   header: 'Volume (24h)',
   cell: (props) => <TokenVolume24hCell row={props.row.original} />,
@@ -78,9 +80,10 @@ export const VOLUME_COLUMN: ColumnDef<Pair, unknown> = {
   },
 }
 
-export const MARKETCAP_COLUMN: ColumnDef<Pair, unknown> = {
+export const MARKETCAP_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   id: 'marketcap',
   header: 'Market Cap',
+  accessorFn: (row) => row.marketCap,
   cell: (props) => <TokenMarketCapCell row={props.row.original} />,
   size: 100,
   meta: {
@@ -89,10 +92,10 @@ export const MARKETCAP_COLUMN: ColumnDef<Pair, unknown> = {
   },
 }
 
-export const PRICE_COLUMN: ColumnDef<Pair, unknown> = {
+export const PRICE_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   header: 'Price',
   id: 'price',
-  // accessorFn: (row) => row.fees24h,
+  accessorFn: (row) => row.price,
   cell: (props) => <TokenPriceCell row={props.row.original} />,
   size: 100,
   meta: {

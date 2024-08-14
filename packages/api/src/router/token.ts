@@ -79,7 +79,7 @@ export const tokenRouter = createTRPCRouter({
     tokens.forEach(async (token) => {
       const queryParams = [`id=${token.uuid}`]
       const rawTokenData = await fetchNodeData(endpoint, queryParams)
-      totalSupplies[token.uuid] = rawTokenData.total
+      totalSupplies[token.uuid] = rawTokenData.total / 100
     })
     return totalSupplies
   }),
