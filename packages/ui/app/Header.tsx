@@ -180,6 +180,8 @@ export function Header({
                     <Select.Option
                       as="a"
                       href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       key={AppType.Blog}
                       value={AppType.Blog}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -206,6 +208,8 @@ export function Header({
                     <Select.Option
                       as="a"
                       href="https://www.x.com/DozerProtocol"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       key="Check our Tweets"
                       value="Check our Tweets"
                       className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
@@ -229,7 +233,9 @@ export function Header({
                     </Select.Option> */}
                     <Select.Option
                       as="a"
-                      href="https://www.docs.dozer.finance"
+                      href="https://docs.dozer.finance"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       key="Check our Docs"
                       value="Check our Docs"
                       className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
