@@ -147,7 +147,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
             type: 'swap',
             chainId: network,
             summary: {
-              pending: `Waiting for next block`,
+              pending: `Waiting for next block. Remove liquidity from ${pair.name}.`,
               completed: `Success! Removed ${currencyAToRemove?.toFixed(2)} ${
                 token0.symbol
               } and ${currencyBToRemove?.toFixed(2)} ${token1.symbol} from ${pair.name} pool.`,
