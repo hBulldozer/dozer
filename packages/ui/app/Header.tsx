@@ -185,7 +185,7 @@ export function Header({
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
                     >
                       <div className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500 !hover:text-transparent">
-                        Pre Sale
+                        Presale
                       </div>
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                         Don't be late anon!

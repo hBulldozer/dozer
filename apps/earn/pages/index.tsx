@@ -29,7 +29,7 @@ const Pools: FC = () => {
         <section className="flex flex-col gap-6 lg:flex-row">
           <div className="max-w-md space-y-4">
             <Typography variant="hero" weight={600} className="text-stone-50">
-              Earn
+              Pools 💦
             </Typography>
             <Typography className="text-stone-300">Earn fees by providing liquidity.</Typography>
           </div>
