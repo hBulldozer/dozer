@@ -22,7 +22,7 @@ import { type Pair, dbPoolWithTokens, dbToken, dbTokenWithPools } from './types'
 
 export function toToken(dbToken: any): Token {
   return new Token({
-    chainId: dbToken.chainId,
+    chainId: dbToken.chainId || ChainId.HATHOR,
     uuid: dbToken.uuid,
     decimals: dbToken.decimals,
     name: dbToken.name,

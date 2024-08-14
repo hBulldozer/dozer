@@ -90,9 +90,14 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
 
   useEffect(() => {
     const balance_user: BalanceProps[] = balance
+      .filter((b: TokenBalance) => {
+        const featured_tokens = tokens?.map((t) => t.uuid)
+        return featured_tokens?.includes(b.token_uuid)
+      })
       .map((b: TokenBalance) => {
+        const user_tokens = tokens?.find((t) => t.uuid === b.token_uuid)
         return {
-          token: tokens ? toToken(tokens.find((t) => t.uuid === b.token_uuid)) : undefined,
+          token: user_tokens && tokens ? toToken(tokens.find((t) => t.uuid === b.token_uuid)) : undefined,
           balance: b.token_balance / 100,
           balanceUSD: prices ? (prices[b.token_uuid] * b.token_balance) / 100 : 0,
         }
