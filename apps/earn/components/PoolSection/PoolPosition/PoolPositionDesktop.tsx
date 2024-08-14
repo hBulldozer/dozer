@@ -89,7 +89,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
             <div className="flex items-center gap-2">
               <Currency.Icon currency={token0} width={20} height={20} />
               <Typography variant="sm" weight={600} className="text-stone-300">
-                {max_withdraw_a?.toFixed(2) || '0'}
+                {Number(max_withdraw_a?.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) || '0'}
                 {' ' + token0.symbol}
               </Typography>
             </div>
@@ -101,7 +101,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
             <div className="flex items-center gap-2">
               <Currency.Icon currency={token1} width={20} height={20} />
               <Typography variant="sm" weight={600} className="text-stone-300">
-                {max_withdraw_b?.toFixed(2) || '0'}
+                {Number(max_withdraw_b?.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) || '0'}
                 {' ' + token1.symbol}
               </Typography>
             </div>

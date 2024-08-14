@@ -71,13 +71,19 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices }) => {
               </Table.td>
               <Table.td>
                 <Typography weight={500} variant="sm" className="text-stone-400">
-                  {reserve0.toFixed(2)}
+                  {Number(reserve0.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </Typography>
               </Table.td>
               <Table.td>
                 <AppearOnMount>
                   <Typography weight={600} variant="sm" className="text-stone-50">
-                    ${prices?.[token0.uuid] ? (Number(reserve0.toFixed(2)) * prices?.[token0.uuid]).toFixed(2) : ''}
+                    $
+                    {prices?.[token0.uuid]
+                      ? Number((Number(reserve0.toFixed(2)) * prices?.[token0.uuid]).toFixed(2)).toLocaleString(
+                          undefined,
+                          { maximumFractionDigits: 2 }
+                        )
+                      : ''}
                   </Typography>
                 </AppearOnMount>
               </Table.td>
@@ -98,13 +104,19 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices }) => {
               </Table.td>
               <Table.td>
                 <Typography weight={500} variant="sm" className="text-stone-400">
-                  {reserve1.toFixed(2)}
+                  {Number(reserve1.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </Typography>
               </Table.td>
               <Table.td>
                 <AppearOnMount>
                   <Typography weight={600} variant="sm" className="text-stone-50">
-                    ${prices?.[token1.uuid] ? (Number(reserve1.toFixed(2)) * prices?.[token1.uuid]).toFixed(2) : ''}
+                    $
+                    {prices?.[token1.uuid]
+                      ? Number((Number(reserve1.toFixed(2)) * prices?.[token1.uuid]).toFixed(2)).toLocaleString(
+                          undefined,
+                          { maximumFractionDigits: 2 }
+                        )
+                      : ''}
                   </Typography>
                 </AppearOnMount>
               </Table.td>
