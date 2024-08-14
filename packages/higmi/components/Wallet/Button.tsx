@@ -132,12 +132,14 @@ export const Button = <C extends React.ElementType>({
             as="div"
             key="wallet_connect"
             onClick={onConnect}
+            disabled={isInitializing}
             className="bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-300"
           >
             <div className="flex flex-row items-center gap-3 px-1 py-1 bg-opacity-5 bg-stone-500 rounded-xl">
               {Icons['WalletConnect'] && Icons['WalletConnect']}
             </div>{' '}
-            {isInitializing ? 'Loading...' : 'Connect'}
+            {/* {isInitializing ? 'Loading...' : 'Connect'} */}
+            Connect
           </Menu.Button>
         }
       >

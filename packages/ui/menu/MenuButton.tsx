@@ -14,7 +14,7 @@ export const MenuButton: React.ForwardRefExoticComponent<
   return (
     // @ts-ignore
     <HeadlessMenu.Button as={React.Fragment} ref={ref} role="button">
-      <Button {...props} className={className}>
+      <Button {...props} className={className} key={props.id}>
         {children}
       </Button>
     </HeadlessMenu.Button>

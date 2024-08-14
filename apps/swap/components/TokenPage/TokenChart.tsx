@@ -304,7 +304,10 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
                 hideIcon={true}
               >
                 {(isCopied) => (
-                  <IconButton className="p-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy'}>
+                  <IconButton
+                    className="p-1 text-stone-400"
+                    description={isCopied ? 'Copied!' : 'Configuration String'}
+                  >
                     <Square2StackIcon width={20} height={20} color="stone-500" />
                   </IconButton>
                 )}
