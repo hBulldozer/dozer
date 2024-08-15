@@ -159,6 +159,21 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
     [chartCurrency]
   )
 
+  const onMouseLeave = useCallback(() => {
+    const valueNodes = document.getElementsByClassName('hoveredItemValue')
+    const changeNodes = document.getElementsByClassName('hoveredItemChange')
+
+    if (chartCurrency === TokenChartCurrency.USD) {
+      valueNodes[0].innerHTML = formatUSD(yData[yData.length - 1])
+    } else {
+      valueNodes[0].innerHTML = formatHTR(yData[yData.length - 1])
+    }
+
+    const change = (yData[yData.length - 1] - yData[0]) / (yData[0] != 0 ? yData[0] : 1)
+    changeNodes[0].innerHTML = formatPercentChange(change)
+    setPriceChange(change)
+  }, [chartCurrency])
+
   const DEFAULT_OPTION: EChartsOption = useMemo(
     () => ({
       tooltip: {
@@ -368,7 +383,9 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
         </div>
       </div>
       {!isLoading ? (
-        <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} />
+        <div onMouseLeave={onMouseLeave}>
+          <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} />
+        </div>
       ) : (
         <Skeleton.Box className="h-96" />
       )}

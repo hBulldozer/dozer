@@ -129,6 +129,22 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
     [chartType, pair.swapFee]
   )
 
+  const onMouseLeave = useCallback(() => {
+    const valueNodes = document.getElementsByClassName('hoveredItemValue')
+    const nameNodes = document.getElementsByClassName('hoveredItemName')
+
+    if (chartType === PoolChartType.APR) {
+      valueNodes[0].innerHTML = formatPercent(yData[yData.length - 1])
+    } else {
+      valueNodes[0].innerHTML = formatUSD(yData[yData.length - 1])
+    }
+
+    if (chartType === PoolChartType.Volume) {
+      valueNodes[1].innerHTML = formatUSD(yData[yData.length - 1] * (pair.swapFee / 100))
+    }
+    nameNodes[0].innerHTML = format(new Date(xData[xData.length - 1] * 1000), 'dd MMM yyyy HH:mm')
+  }, [chartType, pair.swapFee])
+
   const DEFAULT_OPTION: EChartsOption = useMemo(
     () => ({
       tooltip: {
@@ -366,7 +382,9 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           </Typography>
         )}
       </div>
-      <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} />
+      <div onMouseLeave={onMouseLeave}>
+        <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} />
+      </div>
     </div>
   )
 }
