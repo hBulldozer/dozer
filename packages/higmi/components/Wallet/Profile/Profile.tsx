@@ -15,6 +15,7 @@ import { shortenAddress } from './Utils'
 // import { api } from '../../../utils/api'
 import { client } from '@dozer/api'
 import { useWalletConnectClient } from '../../contexts'
+import { Tokens } from './Tokens'
 
 interface ProfileProps {
   client: typeof client
@@ -22,6 +23,7 @@ interface ProfileProps {
 export enum ProfileView {
   Default,
   Transactions,
+  Tokens,
 }
 export const Profile: FC<ProfileProps> = ({ client }) => {
   const { notifications, clearNotifications, updateNotificationStatus } = useAccount()
@@ -95,6 +97,15 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
             notifications={filteredNotifications}
             clearNotifications={clearNotifications}
             updateNotificationStatus={updateNotificationStatus}
+            client={client}
+          />
+        )}
+        {view === ProfileView.Tokens && (
+          <Tokens
+            setView={setView}
+            // notifications={filteredNotifications}
+            // clearNotifications={clearNotifications}
+            // updateNotificationStatus={updateNotificationStatus}
             client={client}
           />
         )}

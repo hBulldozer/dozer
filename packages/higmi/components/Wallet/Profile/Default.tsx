@@ -80,8 +80,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
 
   // const [usdPrice, setUsdPrice] = useState<number>(0)
   // const balanceAsUsd = prices ? prices['00'] : 0
-  const [showBalance1, setShowBalance1] = useState<BalanceProps | undefined>(undefined)
-  const [showBalance2, setShowBalance2] = useState<BalanceProps | undefined>(undefined)
+  const [balanceUSD, setBalanceUSD] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
   const inViewport = useInViewport(ref)
   // const { isLoading, error, data: priceHTR } = useHtrPrice()
@@ -104,8 +103,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
       })
       .sort((a: BalanceProps, b: BalanceProps) => b.balanceUSD - a.balanceUSD)
 
-    setShowBalance1(balance_user[0])
-    setShowBalance2(balance_user[1])
+    setBalanceUSD(balance_user.reduce((acc, cur) => acc + cur.balanceUSD, 0))
   }, [balance])
 
   return (
@@ -146,78 +144,36 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
           </div>
         </div>
         <div className="flex justify-center gap-8">
-          {!isLoading && !showBalance1 && !showBalance2 ? (
+          {!isLoading && balanceUSD == 0 ? (
             <Typography variant="sm" className="text-center text-stone-500">
-              No balances in this address
+              No balance in this address
             </Typography>
-          ) : null}
-          {showBalance1 && showBalance1.balanceUSD != 0 ? (
+          ) : (
             <div className="flex flex-col items-center justify-center gap-2">
-              <Currency.Icon
-                width={20}
-                height={20}
-                currency={
-                  new Token({
-                    chainId: network,
-                    uuid: showBalance1.token?.uuid || 'HTR',
-                    symbol: showBalance1.token?.symbol,
-                    name: showBalance1.token?.name,
-                    decimals: 2,
-                  })
-                }
-                priority={inViewport}
-              />
-
+              <Typography variant="sm" className="text-stone-500">
+                Total Balance
+              </Typography>
               <Typography variant="h3" className="whitespace-nowrap">
                 {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-                {showBalance1 ? showBalance1.balance.toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
-              </Typography>
-              <Typography weight={600} className="text-stone-400">
-                {/* {showBalance1 && showBalance1 != 0  ? '$' + ((showBalance1 / 100) * priceHTR).toFixed(2) : ''} */}
-                {isLoading
-                  ? 'Loading'
-                  : showBalance1 && showBalance1.balance && showBalance1.balanceUSD != 0
-                  ? '$' + showBalance1.balanceUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })
-                  : ''}
+                {balanceUSD ? `$ ${balanceUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : ''}
               </Typography>
             </div>
-          ) : null}
-
-          {showBalance2 && showBalance2.balanceUSD != 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2">
-              <Currency.Icon
-                width={20}
-                height={20}
-                currency={
-                  new Token({
-                    chainId: network,
-                    decimals: 2,
-                    uuid: showBalance2.token?.uuid || 'USDT',
-                    symbol: showBalance2.token?.symbol,
-                    name: showBalance2.token?.name,
-                  })
-                }
-                priority={inViewport}
-              />
-
-              <Typography variant="h3" className="whitespace-nowrap">
-                {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-                {showBalance2 ? showBalance2.balance.toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
-              </Typography>
-              <Typography weight={600} className="text-stone-400">
-                {/* {showBalance1 && showBalance1 != 0  ? '$' + ((showBalance1 / 100) * priceHTR).toFixed(2) : ''} */}
-                {isLoading
-                  ? 'Loading'
-                  : showBalance2 && showBalance2.balance && showBalance2.balanceUSD != 0
-                  ? '$' + showBalance2.balanceUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })
-                  : ''}
-              </Typography>
-            </div>
-          ) : null}
+          )}
         </div>
       </div>
       <div className="px-2">
         <div className="w-full h-px mt-3 bg-stone-200/10" />
+      </div>
+      <div className="p-2">
+        <button
+          onClick={() => setView(ProfileView.Tokens)}
+          className="flex text-sm font-semibold hover:text-stone-50 w-full text-stone-400 justify-between items-center hover:bg-white/[0.04] rounded-xl p-2 pr-1 py-2.5"
+        >
+          Show Tokens <ChevronRightIcon width={20} height={20} />
+        </button>
+      </div>
+      <div className="px-2">
+        <div className="w-full h-px bg-stone-200/10" />
       </div>
       <div className="p-2">
         <button

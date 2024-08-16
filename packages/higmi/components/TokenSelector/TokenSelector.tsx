@@ -104,7 +104,7 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
           // fundSource={fundSource}
           onSelect={onSelect}
           includeNative={includeNative}
-          tokens={tokens}
+          tokens={_tokens}
           {...props}
         />
       )
