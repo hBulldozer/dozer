@@ -169,7 +169,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
           onClick={() => setView(ProfileView.Tokens)}
           className="flex text-sm font-semibold hover:text-stone-50 w-full text-stone-400 justify-between items-center hover:bg-white/[0.04] rounded-xl p-2 pr-1 py-2.5"
         >
-          Show Tokens <ChevronRightIcon width={20} height={20} />
+          Tokens <ChevronRightIcon width={20} height={20} />
         </button>
       </div>
       <div className="px-2">
