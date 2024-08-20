@@ -137,7 +137,7 @@ export const poolRouter = createTRPCRouter({
           //   },
           // },
           orderBy: {
-            date: 'asc',
+            date: 'desc',
           },
           take: 1, // Get only the latest snapshot within the 24-hour period
         },

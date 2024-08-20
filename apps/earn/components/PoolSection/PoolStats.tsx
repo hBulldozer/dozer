@@ -31,7 +31,7 @@ export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
           Volume (24h)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {formatUSD(pair.volumeUSD)}
+          {formatUSD(pair.volumeUSD * prices['00'])}
         </Typography>
         {/* {pair.volume1dChange ? (
           <Typography variant="xs" weight={500} className={pair.volume1dChange > 0 ? 'text-green' : 'text-red'}>

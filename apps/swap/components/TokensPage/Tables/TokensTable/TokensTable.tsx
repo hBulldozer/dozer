@@ -25,6 +25,7 @@ import { getTokens } from '@dozer/currency'
 const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, MARKETCAP_COLUMN, TVL_COLUMN, VOLUME_COLUMN, CHART_COLUMN]
 
 export interface ExtendedPair extends Pair {
+  priceHtr?: number
   price?: number
   marketCap?: number
   change?: number
@@ -253,6 +254,7 @@ export const TokensTable: FC = () => {
           : totalSupplies[pair.token1.uuid] * prices[pair.token1.uuid]
         : 0
     extendedPair.change = change
+    extendedPair.priceHtr = prices ? prices['00'] : 0
     return extendedPair
   })
 
