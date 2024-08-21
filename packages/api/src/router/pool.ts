@@ -65,38 +65,34 @@ const fetchAndProcessPoolData = async (
   const { id, chainId, token0, token1 } = pool
 
   const liquidityUSD = (2 * priceHTR * reserve0) / 100
-  const priceHTRold = pool.hourSnapshots[0]?.priceHTR || 1
   const volume0old = pool.hourSnapshots[0]?.volume0 || 0
   const volume1old = pool.hourSnapshots[0]?.volume1 || 0
-  const fee0old = pool.hourSnapshots[0]?.fee0 || 0
-  const fee1old = pool.hourSnapshots[0]?.fee1 || 0
   const txCountold = pool.hourSnapshots[0]?.txCount || 0
   const reserve0old = pool.hourSnapshots[0]?.reserve0 || 0
   const reserve1old = pool.hourSnapshots[0]?.reserve1 || 1
   const volume1d =
     (volume0 - volume0old) / 100 + ((volume1 * reserve0) / reserve1 - (volume1old * reserve0old) / reserve1old) / 100
   const fees1d = (volume1d * fee) / 100
-  // (fee0 * priceHTR - fee0old * priceHTRold) / 100 +
-  // ((fee1 * priceHTR * reserve0) / reserve1 - (fee1old * priceHTRold * reserve0old) / reserve1old) / 100
+
   const feeUSD = fees1d * priceHTR + (pool.hourSnapshots[0]?.feeUSD || 0)
   const volumeUSD = volume1d * priceHTR + (pool.hourSnapshots[0]?.volumeUSD || 0)
   const txCount1d = transactions - txCountold
   return {
     id: id,
     name: `${token0.symbol}-${token1.symbol}`,
-    liquidityUSD: liquidityUSD, //calculateLiquidityUSD(poolData, token0, token1), // Placeholder
+    liquidityUSD: liquidityUSD,
     volume0: volume0,
     volume1: volume1,
     volumeUSD: volumeUSD,
     feeUSD: feeUSD,
-    swapFee: fee, // !!TODO remove hardcoded
+    swapFee: fee,
     apr: Math.exp(((fees1d * priceHTR) / liquidityUSD) * 365) - 1,
     token0: token0,
     token1: token1,
     reserve0: reserve0 / 100,
     reserve1: reserve1 / 100,
-    chainId: chainId, // Or another way to get chainId
-    liquidity: (2 * reserve0) / 100, //poolData.reserve0 + poolData.reserve1, // Or a more complex calculation
+    chainId: chainId,
+    liquidity: (2 * reserve0) / 100,
     volume1d: volume1d > 0.00001 ? volume1d : 0,
     fee0: fee0,
     fee1: fee1,

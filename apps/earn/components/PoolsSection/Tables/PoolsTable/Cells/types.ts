@@ -1,5 +1,5 @@
-import { Pair } from '@dozer/api'
+import { ExtendedPair } from '../PoolsTable'
 
 export interface CellProps {
-  row: Pair
+  row: ExtendedPair
 }

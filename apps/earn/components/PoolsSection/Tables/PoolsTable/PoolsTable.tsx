@@ -132,6 +132,13 @@ const dummyPools: Pair[] = [
 
 type PoolsOutput = RouterOutputs['getPools']['all']
 
+export interface ExtendedPair extends Pair {
+  priceHtr?: number
+  price?: number
+  marketCap?: number
+  change?: number
+}
+
 export const PoolsTable: FC = () => {
   // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
   // usePoolFilters()
@@ -159,7 +166,12 @@ export const PoolsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: _pools, isLoading } = api.getPools.all.useQuery()
+  const { data: _pools, isLoading: isLoadingPools } = api.getPools.all.useQuery()
+  const { data: prices, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
+
+  const isLoading = useMemo(() => {
+    return isLoadingPools || isLoadingPrices
+  }, [isLoadingPools, isLoadingPrices])
 
   const pools = useMemo(() => {
     const allPools = _pools?.concat(dummyPools)
@@ -185,6 +197,9 @@ export const PoolsTable: FC = () => {
           return pool.volume1d >= (filters.volume.min || 0) && pool.volume1d <= (filters.volume.max || maxVolume)
         }
         return true
+      })
+      .map((pool) => {
+        return { ...pool, priceHtr: prices?.['00'] }
       })
   }, [_pools, query, filters])
 
@@ -226,7 +241,7 @@ export const PoolsTable: FC = () => {
 
   // console.log({ pools })
 
-  const table = useReactTable<Pair>({
+  const table = useReactTable<ExtendedPair>({
     data: pools || [],
     columns: COLUMNS,
     state: {
@@ -270,7 +285,7 @@ export const PoolsTable: FC = () => {
   return (
     <>
       <FilterPools maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
-      <GenericTable<Pair>
+      <GenericTable<ExtendedPair>
         table={table}
         loading={isLoading}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
