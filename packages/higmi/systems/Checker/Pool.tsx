@@ -3,6 +3,8 @@ import { FC, ReactElement, useMemo } from 'react'
 
 import { CheckerButton } from './types'
 import { Token } from '@dozer/currency'
+import router from 'next/router'
+import Link from 'next/link'
 
 export interface PoolProps extends CheckerButton {
   poolExist: boolean
@@ -22,11 +24,13 @@ export const Pool: FC<PoolProps> = ({
   size,
 }): ReactElement<any, any> | null => {
   return useMemo(() => {
-    if (!poolExist)
+    if (!poolExist && token0 && token1)
       return (
-        <Button disabled={true} className={className} variant={variant} as={as} fullWidth={fullWidth} size={size}>
-          Pool does not exist
-        </Button>
+        <Link href="/create">
+          <Button fullWidth onClick={() => router.push('/pool/create')} size="md">
+            Create Pool
+          </Button>
+        </Link>
       )
 
     return <>{children}</>

@@ -45,9 +45,11 @@ export class Token extends Currency {
     decimals,
     symbol,
     name,
+    imageUrl,
     rebase = { base: JSBI.BigInt(1), elastic: JSBI.BigInt(1) },
   }: {
     chainId: number | string
+    imageUrl?: string
     uuid: string
     decimals: number
     symbol?: string
@@ -59,6 +61,7 @@ export class Token extends Currency {
       decimals,
       symbol,
       name,
+      imageUrl,
     })
     try {
       this.uuid = getUuid(uuid)

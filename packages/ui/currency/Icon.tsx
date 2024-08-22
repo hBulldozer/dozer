@@ -31,6 +31,8 @@ export const Icon: FC<IconProps> = ({ currency, ...rest }) => {
       return HathorLogo
     }
 
+    if (currency && currency.imageUrl) return currency.imageUrl
+
     if (currency && currency.logoURI()) {
       return currency.logoURI()
     }

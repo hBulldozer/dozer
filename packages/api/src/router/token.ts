@@ -7,6 +7,8 @@ export const tokenRouter = createTRPCRouter({
   all: procedure.query(({ ctx }) => {
     const tokens = ctx.prisma.token.findMany({
       select: {
+        custom: true,
+        imageUrl: true,
         id: true,
         name: true,
         uuid: true,
@@ -83,4 +85,41 @@ export const tokenRouter = createTRPCRouter({
     })
     return totalSupplies
   }),
+  createCustom: procedure
+    .input(
+      z.object({
+        name: z.string(),
+        symbol: z.string(),
+        chainId: z.number(),
+        decimals: z.number(),
+        description: z.string(),
+        uuid: z.string(),
+        imageUrl: z.string(),
+        telegram: z.string().optional(),
+        twitter: z.string().optional(),
+        website: z.string().optional(),
+        createdBy: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const tokens = await ctx.prisma.token.create({
+        data: {
+          id: input.uuid,
+          custom: true,
+          name: input.name,
+          uuid: input.uuid,
+          about: input.description,
+          symbol: input.symbol,
+          chainId: input.chainId,
+          decimals: input.decimals,
+          imageUrl: input.imageUrl,
+          telegram: input.telegram,
+          twitter: input.twitter,
+          website: input.website,
+          createdBy: input.createdBy,
+        },
+      })
+
+      return { result: tokens, uuid: '00000196e885717d5d2499f41be612df13575f32e8ede8aad9711d9fd4b0a6cc' }
+    }),
 })

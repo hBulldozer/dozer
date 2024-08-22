@@ -42,7 +42,7 @@ const Tokens: FC = () => {
               className="gap-2"
               onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                 e.preventDefault()
-                window.location.href = '/pool/create'
+                window.location.href = '/pool/create_token'
               }}
             >
               <PlusIcon className="w-5 h-5" />

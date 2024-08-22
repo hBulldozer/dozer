@@ -79,84 +79,86 @@ export const TokensTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const _pairs_array: Pair[] = tokens_array.map((token: AllTokensDBOutput) => {
-    const pools0 = token.pools0
-    const pools1 = token.pools1
-    const htr_pools0 = pools0.find((pool) => {
-      return pool.token1.uuid == '00'
-    })
-    const htr_pools1 = pools1.find((pool) => {
-      return pool.token0.uuid == '00'
-    })
-    const pools_idx = []
-    htr_pools0 ? pools_idx.push(htr_pools0.id) : null
-    htr_pools1 ? pools_idx.push(htr_pools1.id) : null
-    if (token.uuid == '00') {
-      const pairs_htr: Pair[] = all_pools
-        .filter((pool) => pool.chainId == rendNetwork)
-        .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
-        .map((pool) => {
-          const pair = pool ? pool : ({} as Pair)
-          return pair
-        })
-      const fakeHTRPair: Pair = {
-        id: network == ChainId.HATHOR ? 'native' : 'native-testnet',
-        name: network == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
-        liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
-        volumeUSD: pairs_htr ? pairs_htr.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-        feeUSD: pairs_htr ? pairs_htr.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
-        swapFee: pairs_htr[0].swapFee,
-        apr: 0,
-        token0: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
-        token1: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
-        chainId: token.chainId,
-        reserve0: 0,
-        reserve1: 0,
-        liquidity: pairs_htr ? pairs_htr.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
-        volume1d: pairs_htr ? pairs_htr.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
-        fees1d: pairs_htr ? pairs_htr.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
-        hourSnapshots: [],
-        daySnapshots: [],
-      }
-      return fakeHTRPair
-    } else if (token.symbol == 'USDT') {
-      const pairs_usdt: Pair[] = all_pools
-        .filter((pool) => pool.chainId == rendNetwork)
-        .filter((pool) => pool.token0.symbol == 'USDT' || pool.token1.symbol == 'USDT')
-        .map((pool) => {
-          const pair = pool ? pool : ({} as Pair)
-          return pair
-        })
-      const fakeUSDTPair: Pair = {
-        id: network == ChainId.HATHOR ? 'usdt' : 'usdt-testnet',
-        name: network == ChainId.HATHOR ? 'USDT' : 'USDT testnet',
-        liquidityUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
-        volumeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-        feeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
-        swapFee: pairs_usdt[0].swapFee,
-        apr: 0,
-        token0: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
-        token1: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
-        chainId: token.chainId,
-        reserve0: 0,
-        reserve1: 0,
-        liquidity: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
-        volume1d: pairs_usdt ? pairs_usdt.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
-        fees1d: pairs_usdt ? pairs_usdt.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
-        hourSnapshots: [],
-        daySnapshots: [],
-      }
-      return fakeUSDTPair
-    } else {
-      const pool_with_htr = pools_idx[0]
+  const _pairs_array: Pair[] = tokens_array
+    .filter((token) => !token.custom)
+    .map((token: AllTokensDBOutput) => {
+      const pools0 = token.pools0
+      const pools1 = token.pools1
+      const htr_pools0 = pools0.find((pool) => {
+        return pool.token1.uuid == '00'
+      })
+      const htr_pools1 = pools1.find((pool) => {
+        return pool.token0.uuid == '00'
+      })
+      const pools_idx = []
+      htr_pools0 ? pools_idx.push(htr_pools0.id) : null
+      htr_pools1 ? pools_idx.push(htr_pools1.id) : null
+      if (token.uuid == '00') {
+        const pairs_htr: Pair[] = all_pools
+          .filter((pool) => pool.chainId == rendNetwork)
+          .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
+          .map((pool) => {
+            const pair = pool ? pool : ({} as Pair)
+            return pair
+          })
+        const fakeHTRPair: Pair = {
+          id: network == ChainId.HATHOR ? 'native' : 'native-testnet',
+          name: network == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
+          liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
+          volumeUSD: pairs_htr ? pairs_htr.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
+          feeUSD: pairs_htr ? pairs_htr.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
+          swapFee: pairs_htr[0].swapFee,
+          apr: 0,
+          token0: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
+          token1: pairs_htr[0].token0.uuid == '00' ? pairs_htr[0].token0 : pairs_htr[0].token1,
+          chainId: token.chainId,
+          reserve0: 0,
+          reserve1: 0,
+          liquidity: pairs_htr ? pairs_htr.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
+          volume1d: pairs_htr ? pairs_htr.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
+          fees1d: pairs_htr ? pairs_htr.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
+          hourSnapshots: [],
+          daySnapshots: [],
+        }
+        return fakeHTRPair
+      } else if (token.symbol == 'USDT') {
+        const pairs_usdt: Pair[] = all_pools
+          .filter((pool) => pool.chainId == rendNetwork)
+          .filter((pool) => pool.token0.symbol == 'USDT' || pool.token1.symbol == 'USDT')
+          .map((pool) => {
+            const pair = pool ? pool : ({} as Pair)
+            return pair
+          })
+        const fakeUSDTPair: Pair = {
+          id: network == ChainId.HATHOR ? 'usdt' : 'usdt-testnet',
+          name: network == ChainId.HATHOR ? 'USDT' : 'USDT testnet',
+          liquidityUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
+          volumeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
+          feeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
+          swapFee: pairs_usdt[0].swapFee,
+          apr: 0,
+          token0: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
+          token1: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
+          chainId: token.chainId,
+          reserve0: 0,
+          reserve1: 0,
+          liquidity: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
+          volume1d: pairs_usdt ? pairs_usdt.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
+          fees1d: pairs_usdt ? pairs_usdt.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
+          hourSnapshots: [],
+          daySnapshots: [],
+        }
+        return fakeUSDTPair
+      } else {
+        const pool_with_htr = pools_idx[0]
 
-      if (!pool_with_htr) return {} as Pair
-      const _poolDB = all_pools.find((pool) => pool.id == pool_with_htr)
-      if (!_poolDB) return {} as Pair
-      const pair = _poolDB ? { ..._poolDB, liquidityUSD: _poolDB.liquidityUSD / 2 } : ({} as Pair)
-      return pair
-    }
-  })
+        if (!pool_with_htr) return {} as Pair
+        const _poolDB = all_pools.find((pool) => pool.id == pool_with_htr)
+        if (!_poolDB) return {} as Pair
+        const pair = _poolDB ? { ..._poolDB, liquidityUSD: _poolDB.liquidityUSD / 2 } : ({} as Pair)
+        return pair
+      }
+    })
 
   const { data: prices } = api.getPrices.all.useQuery()
   const { data: totalSupplies } = api.getTokens.allTotalSupply.useQuery()

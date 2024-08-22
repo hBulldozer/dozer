@@ -7,6 +7,16 @@ const { ROOT_URL, SWAP_URL, EARN_URL } = process.env
 const nextConfig = {
   ...defaultNextConfig,
   transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database', '@dozer/currency'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.redd.it',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
   async redirects() {
     return [
       {

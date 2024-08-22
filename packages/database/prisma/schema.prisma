@@ -27,6 +27,12 @@ model Token {
   pools1           Pool[]      @relation("token1")
   incentives       Incentive[]//
   about            String      @default("teste about")
+  imageUrl         String      @default("") @db.VarChar(10000)
+  createdBy        String      @default("")
+  telegram         String      @default("")
+  twitter          String      @default("")
+  website          String      @default("")
+  custom           Boolean     @default(false)
 
   @@unique([chainId, uuid])
   @@index([id])
