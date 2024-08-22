@@ -6,7 +6,7 @@ import { DatePicker } from './DatePicker'
 import { DatetimeLocal } from './DatetimeLocal'
 import { Input as Numeric } from './Numeric'
 import { Input as Percent } from './Percent'
-
+import { TextGeneric } from './TextGeneric'
 export type { AddressProps } from './Address'
 export type { CounterProps } from './Counter'
 export type { DatetimeLocalProps } from './DatetimeLocal'
@@ -52,4 +52,5 @@ export const Input = {
   Counter,
   Numeric,
   Percent,
+  TextGeneric,
 }

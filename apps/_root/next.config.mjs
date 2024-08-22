@@ -1,4 +1,5 @@
 import defaultNextConfig from '@dozer/nextjs-config'
+import { truncate } from 'fs'
 
 const { ROOT_URL, SWAP_URL, EARN_URL } = process.env
 
@@ -47,6 +48,7 @@ const nextConfig = {
         source: '/pool/:path*',
         destination: `${EARN_URL}/pool/:path*`,
       },
+
       {
         source: '/kucoin/:path*',
         destination: `https://api.kucoin.com/api/v1/:path*`,

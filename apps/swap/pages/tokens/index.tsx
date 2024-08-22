@@ -35,7 +35,20 @@ const Tokens: FC = () => {
             </Typography>
             <Typography className="text-stone-300">Dozer Protocol featured Tokens.</Typography>
           </div>
-          <div className="flex justify-end flex-grow not-prose"></div>
+          <div className="flex justify-end flex-grow not-prose">
+            <Button
+              as="a"
+              href="/pool/create"
+              className="gap-2"
+              onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                e.preventDefault()
+                window.location.href = '/pool/create'
+              }}
+            >
+              <PlusIcon className="w-5 h-5" />
+              Create Token
+            </Button>
+          </div>
         </section>
         <TokensSection />
       </div>
