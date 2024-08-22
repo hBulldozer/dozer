@@ -132,7 +132,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
         mainCurrency.uuid,
         amountSpecified,
         otherCurrency.uuid,
-        outputAmount * (1 - slippageTolerance),
+        outputAmount * (1 + slippageTolerance),
         address
       )
       // console.log(response)
@@ -204,7 +204,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
               onClick()
             }}
           >
-            {isRpcRequestPending ? <Dots>Confirm transactionin your wallet</Dots> : <>Add Liquidity</>}
+            {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : <>Add Liquidity</>}
           </Button>
           {isRpcRequestPending && (
             <Button
