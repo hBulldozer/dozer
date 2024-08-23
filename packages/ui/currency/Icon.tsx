@@ -6,6 +6,7 @@ import Image, { ImageProps } from 'next/legacy/image'
 import { FC, useEffect, useMemo, useState } from 'react'
 
 import { GradientCircleIcon } from '../icons'
+import { PlusIcon } from '@heroicons/react/24/outline'
 // import { Link } from '../link'
 
 const BLOCKCHAIN: Record<number, string> = {
@@ -13,6 +14,7 @@ const BLOCKCHAIN: Record<number, string> = {
 }
 
 const HathorLogo = '/logos/HTR.svg'
+const PlusLogo = '/logos/PLUS.svg'
 
 const LOGO: Record<number, string> = {
   [ChainId.HATHOR]: HathorLogo,
@@ -30,6 +32,8 @@ export const Icon: FC<IconProps> = ({ currency, ...rest }) => {
     if (currency.uuid == '00') {
       return HathorLogo
     }
+
+    if (currency && currency.symbol == 'CREATE') return PlusLogo
 
     if (currency && currency.imageUrl) return currency.imageUrl
 
