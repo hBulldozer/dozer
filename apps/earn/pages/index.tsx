@@ -40,18 +40,13 @@ const Pools: FC = () => {
                   as="a"
                   href="/pool/add"
                   fullWidth
+                  variant="outlined"
                   color="yellow"
                   startIcon={<PlusCircleIcon width={20} height={20} />}
                 >
                   New Position
                 </Button>
-                <Button
-                  as="a"
-                  href="/pool/create"
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<BeakerIcon width={20} height={20} />}
-                >
+                <Button as="a" href="/pool/create" fullWidth startIcon={<BeakerIcon width={20} height={20} />}>
                   Create Pool
                 </Button>
               </div>

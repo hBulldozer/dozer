@@ -10,6 +10,7 @@ import { useNetwork, useTrade } from '@dozer/zustand'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../utils/api'
 import { useRouter } from 'next/router'
+import { PoolSizeCalculator } from '../components'
 
 const LINKS: BreadcrumbLink[] = [
   {
@@ -29,7 +30,6 @@ export const getStaticProps: GetStaticProps = async () => {
     revalidate: 3600,
   }
 }
-
 const CreatePool: FC = () => {
   const { data: tokens = [] } = api.getTokens.all.useQuery()
   const { data: prices = {} } = api.getPrices.all.useQuery()
@@ -40,6 +40,7 @@ const CreatePool: FC = () => {
     new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' })
   )
   const [token1, setToken1] = useState<Token | undefined>(undefined)
+  const [recommendedLiquiditySize, setRecommendedLiquiditySize] = useState<number>(0)
   const { network } = useNetwork()
   const router = useRouter()
 
@@ -55,17 +56,24 @@ const CreatePool: FC = () => {
     setInput1(val)
   }
 
+  const handleLiquiditySizeChange = (size: number) => {
+    setRecommendedLiquiditySize(size)
+    // Optionally, you can update input0 here if you want to automatically set the HTR amount
+    // setInput0(size.toString())
+  }
+
   const handleCreatePool = useCallback(() => {
     // Implement pool creation logic here
-    console.log('Creating pool with:', { token0, token1, amount0: input0, amount1: input1 })
+    console.log('Creating pool with:', { token0, token1, amount0: input0, amount1: input1, recommendedLiquiditySize })
     // After creation, you might want to redirect to the pool page or show a success message
-  }, [token0, token1, input0, input1])
+  }, [token0, token1, input0, input1, recommendedLiquiditySize])
 
   return (
     <Layout breadcrumbs={LINKS}>
       <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
         <div className="hidden md:block" />
         <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
+          <PoolSizeCalculator onLiquiditySizeChange={handleLiquiditySizeChange} />
           <Widget id="createPool" maxWidth={400}>
             <Widget.Content>
               <Widget.Header title="Create Pool">
