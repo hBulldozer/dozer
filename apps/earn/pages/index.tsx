@@ -1,4 +1,4 @@
-import { PlusIcon } from '@heroicons/react/24/solid'
+import { PlusCircleIcon, BeakerIcon } from '@heroicons/react/24/outline'
 import { Button, Typography } from '@dozer/ui'
 import type { GetStaticProps, InferGetStaticPropsType } from 'next'
 import { FC } from 'react'
@@ -34,24 +34,31 @@ const Pools: FC = () => {
             <Typography className="text-stone-300">Earn fees by providing liquidity.</Typography>
           </div>
           <div className="flex justify-end flex-grow not-prose">
-            <div className="flex flex-col gap-3 w-full lg:w-[200px]">
-              {/* <Link.Internal href="/add" passHref={true}> */}
-              <Button as="a" href="/pool/add" fullWidth color="yellow" startIcon={<PlusIcon width={16} height={16} />}>
-                New Position
-              </Button>
-              {/* </Link.Internal> */}
-              {/* <Link.External href="https://rbieu62gj0f.typeform.com/to/KkrPkOFe">
-                <Button fullWidth color="gray" startIcon={<OnsenIcon width={16} height={16} />}>
-                  Join Onsen
+            <div className="flex flex-col gap-3 w-full lg:w-[420px]">
+              <div className="flex gap-3">
+                <Button
+                  as="a"
+                  href="/pool/add"
+                  fullWidth
+                  color="yellow"
+                  startIcon={<PlusCircleIcon width={20} height={20} />}
+                >
+                  New Position
                 </Button>
-              </Link.External> */}
+                <Button
+                  as="a"
+                  href="/pool/create"
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<BeakerIcon width={20} height={20} />}
+                >
+                  Create Pool
+                </Button>
+              </div>
             </div>
           </div>
         </section>
-        {/* <SushiBarSection /> */}
-        {/* <PoolsFiltersProvider selectedNetworks={selectedNetworks}> */}
         <PoolsSection />
-        {/* </PoolsFiltersProvider> */}
       </div>
       <BlockTracker client={api} />
     </Layout>

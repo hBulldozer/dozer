@@ -91,6 +91,47 @@ export class LiquidityPool extends NanoContract {
   //   return response
   // }
 
+  public async wc_initialize(
+    hathorRpc: IHathorRpc,
+    address: string,
+    ncId: string,
+    token0: string,
+    token1: string,
+    amount0: number,
+    amount1: number,
+    fee: number,
+    protocol_fee: number
+  ) {
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'initialize',
+      '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771596',
+      [
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: token0,
+          amount: Math.ceil(amount0 * 100),
+          address: address,
+          changeAddress: address,
+        },
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: token1,
+          amount: Math.ceil(amount1 * 100),
+          address: address,
+          changeAddress: address,
+        },
+      ],
+      [token0, token1, fee, protocol_fee],
+      true,
+      null
+    )
+    console.log('Will send rpc req: ', ncTxRpcReq)
+
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+
+    return rpcResponse
+  }
+
   public async swap_exact_tokens_for_tokens(
     hathorRpc: IHathorRpc,
     address: string,
