@@ -52,7 +52,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
         <SlideIn>
           <Dialog.Header onClose={onClose} title="Select Token" />
           <div className="flex flex-col h-full">
-            <div className="flex-grow pb-2 overflow-y-auto">
+            <div className="flex-grow pb-2 overflow-y-auto custom-scrollbar">
               <Currency.List
                 className="divide-y hide-scrollbar divide-stone-700"
                 currencies={currencies}

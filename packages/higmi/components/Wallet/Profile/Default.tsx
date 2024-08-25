@@ -98,7 +98,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
         return {
           token: user_tokens && tokens ? toToken(tokens.find((t) => t.uuid === b.token_uuid)) : undefined,
           balance: b.token_balance / 100,
-          balanceUSD: prices ? (prices[b.token_uuid] * b.token_balance) / 100 : 0,
+          balanceUSD: prices && prices[b.token_uuid] ? (prices[b.token_uuid] * b.token_balance) / 100 : 0,
         }
       })
       .sort((a: BalanceProps, b: BalanceProps) => b.balanceUSD - a.balanceUSD)

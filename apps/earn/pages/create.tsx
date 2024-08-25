@@ -36,7 +36,7 @@ const CreatePool: FC = () => {
 
   const [input0, setInput0] = useState<string>('')
   const [input1, setInput1] = useState<string>('')
-  const [token0, setToken0] = useState<Token>(
+  const [token0] = useState<Token>(
     new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' })
   )
   const [token1, setToken1] = useState<Token | undefined>(undefined)
@@ -76,11 +76,9 @@ const CreatePool: FC = () => {
                 value={input0}
                 onChange={onInput0}
                 currency={token0}
-                onSelect={() => {}} // Disabled for HTR
                 chainId={ChainId.HATHOR}
                 prices={prices}
                 tokens={[token0]}
-                disabled={true}
               />
               <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
                 <div className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full">
