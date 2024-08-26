@@ -44,7 +44,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
+  const pools = await ssg.getPools.allDay.fetch()
   if (!pools) {
     throw new Error(`Failed to fetch pool, received ${pools}`)
   }
@@ -80,7 +80,7 @@ const Pool = () => {
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
-  const { data: pools } = api.getPools.all.useQuery()
+  const { data: pools } = api.getPools.allDay.useQuery()
   if (!pools) return <></>
   const pair_without_snaps = pools.find((pool) => pool.id === id)
   if (!pair_without_snaps) return <></>

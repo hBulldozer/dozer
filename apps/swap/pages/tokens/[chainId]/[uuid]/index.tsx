@@ -39,7 +39,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const uuid = params?.uuid as string
 
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
+  const pools = await ssg.getPools.allDay.fetch()
   const USDT_token = await ssg.getTokens.bySymbol.fetch({ symbol: 'USDT' })
   if (!USDT_token) {
     throw new Error(`Failed to fetch USDT Token`)
@@ -72,7 +72,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   await ssg.getPools.snapsById.prefetch({ id: pool.id })
   await ssg.getPools.snapsById.prefetch({ id: HTR_USDT_pool.id })
 
-  await ssg.getPools.all.prefetch()
+  await ssg.getPools.allDay.prefetch()
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
   await ssg.getNetwork.getBestBlock.prefetch()
