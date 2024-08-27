@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Form,
   Input,
@@ -16,7 +16,7 @@ import { PhotoIcon } from '@heroicons/react/24/outline'
 import { Checker, useWalletConnectClient } from '@dozer/higmi'
 import { UploadDropzone } from '@dozer/api'
 import { api } from '../utils/api'
-import { useNetwork } from '@dozer/zustand'
+import { useNetwork, useAccount } from '@dozer/zustand'
 import { get } from 'lodash'
 import { Layout } from '../components/Layout'
 
@@ -34,10 +34,18 @@ const TokenCreationPage: React.FC = () => {
   const [generatedMeme, setGeneratedMeme] = useState<string | null>(null)
   const [isGeneratingMeme, setIsGeneratingMeme] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [totalSupply, setTotalSupply] = useState('')
+  const [userHtrBalance, setUserHtrBalance] = useState(0)
 
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { network } = useNetwork()
+  const { balance } = useAccount()
+
+  useEffect(() => {
+    const htrBalance = balance.find((b) => b.token_symbol === 'HTR')?.token_balance || 0
+    setUserHtrBalance(htrBalance)
+  }, [balance])
 
   const LINKS = (): BreadcrumbLink[] => [
     {
@@ -59,6 +67,7 @@ const TokenCreationPage: React.FC = () => {
     setImageSource('upload')
     setGeneratedMeme(null)
     setIsGeneratingMeme(false)
+    setTotalSupply('')
   }
 
   const mutation = api.getTokens.createCustom.useMutation({
@@ -97,6 +106,7 @@ const TokenCreationPage: React.FC = () => {
       twitter,
       website,
       imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme,
+      totalSupply,
     })
 
     mutation.mutate({
@@ -111,6 +121,7 @@ const TokenCreationPage: React.FC = () => {
       twitter,
       website,
       imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme || '',
+      totalSupply: parseInt(totalSupply),
     })
   }
 
@@ -128,12 +139,12 @@ const TokenCreationPage: React.FC = () => {
     }
   }
 
+  const requiredHtr = (parseInt(totalSupply) || 0) * 0.01
+  const isEnoughBalance = userHtrBalance / 100 >= requiredHtr
+
   return (
     <Layout breadcrumbs={LINKS()}>
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <Typography variant="h1" className="mb-6 text-center">
-          Create Your Token
-        </Typography>
         <Container className="flex items-center justify-center">
           <div className="max-w-4xl p-8 sm:w-full md:w-max w-max bg-stone-800 rounded-xl">
             <Form header="" className="-mt-12" onSubmit={handleSubmit}>
@@ -208,8 +219,8 @@ const TokenCreationPage: React.FC = () => {
                             appearance={{
                               uploadIcon: 'text-stone-500 mt-2',
                               container: !uploadedFile
-                                ? 'cursor-pointer border-stone-500 py-3 h-55'
-                                : 'border-stone-500 py-3 h-55',
+                                ? 'cursor-pointer border-stone-500  h-55'
+                                : 'border-stone-500  h-55',
                             }}
                             endpoint="imageUploader"
                             onDrop={(files) => {
@@ -261,7 +272,7 @@ const TokenCreationPage: React.FC = () => {
                     </Tab.Group>
                   </Form.Control>
                 </div>
-                <div className="flex flex-col justify-center gap-12 md:w-2/3">
+                <div className="flex flex-col justify-center gap-2 md:w-2/3">
                   <Form.Control label="Token Name">
                     <Input.TextGeneric
                       pattern="^[a-zA-Z0-9 ]{0,30}$"
@@ -270,7 +281,6 @@ const TokenCreationPage: React.FC = () => {
                       value={tokenName}
                       onChange={(e) => setTokenName(e)}
                       placeholder="Enter token name"
-                      className="mb-3"
                       required
                     />
                   </Form.Control>
@@ -284,6 +294,38 @@ const TokenCreationPage: React.FC = () => {
                       placeholder="Enter token symbol"
                       required
                     />
+                  </Form.Control>
+
+                  <Form.Control label="Total Supply">
+                    <Input.Numeric
+                      id="total-supply"
+                      value={totalSupply}
+                      onUserInput={setTotalSupply}
+                      placeholder="Enter total supply"
+                      required
+                    />
+                    <div className="flex flex-col">
+                      <div className="flex flex-row justify-between ">
+                        <div className="flex flex-col">
+                          <Typography variant="xs" className="mt-1 text-stone-400">
+                            You will need {requiredHtr.toFixed(2)} HTR.
+                          </Typography>
+                          <Typography variant="xxs" className="mt-1 text-stone-400">
+                            0.01 HTR per token.
+                          </Typography>
+                        </div>
+                        <div className="flex flex-col">
+                          <Typography variant="xs" className="mt-1 text-stone-400">
+                            HTR balance: {(userHtrBalance / 100).toFixed(2)}
+                          </Typography>
+                          {!isEnoughBalance && (
+                            <Typography variant="xxs" className="mt-1 text-red-500">
+                              Insufficient balance.
+                            </Typography>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </Form.Control>
                 </div>
               </div>
@@ -332,7 +374,7 @@ const TokenCreationPage: React.FC = () => {
 
               <Form.Buttons>
                 <Checker.Connected fullWidth size="md">
-                  <Button type="submit" className="w-full">
+                  <Button type="submit" className="w-full" disabled={!isEnoughBalance}>
                     Create Token
                   </Button>
                 </Checker.Connected>

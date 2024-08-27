@@ -64,7 +64,7 @@ export const Tokens: FC<TokensProps> = ({
             <ChevronLeftIcon width={24} height={24} className="text-stone-400" />
           </IconButton>
         </div>
-        <Typography weight={600} className="text-stone-400">
+        <Typography weight={600} className="ml-5 text-stone-400">
           Tokens
         </Typography>
       </div>
@@ -107,13 +107,9 @@ export const Tokens: FC<TokensProps> = ({
             )
           })
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="flex flex-col items-center justify-center gap-1">
-              <Typography variant="xs" className="flex italic text-stone-500">
-                No tokens found
-              </Typography>
-            </div>
-          </div>
+          <Typography variant="xs" className="py-5 text-center text-stone-500">
+            No tokens found
+          </Typography>
         )}
       </div>
     </div>

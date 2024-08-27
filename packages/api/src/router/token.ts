@@ -99,6 +99,7 @@ export const tokenRouter = createTRPCRouter({
         twitter: z.string().optional(),
         website: z.string().optional(),
         createdBy: z.string(),
+        totalSupply: z.number(),
       })
     )
     .mutation(async ({ ctx, input }) => {
