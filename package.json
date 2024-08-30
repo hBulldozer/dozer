@@ -27,7 +27,7 @@
     "sort-package-json": "2.10.0",
     "ts-jest": "29.2.2",
     "tsx": "^4.7.2",
-    "turbo": "2.0.14"
+    "turbo": "2.1.0"
   },
   "engines": {
     "packageManager": "pnpm@9.1.0",
