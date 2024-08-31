@@ -46,8 +46,6 @@ export const TokensTable: FC = () => {
   })
   const [rendNetwork, setRendNetwork] = useState<number>(ChainId.HATHOR)
   const { network } = useNetwork()
-
-  // const [all_pools, setAll_pools] = useState<Pair[]>([])
   const [tokens_array, setTokens_array] = useState<AllTokensDBOutput[]>([])
 
   const { data: all_pools, isLoading: isLoadingPools } = api.getPools.allDay.useQuery()
