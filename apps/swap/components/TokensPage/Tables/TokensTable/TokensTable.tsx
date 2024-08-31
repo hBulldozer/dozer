@@ -66,7 +66,6 @@ export const TokensTable: FC = () => {
   useEffect(() => {
     // without useeffect it was giving hydration error,
     // because the two fetchs above can be lazy and cause a difference between server render and client render
-    // setAll_pools(_all_pools ? _all_pools : [])
     setTokens_array(
       tokens
         ? tokens.filter((token: AllTokensDBOutput) => {
@@ -76,7 +75,6 @@ export const TokensTable: FC = () => {
     )
   }, [
     tokens,
-    // _all_pools
   ])
 
   useEffect(() => {
