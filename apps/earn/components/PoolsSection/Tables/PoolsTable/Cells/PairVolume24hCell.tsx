@@ -6,7 +6,7 @@ import { FC } from 'react'
 import { CellProps } from './types'
 
 export const PairVolume24hCell: FC<CellProps> = ({ row }) => {
-  const volume = formatUSD(row.volume1d * (row.priceHtr || 0))
+  const volume = formatUSD(row.volumeUSD)
 
   return (
     <Typography variant="sm" weight={600} className="text-right text-stone-50">

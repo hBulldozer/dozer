@@ -79,7 +79,6 @@ const fetchAndProcessPoolData = async (
     (volume0 - volume0old) / 100 +
     ((volume1 - volume1old) * (reserve0 / reserve1 + reserve0old / reserve1old)) / 2 / 100
 
-  console.log('Volume1d: ', pool.token1.symbol, volume1d)
   const fees1d = (volume1d * fee) / 100
 
   const feeUSD = fees1d * priceHTR //+ (pool.hourSnapshots[0]?.feeUSD || 0)

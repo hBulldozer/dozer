@@ -82,9 +82,9 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           //     : acc[1].push(Number(cur.feeUSD) - Number(arr[idx - 1].feeUSD))
           // } else
           if (chartType === PoolChartType.Volume) {
-            idx == 0
-              ? acc[1].push(Number(cur.volumeUSD))
-              : acc[1].push(Number(cur.volumeUSD) - Number(arr[idx - 1].volumeUSD))
+            // idx == 0
+            acc[1].push(Number(cur.volumeUSD))
+            // : acc[1].push(Number(cur.volumeUSD) - Number(arr[idx - 1].volumeUSD))
           } else if (chartType === PoolChartType.TVL) {
             acc[1].push(Number(cur.liquidityUSD))
           } else if (chartType === PoolChartType.APR) {
@@ -103,7 +103,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
       // } else if (chartType === PoolChartType.Fees) {
       //   y.push(pair.feeUSD)
     } else if (chartType === PoolChartType.Volume) {
-      y.push(pair.volumeUSD - Number(data[data.length - 1].volumeUSD))
+      y.push(pair.volumeUSD)
     }
 
     return [x, y]

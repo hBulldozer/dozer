@@ -172,7 +172,7 @@ export function FilterTokens({ search, setSearch, setFilters, maxValues }: Filte
     { key: 'tvl', label: 'TVL' },
     { key: 'price', label: 'Price' },
     { key: 'volume', label: 'Volume' },
-    { key: 'marketcap', label: 'Market Cap' },
+    { key: 'marketcap', label: 'Circ. Cap' },
   ]
 
   const renderFilterInputs = (close: () => void) => {

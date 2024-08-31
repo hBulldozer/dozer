@@ -82,7 +82,7 @@ export const VOLUME_COLUMN: ColumnDef<ExtendedPair, unknown> = {
 
 export const MARKETCAP_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   id: 'marketcap',
-  header: 'Market Cap',
+  header: 'Circ. Cap',
   accessorFn: (row) => row.marketCap,
   cell: (props) => <TokenMarketCapCell row={props.row.original} />,
   size: 100,
