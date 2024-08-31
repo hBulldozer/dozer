@@ -7,9 +7,10 @@ import { PairChainCell } from './PairChainCell'
 import { PairNameCell } from './PairNameCell'
 import { PairValueCell } from './PairValueCell'
 import { PairVolume24hCell } from './PairVolume24hCell'
-import { Pair } from '@dozer/api'
 
-type TData = Pair
+import { PositionPair } from '../PositionsTable'
+
+type TData = PositionPair
 
 export const NETWORK_COLUMN: ColumnDef<TData, unknown> = {
   id: 'network',
@@ -56,7 +57,7 @@ export const APR_COLUMN: ColumnDef<TData, unknown> = {
 export const VALUE_COLUMN: ColumnDef<TData, unknown> = {
   id: 'value',
   header: 'Value',
-  accessorFn: (row) => row.volumeUSD,
+  accessorFn: (row) => (row.value0 || 0) + (row.value1 || 0),
   cell: (props) => <PairValueCell row={props.row.original} />,
   size: 100,
   meta: {
