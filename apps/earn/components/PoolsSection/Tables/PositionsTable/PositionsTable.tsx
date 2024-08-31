@@ -62,8 +62,8 @@ export const PositionsTable: FC = () => {
         prices[pool.token1.uuid]
       ) {
         const pair: PositionPair = pool
-        pair.value0 = userInfo.max_withdraw_a * prices?.[pool.token0.uuid]
-        pair.value1 = userInfo.max_withdraw_b * prices?.[pool.token1.uuid]
+        pair.value0 = userInfo.max_withdraw_a/100 * prices?.[pool.token0.uuid]
+        pair.value1 = userInfo.max_withdraw_b/100 * prices?.[pool.token1.uuid]
         _pairs_array.push(pair)
       }
     })
