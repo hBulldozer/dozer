@@ -50,7 +50,7 @@ export const TokensTable: FC = () => {
   const [all_pools, setAll_pools] = useState<Pair[]>([])
   const [tokens_array, setTokens_array] = useState<AllTokensDBOutput[]>([])
 
-  const { data: _all_pools, isLoading: isLoadingPools } = api.getPools.all.useQuery()
+  const { data: _all_pools, isLoading: isLoadingPools } = api.getPools.allDay.useQuery()
   const { data: tokens, isLoading } = api.getTokens.all.useQuery()
   const { data: prices24h, isLoading: isLoadingPrices24h } = api.getPrices.all24h.useQuery()
   const { data: lastPrices, isLoading: isLoadingLastPrice } = api.getPrices.all.useQuery()

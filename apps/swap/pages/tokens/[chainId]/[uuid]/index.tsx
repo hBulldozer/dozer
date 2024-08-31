@@ -1,4 +1,4 @@
-import { AppearOnMount, BreadcrumbLink, Button, Typography } from '@dozer/ui'
+import { AppearOnMount, BreadcrumbLink, Button, LoadingOverlay, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { AllTokensDBOutput, Pair } from '@dozer/api'
@@ -39,7 +39,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const uuid = params?.uuid as string
 
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.allDay.fetch()
+  const pools = await ssg.getPools.all.fetch()
+
   const USDT_token = await ssg.getTokens.bySymbol.fetch({ symbol: 'USDT' })
   if (!USDT_token) {
     throw new Error(`Failed to fetch USDT Token`)
@@ -73,6 +74,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   await ssg.getPools.snapsById.prefetch({ id: HTR_USDT_pool.id })
 
   await ssg.getPools.allDay.prefetch()
+  await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
   await ssg.getNetwork.getBestBlock.prefetch()
@@ -107,7 +109,10 @@ const Token = () => {
 
   const { data: pools } = api.getPools.all.useQuery()
   let pair: Pair | undefined
+  let pair_day: Pair | undefined
   if (!pools) return <></>
+  const { data: poolsDay } = api.getPools.allDay.useQuery()
+  if (!poolsDay) return <></>
   const pair_usdt_htr = pools.find((pool) => {
     return (
       (pool.token0.uuid == '00' && pool.token1.symbol == 'USDT') ||
@@ -115,6 +120,14 @@ const Token = () => {
     )
   })
   if (!pair_usdt_htr) return <Typography>Did not found the USDT/HTR pool</Typography>
+
+  const pair_usdt_htr_day = poolsDay.find((pool) => {
+    return (
+      (pool.token0.uuid == '00' && pool.token1.symbol == 'USDT') ||
+      (pool.token1.uuid == '00' && pool.token0.symbol == 'USDT')
+    )
+  })
+  if (!pair_usdt_htr_day) return <Typography>Did not found the USDT/HTR pool</Typography>
 
   if (uuid == USDT_uuid?.uuid) {
     const pairs_usdt: Pair[] = pools
@@ -126,6 +139,14 @@ const Token = () => {
       })
     const { data: snaps_usdt_htr } = api.getPools.snapsById.useQuery({ id: pair_usdt_htr.id })
     if (!snaps_usdt_htr) return <></>
+
+    const pairs_usdt_day: Pair[] = poolsDay
+      .filter((pool) => pool.chainId == chainId)
+      .filter((pool) => pool.token0.symbol == 'USDT' || pool.token1.symbol == 'USDT')
+      .map((pool) => {
+        const pair = pool ? pool : ({} as Pair)
+        return pair
+      })
 
     pair = {
       id: chainId == ChainId.HATHOR ? 'usdt' : 'usdt-testnet',
@@ -146,6 +167,26 @@ const Token = () => {
       hourSnapshots: snaps_usdt_htr ? snaps_usdt_htr.hourSnapshots : ([] as Array<hourSnapshot>),
       daySnapshots: snaps_usdt_htr ? snaps_usdt_htr.daySnapshots : ([] as Array<daySnapshot>),
     }
+
+    pair_day = {
+      id: chainId == ChainId.HATHOR ? 'usdt' : 'usdt-testnet',
+      name: chainId == ChainId.HATHOR ? 'USDT' : 'USDT testnet',
+      liquidityUSD: pairs_usdt_day ? pairs_usdt_day.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
+      volumeUSD: pairs_usdt_day ? pairs_usdt_day.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
+      feeUSD: pairs_usdt_day ? pairs_usdt_day.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
+      swapFee: pairs_usdt_day[0].swapFee,
+      apr: 0,
+      token0: pairs_usdt_day[0].token0.symbol == 'USDT' ? pairs_usdt_day[0].token0 : pairs_usdt_day[0].token1,
+      token1: pairs_usdt_day[0].token0.symbol == 'USDT' ? pairs_usdt_day[0].token1 : pairs_usdt_day[0].token0,
+      chainId: chainId,
+      reserve0: 0,
+      reserve1: 0,
+      liquidity: pairs_usdt_day ? pairs_usdt_day.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
+      volume1d: pairs_usdt_day ? pairs_usdt_day.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
+      fees1d: pairs_usdt_day ? pairs_usdt_day.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
+      hourSnapshots: snaps_usdt_htr ? snaps_usdt_htr.hourSnapshots : ([] as Array<hourSnapshot>),
+      daySnapshots: snaps_usdt_htr ? snaps_usdt_htr.daySnapshots : ([] as Array<daySnapshot>),
+    }
   } else if (uuid == '00') {
     const pairs_htr: Pair[] = pools
       .filter((pool) => pool.chainId == chainId)
@@ -156,6 +197,14 @@ const Token = () => {
       })
     const { data: snaps_usdt_htr } = api.getPools.snapsById.useQuery({ id: pair_usdt_htr.id })
     if (!snaps_usdt_htr) return <></>
+
+    const pairs_htr_day: Pair[] = poolsDay
+      .filter((pool) => pool.chainId == chainId)
+      .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
+      .map((pool) => {
+        const pair = pool ? pool : ({} as Pair)
+        return pair
+      })
 
     pair = {
       id: chainId == ChainId.HATHOR ? 'native' : 'native-testnet',
@@ -176,6 +225,26 @@ const Token = () => {
       hourSnapshots: snaps_usdt_htr ? snaps_usdt_htr.hourSnapshots : ([] as Array<hourSnapshot>),
       daySnapshots: snaps_usdt_htr ? snaps_usdt_htr.daySnapshots : ([] as Array<daySnapshot>),
     }
+
+    pair_day = {
+      id: chainId == ChainId.HATHOR ? 'native' : 'native-testnet',
+      name: chainId == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
+      liquidityUSD: pairs_htr_day ? pairs_htr_day.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
+      volumeUSD: pairs_htr_day ? pairs_htr_day.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
+      feeUSD: pairs_htr_day ? pairs_htr_day.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
+      swapFee: pairs_htr_day[0].swapFee,
+      apr: 0,
+      token0: pairs_htr_day[0].token0.uuid == '00' ? pairs_htr_day[0].token0 : pairs_htr_day[0].token1,
+      token1: pairs_htr_day[0].token0.uuid == '00' ? pairs_htr_day[0].token1 : pairs_htr_day[0].token0,
+      chainId: chainId,
+      reserve0: 0,
+      reserve1: 0,
+      liquidity: pairs_htr_day ? pairs_htr_day.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
+      volume1d: pairs_htr_day ? pairs_htr_day.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
+      fees1d: pairs_htr_day ? pairs_htr_day.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
+      hourSnapshots: snaps_usdt_htr ? snaps_usdt_htr.hourSnapshots : ([] as Array<hourSnapshot>),
+      daySnapshots: snaps_usdt_htr ? snaps_usdt_htr.daySnapshots : ([] as Array<daySnapshot>),
+    }
   } else {
     pair = pools.find(
       (pool) =>
@@ -183,6 +252,11 @@ const Token = () => {
     )
     if (!pair) return <></>
 
+    pair_day = poolsDay.find(
+      (pool) =>
+        (pool.token0.uuid == '00' && pool.token1.uuid == uuid) || (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
+    )
+    if (!pair_day) return <></>
     const { data: snaps } = api.getPools.snapsById.useQuery({ id: pair.id })
     if (!snaps) return <></>
 
@@ -198,6 +272,7 @@ const Token = () => {
   return (
     <>
       <Layout breadcrumbs={LINKS({ pair })}>
+        <LoadingOverlay show={!prices || !pools || !poolsDay || !tokens || !pair || !pair_day} />
         <BlockTracker client={api} />
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-6">
@@ -207,7 +282,7 @@ const Token = () => {
               <Typography weight={500} variant="h1">
                 Stats
               </Typography>
-              <TokenStats pair={pair} prices={prices} />
+              <TokenStats pair={pair_day} prices={prices} />
               <Typography weight={500} className="flex flex-col " variant="h2">
                 About
               </Typography>
