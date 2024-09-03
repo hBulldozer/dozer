@@ -8,6 +8,16 @@ const nextConfig = {
   experimental: {
     swcPlugins: [['next-superjson-plugin', {}]],
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.redd.it',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
   async redirects() {
     return [
       {

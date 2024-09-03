@@ -11,6 +11,7 @@ import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../utils/api'
 import { useRouter } from 'next/router'
 import { PoolSizeCalculator } from '../components'
+import { CreatePoolReviewModal } from '../components/CreatePoolReviewModal'
 
 const LINKS: BreadcrumbLink[] = [
   {
@@ -30,6 +31,7 @@ export const getStaticProps: GetStaticProps = async () => {
     revalidate: 3600,
   }
 }
+
 const CreatePool: FC = () => {
   const { data: tokens = [] } = api.getTokens.all.useQuery()
   const { data: prices = {} } = api.getPrices.all.useQuery()
@@ -61,12 +63,6 @@ const CreatePool: FC = () => {
     // Optionally, you can update input0 here if you want to automatically set the HTR amount
     // setInput0(size.toString())
   }
-
-  const handleCreatePool = useCallback(() => {
-    // Implement pool creation logic here
-    console.log('Creating pool with:', { token0, token1, amount0: input0, amount1: input1, recommendedLiquiditySize })
-    // After creation, you might want to redirect to the pool page or show a success message
-  }, [token0, token1, input0, input1, recommendedLiquiditySize])
 
   return (
     <Layout breadcrumbs={LINKS}>
@@ -108,14 +104,25 @@ const CreatePool: FC = () => {
                   <Checker.Connected fullWidth size="md">
                     <Checker.Amounts fullWidth size="md" amount={Number(input0)} token={token0}>
                       <Checker.Amounts fullWidth size="md" amount={Number(input1)} token={token1}>
-                        <Button
-                          fullWidth
-                          onClick={handleCreatePool}
-                          disabled={!token0 || !token1 || !input0 || !input1}
-                          size="md"
+                        <CreatePoolReviewModal
+                          chainId={network}
+                          token0={token0}
+                          token1={token1}
+                          input0={input0}
+                          input1={input1}
+                          prices={prices}
                         >
-                          Create Pool
-                        </Button>
+                          {({ setOpen }) => (
+                            <Button
+                              fullWidth
+                              onClick={() => setOpen(true)}
+                              disabled={!token0 || !token1 || !input0 || !input1}
+                              size="md"
+                            >
+                              Review Pool Creation
+                            </Button>
+                          )}
+                        </CreatePoolReviewModal>
                       </Checker.Amounts>
                     </Checker.Amounts>
                   </Checker.Connected>

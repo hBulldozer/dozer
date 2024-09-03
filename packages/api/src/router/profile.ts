@@ -41,21 +41,35 @@ export const profileRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const endpoint = 'nano_contract/state'
-      const queryParams = [`id=${input.contractId}`, `calls[]=user_info("a'${input.address}'")`]
+      try {
+        const endpoint = 'nano_contract/state'
+        const queryParams = [`id=${input.contractId}`, `calls[]=user_info("a'${input.address}'")`]
 
-      const response = await fetchNodeData(endpoint, queryParams)
-      const result = response['calls'][`user_info("a'${input.address}'")`]['value']
+        const response = await fetchNodeData(endpoint, queryParams)
+        const result = response['calls'][`user_info("a'${input.address}'")`]['value']
 
-      const endpoint_lasttx = 'nano_contract/history'
-      const queryParams_lasttx = [`id=${input.contractId}`]
-      const response_lasttx = await fetchNodeData(endpoint_lasttx, queryParams_lasttx)
-      const result_lasttx = response_lasttx['history']
-        .filter((tx: any) => tx['nc_context']['address'] == input.address)
-        .filter((tx: any) => tx['nc_method'] == 'add_liquidity' || tx['nc_method'] == 'remove_liquidity')[0][
-        'timestamp'
-      ]
+        const endpoint_lasttx = 'nano_contract/history'
+        const queryParams_lasttx = [`id=${input.contractId}`]
+        const response_lasttx = await fetchNodeData(endpoint_lasttx, queryParams_lasttx)
+        const result_lasttx = response_lasttx['history']
+          .filter((tx: any) => tx['nc_context']['address'] == input.address)
+          .filter((tx: any) => tx['nc_method'] == 'add_liquidity' || tx['nc_method'] == 'remove_liquidity')[0][
+          'timestamp'
+        ]
 
-      return { ...result, last_tx: result_lasttx }
+        return { ...result, last_tx: result_lasttx }
+      } catch (error) {
+        console.log(error)
+        return {
+          balance_a: 0,
+          balance_b: 0,
+          liquidity: 0,
+          max_withdraw_a: 0,
+          max_withdraw_b: 0,
+          user_deposited_a: 0,
+          user_deposited_b: 0,
+          last_tx: 0,
+        }
+      }
     }),
 })

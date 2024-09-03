@@ -47,6 +47,7 @@ export const useTokensFromPair = (pair: Pair) => {
       decimals: pair.token0.decimals,
       symbol: pair.token0.symbol,
       chainId: pair.chainId,
+      imageUrl: pair.token0.imageUrl || undefined,
     })
 
     const _token1 = new Token({
@@ -55,6 +56,7 @@ export const useTokensFromPair = (pair: Pair) => {
       decimals: pair.token1.decimals,
       symbol: pair.token1.symbol,
       chainId: pair.chainId,
+      imageUrl: pair.token1.imageUrl || undefined,
     })
 
     const [token0, token1] = [_token0, _token1]
@@ -78,6 +80,8 @@ export const useTokensFromPair = (pair: Pair) => {
     pair.token1.uuid,
     pair.token1.name,
     pair.token1.symbol,
+    pair.token0.imageUrl,
+    pair.token1.imageUrl,
     pair.liquidity,
   ])
 }

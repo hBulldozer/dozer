@@ -94,7 +94,6 @@ export class LiquidityPool extends NanoContract {
   public async wc_initialize(
     hathorRpc: IHathorRpc,
     address: string,
-    ncId: string,
     token0: string,
     token1: string,
     amount0: number,

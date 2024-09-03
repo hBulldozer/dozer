@@ -25,6 +25,7 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
       decimals: _token.decimals,
       symbol: _token.symbol,
       chainId: _token.chainId,
+      imageUrl: _token.imageUrl || undefined,
     })
   }
   const ref = useRef<HTMLDivElement>(null)

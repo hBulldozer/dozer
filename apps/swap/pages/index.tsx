@@ -31,6 +31,7 @@ function toToken(dbToken: TokenOutput): Token {
     decimals: dbToken.decimals,
     name: dbToken.name,
     symbol: dbToken.symbol,
+    imageUrl: dbToken.imageUrl || undefined,
   })
 }
 

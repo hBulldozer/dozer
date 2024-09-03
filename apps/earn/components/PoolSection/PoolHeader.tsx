@@ -97,7 +97,7 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices }) => {
             <AppearOnMount>
               {token0.symbol} ={' '}
               {prices?.[token0.uuid]
-                ? '$' + prices[token0.uuid].toFixed(2)
+                ? formatUSD(prices[token0.uuid])
                 : // ?  formatUSD(100)
                   `$0.00`}
             </AppearOnMount>
@@ -109,7 +109,7 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices }) => {
             <AppearOnMount>
               {token1.symbol} ={' '}
               {prices?.[token1.uuid]
-                ? '$' + prices[token1.uuid].toFixed(2)
+                ? formatUSD(prices[token1.uuid])
                 : // ?  formatUSD(100)
                   `$0.00`}
             </AppearOnMount>

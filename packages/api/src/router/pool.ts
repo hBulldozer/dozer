@@ -361,4 +361,73 @@ export const poolRouter = createTRPCRouter({
       // }
       return { status: validation, message: message }
     }),
+  createPool: procedure
+    .input(
+      z.object({
+        name: z.string().min(3).max(100),
+        chainId: z.number().int().positive(),
+        token0Uuid: z.string(),
+        token1Uuid: z.string(),
+        reserve0: z.string().regex(/^\d+(\.\d+)?$/),
+        reserve1: z.string().regex(/^\d+(\.\d+)?$/),
+        id: z.string().min(64).max(64),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if pool already exists
+      const existingPool = await ctx.prisma.pool.findUnique({
+        where: { id: input.id },
+      })
+
+      if (existingPool) {
+        throw new Error('Pool already exists')
+      }
+
+      // Check if tokens exist
+      const token0 = await ctx.prisma.token.findUnique({
+        where: {
+          chainId_uuid: {
+            chainId: input.chainId,
+            uuid: input.token0Uuid,
+          },
+        },
+      })
+
+      const token1 = await ctx.prisma.token.findUnique({
+        where: {
+          chainId_uuid: {
+            chainId: input.chainId,
+            uuid: input.token1Uuid,
+          },
+        },
+      })
+
+      if (!token0 || !token1) {
+        throw new Error('One or both tokens do not exist')
+      }
+
+      // Create the pool
+      const pool = await ctx.prisma.pool.create({
+        data: {
+          id: input.id,
+          name: input.name,
+          chainId: input.chainId,
+          token0: { connect: { id: token0.id } },
+          token1: { connect: { id: token1.id } },
+          reserve0: input.reserve0,
+          reserve1: input.reserve1,
+          swapFee: 0.3, // Default swap fee, adjust as needed
+          apr: 0,
+          version: '0',
+          feeUSD: 0,
+          liquidityUSD: 0,
+          volumeUSD: 0,
+          liquidity: 0,
+          volume1d: 0,
+          fees1d: 0,
+        },
+      })
+
+      return pool
+    }),
 })
