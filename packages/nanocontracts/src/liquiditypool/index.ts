@@ -5,7 +5,7 @@ import {
   SignOracleDataRpcRequest,
   SignOracleDataResponse,
   sendNanoContractTxRpcRequest,
-} from '@dozer/hathor-rpc-handler'
+} from 'hathor-rpc-handler-test'
 import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
 

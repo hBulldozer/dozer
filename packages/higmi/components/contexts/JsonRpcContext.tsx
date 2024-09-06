@@ -6,7 +6,7 @@ import {
   SendNanoContractTxResponse,
   SignOracleDataResponse,
   SignOracleDataRpcRequest,
-} from '@dozer/hathor-rpc-handler'
+} from 'hathor-rpc-handler-test'
 
 const HATHOR_TESTNET_CHAIN = 'hathor:testnet'
 

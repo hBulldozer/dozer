@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "dependencies": {
     "@dozer/database": "workspace:*",
-    "@dozer/hathor-rpc-handler": "workspace:*",
+    "hathor-rpc-handler-test": "^0.0.8",
     "@hathor/wallet-lib": "1.9.0",
     "zod": "^3.22.4"
   },
