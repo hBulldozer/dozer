@@ -10,15 +10,17 @@ import {
   NotificationData,
   BreadcrumbLink,
   Dialog,
+  createFailedToast,
 } from '@dozer/ui'
 import TextAreaInput from '../components/TextAreaInput'
 import { PhotoIcon } from '@heroicons/react/24/outline'
-import { Checker, useWalletConnectClient } from '@dozer/higmi'
+import { Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { UploadDropzone } from '@dozer/api'
 import { api } from '../utils/api'
 import { useNetwork, useAccount } from '@dozer/zustand'
 import { get } from 'lodash'
 import { Layout } from '../components/Layout'
+import { CustomToken } from '@dozer/nanocontracts'
 
 const TokenCreationPage: React.FC = () => {
   const [tokenName, setTokenName] = useState('')
@@ -41,6 +43,8 @@ const TokenCreationPage: React.FC = () => {
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { network } = useNetwork()
   const { balance } = useAccount()
+
+  const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
   useEffect(() => {
     const htrBalance = balance.find((b) => b.token_symbol === 'HTR')?.token_balance || 0
@@ -72,31 +76,48 @@ const TokenCreationPage: React.FC = () => {
 
   const mutation = api.getTokens.createCustom.useMutation({
     onSuccess: (data) => {
-      const hash = get(data, 'uuid') as string
       const notificationData: NotificationData = {
         type: 'swap',
         chainId: network,
         summary: {
           pending: `Confirming token ${tokenSymbol} creation...`,
           completed: `Success! Token ${tokenSymbol} created!`,
-          failed: 'Failed summary',
+          failed: 'Token creation failed',
           info: `Creating Token ${tokenSymbol}.`,
         },
-        status: 'pending',
-        txHash: hash,
+        status: 'completed',
+        txHash: data.hash,
         groupTimestamp: Math.floor(Date.now() / 1000),
         timestamp: Math.floor(Date.now() / 1000),
-        promise: new Promise((resolve) => {
-          setTimeout(resolve, 500)
-        }),
+        promise: Promise.resolve(),
         account: address,
       }
       createSuccessToast(notificationData)
       resetFields()
     },
+    onError: (error) => {
+      console.error('Error creating token:', error)
+      const errorNotification: NotificationData = {
+        type: 'swap',
+        chainId: network,
+        summary: {
+          pending: `Creating token ${tokenSymbol}...`,
+          completed: `Token ${tokenSymbol} creation failed`,
+          failed: `Failed to create token ${tokenSymbol}`,
+          info: `Error creating Token ${tokenSymbol}.`,
+        },
+        status: 'failed',
+        txHash: '',
+        groupTimestamp: Math.floor(Date.now() / 1000),
+        timestamp: Math.floor(Date.now() / 1000),
+        promise: Promise.reject(error),
+        account: address,
+      }
+      createFailedToast(errorNotification)
+    },
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     console.log({
       tokenName,
@@ -115,12 +136,11 @@ const TokenCreationPage: React.FC = () => {
       chainId: network,
       decimals: 2,
       description: tokenDescription,
-      uuid: `${tokenName}-${tokenSymbol}`,
-      createdBy: address,
+      imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme || '',
       telegram,
       twitter,
       website,
-      imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme || '',
+      createdBy: address,
       totalSupply: parseInt(totalSupply),
     })
   }

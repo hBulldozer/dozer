@@ -93,7 +93,6 @@ export const tokenRouter = createTRPCRouter({
         chainId: z.number(),
         decimals: z.number(),
         description: z.string(),
-        uuid: z.string(),
         imageUrl: z.string(),
         telegram: z.string().optional(),
         twitter: z.string().optional(),
@@ -103,12 +102,45 @@ export const tokenRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const tokens = await ctx.prisma.token.create({
+      // Create token on blockchain
+      const start = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': process.env.WALLET_API_KEY || '',
+        },
+        body: JSON.stringify({ 'wallet-id': process.env.WALLET_ID, seedKey: 'genesis' }),
+      })
+      const response = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/wallet/create-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-wallet-id': process.env.WALLET_ID || '',
+          'x-api-key': process.env.WALLET_API_KEY || '',
+        },
+        body: JSON.stringify({
+          name: input.name,
+          symbol: input.symbol,
+          amount: input.totalSupply * 100, // Convert to cents
+          address: input.createdBy,
+        }),
+      })
+
+      const data = await response.json()
+
+      console.log(data)
+
+      if (!data || !data.hash) {
+        throw new Error('Failed to create token on blockchain')
+      }
+
+      // Create token in database using the hash as UUID
+      const token = await ctx.prisma.token.create({
         data: {
-          id: input.uuid,
+          id: data.hash,
           custom: true,
           name: input.name,
-          uuid: input.uuid,
+          uuid: data.hash, // Use the blockchain transaction hash as UUID
           about: input.description,
           symbol: input.symbol,
           chainId: input.chainId,
@@ -121,6 +153,6 @@ export const tokenRouter = createTRPCRouter({
         },
       })
 
-      return { result: tokens, uuid: '00000196e885717d5d2499f41be612df13575f32e8ede8aad9711d9fd4b0a6cc' }
+      return { result: token, hash: data.hash }
     }),
 })

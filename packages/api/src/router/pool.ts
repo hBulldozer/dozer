@@ -428,6 +428,11 @@ export const poolRouter = createTRPCRouter({
         },
       })
 
+      const updateToken = await ctx.prisma.token.update({
+        where: { id: token1.uuid },
+        data: { custom: false },
+      })
+
       return pool
     }),
 })
