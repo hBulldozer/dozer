@@ -148,7 +148,7 @@ const TokenCreationPage: React.FC = () => {
   const generateMeme = async () => {
     setIsGeneratingMeme(true)
     try {
-      const response = await fetch('https://meme-api.com/gimme/cryptocurrencymemes')
+      const response = await fetch('https://meme-api.com/gimme/bitcoinmemes')
       const data = await response.json()
       setGeneratedMeme(data.url)
     } catch (error) {
