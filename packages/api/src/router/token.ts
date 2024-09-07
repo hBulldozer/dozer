@@ -128,8 +128,6 @@ export const tokenRouter = createTRPCRouter({
 
       const data = await response.json()
 
-      console.log(data)
-
       if (!data || !data.hash) {
         throw new Error('Failed to create token on blockchain')
       }
