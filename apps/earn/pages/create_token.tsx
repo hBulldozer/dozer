@@ -104,7 +104,7 @@ const TokenCreationPage: React.FC = () => {
           pending: `Creating token ${tokenSymbol}...`,
           completed: `Token ${tokenSymbol} creation failed`,
           failed: `Failed to create token ${tokenSymbol}`,
-          info: `Error creating Token ${tokenSymbol}.`,
+          info: `Error creating ${tokenSymbol}.`,
         },
         status: 'failed',
         txHash: '',
