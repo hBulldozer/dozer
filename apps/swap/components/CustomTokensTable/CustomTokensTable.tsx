@@ -35,7 +35,7 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
         <div className="flex items-center gap-2">
           <img src={info.row.original.imageUrl} alt={info.row.original.name} className="w-6 h-6 rounded-full" />
           <span>{info.row.original.symbol}</span>
-          <span className="text-stone-400">({info.row.original.name})</span>
+          <span className="text-stone-400">{info.row.original.name}</span>
         </div>
       ),
       size: 200,

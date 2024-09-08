@@ -51,11 +51,15 @@ export const profileRouter = createTRPCRouter({
         const endpoint_lasttx = 'nano_contract/history'
         const queryParams_lasttx = [`id=${input.contractId}`]
         const response_lasttx = await fetchNodeData(endpoint_lasttx, queryParams_lasttx)
-        const result_lasttx = response_lasttx['history']
-          .filter((tx: any) => tx['nc_context']['address'] == input.address)
-          .filter((tx: any) => tx['nc_method'] == 'add_liquidity' || tx['nc_method'] == 'remove_liquidity')[0][
-          'timestamp'
-        ]
+
+        const add_remove_liquidity_txs = response_lasttx['history'].filter(
+          (tx: any) => tx['nc_method'] == 'add_liquidity' || tx['nc_method'] == 'remove_liquidity'
+        )
+
+        const result_lasttx =
+          add_remove_liquidity_txs.length == 1
+            ? add_remove_liquidity_txs.filter((tx: any) => tx['nc_context']['address'] == input.address)[0]['timestamp']
+            : response_lasttx['history'].filter((tx: any) => tx['nc_method'] == 'initialize')[0]['timestamp']
 
         return { ...result, last_tx: result_lasttx }
       } catch (error) {
