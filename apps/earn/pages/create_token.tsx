@@ -53,6 +53,8 @@ const TokenCreationPage: React.FC = () => {
 
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
+  const { data: existingTokens } = api.getTokens.all.useQuery()
+
   useEffect(() => {
     const htrBalance = balance.find((b) => b.token_symbol === 'HTR')?.token_balance || 0
     setUserHtrBalance(htrBalance)
@@ -72,10 +74,11 @@ const TokenCreationPage: React.FC = () => {
       setTokenNameError('')
     }
   }
-
-  const validateTokenSymbol = (value: string) => {
+  const validateTokenSymbol = async (value: string) => {
     if (!/^[a-zA-Z0-9]{2,5}$/.test(value)) {
       setTokenSymbolError('Alphanumeric characters only (min 2 characters, max 5 characters)')
+    } else if (existingTokens && existingTokens.some((token) => token.symbol.toLowerCase() === value.toLowerCase())) {
+      setTokenSymbolError('Token symbol already exists')
     } else {
       setTokenSymbolError('')
     }
@@ -201,6 +204,28 @@ const TokenCreationPage: React.FC = () => {
           pending: `Creating token ${tokenSymbol}...`,
           completed: `Token ${tokenSymbol} creation failed`,
           failed: `Inputs are invalid.`,
+          info: `Error creating Token ${tokenSymbol}.`,
+        },
+        status: 'failed',
+        txHash: '',
+        groupTimestamp: Math.floor(Date.now() / 1000),
+        timestamp: Math.floor(Date.now() / 1000),
+        promise: Promise.resolve(),
+        account: address,
+      }
+      createFailedToast(errorNotification)
+      setIsLoading(false)
+      return
+    }
+
+    if (existingTokens && existingTokens.some((token) => token.symbol.toLowerCase() === tokenSymbol.toLowerCase())) {
+      const errorNotification: NotificationData = {
+        type: 'swap',
+        chainId: network,
+        summary: {
+          pending: `Creating token ${tokenSymbol}...`,
+          completed: `Token ${tokenSymbol} creation failed`,
+          failed: `Token symbol already exists.`,
           info: `Error creating Token ${tokenSymbol}.`,
         },
         status: 'failed',
