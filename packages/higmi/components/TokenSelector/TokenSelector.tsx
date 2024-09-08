@@ -73,7 +73,7 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
 
     const handleSelect = (currency: Token) => {
       if (currency.uuid === 'create-token') {
-        router.push('/create_token')
+        window.location.href = '/pool/create_token'
       } else if (onSelect) {
         onSelect(currency)
       }
