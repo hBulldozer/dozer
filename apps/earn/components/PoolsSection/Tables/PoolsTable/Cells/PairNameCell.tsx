@@ -11,7 +11,6 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
   const { token0, token1 } = useTokensFromPair(row)
   const ref = useRef<HTMLDivElement>(null)
   const inViewport = useInViewport(ref)
-  if (token1.symbol == 'TST1') console.log(token1)
   return (
     <div className="flex items-center gap-3 sm:gap-0">
       <div className="flex">
