@@ -11,6 +11,7 @@ import {
   BreadcrumbLink,
   Dialog,
   createFailedToast,
+  Dots,
 } from '@dozer/ui'
 import TextAreaInput from '../components/TextAreaInput'
 import { PhotoIcon } from '@heroicons/react/24/outline'
@@ -521,9 +522,15 @@ const TokenCreationPage: React.FC = () => {
 
               <Form.Buttons>
                 <Checker.Connected fullWidth size="md">
-                  <Button type="submit" className="w-full" disabled={!isEnoughBalance}>
-                    Create Token
-                  </Button>
+                  {isLoading ? (
+                    <Button className="w-full" disabled>
+                      <Dots>Creating token</Dots>
+                    </Button>
+                  ) : (
+                    <Button type="submit" className="w-full" disabled={!isEnoughBalance}>
+                      Create Token
+                    </Button>
+                  )}
                 </Checker.Connected>
               </Form.Buttons>
             </Form>
