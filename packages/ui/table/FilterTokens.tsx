@@ -172,7 +172,7 @@ export function FilterTokens({ search, setSearch, setFilters, maxValues }: Filte
     { key: 'tvl', label: 'TVL' },
     { key: 'price', label: 'Price' },
     { key: 'volume', label: 'Volume' },
-    { key: 'marketcap', label:'Circ. Cap' },
+    { key: 'marketcap', label: 'Circ. Cap' },
   ]
 
   const renderFilterInputs = (close: () => void) => {
@@ -208,7 +208,7 @@ export function FilterTokens({ search, setSearch, setFilters, maxValues }: Filte
   }
 
   return (
-    <div className="flex items-center w-full gap-3 -mb-5 sm:-mb-12">
+    <div className="flex items-center w-full gap-3 mb-2">
       <div
         className={classNames(
           'flex flex-grow sm:flex-grow-0 transform-all items-center gap-3 bg-stone-900 rounded-xl h-[44px] border border-stone-800'

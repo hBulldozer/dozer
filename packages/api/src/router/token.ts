@@ -15,6 +15,7 @@ export const tokenRouter = createTRPCRouter({
         symbol: true,
         chainId: true,
         decimals: true,
+        createdBy: true,
         pools0: {
           select: {
             id: true,
@@ -155,4 +156,9 @@ export const tokenRouter = createTRPCRouter({
 
       return { result: token, hash: data.hash }
     }),
+  byUuid: procedure.input(z.object({ uuid: z.string() })).query(({ ctx, input }) => {
+    return ctx.prisma.token.findFirst({
+      where: { uuid: input.uuid },
+    })
+  }),
 })

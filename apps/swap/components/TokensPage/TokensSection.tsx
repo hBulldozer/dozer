@@ -1,19 +1,55 @@
-import { FC, useEffect, useState } from 'react'
-import { useAccount } from '@dozer/zustand'
-
-import { TokensTable } from './Tables'
+import { FC, useState } from 'react'
+import { Tab } from '@headlessui/react'
+import { classNames } from '@dozer/ui'
 import { useWalletConnectClient } from '@dozer/higmi'
 
+import { TokensTable } from './Tables'
+import { CustomTokensTable } from '../CustomTokensTable'
+
 export const TokensSection: FC = () => {
-  // const accountAddress = useAccount((state) => state.address)
-  // const [address, setAddress] = useState('')
-
-  // useEffect(() => {
-  //   setAddress(accountAddress)
-  // }, [accountAddress])
-
+  const [tab, setTab] = useState<number>(0)
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
 
-  return <TokensTable />
+  return (
+    <section className="flex flex-col">
+      <Tab.Group selectedIndex={tab} onChange={setTab}>
+        <div>
+          <div className="flex items-center gap-6 mb-6">
+            <Tab
+              className={({ selected }) =>
+                classNames(
+                  selected ? 'text-stone-200' : 'text-stone-500',
+                  'hover:text-stone-50 focus:text-stone-50 font-medium !outline-none'
+                )
+              }
+            >
+              All Tokens
+            </Tab>
+
+            {address && (
+              <Tab
+                className={({ selected }) =>
+                  classNames(
+                    selected ? 'text-stone-200' : 'text-stone-500',
+                    'hover:text-stone-50 focus:text-stone-50 flex items-center gap-2 font-medium !outline-none'
+                  )
+                }
+              >
+                My Custom Tokens
+              </Tab>
+            )}
+          </div>
+          <Tab.Panels>
+            <Tab.Panel unmount={false}>
+              <TokensTable />
+            </Tab.Panel>
+            <Tab.Panel unmount={!address}>
+              <CustomTokensTable address={address} />
+            </Tab.Panel>
+          </Tab.Panels>
+        </div>
+      </Tab.Group>
+    </section>
+  )
 }

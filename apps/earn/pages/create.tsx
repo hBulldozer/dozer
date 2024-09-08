@@ -33,18 +33,30 @@ export const getStaticProps: GetStaticProps = async () => {
 }
 
 const CreatePool: FC = () => {
+  const router = useRouter()
+
   const { data: tokens = [] } = api.getTokens.all.useQuery()
   const { data: prices = {} } = api.getPrices.all.useQuery()
+  const { token } = router.query
+  const { data: tokenData } = api.getTokens.byUuid.useQuery(
+    { uuid: token as string },
+    {
+      enabled: !!token,
+    }
+  )
 
   const [input0, setInput0] = useState<string>('')
   const [input1, setInput1] = useState<string>('')
   const [token0] = useState<Token>(
     new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' })
   )
-  const [token1, setToken1] = useState<Token | undefined>(undefined)
+  const [token1, setToken1] = useState<Token | undefined>(undefined) // TODO: Add token1 to the URL
   const [recommendedLiquiditySize, setRecommendedLiquiditySize] = useState<number>(0)
   const { network } = useNetwork()
-  const router = useRouter()
+
+  useEffect(() => {
+    if (token && tokenData) setToken1(new Token(tokenData))
+  }, [token, tokenData])
 
   const customTokens = useMemo(() => {
     return tokens.filter((token) => token.custom === true).map((token) => new Token(token))

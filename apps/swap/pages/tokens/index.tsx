@@ -38,7 +38,7 @@ const Tokens: FC = () => {
           <div className="flex justify-end flex-grow not-prose">
             <Button
               as="a"
-              href="/pool/create"
+              href="/pool/create_token"
               className="gap-2"
               onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                 e.preventDefault()

@@ -1,12 +1,25 @@
 import React, { FC, ReactNode, useState, useEffect } from 'react'
+import { PlusIcon, Square2StackIcon } from '@heroicons/react/24/solid'
 import { ChainId } from '@dozer/chain'
-import { Amount, Type } from '@dozer/currency'
-import { Button, createErrorToast, createSuccessToast, Dots, NotificationData, Dialog } from '@dozer/ui'
+import { Type } from '@dozer/currency'
+import {
+  Button,
+  createErrorToast,
+  createSuccessToast,
+  Dots,
+  NotificationData,
+  Dialog,
+  Typography,
+  Currency,
+  IconButton,
+  CopyHelper,
+} from '@dozer/ui'
 import { useAccount, useNetwork, useTrade, TokenBalance, useSettings } from '@dozer/zustand'
 import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { LiquidityPool } from '@dozer/nanocontracts'
 import { get } from 'lodash'
 import { api } from '../../utils/api'
+import { Rate } from '../Rate'
 
 interface CreatePoolReviewModalProps {
   chainId: ChainId
@@ -34,6 +47,8 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
+  const slippageTolerance = useSettings((state) => state.slippageTolerance)
+  const { pool } = useTrade()
 
   const createPoolMutation = api.getPools.createPool.useMutation()
 
@@ -132,27 +147,66 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
     <>
       {children({ setOpen })}
       <Dialog open={open} onClose={() => setOpen(false)}>
-        <Dialog.Content>
-          <Dialog.Header title="Create Pool" onClose={() => setOpen(false)} />
-          <div className="flex flex-col gap-4 p-4">
-            <div className="flex justify-between">
-              <span>Token 0:</span>
-              <span>{`${input0} ${token0?.symbol}`}</span>
+        <Dialog.Content className="max-w-sm !pb-4">
+          <Dialog.Header border={false} title="Create Pool" onClose={() => setOpen(false)} />
+          <div className="!my-0 grid grid-cols-12 items-center">
+            <div className="relative flex flex-col col-span-12 gap-1 p-2 border sm:p-4 rounded-2xl bg-stone-700/40 border-stone-200/5">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between w-full gap-2">
+                  <Typography variant="h3" weight={500} className="truncate text-stone-50">
+                    {input0}
+                  </Typography>
+                  <div className="flex items-center justify-end gap-2 text-right">
+                    {token0 && (
+                      <div className="w-5 h-5">
+                        <Currency.Icon currency={token0} width={20} height={20} />
+                      </div>
+                    )}
+                    <Typography variant="h3" weight={500} className="text-right text-stone-50">
+                      {token0?.symbol}
+                    </Typography>
+                  </div>
+                </div>
+              </div>
+              <Typography variant="sm" weight={500} className="text-stone-500">
+                {prices[token0?.uuid || ''] ? `$${(prices[token0?.uuid || ''] * Number(input0)).toFixed(2)}` : '-'}
+              </Typography>
             </div>
-            <div className="flex justify-between">
-              <span>Token 1:</span>
-              <span>{`${input1} ${token1?.symbol}`}</span>
+            <div className="flex items-center justify-center col-span-12 -mt-2.5 -mb-2.5">
+              <div className="p-0.5 bg-stone-700 border-2 border-stone-800 ring-1 ring-stone-200/5 z-10 rounded-full">
+                <PlusIcon width={18} height={18} className="text-stone-200" />
+              </div>
             </div>
-            <div className="flex flex-col justify-between gap-2">
-              <Button size="md" disabled={isRpcRequestPending} fullWidth onClick={onClick}>
-                {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : <>Create Pool</>}
+            <div className="flex flex-col col-span-12 gap-1 p-2 border sm:p-4 rounded-2xl bg-stone-700/40 border-stone-200/5">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between w-full gap-2">
+                  <Typography variant="h3" weight={500} className="truncate text-stone-50">
+                    {input1}
+                  </Typography>
+                  <div className="flex items-center justify-end gap-2 text-right">
+                    {token1 && (
+                      <div className="w-5 h-5">
+                        <Currency.Icon currency={token1} width={20} height={20} />
+                      </div>
+                    )}
+                    <Typography variant="h3" weight={500} className="text-right text-stone-50">
+                      {token1?.symbol}
+                    </Typography>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 mt-4">
+            <Button size="md" disabled={isRpcRequestPending} fullWidth onClick={onClick}>
+              {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : <>Create Pool</>}
+            </Button>
+            {isRpcRequestPending && (
+              <Button size="md" fullWidth variant="outlined" color="red" onClick={() => reset()}>
+                Cancel Transaction
               </Button>
-              {isRpcRequestPending && (
-                <Button size="md" fullWidth variant="outlined" color="red" onClick={() => reset()}>
-                  Cancel Transaction
-                </Button>
-              )}
-            </div>
+            )}
           </div>
         </Dialog.Content>
       </Dialog>

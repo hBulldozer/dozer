@@ -18,7 +18,7 @@ import { Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { UploadDropzone } from '@dozer/api'
 import { api } from '../utils/api'
 import { useNetwork, useAccount } from '@dozer/zustand'
-import { get } from 'lodash'
+import { get, set } from 'lodash'
 import { Layout } from '../components/Layout'
 import { CustomToken } from '@dozer/nanocontracts'
 
@@ -38,6 +38,13 @@ const TokenCreationPage: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [totalSupply, setTotalSupply] = useState('')
   const [userHtrBalance, setUserHtrBalance] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const [tokenNameError, setTokenNameError] = useState('')
+  const [tokenSymbolError, setTokenSymbolError] = useState('')
+  const [telegramError, setTelegramError] = useState('')
+  const [twitterError, setTwitterError] = useState('')
+  const [websiteError, setWebsiteError] = useState('')
 
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
@@ -57,6 +64,71 @@ const TokenCreationPage: React.FC = () => {
       label: `Create Token`,
     },
   ]
+
+  const validateTokenName = (value: string) => {
+    if (!/^[a-zA-Z0-9 ]{0,30}$/.test(value)) {
+      setTokenNameError('Alphanumeric characters and spaces only (max 30 characters)')
+    } else {
+      setTokenNameError('')
+    }
+  }
+
+  const validateTokenSymbol = (value: string) => {
+    if (!/^[a-zA-Z0-9]{2,5}$/.test(value)) {
+      setTokenSymbolError('Alphanumeric characters only (min 2 characters, max 5 characters)')
+    } else {
+      setTokenSymbolError('')
+    }
+  }
+
+  const validateTelegram = (value: string) => {
+    if (value && !/^[a-zA-Z0-9_]{5,32}$/.test(value)) {
+      setTelegramError('Alphanumeric characters and underscores only (min 5, max 32)')
+    } else {
+      setTelegramError('')
+    }
+  }
+
+  const validateTwitter = (value: string) => {
+    if (value && !/^[a-zA-Z0-9_]{1,15}$/.test(value)) {
+      setTwitterError('Invalid Twitter username')
+    } else {
+      setTwitterError('')
+    }
+  }
+
+  const validateWebsite = (value: string) => {
+    if (value && !/^(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/.test(value)) {
+      setWebsiteError('Invalid website URL')
+    } else {
+      setWebsiteError('')
+    }
+  }
+
+  const handleTokenNameChange = (value: string) => {
+    setTokenName(value)
+    validateTokenName(value)
+  }
+
+  const handleTokenSymbolChange = (value: string) => {
+    setTokenSymbol(value)
+    validateTokenSymbol(value)
+  }
+
+  const handleTelegramChange = (value: string) => {
+    setTelegram(value)
+    validateTelegram(value)
+  }
+
+  const handleTwitterChange = (value: string) => {
+    setTwitter(value)
+    validateTwitter(value)
+  }
+
+  const handleWebsiteChange = (value: string) => {
+    setWebsite(value)
+    validateWebsite(value)
+  }
 
   const resetFields = () => {
     setTokenName('')
@@ -92,6 +164,7 @@ const TokenCreationPage: React.FC = () => {
         promise: Promise.resolve(),
         account: address,
       }
+      setIsLoading(false)
       createSuccessToast(notificationData)
       resetFields()
     },
@@ -113,11 +186,35 @@ const TokenCreationPage: React.FC = () => {
         promise: Promise.reject(error),
         account: address,
       }
+      setIsLoading(false)
       createFailedToast(errorNotification)
     },
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
+    setIsLoading(true)
+    if (tokenNameError || tokenSymbolError || telegramError || twitterError || websiteError) {
+      const errorNotification: NotificationData = {
+        type: 'swap',
+        chainId: network,
+        summary: {
+          pending: `Creating token ${tokenSymbol}...`,
+          completed: `Token ${tokenSymbol} creation failed`,
+          failed: `Inputs are invalid.`,
+          info: `Error creating Token ${tokenSymbol}.`,
+        },
+        status: 'failed',
+        txHash: '',
+        groupTimestamp: Math.floor(Date.now() / 1000),
+        timestamp: Math.floor(Date.now() / 1000),
+        promise: Promise.resolve(),
+        account: address,
+      }
+      createFailedToast(errorNotification)
+      setIsLoading(false)
+      return
+    }
+
     e.preventDefault()
     console.log({
       tokenName,
@@ -293,24 +390,26 @@ const TokenCreationPage: React.FC = () => {
                   </Form.Control>
                 </div>
                 <div className="flex flex-col justify-center gap-2 md:w-2/3">
-                  <Form.Control label="Token Name">
+                  <Form.Control label="Token Name" error={tokenNameError}>
                     <Input.TextGeneric
                       pattern="^[a-zA-Z0-9 ]{0,30}$"
                       title="Alphanumeric characters and spaces only (max 30 characters)"
                       id="token-name"
                       value={tokenName}
-                      onChange={(e) => setTokenName(e)}
+                      onChange={handleTokenNameChange}
                       placeholder="Enter token name"
+                      error={!!tokenNameError}
                       required
                     />
                   </Form.Control>
-                  <Form.Control label="Token Symbol">
+                  <Form.Control label="Token Symbol" error={tokenSymbolError}>
                     <Input.TextGeneric
                       pattern="^[a-zA-Z0-9]{2,5}$"
                       title="Alphanumeric characters only (min 2 characters, max 5 characters)"
                       id="token-symbol"
                       value={tokenSymbol}
-                      onChange={(e) => setTokenSymbol(e)}
+                      onChange={handleTokenSymbolChange}
+                      error={!!tokenSymbolError}
                       placeholder="Enter token symbol"
                       required
                     />
@@ -362,30 +461,33 @@ const TokenCreationPage: React.FC = () => {
               </Form.Control>
 
               <Form.Section title="Social Media" description="Provide links to your social media channels">
-                <Form.Control label="Telegram">
+                <Form.Control label="Telegram" error={telegramError}>
                   <Input.TextGeneric
                     id="telegram"
                     value={telegram}
-                    onChange={setTelegram}
+                    error={!!telegramError}
+                    onChange={handleTelegramChange}
                     placeholder="Enter Telegram username or link"
                     pattern="^[a-zA-Z0-9_]{5,32}$"
                     title="Alphanumeric characters and underscores only (min 5, max 32)"
                   />
                 </Form.Control>
-                <Form.Control label="Twitter">
+                <Form.Control label="Twitter" error={twitterError}>
                   <Input.TextGeneric
                     id="twitter"
                     value={twitter}
-                    onChange={setTwitter}
+                    onChange={handleTwitterChange}
+                    error={!!twitterError}
                     placeholder="Enter Twitter username or link"
                     pattern="^[a-zA-Z0-9_]{1,15}$"
                   />
                 </Form.Control>
-                <Form.Control label="Website">
+                <Form.Control label="Website" error={websiteError}>
                   <Input.TextGeneric
                     id="website"
                     value={website}
-                    onChange={setWebsite}
+                    onChange={handleWebsiteChange}
+                    error={!!websiteError}
                     placeholder="Enter website URL"
                     pattern="^(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$"
                   />
