@@ -141,7 +141,6 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
 
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result && sentTX) {
-      console.log(rpcResult)
       if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
