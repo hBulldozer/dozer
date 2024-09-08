@@ -26,9 +26,9 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
       <div className="flex flex-col">
         <Typography variant="sm" weight={500} className="flex items-center gap-1 text-stone-50">
           {token0.symbol} <span className="text-stone-500">/</span> {token1.symbol}{' '}
-          <div className={classNames('bg-stone-700 rounded-lg px-1 py-0.5 ml-1')}>
-            {/* {formatNumber(row.swapFee / 100)}% */}
-          </div>
+          {row.token1.imageUrl && (
+            <div className={classNames('bg-stone-700 rounded-lg px-1 py-0.5 ml-1 text-xs')}>Community</div>
+          )}
         </Typography>
         {/* <Typography variant="xxs" className="text-stone-400">
           {row.type === 'STABLE_POOL' && 'Stable'}
