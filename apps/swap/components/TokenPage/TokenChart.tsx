@@ -17,6 +17,9 @@ import { EChartsOption } from 'echarts-for-react/lib/types'
 import { FC, useCallback, useMemo, useState } from 'react'
 import resolveConfig from 'tailwindcss/resolveConfig'
 
+import { TwitterIcon, TelegramIcon } from '@dozer/ui'
+import { GlobeAltIcon } from '@heroicons/react/24/outline'
+
 import tailwindConfig from '../../tailwind.config.js'
 import { hourSnapshot, Token } from '@dozer/database'
 import { api } from '../../utils/api'
@@ -79,6 +82,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const hourSnapshots = getFirstPerHour(pair.hourSnapshots)
   const { token0, token1 } = pair
   const token = pair.id.includes('native') ? token0 : token1
+  const { data: socialURLs } = api.getTokens.socialURLs.useQuery({ uuid: token.uuid })
   const fifteenMinSnapshots = pair.hourSnapshots
   const tokenReserveNow: { reserve0: number; reserve1: number } = {
     reserve0: Number(pair.reserve0),
@@ -332,6 +336,30 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
                   <ArrowTopRightOnSquareIcon width={20} height={20} color="stone-500" />
                 </IconButton>
               </Link.External>
+              {socialURLs && socialURLs.twitter && (
+                <Link.External href={`https://twitter.com/${socialURLs.twitter}`}>
+                  <IconButton className="p-1 text-stone-400" description={'Twitter'}>
+                    <TwitterIcon width={20} height={20} className="text-stone-500" />
+                  </IconButton>
+                </Link.External>
+              )}
+
+              {/* Add Telegram icon if available */}
+              {socialURLs && socialURLs.telegram && (
+                <Link.External href={`https://t.me/${socialURLs.telegram}`}>
+                  <IconButton className="p-1 text-stone-400" description={'Telegram'}>
+                    <TelegramIcon width={20} height={20} className="text-stone-500" />
+                  </IconButton>
+                </Link.External>
+              )}
+
+              {socialURLs && socialURLs.website && (
+                <Link.External href={`https://${socialURLs.website}`}>
+                  <IconButton className="p-1 text-stone-400" description={'Website'}>
+                    <GlobeAltIcon width={20} height={20} className="text-stone-500" />
+                  </IconButton>
+                </Link.External>
+              )}
             </div>
           </div>
           <Typography variant="h2" weight={600} className="text-stone-50">

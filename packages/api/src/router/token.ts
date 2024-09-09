@@ -159,4 +159,14 @@ export const tokenRouter = createTRPCRouter({
       where: { uuid: input.uuid },
     })
   }),
+  socialURLs: procedure.input(z.object({ uuid: z.string() })).query(({ ctx, input }) => {
+    return ctx.prisma.token.findFirst({
+      where: { uuid: input.uuid },
+      select: {
+        telegram: true,
+        twitter: true,
+        website: true,
+      },
+    })
+  }),
 })
