@@ -4,7 +4,6 @@
   "version": "0.0.0",
   "author": "Dozer",
   "dependencies": {
-    "@dozer/api": "workspace:*",
     "@dozer/chain": "workspace:*",
     "@dozer/currency": "workspace:*"
   },

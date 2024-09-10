@@ -2,7 +2,7 @@ import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
 import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } from '@dozer/ui'
 import { FC, ReactNode, useEffect, useState } from 'react'
-import { useAccount, useNetwork, useTrade, TokenBalance, useSettings } from '@dozer/zustand'
+import { useAccount, useNetwork, useTrade, TokenBalance, useSettings, useTempTxStore } from '@dozer/zustand'
 import { AddSectionReviewModal } from './AddSectionReviewModal'
 import { LiquidityPool } from '@dozer/nanocontracts'
 import { api } from '../../utils/api'
@@ -123,9 +123,12 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   //   },
   // })
 
+  const addTempTx = useTempTxStore((state) => state.addTempTx)
+  const { data: networkData } = api.getNetwork.getBestBlock.useQuery()
+
   const onClick = async () => {
     setSentTX(true)
-    if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
+    if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency && networkData) {
       const response = await liquiditypool.add_liquidity(
         hathorRpc,
         pool.id,
@@ -135,7 +138,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
         outputAmount * (1 - slippageTolerance),
         address
       )
-      // console.log(response)
+      addTempTx(pool.id, address, amountSpecified, outputAmount * (1 - slippageTolerance), true, networkData.number)
     }
   }
 

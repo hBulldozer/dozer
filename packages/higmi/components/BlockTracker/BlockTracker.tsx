@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, Tooltip, Typography } from '@dozer/ui' // Assuming Dozer UI for text styling
-import { useNetwork } from '@dozer/zustand'
+import { useNetwork, useTempTxStore } from '@dozer/zustand'
 import chains from '@dozer/chain'
 import { client } from '@dozer/api'
 
@@ -18,6 +18,8 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
   const [number, setNumber] = useState<number | undefined>(data?.number)
   const [hash, setHash] = useState<string | undefined>(data?.hash)
 
+  const clearOldTempTxs = useTempTxStore((state) => state.clearOldTempTxs)
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -27,10 +29,8 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000 }) => 
           setNumber(newNumber)
           setPreviousNumber(newNumber) // Update previous number after animation
           setHash(hash)
-          utils.getPrices.all.invalidate()
-          utils.getPrices.all24h.invalidate()
-          utils.getProfile.balance.invalidate()
-          utils.getProfile.poolInfo.invalidate()
+          utils.invalidate()
+          clearOldTempTxs(newNumber)
         }
       } catch (error) {
         console.error('Error fetching data:', error)

@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
+import { useTempTxStore } from '@dozer/zustand'
 
 export const profileRouter = createTRPCRouter({
   balance: procedure
@@ -35,8 +36,6 @@ export const profileRouter = createTRPCRouter({
         liquidity: z.number(),
         max_withdraw_a: z.number(),
         max_withdraw_b: z.number(),
-        // user_deposited_a: z.number(),
-        // user_deposited_b: z.number(),
         last_tx: z.number(),
       })
     )
@@ -57,11 +56,33 @@ export const profileRouter = createTRPCRouter({
         )
 
         const result_lasttx =
-          add_remove_liquidity_txs.length == 1
-            ? add_remove_liquidity_txs.filter((tx: any) => tx['nc_context']['address'] == input.address)[0]['timestamp']
-            : response_lasttx['history'].filter((tx: any) => tx['nc_method'] == 'initialize')[0]['timestamp']
+          add_remove_liquidity_txs.length > 0
+            ? Math.max(
+                ...add_remove_liquidity_txs
+                  .filter((tx: any) => tx['inputs'].some((input: any) => input['address'] == input.address))
+                  .map((tx: any) => tx['timestamp'])
+              )
+            : Math.max(
+                ...response_lasttx['history']
+                  .filter((tx: any) => tx['nc_method'] == 'initialize')
+                  .map((tx: any) => tx['timestamp'])
+              )
 
-        return { ...result, last_tx: result_lasttx }
+        // Get temporary transaction data
+        const tempTxs = useTempTxStore.getState().getTempTx(input.contractId, input.address)
+
+        // Adjust max_withdraw values based on temporary transactions
+        const adjustedMaxWithdrawA =
+          result.max_withdraw_a + tempTxs.addedLiquidity.tokenA - tempTxs.removedLiquidity.tokenA
+        const adjustedMaxWithdrawB =
+          result.max_withdraw_b + tempTxs.addedLiquidity.tokenB - tempTxs.removedLiquidity.tokenB
+
+        return {
+          ...result,
+          max_withdraw_a: Math.max(0, adjustedMaxWithdrawA), // Ensure non-negative values
+          max_withdraw_b: Math.max(0, adjustedMaxWithdrawB),
+          last_tx: result_lasttx,
+        }
       } catch (error) {
         console.log(error)
         return {
@@ -70,8 +91,6 @@ export const profileRouter = createTRPCRouter({
           liquidity: 0,
           max_withdraw_a: 0,
           max_withdraw_b: 0,
-          user_deposited_a: 0,
-          user_deposited_b: 0,
           last_tx: 0,
         }
       }

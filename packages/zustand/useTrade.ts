@@ -2,7 +2,7 @@ import { ChainId } from '@dozer/chain'
 import { Token, getTokens } from '@dozer/currency'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Pair, dbPoolWithTokens } from '@dozer/api'
+import { Pair } from '@dozer/api'
 
 export enum TradeType {
   EXACT_INPUT,
