@@ -1,7 +1,7 @@
 import { Type, Token } from '@dozer/currency'
-import React, { CSSProperties, FC, memo, ReactElement, useCallback } from 'react'
+import React, { CSSProperties, FC, memo, ReactElement } from 'react'
 import AutoSizer from 'react-virtualized-auto-sizer'
-import { FixedSizeList } from 'react-window'
+import { FixedSizeList, ListChildComponentProps } from 'react-window'
 
 interface RendererPayload {
   currency: Type
@@ -16,27 +16,36 @@ export interface ListProps {
   deps?: any[]
 }
 
+interface ItemData {
+  currencies: Token[]
+  rowRenderer: (payload: RendererPayload) => ReactElement
+}
+
+const Row = ({ index, style, data }: ListChildComponentProps<ItemData>) => {
+  const { currencies, rowRenderer } = data
+  const currency = currencies[index]
+  return rowRenderer({ currency, style })
+}
+
 export const List: FC<ListProps> = memo(
-  ({ className, currencies, rowHeight, rowRenderer }) => {
-    const Row = useCallback(
-      ({ index, style }: { index: number; style: CSSProperties }) => {
-        const currency = currencies[index]
-        return rowRenderer({ currency, style })
-      },
-      [currencies, rowRenderer]
-    )
+  ({ className, currencies, rowHeight = 48, rowRenderer }) => {
+    const itemData: ItemData = {
+      currencies,
+      rowRenderer,
+    }
 
     return (
       <AutoSizer disableWidth>
-        {({ height }: { height: number }) => (
+        {({ height }) => (
           <FixedSizeList
-            width="100%"
-            height={currencies.length * (rowHeight || 48)}
-            itemCount={currencies.length}
-            itemSize={rowHeight || 48}
             className={className}
+            height={currencies.length * rowHeight}
+            itemCount={currencies.length}
+            itemSize={rowHeight}
+            width="100%"
+            itemData={itemData}
           >
-            {Row}
+            {Row as any}
           </FixedSizeList>
         )}
       </AutoSizer>
