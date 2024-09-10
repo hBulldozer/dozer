@@ -77,7 +77,6 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
 
   // const mutation = api.getPools.add_liquidity.useMutation({
   //   onSuccess: (res) => {
-  //     console.log(res)
   //     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
   //       if (res.hash) {
   //         const notificationData: NotificationData = {
