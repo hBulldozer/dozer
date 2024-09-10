@@ -139,7 +139,6 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
 
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result && sentTX) {
-      console.log(rpcResult)
       if (minAmount0 && minAmount1 && percentage) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
