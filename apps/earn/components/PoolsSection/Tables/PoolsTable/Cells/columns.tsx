@@ -69,7 +69,7 @@ export const APR_COLUMN: ColumnDef<Pair, unknown> = {
 export const VOLUME_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'volume',
   header: 'Volume (24h)',
-  accessorFn: (row) => row.volume1d,
+  accessorFn: (row) => row.volumeUSD,
   cell: (props) => <PairVolume24hCell row={props.row.original} />,
   size: 100,
   meta: {
@@ -80,7 +80,7 @@ export const VOLUME_COLUMN: ColumnDef<Pair, unknown> = {
 
 export const FEES_COLUMN: ColumnDef<Pair, unknown> = {
   header: 'Fees (24h)',
-  accessorFn: (row) => row.fees1d,
+  accessorFn: (row) => row.feeUSD,
   id: 'fees',
   // accessorFn: (row) => row.fees24h,
   cell: (props) => <PairFees24hCell row={props.row.original} />,

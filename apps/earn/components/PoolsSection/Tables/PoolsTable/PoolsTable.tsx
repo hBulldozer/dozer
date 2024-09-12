@@ -166,7 +166,7 @@ export const PoolsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: _pools, isLoading: isLoadingPools } = api.getPools.all.useQuery()
+  const { data: _pools, isLoading: isLoadingPools } = api.getPools.allDay.useQuery()
   const { data: prices, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
 
   const isLoading = useMemo(() => {

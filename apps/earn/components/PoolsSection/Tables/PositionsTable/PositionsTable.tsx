@@ -19,6 +19,11 @@ import { useWalletConnectClient } from '@dozer/higmi'
 const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, VALUE_COLUMN, APR_COLUMN]
 // VOLUME_COLUMN
 
+export interface PositionPair extends Pair {
+  value0?: number
+  value1?: number
+}
+
 export const PositionsTable: FC = () => {
   // const { address } = useAccount()
   const { accounts } = useWalletConnectClient()
@@ -41,14 +46,26 @@ export const PositionsTable: FC = () => {
   }, [network])
 
   const { data: pools, isLoading } = api.getPools.all.useQuery()
-  const _pairs_array: Pair[] = []
+  const _pairs_array: PositionPair[] = []
   if (pools)
     pools.map((pool) => {
       const { data: userInfo } = api.getProfile.poolInfo.useQuery({
         contractId: pool.id,
         address,
       })
-      if (userInfo && (userInfo.max_withdraw_a > 0 || userInfo.max_withdraw_b > 0)) _pairs_array.push(pool)
+      const { data: prices } = api.getPrices.all.useQuery()
+      if (
+        userInfo &&
+        (userInfo.max_withdraw_a > 0 || userInfo.max_withdraw_b > 0) &&
+        prices &&
+        prices[pool.token0.uuid] &&
+        prices[pool.token1.uuid]
+      ) {
+        const pair: PositionPair = pool
+        pair.value0 = userInfo.max_withdraw_a/100 * prices?.[pool.token0.uuid]
+        pair.value1 = userInfo.max_withdraw_b/100 * prices?.[pool.token1.uuid]
+        _pairs_array.push(pair)
+      }
     })
 
   const pairs_array = _pairs_array?.filter((pair: Pair) => {
@@ -70,7 +87,7 @@ export const PositionsTable: FC = () => {
 
   // console.log({ pools })
 
-  const table = useReactTable<Pair>({
+  const table = useReactTable<PositionPair>({
     data: pairs_array || [],
     columns: COLUMNS,
     state: {
@@ -112,7 +129,7 @@ export const PositionsTable: FC = () => {
   }, [])
 
   return (
-    <GenericTable<Pair>
+    <GenericTable<PositionPair>
       table={table}
       HoverElement={isMd ? PositionQuickHoverTooltip : undefined}
       loading={isLoading}

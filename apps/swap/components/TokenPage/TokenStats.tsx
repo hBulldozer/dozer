@@ -1,4 +1,5 @@
 import { formatUSD } from '@dozer/format'
+// EDIT
 import { Pair } from '@dozer/api'
 import { Typography } from '@dozer/ui'
 import { FC } from 'react'
@@ -36,7 +37,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
           Volume (24h)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {formatUSD(pair.volume1d * prices['00'])}
+          {formatUSD(pair.volumeUSD)}
         </Typography>
         {/* {pair.volume1dChange ? (
           <Typography variant="xs" weight={500} className={pair.volume1dChange > 0 ? 'text-green' : 'text-red'}>

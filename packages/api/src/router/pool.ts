@@ -53,7 +53,8 @@ const fetchAndProcessPoolData = async (
       txCount: number
     }[]
   },
-  priceHTR: number
+  priceHTR: number,
+  day?: boolean
 ): Promise<Pair> => {
   const endpoint = 'nano_contract/state'
   const queryParams = [`id=${pool.id}`, `calls[]=pool_data()`]
@@ -64,18 +65,24 @@ const fetchAndProcessPoolData = async (
 
   const { id, chainId, token0, token1 } = pool
 
+  const index = day ? pool.hourSnapshots.length - 1 : 0
   const liquidityUSD = (2 * priceHTR * reserve0) / 100
-  const volume0old = pool.hourSnapshots[0]?.volume0 || 0
-  const volume1old = pool.hourSnapshots[0]?.volume1 || 0
-  const txCountold = pool.hourSnapshots[0]?.txCount || 0
-  const reserve0old = pool.hourSnapshots[0]?.reserve0 || 0
-  const reserve1old = pool.hourSnapshots[0]?.reserve1 || 1
+  const volume0old = pool.hourSnapshots[index]?.volume0 || 0
+  const volume1old = pool.hourSnapshots[index]?.volume1 || 0
+  const txCountold = pool.hourSnapshots[index]?.txCount || 0
+  const reserve0old = pool.hourSnapshots[index]?.reserve0 || 0
+  const reserve1old = pool.hourSnapshots[index]?.reserve1 || 1
+  // const txCountold = pool.hourSnapshots[0]?.txCount || 0
+  // const reserve0old = pool.hourSnapshots[0]?.reserve0 || 0
+  // const reserve1old = pool.hourSnapshots[0]?.reserve1 || 1
   const volume1d =
-    (volume0 - volume0old) / 100 + ((volume1 * reserve0) / reserve1 - (volume1old * reserve0old) / reserve1old) / 100
+    (volume0 - volume0old) / 100 +
+    ((volume1 - volume1old) * (reserve0 / reserve1 + reserve0old / reserve1old)) / 2 / 100
+
   const fees1d = (volume1d * fee) / 100
 
-  const feeUSD = fees1d * priceHTR + (pool.hourSnapshots[0]?.feeUSD || 0)
-  const volumeUSD = volume1d * priceHTR + (pool.hourSnapshots[0]?.volumeUSD || 0)
+  const feeUSD = fees1d * priceHTR //+ (pool.hourSnapshots[0]?.feeUSD || 0)
+  const volumeUSD = volume1d * priceHTR //+ (pool.hourSnapshots[0]?.volumeUSD || 0)
   const txCount1d = transactions - txCountold
   return {
     id: id,
@@ -127,15 +134,15 @@ export const poolRouter = createTRPCRouter({
             priceHTR: true,
             txCount: true,
           },
-          // where: {
-          //   date: {
-          //     gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
-          //   },
-          // },
+          where: {
+            date: {
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
+            },
+          },
           orderBy: {
             date: 'desc',
           },
-          take: 1, // Get only the latest snapshot within the 24-hour period
+          // take: 1, // Get only the latest snapshot within the 24-hour period
         },
       },
     })
@@ -156,6 +163,62 @@ export const poolRouter = createTRPCRouter({
       : 1 // Default to 1 if htrUsdtPool is undefined
     // Process each pool concurrently (for efficiency)
     const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice))
+    const allPoolData = await Promise.all(poolDataPromises)
+
+    return allPoolData
+  }),
+
+  allDay: procedure.query(async ({ ctx }) => {
+    // Fetch all pool IDs from the database
+    const pools = await ctx.prisma.pool.findMany({
+      select: {
+        id: true,
+        chainId: true,
+        token0: true,
+        token1: true,
+        hourSnapshots: {
+          select: {
+            volumeUSD: true,
+            volume0: true,
+            volume1: true,
+            fee0: true,
+            fee1: true,
+            feeUSD: true,
+            reserve0: true,
+            reserve1: true,
+            liquidityUSD: true,
+            priceHTR: true,
+            txCount: true,
+          },
+          where: {
+            date: {
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
+            },
+          },
+          orderBy: {
+            date: 'desc',
+          },
+          // take: 1, // Get only the latest snapshot within the 24-hour period
+        },
+      },
+    })
+    const htrUsdtPool = pools.find((pool) => {
+      const symbols = [pool.token0.symbol, pool.token1.symbol]
+      return symbols.includes('HTR') && symbols.includes('USDT')
+    })
+
+    const endpoint = 'nano_contract/state'
+    const queryParams = [`id=${htrUsdtPool?.id}`, `calls[]=pool_data()`]
+
+    const rawPoolData = await fetchNodeData(endpoint, queryParams)
+    const poolData = rawPoolData.calls['pool_data()'].value
+    const htrPrice = htrUsdtPool
+      ? htrUsdtPool.token0.symbol === 'HTR'
+        ? poolData.reserve1 / poolData.reserve0
+        : poolData.reserve0 / poolData.reserve1
+      : 1 // Default to 1 if htrUsdtPool is undefined
+    // Process each pool concurrently (for efficiency)
+    const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice, true))
     const allPoolData = await Promise.all(poolDataPromises)
 
     return allPoolData

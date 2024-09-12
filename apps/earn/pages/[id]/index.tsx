@@ -1,4 +1,4 @@
-import { AppearOnMount, BreadcrumbLink } from '@dozer/ui'
+import { AppearOnMount, BreadcrumbLink, LoadingOverlay } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { Pair } from '@dozer/api'
@@ -48,6 +48,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   if (!pools) {
     throw new Error(`Failed to fetch pool, received ${pools}`)
   }
+  const poolsDay = await ssg.getPools.allDay.fetch()
+  if (!poolsDay) {
+    throw new Error(`Failed to fetch pool, received ${pools}`)
+  }
   const pool = pools.find((pool) => pool.id === id)
   if (!pool) {
     throw new Error(`Failed to find pool with id ${id}`)
@@ -59,6 +63,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const tokens = [pool.token0, pool.token1]
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
+  await ssg.getPools.snapsById.prefetch({ id: pool.id })
+  await ssg.getPools.allDay.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),
@@ -80,8 +86,12 @@ const Pool = () => {
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
+  const { data: poolsDay } = api.getPools.allDay.useQuery()
+  if (!poolsDay) return <></>
   const { data: pools } = api.getPools.all.useQuery()
   if (!pools) return <></>
+  const pair_day = poolsDay.find((pool) => pool.id === id)
+  if (!pair_day) return <></>
   const pair_without_snaps = pools.find((pool) => pool.id === id)
   if (!pair_without_snaps) return <></>
   const snaps = api.getPools.snapsById.useQuery({ id: pair_without_snaps.id })
@@ -96,6 +106,9 @@ const Pool = () => {
   return (
     <PoolPositionProvider pair={pair} prices={prices}>
       <>
+        <LoadingOverlay
+          show={!prices || !pools || !poolsDay || !pair_day || !pair_without_snaps || !snaps || !tokens || !pair}
+        />
         <Layout breadcrumbs={LINKS({ pair })}>
           <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
             <div className="flex flex-col order-1 gap-9">
@@ -105,7 +118,7 @@ const Pool = () => {
               <PoolChart pair={pair} />
               {/* uses snapshots and swapfees */}
               <AppearOnMount>
-                <PoolStats pair={pair} prices={prices} />
+                <PoolStats pair={pair_day} prices={prices} />
                 {/* liquidityusd, volume1d, swapfee  */}
               </AppearOnMount>
 
