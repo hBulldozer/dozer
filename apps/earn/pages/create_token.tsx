@@ -23,6 +23,8 @@ import { get, set } from 'lodash'
 import { Layout } from '../components/Layout'
 import { CustomToken } from '@dozer/nanocontracts'
 
+const MEME_STORAGE_BASE_URL = 'http://207.148.120.225:8000/storage/v1/object/public/memecoins/'
+
 const TokenCreationPage: React.FC = () => {
   const [tokenName, setTokenName] = useState('')
   const [tokenSymbol, setTokenSymbol] = useState('')
@@ -271,9 +273,9 @@ const TokenCreationPage: React.FC = () => {
   const generateMeme = async () => {
     setIsGeneratingMeme(true)
     try {
-      const response = await fetch('https://meme-api.com/gimme/bitcoinmemes')
-      const data = await response.json()
-      setGeneratedMeme(data.url)
+      const randomImageNumber = Math.floor(Math.random() * 79) + 1 // Random number between 1 and 79
+      const imageUrl = `${MEME_STORAGE_BASE_URL}${randomImageNumber}.jpg`
+      setGeneratedMeme(imageUrl)
     } catch (error) {
       console.error('Failed to generate meme:', error)
       setUploadError('Failed to generate meme. Please try again.')
