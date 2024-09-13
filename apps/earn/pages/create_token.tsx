@@ -250,16 +250,6 @@ const TokenCreationPage: React.FC = () => {
     }
 
     e.preventDefault()
-    console.log({
-      tokenName,
-      tokenSymbol,
-      tokenDescription,
-      telegram,
-      twitter,
-      website,
-      imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme,
-      totalSupply,
-    })
 
     mutation.mutate({
       name: tokenName,
