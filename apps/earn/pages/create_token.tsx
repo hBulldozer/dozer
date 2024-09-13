@@ -25,7 +25,7 @@ import { CustomToken } from '@dozer/nanocontracts'
 import { supabase } from '../utils/supabaseClient'
 import { RealtimeChannel } from '@supabase/supabase-js'
 
-const MEME_STORAGE_BASE_URL = 'https://supabase.dozer.finance:8443/storage/v1/object/public/memecoins/'
+const MEME_STORAGE_BASE_URL = 'https://supabase.dozer.finance/storage/v1/object/public/memecoins/'
 const USER_UPLOADS_BUCKET = 'uploads'
 
 const TokenCreationPage: React.FC = () => {

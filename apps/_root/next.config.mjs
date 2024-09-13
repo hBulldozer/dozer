@@ -12,7 +12,7 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'supabase.dozer.finance',
-        port: '8443',
+        port: '',
         pathname: '/**',
       },
       {
