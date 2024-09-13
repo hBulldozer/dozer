@@ -17,6 +17,18 @@ const nextConfig = {
         pathname: '/**',
       },
       {
+        protocol: 'http',
+        hostname: '207.148.120.225',
+        port: '8000',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '207.148.120.225',
+        port: '8443',
+        pathname: '/**',
+      },
+      {
         protocol: 'https',
         hostname: 'i.redd.it',
         port: '',
