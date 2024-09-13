@@ -12,7 +12,7 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '207.148.120.225',
-        port: '8000',
+        port: '8443',
         pathname: '/**',
       },
       {
