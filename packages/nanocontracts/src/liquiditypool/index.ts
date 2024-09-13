@@ -34,13 +34,13 @@ export class LiquidityPool extends NanoContract {
   }
 
   public async initialize(admin_address: string, amount0: number, amount1: number) {
-    if (!process.env.LPBLUEPRINT) throw new Error('Missing environment variables')
+    if (!process.env.LPBLUEPRINT || '') throw new Error('Missing environment variables')
     const actions: NCAction[] = [
       { type: 'deposit', token: this.token0, amount: 100 * amount0 },
       { type: 'deposit', token: this.token1, amount: 100 * amount1 },
     ]
     const args: NCArgs[] = [this.token0, this.token1, this.fee, this.protocol_fee]
-    const response = await this.create(process.env.LPBLUEPRINT, admin_address, actions, args)
+    const response = await this.create(process.env.LPBLUEPRINT || '', admin_address, actions, args)
     return response
   }
 
@@ -103,7 +103,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'initialize',
-      '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771596',
+      process.env.LPBLUEPRINT || '',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -142,7 +142,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'swap_exact_tokens_for_tokens',
-      '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771596',
+      process.env.LPBLUEPRINT || '',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -182,7 +182,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'swap_tokens_for_exact_tokens',
-      '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771596',
+      process.env.LPBLUEPRINT || '',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -222,7 +222,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'add_liquidity',
-      '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771596',
+      process.env.LPBLUEPRINT || '',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -261,7 +261,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'remove_liquidity',
-      '3cb032600bdf7db784800e4ea911b10676fa2f67591f82bb62628c234e771596',
+      process.env.LPBLUEPRINT || '',
       [
         {
           type: NanoContractActionType.WITHDRAWAL,
