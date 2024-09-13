@@ -6,6 +6,7 @@ import { FC, useRef } from 'react'
 import { useTokensFromPair } from '@dozer/api'
 import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
+import { UsersIcon } from '@heroicons/react/24/outline'
 
 export const PairNameCell: FC<CellProps> = ({ row }) => {
   const { token0, token1 } = useTokensFromPair(row)
@@ -26,7 +27,14 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
         <Typography variant="sm" weight={500} className="flex items-center gap-1 text-stone-50">
           {token0.symbol} <span className="text-stone-500">/</span> {token1.symbol}{' '}
           {row.token1.imageUrl && (
-            <div className={classNames('bg-stone-700 rounded-lg px-1 py-0.5 ml-1 text-xs')}>Community</div>
+            <>
+              <div className={classNames('bg-stone-700 hidden sm:flex rounded-lg px-1 py-0.5 ml-1 text-xs')}>
+                Community
+              </div>
+              <div className={classNames('bg-stone-700 flex sm:hidden rounded-lg px-1 py-0.5 ml-1 text-xs')}>
+                <UsersIcon width={16} height={16} />
+              </div>
+            </>
           )}
         </Typography>
         {/* <Typography variant="xxs" className="text-stone-400">

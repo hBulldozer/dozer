@@ -283,12 +283,16 @@ export const PoolsTable: FC = () => {
     return `/${row.id}`
   }, [])
 
+  const isSomePending = useMemo(() => {
+    return table.getRowModel().rows.some((row) => row.original.id.startsWith('pending-'))
+  }, [table])
+
   return (
     <>
       <FilterPools maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
       <GenericTable<ExtendedPair>
         table={table}
-        // loading={isLoading}
+        loading={isSomePending ? false : isLoading}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
         placeholder={'No pools found'}
         pageSize={PAGE_SIZE}

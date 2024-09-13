@@ -141,73 +141,80 @@ const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: nu
 
 const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
   let result
-  if (tokenUuid == '00') {
-    result = await prisma.hourSnapshot.findMany({
-      where: {
-        AND: [
-          { date: { gte: new Date(since) } },
-          {
-            pool: {
-              token0: {
-                uuid: '00',
+  try {
+    if (tokenUuid == '00') {
+      result = await prisma.hourSnapshot.findMany({
+        where: {
+          AND: [
+            { date: { gte: new Date(since) } },
+            {
+              pool: {
+                token0: {
+                  uuid: '00',
+                },
               },
             },
-          },
-          {
-            pool: {
-              token1: {
-                symbol: 'USDT',
+            {
+              pool: {
+                token1: {
+                  symbol: 'USDT',
+                },
               },
             },
-          },
-        ],
-      },
-      select: {
-        date: true,
-        poolId: true,
-        reserve0: true,
-        reserve1: true,
-        priceHTR: true,
-      },
-      take: 1,
-    })
-  } else {
-    result = await prisma.hourSnapshot.findMany({
-      where: {
-        AND: [
-          { date: { gte: new Date(since) } },
-          {
-            pool: {
-              token0: {
-                uuid: '00',
+          ],
+        },
+        select: {
+          date: true,
+          poolId: true,
+          reserve0: true,
+          reserve1: true,
+          priceHTR: true,
+        },
+        take: 1,
+      })
+    } else {
+      result = await prisma.hourSnapshot.findMany({
+        where: {
+          AND: [
+            { date: { gte: new Date(since) } },
+            {
+              pool: {
+                token0: {
+                  uuid: '00',
+                },
               },
             },
-          },
-          {
-            pool: {
-              token1: {
-                uuid: tokenUuid,
+            {
+              pool: {
+                token1: {
+                  uuid: tokenUuid,
+                },
               },
             },
-          },
-        ],
-      },
-      select: {
-        date: true,
-        poolId: true,
-        reserve0: true,
-        reserve1: true,
-        priceHTR: true,
-      },
-      take: 1,
-    })
-  }
+          ],
+        },
+        select: {
+          date: true,
+          poolId: true,
+          reserve0: true,
+          reserve1: true,
+          priceHTR: true,
+        },
+        take: 1,
+      })
+    }
 
-  return result
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .map((snap) => {
-      return { price: parseFloat((snap.reserve0 / snap.reserve1).toFixed(6)), priceHTR: snap.priceHTR }
-    })[0]
+    return result
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .map((snap) => {
+        return { price: parseFloat((snap.reserve0 / snap.reserve1).toFixed(6)), priceHTR: snap.priceHTR }
+      })[0]
+  } catch (error) {
+    return {
+      price: 0,
+      priceHTR: 0,
+    }
+  }
 }
 export const pricesRouter = createTRPCRouter({
   all: procedure.query(async ({ ctx }) => {

@@ -205,7 +205,15 @@ const TokenCreationPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     setIsLoading(true)
-    if (tokenNameError || tokenSymbolError || telegramError || twitterError || websiteError) {
+    e.preventDefault()
+    if (
+      tokenNameError ||
+      tokenSymbolError ||
+      telegramError ||
+      twitterError ||
+      websiteError ||
+      (!imageUrl && !generatedMeme)
+    ) {
       const errorNotification: NotificationData = {
         type: 'swap',
         chainId: network,
@@ -224,10 +232,10 @@ const TokenCreationPage: React.FC = () => {
       }
       createFailedToast(errorNotification)
       setIsLoading(false)
-      return
-    }
-
-    if (existingTokens && existingTokens.some((token) => token.symbol.toLowerCase() === tokenSymbol.toLowerCase())) {
+    } else if (
+      existingTokens &&
+      existingTokens.some((token) => token.symbol.toLowerCase() === tokenSymbol.toLowerCase())
+    ) {
       const errorNotification: NotificationData = {
         type: 'swap',
         chainId: network,
@@ -247,23 +255,21 @@ const TokenCreationPage: React.FC = () => {
       createFailedToast(errorNotification)
       setIsLoading(false)
       return
+    } else {
+      mutation.mutate({
+        name: tokenName,
+        symbol: tokenSymbol,
+        chainId: network,
+        decimals: 2,
+        description: tokenDescription,
+        imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme || '',
+        telegram,
+        twitter,
+        website,
+        createdBy: address,
+        totalSupply: parseInt(totalSupply),
+      })
     }
-
-    e.preventDefault()
-
-    mutation.mutate({
-      name: tokenName,
-      symbol: tokenSymbol,
-      chainId: network,
-      decimals: 2,
-      description: tokenDescription,
-      imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme || '',
-      telegram,
-      twitter,
-      website,
-      createdBy: address,
-      totalSupply: parseInt(totalSupply),
-    })
   }
 
   const generateMeme = async () => {

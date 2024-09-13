@@ -46,27 +46,52 @@ export const PositionsTable: FC = () => {
   }, [network])
 
   const { data: pools, isLoading } = api.getPools.all.useQuery()
-  const _pairs_array: PositionPair[] = []
-  if (pools)
-    pools.map((pool) => {
-      const { data: userInfo } = api.getProfile.poolInfo.useQuery({
-        contractId: pool.id,
-        address,
+  const { data: prices, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
+  const { data: allPoolInfo, isLoading: isLoadingPoolInfo } = api.getProfile.allPoolInfo.useQuery({ address: address })
+
+  const _pairs_array: PositionPair[] = useMemo(() => {
+    const array: PositionPair[] = []
+    if (pools && prices && allPoolInfo && !isLoadingPrices && !isLoadingPoolInfo && !isLoading) {
+      pools.map((pool) => {
+        const userInfo = allPoolInfo?.find((info) => info.contractId == pool.id)
+
+        if (
+          userInfo &&
+          (userInfo.max_withdraw_a > 0 || userInfo.max_withdraw_b > 0) &&
+          prices &&
+          prices[pool.token0.uuid] &&
+          prices[pool.token1.uuid]
+        ) {
+          const pair: PositionPair = pool
+          pair.value0 = (userInfo.max_withdraw_a / 100) * prices?.[pool.token0.uuid]
+          pair.value1 = (userInfo.max_withdraw_b / 100) * prices?.[pool.token1.uuid]
+          array.push(pair)
+        }
       })
-      const { data: prices } = api.getPrices.all.useQuery()
-      if (
-        userInfo &&
-        (userInfo.max_withdraw_a > 0 || userInfo.max_withdraw_b > 0) &&
-        prices &&
-        prices[pool.token0.uuid] &&
-        prices[pool.token1.uuid]
-      ) {
-        const pair: PositionPair = pool
-        pair.value0 = userInfo.max_withdraw_a/100 * prices?.[pool.token0.uuid]
-        pair.value1 = userInfo.max_withdraw_b/100 * prices?.[pool.token1.uuid]
-        _pairs_array.push(pair)
-      }
-    })
+      return array
+    } else return []
+  }, [pools, prices, allPoolInfo, isLoadingPrices, isLoadingPoolInfo, isLoading])
+
+  // if (pools)
+  //   pools.map((pool) => {
+  //     const { data: userInfo } = api.getProfile.poolInfo.useQuery({
+  //       contractId: pool.id,
+  //       address,
+  //     })
+  //     const { data: prices } = api.getPrices.all.useQuery()
+  //     if (
+  //       userInfo &&
+  //       (userInfo.max_withdraw_a > 0 || userInfo.max_withdraw_b > 0) &&
+  //       prices &&
+  //       prices[pool.token0.uuid] &&
+  //       prices[pool.token1.uuid]
+  //     ) {
+  //       const pair: PositionPair = pool
+  //       pair.value0 = (userInfo.max_withdraw_a / 100) * prices?.[pool.token0.uuid]
+  //       pair.value1 = (userInfo.max_withdraw_b / 100) * prices?.[pool.token1.uuid]
+  //       _pairs_array.push(pair)
+  //     }
+  //   })
 
   const pairs_array = _pairs_array?.filter((pair: Pair) => {
     return pair.chainId == rendNetwork

@@ -103,7 +103,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'initialize',
-      process.env.LPBLUEPRINT || '',
+      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a0',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -142,7 +142,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'swap_exact_tokens_for_tokens',
-      process.env.LPBLUEPRINT || '',
+      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a0',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -182,7 +182,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'swap_tokens_for_exact_tokens',
-      process.env.LPBLUEPRINT || '',
+      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a0',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -222,7 +222,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'add_liquidity',
-      process.env.LPBLUEPRINT || '',
+      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a0',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -261,7 +261,7 @@ export class LiquidityPool extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'remove_liquidity',
-      process.env.LPBLUEPRINT || '',
+      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a0',
       [
         {
           type: NanoContractActionType.WITHDRAWAL,

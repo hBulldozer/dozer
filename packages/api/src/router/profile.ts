@@ -4,6 +4,69 @@ import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { useTempTxStore } from '@dozer/zustand'
 
+const poolInfoCall = async (input: {
+  address: string
+  contractId: string
+}): Promise<{
+  balance_a: number
+  balance_b: number
+  liquidity: number
+  max_withdraw_a: number
+  max_withdraw_b: number
+  last_tx: number
+}> => {
+  try {
+    const endpoint = 'nano_contract/state'
+    const queryParams = [`id=${input.contractId}`, `calls[]=user_info("a'${input.address}'")`]
+
+    const response = await fetchNodeData(endpoint, queryParams)
+    const result = response['calls'][`user_info("a'${input.address}'")`]['value']
+
+    const endpoint_lasttx = 'nano_contract/history'
+    const queryParams_lasttx = [`id=${input.contractId}`]
+    const response_lasttx = await fetchNodeData(endpoint_lasttx, queryParams_lasttx)
+
+    const add_remove_liquidity_txs = response_lasttx['history'].filter(
+      (tx: any) => tx['nc_method'] == 'add_liquidity' || tx['nc_method'] == 'remove_liquidity'
+    )
+    const result_lasttx = add_remove_liquidity_txs
+      ? Math.max(
+          ...add_remove_liquidity_txs
+            .filter((tx: any) => tx['inputs'].some((input: any) => input['address'] == input.address))
+            .map((tx: any) => tx['timestamp'])
+        )
+      : Math.max(
+          ...response_lasttx['history']
+            .filter((tx: any) => tx['nc_method'] == 'initialize')
+            .map((tx: any) => tx['timestamp'])
+        )
+
+    // Get temporary transaction data
+    const tempTxs = useTempTxStore.getState().getTempTx(input.contractId, input.address)
+
+    // Adjust max_withdraw values based on temporary transactions
+    const adjustedMaxWithdrawA = result.max_withdraw_a + tempTxs.addedLiquidity.tokenA - tempTxs.removedLiquidity.tokenA
+    const adjustedMaxWithdrawB = result.max_withdraw_b + tempTxs.addedLiquidity.tokenB - tempTxs.removedLiquidity.tokenB
+
+    return {
+      ...result,
+      max_withdraw_a: Math.max(0, adjustedMaxWithdrawA), // Ensure non-negative values
+      max_withdraw_b: Math.max(0, adjustedMaxWithdrawB),
+      last_tx: result_lasttx,
+    }
+  } catch (error) {
+    console.log(error)
+    return {
+      balance_a: 0,
+      balance_b: 0,
+      liquidity: 0,
+      max_withdraw_a: 0,
+      max_withdraw_b: 0,
+      last_tx: 0,
+    }
+  }
+}
+
 export const profileRouter = createTRPCRouter({
   balance: procedure
     // .input(z.object({ address: z.string() }))
@@ -40,57 +103,39 @@ export const profileRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      try {
-        const endpoint = 'nano_contract/state'
-        const queryParams = [`id=${input.contractId}`, `calls[]=user_info("a'${input.address}'")`]
-
-        const response = await fetchNodeData(endpoint, queryParams)
-        const result = response['calls'][`user_info("a'${input.address}'")`]['value']
-
-        const endpoint_lasttx = 'nano_contract/history'
-        const queryParams_lasttx = [`id=${input.contractId}`]
-        const response_lasttx = await fetchNodeData(endpoint_lasttx, queryParams_lasttx)
-
-        const add_remove_liquidity_txs = response_lasttx['history'].filter(
-          (tx: any) => tx['nc_method'] == 'add_liquidity' || tx['nc_method'] == 'remove_liquidity'
-        )
-        const result_lasttx = add_remove_liquidity_txs
-          ? Math.max(
-              ...add_remove_liquidity_txs
-                .filter((tx: any) => tx['inputs'].some((input: any) => input['address'] == input.address))
-                .map((tx: any) => tx['timestamp'])
-            )
-          : Math.max(
-              ...response_lasttx['history']
-                .filter((tx: any) => tx['nc_method'] == 'initialize')
-                .map((tx: any) => tx['timestamp'])
-            )
-
-        // Get temporary transaction data
-        const tempTxs = useTempTxStore.getState().getTempTx(input.contractId, input.address)
-
-        // Adjust max_withdraw values based on temporary transactions
-        const adjustedMaxWithdrawA =
-          result.max_withdraw_a + tempTxs.addedLiquidity.tokenA - tempTxs.removedLiquidity.tokenA
-        const adjustedMaxWithdrawB =
-          result.max_withdraw_b + tempTxs.addedLiquidity.tokenB - tempTxs.removedLiquidity.tokenB
-
-        return {
-          ...result,
-          max_withdraw_a: Math.max(0, adjustedMaxWithdrawA), // Ensure non-negative values
-          max_withdraw_b: Math.max(0, adjustedMaxWithdrawB),
-          last_tx: result_lasttx,
-        }
-      } catch (error) {
-        console.log(error)
-        return {
-          balance_a: 0,
-          balance_b: 0,
-          liquidity: 0,
-          max_withdraw_a: 0,
-          max_withdraw_b: 0,
-          last_tx: 0,
-        }
-      }
+      return await poolInfoCall(input)
+    }),
+  allPoolInfo: procedure
+    .input(
+      z.object({
+        address: z.string(),
+      })
+    )
+    .output(
+      z.array(
+        z.object({
+          balance_a: z.number(),
+          balance_b: z.number(),
+          liquidity: z.number(),
+          max_withdraw_a: z.number(),
+          max_withdraw_b: z.number(),
+          last_tx: z.number(),
+          contractId: z.string(),
+        })
+      )
+    )
+    .query(async ({ ctx, input }) => {
+      const allPools = await ctx.prisma.pool.findMany({
+        select: {
+          id: true,
+        },
+      })
+      const poolInfo = await Promise.all(
+        allPools.map(async (pool) => {
+          const result = await poolInfoCall({ address: input.address, contractId: pool.id })
+          return { ...result, contractId: pool.id }
+        })
+      )
+      return poolInfo
     }),
 })
