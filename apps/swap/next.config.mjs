@@ -12,7 +12,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '207.148.120.225',
+        hostname: 'supabase.dozer.finance',
         port: '8443',
         pathname: '/**',
       },
