@@ -54,19 +54,17 @@ export const profileRouter = createTRPCRouter({
         const add_remove_liquidity_txs = response_lasttx['history'].filter(
           (tx: any) => tx['nc_method'] == 'add_liquidity' || tx['nc_method'] == 'remove_liquidity'
         )
-
-        const result_lasttx =
-          add_remove_liquidity_txs.length > 0
-            ? Math.max(
-                ...add_remove_liquidity_txs
-                  .filter((tx: any) => tx['inputs'].some((input: any) => input['address'] == input.address))
-                  .map((tx: any) => tx['timestamp'])
-              )
-            : Math.max(
-                ...response_lasttx['history']
-                  .filter((tx: any) => tx['nc_method'] == 'initialize')
-                  .map((tx: any) => tx['timestamp'])
-              )
+        const result_lasttx = add_remove_liquidity_txs
+          ? Math.max(
+              ...add_remove_liquidity_txs
+                .filter((tx: any) => tx['inputs'].some((input: any) => input['address'] == input.address))
+                .map((tx: any) => tx['timestamp'])
+            )
+          : Math.max(
+              ...response_lasttx['history']
+                .filter((tx: any) => tx['nc_method'] == 'initialize')
+                .map((tx: any) => tx['timestamp'])
+            )
 
         // Get temporary transaction data
         const tempTxs = useTempTxStore.getState().getTempTx(input.contractId, input.address)

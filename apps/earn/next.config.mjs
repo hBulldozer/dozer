@@ -11,6 +11,12 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
+        protocol: 'http',
+        hostname: '207.148.120.225',
+        port: '8000',
+        pathname: '/**',
+      },
+      {
         protocol: 'https',
         hostname: 'i.redd.it',
         port: '',

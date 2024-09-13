@@ -137,6 +137,7 @@ export interface ExtendedPair extends Pair {
   price?: number
   marketCap?: number
   change?: number
+  isPending?: boolean
 }
 
 export const PoolsTable: FC = () => {
@@ -199,7 +200,7 @@ export const PoolsTable: FC = () => {
         return true
       })
       .map((pool) => {
-        return { ...pool, priceHtr: prices?.['00'] }
+        return { ...pool, priceHtr: prices?.['00'], isPending: pool.id.startsWith('pending-') }
       })
   }, [_pools, query, filters])
 
@@ -287,11 +288,12 @@ export const PoolsTable: FC = () => {
       <FilterPools maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
       <GenericTable<ExtendedPair>
         table={table}
-        loading={isLoading}
+        // loading={isLoading}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
         placeholder={'No pools found'}
         pageSize={PAGE_SIZE}
         linkFormatter={rowLink}
+        isPendingFormatter={(row) => row.isPending || false}
       />
       {/* only needed when we have more than 8 or 10 pools */}
       {/* <Table.Paginator

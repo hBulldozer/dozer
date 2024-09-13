@@ -59,55 +59,103 @@ const fetchAndProcessPoolData = async (
   const endpoint = 'nano_contract/state'
   const queryParams = [`id=${pool.id}`, `calls[]=pool_data()`]
 
-  const rawPoolData = await fetchNodeData(endpoint, queryParams)
-  const poolData = rawPoolData.calls['pool_data()'].value
-  const { fee, reserve0, reserve1, fee0, fee1, volume0, volume1, transactions } = poolData
+  try {
+    const rawPoolData = await fetchNodeData(endpoint, queryParams)
+    const poolData = rawPoolData.calls['pool_data()'].value
+    const { fee, reserve0, reserve1, fee0, fee1, volume0, volume1, transactions } = poolData
 
-  const { id, chainId, token0, token1 } = pool
+    const { id, chainId, token0, token1 } = pool
 
-  const index = day ? pool.hourSnapshots.length - 1 : 0
-  const liquidityUSD = (2 * priceHTR * reserve0) / 100
-  const volume0old = pool.hourSnapshots[index]?.volume0 || 0
-  const volume1old = pool.hourSnapshots[index]?.volume1 || 0
-  const txCountold = pool.hourSnapshots[index]?.txCount || 0
-  const reserve0old = pool.hourSnapshots[index]?.reserve0 || 0
-  const reserve1old = pool.hourSnapshots[index]?.reserve1 || 1
-  // const txCountold = pool.hourSnapshots[0]?.txCount || 0
-  // const reserve0old = pool.hourSnapshots[0]?.reserve0 || 0
-  // const reserve1old = pool.hourSnapshots[0]?.reserve1 || 1
-  const volume1d =
-    (volume0 - volume0old) / 100 +
-    ((volume1 - volume1old) * (reserve0 / reserve1 + reserve0old / reserve1old)) / 2 / 100
+    const index = day ? pool.hourSnapshots.length - 1 : 0
+    const liquidityUSD = (2 * priceHTR * reserve0) / 100
+    const volume0old = pool.hourSnapshots[index]?.volume0 || 0
+    const volume1old = pool.hourSnapshots[index]?.volume1 || 0
+    const txCountold = pool.hourSnapshots[index]?.txCount || 0
+    const reserve0old = pool.hourSnapshots[index]?.reserve0 || 0
+    const reserve1old = pool.hourSnapshots[index]?.reserve1 || 1
+    // const txCountold = pool.hourSnapshots[0]?.txCount || 0
+    // const reserve0old = pool.hourSnapshots[0]?.reserve0 || 0
+    // const reserve1old = pool.hourSnapshots[0]?.reserve1 || 1
+    const volume1d =
+      (volume0 - volume0old) / 100 +
+      ((volume1 - volume1old) * (reserve0 / reserve1 + reserve0old / reserve1old)) / 2 / 100
 
-  const fees1d = (volume1d * fee) / 100
+    const fees1d = (volume1d * fee) / 100
 
-  const feeUSD = fees1d * priceHTR //+ (pool.hourSnapshots[0]?.feeUSD || 0)
-  const volumeUSD = volume1d * priceHTR //+ (pool.hourSnapshots[0]?.volumeUSD || 0)
-  const txCount1d = transactions - txCountold
-  return {
-    id: id,
-    name: `${token0.symbol}-${token1.symbol}`,
-    liquidityUSD: liquidityUSD,
-    volume0: volume0,
-    volume1: volume1,
-    volumeUSD: volumeUSD,
-    feeUSD: feeUSD,
-    swapFee: fee,
-    apr: Math.exp(((fees1d * priceHTR) / liquidityUSD) * 365) - 1,
-    token0: token0,
-    token1: token1,
-    reserve0: reserve0 / 100,
-    reserve1: reserve1 / 100,
-    chainId: chainId,
-    liquidity: (2 * reserve0) / 100,
-    volume1d: volume1d > 0.00001 ? volume1d : 0,
-    fee0: fee0,
-    fee1: fee1,
-    fees1d: fees1d > 0.00001 ? fees1d : 0,
-    txCount: transactions,
-    txCount1d: txCount1d,
-    daySnapshots: [],
-    hourSnapshots: [],
+    const feeUSD = fees1d * priceHTR //+ (pool.hourSnapshots[0]?.feeUSD || 0)
+    const volumeUSD = volume1d * priceHTR //+ (pool.hourSnapshots[0]?.volumeUSD || 0)
+    const txCount1d = transactions - txCountold
+
+    return {
+      id: id,
+      name: `${token0.symbol}-${token1.symbol}`,
+      liquidityUSD: liquidityUSD,
+      volume0: volume0,
+      volume1: volume1,
+      volumeUSD: volumeUSD,
+      feeUSD: feeUSD,
+      swapFee: fee,
+      apr: Math.exp(((fees1d * priceHTR) / liquidityUSD) * 365) - 1,
+      token0: token0,
+      token1: token1,
+      reserve0: reserve0 / 100,
+      reserve1: reserve1 / 100,
+      chainId: chainId,
+      liquidity: (2 * reserve0) / 100,
+      volume1d: volume1d > 0.00001 ? volume1d : 0,
+      fee0: fee0,
+      fee1: fee1,
+      fees1d: fees1d > 0.00001 ? fees1d : 0,
+      txCount: transactions,
+      txCount1d: txCount1d,
+      daySnapshots: [],
+      hourSnapshots: [],
+    }
+  } catch (error) {
+    const endpoint = 'transaction'
+    const response = await fetchNodeData(endpoint, [`id=${pool.id}`])
+      .then((res) => {
+        const validation = res.success
+          ? res.meta.voided_by.length
+            ? 'failed'
+            : res.meta.first_block
+            ? 'success'
+            : 'pending'
+          : 'failed'
+        console.log(pool.id, validation)
+        if (validation == 'pending')
+          return {
+            id: `pending-${pool.id}`,
+            name: `${pool.token0.symbol}-${pool.token1.symbol}`,
+            liquidityUSD: 0,
+            volume0: 0,
+            volume1: 0,
+            volumeUSD: 0,
+            feeUSD: 0,
+            swapFee: 0,
+            apr: 0,
+            token0: pool.token0,
+            token1: pool.token1,
+            reserve0: 0,
+            reserve1: 0,
+            chainId: pool.chainId,
+            liquidity: 0,
+            volume1d: 0,
+            fee0: 0,
+            fee1: 0,
+            fees1d: 0,
+            txCount: 0,
+            txCount1d: 0,
+            daySnapshots: [],
+            hourSnapshots: [],
+          }
+        else return {} as Pair
+      })
+      .catch((err) => {
+        console.error(err)
+        return {} as Pair
+      })
+    return response
   }
 }
 
@@ -165,7 +213,7 @@ export const poolRouter = createTRPCRouter({
     const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice))
     const allPoolData = await Promise.all(poolDataPromises)
 
-    return allPoolData
+    return allPoolData.filter((pool) => pool != ({} as Pair))
   }),
 
   allDay: procedure.query(async ({ ctx }) => {
