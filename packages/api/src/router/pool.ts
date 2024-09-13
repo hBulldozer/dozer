@@ -122,7 +122,6 @@ const fetchAndProcessPoolData = async (
             ? 'success'
             : 'pending'
           : 'failed'
-        console.log(pool.id, validation)
         if (validation == 'pending')
           return {
             id: `pending-${pool.id}`,
