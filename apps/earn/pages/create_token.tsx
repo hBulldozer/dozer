@@ -22,8 +22,11 @@ import { useNetwork, useAccount } from '@dozer/zustand'
 import { get, set } from 'lodash'
 import { Layout } from '../components/Layout'
 import { CustomToken } from '@dozer/nanocontracts'
+import { supabase } from '../utils/supabaseClient'
+import { RealtimeChannel } from '@supabase/supabase-js'
 
 const MEME_STORAGE_BASE_URL = 'http://207.148.120.225:8000/storage/v1/object/public/memecoins/'
+const USER_UPLOADS_BUCKET = 'uploads'
 
 const TokenCreationPage: React.FC = () => {
   const [tokenName, setTokenName] = useState('')
@@ -42,6 +45,9 @@ const TokenCreationPage: React.FC = () => {
   const [totalSupply, setTotalSupply] = useState('')
   const [userHtrBalance, setUserHtrBalance] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadChannel, setUploadChannel] = useState<RealtimeChannel | null>(null)
 
   const [tokenNameError, setTokenNameError] = useState('')
   const [tokenSymbolError, setTokenSymbolError] = useState('')
@@ -284,6 +290,59 @@ const TokenCreationPage: React.FC = () => {
     }
   }
 
+  const handleFileUpload = async (file: File) => {
+    setIsUploading(true)
+    setUploadProgress(0)
+    setUploadError('')
+
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `${fileName}`
+
+      // Create a channel for upload progress
+      const channel = supabase.channel(`upload-${fileName}`)
+      setUploadChannel(channel)
+
+      channel
+        .on('broadcast', { event: 'upload' }, (payload) => {
+          if (payload.data && typeof payload.data.progress === 'number') {
+            setUploadProgress(payload.data.progress)
+          }
+        })
+        .subscribe()
+
+      const { data, error } = await supabase.storage.from(USER_UPLOADS_BUCKET).upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+      if (error) throw error
+
+      const { data: urlData } = supabase.storage.from(USER_UPLOADS_BUCKET).getPublicUrl(filePath)
+
+      setImageUrl(urlData.publicUrl)
+      setUploadedFile(file)
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      setUploadError('Failed to upload image. Please try again.')
+    } finally {
+      setIsUploading(false)
+      if (uploadChannel) {
+        uploadChannel.unsubscribe()
+        setUploadChannel(null)
+      }
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (uploadChannel) {
+        uploadChannel.unsubscribe()
+      }
+    }
+  }, [uploadChannel])
+
   const requiredHtr = (parseInt(totalSupply) || 0) * 0.01
   const isEnoughBalance = userHtrBalance / 100 >= requiredHtr
 
@@ -293,7 +352,7 @@ const TokenCreationPage: React.FC = () => {
         <Container className="flex items-center justify-center">
           <div className="max-w-4xl p-8 sm:w-full md:w-max w-max bg-stone-800 rounded-xl">
             <Form header="" className="-mt-12" onSubmit={handleSubmit}>
-              <div className="flex flex-col gap-12 md:flex-row md:items-center">
+              <div className="flex flex-col gap-12 md:flex-row md:items-start">
                 <div className="md:w-1/3">
                   <Form.Control label="Token Image">
                     <Tab.Group>
@@ -306,113 +365,101 @@ const TokenCreationPage: React.FC = () => {
                         </Tab>
                       </Tab.List>
                       <Tab.Panels>
-                        <Tab.Panel>
-                          <UploadDropzone
-                            content={{
-                              uploadIcon({ ready }) {
-                                if (uploadedFile)
-                                  return (
-                                    <div className="mt-2">
-                                      <img
-                                        src={URL.createObjectURL(uploadedFile)}
-                                        alt="Uploaded token image"
-                                        className={
-                                          !imageUrl ? 'object-cover w-20 h-20 opacity-40' : 'object-cover w-20 h-20'
-                                        }
-                                      />
-                                    </div>
-                                  )
-                                return <PhotoIcon className="w-20 h-20 mx-auto text-stone-500" />
-                              },
-                              button({ ready, isUploading, uploadProgress }) {
-                                if (!uploadedFile || imageUrl) return ''
-                                if (isUploading)
-                                  return (
-                                    <Button className="mt-2 cursor-default" variant="outlined" size="xs" disabled>
-                                      Uploading... {uploadProgress}%
-                                    </Button>
-                                  )
-                                if (uploadedFile)
-                                  return (
-                                    <Button className="mx-1 mt-2 mb-1" variant="outlined" size="xs">
-                                      Upload
-                                    </Button>
-                                  )
-                              },
-                              allowedContent({ ready, fileTypes, isUploading }) {
-                                if (ready && !isUploading && !imageUrl && !uploadedFile)
-                                  return (
-                                    <div className="flex flex-col gap-2 mt-4">
-                                      <Typography className="text-xs text-stone-500">
-                                        {fileTypes.map((f) => f.split('/')[1].toUpperCase()).join('/')}
-                                      </Typography>
-                                      <Typography className="text-xs text-stone-500">Max size: 2MB</Typography>
-                                    </div>
-                                  )
-                                else return ''
-                              },
-                              label({ ready, isUploading }) {
-                                if (uploadedFile)
-                                  return (
-                                    <Typography className="-mb-3 text-xs cursor-default text-stone-500">
-                                      {uploadedFile.name}
-                                    </Typography>
-                                  )
-                                return ''
-                              },
-                            }}
-                            appearance={{
-                              uploadIcon: 'text-stone-500 mt-2',
-                              container: !uploadedFile
-                                ? 'cursor-pointer border-stone-500  h-55'
-                                : 'border-stone-500  h-55',
-                            }}
-                            endpoint="imageUploader"
-                            onDrop={(files) => {
-                              if (files && files[0]) {
-                                setUploadedFile(files[0])
-                              }
-                            }}
-                            onClientUploadComplete={(res) => {
-                              if (res && res[0]) {
-                                setImageUrl(res[0].url)
-                              }
-                            }}
-                            onUploadError={(error: Error) => {
-                              setUploadError(error.message)
-                            }}
-                          />
-                          <Typography variant="xs" className="mt-2 text-red-500">
-                            {uploadError}
-                          </Typography>
-                        </Tab.Panel>
-                        <Tab.Panel>
-                          <div className="flex flex-col items-center">
-                            {generatedMeme ? (
-                              <img
-                                src={generatedMeme}
-                                alt="Generated meme"
-                                className="object-contain w-full h-auto mb-4 cursor-pointer max-h-44"
-                                onClick={() => setIsDialogOpen(true)}
-                              />
-                            ) : (
-                              <div className="flex items-center justify-center w-full mb-4 h-44 bg-stone-700">
-                                <Typography variant="sm" className="text-stone-400">
-                                  No meme generated yet
-                                </Typography>
+                        <div className="h-[220px]">
+                          {' '}
+                          {/* Fixed height container for both panels */}
+                          {/* Upload Image Tab Panel */}
+                          <Tab.Panel className="h-full">
+                            <div className="flex flex-col items-center h-full">
+                              <div className="flex items-center justify-center w-full mb-4 overflow-hidden h-44 bg-stone-700">
+                                {uploadedFile ? (
+                                  <img
+                                    src={imageUrl}
+                                    alt="Uploaded token image"
+                                    className="object-cover w-full h-full"
+                                  />
+                                ) : (
+                                  <PhotoIcon className="w-20 h-20 text-stone-500" />
+                                )}
                               </div>
-                            )}
-                            <Button
-                              onClick={generateMeme}
-                              disabled={isGeneratingMeme}
-                              variant="outlined"
-                              size="xs"
-                              className="w-full"
-                            >
-                              {isGeneratingMeme ? 'Generating...' : 'Generate Random Meme'}
-                            </Button>
-                          </div>
-                        </Tab.Panel>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) {
+                                    handleFileUpload(file)
+                                  }
+                                }}
+                                className="hidden"
+                                id="file-upload"
+                              />
+                              <Button
+                                variant="outlined"
+                                size="xs"
+                                className="w-full mt-2"
+                                onClick={() => document.getElementById('file-upload')?.click()}
+                                disabled={isUploading}
+                              >
+                                {isUploading ? `Uploading... ${uploadProgress.toFixed(0)}%` : 'Upload Image'}
+                              </Button>
+                            </div>
+                          </Tab.Panel>
+                          {/* Generate Meme Tab Panel */}
+                          <Tab.Panel className="h-full">
+                            <div className="flex flex-col items-center h-full">
+                              <div className="flex items-center justify-center w-full mb-4 overflow-hidden h-44 bg-stone-700">
+                                {isGeneratingMeme ? (
+                                  <div className="text-center">
+                                    <svg
+                                      className="w-10 h-10 mx-auto mb-2 text-yellow-500 animate-spin"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <circle
+                                        className="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                      ></circle>
+                                      <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                      ></path>
+                                    </svg>
+                                    <Typography variant="sm" className="text-stone-400">
+                                      Getting meme...
+                                    </Typography>
+                                  </div>
+                                ) : generatedMeme ? (
+                                  <img
+                                    src={generatedMeme}
+                                    alt="Generated meme"
+                                    className="object-cover object-center w-full h-full cursor-pointer"
+                                    onClick={() => setIsDialogOpen(true)}
+                                  />
+                                ) : (
+                                  <Typography variant="sm" className="text-stone-400">
+                                    No meme generated yet
+                                  </Typography>
+                                )}
+                              </div>
+                              <Button
+                                onClick={generateMeme}
+                                disabled={isGeneratingMeme}
+                                variant="outlined"
+                                size="xs"
+                                className="w-full mt-2"
+                              >
+                                {isGeneratingMeme ? 'Generating...' : 'Generate Random Meme'}
+                              </Button>
+                            </div>
+                          </Tab.Panel>
+                        </div>
                       </Tab.Panels>
                     </Tab.Group>
                   </Form.Control>
@@ -544,7 +591,9 @@ const TokenCreationPage: React.FC = () => {
         <Dialog.Content>
           <Dialog.Header title="Generated Meme" onClose={() => setIsDialogOpen(false)} />
           {generatedMeme && (
-            <img src={generatedMeme} alt="Generated meme" className="w-full h-auto max-h-[80vh] object-contain" />
+            <div className="w-full max-h-[80vh] flex items-center justify-center overflow-hidden">
+              <img src={generatedMeme} alt="Generated meme" className="object-contain max-w-full max-h-full" />
+            </div>
           )}
         </Dialog.Content>
       </Dialog>
