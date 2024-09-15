@@ -59,7 +59,6 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
     isError,
   } = usePoolPosition()
 
-  // console.log('max_withdraw_a', max_withdraw_a)
 
   if (isLoading && !isError) {
     return (
