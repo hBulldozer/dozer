@@ -16,7 +16,7 @@ interface PoolPositionProps {
 }
 
 function daysAgoFormatted(last_tx: number) {
-  if (last_tx == 0) return '-'
+  if (last_tx == 0 || last_tx == -Infinity) return '-'
   const now = Date.now()
   const pastDate = new Date(last_tx * 1000).getTime()
   const timeDiff = now - pastDate
@@ -58,7 +58,6 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
     isLoading,
     isError,
   } = usePoolPosition()
-
 
   if (isLoading && !isError) {
     return (

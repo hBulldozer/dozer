@@ -93,9 +93,11 @@ export const PositionsTable: FC = () => {
   //     }
   //   })
 
-  const pairs_array = _pairs_array?.filter((pair: Pair) => {
-    return pair.chainId == rendNetwork
-  })
+  const pairs_array = _pairs_array
+    ?.filter((pair: Pair) => {
+      return pair.chainId == rendNetwork
+    })
+    .filter((pool) => pool.liquidityUSD > 10)
   const args = useMemo(
     () => ({
       sorting,

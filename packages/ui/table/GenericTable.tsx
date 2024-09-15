@@ -140,8 +140,26 @@ export const GenericTable = <T extends { id: string }>({
                                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                       <span className="ml-2 text-yellow-500">Liquidity in motion...</span>
                                     </>
+                                  ) : linkFormatter ? (
+                                    <Link.Internal href={linkFormatter(row.original)} passHref={true}>
+                                      <a
+                                        className={classNames(
+                                          'absolute inset-0 flex items-center px-3 sm:px-4',
+                                          cell.column.columnDef.meta?.className
+                                        )}
+                                      >
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                      </a>
+                                    </Link.Internal>
                                   ) : (
-                                    flexRender(cell.column.columnDef.cell, cell.getContext())
+                                    <div
+                                      className={classNames(
+                                        'absolute inset-0 flex items-center px-3 sm:px-4',
+                                        cell.column.columnDef.meta?.className
+                                      )}
+                                    >
+                                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </div>
                                   )}
                                 </div>
                               </Table.td>
