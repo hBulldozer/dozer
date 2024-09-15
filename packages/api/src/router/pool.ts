@@ -212,7 +212,7 @@ export const poolRouter = createTRPCRouter({
     const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice))
     const allPoolData = await Promise.all(poolDataPromises)
 
-    return allPoolData.filter((pool) => pool != ({} as Pair))
+    return allPoolData.filter((pool) => pool != ({} as Pair) && pool.reserve0 > 0 && pool.reserve1 > 0)
   }),
 
   allDay: procedure.query(async ({ ctx }) => {
@@ -268,7 +268,7 @@ export const poolRouter = createTRPCRouter({
     const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice, true))
     const allPoolData = await Promise.all(poolDataPromises)
 
-    return allPoolData
+    return allPoolData.filter((pool) => pool != ({} as Pair) && pool.reserve0 > 0 && pool.reserve1 > 0)
   }),
   snapsById: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.pool.findFirst({
