@@ -112,7 +112,6 @@ export const PositionsTable: FC = () => {
     // [sorting, pagination, selectedNetworks, selectedPoolTypes, farmsOnly, query, extraQuery]
   )
 
-  // console.log({ pools })
 
   const table = useReactTable<PositionPair>({
     data: pairs_array || [],
