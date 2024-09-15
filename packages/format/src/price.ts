@@ -19,5 +19,13 @@ export const formatUSD = (value: string | number, inputString = '$0.00a') => {
 // }
 
 export const formatHTR = (value: string | number, inputString = '0.00a') => {
-  return numeral(value).format(inputString) + ' HTR'
+  return (
+    numeral(value).format(
+      Number(value) < 0.001 && Number(value) > 0.0001 && Number(value) != 0
+        ? '$0.000a'
+        : Number(value) < 0.0001 && Number(value) != 0
+        ? '$0.0000a'
+        : inputString
+    ) + ' HTR'
+  )
 }
