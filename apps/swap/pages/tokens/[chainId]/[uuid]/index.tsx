@@ -1,4 +1,4 @@
-import { AppearOnMount, BreadcrumbLink, Button, LoadingOverlay, Typography } from '@dozer/ui'
+import { AppearOnMount, BreadcrumbLink, Button, Dialog, LoadingOverlay, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { AllTokensDBOutput, Pair } from '@dozer/api'
@@ -9,7 +9,7 @@ import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../../utils/api'
 import { TokenChart } from '../../../../components/TokenPage/TokenChart'
 import { SwapWidget } from 'pages'
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 import { TokenStats } from 'components/TokenPage/TokenStats'
 import ReadMore from '@dozer/ui/readmore/ReadMore'
 import { dbToken } from 'interfaces'
@@ -98,6 +98,7 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 ]
 
 const Token = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const router = useRouter()
   const uuid = router.query.uuid as string
   const chainId = Number(router.query.chainId)
@@ -276,7 +277,7 @@ const Token = () => {
         <BlockTracker client={api} />
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-6">
-            <TokenChart pair={pair} />
+            <TokenChart pair={pair} setIsDialogOpen={setIsDialogOpen} />
             {/* About */}
             <div className="flex flex-col gap-4">
               <Typography weight={500} variant="h1">
@@ -303,6 +304,20 @@ const Token = () => {
             </AppearOnMount>
           </div>
         </div>
+        <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
+          <Dialog.Content>
+            <Dialog.Header title="Community Token Image" onClose={() => setIsDialogOpen(false)} />
+            {pair.token1.imageUrl && (
+              <div className="w-full max-h-[80vh] flex items-center justify-center overflow-hidden">
+                <img
+                  src={pair.token1.imageUrl}
+                  alt="Community Token Image"
+                  className="object-contain max-w-full max-h-full"
+                />
+              </div>
+            )}
+          </Dialog.Content>
+        </Dialog>
       </Layout>
       <AppearOnMount as={Fragment}>
         <div className="fixed left-0 right-0 flex justify-center lg:hidden bottom-6">

@@ -31,6 +31,7 @@ const tailwind = resolveConfig(tailwindConfig)
 
 interface TokenChartProps {
   pair: Pair
+  setIsDialogOpen(isDialogOpen: boolean): void
   // token: Token
 }
 
@@ -74,7 +75,7 @@ function getFirstPerHour(snapshots: PairHourSnapshot[]): PairHourSnapshot[] {
 
   return hourlySnapshots
 }
-export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
+export const TokenChart: FC<TokenChartProps> = ({ pair, setIsDialogOpen }) => {
   const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(
     pair.id.includes('native') ? TokenChartCurrency.USD : TokenChartCurrency.HTR
   )
@@ -298,7 +299,9 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       <div className="flex justify-between gap-5 mr-3">
         <div className="flex flex-col gap-1 ">
           <div className="flex items-center gap-2">
-            <Currency.Icon currency={toToken(token)} width={32} height={32} />
+            <div className={pair.token1.imageUrl ? 'cursor-pointer' : ''}>
+              <Currency.Icon currency={toToken(token)} width={32} height={32} onClick={() => setIsDialogOpen(true)} />
+            </div>
             <Typography variant="lg" weight={600}>
               {token.name}
             </Typography>
