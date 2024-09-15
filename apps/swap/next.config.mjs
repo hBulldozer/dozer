@@ -7,6 +7,7 @@ const nextConfig = {
   transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database', '@dozer/currency'],
   experimental: {
     swcPlugins: [['next-superjson-plugin', {}]],
+    bundlePagesExternals: true,
   },
   images: {
     remotePatterns: [
