@@ -169,7 +169,6 @@ const TokenCreationPage: React.FC = () => {
           failed: 'Token creation failed',
           info: `Creating Token ${tokenSymbol}.`,
         },
-        href: `../../../swap/tokens/0/${data.hash}`,
         status: 'completed',
         txHash: data.hash,
         groupTimestamp: Math.floor(Date.now() / 1000),
@@ -182,6 +181,7 @@ const TokenCreationPage: React.FC = () => {
       notificationGroup.push(JSON.stringify(notificationData))
       addNotification(notificationGroup)
       createSuccessToast(notificationData)
+      window.location.href = `../swap/tokens`
       resetFields()
     },
     onError: (error) => {

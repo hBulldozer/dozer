@@ -215,7 +215,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
               </Typography>
             </div>
           )}
-          {faucetAvailable && (
+          {!isLoading && faucetAvailable && (
             <Button
               variant="outlined"
               className="px-8"

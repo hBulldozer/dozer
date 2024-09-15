@@ -241,7 +241,6 @@ export const PoolsTable: FC = () => {
     // [sorting, pagination, selectedNetworks, selectedPoolTypes, farmsOnly, query, extraQuery]
   )
 
-
   const table = useReactTable<ExtendedPair>({
     data: pools || [],
     columns: COLUMNS,

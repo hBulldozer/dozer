@@ -126,7 +126,7 @@ const fetchAndProcessPoolData = async (
           return {
             id: `pending-${pool.id}`,
             name: `${pool.token0.symbol}-${pool.token1.symbol}`,
-            liquidityUSD: 0,
+            liquidityUSD: 15,
             volume0: 0,
             volume1: 0,
             volumeUSD: 0,
