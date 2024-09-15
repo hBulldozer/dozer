@@ -181,7 +181,7 @@ const TokenCreationPage: React.FC = () => {
       notificationGroup.push(JSON.stringify(notificationData))
       addNotification(notificationGroup)
       createSuccessToast(notificationData)
-      window.location.href = `../swap/tokens`
+      window.location.href = `../swap/tokens?tab=custom`
       resetFields()
     },
     onError: (error) => {

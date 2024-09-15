@@ -1,15 +1,24 @@
-import { FC, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import { Tab } from '@headlessui/react'
 import { classNames } from '@dozer/ui'
 import { useWalletConnectClient } from '@dozer/higmi'
 
 import { TokensTable } from './Tables'
 import { CustomTokensTable } from '../CustomTokensTable'
+import { useRouter } from 'next/router'
 
 export const TokensSection: FC = () => {
-  const [tab, setTab] = useState<number>(0)
+  const router = useRouter()
+  const params = router.query
+  const [tab, setTab] = useState<number>(Number(params.tab == 'custom'))
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+
+  useEffect(() => {
+    if (address && params.tab == 'custom') {
+      setTab(1)
+    }
+  }, [address, params])
 
   return (
     <section className="flex flex-col">
