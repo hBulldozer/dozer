@@ -63,8 +63,8 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
   const [chartPeriod, setChartPeriod] = useState<PoolChartPeriod>(PoolChartPeriod.Week)
   const hourSnapshots = getFirstPerHour(pair.hourSnapshots)
   const fifteenMinSnapshots = pair.hourSnapshots
-  if (hourSnapshots.length == 0 || fifteenMinSnapshots.length == 0 || !pair.daySnapshots)
-    return <Typography>There is no data for this pool yet.</Typography>
+  // if (hourSnapshots.length == 0 || fifteenMinSnapshots.length == 0 || !pair.daySnapshots)
+  //   return <Typography>There is no data for this pool yet.</Typography>
   const [xData, yData] = useMemo(() => {
     const data =
       chartPeriod == PoolChartPeriod.Day

@@ -138,7 +138,7 @@ export const GenericTable = <T extends { id: string }>({
                                   {isPending && i === 0 ? (
                                     <>
                                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                      <span className="ml-2 text-yellow-500">(Waiting for next block...)</span>
+                                      <span className="ml-2 text-yellow-500">Liquidity in motion...</span>
                                     </>
                                   ) : (
                                     flexRender(cell.column.columnDef.cell, cell.getContext())
