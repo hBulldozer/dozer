@@ -133,7 +133,6 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
         otherCurrency.uuid,
         outputAmount * (1 - slippageTolerance)
       )
-      // console.log(response)
     }
   }
 
