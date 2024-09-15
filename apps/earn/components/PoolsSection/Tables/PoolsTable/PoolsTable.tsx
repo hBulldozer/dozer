@@ -23,52 +23,6 @@ import { XCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 // const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN]
 const COLUMNS = [NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN]
 
-// const fetcher = ({
-//   url,
-//   args,
-// }: {
-//   url: string
-//   args: {
-//     sorting: SortingState
-//     pagination: PaginationState
-//     query: string
-//     extraQuery: string
-//     selectedNetworks: ChainId[]
-//     selectedPoolTypes: string[]
-//     farmsOnly: boolean
-//   }
-// }) => {
-//   const _url = new URL(url, window.location.origin)
-
-//   if (args.sorting[0]) {
-//     _url.searchParams.set('orderBy', args.sorting[0].id)
-//     _url.searchParams.set('orderDirection', args.sorting[0].desc ? 'desc' : 'asc')
-//   }
-
-//   if (args.pagination) {
-//     _url.searchParams.set('pagination', stringify(args.pagination))
-//   }
-
-//   if (args.selectedNetworks) {
-//     _url.searchParams.set('networks', stringify(args.selectedNetworks))
-//   }
-
-//   const where: QuerypairsArgs['where'] = {}
-//   if (args.query) where['name_contains_nocase'] = args.query
-//   if (args.selectedPoolTypes) where['type_in'] = args.selectedPoolTypes as PairType[]
-
-//   if (Object.keys(where).length > 0) {
-//     _url.searchParams.set('where', stringify(where))
-//   }
-
-//   if (args.farmsOnly) {
-//     _url.searchParams.set('farmsOnly', 'true')
-//   }
-
-//   return fetch(_url.href)
-//     .then((res) => res.json())
-//     .catch((e) => console.log(stringify(e)))
-// }
 
 const dummyPools: Pair[] = [
   // {
