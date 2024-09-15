@@ -45,7 +45,7 @@ export const TokensSection: FC = () => {
                   )
                 }
               >
-                My Custom Tokens
+                My Tokens
               </Tab>
             )}
           </div>
