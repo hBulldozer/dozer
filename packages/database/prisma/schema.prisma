@@ -8,6 +8,14 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
+model Faucet {
+  id          Int @id @default(autoincrement())
+  address     String
+  amount      Int
+  date   DateTime @default(now())
+  hash        String
+}
+
 model Token {
   id               String      @id
   uuid             String

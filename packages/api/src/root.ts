@@ -1,3 +1,4 @@
+import { faucetRouter } from './router/faucet'
 import { headlessRouter } from './router/headless'
 import { NanoStateRouter } from './router/nanostates'
 import { networkRouter } from './router/network'
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   getNanoState: NanoStateRouter,
   getHeadless: headlessRouter,
   getNetwork: networkRouter,
+  getFaucet: faucetRouter,
 })
 
 // export type definition of API

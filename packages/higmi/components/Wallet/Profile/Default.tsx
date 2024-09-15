@@ -1,4 +1,15 @@
-import { BuyCrypto, CopyHelper, Currency, IconButton, JazzIcon, Typography } from '@dozer/ui'
+import {
+  Button,
+  BuyCrypto,
+  CopyHelper,
+  createErrorToast,
+  createSuccessToast,
+  Currency,
+  IconButton,
+  JazzIcon,
+  NotificationData,
+  Typography,
+} from '@dozer/ui'
 import {
   CreditCardIcon,
   Square2StackIcon,
@@ -87,6 +98,51 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
   const { isLoading, error, data } = api_client.getPrices.htr.useQuery()
   const priceHTR = data ? data : 0.01
 
+  const { data: faucetAvailable } = api_client.getFaucet.checkFaucet.useQuery({ address: address })
+
+  const { addNotification } = useAccount()
+  const [isLoadingFaucet, setIsLoadingFaucet] = useState(false)
+
+  const mutation = api_client.getFaucet.sendHTR.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        const notificationData: NotificationData = {
+          type: 'swap',
+          chainId: network,
+          summary: {
+            pending: `Sending HTR to you...`,
+            completed: `Success! Sent HTR to you.`,
+            failed: 'Token creation failed',
+            info: `Sending HTR to you.`,
+          },
+          status: 'completed',
+          txHash: data.hash,
+          groupTimestamp: Math.floor(Date.now() / 1000),
+          timestamp: Math.floor(Date.now() / 1000),
+          promise: Promise.resolve(),
+          account: address,
+        }
+        const notificationGroup: string[] = []
+        notificationGroup.push(JSON.stringify(notificationData))
+        addNotification(notificationGroup)
+        createSuccessToast(notificationData)
+        setIsLoadingFaucet(false)
+      } else {
+        setIsLoadingFaucet(false)
+        createErrorToast(data.message, true)
+      }
+    },
+    onError: (error) => {
+      setIsLoadingFaucet(false)
+      createErrorToast(`Error sending HTR to ${address}. \n${error}`, true)
+    },
+  })
+
+  const handleGetTokens = () => {
+    setIsLoadingFaucet(true)
+    mutation.mutate({ address: address })
+  }
+
   useEffect(() => {
     const balance_user: BalanceProps[] = balance
       .filter((b: TokenBalance) => {
@@ -143,7 +199,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
             </IconButton>
           </div>
         </div>
-        <div className="flex justify-center gap-8">
+        <div className="flex flex-col items-center justify-center gap-8">
           {!isLoading && balanceUSD == 0 ? (
             <Typography variant="sm" className="text-center text-stone-500">
               No balance in this address
@@ -158,6 +214,17 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
                 {balanceUSD ? `$ ${balanceUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : ''}
               </Typography>
             </div>
+          )}
+          {faucetAvailable && (
+            <Button
+              variant="outlined"
+              className="px-8"
+              onClick={() => handleGetTokens()}
+              disabled={isLoadingFaucet}
+              size="xs"
+            >
+              {isLoadingFaucet ? 'Processing...' : 'Faucet'}
+            </Button>
           )}
         </div>
       </div>

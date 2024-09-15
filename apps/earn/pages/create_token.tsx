@@ -58,7 +58,7 @@ const TokenCreationPage: React.FC = () => {
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { network } = useNetwork()
-  const { balance } = useAccount()
+  const { balance, addNotification } = useAccount()
 
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
@@ -169,6 +169,7 @@ const TokenCreationPage: React.FC = () => {
           failed: 'Token creation failed',
           info: `Creating Token ${tokenSymbol}.`,
         },
+        href: `../../../swap/tokens/0/${data.hash}`,
         status: 'completed',
         txHash: data.hash,
         groupTimestamp: Math.floor(Date.now() / 1000),
@@ -177,6 +178,9 @@ const TokenCreationPage: React.FC = () => {
         account: address,
       }
       setIsLoading(false)
+      const notificationGroup: string[] = []
+      notificationGroup.push(JSON.stringify(notificationData))
+      addNotification(notificationGroup)
       createSuccessToast(notificationData)
       resetFields()
     },
