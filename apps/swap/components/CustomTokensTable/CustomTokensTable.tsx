@@ -1,5 +1,5 @@
 import React, { FC, useMemo } from 'react'
-import { GenericTable, Button } from '@dozer/ui'
+import { GenericTable, Button, Typography } from '@dozer/ui'
 import { useRouter } from 'next/router'
 import { getCoreRowModel, getSortedRowModel, SortingState, useReactTable, ColumnDef } from '@tanstack/react-table'
 import { api } from '../../utils/api'
@@ -34,18 +34,22 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
       cell: (info) => (
         <div className="flex items-center gap-2">
           <img src={info.row.original.imageUrl} alt={info.row.original.name} className="w-6 h-6 rounded-full" />
-          <span>{info.row.original.symbol}</span>
-          <span className="text-stone-400">{info.row.original.name}</span>
+          <Typography variant="sm" weight={500} className="truncate text-stone-50">
+            {info.row.original.symbol}
+          </Typography>
+          <Typography variant="xxs" className="hidden truncate sm:block text-stone-400">
+            {info.row.original.name}
+          </Typography>
         </div>
       ),
-      size: 200,
+      size: 160,
     },
     {
       id: 'totalSupply',
       header: 'Total Supply',
       accessorFn: (row) => row.totalSupply,
       cell: (info) => info.getValue(),
-      size: 150,
+      size: 110,
     },
     {
       id: 'actions',
@@ -63,7 +67,7 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
           Create Pool
         </Button>
       ),
-      size: 100,
+      size: 210,
     },
   ]
 
