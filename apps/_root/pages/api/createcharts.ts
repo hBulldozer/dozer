@@ -6,9 +6,6 @@ interface Point {
   y: number
 }
 
-export const config = {
-  maxDuration: 60,
-}
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.query.key && request.query.key === process.env.API_KEY) {
     const tokens = await prisma.token.findMany({ where: { isLiquidityToken: false }, select: { id: true, uuid: true } })

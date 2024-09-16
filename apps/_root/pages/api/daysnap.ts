@@ -48,6 +48,3 @@ export default async function handler(request: NextApiRequest, response: NextApi
     return response.status(200).end('Updated!')
   } else return response.status(401).end(`Not Authorized !`)
 }
-export const config = {
-  maxDuration: 60,
-}

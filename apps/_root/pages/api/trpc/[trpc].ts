@@ -1,16 +1,12 @@
-import { createNextApiHandler } from '@trpc/server/adapters/next'
+import { createNextApiHandler } from "@trpc/server/adapters/next";
 
-import { appRouter, createTRPCContext } from '@dozer/api'
+import { appRouter, createTRPCContext } from "@dozer/api";
 
 // export API handler
 export default createNextApiHandler({
   router: appRouter,
   createContext: createTRPCContext,
-})
-
-export const config = {
-  maxDuration: 60,
-}
+});
 
 // If you need to enable cors, you can do so like this:
 // const handler = async (req: NextApiRequest, res: NextApiResponse) => {
