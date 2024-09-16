@@ -7,7 +7,6 @@ const defaultNextConfig = {
   staticPageGenerationTimeout: 180,
   experimental: {
     esmExternals: 'loose',
-    bundlePagesExternals: true,
   },
   images: {
     remotePatterns: [
