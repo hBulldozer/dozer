@@ -23,6 +23,10 @@ import { RouterOutputs, api } from '../../utils/api'
 import { useAccount } from '@dozer/zustand'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
+export const config = {
+  maxDuration: 60,
+}
+
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
   const pools = await ssg.getPools.all.fetch()
@@ -38,7 +42,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   // We'll pre-render only these paths at build time.
   // { fallback: blocking } will server-render pages
   // on-demand if the path doesn't exist.
-  return { paths, fallback: true }
+  return { paths, fallback: 'blocking' }
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
