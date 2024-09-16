@@ -82,6 +82,10 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 
 const Pool = () => {
   const router = useRouter()
+  if (router.isFallback) {
+    return <div>Loading...</div>
+  }
+
   const id = router.query.id as string
 
   const { data: prices = {} } = api.getPrices.all.useQuery()
