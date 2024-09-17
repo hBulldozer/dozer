@@ -12,7 +12,6 @@ export const ourFileRouter = {
   })
     .middleware(async ({ req }) => {
       // This code runs on your server before upload
-      // console.log('Upload middleware', req);
 
       return { userId: 'fakeId' } // Add any data you want to access in onUploadComplete
     })
