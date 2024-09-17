@@ -17,6 +17,9 @@ import { daySnapshot, hourSnapshot } from '@dozer/database'
 import { ChainId } from '@dozer/chain'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
+export const config = {
+  maxDuration: 60,
+}
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
   const tokens = await ssg.getTokens.all.fetch()
