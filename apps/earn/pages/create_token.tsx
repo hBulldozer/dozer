@@ -499,7 +499,7 @@ const TokenCreationPage: React.FC = () => {
                       disabled
                       required
                     />
-                    <div className="flex flex-col">
+                    {/* <div className="flex flex-col">
                       <div className="flex flex-row justify-between ">
                         <div className="flex flex-col">
                           <Typography variant="xs" className="mt-1 text-stone-400">
@@ -520,7 +520,7 @@ const TokenCreationPage: React.FC = () => {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </Form.Control>
                 </div>
               </div>
@@ -536,10 +536,7 @@ const TokenCreationPage: React.FC = () => {
                 />
               </Form.Control>
 
-              <Form.Section
-                title="Dev Social Media"
-                description="Provide links to your social media channels(optional)"
-              >
+              <Form.Section title="Dev Social Media" description="Provide links to your social media (optional)">
                 <Form.Control label="Telegram" error={telegramError}>
                   <Input.TextGeneric
                     id="telegram"
@@ -580,7 +577,11 @@ const TokenCreationPage: React.FC = () => {
                       <Dots>Creating token</Dots>
                     </Button>
                   ) : (
-                    <Button type="submit" className="w-full" disabled={!isEnoughBalance}>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      // disabled={!isEnoughBalance}
+                    >
                       Create Token
                     </Button>
                   )}
