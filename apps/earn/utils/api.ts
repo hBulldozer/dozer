@@ -10,6 +10,9 @@ const getBaseUrl = () => {
 
   return `http://localhost:9000` // dev SSR should use localhost
 }
+export const config = {
+  maxDuration: 60,
+}
 
 export const api = createTRPCNext<AppRouter>({
   config() {

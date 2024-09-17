@@ -42,7 +42,7 @@ const TokenCreationPage: React.FC = () => {
   const [generatedMeme, setGeneratedMeme] = useState<string | null>(null)
   const [isGeneratingMeme, setIsGeneratingMeme] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [totalSupply, setTotalSupply] = useState('')
+  const [totalSupply, setTotalSupply] = useState('2000000')
   const [userHtrBalance, setUserHtrBalance] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -496,6 +496,7 @@ const TokenCreationPage: React.FC = () => {
                       value={totalSupply}
                       onUserInput={setTotalSupply}
                       placeholder="Enter total supply"
+                      disabled
                       required
                     />
                     <div className="flex flex-col">
@@ -535,7 +536,10 @@ const TokenCreationPage: React.FC = () => {
                 />
               </Form.Control>
 
-              <Form.Section title="Social Media" description="Provide links to your social media channels">
+              <Form.Section
+                title="Dev Social Media"
+                description="Provide links to your social media channels(optional)"
+              >
                 <Form.Control label="Telegram" error={telegramError}>
                   <Input.TextGeneric
                     id="telegram"
@@ -557,7 +561,7 @@ const TokenCreationPage: React.FC = () => {
                     pattern="^[a-zA-Z0-9_]{1,15}$"
                   />
                 </Form.Control>
-                <Form.Control label="Website" error={websiteError}>
+                {/* <Form.Control label="Website" error={websiteError}>
                   <Input.TextGeneric
                     id="website"
                     value={website}
@@ -566,7 +570,7 @@ const TokenCreationPage: React.FC = () => {
                     placeholder="Enter website URL"
                     pattern="^(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$"
                   />
-                </Form.Control>
+                </Form.Control> */}
               </Form.Section>
 
               <Form.Buttons>

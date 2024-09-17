@@ -65,8 +65,8 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
           token1.uuid,
           parseFloat(input0),
           parseFloat(input1),
-          5,
-          50
+          0,
+          0
         )
         console.log(response)
       } catch (error) {
