@@ -280,9 +280,11 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
           tradeType={tradeType}
           loading={tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
           prices={prices}
-          tokens={tokens.map((token) => {
-            return new Token(token)
-          })}
+          tokens={tokens
+            .filter((token) => !token.custom)
+            .map((token) => {
+              return new Token(token)
+            })}
         />
         <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
           <button
@@ -313,9 +315,11 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             tradeType={tradeType}
             loading={tradeType == TradeType.EXACT_INPUT && fetchLoading}
             prices={prices}
-            tokens={tokens.map((token) => {
-              return new Token(token)
-            })}
+            tokens={tokens
+              .filter((token) => !token.custom)
+              .map((token) => {
+                return new Token(token)
+              })}
             // isWrap={isWrap}
           />
           <SwapStatsDisclosure prices={prices} />
