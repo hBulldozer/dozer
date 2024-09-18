@@ -6,13 +6,7 @@ import useWaitForTransaction from './useWaitForTransaction'
 import { client as api_client } from '@dozer/api'
 import chains, { ChainId } from '@dozer/chain'
 
-// export const STARGATE_TOKEN = new Token({
-//   chainId: ChainId.ETHEREUM,
-//   address: '0xaf5191b0de278c7286d6c7cc6ab6bb8a73ba2cd6',
-//   decimals: 18,
-//   symbol: 'STG',
-//   name: 'StargateToken',
-// })
+
 
 export const Notification: FC<{
   data: string
@@ -22,11 +16,6 @@ export const Notification: FC<{
 }> = ({ data, showExtra = false, hideStatus = false, client }) => {
   const notification: NotificationData = JSON.parse(data)
   const { status, message } = useWaitForTransaction(notification, client)
-  // const status = notification.status
-  // const message = notification.last_message
-
-  // console.log(notification)
-  // console.log(status, message)
   if (!status)
     return (
       <div className="flex items-center gap-5 px-4 pr-8 rounded-2xl min-h-[82px] w-full">
