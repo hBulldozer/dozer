@@ -28,9 +28,11 @@ export const getStaticPaths: GetStaticPaths = async () => {
     throw new Error(`Failed to fetch pool, received ${tokens}`)
   }
   // Get the paths we want to pre-render based on pairs
-  const paths = tokens?.map((token: AllTokensDBOutput) => ({
-    params: { chainId: `${token.chainId}`, uuid: `${token.uuid}` },
-  }))
+  const paths = tokens
+    ?.filter((token) => !token.custom)
+    .map((token: AllTokensDBOutput) => ({
+      params: { chainId: `${token.chainId}`, uuid: `${token.uuid}` },
+    }))
 
   // We'll pre-render only these paths at build time.
   // { fallback: blocking } will server-render pages
