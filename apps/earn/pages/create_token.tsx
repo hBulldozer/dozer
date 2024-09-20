@@ -261,18 +261,6 @@ const TokenCreationPage: React.FC = () => {
       return
     }
 
-    e.preventDefault()
-    console.log({
-      tokenName,
-      tokenSymbol,
-      tokenDescription,
-      telegram,
-      twitter,
-      website,
-      imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme,
-      totalSupply,
-    })
-
     const token = new CustomToken(tokenSymbol, tokenName, Number(totalSupply) * 100)
     const response = await token.create(hathorRpc, address)
 

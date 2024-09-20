@@ -68,7 +68,6 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
           0,
           0
         )
-        console.log(response)
       } catch (error) {
         console.error('Error initializing pool:', error)
         createErrorToast('Failed to initialize pool', true)
