@@ -8,11 +8,7 @@ import {
 } from 'hathor-rpc-handler-test'
 import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
-
-export interface IHathorRpc {
-  sendNanoContractTx: (ncTxRpcReq: SendNanoContractRpcRequest) => Promise<SendNanoContractTxResponse>
-  signOracleData: (signOracleDataReq: SignOracleDataRpcRequest) => Promise<SignOracleDataResponse>
-}
+import { IHathorRpc } from '../types'
 
 export class LiquidityPool extends NanoContract {
   public readonly token0: string

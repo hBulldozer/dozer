@@ -259,22 +259,47 @@ const TokenCreationPage: React.FC = () => {
       createFailedToast(errorNotification)
       setIsLoading(false)
       return
-    } else {
-      mutation.mutate({
-        name: tokenName,
-        symbol: tokenSymbol,
-        chainId: network,
-        decimals: 2,
-        description: tokenDescription,
-        imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme || '',
-        telegram,
-        twitter,
-        website,
-        createdBy: address,
-        totalSupply: parseInt(totalSupply),
-      })
     }
+
+    e.preventDefault()
+    console.log({
+      tokenName,
+      tokenSymbol,
+      tokenDescription,
+      telegram,
+      twitter,
+      website,
+      imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme,
+      totalSupply,
+    })
+
+    const token = new CustomToken(tokenSymbol, tokenName, Number(totalSupply) * 100)
+    const response = await token.create(hathorRpc, address)
+
+    console.log(response)
   }
+
+  useEffect(() => {
+    if (rpcResult?.valid && rpcResult?.result && isLoading) {
+      const hash = get(rpcResult, 'result.response.hash') as string
+      if (hash) {
+        mutation.mutate({
+          name: tokenName,
+          symbol: tokenSymbol,
+          chainId: network,
+          decimals: 2,
+          description: tokenDescription,
+          imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme || '',
+          telegram,
+          twitter,
+          website,
+          hash: hash,
+          createdBy: address,
+          totalSupply: parseInt(totalSupply),
+        })
+      }
+    }
+  }, [])
 
   const generateMeme = async () => {
     setIsGeneratingMeme(true)

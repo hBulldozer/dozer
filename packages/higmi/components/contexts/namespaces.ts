@@ -4,6 +4,7 @@ export enum DEFAULT_HATHOR_METHODS {
   HATHOR_SIGN_MESSAGE = 'htr_signWithAddress',
   HATHOR_SEND_NANO_TX = 'htr_sendNanoContractTx',
   HATHOR_SIGN_ORACLE_DATA = 'htr_signOracleData',
+  HATHOR_CREATE_TOKEN = 'htr_createToken',
 }
 
 export enum DEFAULT_HATHOR_EVENTS {}

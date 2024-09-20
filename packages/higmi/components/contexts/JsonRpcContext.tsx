@@ -1,12 +1,16 @@
 import { createContext, ReactNode, useCallback, useContext, useState } from 'react'
 import { useWalletConnectClient } from './ClientContext'
 import {
+  CreateTokenResponse,
+  CreateTokenRpcRequest,
   RpcMethods,
   SendNanoContractRpcRequest,
   SendNanoContractTxResponse,
   SignOracleDataResponse,
   SignOracleDataRpcRequest,
 } from 'hathor-rpc-handler-test'
+import { create } from 'domain'
+import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 
 const HATHOR_TESTNET_CHAIN = 'hathor:testnet'
 
@@ -20,16 +24,11 @@ export interface IFormattedRpcResponse<T> {
   result: T
 }
 
-export interface IHathorRpc {
-  sendNanoContractTx: (ncTxRpcReq: SendNanoContractRpcRequest) => Promise<SendNanoContractTxResponse>
-  signOracleData: (signOracleDataReq: SignOracleDataRpcRequest) => Promise<SignOracleDataResponse>
-}
-
 export interface IContext {
   ping: () => Promise<void>
   hathorRpc: IHathorRpc
   rpcResult?: IFormattedRpcResponse<
-    SignOracleDataResponse | SendNanoContractTxResponse | string | null | undefined
+    SignOracleDataResponse | SendNanoContractTxResponse | CreateTokenResponse | string | null | undefined
   > | null
   isRpcRequestPending: boolean
   isTestnet: boolean
@@ -48,7 +47,7 @@ export const JsonRpcContext = createContext<IContext>({} as IContext)
 export function JsonRpcContextProvider({ children }: { children: ReactNode | ReactNode[] }) {
   const [pending, setPending] = useState(false)
   const [result, setResult] = useState<IFormattedRpcResponse<
-    SignOracleDataResponse | SendNanoContractTxResponse | string | null | undefined
+    SignOracleDataResponse | SendNanoContractTxResponse | CreateTokenResponse | string | null | undefined
   > | null>()
   const [isTestnet, setIsTestnet] = useState(true)
 
@@ -149,6 +148,37 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
 
         setResult({
           method: RpcMethods.SignOracleData,
+          valid: true,
+          result,
+        })
+
+        return result
+      } catch (error: any) {
+        setResult({
+          valid: false,
+          result: error?.message ?? error,
+        })
+
+        // Still propagate the error
+        throw error
+      } finally {
+        setPending(false)
+      }
+    },
+    createToken: async (createTokenTxRpcReq: CreateTokenRpcRequest): Promise<CreateTokenResponse> => {
+      walletClientGuard()
+
+      try {
+        setPending(true)
+
+        const result: CreateTokenResponse = await client!.request<CreateTokenResponse>({
+          chainId: HATHOR_TESTNET_CHAIN,
+          topic: session!.topic,
+          request: createTokenTxRpcReq,
+        })
+
+        setResult({
+          method: RpcMethods.CreateToken,
           valid: true,
           result,
         })

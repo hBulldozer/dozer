@@ -100,46 +100,47 @@ export const tokenRouter = createTRPCRouter({
         website: z.string().optional(),
         createdBy: z.string(),
         totalSupply: z.number(),
+        hash: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       // Create token on blockchain
-      const start = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': process.env.WALLET_API_KEY || '',
-        },
-        body: JSON.stringify({ 'wallet-id': process.env.WALLET_ID, seedKey: 'genesis' }),
-      })
-      const response = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/wallet/create-token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-wallet-id': process.env.WALLET_ID || '',
-          'x-api-key': process.env.WALLET_API_KEY || '',
-        },
-        body: JSON.stringify({
-          name: input.name,
-          symbol: input.symbol,
-          amount: input.totalSupply * 100, // Convert to cents
-          address: input.createdBy,
-        }),
-      })
+      // const start = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/start`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'X-API-Key': process.env.WALLET_API_KEY || '',
+      //   },
+      //   body: JSON.stringify({ 'wallet-id': process.env.WALLET_ID, seedKey: 'genesis' }),
+      // })
+      // const response = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/wallet/create-token`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'x-wallet-id': process.env.WALLET_ID || '',
+      //     'x-api-key': process.env.WALLET_API_KEY || '',
+      //   },
+      //   body: JSON.stringify({
+      //     name: input.name,
+      //     symbol: input.symbol,
+      //     amount: input.totalSupply * 100, // Convert to cents
+      //     address: input.createdBy,
+      //   }),
+      // })
 
-      const data = await response.json()
+      // const data = await response.json()
 
-      if (!data || !data.hash) {
-        throw new Error('Failed to create token on blockchain')
-      }
+      // if (!data || !data.hash) {
+      //   throw new Error('Failed to create token on blockchain')
+      // }
 
       // Create token in database using the hash as UUID
       const token = await ctx.prisma.token.create({
         data: {
-          id: data.hash,
+          id: input.hash,
           custom: true,
           name: input.name,
-          uuid: data.hash, // Use the blockchain transaction hash as UUID
+          uuid: input.hash, // Use the blockchain transaction hash as UUID
           about: input.description,
           symbol: input.symbol,
           chainId: input.chainId,
@@ -152,7 +153,7 @@ export const tokenRouter = createTRPCRouter({
         },
       })
 
-      return { result: token, hash: data.hash }
+      return { result: token, hash: input.hash }
     }),
   byUuid: procedure.input(z.object({ uuid: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.token.findFirst({

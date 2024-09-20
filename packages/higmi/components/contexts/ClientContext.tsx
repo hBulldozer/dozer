@@ -49,7 +49,6 @@ const web3Modal = new Web3Modal({
     '--w3m-background-color': '#000000',
     '--w3m-accent-color': '#eab308',
   },
-  explorerAllowList: ['hathor-wallet'],
   enableExplorer: false,
   mobileWallets: [
     {
@@ -101,10 +100,15 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       if (typeof client === 'undefined') {
         throw new Error('WalletConnect is not initialized')
       }
+      if (session != null) {
+        // Session already exists, return success
+        return
+      }
+
       try {
         const requiredNamespaces = {
           hathor: {
-            methods: ['htr_signWithAddress', 'htr_sendNanoContractTx'],
+            methods: ['htr_signWithAddress', 'htr_sendNanoContractTx', 'htr_createToken'],
             chains: ['hathor:testnet'],
             events: [],
           },
@@ -140,7 +144,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
         web3Modal.closeModal()
       }
     },
-    [client, onSessionConnected]
+    [client, session, onSessionConnected]
   )
 
   const disconnect = useCallback(async () => {
