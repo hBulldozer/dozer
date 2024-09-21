@@ -54,6 +54,11 @@ export class CustomToken {
       this.name,
       this.symbol,
       this.totalSupply,
+      address,
+      true,
+      true,
+      true,
+      true,
       address
     )
 

@@ -48,6 +48,7 @@ const TokenCreationPage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadChannel, setUploadChannel] = useState<RealtimeChannel | null>(null)
+  const [sentTX, setSentTX] = useState(false)
 
   const [tokenNameError, setTokenNameError] = useState('')
   const [tokenSymbolError, setTokenSymbolError] = useState('')
@@ -287,7 +288,7 @@ const TokenCreationPage: React.FC = () => {
         })
       }
     }
-  }, [])
+  }, [rpcResult])
 
   const generateMeme = async () => {
     setIsGeneratingMeme(true)
@@ -512,7 +513,7 @@ const TokenCreationPage: React.FC = () => {
                       disabled
                       required
                     />
-                    {/* <div className="flex flex-col">
+                    <div className="flex flex-col">
                       <div className="flex flex-row justify-between ">
                         <div className="flex flex-col">
                           <Typography variant="xs" className="mt-1 text-stone-400">
@@ -533,7 +534,7 @@ const TokenCreationPage: React.FC = () => {
                           )}
                         </div>
                       </div>
-                    </div> */}
+                    </div>
                   </Form.Control>
                 </div>
               </div>
@@ -584,21 +585,37 @@ const TokenCreationPage: React.FC = () => {
               </Form.Section>
 
               <Form.Buttons>
-                <Checker.Connected fullWidth size="md">
-                  {isLoading ? (
-                    <Button className="w-full" disabled>
-                      <Dots>Confirm transaction in your wallet</Dots>
-                    </Button>
-                  ) : (
+                <div className="flex flex-col w-full gap-2">
+                  <Checker.Connected fullWidth size="md">
+                    {isRpcRequestPending ? (
+                      <Button className="w-full" disabled>
+                        <Dots>Confirm transaction in your wallet</Dots>
+                      </Button>
+                    ) : isLoading ? (
+                      <Button className="w-full" disabled>
+                        <Dots>Creating token</Dots>
+                      </Button>
+                    ) : (
+                      <Button type="submit" className="w-full" disabled={!isEnoughBalance}>
+                        Create Token
+                      </Button>
+                    )}
+                  </Checker.Connected>
+                  {isRpcRequestPending && (
                     <Button
-                      type="submit"
-                      className="w-full"
-                      // disabled={!isEnoughBalance}
+                      size="md"
+                      testdata-id="create-token-reset-button"
+                      variant="outlined"
+                      color="red"
+                      onClick={() => {
+                        reset()
+                        setIsLoading(false)
+                      }}
                     >
-                      Create Token
+                      Cancel Transaction
                     </Button>
                   )}
-                </Checker.Connected>
+                </div>
               </Form.Buttons>
             </Form>
           </div>
