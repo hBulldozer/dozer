@@ -587,7 +587,7 @@ const TokenCreationPage: React.FC = () => {
                 <Checker.Connected fullWidth size="md">
                   {isLoading ? (
                     <Button className="w-full" disabled>
-                      <Dots>Creating token</Dots>
+                      <Dots>Confirm transaction in your wallet</Dots>
                     </Button>
                   ) : (
                     <Button
