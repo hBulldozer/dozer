@@ -588,15 +588,15 @@ const TokenCreationPage: React.FC = () => {
                 <div className="flex flex-col w-full gap-2">
                   <Checker.Connected fullWidth size="md">
                     {isRpcRequestPending ? (
-                      <Button className="w-full" disabled>
+                      <Button size="md" className="w-full" disabled>
                         <Dots>Confirm transaction in your wallet</Dots>
                       </Button>
                     ) : isLoading ? (
-                      <Button className="w-full" disabled>
+                      <Button size="md" className="w-full" disabled>
                         <Dots>Creating token</Dots>
                       </Button>
                     ) : (
-                      <Button type="submit" className="w-full" disabled={!isEnoughBalance}>
+                      <Button type="submit" size="md" className="w-full" disabled={!isEnoughBalance}>
                         Create Token
                       </Button>
                     )}
