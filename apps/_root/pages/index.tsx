@@ -2,6 +2,8 @@
 import { Button, Switch } from '@dozer/ui'
 import Background from 'components/Background/Background'
 import { BuildWealth } from 'components/BuildWealth/BuildWealth'
+import DonationProgress from 'components/DonationProgress/DonationProgress'
+import Features from 'components/Features/Features'
 import { Hathor } from 'components/Hathor/Hathor'
 import { Hero } from 'components/Hero/Hero'
 import { Partners } from 'components/Partners/Partners'
@@ -16,6 +18,8 @@ const Home = () => {
     // <article className="w-full my-20">
     <>
       <Background />
+      <DonationProgress />
+      <Features />
       <Hathor />
       <Move />
       <Custody />

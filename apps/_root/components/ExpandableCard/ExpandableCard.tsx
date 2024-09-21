@@ -1,6 +1,6 @@
 import { ChevronRightIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
 import { Button, Link, Typography } from '@dozer/ui'
-import { AnimatePresence, AnimateSharedLayout, motion } from 'framer-motion'
+import { AnimatePresence, AnimateSharedLayout, LayoutGroup, motion } from 'framer-motion'
 import { nanoid } from 'nanoid'
 import React, { FC, ReactNode, useCallback, useState } from 'react'
 
@@ -34,7 +34,7 @@ export const ExpandableCard: FC<ExpandableCardProps> = ({ children, title, capti
   }, [])
 
   return (
-    <AnimateSharedLayout>
+    <LayoutGroup>
       {children ? (
         children({ open, setOpen, containerId, titleId })
       ) : (
@@ -104,6 +104,6 @@ export const ExpandableCard: FC<ExpandableCardProps> = ({ children, title, capti
           </>
         )}
       </AnimatePresence>
-    </AnimateSharedLayout>
+    </LayoutGroup>
   )
 }

@@ -33,7 +33,7 @@ export const Header: FC = () => {
           </Button>
         </Link.Internal> */}
         <Button as="a" href="/swap" size="sm" className="ml-4 whitespace-nowrap">
-          Swap
+          Enter App
         </Button>
       </div>
       {/* <DonateModal open={open} setOpen={setOpen} /> */}
