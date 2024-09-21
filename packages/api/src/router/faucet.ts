@@ -31,7 +31,7 @@ export const faucetRouter = createTRPCRouter({
       },
       body: JSON.stringify({
         address: input.address,
-        value: 21_000_00,
+        value: 41_000_00,
         token: '00',
       }),
     })
@@ -45,7 +45,7 @@ export const faucetRouter = createTRPCRouter({
     const database_save = await ctx.prisma.faucet.create({
       data: {
         address: input.address,
-        amount: 21_000_00,
+        amount: 41_000_00,
         date: new Date(),
         hash: data.hash,
       },
