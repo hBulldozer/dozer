@@ -17,7 +17,7 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
   const router = useRouter()
   const [sorting, setSorting] = React.useState<SortingState>([])
 
-  const { data: tokens, isLoading } = api.getTokens.all.useQuery()
+  const { data: tokens, isLoading } = api.getTokens.all.useQuery(undefined, { staleTime: 5000 })
   const { data: totalSupplies } = api.getTokens.allTotalSupply.useQuery()
 
   const customTokens = useMemo(() => {

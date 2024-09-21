@@ -41,7 +41,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { data, isLoading, isError, error } = client.getProfile.balance.useQuery(
     { address: address },
-    { enabled: Boolean(address) }
+    { enabled: Boolean(address), staleTime: 5000 }
   )
   const { setBalance } = useAccount()
 
