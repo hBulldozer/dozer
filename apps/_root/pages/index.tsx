@@ -1,5 +1,6 @@
 'use client'
 import { Button, Switch } from '@dozer/ui'
+import { Footer } from '@dozer/ui/app/Footer'
 import Background from 'components/Background/Background'
 import { BuildWealth } from 'components/BuildWealth/BuildWealth'
 import DonationProgress from 'components/DonationProgress/DonationProgress'
@@ -20,11 +21,11 @@ const Home = () => {
       <Background />
       <DonationProgress />
       <Features />
-      <Hathor />
-      <Move />
-      <Custody />
+      {/* <Hathor /> */}
+      {/* <Move /> */}
+      {/* <Custody /> */}
       {/* <Hero /> */}
-      <BuildWealth />
+      {/* <BuildWealth /> */}
       {/* <div className="overflow-x-hidden bg-black">
         <div className="flex flex-col gap-2 border-t border-neutral-200/10"></div>
         <Roadmap />

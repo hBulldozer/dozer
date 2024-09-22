@@ -137,7 +137,7 @@ export const BackgroundGradientAnimation = ({
             `opacity-70`
           )}
         ></div>
-        <divclassnames(
+        <div
           className={classnames(
             `absolute [background:radial-gradient(circle_at_center,_rgba(var(--fifth-color),_0.8)_0,_rgba(var(--fifth-color),_0)_50%)_no-repeat]`,
             `[mix-blend-mode:var(--blending-value)] w-[var(--size)] h-[var(--size)] top-[calc(50%-var(--size)/2)] left-[calc(50%-var(--size)/2)]`,
@@ -146,7 +146,7 @@ export const BackgroundGradientAnimation = ({
             `opacity-100`
           )}
         ></div>
-classnames(
+
         {interactive && (
           <div
             ref={interactiveRef}
@@ -155,11 +155,10 @@ classnames(
               `absolute [background:radial-gradient(circle_at_center,_rgba(var(--pointer-color),_0.8)_0,_rgba(var(--pointer-color),_0)_50%)_no-repeat]`,
               `[mix-blend-mode:var(--blending-value)] w-full h-full -top-1/2 -left-1/2`,
               `opacity-70`
-            )}classnames(
+            )}
           ></div>
         )}
       </div>
     </div>
   )
 }
-classnames(

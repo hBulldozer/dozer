@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { IconBrandYoutubeFilled } from '@tabler/icons-react'
 import { Highlight, HeroHighlight } from '@dozer/ui/aceternity/ui/hero-highlight'
 import Link from 'next/link'
+import { BackgroundBeams } from '@dozer/ui/aceternity/ui/background-beams'
 
 export default function Features() {
   const features = [
@@ -38,14 +39,14 @@ export default function Features() {
     },
   ]
   return (
-    <div className="relative z-20 py-10 mx-auto lg:py-40 max-w-7xl">
+    <div className="relative z-20 mx-auto -mt-48 lg:py-40 max-w-7xl">
       <HeroHighlight>
         <motion.h1
           initial={{
             opacity: 0,
             y: 20,
           }}
-          animate={{
+          whileInView={{
             opacity: 1,
             y: [20, -5, 0],
           }}
@@ -60,7 +61,7 @@ export default function Features() {
       </HeroHighlight>
 
       <div className="relative ">
-        <div className="grid grid-cols-1 mt-12 rounded-md lg:grid-cols-6 xl:border dark:border-neutral-800">
+        <div className="grid grid-cols-1 rounded-md lg:grid-cols-6 xl:border dark:border-neutral-800">
           {features.map((feature) => (
             <FeatureCard key={feature.title} className={feature.className}>
               <FeatureTitle>{feature.title}</FeatureTitle>
@@ -102,13 +103,8 @@ const FeatureDescription = ({ children }: { children?: React.ReactNode }) => {
 
 export const SkeletonOne = () => {
   return (
-    <div className="relative flex h-full gap-10 px-2 py-8">
-      <div className="w-full h-full p-5 mx-auto bg-white shadow-2xl dark:bg-neutral-900 group">
-        <div className="flex flex-col flex-1 w-full h-full space-y-2 "></div>
-      </div>
-
-      <div className="absolute inset-x-0 bottom-0 z-40 w-full pointer-events-none h-60 bg-gradient-to-t from-white dark:from-black via-white dark:via-black to-transparent" />
-      <div className="absolute inset-x-0 top-0 z-40 w-full pointer-events-none h-60 bg-gradient-to-b from-white dark:from-black via-transparent to-transparent" />
+    <div className="relative flex flex-col items-center justify-center w-full h-full antialiased bg-black rounded-md">
+      <BackgroundBeams />
     </div>
   )
 }
@@ -124,13 +120,6 @@ export const SkeletonThree = () => {
         <div className="relative flex flex-col flex-1 w-full h-full space-y-2">
           {/* TODO */}
           <IconBrandYoutubeFilled className="absolute inset-0 z-10 w-20 h-20 m-auto text-red-500 " />
-          <Image
-            src="/background.jpg"
-            alt="header"
-            width={800}
-            height={800}
-            className="object-cover object-center w-full h-full transition-all duration-200 rounded-sm aspect-square blur-none group-hover/image:blur-md"
-          />
         </div>
       </div>
     </Link>

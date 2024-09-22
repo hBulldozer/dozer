@@ -62,7 +62,7 @@ export const Highlight = ({ children, className }: { children: React.ReactNode; 
       initial={{
         backgroundSize: '0% 100%',
       }}
-      animate={{
+      whileInView={{
         backgroundSize: '100% 100%',
       }}
       transition={{
