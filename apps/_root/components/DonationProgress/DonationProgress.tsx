@@ -1,8 +1,10 @@
-import { AppearOnMount, Typography } from '@dozer/ui'
+import { AppearOnMount, Select, Typography, Dialog, Button } from '@dozer/ui'
 import { BackgroundGradientAnimation } from '@dozer/ui/aceternity/ui/background-gradient-animation'
 import { LampContainer } from '@dozer/ui/aceternity/ui/lamp'
 import { motion } from 'framer-motion'
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalTrigger } from '@dozer/ui/aceternity/ui/animated-modal'
+import { useState } from 'react'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
 
 export default function DonationProgress() {
   const totalDonations = 50000
@@ -38,9 +40,7 @@ export default function DonationProgress() {
           </div>
           <div className="w-full max-w-[600px]">
             <div className="relative h-[23px] w-full">
-              {/* Background */}
               <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)]"></div>
-              {/* Progress */}
               <div className="absolute inset-y-0 left-0 overflow-hidden rounded-md" style={{ width: `${progress}%` }}>
                 <BackgroundGradientAnimation
                   gradientBackgroundStart="rgb(146, 64, 14)"
@@ -61,46 +61,83 @@ export default function DonationProgress() {
               </Typography>
             </div>
           </div>
-          <AnimatedModal />
+          <CustomDialog />
         </motion.div>
       </LampContainer>
     </AppearOnMount>
   )
 }
 
-function AnimatedModal() {
+function CustomDialog() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null)
+
+  const StyledButton = ({ children, href }: { children: React.ReactNode; href: string }) => (
+    <Link
+      target="_blank"
+      className="relative w-full px-4 py-2 text-sm font-medium text-left text-high-emphesis hover:text-white bg-stone-800 hover:bg-white hover:bg-opacity-[0.06] rounded-xl cursor-pointer select-none"
+      href={href}
+      onMouseEnter={() => setHoveredButton(children as string)}
+      onMouseLeave={() => setHoveredButton(null)}
+    >
+      {children}
+      <motion.div
+        className="absolute top-0 right-0 flex items-center justify-center h-full pr-2"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: hoveredButton === children ? 1 : 0, x: hoveredButton === children ? 0 : -10 }}
+        transition={{ duration: 0.2 }}
+      >
+        <ArrowRightIcon className="w-3 h-3" color="yellow" />
+      </motion.div>
+    </Link>
+  )
+
   return (
-    <div className="flex items-center justify-center -mt-10">
-      <Modal>
-        <ModalTrigger className="flex justify-center text-white bg-black dark:bg-white dark:text-black group/modal-btn">
-          <span className="text-center transition duration-500 group-hover/modal-btn:translate-x-40">
-            Learn about DZD
-          </span>
-          <div className="absolute inset-0 z-20 flex items-center justify-center text-white transition duration-500 -translate-x-40 group-hover/modal-btn:translate-x-0">
-            🚀
+    <>
+      <Button variant="outlined" onClick={() => setIsOpen(true)}>
+        <span className="inline-block transition-transform duration-500 group-hover/modal-btn:translate-x-[200%]">
+          Learn about DZD
+        </span>
+        <span className="absolute inset-0 flex items-center justify-center transition-transform duration-500 -translate-x-full group-hover/modal-btn:translate-x-0">
+          🚀
+        </span>
+      </Button>
+
+      <Dialog open={isOpen} onClose={() => setIsOpen(false)}>
+        <Dialog.Content className="w-screen !pb-4 bg-stone-950">
+          <Dialog.Header title="Become one Dozer Backer!  🚀" onClose={() => setIsOpen(false)} />
+          <div className="flex flex-col p-6">
+            <Typography variant="lg" className="mb-2 text-left text-neutral-300">
+              Summary
+            </Typography>
+            <Typography variant="sm" className="mb-6 text-left text-neutral-500">
+              Dozer Donor Tokens (DZD) are a unique solution designed for the Dozer project's prelaunch phase. They
+              serve as an innovative alternative to traditional SAFE (Simple Agreement for Future Equity) documents,
+              enabling a community-driven fundraising approach while maintaining contributor anonymity.
+            </Typography>
+            <Typography variant="lg" className="mb-2 text-left text-neutral-300">
+              Token Overview
+            </Typography>
+            <Typography variant="sm" className="text-left text-neutral-500">
+              <b>Name</b>: Dozer Donor Tokens (DZD)
+              <br />
+              <b>Representation</b>: 1 DZD represents 1 USD worth of DZR at our token generation event with most-favored
+              nation terms for Dozer valuation <br />
+            </Typography>
           </div>
-        </ModalTrigger>
-        <ModalBody>
-          <ModalContent>
-            <h4 className="mb-8 text-lg font-bold text-center md:text-2xl text-neutral-600 dark:text-neutral-100">
-              Book your trip to{' '}
-              <span className="px-1 py-0.5 rounded-md bg-gray-100 dark:bg-neutral-800 dark:border-neutral-700 border border-gray-200">
-                Bali
-              </span>{' '}
-              now! ✈️
-            </h4>
-            <div className="flex items-center justify-center"></div>
-          </ModalContent>
-          <ModalFooter className="gap-4">
-            <button className="px-2 py-1 text-sm text-black bg-gray-200 border border-gray-300 rounded-md dark:bg-black dark:border-black dark:text-white w-28">
-              Cancel
-            </button>
-            <button className="px-2 py-1 text-sm text-white bg-black border border-black rounded-md dark:bg-white dark:text-black w-28">
-              Book Now
-            </button>
-          </ModalFooter>
-        </ModalBody>
-      </Modal>
-    </div>
+          <div className="flex flex-row gap-2 pt-2 border-t border-stone-700">
+            <StyledButton href="https://explorer.hathor.network/token_balances?sortBy=total&order=desc&token=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d">
+              Token Holders
+            </StyledButton>
+            <StyledButton href="https://explorer.hathor.network/token_detail/0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d">
+              Token Info
+            </StyledButton>
+            <StyledButton href="https://cdn.discordapp.com/attachments/1224059313405034546/1278148160606310500/DZD_Tokenomics.pdf?ex=66f2af7c&is=66f15dfc&hm=0d81a182abf300c8b7d32fcb95d9fd8b202c17159cc244ceab80da37cd547922&">
+              Tokenomics
+            </StyledButton>
+          </div>
+        </Dialog.Content>
+      </Dialog>
+    </>
   )
 }

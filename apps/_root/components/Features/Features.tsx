@@ -39,7 +39,7 @@ export default function Features() {
     },
   ]
   return (
-    <div className="relative z-20 mx-auto -mt-48 lg:py-40 max-w-7xl">
+    <div className="relative z-20 mx-auto max-w-7xl">
       <HeroHighlight>
         <motion.h1
           initial={{
