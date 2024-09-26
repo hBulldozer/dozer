@@ -1,6 +1,6 @@
 import { AppearOnMount, Select, Typography, Dialog, Button } from '@dozer/ui'
-import { BackgroundGradientAnimation } from '@dozer/ui/aceternity/ui/background-gradient-animation'
-import { LampContainer } from '@dozer/ui/aceternity/ui/lamp'
+import { BackgroundGradientAnimation } from '@dozer/ui'
+import { LampContainer } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'

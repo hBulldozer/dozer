@@ -4,7 +4,7 @@ import { motion, useAnimationFrame, useMotionTemplate, useMotionValue, useTransf
 import { useRef } from 'react'
 import classnames from 'classnames'
 
-export function Button({
+export function BorderButton({
   borderRadius = '1.75rem',
   children,
   as: Component = 'button',
@@ -91,7 +91,7 @@ export const MovingBorder = ({
       <svg
         xmlns="http://www.w3.org/2000/svg"
         preserveAspectRatio="none"
-        className="absolute h-full w-full"
+        className="absolute w-full h-full"
         width="100%"
         height="100%"
         {...otherProps}

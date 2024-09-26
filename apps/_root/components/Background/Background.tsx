@@ -2,7 +2,7 @@
 import { Container, Typography } from '@dozer/ui'
 import Image from 'next/image'
 import React from 'react'
-import { WavyBackground } from '@dozer/ui/aceternity/ui/wavy-background'
+import { WavyBackground } from '@dozer/ui'
 
 const Background = () => {
   return (

@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { SparklesCore } from 'components/ui/sparkles'
+import { SparklesCore } from './sparkles'
 import { AnimatePresence, motion } from 'framer-motion'
 import classnames from 'classnames'
 import { IconDotsVertical } from '@tabler/icons-react'
@@ -181,12 +181,12 @@ export const Compare = ({
           </div>
           {showHandlebar && (
             <div className="h-5 w-5 rounded-md top-1/2 -translate-y-1/2 bg-white z-30 -right-2.5 absolute   flex items-center justify-center shadow-[0px_-1px_0px_0px_#FFFFFF40]">
-              <IconDotsVertical className="h-4 w-4 text-black" />
+              <IconDotsVertical className="w-4 h-4 text-black" />
             </div>
           )}
         </motion.div>
       </AnimatePresence>
-      <div className="overflow-hidden w-full h-full relative z-20 pointer-events-none">
+      <div className="relative z-20 w-full h-full overflow-hidden pointer-events-none">
         <AnimatePresence initial={false}>
           {firstImage ? (
             <motion.div

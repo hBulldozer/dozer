@@ -22,7 +22,7 @@ export const HoverEffect = ({
         <Link
           href={item?.link}
           key={item?.link}
-          className="relative group  block p-2 h-full w-full"
+          className="relative block w-full h-full p-2 group"
           onMouseEnter={() => setHoveredIndex(idx)}
           onMouseLeave={() => setHoveredIndex(null)}
         >
@@ -43,17 +43,17 @@ export const HoverEffect = ({
               />
             )}
           </AnimatePresence>
-          <Card>
+          <CardHover>
             <CardTitle>{item.title}</CardTitle>
             <CardDescription>{item.description}</CardDescription>
-          </Card>
+          </CardHover>
         </Link>
       ))}
     </div>
   )
 }
 
-export const Card = ({ className, children }: { className?: string; children: React.ReactNode }) => {
+export const CardHover = ({ className, children }: { className?: string; children: React.ReactNode }) => {
   return (
     <div
       className={classnames(

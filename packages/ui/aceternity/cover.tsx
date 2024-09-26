@@ -3,7 +3,7 @@ import React, { useEffect, useId, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useRef } from 'react'
 import classnames from 'classnames'
-import { SparklesCore } from 'components/ui/sparkles'
+import { SparklesCore } from './sparkles'
 
 export const Cover = ({ children, className }: { children?: React.ReactNode; className?: string }) => {
   const [hovered, setHovered] = useState(false)
@@ -29,7 +29,7 @@ export const Cover = ({ children, className }: { children?: React.ReactNode; cla
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       ref={ref}
-      className="relative hover:bg-neutral-900  group/cover inline-block dark:bg-neutral-900 bg-neutral-100 px-2 py-2  transition duration-200 rounded-sm"
+      className="relative inline-block px-2 py-2 transition duration-200 rounded-sm hover:bg-neutral-900 group/cover dark:bg-neutral-900 bg-neutral-100"
     >
       <AnimatePresence>
         {hovered && (
@@ -42,7 +42,7 @@ export const Cover = ({ children, className }: { children?: React.ReactNode; cla
                 duration: 0.2,
               },
             }}
-            className="h-full w-full overflow-hidden absolute inset-0"
+            className="absolute inset-0 w-full h-full overflow-hidden"
           >
             <motion.div
               animate={{
@@ -128,10 +128,10 @@ export const Cover = ({ children, className }: { children?: React.ReactNode; cla
       >
         {children}
       </motion.span>
-      <CircleIcon className="absolute -right-[2px] -top-[2px]" />
-      <CircleIcon className="absolute -bottom-[2px] -right-[2px]" delay={0.4} />
-      <CircleIcon className="absolute -left-[2px] -top-[2px]" delay={0.8} />
-      <CircleIcon className="absolute -bottom-[2px] -left-[2px]" delay={1.6} />
+      <AceternityCircleIcon className="absolute -right-[2px] -top-[2px]" />
+      <AceternityCircleIcon className="absolute -bottom-[2px] -right-[2px]" delay={0.4} />
+      <AceternityCircleIcon className="absolute -left-[2px] -top-[2px]" delay={0.8} />
+      <AceternityCircleIcon className="absolute -bottom-[2px] -left-[2px]" delay={1.6} />
     </div>
   )
 }
@@ -198,7 +198,7 @@ export const Beam = ({
   )
 }
 
-export const CircleIcon = ({ className, delay }: { className?: string; delay?: number }) => {
+export const AceternityCircleIcon = ({ className, delay }: { className?: string; delay?: number }) => {
   return (
     <div
       className={classnames(
