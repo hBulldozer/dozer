@@ -45,8 +45,8 @@ const CreatePool: FC = () => {
     }
   )
 
-  const [input0, setInput0] = useState<string>('20000')
-  const [input1, setInput1] = useState<string>('2000000')
+  const [input0, setInput0] = useState<string>('')
+  const [input1, setInput1] = useState<string>('')
   const [token0] = useState<Token>(
     new Token({ chainId: ChainId.HATHOR, uuid: '00', decimals: 2, name: 'Hathor', symbol: 'HTR' })
   )
@@ -90,7 +90,6 @@ const CreatePool: FC = () => {
               <Web3Input.Currency
                 className="p-3"
                 value={input0}
-                disabled
                 onChange={onInput0}
                 currency={token0}
                 chainId={ChainId.HATHOR}
@@ -106,7 +105,6 @@ const CreatePool: FC = () => {
                 <Web3Input.Currency
                   className="p-3 !pb-1"
                   value={input1}
-                  disabled
                   onChange={onInput1}
                   currency={token1}
                   onSelect={setToken1}

@@ -42,7 +42,7 @@ const TokenCreationPage: React.FC = () => {
   const [generatedMeme, setGeneratedMeme] = useState<string | null>(null)
   const [isGeneratingMeme, setIsGeneratingMeme] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [totalSupply, setTotalSupply] = useState('2000000')
+  const [totalSupply, setTotalSupply] = useState('')
   const [userHtrBalance, setUserHtrBalance] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -510,7 +510,6 @@ const TokenCreationPage: React.FC = () => {
                       value={totalSupply}
                       onUserInput={setTotalSupply}
                       placeholder="Enter total supply"
-                      disabled
                       required
                     />
                     <div className="flex flex-col">
