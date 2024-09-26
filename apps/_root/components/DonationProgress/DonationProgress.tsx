@@ -1,6 +1,4 @@
-import { AppearOnMount, Select, Typography, Dialog, Button } from '@dozer/ui'
-import { BackgroundGradientAnimation } from '@dozer/ui'
-import { LampContainer } from '@dozer/ui'
+import { AppearOnMount, Typography, Dialog, Button, BackgroundGradientAnimation, LampContainer } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
@@ -13,7 +11,7 @@ export default function DonationProgress() {
 
   return (
     <AppearOnMount className="w-full">
-      <LampContainer className="-mt-12 pt-80">
+      <LampContainer className="pt-40 -mt-12 lg:pt-80">
         <motion.div
           initial={{ opacity: 0.5, y: 350 }}
           whileInView={{ opacity: 1, y: 250 }}
@@ -22,17 +20,17 @@ export default function DonationProgress() {
             duration: 0.8,
             ease: 'easeInOut',
           }}
-          className="flex flex-col items-center justify-center gap-20"
+          className="flex flex-col items-center justify-center gap-10 px-4 lg:gap-20 lg:px-0"
         >
-          <div className="flex flex-col items-center justify-center gap-10">
+          <div className="flex flex-col items-center justify-center gap-6 lg:gap-10">
             <Typography
               variant="h1"
               weight={600}
-              className="text-4xl font-medium tracking-tight text-center text-transparent bg-gradient-to-br from-stone-100 to-stone-200 bg-clip-text md:text-7xl"
+              className="text-2xl font-medium tracking-tight text-center text-transparent lg:text-4xl bg-gradient-to-br from-stone-100 to-stone-200 bg-clip-text md:text-5xl"
             >
               Contribute with Dozer <br /> to build the future of DeFi
             </Typography>
-            <Typography variant="sm" className="max-w-2xl text-center text-neutral-500">
+            <Typography variant="sm" className="max-w-2xl text-sm text-center text-neutral-500 lg:text-base">
               We are proud to be a community-driven project, and we are always looking for new contributors to join our
               mission. DZD Token was created to support the growth of Dozer and its community. DZD is a utility token
               that will be used to reward contributors and incentivize the development of Dozer.
@@ -95,16 +93,11 @@ function CustomDialog() {
   return (
     <>
       <Button variant="outlined" onClick={() => setIsOpen(true)}>
-        <span className="inline-block transition-transform duration-500 group-hover/modal-btn:translate-x-[200%]">
-          Learn about DZD
-        </span>
-        <span className="absolute inset-0 flex items-center justify-center transition-transform duration-500 -translate-x-full group-hover/modal-btn:translate-x-0">
-          🚀
-        </span>
+        Learn about DZD 🚀
       </Button>
 
       <Dialog open={isOpen} onClose={() => setIsOpen(false)}>
-        <Dialog.Content className="w-screen !pb-4 bg-stone-950">
+        <Dialog.Content className="w-screen max-w-md !pb-4 bg-stone-950">
           <Dialog.Header title="Become one Dozer Backer!  🚀" onClose={() => setIsOpen(false)} />
           <div className="flex flex-col p-6">
             <Typography variant="lg" className="mb-2 text-left text-neutral-300">
@@ -125,7 +118,7 @@ function CustomDialog() {
               nation terms for Dozer valuation <br />
             </Typography>
           </div>
-          <div className="flex flex-row gap-2 pt-2 border-t border-stone-700">
+          <div className="flex flex-col gap-2 pt-2 border-t lg:flex-row border-stone-700">
             <StyledButton href="https://explorer.hathor.network/token_balances?sortBy=total&order=desc&token=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d">
               Token Holders
             </StyledButton>
