@@ -3,6 +3,18 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+
+const DynamicLampContainer = dynamic(() => import('@dozer/ui').then((mod) => mod.LampContainer), {
+  ssr: false,
+})
+
+const DynamicBackgroundGradientAnimation = dynamic(
+  () => import('@dozer/ui').then((mod) => mod.BackgroundGradientAnimation),
+  {
+    ssr: false,
+  }
+)
 
 export default function DonationProgress() {
   const totalDonations = 50000
@@ -11,7 +23,7 @@ export default function DonationProgress() {
 
   return (
     <AppearOnMount className="w-full">
-      <LampContainer className="pt-40 -mt-12 lg:pt-80">
+      <DynamicLampContainer className="pt-40 -mt-12 lg:pt-80">
         <motion.div
           initial={{ opacity: 0.5, y: 350 }}
           whileInView={{ opacity: 1, y: 250 }}
@@ -40,7 +52,7 @@ export default function DonationProgress() {
             <div className="relative h-[23px] w-full">
               <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)]"></div>
               <div className="absolute inset-y-0 left-0 overflow-hidden rounded-md" style={{ width: `${progress}%` }}>
-                <BackgroundGradientAnimation
+                <DynamicBackgroundGradientAnimation
                   gradientBackgroundStart="rgb(146, 64, 14)"
                   gradientBackgroundEnd="rgb(202, 138, 4)"
                   pointerColor="253, 224, 71"
@@ -61,7 +73,7 @@ export default function DonationProgress() {
           </div>
           <CustomDialog />
         </motion.div>
-      </LampContainer>
+      </DynamicLampContainer>
     </AppearOnMount>
   )
 }

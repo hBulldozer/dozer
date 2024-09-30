@@ -1,12 +1,20 @@
 'use client'
 import { Container, Typography, WavyBackground } from '@dozer/ui'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import React from 'react'
+
+const DynamicWavyBackground = dynamic(
+  () => import('@dozer/ui/aceternity/wavy-background').then((mod) => mod.WavyBackground),
+  {
+    ssr: false,
+  }
+)
 
 const Background = () => {
   return (
     <header className="relative w-full min-h-screen -mt-24 overflow-hidden">
-      <WavyBackground
+      <DynamicWavyBackground
         colors={['#713f12', '#eab308', '#fde047', '#78716c', '#44403c']}
         className="absolute top-0 left-0 w-full h-full"
         containerClassName="w-full h-full"
@@ -40,7 +48,7 @@ const Background = () => {
             </div>
           </div>
         </Container>
-      </WavyBackground>
+      </DynamicWavyBackground>
     </header>
   )
 }
