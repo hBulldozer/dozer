@@ -1,8 +1,9 @@
 import React from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Button, CanvasRevealEffect, Dialog, DozerIcon, Typography } from '@dozer/ui'
+import { Button, Dialog, DozerIcon, Typography } from '@dozer/ui'
 
 import { BoltIcon, ArrowsRightLeftIcon, CubeIcon } from '@heroicons/react/24/outline'
+import DynamicCanvasRevealEffect from '@dozer/ui/aceternity/dynamic-canvas-reveal-effect'
 
 export default function Features() {
   const [open1, setOpen1] = React.useState(false)
@@ -16,7 +17,7 @@ export default function Features() {
         onClick={() => setOpen1(true)}
         icon={<BoltIcon className="w-12 h-12" />}
       >
-        <CanvasRevealEffect
+        <DynamicCanvasRevealEffect
           containerClassName="bg-emerald-950"
           animationSpeed={3}
           colors={[
@@ -28,7 +29,7 @@ export default function Features() {
         />
       </Card>
       <Card title="EVM Bridge" onClick={() => setOpen2(true)} icon={<ArrowsRightLeftIcon className="w-12 h-12" />}>
-        <CanvasRevealEffect
+        <DynamicCanvasRevealEffect
           animationSpeed={3}
           containerClassName="bg-indigo-950"
           colors={[
@@ -41,7 +42,7 @@ export default function Features() {
         {/* <div className="absolute inset-0 [mask-image:radial-gradient(400px_at_center,white,transparent)] bg-indigo-950/50 dark:bg-indigo-950/90" /> */}
       </Card>
       <Card title="Custom Token Creation" onClick={() => setOpen3(true)} icon={<CubeIcon className="w-12 h-12" />}>
-        <CanvasRevealEffect
+        <DynamicCanvasRevealEffect
           animationSpeed={3}
           containerClassName="bg-amber-950"
           colors={[
@@ -137,6 +138,11 @@ const Card = ({
   icon: React.ReactNode
 }) => {
   const [hovered, setHovered] = React.useState(false)
+  const [isMounted, setIsMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
   return (
     <div
       onMouseEnter={() => setHovered(true)}
@@ -149,7 +155,7 @@ const Card = ({
       <Icon className="absolute w-6 h-6 text-black -bottom-3 -right-3 dark:text-white" />
 
       <AnimatePresence>
-        {hovered && (
+        {isMounted && hovered && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
