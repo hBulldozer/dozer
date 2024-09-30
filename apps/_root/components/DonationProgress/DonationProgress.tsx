@@ -1,20 +1,13 @@
-import { AppearOnMount, Typography, Dialog, Button, BackgroundGradientAnimation, LampContainer } from '@dozer/ui'
+import { AppearOnMount, Typography, Dialog, Button } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
-const DynamicLampContainer = dynamic(() => import('@dozer/ui').then((mod) => mod.LampContainer), {
+const DynamicLampContainer = dynamic(() => import('@dozer/ui/aceternity/lamp').then((mod) => mod.LampContainer), {
   ssr: false,
 })
-
-const DynamicBackgroundGradientAnimation = dynamic(
-  () => import('@dozer/ui').then((mod) => mod.BackgroundGradientAnimation),
-  {
-    ssr: false,
-  }
-)
 
 export default function DonationProgress() {
   const totalDonations = 50000
@@ -50,16 +43,17 @@ export default function DonationProgress() {
           </div>
           <div className="w-full max-w-[600px]">
             <div className="relative h-[23px] w-full">
-              <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)]"></div>
+              <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500 "></div>
               <div className="absolute inset-y-0 left-0 overflow-hidden rounded-md" style={{ width: `${progress}%` }}>
-                <DynamicBackgroundGradientAnimation
+                {/* <DynamicBackgroundGradientAnimation
                   gradientBackgroundStart="rgb(146, 64, 14)"
                   gradientBackgroundEnd="rgb(202, 138, 4)"
                   pointerColor="253, 224, 71"
                   containerClassName="rounded-md h-full"
                   className="h-full"
                   interactive={false}
-                />
+                /> */}
+                <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-500" />
               </div>
             </div>
             <div className="flex flex-row items-center justify-between mt-2">
