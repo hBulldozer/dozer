@@ -18,7 +18,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@headlessui/react": "^1.7.3",
+    "@headlessui/react": "^2.1.8",
     "@heroicons/react": "^1.0.6",
     "@dozer/hooks": "workspace:*",
     "@dozer/currency": "workspace:*",
