@@ -4,18 +4,25 @@ import { Button, Dialog, DozerIcon, Typography } from '@dozer/ui'
 
 import { BoltIcon, ArrowsRightLeftIcon, CubeIcon } from '@heroicons/react/24/outline'
 import DynamicCanvasRevealEffect from '@dozer/ui/aceternity/dynamic-canvas-reveal-effect'
+import { useBreakpoint } from '@dozer/hooks'
 
 export default function Features() {
   const [open1, setOpen1] = React.useState(false)
   const [open2, setOpen2] = React.useState(false)
   const [open3, setOpen3] = React.useState(false)
+  const { isSm } = useBreakpoint('sm')
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-5xl gap-4 px-8 py-20 mx-auto lg:flex-row dark:bg-black">
+    <div
+      className={`flex flex-col items-center justify-center w-full max-w-5xl gap-4 px-8 py-20 mx-auto ${
+        isSm ? 'lg:flex-row' : ''
+      } dark:bg-black`}
+    >
       <Card
         title="Lightning-Fast Transactions"
         onClick={() => setOpen1(true)}
         icon={<BoltIcon className="w-12 h-12" />}
+        isMobile={!isSm}
       >
         <DynamicCanvasRevealEffect
           containerClassName="bg-emerald-950"
@@ -28,7 +35,12 @@ export default function Features() {
           dotSize={2}
         />
       </Card>
-      <Card title="EVM Bridge" onClick={() => setOpen2(true)} icon={<ArrowsRightLeftIcon className="w-12 h-12" />}>
+      <Card
+        title="EVM Bridge"
+        onClick={() => setOpen2(true)}
+        icon={<ArrowsRightLeftIcon className="w-12 h-12" />}
+        isMobile={!isSm}
+      >
         <DynamicCanvasRevealEffect
           animationSpeed={3}
           containerClassName="bg-indigo-950"
@@ -39,9 +51,13 @@ export default function Features() {
           ]}
           dotSize={2}
         />
-        {/* <div className="absolute inset-0 [mask-image:radial-gradient(400px_at_center,white,transparent)] bg-indigo-950/50 dark:bg-indigo-950/90" /> */}
       </Card>
-      <Card title="Custom Token Creation" onClick={() => setOpen3(true)} icon={<CubeIcon className="w-12 h-12" />}>
+      <Card
+        title="Custom Token Creation"
+        onClick={() => setOpen3(true)}
+        icon={<CubeIcon className="w-12 h-12" />}
+        isMobile={!isSm}
+      >
         <DynamicCanvasRevealEffect
           animationSpeed={3}
           containerClassName="bg-amber-950"
@@ -131,23 +147,46 @@ const Card = ({
   onClick,
   children,
   icon,
+  isMobile,
 }: {
   title: string
   onClick: () => void
   children?: React.ReactNode
   icon: React.ReactNode
+  isMobile: boolean
 }) => {
-  const [hovered, setHovered] = React.useState(false)
+  const [active, setActive] = React.useState(false)
   const [isMounted, setIsMounted] = React.useState(false)
 
   React.useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  const handleInteraction = () => {
+    if (isMobile) {
+      setActive(!active)
+    } else {
+      setActive(true)
+    }
+  }
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isMobile && active) {
+      onClick()
+    } else if (!isMobile) {
+      onClick()
+    }
+    e.stopPropagation()
+  }
+
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="border border-black/[0.2] group/canvas-card flex flex-col items-center justify-between dark:border-white/[0.2] max-w-sm w-full mx-auto p-4 relative h-[30rem] overflow-hidden bg-gradient-to-br from-stone-950 to-stone-800"
+      onMouseEnter={isMobile ? undefined : handleInteraction}
+      onMouseLeave={isMobile ? undefined : () => setActive(false)}
+      onClick={isMobile ? handleInteraction : undefined}
+      className={`border border-black/[0.2] group/canvas-card flex flex-col items-center justify-between dark:border-white/[0.2] w-full mx-auto p-4 relative overflow-hidden bg-gradient-to-br from-stone-950 to-stone-800 ${
+        isMobile ? 'h-[200px]' : 'h-[30rem] max-w-sm'
+      }`}
     >
       <Icon className="absolute w-6 h-6 text-black -top-3 -left-3 dark:text-white" />
       <Icon className="absolute w-6 h-6 text-black -bottom-3 -left-3 dark:text-white" />
@@ -155,7 +194,7 @@ const Card = ({
       <Icon className="absolute w-6 h-6 text-black -bottom-3 -right-3 dark:text-white" />
 
       <AnimatePresence>
-        {isMounted && hovered && (
+        {isMounted && active && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -168,9 +207,9 @@ const Card = ({
       </AnimatePresence>
 
       <div className="relative z-20 flex flex-col items-center justify-center w-full h-full">
-        {hovered ? (
+        {active ? (
           <>
-            <AnimatedDozerIcon hovered={hovered} />
+            <AnimatedDozerIcon hovered={active} />
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -196,6 +235,7 @@ const Card = ({
           >
             <div className="mb-4 text-yellow-800">{icon}</div>
             <h2 className="mb-4 text-2xl font-bold text-neutral-500">{title}</h2>
+            {isMobile && <p className="text-sm text-neutral-400">Tap to learn more</p>}
           </motion.div>
         )}
       </div>
