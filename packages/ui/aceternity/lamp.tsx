@@ -2,6 +2,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import classnames from 'classnames'
+import { useBreakpoint } from '@dozer/hooks'
 
 export default function LampDemo() {
   return (
@@ -23,6 +24,7 @@ export default function LampDemo() {
 }
 
 export const LampContainer = ({ children, className }: { children: React.ReactNode; className?: string }) => {
+  const { isSm } = useBreakpoint('sm')
   return (
     <div
       className={classnames(
@@ -32,8 +34,8 @@ export const LampContainer = ({ children, className }: { children: React.ReactNo
     >
       <div className="relative z-0 flex items-center justify-center flex-1 w-full scale-y-125 isolate ">
         <motion.div
-          initial={{ opacity: 0.5, width: '15rem' }}
-          whileInView={{ opacity: 1, width: '30rem' }}
+          initial={{ opacity: 0.5, width: `${!isSm ? '7rem' : '15rem'}` }}
+          whileInView={{ opacity: 1, width: `${!isSm ? '15rem' : '30rem'}` }}
           transition={{
             delay: 0.3,
             duration: 0.8,
@@ -48,8 +50,8 @@ export const LampContainer = ({ children, className }: { children: React.ReactNo
           <div className="absolute  w-40 h-[100%] left-0 bg-black  bottom-0 z-20 [mask-image:linear-gradient(to_right,white,transparent)]" />
         </motion.div>
         <motion.div
-          initial={{ opacity: 0.5, width: '15rem' }}
-          whileInView={{ opacity: 1, width: '30rem' }}
+          initial={{ opacity: 0.5, width: `${!isSm ? '7rem' : '15rem'}` }}
+          whileInView={{ opacity: 1, width: `${!isSm ? '15rem' : '30rem'}` }}
           transition={{
             delay: 0.3,
             duration: 0.8,
@@ -67,8 +69,8 @@ export const LampContainer = ({ children, className }: { children: React.ReactNo
         <div className="absolute z-50 w-full h-48 bg-transparent top-1/2 opacity-10 backdrop-blur-md"></div>
         <div className="absolute inset-auto z-50 h-36 w-[28rem] -translate-y-1/2 rounded-full bg-yellow-700 opacity-50 blur-3xl"></div>
         <motion.div
-          initial={{ width: '8rem' }}
-          whileInView={{ width: '16rem' }}
+          initial={{ width: `${!isSm ? '4rem' : '8rem'}` }}
+          whileInView={{ width: `${!isSm ? '8rem' : '16rem'}` }}
           transition={{
             delay: 0.3,
             duration: 0.8,
@@ -77,8 +79,8 @@ export const LampContainer = ({ children, className }: { children: React.ReactNo
           className="absolute inset-auto z-30 h-36 w-64 -translate-y-[6rem] rounded-full bg-yellow-500 blur-2xl"
         ></motion.div>
         <motion.div
-          initial={{ width: '15rem' }}
-          whileInView={{ width: '30rem' }}
+          initial={{ width: `${!isSm ? '7rem' : '15rem'}` }}
+          whileInView={{ width: `${!isSm ? '15rem' : '30rem'}` }}
           transition={{
             delay: 0.3,
             duration: 0.8,

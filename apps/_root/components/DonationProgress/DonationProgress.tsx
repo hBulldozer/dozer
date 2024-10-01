@@ -16,7 +16,7 @@ export default function DonationProgress() {
 
   return (
     <AppearOnMount className="w-full">
-      <DynamicLampContainer className="pt-40 -mt-12 lg:pt-80">
+      <DynamicLampContainer className="-mt-12 pt-80">
         <motion.div
           initial={{ opacity: 0.5, y: 350 }}
           whileInView={{ opacity: 1, y: 250 }}
