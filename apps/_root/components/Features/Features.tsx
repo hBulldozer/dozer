@@ -2,7 +2,8 @@ import React from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Button, Dialog, DozerIcon, Typography } from '@dozer/ui'
 
-import { BoltIcon, ArrowsRightLeftIcon, CubeIcon } from '@heroicons/react/24/outline'
+import { BoltIcon, ArrowsRightLeftIcon, CubeIcon, CubeTransparentIcon } from '@heroicons/react/24/outline'
+
 import DynamicCanvasRevealEffect from '@dozer/ui/aceternity/dynamic-canvas-reveal-effect'
 import { useBreakpoint } from '@dozer/hooks'
 
@@ -19,7 +20,7 @@ export default function Features() {
       } dark:bg-black`}
     >
       <Card
-        title="Lightning-Fast Transactions"
+        title="Lightning-Fast"
         onClick={() => setOpen1(true)}
         icon={<BoltIcon className="w-12 h-12" />}
         isMobile={!isSm}
@@ -36,7 +37,7 @@ export default function Features() {
         />
       </Card>
       <Card
-        title="EVM Bridge"
+        title="Cross-Chain"
         onClick={() => setOpen2(true)}
         icon={<ArrowsRightLeftIcon className="w-12 h-12" />}
         isMobile={!isSm}
@@ -53,9 +54,10 @@ export default function Features() {
         />
       </Card>
       <Card
-        title="Custom Token Creation"
+        title="No-Code Launch"
         onClick={() => setOpen3(true)}
-        icon={<CubeIcon className="w-12 h-12" />}
+        // icon={<CubeIcon className="w-12 h-12" />}
+        icon={<CubeTransparentIcon className="w-12 h-12" />}
         isMobile={!isSm}
       >
         <DynamicCanvasRevealEffect
@@ -70,24 +72,23 @@ export default function Features() {
       </Card>
       <Dialog open={open1} onClose={() => setOpen1(false)}>
         <Dialog.Content className="w-screen !pb-4 bg-stone-950">
-          <Dialog.Header title="Lightning-Fast Transactions on Hathor" onClose={() => setOpen1(false)} />
+          <Dialog.Header title="Lightning-Fast" onClose={() => setOpen1(false)} />
           <div className="flex flex-col p-6">
             <Typography variant="lg" className="mb-2 text-left text-neutral-300">
               Unparalleled Speed and Scalability
             </Typography>
             <Typography variant="sm" className="mb-6 text-left text-neutral-500">
-              Dozer leverages Hathor Network's novel DAG (Directed Acyclic Graph) structure to provide lightning-fast
-              transactions with near-instant confirmations. This cutting-edge technology allows for unparalleled
-              scalability, ensuring that the network can handle a high volume of transactions without compromising on
-              speed or security.
+              Dozer leverages a novel Blockchain-DAG (Directed Acyclic Graph) structure to provide lightning-fast
+              transactions with instant confirmations. This cutting-edge technology allows for unparalleled scalability,
+              ensuring that the network can handle a high volume of transactions without compromising on speed or
+              security.
             </Typography>
             <Typography variant="lg" className="mb-2 text-left text-neutral-300">
-              Low Gas Fees
+              Zero Gas Fees
             </Typography>
             <Typography variant="sm" className="text-left text-neutral-500">
-              Thanks to Hathor Network's efficient architecture, gas fees on Dozer are significantly lower compared to
-              traditional blockchain networks. This makes Dozer an ideal platform for micropayments and frequent
-              transactions, opening up new possibilities for DeFi applications and user interactions.
+              Thanks to Hathor Network's efficient architecture, transactions fess are zero, yes ZERO. This makes Dozer
+              an ideal platform for micropayments and frequent transactions, opening up infinity possibilities for DeFi.
             </Typography>
           </div>
         </Dialog.Content>
@@ -117,23 +118,22 @@ export default function Features() {
       </Dialog>
       <Dialog open={open3} onClose={() => setOpen3(false)}>
         <Dialog.Content className="w-screen !pb-4 bg-stone-950">
-          <Dialog.Header title="Custom Token Creation Made Easy" onClose={() => setOpen3(false)} />
+          <Dialog.Header title="Permissionless Listing Made Easy" onClose={() => setOpen3(false)} />
           <div className="flex flex-col p-6">
             <Typography variant="lg" className="mb-2 text-left text-neutral-300">
-              Create Your Own Token in Minutes
+              Create Your Token in Seconds
             </Typography>
             <Typography variant="sm" className="mb-6 text-left text-neutral-500">
-              Dozer's intuitive interface allows you to create and deploy custom tokens on the Hathor Network in just
-              minutes. Whether you're launching a new project, creating loyalty points, or tokenizing assets, our
-              user-friendly tool simplifies the process, making token creation accessible to everyone.
+              Dozer's intuitive interface allows you to create and deploy custom tokens in seconds. Whether you're
+              launching a new project, creating loyalty points, tokenizing assets, or just exploring the technology, our
+              dApp simplifies the process, making token creation accessible to everyone.
             </Typography>
             <Typography variant="lg" className="mb-2 text-left text-neutral-300">
               Instant Liquidity
             </Typography>
             <Typography variant="sm" className="text-left text-neutral-500">
-              Once your token is created, Dozer enables you to instantly deploy a liquidity pool for your new asset.
-              This feature ensures that your token has immediate tradability and liquidity, crucial factors for the
-              success of any new token in the DeFi space.
+              Once your token is created, Dozer enables you to instantly deploy a liquidity pool for your new asset. New
+              tokens has immediate liquidity.
             </Typography>
           </div>
         </Dialog.Content>
@@ -233,8 +233,8 @@ const Card = ({
             animate={{ opacity: 1 }}
             className="flex flex-col items-center text-center"
           >
-            <div className="mb-4 text-yellow-800">{icon}</div>
-            <h2 className="mb-4 text-2xl font-bold text-neutral-500">{title}</h2>
+            <div className="mb-4 text-yellow-500">{icon}</div>
+            <h2 className="mb-4 text-2xl font-bold text-neutral-300">{title}</h2>
             {isMobile && <p className="text-sm text-neutral-400">Tap to learn more</p>}
           </motion.div>
         )}

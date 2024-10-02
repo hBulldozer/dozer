@@ -10,7 +10,7 @@ const DynamicLampContainer = dynamic(() => import('@dozer/ui/aceternity/lamp').t
 })
 
 export default function DonationProgress() {
-  const totalDonations = 50000
+  const totalDonations = 17800
   const maxSupply = 100000
   const progress = Math.min(Math.max((totalDonations / maxSupply) * 100, 0), 100)
 
@@ -25,20 +25,15 @@ export default function DonationProgress() {
             duration: 0.8,
             ease: 'easeInOut',
           }}
-          className="flex flex-col items-center justify-center gap-10 px-4 lg:gap-20 lg:px-0"
+          className="flex flex-col items-center justify-center gap-1 px-4 lg:gap-8 lg:px-0"
         >
-          <div className="flex flex-col items-center justify-center gap-6 lg:gap-10">
+          <div className="flex flex-col items-center justify-center gap-1 lg:gap-1">
             <Typography
               variant="h1"
               weight={600}
-              className="text-2xl font-medium tracking-tight text-center text-transparent lg:text-4xl bg-gradient-to-br from-stone-100 to-stone-200 bg-clip-text md:text-5xl"
+              className="text-2xl font-medium tracking-tight text-center text-transparent lg:text-5xl bg-gradient-to-br from-stone-100 to-stone-200 bg-clip-text md:text-5xl"
             >
-              Contribute with Dozer <br /> to build the future of DeFi
-            </Typography>
-            <Typography variant="sm" className="max-w-2xl text-sm text-center text-neutral-500 lg:text-base">
-              We are proud to be a community-driven project, and we are always looking for new contributors to join our
-              mission. DZD Token was created to support the growth of Dozer and its community. DZD is a utility token
-              that will be used to reward contributors and incentivize the development of Dozer.
+              Contribute with Dozer <br /> building the future of DeFi
             </Typography>
           </div>
           <div className="w-full max-w-[600px]">
@@ -53,18 +48,23 @@ export default function DonationProgress() {
                   className="h-full"
                   interactive={false}
                 /> */}
-                <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-500" />
+                <div className="h-full bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-500" />
               </div>
             </div>
             <div className="flex flex-row items-center justify-between mt-2">
-              <Typography variant="xs" className="text-center text-neutral-500">
+              <Typography variant="sm" className="text-center text-neutral-200">
                 DZD distributed
               </Typography>
-              <Typography variant="xs" className="text-center text-neutral-500">
+              <Typography variant="sm" className="text-center text-neutral-200">
                 {totalDonations.toLocaleString()} / {maxSupply.toLocaleString()}
               </Typography>
             </div>
           </div>
+          <Typography variant="sm" className="max-w-2xl text-sm text-center text-neutral-300 lg:text-base">
+            We are proud to be a community-driven project. DZD Token was created to support the growth of Dozer and its
+            community. DZD is a utility token that will be used to log contribututions and incentivize the development
+            of Dozer.
+          </Typography>
           <CustomDialog />
         </motion.div>
       </DynamicLampContainer>
@@ -98,30 +98,29 @@ function CustomDialog() {
 
   return (
     <>
-      <Button variant="outlined" onClick={() => setIsOpen(true)}>
-        Learn about DZD 🚀
+      <Button variant="filled" onClick={() => setIsOpen(true)}>
+        Learn More 🚀
       </Button>
 
       <Dialog open={isOpen} onClose={() => setIsOpen(false)}>
         <Dialog.Content className="w-screen max-w-md !pb-4 bg-stone-950">
-          <Dialog.Header title="Become one Dozer Backer!  🚀" onClose={() => setIsOpen(false)} />
+          <Dialog.Header title="Become a Dozer Backer!  🚀" onClose={() => setIsOpen(false)} />
           <div className="flex flex-col p-6">
             <Typography variant="lg" className="mb-2 text-left text-neutral-300">
               Summary
             </Typography>
-            <Typography variant="sm" className="mb-6 text-left text-neutral-500">
-              Dozer Donor Tokens (DZD) are a unique solution designed for the Dozer project's prelaunch phase. They
-              serve as an innovative alternative to traditional SAFE (Simple Agreement for Future Equity) documents,
-              enabling a community-driven fundraising approach while maintaining contributor anonymity.
+            <Typography variant="sm" className="mb-6 text-left text-neutral-300">
+              Dozer Donor Token (DZD) is an unique solution designed for the Dozer's prelaunch phase. They enable a
+              community-driven funding approach before DZR TGE.
             </Typography>
             <Typography variant="lg" className="mb-2 text-left text-neutral-300">
               Token Overview
             </Typography>
-            <Typography variant="sm" className="text-left text-neutral-500">
+            <Typography variant="sm" className="text-left text-neutral-300">
               <b>Name</b>: Dozer Donor Tokens (DZD)
               <br />
-              <b>Representation</b>: 1 DZD represents 1 USD worth of DZR at our token generation event with most-favored
-              nation terms for Dozer valuation <br />
+              <b>Representation</b>: 1 DZD represents 1 USD worth donated
+              <br />
             </Typography>
           </div>
           <div className="flex flex-col gap-2 pt-2 border-t lg:flex-row border-stone-700">
