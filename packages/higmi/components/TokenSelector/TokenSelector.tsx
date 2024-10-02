@@ -25,7 +25,7 @@ export type TokenSelectorProps = {
 export const TokenSelector: FC<TokenSelectorProps> = memo(
   ({ id, variant, chainId, onSelect, open, includeNative, tokens, pricesMap, customTokensOnly = false, ...props }) => {
     const { accounts } = useWalletConnectClient()
-    const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+    const address = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
     const isMounted = useIsMounted()
     const router = useRouter()
 

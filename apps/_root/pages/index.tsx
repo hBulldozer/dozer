@@ -14,10 +14,10 @@ const Home = () => {
   return (
     <>
       <Background />
-      <Features />
-      <Custody />
-      {/* <Hero /> */}
+      <Hero />
       <BuildWealth />
+      <Custody />
+      <Features />
       <DonationProgress />
     </>
   )

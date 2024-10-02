@@ -15,6 +15,7 @@ import {
   DozerWithTextIcon,
   Typography,
   App,
+  OzerText,
 } from '..'
 
 export enum AppType {
@@ -89,14 +90,40 @@ export function Header({
         className={classNames('grid grid-cols-3 items-center w-full mx-auto z-[101] px-4 row-full')}
       >
         <div className="flex items-center flex-grow gap-3">
-          <a className="flex flex-row items-center gap-1.5" href="/">
-            <div className="hidden md:block w-9 h-9 hover:animate-heartbeat">
-              <DozerIcon width="100%" height="100%" className="mr-2 " />
-            </div>
-            <div className="w-24 md:hidden">
-              <DozerWithTextIcon width="100%" height="100%" />
-            </div>
-          </a>
+          {withScrollBackground ? (
+            <a className="flex flex-row items-center gap-1.5" href="/">
+              <div
+                className={classNames(
+                  'relative overflow-hidden transition-all duration-300 ease-in-out',
+                  !showBackground ? 'w-[120px] h-9' : 'w-9 h-9'
+                )}
+              >
+                <div
+                  className={classNames(
+                    'absolute -inset-0.5 transition-transform duration-300 ease-in-out',
+                    showBackground ? '-translate-x-[100px]' : 'translate-x-0'
+                  )}
+                >
+                  <OzerText width="100%" height="36" className="absolute top-0 left-0" />
+                </div>
+                <div className="absolute inset-0 z-10 pointer-events-none">
+                  <div className="relative w-9 h-9">
+                    <div className="absolute inset-0 pr-1 bg-black bg-clip-content"></div>
+                    <DozerIcon width="36" height="36" className="relative z-20" />
+                  </div>
+                </div>
+              </div>
+            </a>
+          ) : (
+            <a className="flex flex-row items-center gap-1.5" href="/">
+              <div className="hidden md:block w-9 h-9 hover:animate-heartbeat">
+                <DozerIcon width="100%" height="100%" className="mr-2 " />
+              </div>
+              <div className="w-24 md:hidden">
+                <DozerWithTextIcon width="100%" height="100%" />
+              </div>
+            </a>
+          )}
           <div className="bg-stone-200/10 w-0.5 h-[20px]" />
           {!hide ? (
             <Select

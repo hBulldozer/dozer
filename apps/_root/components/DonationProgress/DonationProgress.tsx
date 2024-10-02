@@ -1,7 +1,7 @@
 import { AppearOnMount, Typography, Dialog, Button } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
@@ -13,10 +13,11 @@ export default function DonationProgress() {
   const totalDonations = 17800
   const maxSupply = 100000
   const progress = Math.min(Math.max((totalDonations / maxSupply) * 100, 0), 100)
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
     <AppearOnMount className="w-full">
-      <DynamicLampContainer className="-mt-12 pt-80">
+      <DynamicLampContainer className=" pt-80">
         <motion.div
           initial={{ opacity: 0.5, y: 350 }}
           whileInView={{ opacity: 1, y: 250 }}
@@ -25,18 +26,18 @@ export default function DonationProgress() {
             duration: 0.8,
             ease: 'easeInOut',
           }}
-          className="flex flex-col items-center justify-center gap-1 px-4 lg:gap-8 lg:px-0"
+          className="flex flex-col items-center justify-center gap-3 px-4 lg:gap-8 lg:px-0"
         >
           <div className="flex flex-col items-center justify-center gap-1 lg:gap-1">
             <Typography
               variant="h1"
               weight={600}
-              className="text-2xl font-medium tracking-tight text-center text-transparent lg:text-5xl bg-gradient-to-br from-stone-100 to-stone-200 bg-clip-text md:text-5xl"
+              className="pb-2 text-2xl font-medium tracking-tight text-center text-transparent lg:text-5xl bg-gradient-to-br from-stone-100 to-stone-200 bg-clip-text md:text-5xl"
             >
               Contribute with Dozer <br /> building the future of DeFi
             </Typography>
           </div>
-          <div className="w-full max-w-[600px]">
+          <div className="w-full max-w-[600px] ">
             <div className="relative h-[23px] w-full">
               <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500 "></div>
               <div className="absolute inset-y-0 left-0 overflow-hidden rounded-md" style={{ width: `${progress}%` }}>
@@ -63,17 +64,42 @@ export default function DonationProgress() {
           <Typography variant="sm" className="max-w-2xl text-sm text-center text-neutral-300 lg:text-base">
             We are proud to be a community-driven project. DZD Token was created to support the growth of Dozer and its
             community. DZD is a utility token that will be used to log contribututions and incentivize the development
-            of Dozer.
+            of Dozer. <LearnMoreButton onClick={() => setIsOpen(true)} />
           </Typography>
-          <CustomDialog />
+          <Link href="https://forms.gle/8cEKvsaNrTP4c8Ef6" target="_blank" className="p-[3px] relative">
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-orange-600 to-yellow-500" />
+            <div className="px-8 py-2  bg-black rounded-[6px] text-xl  relative group transition duration-200 text-white hover:bg-transparent">
+              JOIN NOW
+            </div>
+          </Link>
+
+          <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} />
         </motion.div>
       </DynamicLampContainer>
     </AppearOnMount>
   )
 }
 
-function CustomDialog() {
-  const [isOpen, setIsOpen] = useState(false)
+function LearnMoreButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      onClick={onClick}
+      className="inline-flex pl-2 -my-3"
+      variant="empty"
+      endIcon={<ChevronRightIcon width={16} height={16} />}
+    >
+      Learn More
+    </Button>
+  )
+}
+
+function CustomDialog({
+  isOpen,
+  setIsOpen,
+}: {
+  isOpen: boolean
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
+}) {
   const [hoveredButton, setHoveredButton] = useState<string | null>(null)
 
   const StyledButton = ({ children, href }: { children: React.ReactNode; href: string }) => (
@@ -98,10 +124,6 @@ function CustomDialog() {
 
   return (
     <>
-      <Button variant="filled" onClick={() => setIsOpen(true)}>
-        Learn More 🚀
-      </Button>
-
       <Dialog open={isOpen} onClose={() => setIsOpen(false)}>
         <Dialog.Content className="w-screen max-w-md !pb-4 bg-stone-950">
           <Dialog.Header title="Become a Dozer Backer!  🚀" onClose={() => setIsOpen(false)} />
@@ -130,7 +152,7 @@ function CustomDialog() {
             <StyledButton href="https://explorer.hathor.network/token_detail/0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d">
               Token Info
             </StyledButton>
-            <StyledButton href="https://cdn.discordapp.com/attachments/1224059313405034546/1278148160606310500/DZD_Tokenomics.pdf?ex=66f2af7c&is=66f15dfc&hm=0d81a182abf300c8b7d32fcb95d9fd8b202c17159cc244ceab80da37cd547922&">
+            <StyledButton href="https://supabase.dozer.finance/storage/v1/object/public/PDF/DZD%20Tokenomics.pdf">
               Tokenomics
             </StyledButton>
           </div>

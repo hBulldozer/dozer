@@ -15,7 +15,7 @@ export default function Features() {
 
   return (
     <div
-      className={`flex flex-col items-center justify-center w-full max-w-5xl gap-4 px-8 py-20 mx-auto ${
+      className={`flex flex-col items-center justify-center w-full max-w-5xl gap-4 px-8 py-20  mx-auto ${
         isSm ? 'lg:flex-row' : ''
       } dark:bg-black`}
     >

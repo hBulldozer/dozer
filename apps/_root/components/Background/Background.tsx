@@ -24,10 +24,10 @@ const Background = () => {
           {/* </Container> */}
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[auto_400px] lg:justify-between lg:gap-[50px] z-10">
             <div className="flex flex-col">
-              <div className="w-[450px] -ml-8">
+              {/* <div className="w-[450px]  -ml-8">
                 <DozerWithTextIcon />
-              </div>
-              {/* <div className="flex items-center self-end -mt-4 mr-6">
+              </div> */}
+              {/* <div className="flex items-center self-end mr-6 -mt-4">
                 <Typography variant="xxs" className="drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)] text-xs lg:text-sm">
                   Powered by
                 </Typography>
