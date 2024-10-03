@@ -1,6 +1,6 @@
 import { AppearOnMount, Typography, Dialog, Button } from '@dozer/ui'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowRightIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -10,10 +10,29 @@ const DynamicLampContainer = dynamic(() => import('@dozer/ui/aceternity/lamp').t
 })
 
 export default function DonationProgress() {
-  const totalDonations = 17800
+  const [totalDonations, setTotalDonations] = useState(0)
   const maxSupply = 100000
   const progress = Math.min(Math.max((totalDonations / maxSupply) * 100, 0), 100)
   const [isOpen, setIsOpen] = useState(false)
+
+  useEffect(() => {
+    async function fetchDonationData() {
+      try {
+        const response = await fetch(
+          'explorer-service/node_api/token?id=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d'
+        )
+        const data = await response.json()
+        if (data.success) {
+          setTotalDonations(Math.floor(data.total / 100))
+        }
+      } catch (error) {
+        setTotalDonations(17800)
+        console.error('Error fetching donation data:', error)
+      }
+    }
+
+    fetchDonationData()
+  }, [])
 
   return (
     <AppearOnMount className="w-full">

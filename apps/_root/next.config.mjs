@@ -87,6 +87,10 @@ const nextConfig = {
         source: '/kucoin/:path*',
         destination: `https://api.kucoin.com/api/v1/:path*`,
       },
+      {
+        source: '/explorer-service/:path*',
+        destination: `https://explorer-service.mainnet.hathor.network/:path*`,
+      },
     ]
   },
 }

@@ -49,7 +49,7 @@ const Background = () => {
                 Easy, Fast and Safe.
                 {/* , fast and easy. */}
               </Typography>
-              <Typography variant="lg" className="mt-3 text-base lg:text-lg">
+              <Typography variant="lg" className="mt-3 text-white drop-shadow-md lg:text-lg" weight={500}>
                 {/* Safe, fast and easy. */}
                 Overcoming the DeFi challenges.
               </Typography>
