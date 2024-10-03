@@ -1,3 +1,4 @@
+export * from './aceternity'
 export * from './animation'
 export * from './app'
 export * from './backdrop'

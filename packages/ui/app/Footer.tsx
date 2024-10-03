@@ -21,6 +21,11 @@ const config: Record<
       target: '_blank',
       rel: 'noopener noreferrer',
     },
+    Launch: {
+      href: 'https://testnet.dozer.finance/pool/create_token',
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
     // Borrowing: {
     //   href: 'https://mvp.dozer.finance',
     //   target: '_blank',
@@ -106,7 +111,7 @@ export function Footer(props: FooterProps): JSX.Element {
             <DozerWithTextIcon />
           </div>
           <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-300 pl-2">
-            Safe, fast and easy.
+            Easy, Fast and Safe.
           </div>
           <div className="flex items-center gap-4 pl-2">
             <a href="https://twitter.com/DozerProtocol" target="_blank" rel="noopener noreferrer">
