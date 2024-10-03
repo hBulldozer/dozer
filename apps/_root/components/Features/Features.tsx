@@ -1,6 +1,7 @@
 import React from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Button, Dialog, DozerIcon, Typography } from '@dozer/ui'
+import { useOnScreen } from './useOnScreen'
 
 import { BoltIcon, ArrowsRightLeftIcon, CubeIcon, CubeTransparentIcon } from '@heroicons/react/24/outline'
 
@@ -157,6 +158,7 @@ const Card = ({
 }) => {
   const [active, setActive] = React.useState(false)
   const [isMounted, setIsMounted] = React.useState(false)
+  const [ref, isVisible] = useOnScreen(0.6)
 
   React.useEffect(() => {
     setIsMounted(true)
@@ -181,9 +183,10 @@ const Card = ({
 
   return (
     <div
+      ref={ref}
       onMouseEnter={isMobile ? undefined : handleInteraction}
       onMouseLeave={isMobile ? undefined : () => setActive(false)}
-      onClick={isMobile ? handleInteraction : undefined}
+      // onClick={isMobile ? handleInteraction : undefined}
       className={`border border-black/[0.2] group/canvas-card flex flex-col items-center justify-between dark:border-white/[0.2] w-full mx-auto p-4 relative overflow-hidden bg-gradient-to-br from-stone-950 to-stone-800 ${
         isMobile ? 'h-[200px]' : 'h-[30rem] max-w-sm'
       }`}
@@ -194,7 +197,7 @@ const Card = ({
       <Icon className="absolute w-6 h-6 text-black -bottom-3 -right-3 dark:text-white" />
 
       <AnimatePresence>
-        {isMounted && active && (
+        {isMounted && (active || (isMobile && isVisible)) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -207,9 +210,9 @@ const Card = ({
       </AnimatePresence>
 
       <div className="relative z-20 flex flex-col items-center justify-center w-full h-full">
-        {active ? (
+        {active || (isMobile && isVisible) ? (
           <>
-            <AnimatedDozerIcon hovered={active} />
+            <AnimatedDozerIcon hovered={active || (isMobile && isVisible)} />
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -235,7 +238,7 @@ const Card = ({
           >
             <div className="mb-4 text-yellow-500">{icon}</div>
             <h2 className="mb-4 text-2xl font-bold text-neutral-300">{title}</h2>
-            {isMobile && <p className="text-sm text-neutral-400">Tap to learn more</p>}
+            {isMobile && <p className="text-sm text-neutral-400">Scroll to learn more</p>}
           </motion.div>
         )}
       </div>
