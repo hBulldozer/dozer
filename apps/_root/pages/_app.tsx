@@ -3,7 +3,7 @@ import 'styles/index.css'
 
 import { useIsSmScreen } from '@dozer/hooks'
 import { App, ThemeProvider, ToastContainer } from '@dozer/ui'
-import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { MotionConfig } from 'framer-motion'
 import type { AppContext, AppProps } from 'next/app'
 // import { default as NextApp } from 'next/app'
@@ -63,7 +63,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
           <ToastContainer className="mt-[50px]" />
         </App.Shell>
       </ThemeProvider>
-      <Analytics />
+      <SpeedInsights />
     </>
   )
 }
