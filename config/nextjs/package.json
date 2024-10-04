@@ -3,7 +3,7 @@
   "description": "Dozer Next.js Config",
   "version": "0.1.0",
   "devDependencies": {
-    "next": "14.2.5"
+    "next": "14.2.10"
   },
   "files": [
     "index.js"
@@ -17,7 +17,7 @@
   "license": "MIT",
   "main": "index.js",
   "peerDependencies": {
-    "next": "14.2.5"
+    "next": "14.2.10"
   },
   "repository": {
     "type": "git",
