@@ -19,7 +19,7 @@
     "@vercel/speed-insights": "^1.0.12",
     "framer-motion": "11.3.2",
     "nanoid": "5.0.7",
-    "next": "14.2.5",
+    "next": "14.2.10",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "sharp": "^0.33.4",
