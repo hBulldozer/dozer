@@ -6,6 +6,9 @@
     "bradlc.vscode-tailwindcss",
     "VisualStudioExptTeam.vscodeintellicode",
     "mattpocock.ts-error-translator",
-    "bierner.markdown-mermaid"
+    "bierner.markdown-mermaid",
+    "supermaven.supermaven",
+    "prisma.prisma",
+    "yoavbls.pretty-ts-errors"
   ]
 }

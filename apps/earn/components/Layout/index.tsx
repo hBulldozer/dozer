@@ -1,4 +1,5 @@
 import { Backdrop, Breadcrumb, BreadcrumbLink, classNames, Container, MaxWidth } from '@dozer/ui'
+import { useRouter } from 'next/router'
 import React from 'react'
 
 type Props = {
@@ -10,9 +11,10 @@ type Props = {
 }
 
 export function Layout({ children, maxWidth = '5xl', backdrop, className, breadcrumbs }: Props) {
+  const { pathname } = useRouter()
   return (
     <Container maxWidth={maxWidth} className={classNames(className, 'lg:mx-auto px-4 h-full')}>
-      {breadcrumbs && <Breadcrumb home="/" links={breadcrumbs} />}
+      {breadcrumbs && <Breadcrumb home={pathname.includes('tokens') ? '/tokens' : '/'} links={breadcrumbs} />}
       <div className="pb-4 mt-10 mb-4 lg:mb-40 lg:mt-20">
         <Backdrop backdrop={backdrop}>{children}</Backdrop>
       </div>

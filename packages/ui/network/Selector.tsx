@@ -66,7 +66,9 @@ export const Selector: FC<SelectorProps> = ({
             key={chainId}
             button={typeof renderer === 'function' ? renderer(button) : button}
             panel={<div>{chainName[chainId]}</div>}
-          />
+          >
+            <></>
+          </Tooltip>
         )
       })}
     </div>

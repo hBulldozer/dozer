@@ -7,11 +7,11 @@ import { FC } from 'react'
 // import { PoolPositionRewardsProvider, usePoolPositionRewards } from '../../../PoolPositionRewardsProvider'
 // import { PoolPositionStakedProvider, usePoolPositionStaked } from '../../../PoolPositionStakedProvider'
 import { ICON_SIZE } from '../contants'
-import { Pair } from '../../../../utils/Pair'
-import { useTokensFromPair } from '../../../../utils/useTokensFromPair'
-import { dbTokenWithPools } from '../../../../interfaces'
+import { Pair } from '@dozer/api'
+import { useTokensFromPair } from '@dozer/api'
+import { dbTokenWithPools } from '@dozer/api'
 import { PoolPositionProvider, usePoolPosition } from '../../../PoolPositionProvider'
-import { api } from '../../../../utils/trpc'
+import { api } from '../../../../utils/api'
 
 interface PositionQuickHoverTooltipProps {
   row: Pair
@@ -43,7 +43,7 @@ export const PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ 
 const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row }) => {
   const { token0, token1 } = useTokensFromPair(row)
 
-  const { underlying0, underlying1, BalanceLPAmount, value1, value0, isLoading, isError } = usePoolPosition()
+  const { max_withdraw_a, max_withdraw_b, value1, value0, isLoading, isError } = usePoolPosition()
   // const {
   //   underlying1: stakedUnderlying1,
   //   underlying0: stakedUnderlying0,
@@ -66,12 +66,12 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
               <Typography variant="sm" weight={500} className="flex gap-1 text-slate-50">
                 {token0.symbol} <span className="text-slate-500">/</span> {token1.symbol}
               </Typography>
-              <Typography variant="xxs" className="text-slate-400">
+              {/* <Typography variant="xxs" className="text-slate-400">
                 Dozer Farm
-              </Typography>
+              </Typography> */}
             </div>
           </div>
-          <Typography variant="xs" weight={600} className="flex gap-1.5 items-end text-slate-400">
+          <Typography variant="xs" weight={600} className="flex gap-1.5 items-end text-slate-400 mt-2">
             {/* <Chip
               color="gray"
               size="sm"
@@ -86,23 +86,23 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
                   : ''
               }
             /> */}
-            Fee {row.feeUSD / 100}%
+            Fee {row.swapFee}%
           </Typography>
         </div>
         <div className="flex flex-col gap-1">
           <Typography variant="sm" weight={600} className="flex gap-3 text-slate-50">
             <span className="text-slate-400">APR:</span> {formatPercent(row.apr)}
           </Typography>
-          <Typography variant="xxs" weight={600} className="flex justify-end gap-1 text-slate-50">
+          {/* <Typography variant="xxs" weight={600} className="flex justify-end gap-1 text-slate-50">
             <span className="text-slate-400">Rewards:</span> {formatPercent(row.apr)}
           </Typography>
           <Typography variant="xxs" weight={600} className="flex justify-end gap-1 text-slate-50">
             <span className="text-slate-400">Fees:</span> {formatPercent(row.apr)}
-          </Typography>
+          </Typography> */}
         </div>
       </div>
       <hr className="my-3 border-t border-slate-200/10" />
-      {!isLoading && !isError && underlying0 && underlying1 ? (
+      {!isLoading && !isError ? (
         <div className="flex flex-col gap-1.5">
           <Typography variant="xs" className="mb-1 text-slate-500">
             Position
@@ -111,7 +111,7 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
             <div className="flex items-center gap-2">
               <Currency.Icon currency={token0} width={18} height={18} />
               <Typography variant="sm" weight={600} className="text-slate-50">
-                {underlying0?.toSignificant(6) || '0.00'} {token0?.symbol}
+                {max_withdraw_a?.toSignificant(6) || '0.00'} {token0?.symbol}
               </Typography>
             </div>
             <Typography variant="xs" className="text-slate-400">
@@ -122,7 +122,7 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
             <div className="flex items-center gap-2">
               <Currency.Icon currency={token1} width={18} height={18} />
               <Typography variant="sm" weight={600} className="text-slate-50">
-                {underlying1?.toSignificant(6) || '0.00'} {token1?.symbol}
+                {max_withdraw_b?.toSignificant(6) || '0.00'} {token1?.symbol}
               </Typography>
             </div>
             <Typography variant="xs" className="text-slate-400">

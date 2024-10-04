@@ -163,7 +163,9 @@ export const TokenApproveButton: FC<TokenApproveButton> = memo(
                 </Typography>
               </div>
             }
-          />
+          >
+            <></>
+          </Tooltip>
         </DefaultButton>
       </Transition>
     )

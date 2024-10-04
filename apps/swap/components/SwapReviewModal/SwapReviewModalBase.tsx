@@ -1,13 +1,13 @@
-import { ChevronDownIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon, Square2StackIcon } from '@heroicons/react/24/solid'
 import { Amount, Price, Type, getTokens } from '@dozer/currency'
 import { ZERO } from '@dozer/math'
-import { Dialog, Typography } from '@dozer/ui'
+import { CopyHelper, Dialog, IconButton, Typography } from '@dozer/ui'
 import { Currency } from '@dozer/ui'
 import { FC, ReactNode, useMemo } from 'react'
 
 // import { useTokenAmountDollarValues } from '../../lib/hooks'
 import { Rate } from '../Rate'
-import { useTrade } from '@dozer/zustand'
+import { useSettings, useTrade } from '@dozer/zustand'
 
 interface SwapReviewModalBase {
   chainId: number | undefined
@@ -17,12 +17,18 @@ interface SwapReviewModalBase {
 }
 
 export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children, open, setOpen }) => {
+  const { slippageTolerance } = useSettings()
+  const { amountSpecified, outputAmount, tradeType, mainCurrencyPrice, otherCurrencyPrice, pool } = useTrade()
   const input0 = useTrade((state) => state.amountSpecified)
-  const input1 = useTrade((state) => state.outputAmount)
+  // const input1 = useTrade((state) => state.outputAmount)
   const value0 = useTrade((state) => state.mainCurrencyPrice)
-  const value1 = useTrade((state) => state.otherCurrencyPrice)
+  // const value1 = useTrade((state) => state.otherCurrencyPrice)
   const token1 = useTrade((state) => state.mainCurrency)
   const token2 = useTrade((state) => state.otherCurrency)
+  // const input0 = amountSpecified ? amountSpecified * (1 - slippageTolerance) : 0
+  const input1 = outputAmount ? outputAmount * (1 - slippageTolerance) : 0
+  // const value0 = mainCurrencyPrice ? mainCurrencyPrice * (1 - slippageTolerance) : 0
+  const value1 = otherCurrencyPrice ? otherCurrencyPrice * (1 - slippageTolerance) : 0
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>
@@ -79,20 +85,36 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
             </Typography>
           </div>
         </div>
-        <div className="flex justify-center p-4">
-          <Rate token1={token1} token2={token2}>
-            {({ toggleInvert, content, usdPrice }) => (
-              <Typography
-                as="button"
-                onClick={() => toggleInvert()}
-                variant="sm"
-                weight={600}
-                className="flex items-center gap-1 text-stone-100"
-              >
-                {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
-              </Typography>
-            )}
-          </Rate>
+        <div className="flex justify-between items-center pl-4 gap-2 py-6 ">
+          <div className="flex-1">
+            <Rate token1={token1} token2={token2}>
+              {({ toggleInvert, content, usdPrice }) => (
+                <Typography
+                  as="button"
+                  onClick={() => toggleInvert()}
+                  // variant="sm"
+                  weight={600}
+                  className="flex items-center gap-1 text-stone-100"
+                >
+                  {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
+                </Typography>
+              )}
+            </Rate>
+          </div>
+          <div className="flex-1 text-right ">
+            <CopyHelper className="" toCopy={pool?.id || ''} hideIcon={true}>
+              {(isCopied) => (
+                <IconButton className="px-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy contract ID'}>
+                  <div className="flex flex-row justify-center gap-1">
+                    <Square2StackIcon width={20} height={20} color="stone-100" />
+                    <Typography variant="sm" className="text-stone-100">
+                      Register Contract
+                    </Typography>
+                  </div>
+                </IconButton>
+              )}
+            </CopyHelper>
+          </div>
         </div>
         {children}
       </Dialog.Content>

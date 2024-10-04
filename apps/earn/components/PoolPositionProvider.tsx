@@ -2,18 +2,27 @@ import { Amount, Token, Type } from '@dozer/currency'
 import { FundSource } from '@dozer/hooks'
 import { createContext, FC, ReactNode, useContext, useEffect, useMemo, useState } from 'react'
 import { useAccount } from '@dozer/zustand'
-import { Pair } from '../utils/Pair'
-import { useTokensFromPair } from '../utils/useTokensFromPair'
-import { useUnderlyingTokenBalanceFromPair } from '../utils/useUnderlyingTokenBalanceFromPair'
-import { useTotalSupply } from '@dozer/react-query'
-import { isError } from '@tanstack/react-query'
+import { Pair, toToken } from '@dozer/api'
+import { useTokensFromPair } from '@dozer/api'
+import { useUnderlyingTokenBalanceFromPair } from '@dozer/api'
+import { api } from '../utils/api'
+import { max } from 'date-fns'
+import { MAX_SAFE_INTEGER } from '@dozer/math'
+import { useWalletConnectClient } from '@dozer/higmi'
 
 interface PoolPositionContext {
-  BalanceLPAmount: Amount<Type> | undefined
   value0: number
   value1: number
-  underlying0: Amount<Type> | undefined
-  underlying1: Amount<Type> | undefined
+  max_withdraw_a: Amount<Type> | undefined
+  max_withdraw_b: Amount<Type> | undefined
+  // user_deposited_a: Amount<Type> | undefined
+  // user_deposited_b: Amount<Type> | undefined
+  // depositedUSD0: number
+  // depositedUSD1: number
+  last_tx: number
+  // changeUSD0: number
+  // changeUSD1: number
+  liquidity: number | undefined
   isLoading: boolean
   isError: boolean
 }
@@ -26,58 +35,114 @@ export const PoolPositionProvider: FC<{
   children: ReactNode
   watch?: boolean
 }> = ({ pair, prices, children, watch = true }) => {
-  const token0 = pair.token0
-  const token1 = pair.token1
-  const liquidityToken = pair.tokenLP
-  const { balance, address } = useAccount()
+  const token0 = toToken(pair.token0)
+  const token1 = toToken(pair.token1)
 
-  const [totalSupply, setTotalSupply] = useState<Amount<Token>>()
+  // const { address } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
 
-  const [BalanceLPAmount, setBalanceLPAmount] = useState<Amount<Token> | undefined>(undefined)
+  const {
+    data: poolInfo,
+    isLoading: isLoadingPoolInfo,
+    isError,
+  } = api.getProfile.poolInfo.useQuery({ address: address, contractId: pair.id })
 
-  const { data, isLoading, isError } = useTotalSupply(liquidityToken.uuid, pair.chainId)
-  const [reserve0, reserve1] = useMemo(() => {
-    return [Amount.fromRawAmount(token0, Number(pair?.reserve0)), Amount.fromRawAmount(token1, Number(pair?.reserve1))]
-  }, [pair?.reserve0, pair?.reserve1])
+  const {
+    liquidity,
+    max_withdraw_a,
+    max_withdraw_b,
+    // user_deposited_a, user_deposited_b,
+    last_tx,
+  } = poolInfo || {
+    liquidity: undefined,
+    max_withdraw_a: undefined,
+    max_withdraw_b: undefined,
+    // user_deposited_a: undefined,
+    // user_deposited_b: undefined,
+    last_tx: 0,
+  }
 
-  useEffect(() => {
-    if (data && !isLoading && !isError && data['total']) {
-      setTotalSupply(Amount.fromRawAmount(liquidityToken, data['total']))
-
-      const BalanceLPToken = balance.find((token) => {
-        return token.token_uuid == liquidityToken.uuid
-      })
-      setBalanceLPAmount(Amount.fromRawAmount(liquidityToken, BalanceLPToken ? BalanceLPToken.token_balance : 0))
-    }
-  }, [balance, pair, prices, data, isLoading, isError, address])
-
-  const [underlying0, underlying1] = useUnderlyingTokenBalanceFromPair({
-    reserve0,
-    reserve1,
-    totalSupply,
-    balance: BalanceLPAmount,
+  const { data: pricesAtTimestamp, isLoading: isLoadingPricesAtTimestamp } = api.getPrices.allAtTimestamp.useQuery({
+    timestamp: last_tx,
   })
 
+  const isLoading = useMemo(() => {
+    return isLoadingPoolInfo || isLoadingPricesAtTimestamp
+  }, [isLoadingPoolInfo, isLoadingPricesAtTimestamp])
+
+  const _max_withdraw_a: Amount<Type> | undefined = max_withdraw_a
+    ? Amount.fromFractionalAmount(token0, max_withdraw_a * 100, 100)
+    : undefined
+  const _max_withdraw_b: Amount<Type> | undefined = max_withdraw_b
+    ? Amount.fromFractionalAmount(token1, max_withdraw_b * 100, 100)
+    : undefined
+
+  // const _user_deposited_a: Amount<Type> | undefined = user_deposited_a
+  //   ? Amount.fromFractionalAmount(token0, user_deposited_a * 100, 100)
+  //   : undefined
+  // const _user_deposited_b: Amount<Type> | undefined = user_deposited_b
+  //   ? Amount.fromFractionalAmount(token1, user_deposited_b * 100, 100)
+  //   : undefined
+
   const value0 = useMemo(() => {
-    return prices[token0.uuid] * Number(underlying0?.toFixed(2))
-  }, [prices, token0, underlying0])
+    return (prices[token0.uuid] * Number(max_withdraw_a?.toFixed(2))) / 100
+  }, [prices, token0, max_withdraw_a])
   const value1 = useMemo(() => {
-    return prices[token1.uuid] * Number(underlying1?.toFixed(2))
-  }, [prices, token1, underlying1])
+    return (prices[token1.uuid] * Number(max_withdraw_b?.toFixed(2))) / 100
+  }, [prices, token1, max_withdraw_b])
+
+  // const depositedUSD0 = useMemo(() => {
+  //   return ((pricesAtTimestamp ? pricesAtTimestamp[token0.uuid] : 0) * Number(user_deposited_a?.toFixed(2))) / 100
+  // }, [pricesAtTimestamp, token0, _user_deposited_a])
+
+  // const depositedUSD1 = useMemo(() => {
+  //   return ((pricesAtTimestamp ? pricesAtTimestamp[token1.uuid] : 0) * Number(user_deposited_b?.toFixed(2))) / 100
+  // }, [pricesAtTimestamp, token1, _user_deposited_b])
+
+  // const changeUSD0 = useMemo(() => {
+  //   return value0 - depositedUSD0
+  // }, [value0, depositedUSD0])
+
+  // const changeUSD1 = useMemo(() => {
+  //   return value1 - depositedUSD1
+  // }, [value1, depositedUSD1])
 
   return (
     <Context.Provider
       value={useMemo(
         () => ({
-          BalanceLPAmount,
+          liquidity,
           value0,
           value1,
-          underlying0,
-          underlying1,
+          max_withdraw_a: _max_withdraw_a,
+          max_withdraw_b: _max_withdraw_b,
+          // user_deposited_a: _user_deposited_a,
+          // user_deposited_b: _user_deposited_b,
+          last_tx: last_tx,
+          // changeUSD0,
+          // changeUSD1,
+          // depositedUSD0,
+          // depositedUSD1,
           isLoading,
           isError,
         }),
-        [BalanceLPAmount, isError, isLoading, underlying0, underlying1, value0, value1]
+        [
+          liquidity,
+          isError,
+          isLoading,
+          _max_withdraw_a,
+          _max_withdraw_b,
+          // _user_deposited_a,
+          // _user_deposited_b,
+          last_tx,
+          // depositedUSD0,
+          // depositedUSD1,
+          // changeUSD0,
+          // changeUSD1,
+          value0,
+          value1,
+        ]
       )}
     >
       {children}

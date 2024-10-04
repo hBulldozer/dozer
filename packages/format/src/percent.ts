@@ -7,3 +7,10 @@ export const formatPercent = (value: any) => {
 
   return numeral(value).format('0.00%')
 }
+
+export const formatPercentChange = (value: any) => {
+  if (value < 0) {
+    value = value * -1
+  }
+  return numeral(value).format('0.00%')
+}

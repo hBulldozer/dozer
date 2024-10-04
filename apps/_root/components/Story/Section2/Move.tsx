@@ -1,4 +1,5 @@
-import { ChevronRightIcon, ExternalLinkIcon } from '@heroicons/react/solid'
+'use client'
+import { ChevronRightIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
 import { Button, Container, Typography } from '@dozer/ui'
 import { FC } from 'react'
 import { motion } from 'framer-motion'
@@ -37,14 +38,14 @@ const DATA: ExpendableCardData = {
           href="https://github.com/HathorNetwork/rfcs/blob/fa6bb67db9f82e47efdfd02cb527366cab9772fe/projects/evm-compatible-bridge/design.md"
           className="!p-0 mt-3 "
           variant="empty"
-          endIcon={<ExternalLinkIcon width={16} height={16} />}
+          endIcon={<ArrowTopRightOnSquareIcon width={16} height={16} />}
         >
           RFC
         </Button>
       </div>
     </>
   ),
-  link: 'https://dozer.finance/swap',
+  link: 'https://mvp.dozer.finance/swap',
   linkText: 'Visit Swap',
 }
 

@@ -1,12 +1,25 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { ChevronRightIcon, InformationCircleIcon } from '@heroicons/react/outline'
+import { ChevronRightIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import { classNames, DEFAULT_INPUT_UNSTYLED, Input, Tab, Tooltip, Typography } from '@dozer/ui'
-import { FC } from 'react'
+import { FC, useEffect, useState } from 'react'
 
 import { useSettings } from '@dozer/zustand'
 
 export const SlippageToleranceDisclosure: FC = () => {
-  const { slippageTolerance, setSlippageTolerance } = useSettings()
+  const { slippageTolerance, setSlippageTolerance, setSlippageToleranceType, slippageToleranceType } = useSettings()
+  const [slippage, setSlippage] = useState<string>(slippageTolerance.toFixed(2))
+
+  const onChange = (value: string) => {
+    let slip: string
+    if (parseFloat(value) > 100) slip = '100'
+    else slip = value
+    setSlippage(slip)
+    setSlippageTolerance(parseFloat(slip || '0') / 100)
+  }
+
+  useEffect(() => {
+    if (slippageToleranceType == 'custom') setSlippageTolerance(parseFloat(slippage) / 100)
+  }, [slippageToleranceType])
 
   return (
     <Disclosure>
@@ -51,11 +64,13 @@ export const SlippageToleranceDisclosure: FC = () => {
                       </Typography>
                     </div>
                   }
-                />
+                >
+                  <></>
+                </Tooltip>
               </div>
               <div className="flex gap-1">
                 <Typography variant="sm" weight={500} className="group-hover:text-stone-200 text-stone-400">
-                  {`Custom (${slippageTolerance}%)`}
+                  {slippageToleranceType === 'auto' ? 'Auto' : `Custom (${slippage}%)`}
                 </Typography>
                 <div
                   className={classNames(
@@ -80,23 +95,38 @@ export const SlippageToleranceDisclosure: FC = () => {
             leaveTo="transform max-h-0"
           >
             <Disclosure.Panel>
-              <div className="flex flex-col gap-2 px-3 py-2 mt-2 bg-stone-900 rounded-xl">
-                <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-300">
-                  Custom Slippage
-                </Typography>
-                <div className="flex items-center gap-2">
-                  <Input.Numeric
-                    variant="unstyled"
-                    value={slippageTolerance ?? ''}
-                    onUserInput={(val) => setSlippageTolerance(+val)}
-                    placeholder="1"
-                    className={classNames(DEFAULT_INPUT_UNSTYLED, '')}
-                  />
-                  <Typography variant="xs" weight={500} className="text-stone-400">
-                    %
-                  </Typography>
-                </div>
-              </div>
+              <Tab.Group
+                selectedIndex={slippageToleranceType === 'auto' ? 0 : 1}
+                onChange={(index) => setSlippageToleranceType(index === 0 ? 'auto' : 'custom')}
+              >
+                <Tab.List>
+                  <Tab>Auto</Tab>
+                  <Tab>Custom</Tab>
+                </Tab.List>
+                <Tab.Panels>
+                  <Tab.Panel />
+                  <Tab.Panel>
+                    <div className="flex flex-col gap-2 px-3 py-2 mt-2 bg-stone-900 rounded-xl">
+                      <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-300">
+                        Custom Slippage
+                      </Typography>
+                      <div className="flex items-center gap-2">
+                        <Input.Numeric
+                          variant="unstyled"
+                          // disabled
+                          value={slippage || ''}
+                          placeholder="0.5"
+                          onUserInput={(val) => onChange(val)}
+                          className={classNames(DEFAULT_INPUT_UNSTYLED, '')}
+                        />
+                        <Typography variant="xs" weight={500} className="text-stone-400">
+                          %
+                        </Typography>
+                      </div>
+                    </div>
+                  </Tab.Panel>
+                </Tab.Panels>
+              </Tab.Group>
             </Disclosure.Panel>
           </Transition>
         </div>

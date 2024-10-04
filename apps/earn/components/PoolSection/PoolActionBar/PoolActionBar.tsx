@@ -1,5 +1,5 @@
 // import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
 import { AppearOnMount, Typography } from '@dozer/ui'
 import { FC, Fragment, useState } from 'react'
@@ -27,7 +27,9 @@ export const PoolActionBar: FC<PoolActionBarProps> = ({ pair }) => {
                 My Position
               </Typography>
             </button>
-            {/* {pair.farm && (
+
+            {/* CHECK IF MY REWARDS BUTTON SHOULD COME BACK 
+            {pair.farm && (
               <button onClick={() => setOpenRewards(true)} className="inline-flex px-4 py-3 cursor-pointer">
                 <Typography variant="sm" weight={600} className="text-stone-50">
                   My Rewards

@@ -3,16 +3,50 @@ import defaultNextConfig from '@dozer/nextjs-config'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   ...defaultNextConfig,
-  basePath: '/earn',
-  transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database'],
+  basePath: '/pool',
+  transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database', '@dozer/currency'],
   experimental: {
     swcPlugins: [['next-superjson-plugin', {}]],
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'supabase.dozer.finance',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '207.148.120.225',
+        port: '8000',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '207.148.120.225',
+        port: '8443',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.redd.it',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'utfs.io',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
   async redirects() {
     return [
       {
         source: '/',
-        destination: '/earn',
+        destination: '/pool',
         permanent: true,
         basePath: false,
       },

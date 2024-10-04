@@ -1,17 +1,22 @@
-import { PlusIcon } from '@heroicons/react/solid'
+import { PlusIcon } from '@heroicons/react/24/solid'
 import { ChainId } from '@dozer/chain'
 import { Amount, Token } from '@dozer/currency'
 import { AppearOnMount, BreadcrumbLink, Button, Dots } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
-import { AddSectionMyPosition, AddSectionReviewModalLegacy, Layout, SelectNetworkWidget } from '../components'
+import {
+  AddSectionMyPosition,
+  AddSectionReviewModalLegacy,
+  Layout,
+  SelectNetworkWidget,
+  SettingsOverlay,
+} from '../components'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { Checker, Web3Input } from '@dozer/higmi'
 import { GetStaticProps } from 'next'
-import { dbPoolWithTokens } from '../interfaces'
-import { PairState, pairFromPoolAndTokensList } from '../utils/Pair'
-import { useTrade } from '@dozer/zustand'
+import { PairState, Pair } from '@dozer/api'
+import { TradeType, useNetwork, useTrade } from '@dozer/zustand'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
-import { RouterOutputs, api } from '../utils/trpc'
+import { RouterOutputs, api } from '../utils/api'
 
 type TokenOutputArray = RouterOutputs['getTokens']['all']
 
@@ -53,103 +58,76 @@ const Add: FC = () => {
   const { data: tokens = [] } = api.getTokens.all.useQuery()
   const { data: prices = {} } = api.getPrices.all.useQuery()
 
-  const [{ input0, input1 }, setTypedAmounts] = useState<{
-    input0: string
-    input1: string
-  }>({ input0: '', input1: '' })
-  const [token0, setToken0] = useState<Token | undefined>(
-    // initialToken0
-    undefined
-  )
-  const [token1, setToken1] = useState<Token | undefined>(
-    // initialToken1
-    undefined
-  )
+  const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
+  const [selectedPool, setSelectedPool] = useState<Pair>()
+  const [input0, setInput0] = useState<string>('')
+  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([undefined, undefined])
+  const [input1, setInput1] = useState<string>('')
+  const [parsedInput0, parsedInput1] = useMemo(() => {
+    return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
+  }, [input0, input1])
+  const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
+  const { network } = useNetwork()
+  const trade = useTrade()
+  const utils = api.useUtils()
+  const [fetchLoading, setFetchLoading] = useState<boolean>(false)
+
   const [chainId, setChainId] = useState(
     // query?.chainId ? query.chainId :
     ChainId.HATHOR
   )
 
   useEffect(() => {
-    setToken0(undefined)
-    setToken1(undefined)
+    setTokens([undefined, undefined])
   }, [chainId])
   // const [fee, setFee] = useState(2)
 
-  const [parsedInput0, parsedInput1] = useMemo(() => {
-    return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
-  }, [input0, input1])
-  const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
-  const [selectedPool, setSelectedPool] = useState<dbPoolWithTokens>()
-  const [listTokens0, setListTokens0] = useState<Token[]>([])
-  const [listTokens1, setListTokens1] = useState<Token[]>([])
-  const {
-    outputAmount,
-    setMainCurrency,
-    setOtherCurrency,
-    setMainCurrencyPrice,
-    setOtherCurrencyPrice,
-    setAmountSpecified,
-    setOutputAmount,
-    setPriceImpact,
-    setPool,
-  } = useTrade()
-
-  const onChangeToken0TypedAmount = useCallback(
-    (value: string) => {
-      if (poolState === PairState.NOT_EXISTS) {
-        setTypedAmounts((prev) => ({
-          ...prev,
-          input0: value,
-        }))
-      } else if (token0 && selectedPool) {
-        const parsedAmount = Number(value)
-        setTypedAmounts({
-          input0: value,
-          input1: parsedAmount
-            ? ((parsedAmount * Number(selectedPool.reserve1)) / (Number(selectedPool.reserve0) + parsedAmount)).toFixed(
-                2
-              )
-            : '',
-        })
-      }
-    },
-    [selectedPool, poolState, token0]
-  )
-
-  const onChangeToken1TypedAmount = useCallback(
-    (value: string) => {
-      if (poolState === PairState.NOT_EXISTS) {
-        setTypedAmounts((prev) => ({
-          ...prev,
-          input1: value,
-        }))
-      } else if (token1 && selectedPool) {
-        const parsedAmount = Number(value)
-        setTypedAmounts({
-          input0: parsedAmount
-            ? ((parsedAmount * Number(selectedPool.reserve0)) / (Number(selectedPool.reserve1) + parsedAmount)).toFixed(
-                2
-              )
-            : '',
-          input1: value,
-        })
-      }
-    },
-    [selectedPool, poolState, token1]
-  )
-
-  useEffect(() => {
-    if (selectedPool) {
-      onChangeToken0TypedAmount(input0)
+  const onInput0 = async (val: string) => {
+    setInput0(val)
+    if (!val) {
+      setInput1('')
     }
+    setTradeType(TradeType.EXACT_INPUT)
+  }
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onChangeToken0TypedAmount])
+  const onInput1 = async (val: string) => {
+    setInput1(val)
+    if (!val) {
+      setInput0('')
+    }
+    setTradeType(TradeType.EXACT_OUTPUT)
+  }
 
   useEffect(() => {
+    const fetchData = async () => {
+      setFetchLoading(true)
+      if (tradeType == TradeType.EXACT_INPUT) {
+        const response =
+          selectedPool && token0
+            ? await utils.getPools.front_quote_add_liquidity_in.fetch({
+                id: selectedPool?.id,
+                amount_in: parseFloat(input0),
+                token_in: token0?.uuid,
+              })
+            : undefined
+        // set state with the result if `isSubscribed` is true
+
+        setInput1(response && response != 0 ? response.toFixed(2) : '')
+      } else {
+        const response =
+          selectedPool && token0
+            ? await utils.getPools.front_quote_add_liquidity_out.fetch({
+                id: selectedPool?.id,
+                amount_out: parseFloat(input1),
+                token_in: token0?.uuid,
+              })
+            : undefined
+
+        setInput0(response && response != 0 ? response.toFixed(2) : '')
+      }
+    }
     setSelectedPool(
-      pools?.find((pool: dbPoolWithTokens) => {
+      pools.find((pool: Pair) => {
         const uuid0 = pool.token0.uuid
         const uuid1 = pool.token1.uuid
         const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
@@ -160,54 +138,52 @@ const Add: FC = () => {
         return result
       })
     )
-    selectedPool &&
-      setPool({
-        token1: token1,
-        token2: token0,
-        token1_balance:
-          tokens.find((token: TokenOutput) => {
-            return token.id == selectedPool.token0Id
-          }) == token1?.uuid
-            ? Number(selectedPool.reserve1)
-            : Number(selectedPool.reserve0),
-        token2_balance:
-          tokens.find((token: TokenOutput) => {
-            return token.id == selectedPool.token1Id
-          }) == token0?.uuid
-            ? Number(selectedPool.reserve0)
-            : Number(selectedPool.reserve1),
-      })
-    if (!selectedPool) {
-      setPoolState(PairState.NOT_EXISTS)
+
+    // call the function
+    if (input1 || input0) {
+      fetchData()
+        .then(() => {
+          setFetchLoading(false)
+          trade.setMainCurrency(token0)
+          trade.setOtherCurrency(token1)
+          trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
+          trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
+          trade.setAmountSpecified(Number(input0) || 0)
+          trade.setOutputAmount(Number(input1) || 0)
+          trade.setTradeType(tradeType)
+          if (selectedPool) trade.setPool(selectedPool)
+        })
+        // make sure to catch any error
+        .catch((err) => {
+          console.error(err)
+          setFetchLoading(false)
+        })
     } else {
-      setPoolState(PairState.EXISTS)
-      setMainCurrency(token0 ? token0 : undefined)
-      setOtherCurrency(token1 ? token1 : undefined)
-      setPriceImpact()
-      setAmountSpecified(Number(input0))
-      setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
-      setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
-      setOutputAmount()
+      trade.setMainCurrencyPrice(0)
+      trade.setOtherCurrencyPrice(0)
+      trade.setAmountSpecified(0)
+      trade.setOutputAmount(0)
+      trade.setPriceImpact(0)
+      trade.setTradeType(tradeType)
     }
-    const list0: TokenOutputArray = tokens.filter((token) => {
-      return token.uuid !== token1?.uuid
+  }, [pools, token0, token1, input0, input1, prices, network, tokens, selectedPool])
+
+  const onSuccess = useCallback(() => {
+    setInput0('')
+    setInput1('')
+  }, [])
+
+  const _setToken0 = useCallback((currency: Token) => {
+    setTokens(([prevSrc, prevDst]) => {
+      return prevDst && currency.equals(prevDst) ? [prevDst, prevSrc] : [currency, prevDst]
     })
-    setListTokens0(
-      list0?.map((token) => {
-        return toToken(token)
-      })
-    )
-    const list1: TokenOutputArray = tokens.filter((token) => {
-      return token.uuid !== token0?.uuid
+  }, [])
+
+  const _setToken1 = useCallback((currency: Token) => {
+    setTokens(([prevSrc, prevDst]) => {
+      return prevSrc && currency.equals(prevSrc) ? [prevDst, prevSrc] : [prevSrc, currency]
     })
-    setListTokens1(
-      list1?.map((token) => {
-        return token && toToken(token)
-      })
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pools, outputAmount, token0, token1, input0, input1, prices, selectedPool, tokens])
-  if (!(pools || tokens || prices)) return <></>
+  }, [])
 
   return (
     <>
@@ -215,22 +191,27 @@ const Add: FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
           <div className="hidden md:block" />
           <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-            <SelectNetworkWidget selectedNetwork={chainId} onSelect={setChainId} />
+            {/* <SelectNetworkWidget selectedNetwork={chainId} onSelect={setChainId} /> */}
             {/* <SelectFeeWidget selectedNetwork={chainId} fee={fee} setFee={setFee} /> */}
 
             <Widget id="addLiquidity" maxWidth={400}>
               <Widget.Content>
-                <Widget.Header title="2. Add Liquidity">{/* <SettingsOverlay /> */}</Widget.Header>
+                <Widget.Header title="Add Liquidity">
+                  <SettingsOverlay chainId={network} />
+                </Widget.Header>
                 <Web3Input.Currency
                   className="p-3"
                   value={input0}
-                  onChange={onChangeToken0TypedAmount}
+                  onChange={onInput0}
                   disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
                   currency={token0}
-                  onSelect={setToken0}
+                  onSelect={_setToken0}
                   chainId={chainId}
                   prices={prices}
-                  tokens={listTokens0}
+                  loading={tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
+                  tokens={tokens.map((token) => {
+                    return new Token(token)
+                  })}
                 />
                 <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
                   <div className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full">
@@ -241,18 +222,26 @@ const Add: FC = () => {
                   <Web3Input.Currency
                     className="p-3 !pb-1"
                     value={input1}
-                    onChange={onChangeToken1TypedAmount}
+                    onChange={onInput1}
                     disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
                     currency={token1}
-                    onSelect={setToken1}
+                    onSelect={_setToken1}
                     chainId={chainId}
-                    loading={poolState === PairState.LOADING}
+                    loading={tradeType == TradeType.EXACT_INPUT && fetchLoading}
                     prices={prices}
-                    tokens={listTokens1}
+                    tokens={tokens.map((token) => {
+                      return new Token(token)
+                    })}
                   />
                   <div className="p-3">
                     <Checker.Connected fullWidth size="md">
-                      <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
+                      <Checker.Pool
+                        fullWidth
+                        size="md"
+                        poolExist={selectedPool ? true : false}
+                        token0={token0}
+                        token1={token1}
+                      >
                         {/* <Checker.Network fullWidth size="md" chainId={chainId}> */}
                         <Checker.Amounts
                           fullWidth
@@ -280,9 +269,14 @@ const Add: FC = () => {
                                 input1={Amount.fromFractionalAmount(token1, parsedInput1, 100)}
                                 prices={prices}
                               >
-                                {({ isWritePending, setOpen }) => (
-                                  <Button fullWidth onClick={() => setOpen(true)} disabled={isWritePending} size="md">
-                                    {isWritePending ? <Dots>Confirm transaction</Dots> : 'Add Liquidity'}
+                                {({ setOpen }) => (
+                                  <Button
+                                    fullWidth
+                                    onClick={() => setOpen(true)}
+                                    disabled={!token0 || !token1 || !input0 || !input1}
+                                    size="md"
+                                  >
+                                    {fetchLoading ? <Dots>Confirm transaction</Dots> : 'Add Liquidity'}
                                   </Button>
                                 )}
                               </AddSectionReviewModalLegacy>
@@ -312,13 +306,13 @@ const Add: FC = () => {
         </div>
       </Layout>
 
-      {selectedPool && (
+      {/* {selectedPool && (
         <div className="order-1 sm:order-3">
           <AppearOnMount>
-            <AddSectionMyPosition pair={pairFromPoolAndTokensList(selectedPool)} />
+            <AddSectionMyPosition pair={selectedPool} />
           </AppearOnMount>
         </div>
-      )}
+      )} */}
     </>
   )
 }

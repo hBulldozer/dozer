@@ -1,3 +1,4 @@
+'use client'
 import { Container, Typography } from '@dozer/ui'
 import Image from 'next/legacy/image'
 import React, { FC } from 'react'
@@ -17,7 +18,7 @@ export const BuildWealth: FC = () => {
             <span className="text-neutral-400">{`Do not stop at trading.`}</span>
           </AnimatedTitle>
           <div className="grid items-center grid-cols-1 gap-20 md:grid-cols-2 justify-items-center">
-            <div className="relative h-[420px] md:max-w-[420px] md:max-h-[420px] w-full h-full flex items-center justify-center">
+            <div className="relative h-[420px] md:max-w-[420px] md:max-h-[420px] w-full  flex items-center justify-center">
               <div className="absolute w-[210px] h-[210px] bg-rose-500 rounded-full blur-[200px]" />
               <Image alt="stellar" objectFit="contain" src={magnet} layout="fill" />
             </div>
@@ -54,7 +55,7 @@ export const BuildWealth: FC = () => {
                       </p>
                     </>
                   }
-                  link="https://dozer.finance/earn"
+                  link="https://mvp.dozer.finance/pool"
                   linkText="Visit Earn"
                 />
                 <ExpandableCard
@@ -80,7 +81,7 @@ export const BuildWealth: FC = () => {
                       </p>
                     </>
                   }
-                  link="https://dozer.finance/earn"
+                  link="https://mvp.dozer.finance/pool"
                   linkText="Visit Earn"
                 />
                 {/* <ExpandableCard
@@ -104,7 +105,7 @@ export const BuildWealth: FC = () => {
                       </p>
                     </>
                   }
-                  link="https://dozer.finance/earn"
+                  link="https://mvp.dozer.finance/pool"
                   linkText="Visit Earn"
                 /> */}
               </div>

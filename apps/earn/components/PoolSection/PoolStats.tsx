@@ -1,7 +1,6 @@
-// import { Native } from '@dozer/currency'
-import { formatNumber, formatPercent, formatUSD } from '@dozer/format'
-// import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../utils/Pair'
+import { formatUSD } from '@dozer/format'
+// EDIT
+import { Pair } from '@dozer/api'
 import { Typography } from '@dozer/ui'
 import { FC } from 'react'
 
@@ -18,7 +17,7 @@ export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
           Liquidity
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {formatUSD(pair.liquidityUSD * Number(prices['00']))}
+          {formatUSD(pair.liquidityUSD)}
           {/* {123} */}
         </Typography>
         {/* {pair.liquidity1dChange ? (
@@ -33,7 +32,7 @@ export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
           Volume (24h)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {formatUSD(pair.volume1d)}
+          {formatUSD(pair.volumeUSD)}
         </Typography>
         {/* {pair.volume1dChange ? (
           <Typography variant="xs" weight={500} className={pair.volume1dChange > 0 ? 'text-green' : 'text-red'}>
@@ -47,7 +46,7 @@ export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
           Fees (24h)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {formatUSD(pair.volume1d * (pair.swapFee / 10000))}
+          {formatUSD(pair.feeUSD)}
           {/* {0.2} */}
         </Typography>
         {/* {pair.volume1dChange ? (
@@ -62,9 +61,7 @@ export const PoolStats: FC<PoolStats> = ({ pair, prices }) => {
           Transactions (24h)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {/* Don't need decimals for a count */}
-          {/* {formatNumber(pair.txCount1d).replace('.00', '')} */}
-          {10}
+          {pair.txCount1d}
         </Typography>
         {/* {pair.txCount1dChange ? (
           <Typography variant="xs" weight={500} className={pair.txCount1dChange > 0 ? 'text-green' : 'text-red'}>

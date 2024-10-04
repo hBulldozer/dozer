@@ -1,4 +1,4 @@
-import { Pair } from '../../../../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { ColumnDef } from '@tanstack/react-table'
 import React from 'react'
 
@@ -9,10 +9,10 @@ import { PairNameCell } from './PairNameCell'
 import { PairTVLCell } from './PairTVLCell'
 import { PairVolume24hCell } from './PairVolume24hCell'
 
-export const ICON_SIZE = 26
-export const PAGE_SIZE = 20
+const ICON_SIZE = 26
+const PAGE_SIZE = 20
 
-export const NETWORK_COLUMN: ColumnDef<Pair, unknown> = {
+const NETWORK_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'network',
   header: 'Network',
   cell: (props) => <PairChainCell row={props.row.original} />,
@@ -57,6 +57,7 @@ export const TVL_COLUMN: ColumnDef<Pair, unknown> = {
 export const APR_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'apr',
   header: 'APR',
+  accessorFn: (row) => row.apr,
   cell: (props) => <PairAPRCell row={props.row.original} />,
   size: 100,
   meta: {
@@ -68,6 +69,7 @@ export const APR_COLUMN: ColumnDef<Pair, unknown> = {
 export const VOLUME_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'volume',
   header: 'Volume (24h)',
+  accessorFn: (row) => row.volumeUSD,
   cell: (props) => <PairVolume24hCell row={props.row.original} />,
   size: 100,
   meta: {
@@ -78,6 +80,7 @@ export const VOLUME_COLUMN: ColumnDef<Pair, unknown> = {
 
 export const FEES_COLUMN: ColumnDef<Pair, unknown> = {
   header: 'Fees (24h)',
+  accessorFn: (row) => row.feeUSD,
   id: 'fees',
   // accessorFn: (row) => row.fees24h,
   cell: (props) => <PairFees24hCell row={props.row.original} />,

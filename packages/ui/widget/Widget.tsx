@@ -22,7 +22,7 @@ const WidgetRoot: FC<WidgetRootProps> = ({ id, className, maxWidth, children }) 
       }}
       className={classNames(
         className,
-        'flex flex-col mx-auto rounded-2xl relative overflow-hidden shadow shadow-stone-900 bg-stone-700'
+        'flex flex-col mx-auto rounded-2xl relative overflow-hidden shadow-[0_-20px_100px_35px_rgba(0,0,0,0.1)] shadow-yellow-400/10 bg-stone-800/50'
       )}
     >
       {children}

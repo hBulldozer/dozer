@@ -19,6 +19,7 @@ export const Partners: FC = () => {
   return (
     <section className="mt-48 py-20 sm:py-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black">
       <Container maxWidth="5xl" className="px-4 mx-auto">
+        <></>
         {/* <div className="flex flex-col gap-y-10"> */}
         {/* <div className="flex flex-wrap items-center justify-center gap-10">
             <ArbitrumSVG width={130} />

@@ -1,11 +1,13 @@
 import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
-import { Percent } from '@dozer/math'
-import { Button, Dots } from '@dozer/ui'
-import { Approve } from '@dozer/higmi'
-import { FC, ReactNode, useMemo, useState } from 'react'
-import { useSettings, useAccount, useNetwork } from '@dozer/zustand'
+import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } from '@dozer/ui'
+import { FC, ReactNode, useEffect, useState } from 'react'
+import { useAccount, useNetwork, useTrade, TokenBalance, useSettings, useTempTxStore } from '@dozer/zustand'
 import { AddSectionReviewModal } from './AddSectionReviewModal'
+import { LiquidityPool } from '@dozer/nanocontracts'
+import { api } from '../../utils/api'
+import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { get } from 'lodash'
 
 interface AddSectionReviewModalLegacyProps {
   poolState: number
@@ -14,7 +16,7 @@ interface AddSectionReviewModalLegacyProps {
   token1: Type | undefined
   input0: Amount<Type> | undefined
   input1: Amount<Type> | undefined
-  children({ isWritePending, setOpen }: { isWritePending: boolean; setOpen(open: boolean): void }): ReactNode
+  children({ setOpen }: { setOpen(open: boolean): void }): ReactNode
   prices: { [key: string]: number }
 }
 
@@ -26,167 +28,199 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   children,
   prices,
 }) => {
-  // const deadline = useTransactionDeadline(chainId)
+  const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const [open, setOpen] = useState(false)
-  const { address } = useAccount()
+  const { amountSpecified, outputAmount, pool, mainCurrency, otherCurrency } = useTrade()
+  const [sentTX, setSentTX] = useState(false)
+  const {
+    //  address,
+    addNotification,
+    setBalance,
+    balance,
+  } = useAccount()
+  const { network } = useNetwork()
 
-  // const [, { createNotification }] = useNotifications(address)
-  const { slippageTolerance } = useSettings()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
 
-  // const onSettled = useCallback(
-  //   (data: SendTransactionResult | undefined) => {
-  //     if (!data || !token0 || !token1) return
+  const liquiditypool = new LiquidityPool(mainCurrency?.uuid || '', otherCurrency?.uuid || '', 5, 50, pool?.id || '')
 
-  //     const ts = new Date().getTime()
-  //     createNotification({
-  //       type: 'mint',
-  //       chainId,
-  //       txHash: data.hash,
-  //       promise: data.wait(),
-  //       summary: {
-  //         pending: `Adding liquidity to the ${token0.symbol}/${token1.symbol} pair`,
-  //         completed: `Successfully added liquidity to the ${token0.symbol}/${token1.symbol} pair`,
-  //         failed: 'Something went wrong when adding liquidity',
-  //       },
-  //       timestamp: ts,
-  //       groupTimestamp: ts,
-  //     })
-  //   },
-  //   [chainId, createNotification, token0, token1]
-  // )
+  const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
-  // const slippagePercent = useMemo(() => {
-  //   return new Percent(Math.floor(slippageTolerance * 100), 10_000)
-  // }, [slippageTolerance])
+  const editBalanceOnAddLiquidity = (amount_in: number, token_in: string, amount_out: number, token_out: string) => {
+    const balance_tokens = balance.map((t) => {
+      return t.token_uuid
+    })
+    if (balance_tokens.includes(token_out))
+      setBalance(
+        balance.map((token: TokenBalance) => {
+          if (token.token_uuid == token_in) return { ...token, token_balance: token.token_balance - amount_in * 100 }
+          else if (token.token_uuid == token_out)
+            return { ...token, token_balance: token.token_balance - amount_out * 100 }
+          else return token
+        })
+      )
+    else {
+      const token_out_balance: TokenBalance = {
+        token_balance: amount_out * 100,
+        token_symbol: otherCurrency?.symbol || 'DZR',
+        token_uuid: token_out,
+      }
+      const new_balance: TokenBalance[] = balance.map((token: TokenBalance) => {
+        if (token.token_uuid == token_in) return { ...token, token_balance: token.token_balance - amount_in * 100 }
+        else return token
+      })
+      new_balance.push(token_out_balance)
+      setBalance(new_balance)
+    }
+  }
 
-  // const [minAmount0, minAmount1] = useMemo(() => {
-  //   return [
-  //     input0 ? (poolState === 0 ? input0 : undefined) : undefined,
-  //     input1 ? (poolState === 0 ? input1 : undefined) : undefined,
-  //   ]
-  // }, [
-  //   poolState,
-  //   input0,
-  //   input1,
-  //   // slippagePercent
-  // ])
-
-  // const prepare = useCallback(
-  //   async (setRequest: Dispatch<SetStateAction<(TransactionRequest & { to: string }) | undefined>>) => {
-  //     try {
-  //       if (
-  //         !token0 ||
-  //         !token1 ||
-  //         !chain?.id ||
-  //         !contract ||
-  //         !input0 ||
-  //         !input1 ||
-  //         !address ||
-  //         !minAmount0 ||
-  //         !minAmount1 ||
-  //         !deadline
-  //       )
-  //         return
-  //       const withNative = token0.isNative || token1.isNative
-
-  //       if (withNative) {
-  //         const value = BigNumber.from((token1.isNative ? input1 : input0).quotient.toString())
-  //         const args = [
-  //           (token1.isNative ? token0 : token1).wrapped.address as Address,
-  //           BigNumber.from((token1.isNative ? input0 : input1).quotient.toString()),
-  //           BigNumber.from((token1.isNative ? minAmount0 : minAmount1).quotient.toString()),
-  //           BigNumber.from((token1.isNative ? minAmount1 : minAmount0).quotient.toString()),
-  //           address,
-  //           BigNumber.from(deadline.toHexString()),
-  //         ] as const
-
-  //         const gasLimit = await contract.estimateGas.addLiquidityETH(...args, {
-  //           value,
-  //         })
-  //         setRequest({
-  //           from: address,
-  //           to: contract.address,
-  //           data: contract.interface.encodeFunctionData('addLiquidityETH', args),
-  //           value,
-  //           gasLimit: calculateGasMargin(gasLimit),
-  //         })
+  // const mutation = api.getPools.add_liquidity.useMutation({
+  //   onSuccess: (res) => {
+  //     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
+  //       if (res.hash) {
+  //         const notificationData: NotificationData = {
+  //           type: 'swap',
+  //           chainId: network,
+  //           summary: {
+  //             pending: `Waiting for next block`,
+  //             completed: `Success! Added ${amountSpecified} ${mainCurrency.symbol} and ${outputAmount} ${otherCurrency.symbol} in ${pool.name} pool.`,
+  //             failed: 'Failed summary',
+  //             info: `Adding Liquidity in ${pool.name} pool: ${amountSpecified} ${mainCurrency.symbol} and ${outputAmount} ${otherCurrency.symbol}.`,
+  //           },
+  //           status: 'pending',
+  //           txHash: res.hash,
+  //           groupTimestamp: Math.floor(Date.now() / 1000),
+  //           timestamp: Math.floor(Date.now() / 1000),
+  //           promise: new Promise((resolve) => {
+  //             setTimeout(resolve, 500)
+  //           }),
+  //         }
+  //         editBalanceOnAddLiquidity(
+  //           amountSpecified,
+  //           mainCurrency.uuid,
+  //           outputAmount * (1 + slippageTolerance),
+  //           otherCurrency.uuid
+  //         )
+  //         const notificationGroup: string[] = []
+  //         notificationGroup.push(JSON.stringify(notificationData))
+  //         addNotification(notificationGroup)
+  //         createSuccessToast(notificationData)
+  //         setOpen(false)
+  //         setIsWritePending(false)
   //       } else {
-  //         const args = [
-  //           token0.wrapped.address as Address,
-  //           token1.wrapped.address as Address,
-  //           BigNumber.from(input0.quotient.toString()),
-  //           BigNumber.from(input1.quotient.toString()),
-  //           BigNumber.from(minAmount0.quotient.toString()),
-  //           BigNumber.from(minAmount1.quotient.toString()),
-  //           address,
-  //           BigNumber.from(deadline.toHexString()),
-  //         ] as const
-
-  //         const gasLimit = await contract.estimateGas.addLiquidity(...args, {})
-  //         setRequest({
-  //           from: address,
-  //           to: contract.address,
-  //           data: contract.interface.encodeFunctionData('addLiquidity', args),
-  //           gasLimit: calculateGasMargin(gasLimit),
-  //         })
+  //         createErrorToast(`${res.error}`, true)
+  //         setIsWritePending(false)
+  //         setOpen(false)
   //       }
-  //     } catch (e: unknown) {
-  //       //
   //     }
   //   },
-  //   [token0, token1, chain?.id, contract, input0, input1, address, minAmount0, minAmount1, deadline]
-  // )
-
-  // const { sendTransaction, isLoading: isWritePending } = useSendTransaction({
-  //   chainId,
-  //   prepare,
-  //   onSettled,
-  //   onSuccess: () => setOpen(false),
+  //   onError: (error) => {
+  //     createErrorToast(`Error sending TX. \n${error}`, true)
+  //     setIsWritePending(false)
+  //     setOpen(false)
+  //   },
   // })
-  const isWritePending = false
 
-  return useMemo(
-    () => (
-      <>
-        {children({ isWritePending, setOpen })}
-        <AddSectionReviewModal
-          chainId={chainId}
-          input0={input0}
-          input1={input1}
-          open={open}
-          setOpen={setOpen}
-          prices={prices}
-        >
-          <Approve
-            onSuccess={() => {
-              console.log('success')
+  const addTempTx = useTempTxStore((state) => state.addTempTx)
+  const { data: networkData } = api.getNetwork.getBestBlock.useQuery()
+
+  const onClick = async () => {
+    setSentTX(true)
+    if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency && networkData) {
+      const response = await liquiditypool.add_liquidity(
+        hathorRpc,
+        pool.id,
+        mainCurrency.uuid,
+        amountSpecified,
+        otherCurrency.uuid,
+        outputAmount * (1 + slippageTolerance),
+        address
+      )
+      addTempTx(pool.id, address, amountSpecified, outputAmount * (1 - slippageTolerance), true, networkData.number)
+    }
+  }
+
+  useEffect(() => {
+    if (rpcResult?.valid && rpcResult?.result && sentTX) {
+      if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
+        const hash = get(rpcResult, 'result.response.hash') as string
+        if (hash) {
+          const notificationData: NotificationData = {
+            type: 'swap',
+            chainId: network,
+            summary: {
+              pending: `Waiting for next block. Add liquidity in ${pool.name}.`,
+              completed: `Success! Added ${amountSpecified} ${mainCurrency.symbol} and ${outputAmount} ${otherCurrency.symbol} in ${pool.name} pool.`,
+              failed: 'Failed summary',
+              info: `Adding Liquidity in ${pool.name} pool: ${amountSpecified} ${mainCurrency.symbol} and ${outputAmount} ${otherCurrency.symbol}.`,
+            },
+            status: 'pending',
+            txHash: hash,
+            groupTimestamp: Math.floor(Date.now() / 1000),
+            timestamp: Math.floor(Date.now() / 1000),
+            promise: new Promise((resolve) => {
+              setTimeout(resolve, 500)
+            }),
+            account: address,
+          }
+          editBalanceOnAddLiquidity(
+            amountSpecified,
+            mainCurrency.uuid,
+            outputAmount * (1 + slippageTolerance),
+            otherCurrency.uuid
+          )
+          const notificationGroup: string[] = []
+          notificationGroup.push(JSON.stringify(notificationData))
+          addNotification(notificationGroup)
+          createSuccessToast(notificationData)
+          setOpen(false)
+          setSentTX(false)
+        } else {
+          createErrorToast(`Error`, true)
+          setOpen(false)
+          setSentTX(false)
+        }
+      }
+    }
+  }, [rpcResult])
+
+  return (
+    <>
+      {children({ setOpen })}
+      <AddSectionReviewModal
+        chainId={chainId}
+        input0={input0}
+        input1={input1}
+        open={open}
+        setOpen={setOpen}
+        prices={prices}
+      >
+        <div className="flex flex-col justify-between gap-2">
+          <Button
+            size="md"
+            disabled={isRpcRequestPending}
+            fullWidth
+            onClick={() => {
+              onClick()
             }}
-            className="flex-grow !justify-end"
-            components={
-              <Approve.Components>
-                <Approve.Token size="md" className="whitespace-nowrap" fullWidth amount={input0} address={address} />
-                <Approve.Token size="md" className="whitespace-nowrap" fullWidth amount={input1} address={address} />
-              </Approve.Components>
-            }
-            render={({ approved }) => {
-              // console.log({ approved, isWritePending })
-              return (
-                <Button
-                  size="md"
-                  disabled={!approved}
-                  fullWidth
-                  onClick={() => {
-                    console.log('click')
-                  }}
-                >
-                  {<Dots>Confirm transaction</Dots>}
-                </Button>
-              )
-            }}
-          />
-        </AddSectionReviewModal>
-      </>
-    ),
-    [chainId, children, input0, input1, open, address, isWritePending, prices]
+          >
+            {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : <>Add Liquidity</>}
+          </Button>
+          {isRpcRequestPending && (
+            <Button
+              size="md"
+              testdata-id="swap-review-reset-button"
+              fullWidth
+              variant="outlined"
+              color="red"
+              onClick={() => reset()}
+            >
+              Cancel Transaction
+            </Button>
+          )}
+        </div>
+      </AddSectionReviewModal>
+    </>
   )
 }

@@ -7,9 +7,10 @@ import { PairChainCell } from './PairChainCell'
 import { PairNameCell } from './PairNameCell'
 import { PairValueCell } from './PairValueCell'
 import { PairVolume24hCell } from './PairVolume24hCell'
-import { Pair } from '../../../../../utils/Pair'
 
-type TData = Pair
+import { PositionPair } from '../PositionsTable'
+
+type TData = PositionPair
 
 export const NETWORK_COLUMN: ColumnDef<TData, unknown> = {
   id: 'network',
@@ -56,7 +57,7 @@ export const APR_COLUMN: ColumnDef<TData, unknown> = {
 export const VALUE_COLUMN: ColumnDef<TData, unknown> = {
   id: 'value',
   header: 'Value',
-  accessorFn: (row) => row.volumeUSD,
+  accessorFn: (row) => (row.value0 || 0) + (row.value1 || 0),
   cell: (props) => <PairValueCell row={props.row.original} />,
   size: 100,
   meta: {
@@ -65,7 +66,7 @@ export const VALUE_COLUMN: ColumnDef<TData, unknown> = {
   },
 }
 
-export const VOLUME_COLUMN: ColumnDef<TData, unknown> = {
+const VOLUME_COLUMN: ColumnDef<TData, unknown> = {
   id: 'volume',
   header: 'Volume (24h)',
   cell: (props) => <PairVolume24hCell row={props.row.original} />,

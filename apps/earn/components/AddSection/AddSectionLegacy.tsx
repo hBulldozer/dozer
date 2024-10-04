@@ -1,36 +1,26 @@
 import { Amount } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
-import { Button, Dots } from '@dozer/ui'
+import { Button } from '@dozer/ui'
 import { Checker } from '@dozer/higmi'
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 
 import { AddSectionReviewModalLegacy } from './AddSectionReviewModalLegacy'
 import { AddSectionWidget } from './AddSectionWidget'
-import { dbPoolWithTokens } from '../../interfaces'
-import toToken from '../../utils/toToken'
-import { useTrade } from '@dozer/zustand'
+import { Pair, toToken } from '@dozer/api'
+import { TradeType, useTrade } from '@dozer/zustand'
+import { api } from '../../utils/api'
 
-export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: string]: number } }> = ({
-  pool,
-  prices,
-}) => {
+export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number } }> = ({ pool, prices }) => {
   const isMounted = useIsMounted()
   const token0 = toToken(pool.token0)
   const token1 = toToken(pool.token1)
-  const [{ input0, input1 }, setTypedAmounts] = useState<{
-    input0: string
-    input1: string
-  }>({ input0: '', input1: '' })
-  const {
-    setMainCurrency,
-    setOtherCurrency,
-    setMainCurrencyPrice,
-    setOtherCurrencyPrice,
-    setAmountSpecified,
-    setOutputAmount,
-    setPriceImpact,
-    setPool,
-  } = useTrade()
+  const [input0, setInput0] = useState<string>('')
+  const [input1, setInput1] = useState<string>('')
+  const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
+  const trade = useTrade()
+  const utils = api.useUtils()
+  const [fetchLoading, setFetchLoading] = useState<boolean>(false)
+
   // const {
   //   data: [poolState, pool],
   // } = usePair(pair.chainId, token0, token1)
@@ -39,48 +29,77 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
     return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
   }, [input0, input1])
 
-  const onChangeToken0TypedAmount = useCallback(
-    (value: string) => {
-      const parsedAmount = Number(value)
-      setTypedAmounts({
-        input0: value,
-        input1: parsedAmount
-          ? ((parsedAmount * Number(pool.reserve1)) / (Number(pool.reserve0) + parsedAmount)).toFixed(2)
-          : '',
-      })
-    },
-    [pool]
-  )
+  const onInput0 = async (val: string) => {
+    setInput0(val)
+    if (!val) {
+      setInput1('')
+    }
+    setTradeType(TradeType.EXACT_INPUT)
+  }
 
-  const onChangeToken1TypedAmount = useCallback(
-    (value: string) => {
-      const parsedAmount = Number(value)
-      setTypedAmounts({
-        input0: parsedAmount
-          ? ((parsedAmount * Number(pool.reserve0)) / (Number(pool.reserve1) + parsedAmount)).toFixed(2)
-          : '',
-        input1: value,
-      })
-    },
-    [pool]
-  )
+  const onInput1 = async (val: string) => {
+    setInput1(val)
+    if (!val) {
+      setInput0('')
+    }
+    setTradeType(TradeType.EXACT_OUTPUT)
+  }
 
   useEffect(() => {
-    pool &&
-      setPool({
-        token1: token1,
-        token2: token0,
-        token1_balance: pool.token0.uuid == token1?.uuid ? Number(pool.reserve1) : Number(pool.reserve0),
-        token2_balance: pool.token1.uuid == token0?.uuid ? Number(pool.reserve0) : Number(pool.reserve1),
-      })
-    setMainCurrency(token0 ? token0 : undefined)
-    setOtherCurrency(token1 ? token1 : undefined)
-    setPriceImpact()
-    setAmountSpecified(Number(input0))
-    setMainCurrencyPrice(prices && token0 ? Number(prices[token0.uuid]) : 0)
-    setOtherCurrencyPrice(prices && token1 ? Number(prices[token1.uuid]) : 0)
-    setOutputAmount()
-  }, [input0, input1])
+    const fetchData = async () => {
+      setFetchLoading(true)
+      if (tradeType == TradeType.EXACT_INPUT) {
+        const response = token0
+          ? await utils.getPools.front_quote_add_liquidity_in.fetch({
+              id: pool.id,
+              amount_in: parseFloat(input0),
+              token_in: token0?.uuid,
+            })
+          : undefined
+        // set state with the result if `isSubscribed` is true
+
+        setInput1(response && response != 0 ? response.toFixed(2) : '')
+      } else {
+        const response = token0
+          ? await utils.getPools.front_quote_add_liquidity_out.fetch({
+              id: pool?.id,
+              amount_out: parseFloat(input1),
+              token_in: token0?.uuid,
+            })
+          : undefined
+
+        setInput0(response && response != 0 ? response.toFixed(2) : '')
+      }
+    }
+
+    // call the function
+    if (input1 || input0) {
+      fetchData()
+        .then(() => {
+          setFetchLoading(false)
+          trade.setMainCurrency(token0)
+          trade.setOtherCurrency(token1)
+          trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
+          trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
+          trade.setAmountSpecified(Number(input0) || 0)
+          trade.setOutputAmount(Number(input1) || 0)
+          trade.setTradeType(tradeType)
+          trade.setPool(pool)
+        })
+        // make sure to catch any error
+        .catch((err) => {
+          console.error(err)
+          setFetchLoading(false)
+        })
+    } else {
+      trade.setMainCurrencyPrice(0)
+      trade.setOtherCurrencyPrice(0)
+      trade.setAmountSpecified(0)
+      trade.setOutputAmount(0)
+      trade.setPriceImpact(0)
+      trade.setTradeType(tradeType)
+    }
+  }, [input0, input1, prices])
 
   return useMemo(() => {
     return (
@@ -93,8 +112,10 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
         input1={Amount.fromFractionalAmount(token1, parsedInput1, 100)}
         prices={prices}
       >
-        {({ isWritePending, setOpen }) => (
+        {({ setOpen }) => (
           <AddSectionWidget
+            isLoading={fetchLoading}
+            tradeType={tradeType}
             isFarm={false}
             chainId={pool.chainId}
             input0={input0}
@@ -102,8 +123,8 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
             token0={token0}
             token1={token1}
             prices={prices}
-            onInput0={onChangeToken0TypedAmount}
-            onInput1={onChangeToken1TypedAmount}
+            onInput0={onInput0}
+            onInput1={onInput1}
           >
             <Checker.Connected fullWidth size="md">
               {/* <Checker.Custom
@@ -127,8 +148,8 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
                 amount={Number(input0)}
                 token={token0}
               >
-                <Button fullWidth onClick={() => setOpen(true)} disabled={isWritePending} size="md">
-                  {isWritePending ? <Dots>Confirm transaction</Dots> : 'Add Liquidity'}
+                <Button fullWidth onClick={() => setOpen(true)} disabled={!input0 || !input1} size="md">
+                  {input0 && input1 ? 'Add Liquidity' : 'Enter an amount'}
                 </Button>
               </Checker.Amounts>
               {/* </Checker.Network> */}
@@ -142,8 +163,8 @@ export const AddSectionLegacy: FC<{ pool: dbPoolWithTokens; prices: { [key: stri
     input0,
     input1,
     isMounted,
-    onChangeToken0TypedAmount,
-    onChangeToken1TypedAmount,
+    onInput0,
+    onInput1,
     pool.chainId,
     // pair.farm,
     parsedInput0,

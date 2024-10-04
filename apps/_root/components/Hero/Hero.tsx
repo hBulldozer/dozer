@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { ChainId } from '@dozer/chain'
 // import { Native, SUSHI } from '@dozer/currency'
 import { getTokens } from '@dozer/currency'
@@ -52,8 +52,8 @@ export const Hero: FC = () => {
     <section className="relative  mt-24 py-20 sm:py-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black">
       {/* <section className="mt-48 py-20 sm:py-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black"></section> */}
       <Container maxWidth="5xl" className="px-4 mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-[auto_400px] flex justify-between gap-[100px]">
-          <div className="relative justify-end hidden lg:flex">
+        <div className="grid grid-cols-1 lg:grid-cols-[auto_400px] justify-between gap-[100px]">
+          <div className="relative flex justify-end">
             <motion.div
               initial="hidden"
               whileInView="visible"
@@ -155,15 +155,8 @@ export const Hero: FC = () => {
                           delay: 2,
                         }}
                       >
-                        <Button
-                          disabled={true}
-                          // as="a"
-                          // href="https://dozer.finance/swap"
-                          size="md"
-                          fullWidth
-                          className="relative z-10"
-                        >
-                          Coming soon
+                        <Button as="a" href="/swap" size="md" fullWidth className="relative z-10">
+                          Enter App
                         </Button>
                       </motion.div>
                     </div>
@@ -174,7 +167,7 @@ export const Hero: FC = () => {
           </div>
           <div className="flex flex-col">
             <Typography variant="hero" weight={800} className="text-neutral-50 leading-[3.5rem]">
-              Trade Instantly on dozer. <br /> <span className="text-yellow"> {TITLES[index]}.</span>
+              Trade Instantly on Dozer. <br /> <span className="text-yellow"> {TITLES[index]}.</span>
             </Typography>
             <Typography variant="lg" className="mt-3 text-neutral-400">
               The fastest swap on the web3. <br />

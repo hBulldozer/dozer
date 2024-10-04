@@ -1,15 +1,19 @@
 import { App, AppType, BuyCrypto } from '@dozer/ui'
-import { NetworkSelector } from '@dozer/higmi'
+import { NetworkSelector, useWalletConnectClient } from '@dozer/higmi'
 import { Profile } from '@dozer/higmi/components/Wallet/Profile'
-import React, { FC } from 'react'
+import React, { FC, useState } from 'react'
 // import { useAccount } from 'higmi'
 
-import { SUPPORTED_CHAIN_IDS } from '../config'
 import { api } from 'utils/api'
+
 // import { useNotifications } from '../lib/state/storage'
 
 export const Header: FC = () => {
-  const address = 'meu endereço'
+  // const { address } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  const [open, setOpen] = useState(false)
+
   // const [notifications, { clearNotifications }] = useNotifications(address)
 
   return (
@@ -18,15 +22,24 @@ export const Header: FC = () => {
       appType={AppType.Swap}
       nav={
         <App.NavItemList>
-          <App.NavItem href="https://dozer.finance/swap" label="Swap" />
-          <App.NavItem href={`https://dozer.finance/earn`} label="Earn" />
-          {/* <App.NavItem href="https://dozer.finance/bridge" label="Bridge" /> */}
-          <BuyCrypto address={address} />
+          <App.NavItem
+            className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500"
+            href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
+            label="Presale"
+            external
+          />
+          <App.NavItem href="/" label="Swap" />
+          <App.NavItem href="/tokens" label="Tokens" />
+          <App.NavItem href="https://testnet.dozer.finance/pool" label="Pools" />
+          {/* <App.NavItem href="https://mvp.dozer.finance/bridge" label="Bridge" /> */}
+          {/* <BuyCrypto address={address} /> */}
+          <App.OpenModal label="Donate" setOpen={setOpen} />
+          <App.DonateModal open={open} setOpen={setOpen} />
         </App.NavItemList>
       }
     >
       <div className="flex items-center gap-2">
-        <NetworkSelector supportedNetworks={SUPPORTED_CHAIN_IDS} />
+        {/* <NetworkSelector supportedNetworks={SUPPORTED_CHAIN_IDS} /> */}
         <Profile
           client={api}
           // supportedNetworks={SUPPORTED_CHAIN_IDS}

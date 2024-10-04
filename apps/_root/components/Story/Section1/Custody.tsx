@@ -1,4 +1,5 @@
-import { ChevronRightIcon } from '@heroicons/react/solid'
+'use client'
+import { ChevronRightIcon } from '@heroicons/react/24/solid'
 import { Button, Container, Typography } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { FC } from 'react'
@@ -27,7 +28,7 @@ const DATA: ExpendableCardData = {
       </p>
     </>
   ),
-  link: 'https://dozer.finance/swap',
+  link: 'https://mvp.dozer.finance/swap',
   linkText: 'Visit Swap',
 }
 

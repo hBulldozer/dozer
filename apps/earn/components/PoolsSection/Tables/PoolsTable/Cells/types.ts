@@ -1,5 +1,5 @@
-import { Pair } from '../../../../../utils/Pair'
+import { ExtendedPair } from '../PoolsTable'
 
 export interface CellProps {
-  row: Pair
+  row: ExtendedPair
 }

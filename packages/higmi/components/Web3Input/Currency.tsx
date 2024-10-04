@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { Token } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
 import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography } from '@dozer/ui'
@@ -88,8 +88,8 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             data-testid={`${id}-button`}
             className={classNames(
               onSelect ? 'shadow-md hover:ring-2' : 'cursor-default text-2xl',
-              (currency || loading) && onSelect ? 'bg-white bg-opacity-[0.12]' : '',
-              currency || loading ? 'ring-stone-500' : 'bg-yellow ring-yellow-700',
+              onSelect ? 'bg-white bg-opacity-[0.12]' : '',
+              'ring-stone-500',
               'h-[36px] text-stone-200 hover:text-stone-100 transition-all flex flex-row items-center gap-1 text-xl font-semibold rounded-full px-2 py-1'
             )}
           >
@@ -123,7 +123,14 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
           </button>
         </div>
         <div className="flex flex-row justify-between h-[24px]">
-          <PricePanel prices={prices} value={value} currency={currency} usdPctChange={usdPctChange} chainId={chainId} />
+          <PricePanel
+            prices={prices}
+            value={value}
+            currency={currency}
+            usdPctChange={usdPctChange}
+            chainId={chainId}
+            loading={loading}
+          />
           <div className="h-6">
             <BalancePanel
               id={id}
@@ -143,6 +150,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             variant="dialog"
             onClose={handleClose}
             open={tokenSelectorOpen}
+            pricesMap={prices}
             // fundSource={FundSource.WALLET}
             chainId={chainId}
             currency={currency}
@@ -215,17 +223,17 @@ const BalancePanel: FC<BalancePanel> = ({
     <button
       data-testid={`${id}-balance-button`}
       type="button"
-      onClick={() => onChange('')}
+      onClick={() => onChange(tokenBalance.toFixed(2))}
       className="py-1 text-xs text-stone-400 hover:text-stone-300"
       disabled={disableMaxButton}
     >
-      {isMounted && balance ? `Balance: ${tokenBalance}` : 'Balance: 0'}
+      {isMounted && balance ? `Balance: ${tokenBalance.toFixed(2)}` : 'Balance: 0'}
     </button>
   )
 }
 
-type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange' | 'prices'>
-const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange }) => {
+type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange' | 'prices' | 'loading'>
+const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, loading }) => {
   const isMounted = useIsMounted()
   const [price, setPrice] = useState<number | undefined>(0)
   const [usd, setUsd] = useState<number | undefined>(0)
@@ -237,7 +245,7 @@ const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange }) =
     setUsd(usdPctChange)
   }, [calculatedPrice, usdPctChange])
 
-  if (!prices && isMounted)
+  if ((!prices && isMounted) || loading)
     return (
       <div className="h-[24px] w-[60px] flex items-center">
         <Skeleton.Box className="bg-white/[0.06] h-[12px] w-full" />
@@ -262,7 +270,7 @@ const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange }) =
           )}
         >
           {' '}
-          {`${usd === 0 ? '' : usd > 0 ? '(+' : '('}${usd === 0 ? '0.00' : usd?.toFixed(2)}%)`}
+          {/* {`${usd === 0 ? '' : usd > 0 ? '(+' : '('}${usd === 0 ? '0.00' : usd?.toFixed(2)}%)`} */}
         </span>
       )}
     </Typography>

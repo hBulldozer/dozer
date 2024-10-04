@@ -1,5 +1,5 @@
 import { formatPercent, formatUSD } from '@dozer/format'
-import { Pair } from '../../utils/Pair.jsx'
+import { Pair, PairHourSnapshot } from '@dozer/api'
 import { AppearOnMount, classNames, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
 import ReactECharts from 'echarts-for-react'
@@ -18,7 +18,7 @@ interface PoolChartProps {
 enum PoolChartType {
   Volume,
   TVL,
-  Fees,
+  // Fees,
   APR,
 }
 
@@ -38,22 +38,55 @@ const chartTimespans: Record<PoolChartPeriod, number> = {
   [PoolChartPeriod.All]: Infinity,
 }
 
+function getFirstPerHour(snapshots: PairHourSnapshot[]): PairHourSnapshot[] {
+  // Sort snapshots by date in ascending order
+  snapshots.sort((a, b) => a.date.getTime() - b.date.getTime())
+
+  const hourlySnapshots: PairHourSnapshot[] = []
+  let currentHour = -1 // Initialize with an invalid hour
+
+  for (const snap of snapshots) {
+    const snapHour = snap.date.getHours()
+
+    // Check if we moved to a new hour
+    if (snapHour !== currentHour) {
+      currentHour = snapHour
+      hourlySnapshots.push(snap) // Add first snapshot of the new hour
+    }
+  }
+
+  return hourlySnapshots
+}
+
 export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
   const [chartType, setChartType] = useState<PoolChartType>(PoolChartType.Volume)
   const [chartPeriod, setChartPeriod] = useState<PoolChartPeriod>(PoolChartPeriod.Week)
+  const hourSnapshots = getFirstPerHour(pair.hourSnapshots)
+  const fifteenMinSnapshots = pair.hourSnapshots
+  // if (hourSnapshots.length == 0 || fifteenMinSnapshots.length == 0 || !pair.daySnapshots)
+  //   return <Typography>There is no data for this pool yet.</Typography>
   const [xData, yData] = useMemo(() => {
     const data =
-      chartTimespans[chartPeriod] <= chartTimespans[PoolChartPeriod.Week] ? pair.hourSnapshots : pair.daySnapshots
+      chartPeriod == PoolChartPeriod.Day
+        ? fifteenMinSnapshots.filter((snap) => snap.date < new Date(Date.now()))
+        : chartPeriod >= PoolChartPeriod.Year
+        ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now())).reverse()
+        : hourSnapshots.filter((snap) => snap.date < new Date(Date.now()))
     const currentDate = Math.round(Date.now())
-    const [x, y] = data.reduce<[number[], number[]]>(
-      (acc, cur) => {
+    const [x, y] = data.reduce<[number[], any]>(
+      (acc, cur, idx, arr) => {
         const date = new Date(cur.date).getTime()
         if (date >= currentDate - chartTimespans[chartPeriod]) {
           acc[0].push(date / 1000)
-          if (chartType === PoolChartType.Fees) {
-            acc[1].push(Number(cur.volumeUSD * (pair.swapFee / 10000)))
-          } else if (chartType === PoolChartType.Volume) {
+          // if (chartType === PoolChartType.Fees) {
+          //   idx == 0
+          //     ? acc[1].push(Number(cur.volumeUSD * (pair.swapFee / 100)))
+          //     : acc[1].push(Number(cur.feeUSD) - Number(arr[idx - 1].feeUSD))
+          // } else
+          if (chartType === PoolChartType.Volume) {
+            // idx == 0
             acc[1].push(Number(cur.volumeUSD))
+            // : acc[1].push(Number(cur.volumeUSD) - Number(arr[idx - 1].volumeUSD))
           } else if (chartType === PoolChartType.TVL) {
             acc[1].push(Number(cur.liquidityUSD))
           } else if (chartType === PoolChartType.APR) {
@@ -64,9 +97,19 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
       },
       [[], []]
     )
+    x.push(Math.round(Date.now()) / 1000)
+    if (chartType === PoolChartType.APR) {
+      y.push(pair.apr)
+    } else if (chartType === PoolChartType.TVL) {
+      y.push(pair.liquidityUSD)
+      // } else if (chartType === PoolChartType.Fees) {
+      //   y.push(pair.feeUSD)
+    } else if (chartType === PoolChartType.Volume) {
+      y.push(pair.volumeUSD)
+    }
 
-    return [x.reverse(), y.reverse()]
-  }, [chartPeriod, pair.hourSnapshots, pair.daySnapshots, pair.swapFee, chartType])
+    return [x, y]
+  }, [chartPeriod, fifteenMinSnapshots, hourSnapshots, pair.daySnapshots, pair.swapFee, chartType])
 
   // Transient update for performance
   const onMouseOver = useCallback(
@@ -81,12 +124,28 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
       }
 
       if (chartType === PoolChartType.Volume) {
-        valueNodes[1].innerHTML = formatUSD(value * (pair.swapFee / 10000))
+        valueNodes[1].innerHTML = formatUSD(value * (pair.swapFee / 100))
       }
       nameNodes[0].innerHTML = format(new Date(name * 1000), 'dd MMM yyyy HH:mm')
     },
     [chartType, pair.swapFee]
   )
+
+  const onMouseLeave = useCallback(() => {
+    const valueNodes = document.getElementsByClassName('hoveredItemValue')
+    const nameNodes = document.getElementsByClassName('hoveredItemName')
+
+    if (chartType === PoolChartType.APR) {
+      valueNodes[0].innerHTML = formatPercent(yData[yData.length - 1])
+    } else {
+      valueNodes[0].innerHTML = formatUSD(yData[yData.length - 1])
+    }
+
+    if (chartType === PoolChartType.Volume) {
+      valueNodes[1].innerHTML = formatUSD(yData[yData.length - 1] * (pair.swapFee / 100))
+    }
+    nameNodes[0].innerHTML = format(new Date(xData[xData.length - 1] * 1000), 'dd MMM yyyy HH:mm')
+  }, [chartType, pair.swapFee])
 
   const DEFAULT_OPTION: EChartsOption = useMemo(
     () => ({
@@ -95,15 +154,18 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
         extraCssText: 'z-index: 1000',
         responsive: true,
         // @ts-ignore
-        backgroundColor: tailwind.theme.colors.slate['700'],
+        backgroundColor: tailwind.theme.colors.stone['700'],
         textStyle: {
           // @ts-ignore
-          color: tailwind.theme.colors.slate['50'],
+          color: tailwind.theme.colors.stone['50'],
           fontSize: 12,
           fontWeight: 600,
         },
         formatter: (params: any) => {
-          onMouseOver({ name: params[0].name, value: params[0].value })
+          onMouseOver({
+            name: params[0].name,
+            value: params[0].value,
+          })
 
           const date = new Date(Number(params[0].name * 1000))
           return `<div class="flex flex-col gap-0.5">
@@ -121,10 +183,10 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
         show: false,
       },
       grid: {
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        top: 40,
+        left: 20,
+        right: 20,
+        bottom: 60,
       },
       dataZoom: {
         show: false,
@@ -138,10 +200,34 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
       },
       xAxis: [
         {
-          show: false,
+          // show: true,
           type: 'category',
           boundaryGap: true,
           data: xData,
+          axisLabel: {
+            formatter: function (value: number) {
+              return format(
+                new Date(value * 1000),
+                chartPeriod == PoolChartPeriod.Day
+                  ? 'HH:mm aaa'
+                  : chartPeriod === PoolChartPeriod.Week
+                  ? 'eeee'
+                  : chartPeriod === PoolChartPeriod.Month
+                  ? 'LLLL d'
+                  : 'LLLL'
+              )
+            },
+            interval: 'auto',
+            showMinLabel: true, // Changed: Show the first label
+            showMaxLabel: true, // Changed: Show the last label
+            inside: false, // Changed: Place labels outside the chart area
+            margin: 48, // Changed: Adjust margin for better positioning
+            rotate: 0, // Added: Ensure labels are not rotated
+            hideOverlap: true, // Added: Prevent hiding overlapping labels
+          },
+          axisTick: {
+            show: false,
+          },
         },
       ],
       yAxis: [
@@ -150,8 +236,8 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           type: 'value',
           scale: true,
           name: 'Volume',
-          max: 'dataMax',
-          min: 'dataMin',
+          // max: 'dataMax',
+          // min: 'dataMin',
         },
       ],
       series: [
@@ -170,10 +256,12 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
             // @ts-ignore
             color: tailwind.theme.colors.yellow['500'],
           },
-          animationEasing: 'elasticOut',
-          animationDelayUpdate: function (idx: number) {
+          animationEasingUpdate: 'circularInOut',
+          animationDurationUpdate: 0,
+          animationDelay: function (idx: number) {
             return idx * 2
           },
+          animationEasing: 'circularInOut',
           data: yData,
         },
       ],
@@ -203,7 +291,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           >
             TVL
           </button>
-          <button
+          {/* <button
             onClick={() => setChartType(PoolChartType.Fees)}
             className={classNames(
               'border-b-[3px] pb-2 font-semibold text-sm',
@@ -211,9 +299,12 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
             )}
           >
             Fees
-          </button>
+          </button> */}
           <button
-            onClick={() => setChartType(PoolChartType.APR)}
+            onClick={() => {
+              setChartType(PoolChartType.APR)
+              if (chartPeriod < PoolChartPeriod.Month) setChartPeriod(PoolChartPeriod.Month)
+            }}
             className={classNames(
               'border-b-[3px] pb-2 font-semibold text-sm',
               chartType === PoolChartType.APR ? 'text-stone-50 border-yellow' : 'text-stone-500 border-transparent'
@@ -227,13 +318,15 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
             onClick={() => setChartPeriod(PoolChartPeriod.Day)}
             className={classNames(
               'font-semibold text-sm',
-              chartPeriod === PoolChartPeriod.Day ? 'text-yellow' : 'text-stone-500'
+              chartPeriod === PoolChartPeriod.Day ? 'text-yellow' : 'text-stone-500',
+              chartType == PoolChartType.APR ? 'hidden' : ''
             )}
           >
             1D
           </button>
           <button
             onClick={() => setChartPeriod(PoolChartPeriod.Week)}
+            // disabled={chartType == PoolChartType.APR}
             className={classNames(
               'font-semibold text-sm',
               chartPeriod === PoolChartPeriod.Week ? 'text-yellow' : 'text-stone-500'
@@ -280,7 +373,7 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           {chartType === PoolChartType.Volume && (
             <span className="text-sm font-medium text-stone-300">
               <span className="text-xs top-[-2px] relative">•</span>{' '}
-              <span className="hoveredItemValue">{formatUSD(yData[yData.length - 1] * (pair.swapFee / 10000))}</span>{' '}
+              <span className="hoveredItemValue">{formatUSD(yData[yData.length - 1] * (pair.swapFee / 100))}</span>{' '}
               earned
             </span>
           )}
@@ -291,7 +384,9 @@ export const PoolChart: FC<PoolChartProps> = ({ pair }) => {
           </Typography>
         )}
       </div>
-      <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} />
+      <div onMouseLeave={onMouseLeave}>
+        <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} />
+      </div>
     </div>
   )
 }

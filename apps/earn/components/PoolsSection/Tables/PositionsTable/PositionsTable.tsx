@@ -9,16 +9,25 @@ import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
 import { useAccount, useNetwork } from '@dozer/zustand'
 import { PAGE_SIZE } from '../contants'
 import { ChainId } from '@dozer/chain'
-import { Pair, pairFromPool } from '../../../../utils/Pair'
-import { api } from '../../../../utils/trpc'
+import { Pair } from '@dozer/api'
+import { api } from '../../../../utils/api'
+import { usePoolPosition } from '../../../PoolPositionProvider'
+import { useWalletConnectClient } from '@dozer/higmi'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, VALUE_COLUMN, APR_COLUMN]
 // VOLUME_COLUMN
 
+export interface PositionPair extends Pair {
+  value0?: number
+  value1?: number
+}
+
 export const PositionsTable: FC = () => {
-  const { address, balance } = useAccount()
+  // const { address } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { isSm } = useBreakpoint('sm')
   const { isMd } = useBreakpoint('md')
 
@@ -32,23 +41,63 @@ export const PositionsTable: FC = () => {
   const [rendNetwork, setRendNetwork] = useState<number>(ChainId.HATHOR)
   const { network } = useNetwork()
 
-  const userTokens = balance.map((token) => {
-    return token.token_uuid
-  })
-
   useEffect(() => {
     setRendNetwork(network)
   }, [network])
 
   const { data: pools, isLoading } = api.getPools.all.useQuery()
-  const _pairs_array: Pair[] = pools
-    ? pools.map((pool) => {
-        return pairFromPool(pool)
+  const { data: prices, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
+  const { data: allPoolInfo, isLoading: isLoadingPoolInfo } = api.getProfile.allPoolInfo.useQuery({ address: address })
+
+  const _pairs_array: PositionPair[] = useMemo(() => {
+    const array: PositionPair[] = []
+    if (pools && prices && allPoolInfo && !isLoadingPrices && !isLoadingPoolInfo && !isLoading) {
+      pools.map((pool) => {
+        const userInfo = allPoolInfo?.find((info) => info.contractId == pool.id)
+
+        if (
+          userInfo &&
+          (userInfo.max_withdraw_a > 0 || userInfo.max_withdraw_b > 0) &&
+          prices &&
+          prices[pool.token0.uuid] &&
+          prices[pool.token1.uuid]
+        ) {
+          const pair: PositionPair = pool
+          pair.value0 = (userInfo.max_withdraw_a / 100) * prices?.[pool.token0.uuid]
+          pair.value1 = (userInfo.max_withdraw_b / 100) * prices?.[pool.token1.uuid]
+          array.push(pair)
+        }
       })
-    : []
-  const pairs_array = _pairs_array?.filter((pair: Pair) => {
-    return pair.chainId == rendNetwork
-  })
+      return array
+    } else return []
+  }, [pools, prices, allPoolInfo, isLoadingPrices, isLoadingPoolInfo, isLoading])
+
+  // if (pools)
+  //   pools.map((pool) => {
+  //     const { data: userInfo } = api.getProfile.poolInfo.useQuery({
+  //       contractId: pool.id,
+  //       address,
+  //     })
+  //     const { data: prices } = api.getPrices.all.useQuery()
+  //     if (
+  //       userInfo &&
+  //       (userInfo.max_withdraw_a > 0 || userInfo.max_withdraw_b > 0) &&
+  //       prices &&
+  //       prices[pool.token0.uuid] &&
+  //       prices[pool.token1.uuid]
+  //     ) {
+  //       const pair: PositionPair = pool
+  //       pair.value0 = (userInfo.max_withdraw_a / 100) * prices?.[pool.token0.uuid]
+  //       pair.value1 = (userInfo.max_withdraw_b / 100) * prices?.[pool.token1.uuid]
+  //       _pairs_array.push(pair)
+  //     }
+  //   })
+
+  const pairs_array = _pairs_array
+    ?.filter((pair: Pair) => {
+      return pair.chainId == rendNetwork
+    })
+    .filter((pool) => pool.liquidityUSD > 10)
   const args = useMemo(
     () => ({
       sorting,
@@ -63,9 +112,8 @@ export const PositionsTable: FC = () => {
     // [sorting, pagination, selectedNetworks, selectedPoolTypes, farmsOnly, query, extraQuery]
   )
 
-  // console.log({ pools })
 
-  const table = useReactTable<Pair>({
+  const table = useReactTable<PositionPair>({
     data: pairs_array || [],
     columns: COLUMNS,
     state: {
@@ -107,7 +155,7 @@ export const PositionsTable: FC = () => {
   }, [])
 
   return (
-    <GenericTable<Pair>
+    <GenericTable<PositionPair>
       table={table}
       HoverElement={isMd ? PositionQuickHoverTooltip : undefined}
       loading={isLoading}

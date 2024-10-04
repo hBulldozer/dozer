@@ -1,6 +1,6 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/outline'
-import { PlusIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon } from '@heroicons/react/24/outline'
+import { PlusIcon } from '@heroicons/react/24/solid'
 import { ChainId } from '@dozer/chain'
 import { Type, getTokens } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
@@ -8,6 +8,8 @@ import { classNames } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
 import { Web3Input } from '@dozer/higmi'
 import { FC, ReactNode } from 'react'
+import { TradeType, useNetwork } from '@dozer/zustand'
+import { SettingsOverlay } from '../SettingsOverlay'
 
 // import { useCustomTokens } from '../../lib/state/storage'
 // import { useTokens } from '../../lib/state/token-lists'
@@ -20,6 +22,8 @@ interface AddSectionWidgetProps {
   input1: string
   token0: Type | undefined
   token1: Type | undefined
+  isLoading: boolean
+  tradeType: TradeType
   onSelectToken0?(currency: Type): void
   onSelectToken1?(currency: Type): void
   onInput0(value: string): void
@@ -41,8 +45,11 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
   onInput1,
   prices,
   children,
+  isLoading,
+  tradeType,
 }) => {
   const isMounted = useIsMounted()
+  const { network } = useNetwork()
   // const [customTokensMap, { addCustomToken, removeCustomToken }] = useCustomTokens(chainId)
   return (
     <Widget id="addLiquidity" maxWidth={400}>
@@ -50,11 +57,11 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
         <Disclosure defaultOpen={true}>
           {({ open }) => (
             <>
-              {isFarm && isMounted ? (
-                <Widget.Header title="1. Add Liquidity" className="!pb-3 ">
-                  <div className="flex gap-3">
-                    {/* <SettingsOverlay variant="dialog" /> */}
-                    <Disclosure.Button className="w-full pr-0.5">
+              {isMounted ? (
+                <Widget.Header title="Add Liquidity" className="!pb-3 ">
+                  {/* <div className="flex gap-3"> */}
+                  <SettingsOverlay chainId={network} />
+                  {/* <Disclosure.Button className="w-full pr-0.5">
                       <div className="flex items-center justify-between">
                         <div
                           className={classNames(
@@ -65,12 +72,12 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
                           <ChevronDownIcon
                             width={24}
                             height={24}
-                            className="group-hover:text-stone-200 text-stone-300"
+                            className="hidden group-hover:text-stone-200 text-stone-300"
                           />
                         </div>
                       </div>
-                    </Disclosure.Button>
-                  </div>
+                    </Disclosure.Button> */}
+                  {/* </div> */}
                 </Widget.Header>
               ) : (
                 <Widget.Header title="Add Liquidity" className="!pb-3" />
@@ -88,7 +95,7 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
                 <Disclosure.Panel unmount={false}>
                   <Web3Input.Currency
                     className="p-3"
-                    loading={false}
+                    loading={tradeType == TradeType.EXACT_OUTPUT && isLoading}
                     value={input0}
                     onChange={onInput0}
                     onSelect={onSelectToken0}
@@ -108,6 +115,7 @@ export const AddSectionWidget: FC<AddSectionWidgetProps> = ({
                   <div className="bg-stone-800">
                     <Web3Input.Currency
                       className="p-3 !pb-1"
+                      loading={tradeType == TradeType.EXACT_INPUT && isLoading}
                       value={input1}
                       onChange={onInput1}
                       currency={token1}

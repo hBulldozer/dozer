@@ -1,12 +1,12 @@
 // import { Native } from '@dozer/currency'
 import { formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../utils/Pair'
-import { AppearOnMount, Currency, Table, Typography } from '@dozer/ui'
+import { Pair } from '@dozer/api'
+import { AppearOnMount, Currency, Link, Table, Typography } from '@dozer/ui'
 import { FC } from 'react'
 
 // import { useTokensFromPair } from '../../lib/hooks'
-import { useTokensFromPair } from '../../utils/useTokensFromPair'
+import { useTokensFromPair } from '@dozer/api'
 
 interface PoolCompositionProps {
   pair: Pair
@@ -57,44 +57,66 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices }) => {
           <Table.tbody>
             <Table.tr>
               <Table.td>
-                <div className="flex items-center gap-3">
-                  <Currency.Icon currency={token0} width={24} height={24} />
-                  <Typography weight={600} variant="sm" className="text-stone-50">
-                    {token0.symbol}
-                  </Typography>
-                </div>
+                <Link.External
+                  style={{ textDecoration: 'none' }}
+                  href={`../../../swap/tokens/${token0.chainId}/${token0.uuid}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Currency.Icon currency={token0} width={24} height={24} />
+                    <Typography weight={600} variant="sm" className="text-stone-50">
+                      {token0.symbol}
+                    </Typography>
+                  </div>
+                </Link.External>
               </Table.td>
               <Table.td>
                 <Typography weight={500} variant="sm" className="text-stone-400">
-                  {reserve0.toFixed(2)}
+                  {Number(reserve0.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </Typography>
               </Table.td>
               <Table.td>
                 <AppearOnMount>
                   <Typography weight={600} variant="sm" className="text-stone-50">
-                    ${prices?.[token0.uuid] ? (Number(reserve0.toFixed(2)) * prices?.[token0.uuid]).toFixed(2) : ''}
+                    $
+                    {prices?.[token0.uuid]
+                      ? Number((Number(reserve0.toFixed(2)) * prices?.[token0.uuid]).toFixed(2)).toLocaleString(
+                          undefined,
+                          { maximumFractionDigits: 2 }
+                        )
+                      : ''}
                   </Typography>
                 </AppearOnMount>
               </Table.td>
             </Table.tr>
             <Table.tr>
               <Table.td>
-                <div className="flex items-center gap-3">
-                  <Currency.Icon currency={token1} width={24} height={24} />
-                  <Typography weight={600} variant="sm" className="text-stone-50">
-                    {token1.symbol}
-                  </Typography>
-                </div>
+                <Link.External
+                  style={{ textDecoration: 'none' }}
+                  href={`../../../swap/tokens/${token1.chainId}/${token1.uuid}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Currency.Icon currency={token1} width={24} height={24} />
+                    <Typography weight={600} variant="sm" className="text-stone-50">
+                      {token1.symbol}
+                    </Typography>
+                  </div>
+                </Link.External>
               </Table.td>
               <Table.td>
                 <Typography weight={500} variant="sm" className="text-stone-400">
-                  {reserve1.toFixed(2)}
+                  {Number(reserve1.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </Typography>
               </Table.td>
               <Table.td>
                 <AppearOnMount>
                   <Typography weight={600} variant="sm" className="text-stone-50">
-                    ${prices?.[token1.uuid] ? (Number(reserve1.toFixed(2)) * prices?.[token1.uuid]).toFixed(2) : ''}
+                    $
+                    {prices?.[token1.uuid]
+                      ? Number((Number(reserve1.toFixed(2)) * prices?.[token1.uuid]).toFixed(2)).toLocaleString(
+                          undefined,
+                          { maximumFractionDigits: 2 }
+                        )
+                      : ''}
                   </Typography>
                 </AppearOnMount>
               </Table.td>

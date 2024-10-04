@@ -1,6 +1,6 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { InformationCircleIcon } from '@heroicons/react/outline'
-import { ChevronDownIcon } from '@heroicons/react/solid'
+import { InformationCircleIcon } from '@heroicons/react/24/outline'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { classNames, Tooltip, Typography } from '@dozer/ui'
 import React, { FC, useMemo } from 'react'
 
@@ -34,17 +34,15 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
           'text-right truncate'
         )}
       >
-        {trade?.priceImpact?.toFixed(2)}%
+        -{trade?.priceImpact?.toFixed(2)}%
       </Typography>
       <div className="col-span-2 border-t border-stone-200/5 w-full py-0.5" />
       <Typography variant="sm" className="text-stone-400">
         Min. Received
       </Typography>
       <Typography variant="sm" weight={500} className="text-right truncate text-stone-400">
-        {trade.outputAmount && slippageTolerance
-          ? (trade?.outputAmount * (1 - slippageTolerance / 100)).toFixed(2)
-          : ''}{' '}
-        {trade.outputAmount && slippageTolerance ? trade?.otherCurrency?.symbol : ''}
+        {trade.outputAmount ? (trade?.outputAmount * (1 - slippageTolerance / 100)).toFixed(2) : ''}{' '}
+        {trade.outputAmount ? trade?.otherCurrency?.symbol : ''}
       </Typography>
     </>
   )
@@ -75,7 +73,9 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                       <Tooltip
                         panel={<div className="grid grid-cols-2 gap-1">{stats}</div>}
                         button={<InformationCircleIcon width={16} height={16} />}
-                      />{' '}
+                      >
+                        <></>
+                      </Tooltip>{' '}
                       {content}{' '}
                       {usdPrice && trade.amountSpecified ? (
                         <span className="font-medium text-stone-500">(${Number(usdPrice).toFixed(2)})</span>

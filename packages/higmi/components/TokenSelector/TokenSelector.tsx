@@ -1,11 +1,12 @@
-// import { ChainId } from '@dozer/chain'
 import { Token } from '@dozer/currency'
-import { FundSource, useIsMounted } from '@dozer/hooks'
+import { useIsMounted } from '@dozer/hooks'
 import { FC, memo, useMemo } from 'react'
 import { useAccount } from '@dozer/zustand'
-
 import { TokenSelectorDialog } from './TokenSelectorDialog'
 import { ChainId } from '@dozer/chain'
+import { api } from '../../utils/api'
+import { useWalletConnectClient } from '../contexts'
+import { useRouter } from 'next/router'
 
 export type TokenSelectorProps = {
   id?: string
@@ -13,56 +14,69 @@ export type TokenSelectorProps = {
   currency?: Token
   open: boolean
   chainId: ChainId | undefined
-  // tokenMap: Record<string, Token>
-  // customTokenMap?: Record<string, Token>
   onClose(): void
   onSelect?(currency: Token): void
-  // onAddToken?(token: Token): void
-  // onRemoveToken?({ uuid }: { uuid: string }): void
-  // fundSource?: FundSource
   includeNative?: boolean
   tokens?: Token[]
+  pricesMap?: { [key: string]: number }
+  customTokensOnly?: boolean
 }
 
 export const TokenSelector: FC<TokenSelectorProps> = memo(
-  ({
-    id,
-    variant,
-    // tokenMap,
-    chainId,
-    // fundSource = FundSource.WALLET,
-    onSelect,
-    open,
-    // customTokenMap = {},
-    includeNative,
-    tokens,
-    ...props
-  }) => {
-    const { address } = useAccount()
+  ({ id, variant, chainId, onSelect, open, includeNative, tokens, pricesMap, customTokensOnly = false, ...props }) => {
+    const { accounts } = useWalletConnectClient()
+    const address = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
     const isMounted = useIsMounted()
+    const router = useRouter()
 
-    // const _tokenMap: Record<string, Token> = useMemo(
-    //   () => ({ ...tokenMap, ...customTokenMap }),
-    //   [tokenMap, customTokenMap]
-    // )
+    const { balance: balances } = useAccount()
+    const _tokens = useMemo(() => {
+      let filteredTokens = tokens || []
+      if (customTokensOnly) {
+        filteredTokens = filteredTokens.filter((token) => token.imageUrl != undefined)
+      }
 
-    // const _tokenMapValues = useMemo(() => {
-    //   // Optimism token list is dumb, have to remove random weird addresses
-    //   delete _tokenMap['0x0000000000000000000000000000000000000000']
-    //   delete _tokenMap['0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000']
-    //   return Object.values(_tokenMap)
-    // }, [_tokenMap])
+      const sortedTokens = filteredTokens.sort((a: Token, b: Token) => {
+        const balanceA = balances.find((balance) => balance.token_uuid === a.uuid)?.token_balance || 0
+        const balanceB = balances.find((balance) => balance.token_uuid === b.uuid)?.token_balance || 0
 
-    const balances = [
-      {
-        token_uuid: '00',
-        token_symbol: 'HTR',
-        token_balance: 0,
-      },
-    ]
+        if (balanceA === 0 && balanceB === 0) {
+          return 0 // Both tokens have no balance, keep original order
+        }
+        if (balanceA === 0) {
+          return 1 // A has no balance, move it to the end
+        }
+        if (balanceB === 0) {
+          return -1 // B has no balance, move it to the end
+        }
+        return balanceB - balanceA // Sort by balance in descending order
+      })
 
-    const pricesMap = {
-      HTR_UUID: 0.008,
+      // Check if "Create your token" option already exists
+      const createTokenExists = sortedTokens.some((token) => token.uuid === 'create-token')
+
+      // Add the "Create your token" option if it doesn't exist
+      if (!createTokenExists) {
+        sortedTokens.push(
+          new Token({
+            chainId: chainId || ChainId.HATHOR,
+            uuid: 'create-token',
+            decimals: 0,
+            name: 'Create your token',
+            symbol: 'CREATE',
+          })
+        )
+      }
+
+      return sortedTokens
+    }, [tokens, balances, customTokensOnly, chainId])
+
+    const handleSelect = (currency: Token) => {
+      if (currency.uuid === 'create-token') {
+        window.location.href = '/pool/create_token'
+      } else if (onSelect) {
+        onSelect(currency)
+      }
     }
 
     return useMemo(() => {
@@ -73,26 +87,21 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
           open={open}
           account={address}
           balancesMap={balances}
-          // tokenMap={_tokenMap}
           pricesMap={pricesMap}
           chainId={chainId}
-          // fundSource={fundSource}
-          onSelect={onSelect}
+          onSelect={handleSelect}
           includeNative={includeNative}
-          tokens={tokens}
+          tokens={_tokens}
           {...props}
         />
       )
-    }, [address, balances, chainId, isMounted, onSelect, open, pricesMap, props, variant, tokens])
+    }, [address, balances, chainId, isMounted, handleSelect, open, pricesMap, props, variant, _tokens])
   },
   (prevProps, nextProps) => {
     return (
       prevProps.variant === nextProps.variant &&
       prevProps.currency === nextProps.currency &&
       prevProps.open === nextProps.open
-      // prevProps.tokenMap === nextProps.tokenMap &&
-      // prevProps.customTokenMap === nextProps.customTokenMap
-      // prevProps.fundSource === nextProps.fundSource
     )
   }
 )

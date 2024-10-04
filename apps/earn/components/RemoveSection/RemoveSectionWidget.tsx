@@ -1,5 +1,5 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/outline'
+import { ChevronDownIcon } from '@heroicons/react/24/outline'
 import { ChainId } from '@dozer/chain'
 import { Amount, Token, Type } from '@dozer/currency'
 import { formatUSD } from '@dozer/format'
@@ -20,6 +20,7 @@ import { useAccount, useNetwork } from '@dozer/zustand'
 
 // import { usePoolPosition } from '../PoolPositionProvider'
 import { SettingsOverlay } from '../SettingsOverlay'
+import { useWalletConnectClient } from '@dozer/higmi'
 
 interface RemoveSectionWidgetProps {
   chainId: ChainId
@@ -32,7 +33,6 @@ interface RemoveSectionWidgetProps {
   currency1?: Token
   setPercentage(percentage: string): void
   prices: { [key: string]: number }
-  BalanceLPAmount: Amount<Token> | undefined
   children: ReactNode
 }
 
@@ -47,12 +47,16 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
   currency0,
   currency1,
   prices,
-  BalanceLPAmount,
   children,
 }) => {
   const isMounted = useIsMounted()
   const [hover, setHover] = useState(false)
-  const { address, balance } = useAccount()
+  const {
+    // address,
+    balance,
+  } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const value0 = prices[token0.uuid]
   const value1 = prices[token1.uuid]
 
@@ -61,7 +65,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
   return (
     <div className="relative" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <Transition
-        show={Boolean(hover && (!address || !BalanceLPAmount?.greaterThan(ZERO)))}
+        show={Boolean(hover && (!address || value0 == 0 || value1 == 0))}
         as={Fragment}
         enter="transition duration-300 origin-center ease-out"
         enterFrom="transform opacity-0"
@@ -81,34 +85,31 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
           <Disclosure defaultOpen={true}>
             {({ open }) => (
               <>
-                {
-                  // isFarm &&
-                  isMounted ? (
-                    <Widget.Header title="Remove Liquidity" className="!pb-3 ">
-                      <div className="flex gap-3">
-                        <SettingsOverlay chainId={network} />
-                        <Disclosure.Button className="w-full pr-0.5">
-                          <div className="flex items-center justify-between">
-                            <div
-                              className={classNames(
-                                open ? 'rotate-180' : 'rotate-0',
-                                'transition-all w-5 h-5 -mr-1.5 flex items-center delay-300'
-                              )}
-                            >
-                              <ChevronDownIcon
-                                width={24}
-                                height={24}
-                                className="group-hover:text-stone-200 text-stone-300"
-                              />
-                            </div>
+                {isMounted ? (
+                  <Widget.Header title="Remove Liquidity" className="!pb-3 ">
+                    <div className="flex gap-3">
+                      <SettingsOverlay chainId={network} />
+                      <Disclosure.Button className="w-full pr-0.5">
+                        <div className="flex items-center justify-between">
+                          <div
+                            className={classNames(
+                              open ? 'rotate-180' : 'rotate-0',
+                              'transition-all w-5 h-5 -mr-1.5 flex items-center delay-300'
+                            )}
+                          >
+                            <ChevronDownIcon
+                              width={24}
+                              height={24}
+                              className="group-hover:text-stone-200 text-stone-300"
+                            />
                           </div>
-                        </Disclosure.Button>
-                      </div>
-                    </Widget.Header>
-                  ) : (
-                    <Widget.Header title="Remove Liquidity" className="!pb-3" />
-                  )
-                }
+                        </div>
+                      </Disclosure.Button>
+                    </div>
+                  </Widget.Header>
+                ) : (
+                  <Widget.Header title="Remove Liquidity" className="!pb-3" />
+                )}
                 <Transition
                   unmount={false}
                   className="transition-[max-height] overflow-hidden"
@@ -126,7 +127,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                           <Input.Percent
                             onUserInput={(val) => setPercentage(val ? Math.min(+val, 100).toString() : '')}
                             value={percentage}
-                            placeholder="100%"
+                            placeholder="95%"
                             variant="unstyled"
                             className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-2xl')}
                           />
@@ -141,7 +142,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                           <Button size="xs" onClick={() => setPercentage('75')}>
                             75%
                           </Button>
-                          <Button size="xs" onClick={() => setPercentage('100')}>
+                          <Button size="xs" onClick={() => setPercentage('95')}>
                             MAX
                           </Button>
                         </div>
@@ -156,7 +157,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                             )}
                           </Typography>
                         </AppearOnMount>
-                        <AppearOnMount className="flex justify-end col-span-2" show={Boolean(balance)}>
+                        {/* <AppearOnMount className="flex justify-end col-span-2" show={Boolean(balance)}>
                           <Typography
                             onClick={() => setPercentage('100')}
                             as="button"
@@ -164,9 +165,9 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                             weight={500}
                             className="truncate text-stone-300 hover:text-stone-200"
                           >
-                            Balance: {BalanceLPAmount?.toFixed(2)}
+                            Balance: {token0Minimum?.toFixed(2)}
                           </Typography>
-                        </AppearOnMount>
+                        </AppearOnMount> */}
                       </div>
                       <Transition
                         show={Boolean(+percentage > 0 && token0Minimum && token1Minimum)}

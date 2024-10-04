@@ -1,14 +1,15 @@
-import { ExternalLinkIcon } from '@heroicons/react/solid'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
 import { formatPercent } from '@dozer/format'
-import { Pair, pairFromPool } from '../../utils/Pair'
+// import { Pair } from '@dozer/api'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
 
 import { AddSectionLegacy, AddSectionMyPosition, Layout } from '../../components'
 
-import { RouterOutputs, api } from '../../utils/trpc'
+import { RouterOutputs, api } from '../../utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
+import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
 type PoolsOutputArray = RouterOutputs['getPools']['all']
 
@@ -18,7 +19,7 @@ type PoolsOutput = ElementType<PoolsOutputArray>
 const LINKS = (pool: PoolsOutput): BreadcrumbLink[] => [
   {
     href: `/${pool.id}`,
-    label: `${pool.name} - ${formatPercent(pool.swapFee / 10000)}`,
+    label: `${pool.name}`,
   },
   {
     href: `/${pool.id}/add`,
@@ -30,11 +31,12 @@ const Add: NextPage = () => {
   const router = useRouter()
   const id = router.query.id as string
 
-  const { data: pool } = api.getPools.byId.useQuery({ id })
-  if (!pool) return <></>
-  const pair = pool ? pairFromPool(pool) : ({} as Pair)
+  const { data: pools } = api.getPools.all.useQuery()
+  if (!pools) return <></>
+  const pair = pools.find((pool) => pool.id === id)
+  // const pair = pool ? pairFromPool(pool) : ({} as Pair)
   if (!pair) return <></>
-  const tokens = pool ? [pool.token0, pool.token1] : []
+  const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
   const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
@@ -43,31 +45,32 @@ const Add: NextPage = () => {
     // <PoolPositionProvider pair={pair}>
     <>
       {/* <PoolPositionStakedProvider pair={pair}> */}
-      <Layout breadcrumbs={LINKS(pool)}>
+      <Layout breadcrumbs={LINKS(pair)}>
+        <BlockTracker client={api} />
         <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
           <div className="hidden md:block" />
           <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-            <AddSectionLegacy pool={pool} prices={prices} />
+            <AddSectionLegacy pool={pair} prices={prices} />
             {/* <AddSectionStake poolAddress={pair.id} /> */}
             <Container className="flex justify-center">
               <Link.External
-                href="https://docs.dozer.finance/docs/Products/dozer/Liquidity%20Pools"
+                href="https://docs.dozer.finance/products/dex-liquidity-pools"
                 className="flex justify-center px-6 py-4 decoration-stone-500 hover:bg-opacity-[0.06] cursor-pointer rounded-2xl"
               >
                 <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-500">
                   Learn more about liquidity and yield farming
-                  <ExternalLinkIcon width={16} height={16} className="text-stone-500" />
+                  <ArrowTopRightOnSquareIcon width={16} height={16} className="text-stone-500" />
                 </Typography>
               </Link.External>
             </Container>
           </div>
-          <div className="order-1 sm:order-3">
+          {/* <div className="order-1 sm:order-3">
             <AppearOnMount>
               <AddSectionMyPosition pair={pair} />
             </AppearOnMount>
-          </div>
+          </div> */}
         </div>
-        <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" />
+        {/* <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" /> */}
       </Layout>
       {/* </PoolPositionStakedProvider> */}
     </>
@@ -96,9 +99,13 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
   const ssg = generateSSGHelper()
-  const pool = await ssg.getPools.byId.fetch({ id })
+  const pools = await ssg.getPools.all.fetch()
+  if (!pools) {
+    throw new Error(`Failed to fetch pool, received ${pools}`)
+  }
+  const pool = pools.find((pool) => pool.id === id)
   if (!pool) {
-    throw new Error(`Failed to fetch pool, received ${pool}`)
+    throw new Error(`Failed to find pool with id ${id}`)
   }
   const tokens = [pool.token0, pool.token1]
   await ssg.getTokens.all.prefetch()

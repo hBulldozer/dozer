@@ -8,7 +8,7 @@
  */
 // import { getServerSession, type Session } from "@acme/auth";
 import { prisma } from '@dozer/database'
-import { initTRPC,TRPCError } from '@trpc/server'
+import { initTRPC, TRPCError } from '@trpc/server'
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
@@ -68,6 +68,7 @@ export const createTRPCContext = async () => {
  */
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
+  isServer: true,
   errorFormatter({ shape, error }) {
     return {
       ...shape,

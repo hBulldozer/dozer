@@ -1,0 +1,17 @@
+{
+    "versionGroups": [
+      {
+        "label": "Use workspace protocol when developing local packages",
+        "dependencies": ["@dozer/*"],
+        "dependencyTypes": ["dev", "peer", "prod"],
+        "pinVersion": "workspace:*"
+      },
+      {
+        "label": "Use fixed version of headlessui",
+        "dependencies": ["@headlessui/*"],
+        "dependencyTypes": ["dev", "peer", "prod"],
+        "pinVersion": "^1.7.3"
+      }
+
+    ]
+  }

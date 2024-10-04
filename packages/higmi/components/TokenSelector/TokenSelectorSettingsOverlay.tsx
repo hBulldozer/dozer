@@ -1,4 +1,4 @@
-import { CogIcon } from '@heroicons/react/outline'
+import { CogIcon } from '@heroicons/react/24/outline'
 import { IconButton, Overlay, SlideIn } from '@dozer/ui'
 import React, { FC, useState } from 'react'
 
@@ -7,7 +7,7 @@ import { TokenSelectorProps } from './TokenSelector'
 
 type TokenSelectorSettingsOverlayProps = TokenSelectorProps
 
-export const TokenSelectorSettingsOverlay: FC<TokenSelectorSettingsOverlayProps> = () => {
+const TokenSelectorSettingsOverlay: FC<TokenSelectorSettingsOverlayProps> = () => {
   const [open, setOpen] = useState(false)
 
   return (

@@ -1,15 +1,54 @@
 {
   "name": "@dozer/higmi",
-  "version": "0.0.0",
-  "private": true,
   "description": "Dozer Higmi",
+  "version": "0.0.0",
+  "author": "Dozer",
+  "dependencies": {
+    "@dozer/api": "workspace:*",
+    "@dozer/chain": "workspace:*",
+    "@dozer/currency": "workspace:*",
+    "@dozer/hooks": "workspace:*",
+    "@dozer/math": "workspace:*",
+    "@dozer/ui": "workspace:*",
+    "@dozer/zustand": "workspace:*",
+    "@headlessui/react": "^1.7.3",
+    "@heroicons/react": "^2.1.5",
+    "@trpc/client": "^10.45.0",
+    "@trpc/next": "^10.45.0",
+    "hathor-rpc-handler-test": "^0.0.38",
+    "superjson": "1.9.1",
+    "@walletconnect/sign-client": "^2.15.1",
+    "@walletconnect/types": "^2.15.1",
+    "@walletconnect/core": "^2.15.1",
+    "@web3modal/standalone": "^2.4.3"
+  },
+  "devDependencies": {
+    "@dozer/eslint-config": "workspace:*",
+    "@dozer/prettier-config": "workspace:*",
+    "@dozer/typescript-config": "workspace:*",
+    "@types/pino": "^7.0.5",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "eslint": "*",
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "typechain": "^8.3.2",
+    "typescript": "^5.3.3"
+  },
   "keywords": [
     "Dozer",
     "higmi"
   ],
   "license": "MIT",
-  "author": "Dozer",
-  "source": "./index.ts",
+  "optionalDependencies": {
+    "next": "14.2.5"
+  },
+  "peerDependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "private": true,
   "scripts": {
     "check": "tsc --pretty --noEmit",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
@@ -17,43 +56,5 @@
     "lint": "TIMING=1 eslint . --fix",
     "test": "jest --passWithNoTests"
   },
-  "dependencies": {
-    "@headlessui/react": "^1.7.3",
-    "@heroicons/react": "^1.0.6",
-    "@dozer/hooks": "workspace:*",
-    "@dozer/currency": "workspace:*",
-    "@dozer/format": "workspace:*",
-    "@dozer/math": "workspace:*",
-    "@dozer/chain": "workspace:*",
-    "@dozer/api": "workspace:*",
-    "@dozer/zustand": "workspace:*",
-    "@dozer/react-query": "workspace:*",
-    "@dozer/ui": "workspace:*",
-    "superjson": "1.9.1",
-    "@trpc/client": "^10.45.0",
-    "@trpc/next": "^10.45.0"
-  },
-  "devDependencies": {
-    "@dozer/eslint-config": "workspace:*",
-    "@dozer/jest-config": "workspace:*",
-    "@dozer/prettier-config": "workspace:*",
-    "@dozer/typescript-config": "workspace:*",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
-    "eslint": "8.56.0",
-    "ethers": "6.9.2",
-    "next": "13.1.1",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "tsup": "8.0.1",
-    "typechain": "^8.3.2",
-    "typescript": "5.3.3"
-  },
-  "peerDependencies": {
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
-  },
-  "optionalDependencies": {
-    "next": "13.1.1"
-  }
+  "source": "./index.ts"
 }

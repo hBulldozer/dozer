@@ -1,4 +1,4 @@
-import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/solid'
+import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/24/solid'
 import { flexRender, RowData, Table as ReactTableType } from '@tanstack/react-table'
 import React, { ReactNode, useState } from 'react'
 
@@ -14,6 +14,7 @@ interface GenericTableProps<C> {
   placeholder: ReactNode
   pageSize: number
   linkFormatter?(row: C): string
+  isPendingFormatter?: (row: C) => boolean
 }
 
 declare module '@tanstack/react-table' {
@@ -30,6 +31,7 @@ export const GenericTable = <T extends { id: string }>({
   placeholder,
   pageSize,
   linkFormatter,
+  isPendingFormatter,
 }: GenericTableProps<T>) => {
   const [showOverlay, setShowOverlay] = useState(false)
   const [popupInvisible, setPopupInvisible] = useState(false)
@@ -38,7 +40,7 @@ export const GenericTable = <T extends { id: string }>({
 
   return (
     <>
-      {/* <LoadingOverlay show={showOverlay} /> */}
+      <LoadingOverlay show={showOverlay} />
       <Table.container>
         <Table.table style={{ minHeight: (pageSize + 1) * 52 }}>
           <Table.thead>
@@ -84,6 +86,7 @@ export const GenericTable = <T extends { id: string }>({
           <Table.tbody>
             {!loading &&
               table.getRowModel().rows.map((row) => {
+                const isPending = row.original.id.startsWith('pending-')
                 if (HoverElement) {
                   return (
                     <Tooltip
@@ -96,14 +99,15 @@ export const GenericTable = <T extends { id: string }>({
                       button={
                         <Table.tr
                           onClick={(e) => {
-                            if (!e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey) {
+                            if (!isPending && !e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey) {
                               setPopupInvisible(true)
                               setTimeout(() => setShowOverlay(true), 250)
                             }
                           }}
-                          className="cursor-pointer"
+                          className={classNames('cursor-pointer', isPending ? 'opacity-50 pointer-events-none' : '')}
                         >
                           {row.getVisibleCells().map((cell, i) => {
+                            if (isPending && i !== 0) return null // Hide other columns for pending rows
                             return (
                               <Table.td
                                 className="!px-0 relative"
@@ -117,40 +121,58 @@ export const GenericTable = <T extends { id: string }>({
                                   ...(cell.column.columnDef.minSize && {
                                     minWidth: cell.column.columnDef.minSize,
                                   }),
+                                  ...(isPending &&
+                                    i === 0 && {
+                                      width: '100%', // Make the first column take full width for pending rows
+                                    }),
                                 }}
                                 key={cell.id}
+                                colSpan={isPending ? table.getVisibleFlatColumns().length : 1}
                               >
-                                {linkFormatter ? (
-                                  <Link.Internal href={linkFormatter(row.original)} passHref={true}>
-                                    <a
+                                <div
+                                  className={classNames(
+                                    'absolute inset-0 flex items-center px-3 sm:px-4',
+                                    cell.column.columnDef.meta?.className
+                                  )}
+                                >
+                                  {isPending && i === 0 ? (
+                                    <>
+                                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                      <span className="ml-2 text-yellow-500">Liquidity in motion...</span>
+                                    </>
+                                  ) : linkFormatter ? (
+                                    <Link.Internal href={linkFormatter(row.original)} passHref={true}>
+                                      <a
+                                        className={classNames(
+                                          'absolute inset-0 flex items-center px-3 sm:px-4',
+                                          cell.column.columnDef.meta?.className
+                                        )}
+                                      >
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                      </a>
+                                    </Link.Internal>
+                                  ) : (
+                                    <div
                                       className={classNames(
                                         'absolute inset-0 flex items-center px-3 sm:px-4',
                                         cell.column.columnDef.meta?.className
                                       )}
                                     >
                                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                    </a>
-                                  </Link.Internal>
-                                ) : (
-                                  <div
-                                    className={classNames(
-                                      'absolute inset-0 flex items-center px-3 sm:px-4',
-                                      cell.column.columnDef.meta?.className
-                                    )}
-                                  >
-                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                  </div>
-                                )}
+                                    </div>
+                                  )}
+                                </div>
                               </Table.td>
                             )
                           })}
                         </Table.tr>
                       }
-                      panel={<HoverElement row={row.original} />}
-                    />
+                      panel={!isPending && HoverElement ? <HoverElement row={row.original} /> : <></>}
+                    >
+                      <></>
+                    </Tooltip>
                   )
                 }
-
                 return (
                   <Table.tr
                     key={row.id}

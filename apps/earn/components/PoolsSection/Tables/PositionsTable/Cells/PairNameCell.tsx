@@ -4,7 +4,7 @@ import { FC } from 'react'
 
 import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
-import { useTokensFromPair } from '../../../../../utils/useTokensFromPair'
+import { useTokensFromPair } from '@dozer/api'
 
 export const PairNameCell: FC<CellProps> = ({ row }) => {
   const { token0, token1 } = useTokensFromPair(row)
@@ -23,9 +23,9 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
       <div className="flex flex-col">
         <Typography variant="sm" weight={500} className="flex items-center gap-1 text-slate-50">
           {token0.symbol} <span className="text-slate-500">/</span> {token1.symbol}{' '}
-          <div className={classNames('bg-slate-700 rounded-lg px-1 py-0.5 ml-1')}>
+          {/* <div className={classNames('bg-slate-700 rounded-lg px-1 py-0.5 ml-1')}>
             {formatNumber(row.feeUSD / 100)}%
-          </div>
+          </div> */}
         </Typography>
         {/* <Typography variant="xxs" className="text-slate-400">
           {row.type === 'STABLE_POOL' && 'Stable'}

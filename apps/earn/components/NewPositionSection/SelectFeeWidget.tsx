@@ -1,5 +1,4 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { Fee } from '../../utils/Fee'
 import { ChainId } from '@dozer/chain'
 import { Tab, Tooltip, Typography } from '@dozer/ui'
 import { Widget } from '@dozer/ui'
@@ -7,15 +6,25 @@ import React, { FC, memo } from 'react'
 
 // import { TRIDENT_ENABLED_NETWORKS } from '../../config'
 
+// Fee - Tiers TBD
+enum Fee {
+  LOW = 1,
+  MEDIUM = 5,
+  AVERAGE = 10,
+  DEFAULT = 30,
+  HIGH = 100,
+  //   MAX = 10000
+}
+
 interface SelectFeeWidgetProps {
   selectedNetwork: ChainId
   fee: number
   setFee(fee: number): void
 }
 
-export const FEE_MAP = [Fee.LOW, Fee.MEDIUM, Fee.DEFAULT, Fee.HIGH]
+const FEE_MAP = [Fee.LOW, Fee.MEDIUM, Fee.DEFAULT, Fee.HIGH]
 
-export const SelectFeeWidget: FC<SelectFeeWidgetProps> = memo(({ fee, setFee }) => {
+const SelectFeeWidget: FC<SelectFeeWidgetProps> = memo(({ fee, setFee }) => {
   return (
     <Widget id="selectFee" maxWidth={400} className="!bg-stone-800">
       <Widget.Content>
@@ -37,7 +46,9 @@ export const SelectFeeWidget: FC<SelectFeeWidgetProps> = memo(({ fee, setFee }) 
                     This network does not allow changing the default fee of 0.3%
                   </Typography>
                 }
-              ></Tooltip>
+              >
+                <></>
+              </Tooltip>
               <Transition
                 unmount={false}
                 className="transition-[max-height] overflow-hidden"

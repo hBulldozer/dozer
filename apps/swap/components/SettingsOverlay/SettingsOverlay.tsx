@@ -1,4 +1,4 @@
-import { CogIcon } from '@heroicons/react/outline'
+import { CogIcon } from '@heroicons/react/24/outline'
 import { ChainId } from '@dozer/chain'
 import { classNames, IconButton, Overlay, SlideIn } from '@dozer/ui'
 import { useSettings } from '@dozer/zustand'
@@ -6,7 +6,7 @@ import { FC, useState } from 'react'
 
 // import { CarbonOffsetOverlay } from './CarbonOffsetOverlay'
 // import { CustomTokensOverlay } from './CustomTokensOverlay'
-// import { ExpertMode } from './ExpertMode'
+import { ExpertMode } from './ExpertMode'
 import { SlippageToleranceDisclosure } from './SlippageToleranceDisclosure'
 
 interface SettingsOverlay {
@@ -29,6 +29,7 @@ export const SettingsOverlay: FC<SettingsOverlay> = ({ chainId }) => {
               <Overlay.Header onClose={() => setOpen(false)} title="Settings" />
               <div className="px-1 py-1">
                 <SlippageToleranceDisclosure />
+                <ExpertMode />
               </div>
             </div>
           </Overlay.Content>

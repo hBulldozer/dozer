@@ -70,8 +70,19 @@ export class Chain implements Chain {
   constructor(data: (typeof CHAINS)[number]) {
     Object.assign(this, data)
   }
+  getNanoContractDetailsUrl(nanoContractId: string): string {
+    if (!this.explorers) return ''
+    if (process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL)
+      return `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/nano_contract/detail/${nanoContractId}`
+    for (const explorer of this.explorers) {
+      return `${explorer.url}/nano_contract/detail/${nanoContractId}`
+    }
+    return ''
+  }
   getTxUrl(txHash: string): string {
     if (!this.explorers) return ''
+    if (process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL)
+      return `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/transaction/${txHash}`
     for (const explorer of this.explorers) {
       return `${explorer.url}/transaction/${txHash}`
     }
@@ -79,6 +90,8 @@ export class Chain implements Chain {
   }
   getTokenUrl(tokenUUID: string): string {
     if (!this.explorers) return ''
+    if (process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL)
+      return `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/token_detail/${tokenUUID}`
     for (const explorer of this.explorers) {
       return `${explorer.url}/token_detail/${tokenUUID}`
     }
@@ -86,6 +99,8 @@ export class Chain implements Chain {
   }
   getAccountUrl(accountAddress: string): string {
     if (!this.explorers) return ''
+    if (process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL)
+      return `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/address/${accountAddress}`
     for (const explorer of this.explorers) {
       return `${explorer.url}/address/${accountAddress}`
     }

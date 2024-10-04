@@ -1,18 +1,7 @@
 {
   "name": "@dozer/typescript-config",
-  "version": "0.1.0",
   "description": "Dozer TypeScript Config",
-  "keywords": [
-    "dozer",
-    "typescript",
-    "config"
-  ],
-  "homepage": "https://dozer.finance",
-  "repository": {
-    "type": "git",
-    "directory": "packages/config/typescript"
-  },
-  "license": "MIT",
+  "version": "0.1.0",
   "exports": {
     "./base-strictest.json": "./base-strictest.json",
     "./base.json": "./base.json",
@@ -46,5 +35,16 @@
     "./node18.json",
     "./react-library.json",
     "./strictest.json"
-  ]
+  ],
+  "homepage": "https://dozer.finance",
+  "keywords": [
+    "config",
+    "dozer",
+    "typescript"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "directory": "packages/config/typescript"
+  }
 }

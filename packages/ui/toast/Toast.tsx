@@ -10,6 +10,7 @@ import { ToastFailed } from './ToastFailed'
 import { ToastInfo } from './ToastInfo'
 import { ToastInline } from './ToastInline'
 import { ToastPending } from './ToastPending'
+import { ChainId } from '@dozer/chain'
 
 export const TOAST_OPTIONS: ToastOptions = {
   position: 'top-right',
@@ -51,11 +52,16 @@ export interface NotificationData {
     failed: ReactNode | Array<ReactNode>
     info?: ReactNode | Array<ReactNode>
   }
+  chainId?: ChainId
   href?: string
-  txHash: `0x${string}`
+  txHash: string
   groupTimestamp: number
   timestamp: number
+  last_status?: string
+  last_message?: string
   promise: Promise<any>
+  status?: string
+  account?: string
 }
 
 export const createInlineToast = (props: NotificationData) => {
@@ -73,7 +79,7 @@ export const createToast = (props: NotificationData) => {
   // Spawn new toasts based on promise result
   props.promise
     .then(() => {
-      setTimeout(onDismiss, 3000)
+      setTimeout(onDismiss, 1000)
 
       // Spawn success notification
       const toastId = `completed:${props.txHash}`

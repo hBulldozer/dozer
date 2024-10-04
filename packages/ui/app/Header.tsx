@@ -1,24 +1,36 @@
 import { Listbox, Transition } from '@headlessui/react'
-import { ChevronDownIcon, ExternalLinkIcon } from '@heroicons/react/outline'
+import { ChevronDownIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import useScrollPosition from '@react-hook/window-scroll'
 import { useBreakpoint, useIsMounted } from '@dozer/hooks'
-import Image from 'next/legacy/image'
-import React, { Fragment } from 'react'
+import React, { Fragment, useState } from 'react'
 
-import { classNames, Container, IconButton, Link, MaxWidth, Select, DozerIcon, DozerWithTextIcon, Typography } from '..'
+import {
+  classNames,
+  Container,
+  IconButton,
+  Link,
+  MaxWidth,
+  Select,
+  DozerIcon,
+  DozerWithTextIcon,
+  Typography,
+  App,
+  OzerText,
+} from '..'
 
 export enum AppType {
-  Root = 'Explore Apps',
+  Root = 'Explore',
   Swap = 'Swap',
-  Invest = 'Earn',
+  Invest = 'Pools',
   Blog = 'Blog',
+  Tokens = 'Tokens',
 }
 
 const LINK = {
   [AppType.Root]: '/',
   [AppType.Swap]: '/swap',
-  [AppType.Invest]: '/earn',
-  [AppType.Blog]: '/blog',
+  [AppType.Invest]: '/pool',
+  [AppType.Tokens]: '/swap/tokens',
 }
 
 export interface HeaderProps extends React.HTMLProps<HTMLElement> {
@@ -43,6 +55,7 @@ export function Header({
 }: HeaderProps): JSX.Element {
   const isMounted = useIsMounted()
   const scrollY = useScrollPosition()
+  const [open, setOpen] = useState<boolean>(false)
 
   const { isMd } = useBreakpoint('md')
 
@@ -77,14 +90,40 @@ export function Header({
         className={classNames('grid grid-cols-3 items-center w-full mx-auto z-[101] px-4 row-full')}
       >
         <div className="flex items-center flex-grow gap-3">
-          <a className="flex flex-row items-center gap-1.5" href="/">
-            <div className="hidden md:block w-9 h-9 hover:animate-heartbeat">
-              <DozerIcon width="100%" height="100%" className="mr-2 " />
-            </div>
-            <div className=" md:hidden w-24 ">
-              <DozerWithTextIcon width="100%" height="100%" />
-            </div>
-          </a>
+          {withScrollBackground ? (
+            <a className="flex flex-row items-center gap-1.5" href="/">
+              <div
+                className={classNames(
+                  'relative overflow-hidden transition-all duration-300 ease-in-out',
+                  !showBackground ? 'w-[120px] h-9' : 'w-9 h-9'
+                )}
+              >
+                <div
+                  className={classNames(
+                    'absolute -inset-0.5 transition-transform duration-300 ease-in-out',
+                    showBackground ? '-translate-x-[100px]' : 'translate-x-0'
+                  )}
+                >
+                  <OzerText width="100%" height="36" className="absolute top-0 left-0" />
+                </div>
+                <div className="absolute inset-0 z-10 pointer-events-none">
+                  <div className="relative w-9 h-9">
+                    <div className="absolute inset-0 pr-1 bg-black bg-clip-content"></div>
+                    <DozerIcon width="36" height="36" className="relative z-20" />
+                  </div>
+                </div>
+              </div>
+            </a>
+          ) : (
+            <a className="flex flex-row items-center gap-1.5" href="/">
+              <div className="hidden md:block w-9 h-9 hover:animate-heartbeat">
+                <DozerIcon width="100%" height="100%" className="mr-2 " />
+              </div>
+              <div className="w-24 md:hidden">
+                <DozerWithTextIcon width="100%" height="100%" />
+              </div>
+            </a>
+          )}
           <div className="bg-stone-200/10 w-0.5 h-[20px]" />
           {!hide ? (
             <Select
@@ -100,8 +139,8 @@ export function Header({
                 </Listbox.Button>
               }
             >
-              <Select.Options className="w-[max-content] !bg-stone-700 -ml-5 mt-5 !max-h-[unset]">
-                <div className="grid grid-cols-1 gap-1 px-2 py-2 md:grid-cols-3">
+              <Select.Options className=" !bg-stone-700 -ml-5 mt-5 !max-h-[unset]">
+                <div className="grid grid-cols-1 gap-1 px-2 py-2 md:grid-cols-2">
                   <div>
                     <Typography
                       variant="xs"
@@ -112,7 +151,7 @@ export function Header({
                     </Typography>
                     <Select.Option
                       as="a"
-                      href="https://dozer.finance/swap"
+                      href="/swap"
                       key={AppType.Swap}
                       value={AppType.Swap}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -124,7 +163,20 @@ export function Header({
                     </Select.Option>
                     <Select.Option
                       as="a"
-                      href="https://dozer.finance/earn"
+                      href="/swap/tokens"
+                      key={AppType.Tokens}
+                      value={AppType.Tokens}
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      {AppType.Tokens}
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Top tokens on Dozer
+                      </Typography>
+                    </Select.Option>
+
+                    <Select.Option
+                      as="a"
+                      href="/pool"
                       key={AppType.Invest}
                       value={AppType.Invest}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -135,7 +187,7 @@ export function Header({
                       </Typography>
                     </Select.Option>
                   </div>
-                  <div>
+                  {/* <div>
                     <Typography
                       variant="xs"
                       weight={600}
@@ -143,7 +195,7 @@ export function Header({
                     >
                       Products
                     </Typography>
-                  </div>
+                  </div> */}
                   <div>
                     <Typography
                       variant="xs"
@@ -154,7 +206,23 @@ export function Header({
                     </Typography>
                     <Select.Option
                       as="a"
-                      href="https://dozer.finance/blog"
+                      href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      key={AppType.Blog}
+                      value={AppType.Blog}
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      <div className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500 !hover:text-transparent">
+                        Presale
+                      </div>
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Don't be late anon!
+                      </Typography>
+                    </Select.Option>
+                    {/* <Select.Option
+                      as="a"
+                      href="https://mvp.dozer.finance/blog"
                       key={AppType.Blog}
                       value={AppType.Blog}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
@@ -163,7 +231,66 @@ export function Header({
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
                         Stay up to date with Dozer
                       </Typography>
+                    </Select.Option> */}
+                    <Select.Option
+                      as="a"
+                      href="https://www.x.com/DozerProtocol"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      key="Check our Tweets"
+                      value="Check our Tweets"
+                      className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
+                    >
+                      Twitter
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Stay up to date with Dozer
+                      </Typography>
                     </Select.Option>
+                    {/* <Select.Option
+                      as="a"
+                      href="https://www.t.me/h_bulldozer"
+                      key="Contact us!"
+                      value="Contact us!"
+                      className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
+                    >
+                      Contact us!
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        DM us!
+                      </Typography>
+                    </Select.Option> */}
+                    <Select.Option
+                      as="a"
+                      href="https://docs.dozer.finance"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      key="Check our Docs"
+                      value="Check our Docs"
+                      className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
+                    >
+                      Documentation
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        Read our Early Documentation
+                      </Typography>
+                    </Select.Option>{' '}
+                    {/* <Select.Option
+                      as="a"
+                      // href="https://www.docs.dozer.finance"
+                      key="Donate"
+                      value="Donate"
+                      className="!border-stone-700 !cursor-pointer pl-2 pr-12 flex flex-col gap-0 !items-start group"
+                    >
+                      <a
+                        onClick={() => {
+                          setOpen(true)
+                        }}
+                      >
+                        <App.DonateModal open={open && !hide} setOpen={setOpen} />
+                        Donate
+                        <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                          Support us
+                        </Typography>
+                      </a>
+                    </Select.Option>{' '} */}
                   </div>
                 </div>
               </Select.Options>
@@ -178,5 +305,3 @@ export function Header({
     </header>
   )
 }
-
-export default Header

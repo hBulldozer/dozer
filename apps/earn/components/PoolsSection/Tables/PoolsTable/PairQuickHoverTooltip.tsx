@@ -1,10 +1,10 @@
 import { formatNumber, formatPercent } from '@dozer/format'
-import { Pair } from '../../../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { Button, Chip, Currency, Link, Typography } from '@dozer/ui'
 import { FC } from 'react'
 
 // import { incentiveRewardToToken } from '../../../../lib/functions'
-import { useTokensFromPair } from '../../../../utils/useTokensFromPair'
+import { useTokensFromPair } from '@dozer/api'
 import { ICON_SIZE } from '../contants'
 
 interface PairQuickHoverTooltipProps {

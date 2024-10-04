@@ -1,6 +1,6 @@
 // import { getAddress } from '@ethersproject/address'
 // import { Pair } from '@dozer/graph-client'
-import { Pair } from '../../utils/Pair'
+import { Pair } from '@dozer/api'
 import { FundSource } from '@dozer/hooks'
 import { ZERO } from '@dozer/math'
 import { Button, Link } from '@dozer/ui'
@@ -44,7 +44,7 @@ export const PoolButtons: FC<PoolButtonsProps> = ({ pair }) => {
         as="a"
         href={`../../swap?token0=${pair.token0.uuid}&token1=${pair.token1.uuid}&chainId=${pair.chainId}`}
       >
-        Trade
+        Swap
       </Button>
     </div>
   )

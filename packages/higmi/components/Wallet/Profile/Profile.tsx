@@ -1,9 +1,9 @@
 import { Popover } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/solid'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { useBreakpoint } from '@dozer/hooks'
 import { classNames, DEFAULT_INPUT_UNSTYLED, JazzIcon } from '@dozer/ui'
 import Image from 'next/legacy/image'
-import React, { FC, useState, useRef, useEffect } from 'react'
+import React, { FC, useState, useRef, useEffect, useMemo } from 'react'
 import ReactDOM from 'react-dom'
 import { useAccount, useNetwork } from '@dozer/zustand'
 
@@ -12,9 +12,10 @@ import { Default } from './Default'
 import { Transactions } from './Transactions'
 import { Portal } from './Portal'
 import { shortenAddress } from './Utils'
-import { useBalance } from '@dozer/react-query'
 // import { api } from '../../../utils/api'
 import { client } from '@dozer/api'
+import { useWalletConnectClient } from '../../contexts'
+import { Tokens } from './Tokens'
 
 interface ProfileProps {
   client: typeof client
@@ -22,31 +23,48 @@ interface ProfileProps {
 export enum ProfileView {
   Default,
   Transactions,
+  Tokens,
 }
 export const Profile: FC<ProfileProps> = ({ client }) => {
+  const { notifications, clearNotifications, updateNotificationStatus } = useAccount()
   const { isSm } = useBreakpoint('sm')
   const [view, setView] = useState<ProfileView>(ProfileView.Default)
   const { network } = useNetwork()
-  const accountAddress = useAccount((state) => state.address)
+  // const accountAddress = useAccount((state) => state.address)
   // const utils = api.useContext()
   // const htr = utils.getTokens.all.getData()
   // console.log(htr)
-  const [address, setAddress] = useState('')
+  // const [address, setAddress] = useState('')
   const chainId = network
   // const { data, isLoading, isError, error } = useBalance(accountAddress)
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { data, isLoading, isError, error } = client.getProfile.balance.useQuery(
-    { address: accountAddress },
-    { enabled: Boolean(accountAddress) }
+    { address: address },
+    { enabled: Boolean(address), staleTime: 5000 }
   )
   const { setBalance } = useAccount()
+
+  const filteredNotifications = useMemo<Record<number, string[]>>(() => {
+    const filteredEntries = Object.entries(notifications)
+      .reverse()
+      .filter(([, _notifications], index: number) => {
+        const json_notification = JSON.parse(_notifications[0])
+        return json_notification.account === address
+      })
+    return filteredEntries.reduce<Record<number, string[]>>((result, [key, value]) => {
+      result[parseInt(key, 10)] = value
+      return result
+    }, {})
+  }, [notifications, address])
 
   // const { data: avatar } = useEnsAvatar({
   //   address,
   // })
 
-  useEffect(() => {
-    setAddress(accountAddress)
-  }, [accountAddress])
+  // useEffect(() => {
+  //   setAddress(accountAddress)
+  // }, [accountAddress])
 
   useEffect(() => {
     if (address && data && !isLoading && !isError) {
@@ -69,8 +87,27 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   if (address) {
     const panel = (
       <Popover.Panel className="w-full sm:w-[320px] fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-[unset] sm:left-[unset] mt-4 sm:rounded-xl rounded-b-none shadow-md shadow-black/[0.3] bg-stone-900 border border-stone-200/20">
-        {view === ProfileView.Default && <Default chainId={chainId} address={address} setView={setView} />}
-        {view === ProfileView.Transactions && <Transactions setView={setView} />}
+        {view === ProfileView.Default && (
+          <Default api_client={client} chainId={chainId} address={address} setView={setView} />
+        )}
+        {view === ProfileView.Transactions && (
+          <Transactions
+            setView={setView}
+            notifications={filteredNotifications}
+            clearNotifications={clearNotifications}
+            updateNotificationStatus={updateNotificationStatus}
+            client={client}
+          />
+        )}
+        {view === ProfileView.Tokens && (
+          <Tokens
+            setView={setView}
+            // notifications={filteredNotifications}
+            // clearNotifications={clearNotifications}
+            // updateNotificationStatus={updateNotificationStatus}
+            client={client}
+          />
+        )}
       </Popover.Panel>
     )
 

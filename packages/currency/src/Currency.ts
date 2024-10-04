@@ -9,6 +9,7 @@ import { Token } from './Token'
  * A currency is any fungible financial instrument, including HTR, all Hathor Custom tokens
  */
 export abstract class Currency {
+  public readonly imageUrl?: string
   /**
    * Returns whether the currency is native to the chain and must be wrapped (e.g. Ether)
    */
@@ -46,12 +47,14 @@ export abstract class Currency {
    * @param rebase of the currency
    */
   protected constructor({
+    imageUrl,
     chainId,
     decimals,
     symbol,
     name,
     rebase = { base: JSBI.BigInt(1), elastic: JSBI.BigInt(1) },
   }: {
+    imageUrl?: string
     chainId: number | string
     decimals: number | string
     symbol?: string
@@ -64,6 +67,7 @@ export abstract class Currency {
     this.symbol = symbol
     this.name = name
     this.rebase = rebase
+    this.imageUrl = imageUrl
   }
 
   /**

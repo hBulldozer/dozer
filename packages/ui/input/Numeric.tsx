@@ -74,4 +74,3 @@ export const Input = forwardRef<HTMLInputElement, NumericProps>(
   }
 )
 
-export default Input

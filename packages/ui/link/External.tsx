@@ -6,12 +6,13 @@ const COLOR = {
   yellow: 'text-yellow',
 }
 
-export type Color = 'primary' | 'yellow'
+type Color = 'primary' | 'yellow'
 
 export interface ExternalLinkProps extends Omit<HTMLProps<HTMLAnchorElement>, 'as' | 'ref' | 'onClick'> {
   color?: Color
   startIcon?: JSX.Element
   endIcon?: JSX.Element
+  target?: string
 }
 
 export const External: FC<ExternalLinkProps> = ({

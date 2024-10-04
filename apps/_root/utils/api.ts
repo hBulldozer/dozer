@@ -1,14 +1,18 @@
-import { httpBatchLink, loggerLink } from '@trpc/client'
+import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client'
+
 import { createTRPCNext } from '@trpc/next'
 import superjson from 'superjson'
 
 import type { AppRouter } from '@dozer/api'
+import { RegisterOptions } from 'superjson/dist/class-registry'
+import { CustomTransfomer } from 'superjson/dist/custom-transformer-registry'
+import { SuperJSONResult, Class, JSONValue } from 'superjson/dist/types'
 
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') return '' // browser should use relative url
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}` // SSR should use vercel url
 
-  return `http://localhost:3000` // dev SSR should use localhost
+  return `http://localhost:9000` // dev SSR should use localhost
 }
 
 export const api = createTRPCNext<AppRouter>({
@@ -26,6 +30,16 @@ export const api = createTRPCNext<AppRouter>({
       ],
     }
   },
+})
+
+export const client = createTRPCProxyClient<AppRouter>({
+  transformer: superjson,
+  links: [
+    httpBatchLink({
+      url: `${getBaseUrl()}/api/trpc`,
+      // You can pass any HTTP headers you wish here
+    }),
+  ],
 })
 
 export { type RouterInputs, type RouterOutputs } from '@dozer/api'
