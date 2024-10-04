@@ -18,12 +18,11 @@ export const Header: FC = () => {
 
   return (
     <App.Header
-      withScrollBackground={true}
       appType={AppType.Swap}
       nav={
         <App.NavItemList>
           <App.NavItem
-            className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500"
+            className="text-transparent bg-clip-text bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500"
             href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
             label="Presale"
             external
