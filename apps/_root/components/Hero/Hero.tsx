@@ -155,8 +155,14 @@ export const Hero: FC = () => {
                           delay: 2,
                         }}
                       >
-                        <Button as="a" href="/swap" size="md" fullWidth className="relative z-10">
-                          Enter App
+                        <Button
+                          as="a"
+                          href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
+                          size="md"
+                          fullWidth
+                          className="relative z-10"
+                        >
+                          Join Now
                         </Button>
                       </motion.div>
                     </div>

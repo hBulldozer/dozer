@@ -62,31 +62,31 @@ const nextConfig = {
   },
   async rewrites() {
     return [
-      {
-        source: '/:path*',
-        destination: `/:path*`,
-      },
-      {
-        source: '/swap',
-        destination: `${SWAP_URL}/swap`,
-      },
-      {
-        source: '/swap/:path*',
-        destination: `${SWAP_URL}/swap/:path*`,
-      },
-      {
-        source: '/pool',
-        destination: `${EARN_URL}/pool`,
-      },
-      {
-        source: '/pool/:path*',
-        destination: `${EARN_URL}/pool/:path*`,
-      },
+      // {
+      //   source: '/:path*',
+      //   destination: `/:path*`,
+      // },
+      // {
+      //   source: '/swap',
+      //   destination: `${SWAP_URL}/swap`,
+      // },
+      // {
+      //   source: '/swap/:path*',
+      //   destination: `${SWAP_URL}/swap/:path*`,
+      // },
+      // {
+      //   source: '/pool',
+      //   destination: `${EARN_URL}/pool`,
+      // },
+      // {
+      //   source: '/pool/:path*',
+      //   destination: `${EARN_URL}/pool/:path*`,
+      // },
 
-      {
-        source: '/kucoin/:path*',
-        destination: `https://api.kucoin.com/api/v1/:path*`,
-      },
+      // {
+      //   source: '/kucoin/:path*',
+      //   destination: `https://api.kucoin.com/api/v1/:path*`,
+      // },
       {
         source: '/explorer-service/:path*',
         destination: `https://explorer-service.mainnet.hathor.network/:path*`,
