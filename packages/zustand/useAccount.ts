@@ -18,6 +18,8 @@ export interface AccountState {
   updateNotificationLastState: (txHash: string, last_status: string, last_message: string) => void
   updateNotificationStatus: (txHash: string, status: string, message?: string) => void
   addNotification: (notification: string[]) => void
+  zealyIdentity: string
+  setZealyIdentity: (identity: string) => void
 }
 
 export const useAccount = create<AccountState>()(
@@ -89,6 +91,8 @@ export const useAccount = create<AccountState>()(
             [Object.keys(state.notifications).length + 1]: notification,
           },
         })),
+      zealyIdentity: '',
+      setZealyIdentity: (identity) => set((state) => ({ zealyIdentity: identity })),
     }),
     {
       name: 'account-storage',
