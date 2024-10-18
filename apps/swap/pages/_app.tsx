@@ -60,6 +60,17 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
         <link rel="manifest" href="/images/site.webmanifest?v=1" />
         <link rel="mask-icon" href="/images/safari-pinned-tab.svg?v=1" color="#fa52a0" />
         <link rel="shortcut icon" href="/images/favicon.ico?v=1" />
+        <meta property="og:title" content="Dozer Finance - The future of finance" />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:description"
+          content="Trade on Dozer. Seamless, fast and secure. No KYC, no registration needed and you won't spend gas."
+        />
+        <meta
+          property="og:image"
+          content="https://supabase.dozer.finance/storage/v1/object/public/uploads/dozer_background.jpeg"
+        />
+        <meta property="og:url" content="https://testnet.dozer.finance/swap" />
       </Head>
       <ThemeProvider>
         <App.Shell>
