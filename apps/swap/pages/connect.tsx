@@ -4,10 +4,13 @@ import { NextPage } from 'next'
 import { useWalletConnectClient } from '@dozer/higmi' // adjust the import path as needed
 import { useAccount } from '@dozer/zustand' // adjust the import path as needed
 import { api } from 'utils/api'
+import { Typography } from '@dozer/ui'
+import { Button } from '@dozer/higmi/components/Wallet/Button'
 
 const ZealyConnectPage: NextPage = () => {
   const router = useRouter()
   const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const setZealyIdentity = useAccount((state) => state.setZealyIdentity)
   const [isProcessing, setIsProcessing] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -41,6 +44,7 @@ const ZealyConnectPage: NextPage = () => {
       try {
         const fullUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`
         const result = await zealyConnect.mutateAsync({
+          address,
           zealyUserId,
           signature,
           callbackUrl,
@@ -61,12 +65,15 @@ const ZealyConnectPage: NextPage = () => {
     processZealyConnect()
   }, [router, accounts, setZealyIdentity, zealyConnect])
 
-  if (isProcessing) {
-    return <div>Processing Zealy connection...</div>
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>
+  if (isProcessing || error) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full mt-10">
+        <Typography variant="h1" weight={600} className="mb-5 text-center ">
+          {isProcessing ? 'Processing Zealy connection...' : error ? error : ''}
+        </Typography>
+        {error?.includes('Please connect your wallet first') && <Button size="lg" />}
+      </div>
+    )
   }
 
   return null

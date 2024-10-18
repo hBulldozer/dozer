@@ -3,11 +3,13 @@ import crypto from 'crypto'
 import { z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
+import { fetchNodeData } from '../helpers/fetchFunction'
 
 export const rewardsRouter = createTRPCRouter({
   zealyConnect: procedure
     .input(
       z.object({
+        address: z.string(),
         zealyUserId: z.string(),
         signature: z.string(),
         callbackUrl: z.string().url(),
@@ -44,7 +46,7 @@ export const rewardsRouter = createTRPCRouter({
 
       // Prepare callback URL
       const callbackWithParams = new URL(callbackUrl)
-      //   callbackWithParams.searchParams.append('identifier', ctx.address)
+      callbackWithParams.searchParams.append('identifier', input.address)
 
       const callbackHmac = crypto.createHmac('sha256', process.env.ZEALY_CONNECT_SECRET as string)
       callbackHmac.update(callbackWithParams.toString())
@@ -55,5 +57,18 @@ export const rewardsRouter = createTRPCRouter({
         redirectUrl: callbackWithParams.toString(),
         zealyUserId,
       }
+    }),
+  checkClaim: procedure
+    .input(z.object({ contractId: z.string(), address: z.string(), methods: z.array(z.string()) }))
+    .query(async ({ input }) => {
+      const endpoint = 'nano_contract/history'
+      const queryParams = [`id=${input.contractId}`]
+      const response = await fetchNodeData(endpoint, queryParams)
+
+      const checkClaim = response['history']
+        .filter((tx: any) => input.methods.includes(tx['nc_method']))
+        .filter((tx: any) => tx['inputs'].some((x: any) => x['decoded']['address'] == input.address))
+      const success = checkClaim.length > 0 ? true : false
+      return success
     }),
 })
