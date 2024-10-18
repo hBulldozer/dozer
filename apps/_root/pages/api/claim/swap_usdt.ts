@@ -5,7 +5,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   const payload = request.body
   const pool_ncid = await prisma.pool.findFirst({
     where: {
-      name: 'HTR-USDT',
+      name: 'USDT-HTR',
     },
   })
   if (!pool_ncid) {
