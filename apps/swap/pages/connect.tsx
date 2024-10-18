@@ -67,7 +67,7 @@ const ZealyConnectPage: NextPage = () => {
 
   if (isProcessing || error) {
     return (
-      <div className="flex flex-col items-center justify-center w-full mt-10">
+      <div className="flex flex-col items-center justify-center w-full mt-9">
         <Typography variant="h1" weight={600} className="mb-5 text-center ">
           {isProcessing ? 'Processing Zealy connection...' : error ? error : ''}
         </Typography>
