@@ -9,7 +9,7 @@ import { Button } from '@dozer/higmi/components/Wallet/Button'
 
 const ZealyConnectPage: NextPage = () => {
   const router = useRouter()
-  const { accounts } = useWalletConnectClient()
+  const { accounts, isInitializing } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const setZealyIdentity = useAccount((state) => state.setZealyIdentity)
   const [isProcessing, setIsProcessing] = useState(true)
@@ -19,7 +19,6 @@ const ZealyConnectPage: NextPage = () => {
 
   useEffect(() => {
     const { zealyUserId, signature, callbackUrl } = router.query
-
     if (
       !zealyUserId ||
       !signature ||
@@ -34,8 +33,14 @@ const ZealyConnectPage: NextPage = () => {
     }
 
     const processZealyConnect = async () => {
+      if (isInitializing) {
+        setIsProcessing(false)
+        setError('Please wait for the WalletConnect integration to finish')
+        return
+      }
+
       // Check if user is connected
-      if (accounts.length === 0) {
+      if (!isInitializing && accounts.length === 0) {
         setIsProcessing(false)
         setError('Please connect your wallet first')
         return
@@ -63,7 +68,7 @@ const ZealyConnectPage: NextPage = () => {
     }
 
     processZealyConnect()
-  }, [router, accounts, setZealyIdentity, zealyConnect])
+  }, [router, accounts, setZealyIdentity, isInitializing])
 
   if (isProcessing || error) {
     return (
