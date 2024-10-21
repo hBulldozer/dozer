@@ -72,19 +72,15 @@ export const rewardsRouter = createTRPCRouter({
       const endpoint = 'nano_contract/history'
       const queryParams = [`id=${input.contractId}`]
       const response = await fetchNodeData(endpoint, queryParams)
-      console.log(
-        response['history'][0]['timestamp'],
-        input.latest_timestamp,
-        response['history'][0]['timestamp'] > input.latest_timestamp - 24 * 60 * 60
-      )
       const checkClaim = response['history']
         .filter((tx: any) => input.methods.includes(tx['nc_method'])) // Filter out transactions not involving the specified methods
         .filter((tx: any) => tx['inputs'].some((x: any) => x['decoded']['address'] == input.address)) // Filter out transactions not involving the specified address
         .filter((tx: any) => tx['timestamp'] > input.latest_timestamp - 24 * 60 * 60) // Filter out transactions older than 24 hours
         .filter(
           (tx: any) =>
-            tx['nc_context']['actions'].filter((x: any) => x['token_uid'] == '00' && x['amount'] > input.minimum_amount)
-              .length > 0
+            tx['nc_context']['actions'].filter(
+              (x: any) => x['token_uid'] == '00' && x['amount'] >= input.minimum_amount
+            ).length > 0
         ) // Filter out transactions with less than the specified minimum amount
       const success = checkClaim.length > 0 ? true : false
       return success

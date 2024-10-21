@@ -4,18 +4,40 @@ import { NextPage } from 'next'
 import { useWalletConnectClient } from '@dozer/higmi' // adjust the import path as needed
 import { useAccount } from '@dozer/zustand' // adjust the import path as needed
 import { api } from 'utils/api'
-import { Typography } from '@dozer/ui'
+import { createErrorToast, createInfoToast, createSuccessToast, NotificationData, Typography } from '@dozer/ui'
 import { Button } from '@dozer/higmi/components/Wallet/Button'
+import { ConnectHero } from 'components/ConnectHero'
+import { isError } from 'lodash'
 
 const ZealyConnectPage: NextPage = () => {
   const router = useRouter()
   const { accounts, isInitializing } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const setZealyIdentity = useAccount((state) => state.setZealyIdentity)
+  const zealyIdentity = useAccount((state) => state.zealyIdentity)
   const [isProcessing, setIsProcessing] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const zealyConnect = api.getRewards.zealyConnect.useMutation()
+
+  const notificationData: NotificationData = {
+    type: 'approval',
+    summary: {
+      pending: 'Zealy Identity Connecting',
+      completed: 'Zealy Identity Connected',
+      failed: 'Zealy Identity Connection Failed',
+      info: 'Zealy Identity Connected',
+    },
+    status: 'pending',
+    txHash: '0x000',
+    groupTimestamp: Math.floor(Date.now() / 1000),
+    timestamp: Math.floor(Date.now() / 1000),
+    promise: new Promise((resolve) => {
+      setTimeout(resolve, 500)
+    }),
+    account: address,
+    title: 'Zealy Identity Connected',
+  }
 
   useEffect(() => {
     const { zealyUserId, signature, callbackUrl } = router.query
@@ -70,18 +92,27 @@ const ZealyConnectPage: NextPage = () => {
     processZealyConnect()
   }, [router, accounts, setZealyIdentity, isInitializing])
 
-  if (isProcessing || error) {
-    return (
-      <div className="flex flex-col items-center justify-center w-full mt-9">
-        <Typography variant="h1" weight={600} className="mb-5 text-center ">
-          {isProcessing ? 'Processing Zealy connection...' : error ? error : ''}
-        </Typography>
-        {error?.includes('Please connect your wallet first') && <Button size="lg" />}
-      </div>
-    )
-  }
+  useEffect(() => {
+    if (error) {
+      const message = error ? error : 'Could not continue in Zealy Connection'
+      createErrorToast(message, true)
+    }
+    if (isProcessing)
+      createInfoToast({
+        ...notificationData,
+        summary: {
+          pending: 'Zealy Identity Connecting...',
+          completed: 'Zealy Identity Connecting...',
+          failed: 'Zealy Identity Connecting...',
+          info: 'Zealy Identity Connecting...',
+        },
+      })
+    if (zealyIdentity) {
+      createSuccessToast(notificationData)
+    }
+  }, [isProcessing, error, zealyIdentity])
 
-  return null
+  return <ConnectHero />
 }
 
 export default ZealyConnectPage

@@ -20,18 +20,18 @@ export default async function handler(request: NextApiRequest, response: NextApi
   const success = await client.getRewards.checkClaim.query({
     contractId: pool_ncid.id,
     address: payload.accounts['zealy-connect'].replace(/['"]+/g, ''),
-    methods: ['swap_exact_tokens_for_tokens', 'swap_tokens_for_exact_tokens'],
+    methods: ['add_liquidity'],
     minimum_amount: 10000,
     latest_timestamp: latest_timestamp,
   })
   // const success = false
   if (request.headers['x-api-key'] && request.headers['x-api-key'] === process.env.API_KEY) {
     if (success) {
-      return response.status(200).json({ message: 'Claimed !' })
+      return response.status(200).json({ message: 'Claimed!' })
     } else {
       return response.status(400).json({
         message:
-          "Not Claimed! You didn't complete the task within 24 hours or you didn't swap the minimum amount of tokens.",
+          "Not Claimed! You didn't complete the task within 24 hours or you didn't added the minimum amount of tokens.",
       })
     }
   } else return response.status(400).json({ message: 'Not Authorized !' })

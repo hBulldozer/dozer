@@ -62,6 +62,7 @@ export interface NotificationData {
   promise: Promise<any>
   status?: string
   account?: string
+  title?: string
 }
 
 export const createInlineToast = (props: NotificationData) => {
