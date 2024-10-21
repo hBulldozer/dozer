@@ -545,4 +545,38 @@ export const poolRouter = createTRPCRouter({
 
       return pool
     }),
+  checkCreatedBy: procedure.input(z.object({ address: z.string() })).query(async ({ ctx, input }) => {
+    type Transaction = Record<string, unknown>
+
+    function hasObjectsWithKeys(transactions: Transaction[], key1: string, key2: string): boolean {
+      return transactions.some((tx) => key1 in tx && key2 in tx)
+    }
+    const endpoint = 'thin_wallet/address_search'
+    const queryParams = [`address=${input.address}`, 'count=20']
+    const data = await fetchNodeData(endpoint, queryParams)
+    if (!data || !data.success || !data.transactions) {
+      throw new Error('Failed to fetch transactions')
+    }
+    const transactions = data.transactions
+    console.log(transactions)
+    if (transactions.has_more) {
+      // If more than 20 transactions, check only in database
+      const userToken = await ctx.prisma.token.findFirst({
+        where: { createdBy: input.address },
+        select: { uuid: true },
+      })
+      const checkInDb = await ctx.prisma.pool.findFirst({
+        where: { token1: { uuid: userToken?.uuid } },
+      })
+      return checkInDb ? true : false
+    } else {
+      // If less than 20 transactions, check in the node address_search endpoint
+      if (hasObjectsWithKeys(transactions, 'nc_method', 'nc_blueprint_id')) {
+        return transactions.some(
+          (tx: Transaction) => tx.nc_method === 'initialize' && tx.nc_blueprint_id == process.env.LPBLUEPRINT
+        )
+      }
+      return false
+    }
+  }),
 })

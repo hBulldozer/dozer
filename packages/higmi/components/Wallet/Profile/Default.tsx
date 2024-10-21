@@ -110,7 +110,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
           type: 'swap',
           chainId: network,
           summary: {
-            pending: `Sending HTR to you...`,
+            pending: `Sending HTR to you`,
             completed: `Success! Sent HTR to you.`,
             failed: 'Token creation failed',
             info: `Sending HTR to you.`,

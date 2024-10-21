@@ -170,4 +170,29 @@ export const tokenRouter = createTRPCRouter({
       },
     })
   }),
+  checkCreatedBy: procedure.input(z.object({ address: z.string() })).query(async ({ ctx, input }) => {
+    type Transaction = Record<string, unknown>
+
+    function hasObjectsWithKeys(transactions: Transaction[], key1: string, key2: string): boolean {
+      return transactions.some((tx) => key1 in tx && key2 in tx)
+    }
+    const endpoint = 'thin_wallet/address_search'
+    const queryParams = [`address=${input.address}`, 'count=20']
+    const data = await fetchNodeData(endpoint, queryParams)
+    if (!data || !data.success || !data.transactions) {
+      throw new Error('Failed to fetch transactions')
+    }
+    const transactions = data.transactions
+    console.log(transactions)
+    if (transactions.has_more) {
+      // If more than 20 transactions, check only in database
+      const checkInDb = await ctx.prisma.token.findFirst({
+        where: { custom: true, createdBy: input.address },
+      })
+      return checkInDb ? true : false
+    } else {
+      // If less than 20 transactions, check in the node address_search endpoint
+      return hasObjectsWithKeys(transactions, 'token_symbol', 'token_name')
+    }
+  }),
 })
