@@ -558,7 +558,6 @@ export const poolRouter = createTRPCRouter({
       throw new Error('Failed to fetch transactions')
     }
     const transactions = data.transactions
-    console.log(transactions)
     if (transactions.has_more) {
       // If more than 20 transactions, check only in database
       const userToken = await ctx.prisma.token.findFirst({
