@@ -101,7 +101,7 @@ export const rewardsRouter = createTRPCRouter({
       const checkClaim = response['history']
         .filter((tx: any) => input.methods.includes(tx['nc_method'])) // Filter out transactions not involving the specified methods
         .filter((tx: any) => tx['inputs'].some((x: any) => x['decoded']['address'] != input.address)) // Filter out transactions not involving the specified address
-      const success = checkClaim.length > input.n_of_friends ? true : false
+      const success = checkClaim.length >= input.n_of_friends ? true : false
       return success
     }),
   checkAnotherCustomToken: procedure
@@ -119,7 +119,7 @@ export const rewardsRouter = createTRPCRouter({
       }
       const transactions = data.transactions
       const anotherCustomTokens = await ctx.prisma.token.findMany({
-        where: { createdBy: { not: input.address } },
+        where: { createdBy: { notIn: [input.address, ''] } },
         select: { uuid: true },
       })
       const anotherCustomTokensUuid = anotherCustomTokens.map((token) => token.uuid)
@@ -133,7 +133,8 @@ export const rewardsRouter = createTRPCRouter({
         const endpoint_balance = 'thin_wallet/address_balance'
         const queryParams_balance = [`address=${input.address}`]
         const data_balance = await fetchNodeData(endpoint_balance, queryParams_balance)
-        const balance = data_balance.tokens_data.keys()
+        const balance = Object.keys(data_balance.tokens_data)
+        console.log(balance)
         const checkInBalance = balance.filter((token: string) =>
           anotherCustomTokensUuid.some((token_uuid: string) => token == token_uuid)
         )
@@ -147,7 +148,7 @@ export const rewardsRouter = createTRPCRouter({
               (tx['nc_method'] == 'swap_tokens_for_exact_tokens' || tx['nc_method'] == 'swap_exact_tokens_for_tokens')
           )
           .filter((tx: any) => 'nc_id' in tx && anotherPoolsId.includes(tx['nc_id']))
-        return swapAnotherCustomTokenTx?.tx_id
+        return swapAnotherCustomTokenTx.length > 0 ? true : false
       }
     }),
 })
