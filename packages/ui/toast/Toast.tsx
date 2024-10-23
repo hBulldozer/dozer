@@ -123,6 +123,30 @@ export const createErrorToast = (message: string | undefined, code: boolean) => 
   )
 }
 
+export const createZealyErrorToast = (message: string | undefined, code: boolean) => {
+  if (!message) return
+
+  const toastId = `zealy`
+  toast(
+    <>
+      <ToastContent title="Error Occurred" summary={message} code={code} />
+      <ToastButtons onDismiss={() => toast.dismiss(toastId)} />
+    </>,
+    {
+      position: 'bottom-right',
+      autoClose: 5000,
+      hideProgressBar: true,
+      closeOnClick: false,
+      pauseOnHover: true,
+      draggable: false,
+      progress: undefined,
+      closeButton: false,
+      icon: false,
+      toastId,
+    }
+  )
+}
+
 export const createSuccessToast = (props: Omit<NotificationData, 'promise'>) => {
   const toastId = `completed:${props.txHash}`
   toast(<ToastCompleted {...props} onDismiss={() => toast.dismiss(toastId)} />, {

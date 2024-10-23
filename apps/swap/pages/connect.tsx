@@ -4,10 +4,8 @@ import { NextPage } from 'next'
 import { useWalletConnectClient } from '@dozer/higmi' // adjust the import path as needed
 import { useAccount } from '@dozer/zustand' // adjust the import path as needed
 import { api } from 'utils/api'
-import { createErrorToast, createInfoToast, createSuccessToast, NotificationData, Typography } from '@dozer/ui'
-import { Button } from '@dozer/higmi/components/Wallet/Button'
+import { createSuccessToast, createZealyErrorToast, NotificationData } from '@dozer/ui'
 import { ConnectHero } from 'components/ConnectHero'
-import { isError } from 'lodash'
 
 const ZealyConnectPage: NextPage = () => {
   const router = useRouter()
@@ -41,76 +39,67 @@ const ZealyConnectPage: NextPage = () => {
 
   useEffect(() => {
     const { zealyUserId, signature, callbackUrl } = router.query
-    if (
-      !zealyUserId ||
-      !signature ||
-      !callbackUrl ||
-      typeof zealyUserId !== 'string' ||
-      typeof signature !== 'string' ||
-      typeof callbackUrl !== 'string'
-    ) {
-      setIsProcessing(false)
-      setError('Invalid Zealy Connect parameters')
-      return
-    }
 
-    const processZealyConnect = async () => {
-      if (isInitializing) {
+    if (router.isReady) {
+      if (
+        !zealyUserId ||
+        !signature ||
+        !callbackUrl ||
+        typeof zealyUserId !== 'string' ||
+        typeof signature !== 'string' ||
+        typeof callbackUrl !== 'string'
+      ) {
         setIsProcessing(false)
-        setError('Please wait for the WalletConnect integration to finish')
+        setError('Invalid Zealy Connect parameters')
         return
       }
 
-      // Check if user is connected
-      if (!isInitializing && accounts.length === 0) {
-        setIsProcessing(false)
-        setError('Please connect your wallet first')
-        return
+      const processZealyConnect = async () => {
+        if (isInitializing) {
+          return
+        }
+
+        // Check if user is connected
+        if (!isInitializing && accounts.length === 0) {
+          setIsProcessing(false)
+          setError('Please connect your wallet first')
+          return
+        }
+
+        try {
+          const fullUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`
+          const result = await zealyConnect.mutateAsync({
+            address,
+            zealyUserId,
+            signature,
+            callbackUrl,
+            fullUrl,
+          })
+
+          // Save Zealy User ID
+          setZealyIdentity(result.zealyUserId)
+
+          // Redirect back to Zealy
+          router.push(result.redirectUrl)
+        } catch (err) {
+          setIsProcessing(false)
+          setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+        }
       }
 
-      try {
-        const fullUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`
-        const result = await zealyConnect.mutateAsync({
-          address,
-          zealyUserId,
-          signature,
-          callbackUrl,
-          fullUrl,
-        })
-
-        // Save Zealy User ID
-        setZealyIdentity(result.zealyUserId)
-
-        // Redirect back to Zealy
-        router.push(result.redirectUrl)
-      } catch (err) {
-        setIsProcessing(false)
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred')
-      }
+      processZealyConnect()
     }
-
-    processZealyConnect()
   }, [router, accounts, setZealyIdentity, isInitializing])
 
   useEffect(() => {
-    if (error) {
+    if (!isProcessing && !isInitializing && error) {
       const message = error ? error : 'Could not continue in Zealy Connection'
-      createErrorToast(message, true)
+      createZealyErrorToast(message, true)
     }
-    if (isProcessing)
-      createInfoToast({
-        ...notificationData,
-        summary: {
-          pending: 'Zealy Identity Connecting...',
-          completed: 'Zealy Identity Connecting...',
-          failed: 'Zealy Identity Connecting...',
-          info: 'Zealy Identity Connecting...',
-        },
-      })
     if (zealyIdentity) {
       createSuccessToast(notificationData)
     }
-  }, [isProcessing, error, zealyIdentity])
+  }, [isProcessing, isInitializing, error, zealyIdentity])
 
   return <ConnectHero />
 }

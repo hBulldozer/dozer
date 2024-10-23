@@ -3,24 +3,9 @@ import { prisma } from '@dozer/database'
 import { client } from 'utils/api'
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   const payload = request.body
-  const token_symbol = request.query.token as string
-  if (!token_symbol) {
-    return response.status(400).json({ message: 'Token not found !' })
-  }
-  const pool_ncid = await prisma.pool.findFirst({
-    where: {
-      name: `${token_symbol.toUpperCase()}-HTR`,
-    },
-  })
-  if (!pool_ncid) {
-    return response.status(400).json({ message: 'Pool not found !' })
-  }
 
-  const success = await client.getRewards.checkClaim.query({
-    contractId: pool_ncid.id,
+  const success = await client.getRewards.checkAnotherCustomToken.query({
     address: payload.accounts['zealy-connect'].replace(/['"]+/g, ''),
-    methods: ['add_liquidity'],
-    minimum_amount: 10000,
   })
 
   if (request.headers['x-api-key'] && request.headers['x-api-key'] === process.env.API_KEY) {
