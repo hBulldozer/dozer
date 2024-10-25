@@ -64,7 +64,7 @@ export const rewardsRouter = createTRPCRouter({
         contractId: z.string(),
         address: z.string(),
         methods: z.array(z.string()),
-        minimum_amount: z.number(),
+        minimum_amount: z.number().optional(),
         latest_timestamp: z.number().optional(),
       })
     )
@@ -78,10 +78,10 @@ export const rewardsRouter = createTRPCRouter({
         .filter((tx: any) => (input.latest_timestamp ? tx['timestamp'] > input.latest_timestamp - 24 * 60 * 60 : true)) // Filter out transactions older than 24 hours
         .filter(
           (tx: any) =>
-            tx['nc_context']['actions'].filter(
-              (x: any) => x['token_uid'] == '00' && x['amount'] >= input.minimum_amount
+            tx['nc_context']['actions'].filter((x: any) =>
+              input.minimum_amount ? x['token_uid'] == '00' && x['amount'] >= input.minimum_amount : true
             ).length > 0
-        ) // Filter out transactions with less than the specified minimum amount
+        ) // Filter out transactions with less than the specified minimum amount, if minimum_amount is not provided, it will not filter
       const success = checkClaim.length > 0 ? true : false
       return success
     }),
