@@ -1,11 +1,10 @@
-import { symbol, z } from 'zod'
-
-import { createTRPCRouter, procedure } from '../trpc'
-import { fetchNodeData } from '../helpers/fetchFunction'
 import { PrismaClient, Token } from '@dozer/database'
 import { LiquidityPool } from '@dozer/nanocontracts'
-import { toToken } from '../functions'
+import { z } from 'zod'
+
 import { Pair } from '../..'
+import { fetchNodeData } from '../helpers/fetchFunction'
+import { createTRPCRouter, procedure } from '../trpc'
 // Exporting common functions to use in another routers, as is suggested in https://trpc.io/docs/v10/server/server-side-calls
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))

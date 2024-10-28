@@ -63,7 +63,8 @@
         "LOCAL_WALLET_USERS_URL",
         "WALLET_API_KEY",
         "WALLET_ID",
-        "LPBLUEPRINT"
+        "LPBLUEPRINT",
+        "BETBLUEPRINT"
       ],
       "outputs": [
         ".vercel/**/*",
@@ -127,7 +128,8 @@
         "LOCAL_WALLET_USERS_URL",
         "WALLET_API_KEY",
         "WALLET_ID",
-        "LPBLUEPRINT"
+        "LPBLUEPRINT",
+        "BETBLUEPRINT"
       ],
       "cache": false,
       "persistent": true

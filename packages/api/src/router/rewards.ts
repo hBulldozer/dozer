@@ -2,8 +2,8 @@ import { TRPCError } from '@trpc/server'
 import crypto from 'crypto'
 import { z } from 'zod'
 
-import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
+import { createTRPCRouter, procedure } from '../trpc'
 
 export const rewardsRouter = createTRPCRouter({
   zealyConnect: procedure
@@ -75,7 +75,7 @@ export const rewardsRouter = createTRPCRouter({
       const checkClaim = response['history']
         .filter((tx: any) => input.methods.includes(tx['nc_method'])) // Filter out transactions not involving the specified methods
         .filter((tx: any) => tx['inputs'].some((x: any) => x['decoded']['address'] == input.address)) // Filter out transactions not involving the specified address
-        .filter((tx: any) => (input.latest_timestamp ? tx['timestamp'] > input.latest_timestamp - 24 * 60 * 60 : true)) // Filter out transactions older than 24 hours
+        .filter((tx: any) => tx['timestamp'] > Math.floor(new Date().setUTCHours(0, 0, 0, 0) / 1000)) // Fillter out transactions that occured before the 0AM
         .filter(
           (tx: any) =>
             tx['nc_context']['actions'].filter((x: any) =>
@@ -151,4 +151,38 @@ export const rewardsRouter = createTRPCRouter({
         return swapAnotherCustomTokenTx.length > 0 ? true : false
       }
     }),
+  checkBetCreatedBy: procedure.input(z.object({ address: z.string() })).query(async ({ ctx, input }) => {
+    type Transaction = Record<string, unknown>
+
+    function hasObjectsWithKeys(transactions: Transaction[], key1: string, key2: string): boolean {
+      return transactions.some((tx) => key1 in tx && key2 in tx)
+    }
+    const endpoint = 'thin_wallet/address_search'
+    const queryParams = [`address=${input.address}`, 'count=20']
+    const data = await fetchNodeData(endpoint, queryParams)
+    if (!data || !data.success || !data.transactions) {
+      throw new Error('Failed to fetch transactions')
+    }
+    const transactions = data.transactions
+    if (transactions.has_more) {
+      // If more than 20 transactions, check only in database -- REPLACE BY HATHOR DAPP ENDPOINT
+      const userToken = await ctx.prisma.token.findFirst({
+        where: { createdBy: input.address },
+        select: { uuid: true },
+      })
+      const checkInDb = await ctx.prisma.pool.findFirst({
+        where: { token1: { uuid: userToken?.uuid } },
+        select: { id: true },
+      })
+      return checkInDb?.id || undefined
+    } else {
+      // If less than 20 transactions, check in the node address_search endpoint
+      if (hasObjectsWithKeys(transactions, 'nc_method', 'nc_blueprint_id')) {
+        return transactions.find(
+          (tx: Transaction) => tx.nc_method === 'initialize' && tx.nc_blueprint_id == process.env.BETBLUEPRINT
+        )
+      }
+      return undefined
+    }
+  }),
 })
