@@ -185,4 +185,21 @@ export const rewardsRouter = createTRPCRouter({
       return undefined
     }
   }),
+  checkZealyUserAddress: procedure
+    .input(z.object({ zealyId: z.string(), subdomain: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const url = `https://api-v2.zealy.io/public/communities/${input.subdomain}/leaderboard`
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'x-api-key': process.env.ZEALY_API_KEY || '',
+        },
+      })
+      const data = await response.json()
+      if (data.data.length > 0) {
+        const zealyUser = data.data.find((user: any) => user.userId == input.zealyId)
+        console.log(zealyUser)
+        return zealyUser ? zealyUser.address : undefined
+      }
+    }),
 })
