@@ -115,7 +115,7 @@ export const rewardsRouter = createTRPCRouter({
       const queryParams = [`address=${input.address}`, 'count=50']
       const data = await fetchNodeData(endpoint, queryParams)
       if (!data || !data.success || !data.transactions) {
-        throw new Error('Failed to fetch transactions')
+        return false
       }
       const transactions = data.transactions
       const anotherCustomTokens = await ctx.prisma.token.findMany({
@@ -153,6 +153,10 @@ export const rewardsRouter = createTRPCRouter({
     }),
   checkBetCreatedBy: procedure.input(z.object({ address: z.string() })).query(async ({ ctx, input }) => {
     type Transaction = Record<string, unknown>
+    interface BetTransaction {
+      id: string
+      createdAt: number
+    }
 
     function hasObjectsWithKeys(transactions: Transaction[], key1: string, key2: string): boolean {
       return transactions.some((tx) => key1 in tx && key2 in tx)
@@ -161,26 +165,26 @@ export const rewardsRouter = createTRPCRouter({
     const queryParams = [`address=${input.address}`, 'count=20']
     const data = await fetchNodeData(endpoint, queryParams)
     if (!data || !data.success || !data.transactions) {
-      throw new Error('Failed to fetch transactions')
+      return undefined
     }
     const transactions = data.transactions
     if (transactions.has_more) {
-      // If more than 20 transactions, check only in database -- REPLACE BY HATHOR DAPP ENDPOINT
-      const userToken = await ctx.prisma.token.findFirst({
-        where: { createdBy: input.address },
-        select: { uuid: true },
-      })
-      const checkInDb = await ctx.prisma.pool.findFirst({
-        where: { token1: { uuid: userToken?.uuid } },
-        select: { id: true },
-      })
-      return checkInDb?.id || undefined
+      // If more than 20 transactions, check only in hathor dapp endpoint
+      const url = 'https://hathor.network/betting2024/api/nano_contracts'
+      const data = await fetch(`${url}?creator_address=${input.address}`)
+      const response = await data.json()
+      const ids = response
+        .sort((a: BetTransaction, b: BetTransaction) => b.createdAt - a.createdAt)
+        .map((bet: BetTransaction) => bet.id)
+      if (ids.length > 0) {
+        return ids[0]
+      } else return undefined
     } else {
       // If less than 20 transactions, check in the node address_search endpoint
       if (hasObjectsWithKeys(transactions, 'nc_method', 'nc_blueprint_id')) {
         return transactions.find(
           (tx: Transaction) => tx.nc_method === 'initialize' && tx.nc_blueprint_id == process.env.BETBLUEPRINT
-        )
+        ).nc_id
       }
       return undefined
     }
