@@ -65,7 +65,8 @@
         "WALLET_API_KEY",
         "WALLET_ID",
         "LPBLUEPRINT",
-        "BETBLUEPRINT"
+        "BETBLUEPRINT",
+        "SUPABASE_ANON_KEY"
       ],
       "outputs": [
         ".vercel/**/*",
@@ -131,7 +132,8 @@
         "WALLET_API_KEY",
         "WALLET_ID",
         "LPBLUEPRINT",
-        "BETBLUEPRINT"
+        "BETBLUEPRINT",
+        "SUPABASE_ANON_KEY"
       ],
       "cache": false,
       "persistent": true
