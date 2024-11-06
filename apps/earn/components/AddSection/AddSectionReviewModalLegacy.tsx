@@ -2,7 +2,7 @@ import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
 import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } from '@dozer/ui'
 import { FC, ReactNode, useEffect, useState } from 'react'
-import { useAccount, useNetwork, useTrade, TokenBalance, useSettings, useTempTxStore } from '@dozer/zustand'
+import { useAccount, useNetwork, useTrade, TokenBalance, useSettings, useTempTxStore, TradeType } from '@dozer/zustand'
 import { AddSectionReviewModal } from './AddSectionReviewModal'
 import { LiquidityPool } from '@dozer/nanocontracts'
 import { api } from '../../utils/api'
@@ -30,7 +30,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
 }) => {
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const [open, setOpen] = useState(false)
-  const { amountSpecified, outputAmount, pool, mainCurrency, otherCurrency } = useTrade()
+  const { amountSpecified, outputAmount, pool, mainCurrency, otherCurrency, tradeType } = useTrade()
   const [sentTX, setSentTX] = useState(false)
   const {
     //  address,
@@ -132,12 +132,19 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
         hathorRpc,
         pool.id,
         mainCurrency.uuid,
-        amountSpecified,
+        amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
         otherCurrency.uuid,
-        outputAmount * (1 + slippageTolerance),
+        outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
         address
       )
-      addTempTx(pool.id, address, amountSpecified, outputAmount * (1 - slippageTolerance), true, networkData.number)
+      addTempTx(
+        pool.id,
+        address,
+        amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
+        outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
+        true,
+        networkData.number
+      )
     }
   }
 
@@ -165,9 +172,9 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
             account: address,
           }
           editBalanceOnAddLiquidity(
-            amountSpecified,
+            amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
             mainCurrency.uuid,
-            outputAmount * (1 + slippageTolerance),
+            outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
             otherCurrency.uuid
           )
           const notificationGroup: string[] = []

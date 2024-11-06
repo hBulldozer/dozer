@@ -6,6 +6,7 @@ import { FC, useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { AccountState, useAccount } from '@dozer/zustand'
 
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
+import { useWalletConnectClient } from '../contexts'
 
 export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' | 'chainId'> {
   id?: string
@@ -209,15 +210,17 @@ const BalancePanel: FC<BalancePanel> = ({
   // const address = useAccount((state) => state.address)
   const balance = useAccount((state) => state.balance)
   const [tokenBalance, setTokenBalance] = useState(0)
+  const { accounts } = useWalletConnectClient()
+  const address = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
 
   useEffect(() => {
     if (currency && balance) {
       const token = balance.find((obj) => {
         return obj.token_uuid === currency.uuid
       })
-      setTokenBalance(token ? token.token_balance / 100 : 0)
+      setTokenBalance(token && address ? token.token_balance / 100 : 0)
     }
-  }, [currency, balance])
+  }, [currency, balance, address])
 
   return (
     <button

@@ -7,7 +7,7 @@ import { FC, ReactNode, useMemo } from 'react'
 
 // import { useTokenAmountDollarValues } from '../../lib/hooks'
 import { Rate } from '../Rate'
-import { useSettings, useTrade } from '@dozer/zustand'
+import { TradeType, useSettings, useTrade } from '@dozer/zustand'
 
 interface SwapReviewModalBase {
   chainId: number | undefined
@@ -19,16 +19,18 @@ interface SwapReviewModalBase {
 export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children, open, setOpen }) => {
   const { slippageTolerance } = useSettings()
   const { amountSpecified, outputAmount, tradeType, mainCurrencyPrice, otherCurrencyPrice, pool } = useTrade()
-  const input0 = useTrade((state) => state.amountSpecified)
+  const input0 = amountSpecified
+    ? amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 - slippageTolerance : 1)
+    : 0
   // const input1 = useTrade((state) => state.outputAmount)
   const value0 = useTrade((state) => state.mainCurrencyPrice)
   // const value1 = useTrade((state) => state.otherCurrencyPrice)
   const token1 = useTrade((state) => state.mainCurrency)
   const token2 = useTrade((state) => state.otherCurrency)
   // const input0 = amountSpecified ? amountSpecified * (1 - slippageTolerance) : 0
-  const input1 = outputAmount ? outputAmount * (1 - slippageTolerance) : 0
+  const input1 = outputAmount ? outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 - slippageTolerance : 1) : 0
   // const value0 = mainCurrencyPrice ? mainCurrencyPrice * (1 - slippageTolerance) : 0
-  const value1 = otherCurrencyPrice ? otherCurrencyPrice * (1 - slippageTolerance) : 0
+  const value1 = otherCurrencyPrice ? otherCurrencyPrice : 0
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>
@@ -85,7 +87,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
             </Typography>
           </div>
         </div>
-        <div className="flex justify-between items-center pl-4 gap-2 py-6 ">
+        <div className="flex items-center justify-between gap-2 py-6 pl-4 ">
           <div className="flex-1">
             <Rate token1={token1} token2={token2}>
               {({ toggleInvert, content, usdPrice }) => (

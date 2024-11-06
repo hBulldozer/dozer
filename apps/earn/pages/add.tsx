@@ -66,7 +66,6 @@ const Add: FC = () => {
   const [parsedInput0, parsedInput1] = useMemo(() => {
     return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
   }, [input0, input1])
-  const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
   const { network } = useNetwork()
   const trade = useTrade()
   const utils = api.useUtils()
@@ -87,7 +86,7 @@ const Add: FC = () => {
     if (!val) {
       setInput1('')
     }
-    setTradeType(TradeType.EXACT_INPUT)
+    trade.setTradeType(TradeType.EXACT_INPUT)
   }
 
   const onInput1 = async (val: string) => {
@@ -95,13 +94,13 @@ const Add: FC = () => {
     if (!val) {
       setInput0('')
     }
-    setTradeType(TradeType.EXACT_OUTPUT)
+    trade.setTradeType(TradeType.EXACT_OUTPUT)
   }
 
   useEffect(() => {
     const fetchData = async () => {
       setFetchLoading(true)
-      if (tradeType == TradeType.EXACT_INPUT) {
+      if (trade.tradeType == TradeType.EXACT_INPUT) {
         const response =
           selectedPool && token0
             ? await utils.getPools.front_quote_add_liquidity_in.fetch({
@@ -150,7 +149,7 @@ const Add: FC = () => {
           trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
           trade.setAmountSpecified(Number(input0) || 0)
           trade.setOutputAmount(Number(input1) || 0)
-          trade.setTradeType(tradeType)
+          trade.setTradeType(trade.tradeType)
           if (selectedPool) trade.setPool(selectedPool)
         })
         // make sure to catch any error
@@ -164,7 +163,7 @@ const Add: FC = () => {
       trade.setAmountSpecified(0)
       trade.setOutputAmount(0)
       trade.setPriceImpact(0)
-      trade.setTradeType(tradeType)
+      trade.setTradeType(trade.tradeType)
     }
   }, [pools, token0, token1, input0, input1, prices, network, tokens, selectedPool])
 
@@ -208,7 +207,7 @@ const Add: FC = () => {
                   onSelect={_setToken0}
                   chainId={chainId}
                   prices={prices}
-                  loading={tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
+                  loading={trade.tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
                   tokens={tokens.map((token) => {
                     return new Token(token)
                   })}
@@ -227,7 +226,7 @@ const Add: FC = () => {
                     currency={token1}
                     onSelect={_setToken1}
                     chainId={chainId}
-                    loading={tradeType == TradeType.EXACT_INPUT && fetchLoading}
+                    loading={trade.tradeType == TradeType.EXACT_INPUT && fetchLoading}
                     prices={prices}
                     tokens={tokens.map((token) => {
                       return new Token(token)

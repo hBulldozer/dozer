@@ -129,9 +129,9 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
         address,
         pool.id,
         mainCurrency.uuid,
-        amountSpecified,
+        amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 - slippageTolerance : 1),
         otherCurrency.uuid,
-        outputAmount * (1 - slippageTolerance)
+        outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 - slippageTolerance : 1)
       )
     }
   }
@@ -161,9 +161,9 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             account: address,
           }
           editBalanceOnSwap(
-            amountSpecified,
+            amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 - slippageTolerance : 1),
             mainCurrency.uuid,
-            outputAmount * (1 - slippageTolerance),
+            outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 - slippageTolerance : 1),
             otherCurrency.uuid
           )
           const notificationGroup: string[] = []
