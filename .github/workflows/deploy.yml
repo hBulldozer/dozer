@@ -21,7 +21,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Handle Docker image names (CI/CD variables)
       - name: Set Docker image names
         run: |
           REPO_LC=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
@@ -32,20 +31,9 @@ jobs:
             echo "EARN_IMAGE=${{ env.REGISTRY }}/$REPO_LC/earn-app-testnet"
           } >> $GITHUB_ENV
 
-      # Handle application .env file (your app's environment variables)
       - name: Create .env file
         run: |
-          # Create fresh .env file
           echo "${{ secrets.ENV_FILE }}" > .env
-          
-          # Debug: Print first line count
-          echo "Created .env file with $(wc -l < .env) lines"
-          
-          # Ensure no Windows line endings
-          sed -i 's/\r$//' .env
-          
-          # Debug: Verify file permissions
-          ls -la .env
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -57,54 +45,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build root app with fixed secrets format
-      - name: Build and push Root app
+      - name: Build and push images
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          target: root-runner
-          tags: ${{ env.ROOT_IMAGE }}:${{ github.sha }},${{ env.ROOT_IMAGE }}:latest
-          build-args: |
-            NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
-          secret-files: env=.env
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          no-cache: true
-
-      # Build swap app with fixed secrets format
-      - name: Build and push Swap app
-        uses: docker/build-push-action@v5
-        env:
-          DOCKER_BUILDKIT: 1
-        with:
-          context: .
-          push: true
-          target: swap-runner
-          tags: ${{ env.SWAP_IMAGE }}:${{ github.sha }},${{ env.SWAP_IMAGE }}:latest
-          secret-files: env=.env
+          tags: |
+            ${{ env.ROOT_IMAGE }}:${{ github.sha }}
+            ${{ env.ROOT_IMAGE }}:latest
+            ${{ env.SWAP_IMAGE }}:${{ github.sha }}
+            ${{ env.SWAP_IMAGE }}:latest
+            ${{ env.EARN_IMAGE }}:${{ github.sha }}
+            ${{ env.EARN_IMAGE }}:latest
+          secret-files: |
+            env=.env
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          no-cache: true
-
-      # Build earn app with fixed secrets format
-      - name: Build and push Earn app
-        uses: docker/build-push-action@v5
-        env:
-          DOCKER_BUILDKIT: 1
-        with:
-          context: .
-          push: true
-          target: earn-runner
-          tags: ${{ env.EARN_IMAGE }}:${{ github.sha }},${{ env.EARN_IMAGE }}:latest
-          secret-files: env=.env
-          build-args: |
-            NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          no-cache: true
+          target: builder # This ensures it builds everything once
 
   deploy:
     needs: build-and-push
@@ -143,8 +102,8 @@ jobs:
             docker pull ${{ env.SWAP_IMAGE }}:latest
             docker pull ${{ env.EARN_IMAGE }}:latest
 
-            docker compose down
-            docker compose up -d
+            docker-compose down
+            docker-compose up -d
           "
 
       - name: Cleanup SSH key
