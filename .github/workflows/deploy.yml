@@ -29,6 +29,11 @@ jobs:
           echo "SWAP_IMAGE=${{ env.REGISTRY }}/$REPO_LC/swap-app-testnet" >> $GITHUB_ENV
           echo "EARN_IMAGE=${{ env.REGISTRY }}/$REPO_LC/earn-app-testnet" >> $GITHUB_ENV
 
+      # Create .env file from secret
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -48,6 +53,8 @@ jobs:
           tags: ${{ env.ROOT_IMAGE }}:${{ github.sha }},${{ env.ROOT_IMAGE }}:latest
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
+          secret: |
+            "type=file,src=.env"
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -60,6 +67,8 @@ jobs:
           tags: ${{ env.SWAP_IMAGE }}:${{ github.sha }},${{ env.SWAP_IMAGE }}:latest
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
+          secret: |
+            "type=file,src=.env"
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -72,9 +81,11 @@ jobs:
           tags: ${{ env.EARN_IMAGE }}:${{ github.sha }},${{ env.EARN_IMAGE }}:latest
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
+          secret: |
+            "type=file,src=.env"
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
+          
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
