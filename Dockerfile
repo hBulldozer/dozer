@@ -13,9 +13,10 @@ WORKDIR /app
 COPY . .
 
 # Debug: Print environment before install
-RUN --mount=type=secret,id=env,target=/app/.env \
-    echo "Building with following env:" && \
-    cat /app/.env | wc -l && \
+RUN --mount=type=secret,id=env \
+    cat /run/secrets/env > .env && \
+    echo "Contents of .env during install:" && \
+    wc -l .env && \
     pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
@@ -28,10 +29,11 @@ COPY --from=deps /app .
 # Make sure we have the source code in case it was modified by postinstall
 COPY . .
 
-# Debug: Print environment before build
-RUN --mount=type=secret,id=env,target=/app/.env \
-    echo "Building with following env:" && \
-    cat /app/.env | wc -l && \
+# Build with environment variables
+RUN --mount=type=secret,id=env \
+    cat /run/secrets/env > .env && \
+    echo "Contents of .env during build:" && \
+    wc -l .env && \
     pnpm build
 
 # Root app production image
