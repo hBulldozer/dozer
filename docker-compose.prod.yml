@@ -16,28 +16,49 @@ services:
     restart: unless-stopped
 
   root:
-    image: ${ROOT_IMAGE}:latest
+    image: ${ROOT_IMAGE:-ghcr.io/hbulldozer/dozer/root-app-testnet}:latest
     env_file:
       - .env
+    environment:
+      - NODE_ENV=production
     networks:
       - app-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   swap:
-    image: ${SWAP_IMAGE}:latest
+    image: ${SWAP_IMAGE:-ghcr.io/hbulldozer/dozer/swap-app-testnet}:latest
     env_file:
       - .env
+    environment:
+      - NODE_ENV=production
     networks:
       - app-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   earn:
-    image: ${EARN_IMAGE}:latest
+    image: ${EARN_IMAGE:-ghcr.io/hbulldozer/dozer/earn-app-testnet}:latest
     env_file:
       - .env
+    environment:
+      - NODE_ENV=production
     networks:
       - app-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9002"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   app-network:

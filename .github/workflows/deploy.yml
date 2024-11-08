@@ -158,25 +158,33 @@ jobs:
           scp -i ~/.ssh/deploy_key .env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env
           scp -i ~/.ssh/deploy_key docker.env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env.docker
 
-      - name: Deploy to VM
-        run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            # Export image variables for docker-compose
-            export ROOT_IMAGE=${{ env.ROOT_IMAGE }}
-            export SWAP_IMAGE=${{ env.SWAP_IMAGE }}
-            export EARN_IMAGE=${{ env.EARN_IMAGE }}
-
-            # Pull images
-            docker pull ${{ env.ROOT_IMAGE }}:latest
-            docker pull ${{ env.SWAP_IMAGE }}:latest
-            docker pull ${{ env.EARN_IMAGE }}:latest
-
-            # Run docker-compose with both env files
-            docker compose --env-file .env.docker down
-            docker compose --env-file .env.docker up -d
-          "
+          - name: Deploy to VM
+          run: |
+            ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
+              # Login to registry
+              echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+  
+              # Create docker env file
+              cat > .env.docker << EOL
+              ROOT_IMAGE=ghcr.io/${{ github.repository_owner }}/dozer/root-app-testnet
+              SWAP_IMAGE=ghcr.io/${{ github.repository_owner }}/dozer/swap-app-testnet
+              EARN_IMAGE=ghcr.io/${{ github.repository_owner }}/dozer/earn-app-testnet
+              EOL
+  
+              # Pull images
+              docker pull ghcr.io/${{ github.repository_owner }}/dozer/root-app-testnet:latest
+              docker pull ghcr.io/${{ github.repository_owner }}/dozer/swap-app-testnet:latest
+              docker pull ghcr.io/${{ github.repository_owner }}/dozer/earn-app-testnet:latest
+  
+              # Stop and remove existing containers
+              docker compose down
+  
+              # Start containers with both env files
+              docker compose --env-file .env --env-file .env.docker up -d
+  
+              # Show logs to verify startup
+              docker compose logs
+            "
 
       - name: Cleanup SSH key
         if: always()
