@@ -22,17 +22,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Cache pnpm modules
+      # Setup pnpm with specific version
       - uses: pnpm/action-setup@v2
         with:
           version: 8
 
+      # Setup Node.js
       - uses: actions/setup-node@v3
         with:
           node-version: '20'
-          cache: 'pnpm'
 
-      # Setup Docker cache directories
+      # Cache pnpm dependencies
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      # Setup Docker Buildx cache directories
       - name: Set up Docker Buildx cache directories
         run: |
           mkdir -p /tmp/.buildx-cache
