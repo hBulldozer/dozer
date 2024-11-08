@@ -12,8 +12,9 @@ WORKDIR /app
 # Copy all source files and install deps
 COPY . .
 
-# Clean install dependencies
-RUN pnpm install --frozen-lockfile
+# Mount and use secret during install
+RUN --mount=type=secret,id=env,target=/app/.env \
+    pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -24,14 +25,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Mount and use secret during build
-RUN --mount=type=secret,id=env \
-    cat /run/secrets/env > .env
-
-# Next.js collects completely anonymous telemetry data about general usage.
-ENV NEXT_TELEMETRY_DISABLED 1
-
-# Build all packages and applications
-RUN pnpm build
+RUN --mount=type=secret,id=env,target=/app/.env \
+    pnpm build
 
 # Root app production image
 FROM base AS root-runner
