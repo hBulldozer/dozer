@@ -8,9 +8,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  ROOT_IMAGE: ${{ github.repository }}/root-app-testnet
-  SWAP_IMAGE: ${{ github.repository }}/swap-app-testnet
-  EARN_IMAGE: ${{ github.repository }}/earn-app-testnet
   DEPLOY_ENV: testnet
 
 jobs:
@@ -23,6 +20,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set repository name to lowercase
+        run: |
+          REPO_LC=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "REPO_NAME=$REPO_LC" >> $GITHUB_ENV
+          echo "ROOT_IMAGE=${{ env.REGISTRY }}/$REPO_LC/root-app-testnet" >> $GITHUB_ENV
+          echo "SWAP_IMAGE=${{ env.REGISTRY }}/$REPO_LC/swap-app-testnet" >> $GITHUB_ENV
+          echo "EARN_IMAGE=${{ env.REGISTRY }}/$REPO_LC/earn-app-testnet" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -40,7 +45,7 @@ jobs:
           context: .
           push: true
           target: root-runner
-          tags: ${{ env.REGISTRY }}/${{ env.ROOT_IMAGE }}:${{ github.sha }},${{ env.REGISTRY }}/${{ env.ROOT_IMAGE }}:latest
+          tags: ${{ env.ROOT_IMAGE }}:${{ github.sha }},${{ env.ROOT_IMAGE }}:latest
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
@@ -52,7 +57,7 @@ jobs:
           context: .
           push: true
           target: swap-runner
-          tags: ${{ env.REGISTRY }}/${{ env.SWAP_IMAGE }}:${{ github.sha }},${{ env.REGISTRY }}/${{ env.SWAP_IMAGE }}:latest
+          tags: ${{ env.SWAP_IMAGE }}:${{ github.sha }},${{ env.SWAP_IMAGE }}:latest
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
@@ -64,7 +69,7 @@ jobs:
           context: .
           push: true
           target: earn-runner
-          tags: ${{ env.REGISTRY }}/${{ env.EARN_IMAGE }}:${{ github.sha }},${{ env.REGISTRY }}/${{ env.EARN_IMAGE }}:latest
+          tags: ${{ env.EARN_IMAGE }}:${{ github.sha }},${{ env.EARN_IMAGE }}:latest
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
@@ -77,6 +82,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set repository name to lowercase
+        run: |
+          REPO_LC=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "REPO_NAME=$REPO_LC" >> $GITHUB_ENV
+          echo "ROOT_IMAGE=${{ env.REGISTRY }}/$REPO_LC/root-app-testnet" >> $GITHUB_ENV
+          echo "SWAP_IMAGE=${{ env.REGISTRY }}/$REPO_LC/swap-app-testnet" >> $GITHUB_ENV
+          echo "EARN_IMAGE=${{ env.REGISTRY }}/$REPO_LC/earn-app-testnet" >> $GITHUB_ENV
 
       - name: Create SSH key
         run: |
@@ -95,9 +108,9 @@ jobs:
           ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            docker pull ${{ env.REGISTRY }}/${{ env.ROOT_IMAGE }}:latest
-            docker pull ${{ env.REGISTRY }}/${{ env.SWAP_IMAGE }}:latest
-            docker pull ${{ env.REGISTRY }}/${{ env.EARN_IMAGE }}:latest
+            docker pull ${{ env.ROOT_IMAGE }}:latest
+            docker pull ${{ env.SWAP_IMAGE }}:latest
+            docker pull ${{ env.EARN_IMAGE }}:latest
 
             docker-compose down
             docker-compose up -d

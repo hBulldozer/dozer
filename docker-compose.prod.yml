@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
 
   root:
-    image: ghcr.io/${GITHUB_REPOSITORY}/root-app:latest
+    image: ${ROOT_IMAGE}:latest
     env_file:
       - .env
     networks:
@@ -26,7 +26,7 @@ services:
     restart: unless-stopped
 
   swap:
-    image: ghcr.io/${GITHUB_REPOSITORY}/swap-app:latest
+    image: ${SWAP_IMAGE}:latest
     env_file:
       - .env
     networks:
@@ -34,7 +34,7 @@ services:
     restart: unless-stopped
 
   earn:
-    image: ghcr.io/${GITHUB_REPOSITORY}/earn-app:latest
+    image: ${EARN_IMAGE}:latest
     env_file:
       - .env
     networks:
