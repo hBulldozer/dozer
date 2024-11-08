@@ -16,7 +16,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      # Add permission for cache
       actions: write
 
     steps:
@@ -32,6 +31,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
+
+      # Setup Docker cache directories
+      - name: Set up Docker Buildx cache directories
+        run: |
+          mkdir -p /tmp/.buildx-cache
 
       # Cache Docker layers
       - name: Cache Docker layers
@@ -58,10 +62,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          # Use the cached builder
-          driver-opts: |
-            image=moby/buildkit:latest
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -86,13 +86,8 @@ jobs:
             env=.env
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
-          # Use the new cache from buildx
-          cache-from: |
-            type=local,src=/tmp/.buildx-cache
-            type=registry,ref=${{ env.ROOT_IMAGE }}:buildcache
-          cache-to: |
-            type=local,dest=/tmp/.buildx-cache-new,mode=max
-            type=registry,ref=${{ env.ROOT_IMAGE }}:buildcache,mode=max
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
           target: builder
 
       # Temp fix for growing cache size
