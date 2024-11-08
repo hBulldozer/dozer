@@ -8,6 +8,7 @@ const nextConfig = {
   experimental: {
     swcPlugins: [['next-superjson-plugin', {}]],
   },
+  output: 'standalone',
   images: {
     remotePatterns: [
       {

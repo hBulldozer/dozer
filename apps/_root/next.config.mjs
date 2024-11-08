@@ -7,6 +7,7 @@ const { ROOT_URL, SWAP_URL, EARN_URL } = process.env
 const nextConfig = {
   ...defaultNextConfig,
   transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database', '@dozer/currency'],
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
