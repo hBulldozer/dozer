@@ -45,7 +45,7 @@ export const faucetRouter = createTRPCRouter({
     const database_save = await ctx.prisma.faucet.create({
       data: {
         address: input.address,
-        amount: 41_000_00,
+        amount: 5_000_00,
         date: new Date(),
         hash: data.hash,
       },

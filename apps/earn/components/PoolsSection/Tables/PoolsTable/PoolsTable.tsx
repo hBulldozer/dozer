@@ -23,7 +23,6 @@ import { XCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 // const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN]
 const COLUMNS = [NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN]
 
-
 const dummyPools: Pair[] = [
   // {
   //   id: '1',
@@ -245,7 +244,8 @@ export const PoolsTable: FC = () => {
       <FilterPools maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
       <GenericTable<ExtendedPair>
         table={table}
-        loading={isSomePending ? false : isLoading}
+        // loading={isSomePending ? false : isLoading}
+        loading={false}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
         placeholder={'No pools found'}
         pageSize={PAGE_SIZE}
