@@ -127,6 +127,10 @@ jobs:
           echo "SWAP_IMAGE=${{ env.REGISTRY }}/$REPO_LC/swap-app-testnet" >> $GITHUB_ENV
           echo "EARN_IMAGE=${{ env.REGISTRY }}/$REPO_LC/earn-app-testnet" >> $GITHUB_ENV
 
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+
       - name: Create SSH key
         run: |
           mkdir -p ~/.ssh
@@ -134,22 +138,37 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Copy docker-compose file
+      - name: Copy configuration files
         run: |
+          # Create a temporary env file for docker-compose
+          echo "ROOT_IMAGE=${{ env.ROOT_IMAGE }}" > docker.env
+          echo "SWAP_IMAGE=${{ env.SWAP_IMAGE }}" >> docker.env
+          echo "EARN_IMAGE=${{ env.EARN_IMAGE }}" >> docker.env
+          
+          # Copy all necessary files
           scp -i ~/.ssh/deploy_key docker-compose.prod.yml ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/docker-compose.yml
           scp -i ~/.ssh/deploy_key nginx.conf ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/nginx.conf
+          scp -i ~/.ssh/deploy_key .env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env
+          scp -i ~/.ssh/deploy_key docker.env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env.docker
 
       - name: Deploy to VM
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+            # Export image variables for docker-compose
+            export ROOT_IMAGE=${{ env.ROOT_IMAGE }}
+            export SWAP_IMAGE=${{ env.SWAP_IMAGE }}
+            export EARN_IMAGE=${{ env.EARN_IMAGE }}
+
+            # Pull images
             docker pull ${{ env.ROOT_IMAGE }}:latest
             docker pull ${{ env.SWAP_IMAGE }}:latest
             docker pull ${{ env.EARN_IMAGE }}:latest
 
-            docker compose down
-            docker compose up -d
+            # Run docker-compose with both env files
+            docker-compose --env-file .env.docker down
+            docker-compose --env-file .env.docker up -d
           "
 
       - name: Cleanup SSH key
