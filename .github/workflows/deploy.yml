@@ -67,8 +67,7 @@ jobs:
           tags: ${{ env.ROOT_IMAGE }}:${{ github.sha }},${{ env.ROOT_IMAGE }}:latest
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
-          secrets: |
-            env=.env
+          secret-files: env=.env
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: true
@@ -83,8 +82,7 @@ jobs:
           push: true
           target: swap-runner
           tags: ${{ env.SWAP_IMAGE }}:${{ github.sha }},${{ env.SWAP_IMAGE }}:latest
-          secrets: |
-            env=.env
+          secret-files: env=.env
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
@@ -101,8 +99,7 @@ jobs:
           push: true
           target: earn-runner
           tags: ${{ env.EARN_IMAGE }}:${{ github.sha }},${{ env.EARN_IMAGE }}:latest
-          secrets: |
-            env=.env
+          secret-files: env=.env
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
