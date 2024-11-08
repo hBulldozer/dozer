@@ -7,93 +7,46 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
-    depends_on:
-      root:
-        condition: service_healthy
-      swap:
-        condition: service_healthy
-      earn:
-        condition: service_healthy
     networks:
       - app-network
     restart: unless-stopped
 
   root:
-    image: ${ROOT_IMAGE:-ghcr.io/hbulldozer/dozer/root-app-testnet}:latest
+    image: ${ROOT_IMAGE}:latest
     env_file:
       - .env
     environment:
       - NODE_ENV=production
-      - PORT=9000
-      - HOSTNAME=0.0.0.0
     expose:
       - 9000
     networks:
       - app-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9000"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   swap:
-    image: ${SWAP_IMAGE:-ghcr.io/hbulldozer/dozer/swap-app-testnet}:latest
+    image: ${SWAP_IMAGE}:latest
     env_file:
       - .env
     environment:
       - NODE_ENV=production
-      - PORT=9001
-      - HOSTNAME=0.0.0.0
     expose:
       - 9001
     networks:
       - app-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9001"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   earn:
-    image: ${EARN_IMAGE:-ghcr.io/hbulldozer/dozer/earn-app-testnet}:latest
+    image: ${EARN_IMAGE}:latest
     env_file:
       - .env
     environment:
       - NODE_ENV=production
-      - PORT=9002
-      - HOSTNAME=0.0.0.0
     expose:
       - 9002
     networks:
       - app-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9002"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
 networks:
   app-network:
-    name: app-network
     driver: bridge

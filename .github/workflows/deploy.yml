@@ -16,57 +16,20 @@ jobs:
     permissions:
       contents: read
       packages: write
-      actions: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup pnpm with specific version
-      - uses: pnpm/action-setup@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
         with:
           version: 8
 
-      # Setup Node.js
-      - uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
-
-      # Docker layer caching with monorepo consideration
-      - name: Generate Docker cache key
-        id: docker-cache
-        run: |
-          # Create a hash of all files that affect the Docker build
-          find . -type f \( \
-            -name "Dockerfile" -o \
-            -name "docker-compose*.yml" -o \
-            -name ".dockerignore" -o \
-            -path "./.github/workflows/*" -o \
-            -name "package.json" -o \
-            -name "pnpm-lock.yaml" -o \
-            -name "pnpm-workspace.yaml" -o \
-            -path "./packages/*/package.json" -o \
-            -path "./apps/*/package.json" -o \
-            -path "./config/*/package.json" \
-          \) -exec sha256sum {} \; | sort > docker-hash.txt
-          
-          echo "hash=$(sha256sum docker-hash.txt | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-
-      # Cache Docker layers
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-          driver-opts: |
-            image=moby/buildkit:latest
-
-      - name: Docker Layer Caching
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ steps.docker-cache.outputs.hash }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
 
       - name: Set Docker image names
         run: |
@@ -98,25 +61,13 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.ROOT_IMAGE }}:${{ github.sha }}
             ${{ env.ROOT_IMAGE }}:latest
-            ${{ env.SWAP_IMAGE }}:${{ github.sha }}
             ${{ env.SWAP_IMAGE }}:latest
-            ${{ env.EARN_IMAGE }}:${{ github.sha }}
             ${{ env.EARN_IMAGE }}:latest
           secret-files: |
             env=.env
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-          target: builder
-
-      # Temp fix for growing cache size
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   deploy:
     needs: build-and-push
@@ -134,10 +85,6 @@ jobs:
           echo "SWAP_IMAGE=${{ env.REGISTRY }}/$REPO_LC/swap-app-testnet" >> $GITHUB_ENV
           echo "EARN_IMAGE=${{ env.REGISTRY }}/$REPO_LC/earn-app-testnet" >> $GITHUB_ENV
 
-      - name: Create .env file
-        run: |
-          echo "${{ secrets.ENV_FILE }}" > .env
-
       - name: Create SSH key
         run: |
           mkdir -p ~/.ssh
@@ -145,66 +92,34 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Copy configuration files
-        run: |
-          # Create a temporary env file for docker-compose
-          echo "ROOT_IMAGE=${{ env.ROOT_IMAGE }}" > docker.env
-          echo "SWAP_IMAGE=${{ env.SWAP_IMAGE }}" >> docker.env
-          echo "EARN_IMAGE=${{ env.EARN_IMAGE }}" >> docker.env
-          
-          # Copy all necessary files
-          scp -i ~/.ssh/deploy_key docker-compose.prod.yml ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/docker-compose.yml
-          scp -i ~/.ssh/deploy_key nginx.conf ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/nginx.conf
-          scp -i ~/.ssh/deploy_key .env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env
-          scp -i ~/.ssh/deploy_key docker.env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env.docker
-
       - name: Deploy to VM
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
             # Login to registry
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Create docker env file
+            # Pull latest images
+            docker pull ${{ env.ROOT_IMAGE }}:latest
+            docker pull ${{ env.SWAP_IMAGE }}:latest
+            docker pull ${{ env.EARN_IMAGE }}:latest
+
+            # Create docker env file with image names
             cat > .env.docker << EOL
-            ROOT_IMAGE=ghcr.io/${{ github.repository_owner }}/dozer/root-app-testnet
-            SWAP_IMAGE=ghcr.io/${{ github.repository_owner }}/dozer/swap-app-testnet
-            EARN_IMAGE=ghcr.io/${{ github.repository_owner }}/dozer/earn-app-testnet
+            ROOT_IMAGE=${{ env.ROOT_IMAGE }}
+            SWAP_IMAGE=${{ env.SWAP_IMAGE }}
+            EARN_IMAGE=${{ env.EARN_IMAGE }}
             EOL
 
-            # Pull images
-            docker pull ghcr.io/${{ github.repository_owner }}/dozer/root-app-testnet:latest
-            docker pull ghcr.io/${{ github.repository_owner }}/dozer/swap-app-testnet:latest
-            docker pull ghcr.io/${{ github.repository_owner }}/dozer/earn-app-testnet:latest
-
-            # Stop and remove existing containers
-            docker compose down
-
-            # Start containers with both env files
-            docker compose --env-file .env --env-file .env.docker up -d
-
-            # Wait a bit for containers to attempt to start
-            sleep 10
-
-            # Check container status and logs
-            echo 'Container Status:'
-            docker ps -a
-
-            echo '\nContainer Logs:'
-            docker-compose logs
-
-            echo '\nChecking file permissions:'
-            ls -la /home/${{ secrets.VM_USERNAME }}/apps/_root/server.js
-            ls -la /home/${{ secrets.VM_USERNAME }}/apps/swap/server.js
-            ls -la /home/${{ secrets.VM_USERNAME }}/apps/earn/server.js
-
-            echo '\nChecking environment variables:'
-            docker-compose config
-
-            # Try running one container with interactive shell to debug
-            echo '\nDebug root container:'
-            docker-compose run --rm root /bin/sh -c 'ls -la && pwd && env'
+            # Copy configuration files
+            mv docker-compose.yml docker-compose.yml.bak 2>/dev/null || true
           "
 
-      - name: Cleanup SSH key
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
+          # Copy new config files
+          scp -i ~/.ssh/deploy_key docker-compose.prod.yml ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/docker-compose.yml
+          scp -i ~/.ssh/deploy_key nginx.conf ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/nginx.conf
+          scp -i ~/.ssh/deploy_key .env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env
+
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
+            # Restart containers
+            docker compose -f docker-compose.yml up -d
+          "
