@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - root
+      - swap
+      - earn
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  root:
+    image: ghcr.io/${GITHUB_REPOSITORY}/root-app:latest
+    env_file:
+      - .env
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  swap:
+    image: ghcr.io/${GITHUB_REPOSITORY}/swap-app:latest
+    env_file:
+      - .env
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  earn:
+    image: ghcr.io/${GITHUB_REPOSITORY}/earn-app:latest
+    env_file:
+      - .env
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge
