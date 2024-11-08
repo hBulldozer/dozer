@@ -54,7 +54,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build root app with updated secrets handling
+      # Build root app with fixed secrets format
       - name: Build and push Root app
         uses: docker/build-push-action@v5
         env:
@@ -64,16 +64,14 @@ jobs:
           push: true
           target: root-runner
           tags: ${{ env.ROOT_IMAGE }}:${{ github.sha }},${{ env.ROOT_IMAGE }}:latest
-          secrets: |
-            GIT_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}
-            "env=${{ secrets.ENV_FILE }}"
+          secrets: env=${{ secrets.ENV_FILE }}
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: true
 
-      # Build swap app with updated secrets handling
+      # Build swap app with fixed secrets format
       - name: Build and push Swap app
         uses: docker/build-push-action@v5
         env:
@@ -83,16 +81,14 @@ jobs:
           push: true
           target: swap-runner
           tags: ${{ env.SWAP_IMAGE }}:${{ github.sha }},${{ env.SWAP_IMAGE }}:latest
-          secrets: |
-            GIT_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}
-            "env=${{ secrets.ENV_FILE }}"
+          secrets: env=${{ secrets.ENV_FILE }}
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: true
 
-      # Build earn app with updated secrets handling
+      # Build earn app with fixed secrets format
       - name: Build and push Earn app
         uses: docker/build-push-action@v5
         env:
@@ -102,9 +98,7 @@ jobs:
           push: true
           target: earn-runner
           tags: ${{ env.EARN_IMAGE }}:${{ github.sha }},${{ env.EARN_IMAGE }}:latest
-          secrets: |
-            GIT_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}
-            "env=${{ secrets.ENV_FILE }}"
+          secrets: env=${{ secrets.ENV_FILE }}
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
