@@ -9,8 +9,8 @@ RUN corepack enable pnpm
 FROM base AS deps
 WORKDIR /app
 
-# Copy all source code for dependency installation
-COPY dozer .
+# Copy all source files and install deps
+COPY . .
 
 # Clean install dependencies
 RUN pnpm install --frozen-lockfile
@@ -21,7 +21,7 @@ WORKDIR /app
 
 # Copy all source files and install deps
 COPY --from=deps /app/node_modules ./node_modules
-COPY dozer .
+COPY . .
 
 # Next.js collects completely anonymous telemetry data about general usage.
 ENV NEXT_TELEMETRY_DISABLED 1
@@ -81,7 +81,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/static ./apps/swap/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/public ./apps/swap/public
 
-
 USER nextjs
 
 CMD ["node", "apps/swap/server.js"]
@@ -103,7 +102,6 @@ RUN mkdir -p /app/apps/earn && chown -R nextjs:nodejs /app
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/static ./apps/earn/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/public ./apps/earn/public
-
 
 USER nextjs
 
