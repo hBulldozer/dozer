@@ -38,8 +38,11 @@ jobs:
           # Create fresh .env file
           echo "${{ secrets.ENV_FILE }}" > .env
           
-          # Debug: Print first line count (safe way to verify content without exposing values)
-          echo "Created .env file with $(grep -c '' .env) lines"
+          # Debug: Print first line count
+          echo "Created .env file with $(wc -l < .env) lines"
+          
+          # Ensure no Windows line endings
+          sed -i 's/\r$//' .env
           
           # Debug: Verify file permissions
           ls -la .env
@@ -57,16 +60,15 @@ jobs:
       # Build root app with fixed secrets format
       - name: Build and push Root app
         uses: docker/build-push-action@v5
-        env:
-          DOCKER_BUILDKIT: 1
         with:
           context: .
           push: true
           target: root-runner
           tags: ${{ env.ROOT_IMAGE }}:${{ github.sha }},${{ env.ROOT_IMAGE }}:latest
-          secrets: env=${{ secrets.ENV_FILE }}
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
+          secrets: |
+            env=.env
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: true
@@ -81,7 +83,8 @@ jobs:
           push: true
           target: swap-runner
           tags: ${{ env.SWAP_IMAGE }}:${{ github.sha }},${{ env.SWAP_IMAGE }}:latest
-          secrets: env=${{ secrets.ENV_FILE }}
+          secrets: |
+            env=.env
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
@@ -98,7 +101,8 @@ jobs:
           push: true
           target: earn-runner
           tags: ${{ env.EARN_IMAGE }}:${{ github.sha }},${{ env.EARN_IMAGE }}:latest
-          secrets: env=${{ secrets.ENV_FILE }}
+          secrets: |
+            env=.env
           build-args: |
             NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha

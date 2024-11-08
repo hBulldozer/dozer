@@ -13,10 +13,16 @@ WORKDIR /app
 COPY . .
 
 # Debug: Print environment before install
-RUN --mount=type=secret,id=env \
-    cat /run/secrets/env > .env && \
-    echo "Contents of .env during install:" && \
-    wc -l .env && \
+RUN --mount=type=secret,id=env,mode=0644 \
+    if [ -f "/run/secrets/env" ]; then \
+        echo "Secret mounted successfully" && \
+        cp /run/secrets/env .env && \
+        echo "ENV file contents:" && \
+        wc -l .env; \
+    else \
+        echo "Secret not found at /run/secrets/env"; \
+        exit 1; \
+    fi && \
     pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
@@ -30,10 +36,16 @@ COPY --from=deps /app .
 COPY . .
 
 # Build with environment variables
-RUN --mount=type=secret,id=env \
-    cat /run/secrets/env > .env && \
-    echo "Contents of .env during build:" && \
-    wc -l .env && \
+RUN --mount=type=secret,id=env,mode=0644 \
+    if [ -f "/run/secrets/env" ]; then \
+        echo "Secret mounted successfully" && \
+        cp /run/secrets/env .env && \
+        echo "ENV file contents:" && \
+        wc -l .env; \
+    else \
+        echo "Secret not found at /run/secrets/env"; \
+        exit 1; \
+    fi && \
     pnpm build
 
 # Root app production image
