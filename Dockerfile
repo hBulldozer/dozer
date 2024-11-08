@@ -12,20 +12,26 @@ WORKDIR /app
 # Copy all source files and install deps
 COPY . .
 
-# Mount and use secret during install
+# Debug: Print environment before install
 RUN --mount=type=secret,id=env,target=/app/.env \
+    echo "Building with following env:" && \
+    cat /app/.env | wc -l && \
     pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 
-# Copy all source files and install deps
-COPY --from=deps /app/node_modules ./node_modules
+# Copy the entire deps folder including node_modules
+COPY --from=deps /app .
+
+# Make sure we have the source code in case it was modified by postinstall
 COPY . .
 
-# Mount and use secret during build
+# Debug: Print environment before build
 RUN --mount=type=secret,id=env,target=/app/.env \
+    echo "Building with following env:" && \
+    cat /app/.env | wc -l && \
     pnpm build
 
 # Root app production image

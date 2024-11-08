@@ -21,25 +21,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set repository name to lowercase
+      # Handle Docker image names (CI/CD variables)
+      - name: Set Docker image names
         run: |
           REPO_LC=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "REPO_NAME=$REPO_LC" >> $GITHUB_ENV
-          echo "ROOT_IMAGE=${{ env.REGISTRY }}/$REPO_LC/root-app-testnet" >> $GITHUB_ENV
-          echo "SWAP_IMAGE=${{ env.REGISTRY }}/$REPO_LC/swap-app-testnet" >> $GITHUB_ENV
-          echo "EARN_IMAGE=${{ env.REGISTRY }}/$REPO_LC/earn-app-testnet" >> $GITHUB_ENV
+          {
+            echo "REPO_NAME=$REPO_LC"
+            echo "ROOT_IMAGE=${{ env.REGISTRY }}/$REPO_LC/root-app-testnet"
+            echo "SWAP_IMAGE=${{ env.REGISTRY }}/$REPO_LC/swap-app-testnet"
+            echo "EARN_IMAGE=${{ env.REGISTRY }}/$REPO_LC/earn-app-testnet"
+          } >> $GITHUB_ENV
 
-      # Debug step - check if secret exists and create .env file
-      - name: Debug ENV_FILE
+      # Handle application .env file (your app's environment variables)
+      - name: Create .env file
         run: |
-          if [ -n "${{ secrets.ENV_FILE }}" ]; then
-            echo "ENV_FILE secret exists"
-            echo "${{ secrets.ENV_FILE }}" > .env
-            echo "Created .env file with content length: $(wc -c < .env)"
-          else
-            echo "ENV_FILE secret is empty or not set"
-            exit 1
-          fi
+          # Create fresh .env file
+          echo "${{ secrets.ENV_FILE }}" > .env
+          
+          # Debug: Print first line count (safe way to verify content without exposing values)
+          echo "Created .env file with $(grep -c '' .env) lines"
+          
+          # Debug: Verify file permissions
+          ls -la .env
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -51,19 +54,59 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Build root app with explicit secret handling
       - name: Build and push Root app
         uses: docker/build-push-action@v5
+        env:
+          DOCKER_BUILDKIT: 1
         with:
           context: .
           push: true
           target: root-runner
           tags: ${{ env.ROOT_IMAGE }}:${{ github.sha }},${{ env.ROOT_IMAGE }}:latest
-          build-args: |
-            NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           secrets: |
             env=./.env
+          build-args: |
+            NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Add build output to see more details
+          no-cache: true
+          outputs: type=docker,dest=/tmp/root-image.tar
+
+      - name: Build and push Swap app
+        uses: docker/build-push-action@v5
+        env:
+          DOCKER_BUILDKIT: 1
+        with:
+          context: .
+          push: true
+          target: swap-runner
+          tags: ${{ env.SWAP_IMAGE }}:${{ github.sha }},${{ env.SWAP_IMAGE }}:latest
+          secrets: |
+            env=./.env
+          build-args: |
+            NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          no-cache: true
+
+      - name: Build and push Earn app
+        uses: docker/build-push-action@v5
+        env:
+          DOCKER_BUILDKIT: 1
+        with:
+          context: .
+          push: true
+          target: earn-runner
+          tags: ${{ env.EARN_IMAGE }}:${{ github.sha }},${{ env.EARN_IMAGE }}:latest
+          secrets: |
+            env=./.env
+          build-args: |
+            NEXT_PUBLIC_ENV=${{ env.DEPLOY_ENV }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          no-cache: true
 
   deploy:
     needs: build-and-push
