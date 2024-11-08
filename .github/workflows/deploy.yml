@@ -182,8 +182,27 @@ jobs:
             # Start containers with both env files
             docker compose --env-file .env --env-file .env.docker up -d
 
-            # Show logs to verify startup
-            docker compose logs
+            # Wait a bit for containers to attempt to start
+            sleep 10
+
+            # Check container status and logs
+            echo 'Container Status:'
+            docker ps -a
+
+            echo '\nContainer Logs:'
+            docker-compose logs
+
+            echo '\nChecking file permissions:'
+            ls -la /home/${{ secrets.VM_USERNAME }}/apps/_root/server.js
+            ls -la /home/${{ secrets.VM_USERNAME }}/apps/swap/server.js
+            ls -la /home/${{ secrets.VM_USERNAME }}/apps/earn/server.js
+
+            echo '\nChecking environment variables:'
+            docker-compose config
+
+            # Try running one container with interactive shell to debug
+            echo '\nDebug root container:'
+            docker-compose run --rm root /bin/sh -c 'ls -la && pwd && env'
           "
 
       - name: Cleanup SSH key

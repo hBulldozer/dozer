@@ -21,14 +21,21 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - PORT=9000
+      - HOSTNAME=0.0.0.0
+    ports:
+      - "9000:9000"
     networks:
       - app-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    # Add logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Add command to enable more verbose Node.js logging
+    command: ["node", "--trace-warnings", "apps/_root/server.js"]
 
   swap:
     image: ${SWAP_IMAGE:-ghcr.io/hbulldozer/dozer/swap-app-testnet}:latest
@@ -36,14 +43,19 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - PORT=9001
+      - HOSTNAME=0.0.0.0
+    ports:
+      - "9001:9001"
     networks:
       - app-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9001"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: ["node", "--trace-warnings", "apps/swap/server.js"]
 
   earn:
     image: ${EARN_IMAGE:-ghcr.io/hbulldozer/dozer/earn-app-testnet}:latest
@@ -51,14 +63,19 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - PORT=9002
+      - HOSTNAME=0.0.0.0
+    ports:
+      - "9002:9002"
     networks:
       - app-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9002"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: ["node", "--trace-warnings", "apps/earn/server.js"]
 
 networks:
   app-network:

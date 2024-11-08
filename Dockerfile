@@ -70,17 +70,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/.next/static ./apps/_root/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/public ./apps/_root/public
 
-# Create a wrapper script to replace environment variables in the server code
-RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'sed -i "s|http://localhost:9000|$ROOT_URL|g" /app/apps/_root/server.js' >> /app/start.sh && \
-    echo 'sed -i "s|http://localhost:9001|$SWAP_URL|g" /app/apps/_root/server.js' >> /app/start.sh && \
-    echo 'sed -i "s|http://localhost:9002|$EARN_URL|g" /app/apps/_root/server.js' >> /app/start.sh && \
-    echo 'exec node apps/_root/server.js' >> /app/start.sh && \
-    chmod +x /app/start.sh
-
 USER nextjs
 
-CMD ["/app/start.sh"]
+# Use the direct node command instead of a start script
+CMD ["node", "apps/_root/server.js"]
 
 # Swap app production image
 FROM base AS swap-runner
