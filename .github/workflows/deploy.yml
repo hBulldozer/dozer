@@ -143,8 +143,8 @@ jobs:
             docker pull ${{ env.SWAP_IMAGE }}:latest
             docker pull ${{ env.EARN_IMAGE }}:latest
 
-            docker-compose down
-            docker-compose up -d
+            docker compose down
+            docker compose up -d
           "
 
       - name: Cleanup SSH key
