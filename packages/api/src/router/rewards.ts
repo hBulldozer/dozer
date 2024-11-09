@@ -170,7 +170,7 @@ export const rewardsRouter = createTRPCRouter({
     const transactions = data.transactions
     if (transactions.has_more) {
       // If more than 20 transactions, check only in hathor dapp endpoint
-      const url = 'https://hathor.network/betting2024/api/nano_contracts'
+      const url = 'https://betting.hathor.network/api/nano_contracts'
       const data = await fetch(`${url}?creator_address=${input.address}`)
       const response = await data.json()
       const ids = response
