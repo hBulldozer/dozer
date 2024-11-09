@@ -49,14 +49,15 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Build applications
-        run: pnpm turbo run build
+        # Load env file and run build
+        run: |
+          set -a  # automatically export all variables
+          source .env  # load the env file
+          set +a  # stop automatically exporting
+          pnpm turbo run build
         env:
           TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
           TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-          # Add all environment variables from .env file here
-          ROOT_URL: ${{ secrets.ROOT_URL }}
-          SWAP_URL: ${{ secrets.SWAP_URL }}
-          EARN_URL: ${{ secrets.EARN_URL }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
