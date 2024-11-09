@@ -78,6 +78,17 @@ jobs:
 
       - name: Deploy to VM
         run: |
+          # Create temporary .env file
+          echo "${{ secrets.ENV_FILE }}" > .env
+
+          # Copy configuration files
+          scp -i ~/.ssh/deploy_key docker-compose.prod.yml ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/docker-compose.yml
+          scp -i ~/.ssh/deploy_key nginx.conf ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/nginx.conf
+          scp -i ~/.ssh/deploy_key .env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env
+
+          # Remove temporary .env file
+          rm .env
+
           ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
             # Login to registry
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -86,14 +97,7 @@ jobs:
             docker pull ghcr.io/hbulldozer/dozer/root-app-testnet:latest
             docker pull ghcr.io/hbulldozer/dozer/swap-app-testnet:latest
             docker pull ghcr.io/hbulldozer/dozer/earn-app-testnet:latest
-          "
 
-          # Copy configuration files
-          scp -i ~/.ssh/deploy_key docker-compose.prod.yml ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/docker-compose.yml
-          scp -i ~/.ssh/deploy_key nginx.conf ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/nginx.conf
-          scp -i ~/.ssh/deploy_key .env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env
-
-          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
             # Restart containers
             docker compose down
             docker compose up -d
