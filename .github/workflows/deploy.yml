@@ -7,7 +7,7 @@ on:
     branches: [ testnet ]
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -17,46 +17,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      # Setup pnpm with caching
-      - name: Setup pnpm cache
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Cache for Turbo
-        uses: rharkor/caching-for-turbo@v1.5
-
       - name: Create .env file
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build applications
-        # Load env file and run build
-        run: |
-          set -a  # automatically export all variables
-          source .env  # load the env file
-          set +a  # stop automatically exporting
-          pnpm turbo run build
-        env:
-          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -67,61 +30,69 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Cache for Turbo
+        uses: rharkor/caching-for-turbo@v1.5
 
-      # Build and push root app
       - name: Build and push root image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile.prod
           push: true
           tags: ghcr.io/hbulldozer/dozer/root-app-testnet:latest
           target: root-runner
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          secret-files: |
+            env=.env
 
-      # Build and push swap app
       - name: Build and push swap image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile.prod
           push: true
           tags: ghcr.io/hbulldozer/dozer/swap-app-testnet:latest
           target: swap-runner
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          secret-files: |
+            env=.env
 
-      # Build and push earn app
       - name: Build and push earn image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile.prod
           push: true
           tags: ghcr.io/hbulldozer/dozer/earn-app-testnet:latest
           target: earn-runner
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          secret-files: |
+            env=.env
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: testnet
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy to VM
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          VM_HOST: ${{ secrets.VM_HOST }}
-          VM_USERNAME: ${{ secrets.VM_USERNAME }}
         run: |
-          # Create SSH key
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan $VM_HOST >> ~/.ssh/known_hosts
+          # Create temporary .env file
+          echo "${{ secrets.ENV_FILE }}" > .env
 
           # Copy configuration files
-          scp -i ~/.ssh/deploy_key docker-compose.prod.yml $VM_USERNAME@$VM_HOST:/home/$VM_USERNAME/docker-compose.yml
-          scp -i ~/.ssh/deploy_key nginx.conf $VM_USERNAME@$VM_HOST:/home/$VM_USERNAME/nginx.conf
-          scp -i ~/.ssh/deploy_key .env $VM_USERNAME@$VM_HOST:/home/$VM_USERNAME/.env
+          scp -i ~/.ssh/deploy_key docker-compose.prod.yml ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/docker-compose.yml
+          scp -i ~/.ssh/deploy_key nginx.conf ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/nginx.conf
+          scp -i ~/.ssh/deploy_key .env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env
 
-          ssh -i ~/.ssh/deploy_key $VM_USERNAME@$VM_HOST "
+          # Remove temporary .env file
+          rm .env
+
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
             # Login to registry
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
