@@ -12,41 +12,23 @@ WORKDIR /app
 # Copy all source files and install deps
 COPY . .
 
-# Debug: Print environment before install
-RUN --mount=type=secret,id=env,mode=0644 \
-    if [ -f "/run/secrets/env" ]; then \
-        echo "Secret mounted successfully" && \
-        cp /run/secrets/env .env && \
-        echo "ENV file contents:" && \
-        wc -l .env; \
-    else \
-        echo "Secret not found at /run/secrets/env"; \
-        exit 1; \
-    fi && \
+# Clean install dependencies
+RUN --mount=type=secret,id=env,target=/app/.env \
     pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 
-# Copy the entire deps folder including node_modules
-COPY --from=deps /app .
-
-# Make sure we have the source code in case it was modified by postinstall
+# Copy all source files and install deps
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build with environment variables
-RUN --mount=type=secret,id=env,mode=0644 \
-    if [ -f "/run/secrets/env" ]; then \
-        echo "Secret mounted successfully" && \
-        cp /run/secrets/env .env && \
-        echo "ENV file contents:" && \
-        wc -l .env; \
-    else \
-        echo "Secret not found at /run/secrets/env"; \
-        exit 1; \
-    fi && \
+RUN --mount=type=secret,id=env,target=/app/.env \
     pnpm build
+
+ENV NEXT_TELEMETRY_DISABLED 1
 
 # Root app production image
 FROM base AS root-runner
@@ -56,7 +38,6 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Set production environment
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV PORT 9000
@@ -72,7 +53,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/public ./apps/_root/pu
 
 USER nextjs
 
-# Use the direct node command instead of a start script
 CMD ["node", "apps/_root/server.js"]
 
 # Swap app production image
