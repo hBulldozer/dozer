@@ -10,6 +10,7 @@
     "@dozer/hooks": "workspace:*",
     "@dozer/ui": "workspace:*",
     "@dozer/zustand": "workspace:*",
+    "@socialgouv/matomo-next": "^1.9.1",
     "@tailwindcss/typography": "^0.5.10",
     "@trpc/client": "^10.45.0",
     "@trpc/next": "^10.45.0",

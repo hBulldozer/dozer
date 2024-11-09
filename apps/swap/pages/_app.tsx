@@ -11,6 +11,11 @@ import Head from 'next/head'
 import { ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 import { config } from '@hathor/wallet-lib'
 
+import { init } from '@socialgouv/matomo-next'
+
+const MATOMO_URL = process.env.NEXT_PUBLIC_MATOMO_URL || 'https://matomo.self2.dozer.finance/'
+const MATOMO_SITE_ID = process.env.NEXT_PUBLIC_MATOMO_SITE_ID || '1'
+
 config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
 config.setNetwork('testnet')
 
@@ -49,6 +54,11 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
   //     setIsLoading(false)
   //   })
   // }, [isLoading, router])
+
+  useEffect(() => {
+    init({ url: MATOMO_URL, siteId: MATOMO_SITE_ID, disableCookies: true })
+  }, [])
+
   return (
     <>
       {/* <LoadingOverlay show={isLoading} /> */}

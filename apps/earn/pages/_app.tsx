@@ -18,6 +18,11 @@ import { api } from '../utils/api'
 import { ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 import { usePathname } from 'next/navigation'
 
+import { init } from '@socialgouv/matomo-next'
+
+const MATOMO_URL = process.env.NEXT_PUBLIC_MATOMO_URL || 'https://matomo.self2.dozer.finance/'
+const MATOMO_SITE_ID = process.env.NEXT_PUBLIC_MATOMO_SITE_ID || '1'
+
 // const queryClient = new QueryClient()
 
 const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
@@ -50,6 +55,11 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   //     setIsLoading(false)
   //   })
   // }, [isLoading, router])
+
+  useEffect(() => {
+    init({ url: MATOMO_URL, siteId: MATOMO_SITE_ID, disableCookies: true })
+  }, [])
+
   return (
     <>
       {/* <LoadingOverlay show={isLoading} /> */}

@@ -16,6 +16,11 @@ import { api } from 'utils/api'
 import { Header } from '../components'
 import Head from 'next/head'
 
+import { init } from '@socialgouv/matomo-next'
+
+const MATOMO_URL = process.env.NEXT_PUBLIC_MATOMO_URL || 'https://matomo.self2.dozer.finance/'
+const MATOMO_SITE_ID = process.env.NEXT_PUBLIC_MATOMO_SITE_ID || '1'
+
 declare global {
   interface Window {
     dataLayer: Record<string, any>[]
@@ -42,6 +47,10 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
       router.events.off('hashChangeComplete', handler)
     }
   }, [router.events])
+
+  useEffect(() => {
+    init({ url: MATOMO_URL, siteId: MATOMO_SITE_ID, disableCookies: true })
+  }, [])
   return (
     <>
       <Head>
