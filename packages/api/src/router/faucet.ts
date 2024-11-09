@@ -31,7 +31,7 @@ export const faucetRouter = createTRPCRouter({
       },
       body: JSON.stringify({
         address: input.address,
-        value: 41_000_00,
+        value: 5_000_00,
         token: '00',
       }),
     })
