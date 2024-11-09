@@ -2,7 +2,16 @@
 // import { Pair, PairType, QuerypairsArgs } from '@dozer/graph-client'
 import { Pair } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
-import { GenericTable, IconButton, Table, classNames, DEFAULT_INPUT_UNSTYLED, FilterPools, Filters } from '@dozer/ui'
+import {
+  GenericTable,
+  IconButton,
+  Table,
+  classNames,
+  DEFAULT_INPUT_UNSTYLED,
+  FilterPools,
+  Filters,
+  LoadingOverlay,
+} from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 // import stringify from 'fast-json-stable-stringify'
@@ -241,6 +250,7 @@ export const PoolsTable: FC = () => {
 
   return (
     <>
+      <LoadingOverlay show={isSomePending ? false : isLoading} />
       <FilterPools maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
       <GenericTable<ExtendedPair>
         table={table}

@@ -1,7 +1,7 @@
 import { AllTokensDBOutput, Pair, dbPoolWithTokens } from '@dozer/api'
 // EDIT
 import { useBreakpoint } from '@dozer/hooks'
-import { FilterTokens, FiltersTokens, GenericTable } from '@dozer/ui'
+import { FilterTokens, FiltersTokens, GenericTable, LoadingOverlay } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -339,10 +339,11 @@ export const TokensTable: FC = () => {
 
   return (
     <>
+      <LoadingOverlay show={isLoading || isLoadingPools || isLoadingPrices24h || isLoadingLastPrice} />
       <FilterTokens maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
       <GenericTable<ExtendedPair>
         table={table}
-        loading={isLoading || isLoadingPools || isLoadingPrices24h || isLoadingLastPrice}
+        loading={false}
         placeholder={'No tokens found'}
         pageSize={PAGE_SIZE}
         linkFormatter={rowLink}
