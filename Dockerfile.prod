@@ -1,6 +1,22 @@
 # Production image, copy all the files and run next
 FROM node:20-alpine AS base
 
+# Install required system dependencies for native builds
+RUN apk add --no-cache libc6-compat python3 make g++ gcc musl-dev
+
+# Dependencies builder stage
+FROM base AS deps-builder
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install and build native dependencies
+RUN corepack enable pnpm && \
+    pnpm install --prod --frozen-lockfile && \
+    cd node_modules/classic-level && \
+    npm_config_build_from_source=true node-gyp-build rebuild
+
 # Root app production image
 FROM base AS root-runner
 WORKDIR /app
@@ -21,6 +37,9 @@ RUN mkdir -p /app/apps/_root && chown -R nextjs:nodejs /app
 COPY --chown=nextjs:nodejs ./apps/_root/.next/standalone/ ./
 COPY --chown=nextjs:nodejs ./apps/_root/.next/static ./apps/_root/.next/static
 COPY --chown=nextjs:nodejs ./apps/_root/public ./apps/_root/public
+
+# Copy the rebuilt native dependencies
+COPY --from=deps-builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 
@@ -44,6 +63,9 @@ COPY --chown=nextjs:nodejs ./apps/swap/.next/standalone/ ./
 COPY --chown=nextjs:nodejs ./apps/swap/.next/static ./apps/swap/.next/static
 COPY --chown=nextjs:nodejs ./apps/swap/public ./apps/swap/public
 
+# Copy the rebuilt native dependencies
+COPY --from=deps-builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+
 USER nextjs
 
 CMD ["node", "apps/swap/server.js"]
@@ -65,6 +87,9 @@ RUN mkdir -p /app/apps/earn && chown -R nextjs:nodejs /app
 COPY --chown=nextjs:nodejs ./apps/earn/.next/standalone/ ./
 COPY --chown=nextjs:nodejs ./apps/earn/.next/static ./apps/earn/.next/static
 COPY --chown=nextjs:nodejs ./apps/earn/public ./apps/earn/public
+
+# Copy the rebuilt native dependencies
+COPY --from=deps-builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 
