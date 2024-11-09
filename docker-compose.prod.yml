@@ -26,6 +26,8 @@ services:
       - ROOT_URL=https://self-testnet.dozer.finance
       - SWAP_URL=https://self-testnet.dozer.finance
       - EARN_URL=https://self-testnet.dozer.finance
+    volumes:
+      - root_cache:/app/apps/_root/.next/cache
     networks:
       - app-network
     restart: unless-stopped
@@ -38,6 +40,8 @@ services:
       - NODE_ENV=production
       - PORT=9001
       - HOSTNAME=0.0.0.0
+    volumes:
+      - swap_cache:/app/apps/swap/.next/cache
     networks:
       - app-network
     restart: unless-stopped
@@ -50,6 +54,8 @@ services:
       - NODE_ENV=production
       - PORT=9002
       - HOSTNAME=0.0.0.0
+    volumes:
+      - earn_cache:/app/apps/earn/.next/cache
     networks:
       - app-network
     restart: unless-stopped
@@ -57,3 +63,8 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  root_cache:
+  swap_cache:
+  earn_cache:
