@@ -51,7 +51,7 @@ const Background = () => {
               </Typography>
               <Typography variant="lg" className="mt-3 text-white drop-shadow-md lg:text-lg" weight={500}>
                 {/* Safe, fast and easy. */}
-                Overcoming the DeFi challenges.
+                Overcoming Defi's challenges
               </Typography>
               <div className="flex items-center">
                 <Typography variant="xxs" className="drop-shadow-[0_2.5px_15px_rgba(0,0,0,0.8)] text-xs lg:text-sm">
