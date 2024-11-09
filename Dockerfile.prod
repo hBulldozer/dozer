@@ -1,5 +1,8 @@
-# Production image, copy all the files and run next
+# Specify base image
 FROM node:20-alpine AS base
+
+# Install required system dependencies
+RUN apk add --no-cache libc6-compat python3 make g++ gcc musl-dev
 
 # Root app production image
 FROM base AS root-runner
@@ -21,6 +24,17 @@ RUN mkdir -p /app/apps/_root && chown -R nextjs:nodejs /app
 COPY --chown=nextjs:nodejs ./apps/_root/.next/standalone/ ./
 COPY --chown=nextjs:nodejs ./apps/_root/.next/static ./apps/_root/.next/static
 COPY --chown=nextjs:nodejs ./apps/_root/public ./apps/_root/public
+
+# Generate Prisma Client for Alpine
+COPY --chown=nextjs:nodejs ./packages/database/prisma ./prisma
+RUN npx prisma generate --generator client \
+    --schema=./prisma/schema.prisma \
+    --generator-provider=prisma-client-js \
+    --generator-binaryTargets=linux-musl-openssl-3.0.x
+
+# Rebuild native dependencies
+COPY --chown=nextjs:nodejs package.json pnpm-lock.yaml ./
+RUN npm_config_build_from_source=true pnpm install --prod --frozen-lockfile classic-level
 
 USER nextjs
 
@@ -44,6 +58,17 @@ COPY --chown=nextjs:nodejs ./apps/swap/.next/standalone/ ./
 COPY --chown=nextjs:nodejs ./apps/swap/.next/static ./apps/swap/.next/static
 COPY --chown=nextjs:nodejs ./apps/swap/public ./apps/swap/public
 
+# Generate Prisma Client for Alpine
+COPY --chown=nextjs:nodejs ./packages/database/prisma ./prisma
+RUN npx prisma generate --generator client \
+    --schema=./prisma/schema.prisma \
+    --generator-provider=prisma-client-js \
+    --generator-binaryTargets=linux-musl-openssl-3.0.x
+
+# Rebuild native dependencies
+COPY --chown=nextjs:nodejs package.json pnpm-lock.yaml ./
+RUN npm_config_build_from_source=true pnpm install --prod --frozen-lockfile classic-level
+
 USER nextjs
 
 CMD ["node", "apps/swap/server.js"]
@@ -65,6 +90,17 @@ RUN mkdir -p /app/apps/earn && chown -R nextjs:nodejs /app
 COPY --chown=nextjs:nodejs ./apps/earn/.next/standalone/ ./
 COPY --chown=nextjs:nodejs ./apps/earn/.next/static ./apps/earn/.next/static
 COPY --chown=nextjs:nodejs ./apps/earn/public ./apps/earn/public
+
+# Generate Prisma Client for Alpine
+COPY --chown=nextjs:nodejs ./packages/database/prisma ./prisma
+RUN npx prisma generate --generator client \
+    --schema=./prisma/schema.prisma \
+    --generator-provider=prisma-client-js \
+    --generator-binaryTargets=linux-musl-openssl-3.0.x
+
+# Rebuild native dependencies
+COPY --chown=nextjs:nodejs package.json pnpm-lock.yaml ./
+RUN npm_config_build_from_source=true pnpm install --prod --frozen-lockfile classic-level
 
 USER nextjs
 
