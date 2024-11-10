@@ -148,9 +148,19 @@ export const AddSectionLegacy: FC<{ pool: Pair; prices: { [key: string]: number 
                 amount={Number(input0)}
                 token={token0}
               >
-                <Button fullWidth onClick={() => setOpen(true)} disabled={!input0 || !input1} size="md">
-                  {input0 && input1 ? 'Add Liquidity' : 'Enter an amount'}
-                </Button>
+                <Checker.Amounts
+                  fullWidth
+                  size="md"
+                  // chainId={pair.chainId}
+                  // fundSource={FundSource.WALLET}
+                  // amounts={[parsedInput0, parsedInput1]}
+                  amount={Number(input1)}
+                  token={token1}
+                >
+                  <Button fullWidth onClick={() => setOpen(true)} disabled={!input0 || !input1} size="md">
+                    {input0 && input1 ? 'Add Liquidity' : 'Enter an amount'}
+                  </Button>
+                </Checker.Amounts>
               </Checker.Amounts>
               {/* </Checker.Network> */}
               {/* </Checker.Custom> */}

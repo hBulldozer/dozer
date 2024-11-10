@@ -127,7 +127,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                           <Input.Percent
                             onUserInput={(val) => setPercentage(val ? Math.min(+val, 100).toString() : '')}
                             value={percentage}
-                            placeholder="95%"
+                            placeholder="100%"
                             variant="unstyled"
                             className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-2xl')}
                           />
@@ -142,7 +142,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                           <Button size="xs" onClick={() => setPercentage('75')}>
                             75%
                           </Button>
-                          <Button size="xs" onClick={() => setPercentage('95')}>
+                          <Button size="xs" onClick={() => setPercentage('100')}>
                             MAX
                           </Button>
                         </div>

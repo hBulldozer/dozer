@@ -20,7 +20,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
   const { slippageTolerance } = useSettings()
   const { amountSpecified, outputAmount, tradeType, mainCurrencyPrice, otherCurrencyPrice, pool } = useTrade()
   const input0 = amountSpecified
-    ? amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 - slippageTolerance : 1)
+    ? amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1)
     : 0
   // const input1 = useTrade((state) => state.outputAmount)
   const value0 = useTrade((state) => state.mainCurrencyPrice)

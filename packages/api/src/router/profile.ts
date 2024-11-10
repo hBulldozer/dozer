@@ -55,7 +55,6 @@ const poolInfoCall = async (input: {
       last_tx: result_lasttx,
     }
   } catch (error) {
-    console.log(error)
     return {
       balance_a: 0,
       balance_b: 0,

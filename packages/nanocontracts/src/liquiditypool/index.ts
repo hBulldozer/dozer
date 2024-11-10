@@ -2,10 +2,9 @@ import { NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/ty
 import {
   SendNanoContractRpcRequest,
   SendNanoContractTxResponse,
-  SignOracleDataRpcRequest,
-  SignOracleDataResponse,
   sendNanoContractTxRpcRequest,
 } from 'hathor-rpc-handler-test'
+
 import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
 import { IHathorRpc } from '../types'
