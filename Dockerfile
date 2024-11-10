@@ -14,7 +14,7 @@ COPY . .
 
 # Clean install dependencies
 RUN --mount=type=secret,id=env,target=/app/.env \
-    pnpm install --frozen-lockfile
+    pnpm install --no-frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
