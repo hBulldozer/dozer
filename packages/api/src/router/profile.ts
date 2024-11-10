@@ -50,8 +50,8 @@ const poolInfoCall = async (input: {
 
     return {
       ...result,
-      max_withdraw_a: Math.max(0, adjustedMaxWithdrawA), // Ensure non-negative values
-      max_withdraw_b: Math.max(0, adjustedMaxWithdrawB),
+      max_withdraw_a: Math.max(0, adjustedMaxWithdrawA) >= 0.1 ? Math.max(0, adjustedMaxWithdrawA) : 0, // Ensure non-negative values
+      max_withdraw_b: Math.max(0, adjustedMaxWithdrawB) >= 0.1 ? Math.max(0, adjustedMaxWithdrawA) : 0,
       last_tx: result_lasttx,
     }
   } catch (error) {

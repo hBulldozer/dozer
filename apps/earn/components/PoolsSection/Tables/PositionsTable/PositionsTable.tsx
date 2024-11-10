@@ -57,7 +57,8 @@ export const PositionsTable: FC = () => {
 
         if (
           userInfo &&
-          (userInfo.max_withdraw_a > 0 || userInfo.max_withdraw_b > 0) &&
+          userInfo.max_withdraw_a > 0 &&
+          userInfo.max_withdraw_b > 0 &&
           prices &&
           prices[pool.token0.uuid] &&
           prices[pool.token1.uuid]
@@ -111,7 +112,6 @@ export const PositionsTable: FC = () => {
     [sorting, pagination]
     // [sorting, pagination, selectedNetworks, selectedPoolTypes, farmsOnly, query, extraQuery]
   )
-
 
   const table = useReactTable<PositionPair>({
     data: pairs_array || [],
