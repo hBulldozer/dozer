@@ -74,7 +74,7 @@ export function Header({
         <Container maxWidth="full" className="flex items-center justify-center h-12 px-4">
           <div className="w-full text-center">
             <a
-              href="https://testnet.dozer.finance"
+              href="https://testnet.dozer.finance/swap"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 font-semibold transition-opacity text-md hover:opacity-80"
