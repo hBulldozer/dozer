@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "dependencies": {
     "@dozer/database": "workspace:*",
+    "hathor-rpc-handler-test": "^0.0.38",
     "@hathor/wallet-lib": "^1.11.0",
-    "hathor-rpc-handler-test": "0.0.42",
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/node": "22.9.0",
+    "@types/node": "20.14.10",
     "eslint": "*",
     "tsx": "^4.7.2",
     "typescript": "^5.3.3"
