@@ -130,7 +130,8 @@ export const Button = <C extends React.ElementType>({
           <Menu.Button
             {...rest}
             as="div"
-            key="wallet_connect"
+            id="wallet_connect"
+            // key="wallet_connect"
             onClick={onConnect}
             disabled={isInitializing}
             className="bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-300"
