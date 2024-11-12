@@ -16,7 +16,6 @@ import {
 import TextAreaInput from '../components/TextAreaInput'
 import { PhotoIcon } from '@heroicons/react/24/outline'
 import { Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
-import { UploadDropzone } from '@dozer/api'
 import { api } from '../utils/api'
 import { useNetwork, useAccount } from '@dozer/zustand'
 import { get, set } from 'lodash'
