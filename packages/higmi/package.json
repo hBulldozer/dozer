@@ -15,7 +15,7 @@
     "@heroicons/react": "^2.1.5",
     "@trpc/client": "^10.45.0",
     "@trpc/next": "^10.45.0",
-    "hathor-rpc-handler-test": "^0.0.38",
+    "hathor-rpc-handler-test": "0.0.42",
     "superjson": "1.9.1",
     "@walletconnect/sign-client": "^2.15.1",
     "@walletconnect/types": "^2.15.1",
