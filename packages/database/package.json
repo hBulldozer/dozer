@@ -3,18 +3,18 @@
   "description": "Dozer Database",
   "version": "0.0.0",
   "dependencies": {
-    "@prisma/client": "5.16.2"
+    "@prisma/client": "5.22.0"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
     "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
-    "@types/node": "20.14.10",
+    "@types/node": "22.9.0",
     "eslint": "*",
     "jest": "29.7.0",
-    "prisma": "5.16.2",
-    "tsup": "8.1.0",
+    "prisma": "5.22.0",
+    "tsup": "8.3.5",
     "tsx": "^4.7.2",
     "typescript": "^5.3.3"
   },

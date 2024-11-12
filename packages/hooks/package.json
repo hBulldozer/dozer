@@ -15,7 +15,7 @@
     "eslint": "*",
     "jest": "29.7.0",
     "react": "18.3.1",
-    "tailwindcss": "3.4.4",
+    "tailwindcss": "3.4.14",
     "typescript": "^5.3.3"
   },
   "jest": {
@@ -31,7 +31,7 @@
   "peerDependencies": {
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "tailwindcss": "3.4.4"
+    "tailwindcss": "3.4.14"
   },
   "private": true,
   "scripts": {
