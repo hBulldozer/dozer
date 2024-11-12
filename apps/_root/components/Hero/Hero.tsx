@@ -176,7 +176,7 @@ export const Hero: FC = () => {
               Trade Instantly on Dozer. <br /> <span className="text-yellow"> {TITLES[index]}.</span>
             </Typography>
             <Typography variant="lg" className="mt-3 text-neutral-400">
-              The fastest swap on the web3. <br />
+              The fastest swap in web3. <br />
               No registration needed and you won&apos;t spend gas.
             </Typography>
             {/* <div className="mt-10">
