@@ -5,7 +5,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   const payload = request.body
   const checkZealyUserAddress = await client.getRewards.checkZealyUserAddress.query({
     zealyId: payload.userId.replace(/['"]+/g, ''),
-    subdomain: 'rewardstest',
+    subdomain: 'hathornetwork',
   })
   // const success = false
   if (request.headers['x-api-key'] && request.headers['x-api-key'] === process.env.API_KEY) {
