@@ -66,8 +66,8 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                     className="!px-6"
                     balance={Amount.fromFractionalAmount(
                       currency,
-                      Number(
-                        Math.floor(
+                      Math.floor(
+                        Number(
                           balancesMap
                             ?.find((balance) => balance.token_uuid == currency.uuid)
                             ?.token_balance.toFixed(2) || '0'
