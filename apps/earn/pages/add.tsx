@@ -54,9 +54,9 @@ export const getStaticProps: GetStaticProps = async () => {
 }
 
 const Add: FC = () => {
-  const { data: pools = [] } = api.getPools.all.useQuery()
-  const { data: tokens = [] } = api.getTokens.all.useQuery()
-  const { data: prices = {} } = api.getPrices.all.useQuery()
+  const { data: pools } = api.getPools.all.useQuery()
+  const { data: tokens } = api.getTokens.all.useQuery()
+  const { data: prices } = api.getPrices.all.useQuery()
 
   const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
   const [selectedPool, setSelectedPool] = useState<Pair>()
@@ -125,18 +125,19 @@ const Add: FC = () => {
         setInput0(response && response != 0 ? response.toFixed(2) : '')
       }
     }
-    setSelectedPool(
-      pools.find((pool: Pair) => {
-        const uuid0 = pool.token0.uuid
-        const uuid1 = pool.token1.uuid
-        const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
-        const result = checker(
-          [token0 ? token0.uuid : '', token1 ? token1.uuid : ''],
-          [uuid0 ? uuid0 : '', uuid1 ? uuid1 : '']
-        )
-        return result
-      })
-    )
+    if (pools)
+      setSelectedPool(
+        pools.find((pool: Pair) => {
+          const uuid0 = pool.token0.uuid
+          const uuid1 = pool.token1.uuid
+          const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
+          const result = checker(
+            [token0 ? token0.uuid : '', token1 ? token1.uuid : ''],
+            [uuid0 ? uuid0 : '', uuid1 ? uuid1 : '']
+          )
+          return result
+        })
+      )
 
     // call the function
     if (input1 || input0) {
@@ -145,8 +146,8 @@ const Add: FC = () => {
           setFetchLoading(false)
           trade.setMainCurrency(token0)
           trade.setOtherCurrency(token1)
-          trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
-          trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
+          trade.setMainCurrencyPrice(token0 && prices ? prices[token0?.uuid] : 0)
+          trade.setOtherCurrencyPrice(token1 && prices ? prices[token1?.uuid] : 0)
           trade.setAmountSpecified(Number(input0) || 0)
           trade.setOutputAmount(Number(input1) || 0)
           trade.setTradeType(trade.tradeType)
@@ -208,9 +209,13 @@ const Add: FC = () => {
                   chainId={chainId}
                   prices={prices}
                   loading={trade.tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
-                  tokens={tokens.map((token) => {
-                    return new Token(token)
-                  })}
+                  tokens={
+                    tokens
+                      ? tokens.map((token) => {
+                          return new Token(token)
+                        })
+                      : []
+                  }
                 />
                 <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
                   <div className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full">
@@ -228,9 +233,13 @@ const Add: FC = () => {
                     chainId={chainId}
                     loading={trade.tradeType == TradeType.EXACT_INPUT && fetchLoading}
                     prices={prices}
-                    tokens={tokens.map((token) => {
-                      return new Token(token)
-                    })}
+                    tokens={
+                      tokens
+                        ? tokens.map((token) => {
+                            return new Token(token)
+                          })
+                        : []
+                    }
                   />
                   <div className="p-3">
                     <Checker.Connected fullWidth size="md">
@@ -266,7 +275,7 @@ const Add: FC = () => {
                                 token1={token1}
                                 input0={Amount.fromFractionalAmount(token0, parsedInput0, 100)}
                                 input1={Amount.fromFractionalAmount(token1, parsedInput1, 100)}
-                                prices={prices}
+                                prices={prices || {}}
                               >
                                 {({ setOpen }) => (
                                   <Button
