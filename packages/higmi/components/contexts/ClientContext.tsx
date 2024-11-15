@@ -54,7 +54,7 @@ const web3Modal = new Web3Modal({
     {
       id: 'hathor-wallet',
       name: 'HathorWallet',
-      links: { universal: 'https://apps.apple.com/br/app/hathor-play/id6557030964' },
+      links: { universal: 'https://apps.apple.com/us/app/hathor-wallet/id1465041963' },
     },
   ],
   walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
