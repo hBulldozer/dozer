@@ -268,23 +268,27 @@ const TokenCreationPage: React.FC = () => {
   }
 
   useEffect(() => {
-    if (rpcResult?.valid && rpcResult?.result && isLoading) {
-      const hash = get(rpcResult, 'result.response.hash') as string
-      if (hash) {
-        mutation.mutate({
-          name: tokenName,
-          symbol: tokenSymbol,
-          chainId: network,
-          decimals: 2,
-          description: tokenDescription,
-          imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme || '',
-          telegram,
-          twitter,
-          website,
-          hash: hash,
-          createdBy: address,
-          totalSupply: parseInt(totalSupply),
-        })
+    if (isLoading) {
+      if (rpcResult?.valid && rpcResult?.result) {
+        const hash = get(rpcResult, 'result.response.hash') as string
+        if (hash) {
+          mutation.mutate({
+            name: tokenName,
+            symbol: tokenSymbol,
+            chainId: network,
+            decimals: 2,
+            description: tokenDescription,
+            imageUrl: imageSource === 'upload' ? imageUrl : generatedMeme || '',
+            telegram,
+            twitter,
+            website,
+            hash: hash,
+            createdBy: address,
+            totalSupply: parseInt(totalSupply),
+          })
+        }
+      } else {
+        setIsLoading(false)
       }
     }
   }, [rpcResult])
