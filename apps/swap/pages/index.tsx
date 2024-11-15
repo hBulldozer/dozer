@@ -71,9 +71,9 @@ const Home = () => {
 export default Home
 
 export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ token0_idx, token1_idx }) => {
-  const { data: pools = [] } = api.getPools.all.useQuery()
-  const { data: tokens = [] } = api.getTokens.all.useQuery()
-  const { data: prices = { '00': 0 } } = api.getPrices.all.useQuery()
+  const { data: pools } = api.getPools.all.useQuery()
+  const { data: tokens } = api.getTokens.all.useQuery()
+  const { data: prices } = api.getPrices.all.useQuery()
   const router = useRouter()
 
   useEffect(() => {
@@ -97,19 +97,23 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const network = useNetwork((state) => state.network)
 
   const [initialToken0, setInitialToken0] = useState(
-    toToken(
-      tokens.filter((token) => {
-        return token.id == token0_idx
-      })[0]
-    )
+    tokens
+      ? toToken(
+          tokens.filter((token) => {
+            return token.id == token0_idx
+          })[0]
+        )
+      : undefined
   )
 
   const [initialToken1, setInitialToken1] = useState(
-    toToken(
-      tokens.filter((token) => {
-        return token.id == token1_idx
-      })[0]
-    )
+    tokens
+      ? toToken(
+          tokens.filter((token) => {
+            return token.id == token1_idx
+          })[0]
+        )
+      : undefined
   )
 
   useEffect(() => {
@@ -192,27 +196,29 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
       }
     }
     setSelectedPool(
-      pools.find((pool: Pair) => {
-        const uuid0 = pool.token0.uuid
-        const uuid1 = pool.token1.uuid
-        const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
-        const result = checker(
-          [token0 ? token0.uuid : '', token1 ? token1.uuid : ''],
-          [uuid0 ? uuid0 : '', uuid1 ? uuid1 : '']
-        )
-        return result
-      })
+      pools
+        ? pools.find((pool: Pair) => {
+            const uuid0 = pool.token0.uuid
+            const uuid1 = pool.token1.uuid
+            const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
+            const result = checker(
+              [token0 ? token0.uuid : '', token1 ? token1.uuid : ''],
+              [uuid0 ? uuid0 : '', uuid1 ? uuid1 : '']
+            )
+            return result
+          })
+        : undefined
     )
 
     // call the function
-    if (input1 || input0) {
+    if (selectedPool && (input1 || input0)) {
       fetchData()
         .then(() => {
           setFetchLoading(false)
           trade.setMainCurrency(token0)
           trade.setOtherCurrency(token1)
-          trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
-          trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
+          trade.setMainCurrencyPrice(token0 && prices ? prices[token0?.uuid] : 0)
+          trade.setOtherCurrencyPrice(token1 && prices ? prices[token1?.uuid] : 0)
           trade.setAmountSpecified(Number(input0) || 0)
           trade.setOutputAmount(Number(input1) || 0)
           trade.setPriceImpact(priceImpact || 0)
@@ -279,12 +285,16 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
           inputType={TradeType.EXACT_INPUT}
           tradeType={tradeType}
           loading={tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
-          prices={prices}
-          tokens={tokens
-            .filter((token) => !token.custom)
-            .map((token) => {
-              return new Token(token)
-            })}
+          prices={prices || {}}
+          tokens={
+            tokens
+              ? tokens
+                  .filter((token) => !token.custom)
+                  .map((token) => {
+                    return new Token(token)
+                  })
+              : []
+          }
         />
         <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
           <button
@@ -314,15 +324,19 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             inputType={TradeType.EXACT_OUTPUT}
             tradeType={tradeType}
             loading={tradeType == TradeType.EXACT_INPUT && fetchLoading}
-            prices={prices}
-            tokens={tokens
-              .filter((token) => !token.custom)
-              .map((token) => {
-                return new Token(token)
-              })}
+            prices={prices || {}}
+            tokens={
+              tokens
+                ? tokens
+                    .filter((token) => !token.custom)
+                    .map((token) => {
+                      return new Token(token)
+                    })
+                : []
+            }
             // isWrap={isWrap}
           />
-          <SwapStatsDisclosure prices={prices} />
+          <SwapStatsDisclosure prices={prices || {}} />
           <div className="p-3 pt-0">
             <Checker.Connected fullWidth size="md">
               <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
