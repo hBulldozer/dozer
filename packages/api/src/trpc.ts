@@ -7,7 +7,7 @@
  * The pieces you will need to use are documented accordingly near the end
  */
 // import { getServerSession, type Session } from "@acme/auth";
-import { prisma } from '@dozer/database'
+import prisma from '@dozer/database'
 import { initTRPC, TRPCError } from '@trpc/server'
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
 import superjson from 'superjson'

@@ -69,20 +69,20 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
             (pool.token0.uuid == '00' && pool.token1.uuid == uuid) ||
             (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
         )
-  if (!pool) {
-    throw new Error(`Failed to fetch pool, received ${pool}`)
+  if (pool) {
+    // throw new Error(`Failed to fetch pool, received ${pool}`)
+
+    await ssg.getTokens.bySymbol.prefetch({ symbol: 'USDT' })
+
+    await ssg.getPools.snapsById.prefetch({ id: pool.id })
+    await ssg.getPools.snapsById.prefetch({ id: HTR_USDT_pool.id })
+
+    await ssg.getPools.allDay.prefetch()
+    await ssg.getPools.all.prefetch()
+    await ssg.getTokens.all.prefetch()
+    await ssg.getPrices.all.prefetch()
+    await ssg.getNetwork.getBestBlock.prefetch()
   }
-
-  await ssg.getTokens.bySymbol.prefetch({ symbol: 'USDT' })
-
-  await ssg.getPools.snapsById.prefetch({ id: pool.id })
-  await ssg.getPools.snapsById.prefetch({ id: HTR_USDT_pool.id })
-
-  await ssg.getPools.allDay.prefetch()
-  await ssg.getPools.all.prefetch()
-  await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.all.prefetch()
-  await ssg.getNetwork.getBestBlock.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),

@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { prisma } from '@dozer/database'
+import prisma from '@dozer/database'
 
 interface Point {
   x: number
