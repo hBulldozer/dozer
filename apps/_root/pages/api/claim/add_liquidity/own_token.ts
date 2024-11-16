@@ -27,7 +27,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     contractId: pool_ncid.id,
     address: payload.accounts['zealy-connect'].replace(/['"]+/g, ''),
     methods: ['add_liquidity'],
-    minimum_amount: 10000,
+    minimum_amount: 100,
   })
 
   if (request.headers['x-api-key'] && request.headers['x-api-key'] === process.env.API_KEY) {
