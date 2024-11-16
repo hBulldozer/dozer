@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 import { getCoreRowModel, getSortedRowModel, SortingState, useReactTable, ColumnDef } from '@tanstack/react-table'
 import { api } from '../../utils/api'
 import { AllTokensDBOutput } from '@dozer/api' // Adjust the import path as needed
+import { useBreakpoint } from '@dozer/hooks'
 
 interface CustomTokensTableProps {
   address: string
@@ -14,6 +15,7 @@ interface CustomToken extends AllTokensDBOutput {
 }
 
 export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
+  const { isSm } = useBreakpoint('sm')
   const router = useRouter()
   const [sorting, setSorting] = React.useState<SortingState>([])
 
@@ -21,7 +23,7 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
   const { data: totalSupplies } = api.getTokens.allTotalSupply.useQuery()
 
   const customTokens = useMemo(() => {
-    return (tokens?.filter((token) => token.custom && token.createdBy === address) || []).map((token) => ({
+    return (tokens?.filter((token) => token.createdBy === address) || []).map((token) => ({
       ...token,
       totalSupply: totalSupplies?.[token.uuid] || 0,
     }))
@@ -42,32 +44,41 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
           </Typography>
         </div>
       ),
-      size: 160,
+      size: 50,
     },
     {
       id: 'totalSupply',
       header: 'Total Supply',
       accessorFn: (row) => row.totalSupply,
       cell: (info) => info.getValue(),
-      size: 110,
+      size: 50,
     },
     {
       id: 'actions',
       header: '',
       cell: (info) => (
-        <Button
-          as="a"
-          href={`/pool/create?token=${info.row.original.uuid}`}
-          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-            e.preventDefault()
-            window.location.href = `/pool/create?token=${info.row.original.uuid}`
-          }}
-          size="sm"
-        >
-          Create Pool
-        </Button>
+        //justify the button to the right of the table
+        <div className="flex justify-end">
+          <Button
+            as="a"
+            href={
+              !info.row.original.custom
+                ? `/pool/${info.row.original.uuid}`
+                : `/pool/create?token=${info.row.original.uuid}`
+            }
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+              e.preventDefault()
+              window.location.href = !info.row.original.custom
+                ? `/pool/${info.row.original.pools1[0].id}`
+                : `/pool/create?token=${info.row.original.uuid}`
+            }}
+            size="sm"
+          >
+            {!info.row.original.custom ? 'View Pool' : 'Create Pool'}
+          </Button>
+        </div>
       ),
-      size: 210,
+      size: isSm ? 20 : 90,
     },
   ]
 
@@ -80,5 +91,12 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
     getSortedRowModel: getSortedRowModel(),
   })
 
-  return <GenericTable table={table} loading={isLoading} placeholder="No custom tokens found" pageSize={20} />
+  return (
+    <GenericTable
+      table={table}
+      loading={isLoading}
+      placeholder="No custom tokens found"
+      pageSize={Math.max(customTokens?.length || 0, 5)}
+    />
+  )
 }
