@@ -388,30 +388,30 @@ export const TokenChart: FC<TokenChartProps> = ({ pair, setIsDialogOpen }) => {
             </Typography>
           )}
         </div>
-        <div className="flex gap-4">
-          {!pair.id.includes('usdt') ? (
-            <button
-              onClick={() => setChartCurrency(TokenChartCurrency.USD)}
-              className={classNames(
-                'font-semibold text-xl',
-                chartCurrency === TokenChartCurrency.USD ? 'text-yellow-500' : 'text-stone-500'
-              )}
-            >
-              USD
-            </button>
-          ) : null}
-          {!pair.id.includes('native') ? (
-            <button
-              onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
-              className={classNames(
-                'font-semibold text-xl',
-                chartCurrency === TokenChartCurrency.HTR ? 'text-yellow-500 ' : 'text-stone-500 '
-              )}
-            >
-              HTR
-            </button>
-          ) : null}
-        </div>
+      </div>
+      <div className="flex justify-end gap-4 text-right">
+        {!pair.id.includes('usdt') ? (
+          <button
+            onClick={() => setChartCurrency(TokenChartCurrency.USD)}
+            className={classNames(
+              'font-semibold text-xl',
+              chartCurrency === TokenChartCurrency.USD ? 'text-yellow-500' : 'text-stone-500'
+            )}
+          >
+            USD
+          </button>
+        ) : null}
+        {!pair.id.includes('native') ? (
+          <button
+            onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
+            className={classNames(
+              'font-semibold text-xl',
+              chartCurrency === TokenChartCurrency.HTR ? 'text-yellow-500 ' : 'text-stone-500 '
+            )}
+          >
+            HTR
+          </button>
+        ) : null}
       </div>
       {!isLoading ? (
         <div onMouseLeave={onMouseLeave}>
