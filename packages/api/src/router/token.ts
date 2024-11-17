@@ -183,10 +183,10 @@ export const tokenRouter = createTRPCRouter({
         throw new Error('Failed to fetch transactions')
       }
       const transactions = data.transactions
-      if (transactions.has_more) {
+      if (data.has_more) {
         // If more than 20 transactions, check only in database
         const checkInDb = await ctx.prisma.token.findFirst({
-          where: { custom: true, createdBy: input.address },
+          where: { createdBy: input.address },
         })
         return checkInDb?.uuid
       } else {

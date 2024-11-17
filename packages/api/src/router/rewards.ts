@@ -128,7 +128,7 @@ export const rewardsRouter = createTRPCRouter({
         select: { id: true },
       })
       const anotherPoolsId = anotherPools.map((pool) => pool.id)
-      if (transactions.has_more) {
+      if (data.has_more) {
         // If more than 50 transactions, check only in database
         const endpoint_balance = 'thin_wallet/address_balance'
         const queryParams_balance = [`address=${input.address}`]
