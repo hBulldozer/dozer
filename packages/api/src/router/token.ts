@@ -184,6 +184,7 @@ export const tokenRouter = createTRPCRouter({
       }
       const transactions = data.transactions
       if (data.has_more) {
+        console.log('has_more')
         // If more than 20 transactions, check only in database
         const checkInDb = await ctx.prisma.token.findFirst({
           where: { createdBy: input.address },
@@ -191,8 +192,15 @@ export const tokenRouter = createTRPCRouter({
         return checkInDb?.uuid
       } else {
         // If less than 20 transactions, check in the node address_search endpoint
-        const createTokenTx = transactions.find((tx: Transaction) => 'token_symbol' in tx && 'token_name' in tx)
-        return createTokenTx?.tx_id
+        const createTokenTx = transactions.filter((tx: Transaction) => 'token_symbol' in tx && 'token_name' in tx)
+        if (createTokenTx.length > 1) {
+          console.log('user created more than one token')
+          // If more than 20 transactions, check only in database
+          const checkInDb = await ctx.prisma.token.findFirst({
+            where: { createdBy: input.address },
+          })
+          return checkInDb?.uuid
+        } else return createTokenTx[0]?.tx_id
       }
     }),
 })
