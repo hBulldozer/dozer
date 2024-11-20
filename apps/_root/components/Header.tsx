@@ -32,7 +32,7 @@ export const Header: FC = () => {
             Enter App
           </Button>
         </Link.Internal> */}
-        <Button as="a" href="https://forms.gle/8cEKvsaNrTP4c8Ef6" size="sm" className="ml-4 whitespace-nowrap">
+        <Button as="a" href="https://testnet.dozer.finance/swap" size="sm" className="ml-4 whitespace-nowrap">
           Join Now
         </Button>
       </div>
