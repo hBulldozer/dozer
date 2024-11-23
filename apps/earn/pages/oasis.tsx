@@ -1,12 +1,43 @@
 import React, { useState } from 'react'
-import { Widget, Select, Input, Button, Typography, Slider } from '@dozer/ui'
+import {
+  Widget,
+  Select,
+  Input,
+  Button,
+  Typography,
+  Slider,
+  TextHoverEffect,
+  BackgroundGradientAnimation,
+} from '@dozer/ui'
 import { OasisChart } from '../components/OasisChart'
+import Image, { ImageProps } from 'next/legacy/image'
+import { Token } from '@dozer/currency'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+
+const TokenOption = ({ token }: { token: string }) => {
+  const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
+  return (
+    <div className="flex flex-row items-center w-full gap-4">
+      <div className="flex-shrink-0 w-7 h-7">
+        <Image key={token} src={`/logos/${currency}.svg`} width={28} height={28} alt={token} className="rounded-full" />
+      </div>
+      <div className="flex flex-col items-start min-w-0">
+        <Typography variant="sm" weight={500} className="truncate text-stone-200 group-hover:text-stone-50">
+          {token}
+        </Typography>
+      </div>
+    </div>
+  )
+}
 
 const OasisProgram = () => {
   const [amount, setAmount] = useState<string>('')
   const [token, setToken] = useState<string>('hUSDT')
   const [lockPeriod, setLockPeriod] = useState<number>(12)
   const [tokenPriceChange, setTokenPriceChange] = useState<number>(0)
+  const maxHTR = 1000
+  const availableHTR = 500
+  const progress = (availableHTR / maxHTR) * 100
 
   // Bonus rate based on lock period
   const bonusRate = lockPeriod === 6 ? 0.1 : lockPeriod === 9 ? 0.15 : 0.2
@@ -27,10 +58,7 @@ const OasisProgram = () => {
   return (
     <div className="flex flex-col gap-6 p-6 bg-black/80">
       <div className="flex flex-col items-center mb-8 text-center">
-        <Typography
-          variant="h1"
-          className="mb-4 text-6xl font-bold text-transparent text-yellow bg-gradient-to-r from-yellow-500 to-yellow-300 bg-clip-text"
-        >
+        <Typography variant="h1" className="mb-4 text-6xl font-bold text-transparent text-yellow bg-clip-text">
           OASIS
         </Typography>
         <Typography variant="lg" className="mb-2 text-stone-400">
@@ -41,33 +69,122 @@ const OasisProgram = () => {
         </Typography>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[400px_1fr] gap-6">
-        <Widget id="oasisInput" maxWidth="full">
-          <Widget.Content>
-            <Widget.Header title="Oasis">
-              <Typography variant="xs" className="text-stone-400">
-                Your Locked Liquidity
-              </Typography>
-            </Widget.Header>
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-3">
+          <div className="p-6 bg-stone-800/50 rounded-xl">
+            <Typography variant="lg" weight={500} className="mb-2 text-yellow">
+              1. Equal HTR Matching
+            </Typography>
+            <Typography variant="sm" className="text-stone-400">
+              For every $1 worth of tokens you provide, Oasis will match with $1 worth of HTR, doubling the effective
+              liquidity you provide to the pool.
+            </Typography>
+          </div>
 
+          <div className="p-6 bg-stone-800/50 rounded-xl">
+            <Typography variant="lg" weight={500} className="mb-2 text-yellow">
+              2. Instant Bonus
+            </Typography>
+            <Typography variant="sm" className="text-stone-400">
+              Get an immediate upfront payment of up to 20% of your deposit value in HTR, depending on your chosen lock
+              period.
+            </Typography>
+          </div>
+
+          <div className="p-6 bg-stone-800/50 rounded-xl">
+            <Typography variant="lg" weight={500} className="mb-2 text-yellow">
+              3. IL Protection
+            </Typography>
+            <Typography variant="sm" className="text-stone-400">
+              Your deposit is protected against impermanent loss up to a 4x price difference between HTR and your
+              deposited token.
+            </Typography>
+          </div>
+        </div>
+        <div className="flex justify-center">
+          <Button variant="outlined" className="text-yellow hover:text-yellow-600">
+            <Typography variant="sm" weight={500}>
+              Learn More
+            </Typography>
+            <ArrowTopRightOnSquareIcon width={16} height={16} className="ml-2 text-yellow" />
+          </Button>
+        </div>
+      </div>
+
+      <Widget id="oasisInput" maxWidth="full" className="py-10 my-20">
+        <Widget.Content>
+          <div className="grid grid-cols-1 md:grid-cols-[400px_1fr] gap-6">
             <div className="flex flex-col gap-4 p-4">
-              <div className="flex flex-col gap-2">
-                <Typography variant="sm" className="text-stone-400">
-                  Amount to lock up
-                </Typography>
-                <Input.Numeric value={amount} onUserInput={(val) => setAmount(val)} className="w-full" />
+              <div className="flex flex-row gap-2 justify-items-end">
+                <div className="flex flex-col flex-1 gap-2">
+                  <Typography variant="sm" className="text-stone-400">
+                    Amount to lock up
+                  </Typography>
+                  <div className="h-[51px]">
+                    {' '}
+                    {/* h-10 = 40px, standard input height */}
+                    <Input.Numeric value={amount} onUserInput={(val) => setAmount(val)} className="h-full" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 w-[180px]">
+                  <Typography variant="sm" className="text-stone-400">
+                    Choose token
+                  </Typography>
+
+                  <Select
+                    value={token}
+                    onChange={(val: string) => setToken(val as string)}
+                    button={
+                      <Select.Button>
+                        <div className="flex flex-row items-center flex-grow gap-4 mr-8">
+                          <div className="flex-shrink-0 w-7 h-7">
+                            <Image
+                              key={currency}
+                              src={`/logos/${currency}.svg`}
+                              width={28}
+                              height={28}
+                              alt={currency}
+                              className="rounded-full"
+                            />
+                          </div>
+                          <div className="flex flex-col items-start min-w-0">
+                            <Typography
+                              variant="sm"
+                              weight={500}
+                              className="truncate text-stone-200 group-hover:text-stone-50"
+                            >
+                              {token}
+                            </Typography>
+                          </div>
+                        </div>
+                      </Select.Button>
+                    }
+                  >
+                    <Select.Options>
+                      <Select.Option value="hUSDT">
+                        <TokenOption token="hUSDT" />
+                      </Select.Option>
+                      <Select.Option value="hETH">
+                        <TokenOption token="hETH" />
+                      </Select.Option>
+                      <Select.Option value="hBTC">
+                        <TokenOption token="hBTC" />
+                      </Select.Option>
+                    </Select.Options>
+                  </Select>
+                </div>
               </div>
 
-              <div className="flex flex-col w-full gap-2">
-                <div className="flex justify-between">
-                  <Typography variant="sm" className="text-stone-400">
-                    {currency} Price Change
-                  </Typography>
-                  <Typography variant="sm" className="text-yellow">
-                    {tokenPriceChange.toFixed(2)}%
-                  </Typography>
-                </div>
-                {token !== 'hUSDT' && (
+              {token !== 'hUSDT' && (
+                <div className="flex flex-col w-full gap-2">
+                  <div className="flex justify-between">
+                    <Typography variant="sm" className="text-stone-400">
+                      {currency} Price Change
+                    </Typography>
+                    <Typography variant="sm" className="text-yellow">
+                      {tokenPriceChange.toFixed(2)}%
+                    </Typography>
+                  </div>
                   <Slider
                     value={[tokenPriceChange]}
                     onValueChange={(vals: number[]) => setTokenPriceChange(vals[0])}
@@ -76,24 +193,8 @@ const OasisProgram = () => {
                     step={1}
                     className="w-full"
                   />
-                )}
-              </div>
-              <div className="flex flex-col gap-2">
-                <Typography variant="sm" className="text-stone-400">
-                  Choose token
-                </Typography>
-                <Select
-                  value={token}
-                  onChange={(val: string) => setToken(val as string)}
-                  button={<Select.Button>{token}</Select.Button>}
-                >
-                  <Select.Options>
-                    <Select.Option value="hUSDT">hUSDT</Select.Option>
-                    <Select.Option value="hETH">hETH</Select.Option>
-                    <Select.Option value="hBTC">hBTC</Select.Option>
-                  </Select.Options>
-                </Select>
-              </div>
+                </div>
+              )}
 
               <div className="flex flex-col gap-2">
                 <Typography variant="sm" className="text-stone-400">
@@ -156,34 +257,43 @@ const OasisProgram = () => {
               <Button className="w-full mt-4" disabled={!amount || Number(amount) <= 0}>
                 Get tokens then ignite now
               </Button>
-            </div>
-          </Widget.Content>
-        </Widget>
 
-        <Widget id="oasisChart" maxWidth="full">
-          <Widget.Content>
-            <Widget.Header title="Return Analysis">
-              <Typography variant="xs" className="text-stone-400">
-                Price Impact vs Returns
-              </Typography>
-            </Widget.Header>
-            <div className="p-4">
-              <div className="h-[500px]">
-                {amount && Number(amount) > 0 && (
-                  <OasisChart
-                    liquidityValue={Number(amount)}
-                    initialPrices={initialPrices}
-                    bonusRate={bonusRate}
-                    holdPeriod={lockPeriod}
-                    currency={currency}
-                    tokenPriceChange={tokenPriceChange}
-                  />
-                )}
+              <div className="w-full max-w-[600px] mt-4 ">
+                <div className="relative h-[23px] w-full">
+                  <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500 "></div>
+                  <div
+                    className="absolute inset-y-0 left-0 overflow-hidden rounded-md"
+                    style={{ width: `${progress}%` }}
+                  >
+                    <div className="h-full bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-500" />
+                  </div>
+                </div>
+                <div className="flex flex-row items-center justify-between mt-2">
+                  <Typography variant="sm" className="text-center text-neutral-200">
+                    HTR matched
+                  </Typography>
+                  <Typography variant="sm" className="text-center text-neutral-200">
+                    {availableHTR.toLocaleString()} / {maxHTR.toLocaleString()} HTR
+                  </Typography>
+                </div>
               </div>
             </div>
-          </Widget.Content>
-        </Widget>
-      </div>
+
+            <div className="p-4">
+              <div className="h-[500px]">
+                <OasisChart
+                  liquidityValue={Number(amount)}
+                  initialPrices={initialPrices}
+                  bonusRate={bonusRate}
+                  holdPeriod={lockPeriod}
+                  currency={currency}
+                  tokenPriceChange={tokenPriceChange}
+                />
+              </div>
+            </div>
+          </div>
+        </Widget.Content>
+      </Widget>
     </div>
   )
 }

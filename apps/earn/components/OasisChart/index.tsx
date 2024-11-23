@@ -36,7 +36,7 @@ export const OasisChart = ({
   const chartData = calculator.generateAnalysis(htrChanges, Array(htrChanges.length).fill(tokenPriceChange))
 
   const option = {
-    backgroundColor: '#1c1917', // stone-900 background
+    // backgroundColor: '#1c1917', // stone-900 background
     grid: {
       top: 40,
       right: 60,
@@ -211,8 +211,7 @@ export const OasisChart = ({
     <ReactECharts
       option={option}
       style={{
-        height: '100%', // Adjust height as needed
-        backgroundColor: '#1c1917', // stone-900 background
+        height: '100%',
       }}
     />
   )
