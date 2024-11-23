@@ -21,6 +21,7 @@ const OasisProgram = () => {
 
   // Unlock date calculation
   const unlockDate = new Date(Date.now() + lockPeriod * 30 * 24 * 60 * 60 * 1000)
+  const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
 
   return (
     <div className="flex flex-col gap-6 p-6 bg-black/80">
@@ -153,6 +154,7 @@ const OasisProgram = () => {
                     initialPrices={initialPrices}
                     bonusRate={bonusRate}
                     holdPeriod={lockPeriod}
+                    currency={currency}
                   />
                 )}
               </div>

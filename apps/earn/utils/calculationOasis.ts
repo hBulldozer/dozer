@@ -6,190 +6,182 @@ export interface TokenPrices {
   usdt: number
 }
 
-interface DepositAmount {
-  amount: number
-  currency: 'BTC' | 'ETH' | 'USDC' | 'USDT'
-}
+export type TradingPair = 'BTC' | 'ETH' | 'USDC' | 'USDT'
 
 interface PoolConfig {
-  deposit: DepositAmount
+  liquidityValue: number // Initial deposit value in USD
   holdPeriod: number // Hold period in months
-  bonusValue: number // Bonus value in USD
-  dexFees: number // DEX fees percentage
+  bonusRate: number // Bonus rate
+  dexFees: number // DEX fees percentage (e.g., 25 for 25%)
+  tradingPair: TradingPair // The token paired with HTR
 }
 
-export interface CalculationResult {
-  inputCurrency: {
-    currency: string
-    amount: number
-    usdValue: number
-  }
-  endPrice: {
-    usdt: number
-    htrChange: number
-    htrPrice: number
-    htrBonus: number
-  }
-  startingBalances: {
-    htr: number
-    usdt: number
+interface PriceChanges {
+  htrChange: number // Percentage change in HTR price
+  tokenChange: number // Percentage change in paired token price
+}
+
+interface CalculationResult {
+  priceChanges: {
+    relative: number // Relative price change
+    htr: number // HTR price change percentage
+    token: number // Paired token price change percentage
+    endHtrPrice: number // Final HTR price
+    endTokenPrice: number // Final paired token price
   }
   endingPoolBalances: {
-    usdt: number
-    htr: number
-    usdtDexFees: number
-    usdtDeficit: number
+    token: number // Final token balance
+    htr: number // Final HTR balance
+    tokenDexFees: number // DEX fees in token
+    tokenDeficit: number // Deficit in token
   }
   endingLPWithdraw: {
-    usdt: number
-    htrIlProtection: number
-    lpValue: number
-    originalCurrency: number
+    token: number // Token amount to withdraw
+    htrIlProtection: number // IL protection in HTR
+    lpValue: number // Total LP value in token
   }
   plusBonus: {
-    hodl: number
-    sell: number
+    hodl: number // Bonus if holding
+    sell: number // Bonus if selling
   }
-  priceChange: number
   percentageDelta: {
-    vsUsdtHodl: number
-    hodl: number
-    sell: number
+    vsTokenHodl: number // Return vs holding token
+    hodl: number // Return if holding bonus
+    sell: number // Return if selling bonus
   }
 }
 
-export class MultiCurrencyLiquidityCalculator {
-  private readonly prices: TokenPrices
+export class ImprovedPairCalculator {
+  private readonly initialPrices: TokenPrices
   private readonly config: PoolConfig
-  private readonly liquidityValueUSD: number
+  private readonly initialTokenPrice: number
+  private readonly initialHtrAmount: number
+  private readonly initialTokenAmount: number
 
   constructor(tokenPrices: TokenPrices, config: PoolConfig) {
-    this.prices = tokenPrices
+    this.initialPrices = tokenPrices
     this.config = config
+    this.initialTokenPrice = this.getTokenPrice(config.tradingPair)
 
-    // Convert deposit to USD value
-    this.liquidityValueUSD = this.convertToUSD(config.deposit.amount, config.deposit.currency)
+    // Calculate initial amounts
+    this.initialTokenAmount = this.config.liquidityValue / this.initialTokenPrice
+    this.initialHtrAmount = this.config.liquidityValue / this.initialPrices.htr
   }
 
-  private convertToUSD(amount: number, currency: string): number {
-    switch (currency) {
+  private getTokenPrice(token: TradingPair): number {
+    switch (token) {
       case 'BTC':
-        return amount * this.prices.btc
+        return this.initialPrices.btc
       case 'ETH':
-        return amount * this.prices.eth
+        return this.initialPrices.eth
       case 'USDC':
+        return this.initialPrices.usdc
       case 'USDT':
-        return amount
+        return this.initialPrices.usdt
       default:
-        throw new Error(`Unsupported currency: ${currency}`)
+        throw new Error(`Unsupported token: ${token}`)
     }
   }
 
-  private convertFromUSD(usdAmount: number, currency: string): number {
-    switch (currency) {
-      case 'BTC':
-        return usdAmount / this.prices.btc
-      case 'ETH':
-        return usdAmount / this.prices.eth
-      case 'USDC':
-      case 'USDT':
-        return usdAmount
-      default:
-        throw new Error(`Unsupported currency: ${currency}`)
-    }
-  }
+  calculatePosition(changes: PriceChanges): CalculationResult {
+    // Calculate new prices
+    const htrChange = changes.htrChange / 100
+    const tokenChange = changes.tokenChange / 100
 
-  calculatePosition(htrPriceChangePercent: number): CalculationResult {
-    // Calculate new HTR price based on percentage change
-    const htrChange = htrPriceChangePercent / 100
-    const endHtrPrice = this.prices.htr * (1 + htrChange)
-
-    // Calculate starting balances
-    const startingUsdtBalance = this.liquidityValueUSD
-    const startingHtrBalance = this.liquidityValueUSD / this.prices.htr
+    const newHtrPrice = this.initialPrices.htr * (1 + htrChange)
+    const newTokenPrice = this.initialTokenPrice * (1 + tokenChange)
 
     // Calculate constant product (k)
-    const k = startingUsdtBalance * startingHtrBalance
+    const k = this.initialTokenAmount * this.initialHtrAmount
+    const R = newTokenPrice / newHtrPrice
 
-    // Calculate new token amounts based on constant product formula
-    const newHtrBalance = Math.sqrt(k / endHtrPrice)
-    const newUsdtBalance = k / newHtrBalance
+    // Calculate new balances maintaining constant product
+    const newTokenBalance = Math.sqrt(k / R)
+    const newHtrBalance = k / newTokenBalance
 
-    // Calculate DEX fees
-    const usdtDexFees = newUsdtBalance * (this.config.dexFees / 100)
+    const endingTokenBalance = newTokenBalance * (1 + this.config.dexFees / 100)
+    const endingHTRBalance = newHtrBalance * (1 + this.config.dexFees / 100)
 
-    // Calculate USDT deficit for IL protection
-    const usdtDeficit = Math.max(0, this.liquidityValueUSD - newUsdtBalance)
+    const tokenDexFees = endingTokenBalance - newTokenBalance
+
+    const tokenDeficit = endingTokenBalance > this.initialTokenAmount ? 0 : this.initialTokenAmount - endingTokenBalance
+
+    const endingTokenWithdraw =
+      endingTokenBalance > this.initialTokenAmount ? this.initialTokenAmount + tokenDexFees : endingTokenBalance
+    const endingHTRWithdraw =
+      (tokenDeficit * newTokenPrice) / newHtrPrice > endingHTRBalance
+        ? endingHTRBalance
+        : (tokenDeficit * newTokenPrice) / newHtrPrice
 
     // Calculate IL protection in HTR
-    const htrIlProtection = usdtDeficit / endHtrPrice
+    const htrIlProtection = (tokenDeficit * newTokenPrice) / newHtrBalance
 
-    // Calculate LP value in USD
-    const lpValue = newUsdtBalance + newHtrBalance * endHtrPrice
+    // Calculate LP value in token terms
+    const lpValue = endingTokenWithdraw * newTokenPrice + endingHTRWithdraw * newHtrPrice
 
+    const bonusValueHTR = (this.config.liquidityValue * this.config.bonusRate) / this.initialPrices.htr
     // Calculate bonus values
-    const hodlBonus = this.config.bonusValue * (1 + htrChange)
-    const sellBonus = this.config.bonusValue
+    const hodlBonus = bonusValueHTR * newHtrPrice
+    const sellBonus = ((bonusValueHTR * this.initialPrices.htr) / this.initialTokenPrice) * newTokenPrice
 
-    // Calculate final positions including bonus
-    const finalUsdHodl = lpValue + hodlBonus
-    const finalUsdSell = lpValue + sellBonus
+    // Calculate percentage returns
+    const baseValue = this.config.liquidityValue
+    const lpValueWithHodlBonus = lpValue + hodlBonus
+    const lpValueWithSellBonus = lpValue + sellBonus
 
-    // Convert final LP value back to original currency
-    const lpValueInOriginalCurrency = this.convertFromUSD(lpValue, this.config.deposit.currency)
-
-    // Calculate percentage deltas
-    const baseValue = this.liquidityValueUSD
-    const vsUsdtHodlPercent = (finalUsdHodl / baseValue - 1) * 100
-    const hodlPercent = (finalUsdHodl / baseValue - 1) * 100
-    const sellPercent = (finalUsdSell / baseValue - 1) * 100
+    const vsTokenHodl = ((lpValueWithHodlBonus - baseValue) / baseValue) * 100
+    const hodlReturn = ((lpValueWithHodlBonus - baseValue) / baseValue) * 100
+    const sellReturn = ((lpValueWithSellBonus - baseValue) / baseValue) * 100
 
     return {
-      priceChange: htrPriceChangePercent,
-      inputCurrency: {
-        currency: this.config.deposit.currency,
-        amount: this.config.deposit.amount,
-        usdValue: this.liquidityValueUSD,
-      },
-      endPrice: {
-        usdt: 1,
-        htrChange: htrPriceChangePercent,
-        htrPrice: endHtrPrice,
-        htrBonus: this.config.bonusValue,
-      },
-      startingBalances: {
-        htr: startingHtrBalance,
-        usdt: startingUsdtBalance,
+      priceChanges: {
+        htr: changes.htrChange,
+        token: changes.tokenChange,
+        relative: changes.tokenChange / changes.htrChange,
+        endHtrPrice: newHtrPrice,
+        endTokenPrice: newTokenPrice,
       },
       endingPoolBalances: {
-        usdt: newUsdtBalance,
+        token: newTokenBalance,
         htr: newHtrBalance,
-        usdtDexFees,
-        usdtDeficit,
+        tokenDexFees,
+        tokenDeficit,
       },
       endingLPWithdraw: {
-        usdt: newUsdtBalance,
+        token: newTokenBalance,
         htrIlProtection,
         lpValue,
-        originalCurrency: lpValueInOriginalCurrency,
       },
       plusBonus: {
         hodl: hodlBonus,
         sell: sellBonus,
       },
       percentageDelta: {
-        vsUsdtHodl: vsUsdtHodlPercent,
-        hodl: hodlPercent,
-        sell: sellPercent,
+        vsTokenHodl,
+        hodl: hodlReturn,
+        sell: sellReturn,
       },
     }
   }
 
-  generateAnalysis(minChange: number = -98, maxChange: number = 5000, step: number = 10): CalculationResult[] {
+  generateAnalysis(htrChanges: number[] = [], tokenChanges: number[] = []): CalculationResult[] {
     const results: CalculationResult[] = []
 
-    for (let change = minChange; change <= maxChange; change += step) {
-      results.push(this.calculatePosition(change))
+    // If only HTR changes provided, use constant token price
+    if (tokenChanges.length === 0) {
+      tokenChanges = htrChanges.map(() => 0)
+    }
+
+    // Ensure arrays are the same length
+    const length = Math.min(htrChanges.length, tokenChanges.length)
+
+    for (let i = 0; i < length; i++) {
+      results.push(
+        this.calculatePosition({
+          htrChange: htrChanges[i],
+          tokenChange: tokenChanges[i],
+        })
+      )
     }
 
     return results
@@ -197,36 +189,39 @@ export class MultiCurrencyLiquidityCalculator {
 }
 
 // Example usage:
-const calculator = new MultiCurrencyLiquidityCalculator(
+const calculator = new ImprovedPairCalculator(
   {
     htr: 0.07,
-    btc: 98520,
-    eth: 3339,
-    usdc: 1,
-    usdt: 1,
+    btc: 98472.35,
+    eth: 3361.67,
+    usdc: 1.0,
+    usdt: 1.0,
   },
   {
-    deposit: {
-      amount: 0.102, // Depositing 0.102 BTC
-      currency: 'BTC',
-    },
+    liquidityValue: 10000,
     holdPeriod: 12,
-    bonusValue: 2000,
+    bonusRate: 2000,
     dexFees: 25,
+    tradingPair: 'BTC',
   }
 )
 
-// Calculate for specific price changes
-const resultMinus50 = calculator.calculatePosition(-50) // -50% price change
-
-// Example test cases with different deposit currencies:
-const btcTest = calculator.calculatePosition(-90)
-console.log('Test case (-90% price change with BTC deposit):', {
-  'Input Amount (BTC)': btcTest.inputCurrency.amount,
-  'USD Value': btcTest.inputCurrency.usdValue,
-  'End HTR Price': btcTest.endPrice.htrPrice,
-  'LP Value (USD)': btcTest.endingLPWithdraw.lpValue,
-  'LP Value (BTC)': btcTest.endingLPWithdraw.originalCurrency,
-  'HODL Return %': btcTest.percentageDelta.hodl,
-  'Sell Return %': btcTest.percentageDelta.sell,
+// Test with HTR up 50% and BTC down 20%
+const testResult = calculator.calculatePosition({
+  htrChange: 50,
+  tokenChange: -20,
 })
+
+// Generate analysis for a range of price scenarios
+const htrChanges = Array.from({ length: 21 }, (_, i) => -100 + i * 10) // -100% to +100%
+const btcChanges = Array.from({ length: 21 }, (_, i) => -50 + i * 5) // -50% to +50%
+
+const analysis = calculator.generateAnalysis(htrChanges, btcChanges)
+
+// For chart data
+const chartData = analysis.map((result) => ({
+  htrPriceChange: result.priceChanges.htr,
+  tokenPriceChange: result.priceChanges.token,
+  hodlReturn: result.percentageDelta.hodl,
+  sellReturn: result.percentageDelta.sell,
+}))

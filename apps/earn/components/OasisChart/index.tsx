@@ -1,4 +1,4 @@
-import { TokenPrices, MultiCurrencyLiquidityCalculator, CalculationResult } from '../../utils/calculationOasis'
+import { ImprovedPairCalculator, TokenPrices, TradingPair } from '../../utils/calculationOasis'
 import ReactECharts from 'echarts-for-react'
 
 interface ChartProps {
@@ -6,26 +6,32 @@ interface ChartProps {
   initialPrices: TokenPrices
   bonusRate: number
   holdPeriod: number
+  currency: TradingPair
 }
 
-export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPeriod }: ChartProps) => {
-  const calculator = new MultiCurrencyLiquidityCalculator(initialPrices, {
-    deposit: {
-      amount: liquidityValue, // Depositing 0.102 BTC
-      currency: 'USDT',
-    },
+const MIN_CHANGE = -100
+const MAX_CHANGE = 100
+const STEP = 10
+
+export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPeriod, currency }: ChartProps) => {
+  const calculator = new ImprovedPairCalculator(initialPrices, {
+    liquidityValue: liquidityValue,
     holdPeriod: holdPeriod,
-    bonusValue: liquidityValue * bonusRate,
+    bonusRate: bonusRate,
     dexFees: 25,
+    tradingPair: currency,
   })
-  const chartData = calculator.generateAnalysis(-98, 5000, 10)
+
+  const changes = Array.from({ length: (MAX_CHANGE - MIN_CHANGE) / STEP + 1 }, (_, i) => MIN_CHANGE + i * STEP)
+
+  const chartData = calculator.generateAnalysis(changes, Array(changes.length).fill(0))
 
   const option = {
     backgroundColor: '#1c1917', // stone-900 background
     grid: {
       top: 40,
-      right: 60, // Increased to make room for zoom slider
-      bottom: 40,
+      right: 60,
+      bottom: 60, // Increased to accommodate both sliders
       left: 60,
       containLabel: true,
     },
@@ -51,6 +57,7 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
     },
     dataZoom: [
       {
+        // Inside zoom for X axis
         type: 'inside',
         xAxisIndex: 0,
         filterMode: 'none',
@@ -58,17 +65,47 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
         moveOnMouseMove: false,
       },
       {
+        // Inside zoom for Y axis
+        type: 'inside',
+        yAxisIndex: 0,
+        filterMode: 'none',
+        // zoomOnMouseWheel: true,
+        moveOnMouseMove: false,
+        zoomOnMouseWheel: false, // Disable mouse wheel for Y (will use modifier key)
+        moveOnMouseWheel: true, // Enable Y axis zoom with modifier key
+      },
+      {
+        // Bottom slider for X axis
         show: true,
         type: 'slider',
         xAxisIndex: 0,
         filterMode: 'none',
         height: 20,
-        bottom: 0,
+        bottom: 10,
         borderColor: 'transparent',
-        backgroundColor: '#292524', // stone-800
-        fillerColor: '#44403c', // stone-700
+        backgroundColor: '#292524',
+        fillerColor: '#44403c',
         handleStyle: {
-          color: '#eab308', // yellow-500
+          color: '#eab308',
+        },
+        textStyle: {
+          color: '#999',
+        },
+        brushSelect: false,
+      },
+      {
+        // Right slider for Y axis
+        show: true,
+        type: 'slider',
+        yAxisIndex: 0,
+        filterMode: 'none',
+        width: 20,
+        right: 10,
+        borderColor: 'transparent',
+        backgroundColor: '#292524',
+        fillerColor: '#44403c',
+        handleStyle: {
+          color: '#eab308',
         },
         textStyle: {
           color: '#999',
@@ -79,8 +116,8 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
     xAxis: {
       type: 'value',
       name: 'HTR Price Change (%)',
-      min: -98,
-      max: 5000,
+      min: -100,
+      max: 100,
       axisLabel: {
         color: '#999',
         formatter: '{value}%',
@@ -88,7 +125,7 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
       splitLine: {
         show: true,
         lineStyle: {
-          color: '#292524', // stone-800
+          color: '#292524',
           type: 'dashed',
         },
       },
@@ -103,7 +140,7 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
       splitLine: {
         show: true,
         lineStyle: {
-          color: '#292524', // stone-800
+          color: '#292524',
           type: 'dashed',
         },
       },
@@ -112,7 +149,7 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
       {
         name: 'Hold Bonus + IL Protection',
         type: 'line',
-        data: chartData.map((d) => [d.priceChange, d.percentageDelta.hodl]),
+        data: chartData.map((d) => [d.priceChanges.htr, d.percentageDelta.hodl]),
         smooth: true,
         showSymbol: false,
         color: '#eab308', // yellow color
@@ -135,12 +172,25 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
       {
         name: 'Sell Bonus Immediately',
         type: 'line',
-        data: chartData.map((d) => [d.priceChange, d.percentageDelta.sell]),
+        data: chartData.map((d) => [d.priceChanges.htr, d.percentageDelta.sell]),
         smooth: true,
         showSymbol: false,
         color: '#22c55e', // green color
       },
     ],
+    toolbox: {
+      feature: {
+        restore: {
+          show: true,
+          title: 'Reset Zoom',
+          icon: 'path://M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z',
+          iconStyle: {
+            color: '#eab308',
+          },
+        },
+      },
+      right: 60,
+    },
   }
   return (
     <ReactECharts
