@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { Widget, Select, Input, Button, Typography } from '@dozer/ui'
+import { Widget, Select, Input, Button, Typography, Slider } from '@dozer/ui'
 import { OasisChart } from '../components/OasisChart'
 
 const OasisProgram = () => {
   const [amount, setAmount] = useState<string>('')
   const [token, setToken] = useState<string>('hUSDT')
   const [lockPeriod, setLockPeriod] = useState<number>(12)
+  const [tokenPriceChange, setTokenPriceChange] = useState<number>(0)
 
   // Bonus rate based on lock period
   const bonusRate = lockPeriod === 6 ? 0.1 : lockPeriod === 9 ? 0.15 : 0.2
@@ -57,6 +58,26 @@ const OasisProgram = () => {
                 <Input.Numeric value={amount} onUserInput={(val) => setAmount(val)} className="w-full" />
               </div>
 
+              <div className="flex flex-col w-full gap-2">
+                <div className="flex justify-between">
+                  <Typography variant="sm" className="text-stone-400">
+                    {currency} Price Change
+                  </Typography>
+                  <Typography variant="sm" className="text-yellow">
+                    {tokenPriceChange.toFixed(2)}%
+                  </Typography>
+                </div>
+                {token !== 'hUSDT' && (
+                  <Slider
+                    value={[tokenPriceChange]}
+                    onValueChange={(vals: number[]) => setTokenPriceChange(vals[0])}
+                    min={-100}
+                    max={100}
+                    step={1}
+                    className="w-full"
+                  />
+                )}
+              </div>
               <div className="flex flex-col gap-2">
                 <Typography variant="sm" className="text-stone-400">
                   Choose token
@@ -155,6 +176,7 @@ const OasisProgram = () => {
                     bonusRate={bonusRate}
                     holdPeriod={lockPeriod}
                     currency={currency}
+                    tokenPriceChange={tokenPriceChange}
                   />
                 )}
               </div>

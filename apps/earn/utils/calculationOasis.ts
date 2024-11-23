@@ -23,7 +23,6 @@ interface PriceChanges {
 
 interface CalculationResult {
   priceChanges: {
-    relative: number // Relative price change
     htr: number // HTR price change percentage
     token: number // Paired token price change percentage
     endHtrPrice: number // Final HTR price
@@ -137,7 +136,6 @@ export class ImprovedPairCalculator {
       priceChanges: {
         htr: changes.htrChange,
         token: changes.tokenChange,
-        relative: changes.tokenChange / changes.htrChange,
         endHtrPrice: newHtrPrice,
         endTokenPrice: newTokenPrice,
       },

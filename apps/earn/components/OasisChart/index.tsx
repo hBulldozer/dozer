@@ -1,3 +1,4 @@
+import { text } from 'stream/consumers'
 import { ImprovedPairCalculator, TokenPrices, TradingPair } from '../../utils/calculationOasis'
 import ReactECharts from 'echarts-for-react'
 
@@ -7,13 +8,21 @@ interface ChartProps {
   bonusRate: number
   holdPeriod: number
   currency: TradingPair
+  tokenPriceChange?: number
 }
 
 const MIN_CHANGE = -100
 const MAX_CHANGE = 100
 const STEP = 10
 
-export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPeriod, currency }: ChartProps) => {
+export const OasisChart = ({
+  liquidityValue,
+  initialPrices,
+  bonusRate,
+  holdPeriod,
+  currency,
+  tokenPriceChange = 0,
+}: ChartProps) => {
   const calculator = new ImprovedPairCalculator(initialPrices, {
     liquidityValue: liquidityValue,
     holdPeriod: holdPeriod,
@@ -22,9 +31,9 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
     tradingPair: currency,
   })
 
-  const changes = Array.from({ length: (MAX_CHANGE - MIN_CHANGE) / STEP + 1 }, (_, i) => MIN_CHANGE + i * STEP)
+  const htrChanges = Array.from({ length: (MAX_CHANGE - MIN_CHANGE) / STEP + 1 }, (_, i) => MIN_CHANGE + i * STEP)
 
-  const chartData = calculator.generateAnalysis(changes, Array(changes.length).fill(0))
+  const chartData = calculator.generateAnalysis(htrChanges, Array(htrChanges.length).fill(tokenPriceChange))
 
   const option = {
     backgroundColor: '#1c1917', // stone-900 background
@@ -37,6 +46,11 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
     },
     tooltip: {
       trigger: 'axis',
+      backgroundColor: '#1c1917', // stone-900 background
+      textStyle: {
+        color: '#a3a3a3',
+      },
+      borderColor: '#57534e',
       axisPointer: {
         type: 'cross',
         crossStyle: {
@@ -45,11 +59,13 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
       },
       formatter: function (params: any) {
         return `HTR Price Change: ${params[0].data[0].toFixed(1)}%<br/>
+                ${currency} Price Change: ${tokenPriceChange.toFixed(1)}%<br/>
                   Hold Return: ${params[0].data[1].toFixed(1)}%<br/>
                   Sell Return: ${params[1].data[1].toFixed(1)}%`
       },
     },
     legend: {
+      itemGap: 200,
       data: ['Hold Bonus + IL Protection', 'Sell Bonus Immediately'],
       textStyle: {
         color: '#999',
@@ -69,9 +85,9 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
         type: 'inside',
         yAxisIndex: 0,
         filterMode: 'none',
-        // zoomOnMouseWheel: true,
+        zoomOnMouseWheel: true,
         moveOnMouseMove: false,
-        zoomOnMouseWheel: false, // Disable mouse wheel for Y (will use modifier key)
+        // zoomOnMouseWheel: false, // Disable mouse wheel for Y (will use modifier key)
         moveOnMouseWheel: true, // Enable Y axis zoom with modifier key
       },
       {
@@ -116,6 +132,8 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
     xAxis: {
       type: 'value',
       name: 'HTR Price Change (%)',
+      nameLocation: 'middle',
+      nameGap: 25,
       min: -100,
       max: 100,
       axisLabel: {
@@ -133,6 +151,7 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
     yAxis: {
       type: 'value',
       name: 'Return (%)',
+      nameLocation: 'middle',
       axisLabel: {
         color: '#999',
         formatter: '{value}%',
@@ -161,10 +180,6 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
           data: [
             {
               xAxis: 0,
-              label: {
-                formatter: 'Current',
-                color: '#999',
-              },
             },
           ],
         },
@@ -196,7 +211,7 @@ export const OasisChart = ({ liquidityValue, initialPrices, bonusRate, holdPerio
     <ReactECharts
       option={option}
       style={{
-        height: '100%',
+        height: '100%', // Adjust height as needed
         backgroundColor: '#1c1917', // stone-900 background
       }}
     />
