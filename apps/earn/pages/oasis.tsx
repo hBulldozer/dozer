@@ -72,15 +72,21 @@ const OasisProgram = () => {
       {/* Your content - now with relative positioning and z-index */}
       <div className="relative z-10 flex flex-col gap-6 p-6">
         <div className="flex flex-col gap-6 px-6 bg-black/80">
-          <div className="flex flex-col items-center text-center ">
-            <div className="flex flex-col items-center pt-10 ">
-              <h1 className="relative z-20 text-3xl font-bold text-center text-white md:text-7xl lg:text-9xl">OASIS</h1>
-              <div className="w-[40rem] h-40 relative">
-                <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-amber-500 to-transparent h-[2px] w-3/4 blur-sm" />
-                <div className="absolute top-0 w-3/4 h-px inset-x-20 bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
-                <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-yellow-500 to-transparent h-[5px] w-1/4 blur-sm" />
-                <div className="absolute top-0 w-1/4 h-px inset-x-60 bg-gradient-to-r from-transparent via-yellow-500 to-transparent" />
+          <div className="flex flex-col items-center text-center">
+            <div className="flex flex-col items-center pt-10">
+              <h1 className="relative z-20 text-4xl font-bold text-center text-white sm:text-7xl lg:text-9xl">OASIS</h1>
+              <div className="w-full max-w-[40rem] h-40 relative px-4">
+                {/* First (wider) gradient pair */}
+                <div className="absolute w-full sm:w-3/4 h-[2px] left-1/2 -translate-x-1/2 top-0">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500 to-transparent blur-sm" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+                </div>
 
+                {/* Second (narrower) gradient pair */}
+                <div className="absolute w-2/3 sm:w-1/3 h-[2px] left-1/2 -translate-x-1/2 top-0">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-500 to-transparent h-[5px] blur-sm" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-500 to-transparent" />
+                </div>
                 <Typography variant="lg" className="mt-8 text-stone-400">
                   The Official Hathor Liquidity Incentive program
                 </Typography>
@@ -89,7 +95,7 @@ const OasisProgram = () => {
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 px-4 mb-8 sm:px-0 md:grid-cols-3">
               <div className="p-6 bg-stone-800/50 rounded-xl">
                 <Typography variant="lg" weight={500} className="mb-2 text-yellow">
                   1. Equal HTR Matching
@@ -132,16 +138,16 @@ const OasisProgram = () => {
 
           <Widget id="oasisInput" maxWidth="full" className="py-10 my-20">
             <Widget.Content>
-              <div className="grid grid-cols-1 md:grid-cols-[400px_1fr] gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6">
                 {/* Left column with tabs */}
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 ">
                   <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
                     <div>
-                      <div className="flex items-center gap-6 mb-6 ml-8">
+                      <div className="flex items-center gap-4 mb-6 ml-4 sm:gap-6 sm:ml-8">
                         <Tab
                           className={({ selected }) =>
                             classNames(
-                              'transition-colors duration-200 font-medium !outline-none',
+                              'transition-colors duration-200 font-medium !outline-none text-sm sm:text-base',
                               selected ? 'text-yellow border-b-2 border-yellow' : 'text-stone-500 hover:text-stone-200'
                             )
                           }
@@ -162,8 +168,8 @@ const OasisProgram = () => {
 
                       <Tab.Panels>
                         <Tab.Panel>
-                          <div className="flex flex-col gap-4 p-8">
-                            <div className="flex flex-row gap-2 justify-items-end">
+                          <div className="flex flex-col gap-4 p-4 sm:p-8">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:gap-2 justify-items-end">
                               <div className="flex flex-col flex-1 gap-2">
                                 <Typography variant="sm" className="text-stone-400">
                                   Amount to lock up
@@ -178,7 +184,7 @@ const OasisProgram = () => {
                                   />
                                 </div>
                               </div>
-                              <div className="flex flex-col gap-2 w-[180px]">
+                              <div className="flex flex-col w-full sm:w-[180px] gap-2">
                                 <Typography variant="sm" className="text-stone-400">
                                   Choose token
                                 </Typography>
@@ -298,7 +304,7 @@ const OasisProgram = () => {
                               </Select>
                             </div>
 
-                            <div className="p-4 mt-4 bg-stone-800 rounded-xl">
+                            <div className="p-4 mt-2 sm:mt-4 bg-stone-800 rounded-xl">
                               <div className="flex flex-col gap-4">
                                 <div className="flex justify-between">
                                   <Typography variant="sm" className="text-stone-400">
@@ -337,7 +343,7 @@ const OasisProgram = () => {
                               Get tokens then ignite now
                             </Button>
 
-                            <div className="w-full max-w-[600px] mt-4 ">
+                            <div className="w-full mt-4">
                               <Typography variant="xs" className="text-stone-400">
                                 Oasis Reserve available
                               </Typography>
@@ -421,7 +427,7 @@ const OasisProgram = () => {
                   </Tab.Group>
                 </div>
 
-                <div className="p-4">
+                <div className="hidden p-4 sm:block">
                   <OasisChart
                     liquidityValue={Number(amount)}
                     initialPrices={initialPrices}
