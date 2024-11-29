@@ -192,7 +192,7 @@ export const rewardsRouter = createTRPCRouter({
   checkZealyUserAddress: procedure
     .input(z.object({ zealyId: z.string(), subdomain: z.string() }))
     .query(async ({ ctx, input }) => {
-      const url = `https://api-v2.zealy.io/public/communities/${input.subdomain}/leaderboard`
+      const url = `https://api-v2.zealy.io/public/communities/${input.subdomain}/leaderboard?limit=500`
       const response = await fetch(url, {
         method: 'GET',
         headers: {
