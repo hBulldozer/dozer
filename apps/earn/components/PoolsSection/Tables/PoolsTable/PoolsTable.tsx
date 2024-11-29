@@ -11,6 +11,7 @@ import {
   FilterPools,
   Filters,
   LoadingOverlay,
+  Typography,
 } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
@@ -65,12 +66,14 @@ export const PoolsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: _pools, isLoading: isLoadingPools } = api.getPools.allDay.useQuery()
+  const { data: _pools_initial, isLoading: isLoadingInitial } = api.getPools.firstLoadAllDay.useQuery()
+  const { data: _pools_detailed, isLoading: isLoadingDetailed } = api.getPools.allDay.useQuery()
   const { data: prices, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
 
-  const isLoading = useMemo(() => {
-    return isLoadingPools || isLoadingPrices
-  }, [isLoadingPools, isLoadingPrices])
+  const _pools = useMemo(() => {
+    if (isLoadingDetailed) return _pools_initial
+    else return _pools_detailed
+  }, [_pools_initial, _pools_detailed, isLoadingDetailed])
 
   const pools = useMemo(() => {
     const maxAPR = Math.max(...(_pools?.map((pool) => pool.apr) || [])) * 100
@@ -176,7 +179,12 @@ export const PoolsTable: FC = () => {
 
   return (
     <>
-      <LoadingOverlay show={isSomePending ? false : isLoading} />
+      <LoadingOverlay show={isSomePending ? false : isLoadingInitial} />
+      {isLoadingDetailed && (
+        <Typography variant="xs" className="text-center text-stone-500">
+          Loading detailed pools...
+        </Typography>
+      )}
       <FilterPools maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
       <GenericTable<ExtendedPair>
         table={table}
