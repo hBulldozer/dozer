@@ -328,30 +328,6 @@ export const poolRouter = createTRPCRouter({
         reserve0: true,
         reserve1: true,
         volume1d: true,
-        hourSnapshots: {
-          select: {
-            volumeUSD: true,
-            volume0: true,
-            volume1: true,
-            fee0: true,
-            fee1: true,
-            feeUSD: true,
-            reserve0: true,
-            reserve1: true,
-            liquidityUSD: true,
-            priceHTR: true,
-            txCount: true,
-          },
-          where: {
-            date: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
-            },
-          },
-          orderBy: {
-            date: 'desc',
-          },
-          // take: 1, // Get only the latest snapshot within the 24-hour period
-        },
       },
     })
     const htrUsdtPool = pools.find((pool) => {
