@@ -11,6 +11,8 @@ import { api } from '../utils/api'
 export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
   await ssg.getPools.all.prefetch()
+  // await ssg.getPools.firstLoadAllDay.prefetch()
+  // await ssg.getPools.allDay.prefetch()
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
   await ssg.getNetwork.getBestBlock.prefetch()

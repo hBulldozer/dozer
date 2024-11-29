@@ -11,7 +11,7 @@ const fetchInitialLoad = (pool: any, htrPrice: number): Pair & { priceHTR: numbe
     priceHTR: htrPrice,
     id: pool.id,
     name: `${pool.token0.symbol}-${pool.token1.symbol}`,
-    liquidityUSD: pool.liquidityUSD,
+    liquidityUSD: pool.liquidityUSD > 10 ? pool.liquidityUSD : 15,
     volume0: 0,
     volume1: 0,
     volumeUSD: pool.volumeUSD,
@@ -370,34 +370,7 @@ export const poolRouter = createTRPCRouter({
         : poolData.reserve0 / poolData.reserve1
       : 1 // Default to 1 if htrUsdtPool is undefined
     // Process each pool concurrently (for efficiency)
-    const allPoolData = pools.map((pool) => {
-      return {
-        priceHTR: htrPrice,
-        id: pool.id,
-        name: `${pool.token0.symbol}-${pool.token1.symbol}`,
-        liquidityUSD: pool.liquidityUSD > 10 ? pool.liquidityUSD : 100,
-        volume0: 0,
-        volume1: 0,
-        volumeUSD: pool.volumeUSD,
-        feeUSD: pool.feeUSD,
-        swapFee: 0.5,
-        apr: 0,
-        token0: pool.token0,
-        token1: pool.token1,
-        reserve0: Number(pool.reserve0) / 100,
-        reserve1: Number(pool.reserve1) / 100,
-        chainId: pool.chainId,
-        liquidity: (2 * Number(pool.reserve0)) / 100,
-        volume1d: pool.volume1d > 0.00001 ? pool.volume1d : 0,
-        fee0: 0,
-        fee1: 0,
-        fees1d: pool.fees1d > 0.00001 ? pool.fees1d : 0,
-        txCount: 0,
-        txCount1d: 0,
-        daySnapshots: [],
-        hourSnapshots: [],
-      }
-    })
+    const allPoolData = pools.map((pool) => fetchInitialLoad(pool, htrPrice))
     // const allPoolData = await Promise.all(poolDataPromises)
 
     return allPoolData.filter((pool) => pool != ({} as Pair))

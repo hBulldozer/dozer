@@ -66,14 +66,34 @@ export const PoolsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: _pools_initial, isLoading: isLoadingInitial } = api.getPools.firstLoadAllDay.useQuery()
-  const { data: _pools_detailed, isLoading: isLoadingDetailed } = api.getPools.allDay.useQuery()
-  const { data: prices, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
+  // Use enabled option to control when queries run
+  const initialQuery = api.getPools.firstLoadAllDay.useQuery(undefined, {
+    staleTime: 30000, // Reduce refetches
+    cacheTime: 1000 * 60 * 5, // Cache for 5 minutes
+  })
 
+  const detailedQuery = api.getPools.allDay.useQuery(undefined, {
+    staleTime: 30000,
+    cacheTime: 1000 * 60 * 5,
+    // Only run this query after initial data is loaded
+    enabled: !!initialQuery.data,
+  })
+
+  const pricesQuery = api.getPrices.all.useQuery(undefined, {
+    staleTime: 30000,
+    cacheTime: 1000 * 60 * 5,
+  })
+
+  const prices = useMemo(() => {
+    if (pricesQuery.data) return pricesQuery.data
+    return {}
+  }, [pricesQuery.data])
+
+  // Combine the data based on what's available
   const _pools = useMemo(() => {
-    if (isLoadingDetailed) return _pools_initial
-    else return _pools_detailed
-  }, [_pools_initial, _pools_detailed, isLoadingDetailed])
+    if (detailedQuery.data) return detailedQuery.data
+    return initialQuery.data || []
+  }, [initialQuery.data, detailedQuery.data])
 
   const pools = useMemo(() => {
     const maxAPR = Math.max(...(_pools?.map((pool) => pool.apr) || [])) * 100
@@ -179,8 +199,8 @@ export const PoolsTable: FC = () => {
 
   return (
     <>
-      <LoadingOverlay show={isSomePending ? false : isLoadingInitial} />
-      {isLoadingDetailed && (
+      <LoadingOverlay show={isSomePending ? false : initialQuery.isLoading} />
+      {detailedQuery.isLoading && (
         <Typography variant="xs" className="text-center text-stone-500">
           Loading detailed pools...
         </Typography>
