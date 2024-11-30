@@ -217,6 +217,23 @@ const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, s
   }
 }
 export const pricesRouter = createTRPCRouter({
+  firstLoadAll: procedure.query(async ({ ctx }) => {
+    const tokens = await ctx.prisma.token.findMany({
+      select: {
+        uuid: true,
+        symbol: true,
+        chainId: true,
+      },
+    })
+    if (!tokens) {
+      throw new Error(`Failed to fetch tokens, received ${tokens}`)
+    }
+    const prices: { [key: string]: number } = {}
+    tokens.map(async (token) => {
+      prices[token.uuid] = 0
+    })
+    return prices
+  }),
   all: procedure.query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
       select: {
@@ -282,6 +299,22 @@ export const pricesRouter = createTRPCRouter({
       throw new Error(`Failed to fetch prices, received ${prices}`)
     }
     return prices
+  }),
+  firstLoadAll24h: procedure.query(async ({ ctx }) => {
+    const tokens = await ctx.prisma.token.findMany({
+      select: {
+        uuid: true,
+        chainId: true,
+      },
+    })
+    if (!tokens) {
+      throw new Error(`Failed to fetch tokens, received ${tokens}`)
+    }
+    const prices24hUSD: { [key: string]: number[] } = {}
+    tokens.map(async (token) => {
+      prices24hUSD[token.uuid] = [0, 0]
+    })
+    return prices24hUSD
   }),
   all24h: procedure.query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
