@@ -21,7 +21,7 @@ import { api } from '../../../../utils/api'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, MARKETCAP_COLUMN, TVL_COLUMN, VOLUME_COLUMN, CHART_COLUMN]
+const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, MARKETCAP_COLUMN, TVL_COLUMN, VOLUME_COLUMN]
 
 export interface ExtendedPair extends Pair {
   priceHtr?: number
@@ -79,7 +79,7 @@ export const TokensTable: FC = () => {
 
   const { data: tokens, isLoading: isLoadingTokens } = api.getTokens.all.useQuery()
 
-  const { data: pricesInitial, isLoading: isLoadingPricesInitial } = api.getPrices.all.useQuery(undefined, {
+  const { data: pricesInitial, isLoading: isLoadingPricesInitial } = api.getPrices.firstLoadAll.useQuery(undefined, {
     suspense: false, // Important for hydration
     refetchOnMount: false,
     staleTime: 30000, // Reduce refetches
@@ -109,8 +109,10 @@ export const TokensTable: FC = () => {
   const allPools = allPoolsDetailed || allPoolsInitial
   const prices = pricesDetailed || pricesInitial
 
-  const isLoadingInitial = isLoadingPoolsInitial || isLoadingPrices24hInitial || isLoadingTotalSuppliesInitial
-  const isLoading = isLoadingPoolsDetailed || isLoadingPrices24hDetailed || isLoadingTotalSuppliesDetailed
+  const isLoadingInitial =
+    isLoadingPoolsInitial || isLoadingPrices24hInitial || isLoadingTotalSuppliesInitial || isLoadingPricesInitial
+  const isLoadingDetailed =
+    isLoadingPoolsDetailed || isLoadingPrices24hDetailed || isLoadingTotalSuppliesDetailed || isLoadingPricesDetailed
 
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<FiltersTokens>({
@@ -398,7 +400,7 @@ export const TokensTable: FC = () => {
       <LoadingOverlay show={isLoadingInitial} />
       <div className="flex flex-row items-center ">
         <FilterTokens maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
-        {isLoading && (
+        {isLoadingDetailed && (
           <Typography variant="xs" className="text-balance text-stone-500">
             Loading detailed data for all tokens...
           </Typography>
