@@ -44,7 +44,6 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
         blurDataURL={`data:image/svg+xml;base64,${btoa(
           `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#1c1917"/></svg>`
         )}`}
-        placeholder="blur"
         onError={(e) => {
           const target = e.target as HTMLImageElement
           target.style.display = 'none'
