@@ -1,18 +1,17 @@
 // components/Currency/Icon.tsx
 import { FC, memo } from 'react'
-import Image from 'next/image'
+import Image, { ImageProps } from 'next/image'
 import { DefaultTokenIcon } from './DefaultTokenIcon'
-import type { Currency } from '@dozer/currency' // Make sure to import the Currency type
-
-export interface IconProps {
+import type { Currency } from '@dozer/currency'
+export interface IconProps extends Omit<ImageProps, 'src' | 'alt'> {
   currency: Currency
-  width: number
-  height: number
   priority?: boolean
   loading?: 'eager' | 'lazy'
 }
 
-export const Icon: FC<IconProps> = memo(({ currency, width, height, priority, loading }) => {
+export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest }) => {
+  const width = rest.width || 24
+  const height = rest.height || 24
   const iconUrl = currency.imageUrl || ''
 
   if (iconUrl == '') {
@@ -22,24 +21,31 @@ export const Icon: FC<IconProps> = memo(({ currency, width, height, priority, lo
     if (isLocalSvg) {
       return (
         <div className="relative overflow-hidden rounded-full bg-stone-800">
-          <img src={logoURI} alt={`${currency.symbol} icon`} width={width} height={height} className="object-contain" />
+          <img
+            src={logoURI}
+            alt={`${currency.symbol} icon`}
+            width={rest.width}
+            height={rest.height}
+            className="object-contain"
+          />
         </div>
       )
     }
 
-    return <DefaultTokenIcon symbol={currency.symbol || 'TK'} size={width} />
+    return <DefaultTokenIcon symbol={currency.symbol || 'TK'} alt={`${currency.symbol} icon`} />
   }
 
   return (
     <div className="relative overflow-hidden rounded-full bg-stone-800" style={{ width, height }}>
       <Image
+        {...rest}
         src={iconUrl}
         alt={`${currency.symbol} icon`}
         fill
         className="object-contain w-full h-full"
         priority={priority}
         loading={loading}
-        sizes={`${width}px`}
+        sizes={`${rest.width}px`}
         quality={75}
         onError={(e) => {
           const target = e.target as HTMLImageElement
@@ -47,13 +53,13 @@ export const Icon: FC<IconProps> = memo(({ currency, width, height, priority, lo
           const parent = target.parentElement
           if (parent) {
             const defaultIcon = document.createElement('div')
-            defaultIcon.style.width = `${width}px`
-            defaultIcon.style.height = `${height}px`
+            defaultIcon.style.width = `${rest.width}px`
+            defaultIcon.style.height = `${rest.height}px`
             defaultIcon.className = 'flex items-center justify-center'
             parent.appendChild(defaultIcon)
 
             defaultIcon.innerHTML = `<div class="rounded-full flex items-center justify-center bg-stone-800 text-stone-300" style="width: ${width}px; height: ${height}px; font-size: ${
-              width * 0.4
+              rest.width || 24 * 0.4
             }px">${currency.symbol?.slice(0, 2).toUpperCase()}</div>`
           }
         }}
