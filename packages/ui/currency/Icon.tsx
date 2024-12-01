@@ -1,4 +1,3 @@
-// components/Currency/Icon.tsx
 import { FC, memo } from 'react'
 import Image, { ImageProps } from 'next/image'
 import { DefaultTokenIcon } from './DefaultTokenIcon'
@@ -21,18 +20,12 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
     if (isLocalSvg) {
       return (
         <div className="relative overflow-hidden rounded-full bg-stone-800">
-          <img
-            src={logoURI}
-            alt={`${currency.symbol} icon`}
-            width={rest.width}
-            height={rest.height}
-            className="object-contain"
-          />
+          <img src={logoURI} alt={`${currency.symbol} icon`} width={width} height={height} className="object-contain" />
         </div>
       )
     }
 
-    return <DefaultTokenIcon symbol={currency.symbol || 'TK'} alt={`${currency.symbol} icon`} />
+    return <DefaultTokenIcon alt={`${currency.symbol} icon`} symbol={currency.symbol || 'TK'} {...rest} />
   }
 
   return (
@@ -41,25 +34,30 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
         {...rest}
         src={iconUrl}
         alt={`${currency.symbol} icon`}
-        fill
+        // fill
         className="object-contain w-full h-full"
         priority={priority}
         loading={loading}
-        sizes={`${rest.width}px`}
+        sizes={`${width}px`}
         quality={75}
+        // Add blur placeholder for better loading experience
+        blurDataURL={`data:image/svg+xml;base64,${btoa(
+          `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#1c1917"/></svg>`
+        )}`}
+        placeholder="blur"
         onError={(e) => {
           const target = e.target as HTMLImageElement
           target.style.display = 'none'
           const parent = target.parentElement
           if (parent) {
             const defaultIcon = document.createElement('div')
-            defaultIcon.style.width = `${rest.width}px`
-            defaultIcon.style.height = `${rest.height}px`
+            defaultIcon.style.width = `${width}px`
+            defaultIcon.style.height = `${height}px`
             defaultIcon.className = 'flex items-center justify-center'
             parent.appendChild(defaultIcon)
 
             defaultIcon.innerHTML = `<div class="rounded-full flex items-center justify-center bg-stone-800 text-stone-300" style="width: ${width}px; height: ${height}px; font-size: ${
-              rest.width || 24 * 0.4
+              width || 24 * 0.4
             }px">${currency.symbol?.slice(0, 2).toUpperCase()}</div>`
           }
         }}
@@ -70,5 +68,4 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
 
 Icon.displayName = 'CurrencyIcon'
 
-// Add both default and named exports
 export default Icon

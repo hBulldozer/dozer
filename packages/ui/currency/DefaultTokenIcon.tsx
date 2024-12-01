@@ -11,6 +11,7 @@ export const DefaultTokenIcon: FC<DefaultTokenIconProps> = ({ symbol, ...rest })
   return (
     <div
       className="flex items-center justify-center rounded-full bg-stone-800 text-stone-300"
+      {...rest}
       style={{
         width: rest.width,
         height: rest.height,

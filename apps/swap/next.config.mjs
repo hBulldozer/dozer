@@ -10,6 +10,9 @@ const nextConfig = {
   },
   output: 'standalone',
   images: {
+    minimumCacheTTL: 86400, // 24 hours
+    deviceSizes: [32, 48, 64, 96, 128, 256], // Adjust based on your needs
+    formats: ['image/webp', 'image/avif'],
     remotePatterns: [
       {
         protocol: 'https',
