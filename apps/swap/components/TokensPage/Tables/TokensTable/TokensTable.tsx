@@ -400,7 +400,7 @@ export const TokensTable: FC = () => {
 
   return (
     <>
-      <LoadingOverlay show={isLoadingInitial} />
+      <LoadingOverlay show={isLoadingTokens} />
       <div className="flex flex-row items-center ">
         <FilterTokens maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
         {isLoadingDetailed && (
