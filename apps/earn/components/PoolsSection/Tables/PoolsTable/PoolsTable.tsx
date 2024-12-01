@@ -190,7 +190,7 @@ export const PoolsTable: FC = () => {
       </div>
       <GenericTable<ExtendedPair>
         table={table}
-        loading={false}
+        loading={initialQuery.isLoading}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
         placeholder={'No pools found'}
         pageSize={PAGE_SIZE}
