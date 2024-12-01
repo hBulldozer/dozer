@@ -21,7 +21,7 @@ import { api } from '../../../../utils/api'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, MARKETCAP_COLUMN, TVL_COLUMN, VOLUME_COLUMN]
+const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, MARKETCAP_COLUMN, TVL_COLUMN, VOLUME_COLUMN, CHART_COLUMN]
 
 export interface ExtendedPair extends Pair {
   priceHtr?: number
@@ -55,7 +55,6 @@ export const TokensTable: FC = () => {
     refetchOnMount: false,
     staleTime: 30000,
     cacheTime: 1000 * 60 * 5,
-    // Only run this query after initial data is loaded
     enabled: !!allPoolsInitial,
   })
 
@@ -73,7 +72,6 @@ export const TokensTable: FC = () => {
     refetchOnMount: false,
     staleTime: 30000,
     cacheTime: 1000 * 60 * 5,
-    // Only run this query after initial data is loaded
     enabled: !!prices24hInitial,
   })
 
@@ -88,6 +86,7 @@ export const TokensTable: FC = () => {
   const { data: pricesDetailed, isLoading: isLoadingPricesDetailed } = api.getPrices.all.useQuery(undefined, {
     staleTime: 30000,
     cacheTime: 1000 * 60 * 5,
+    enabled: !!pricesInitial,
   })
 
   const { data: totalSuppliesInitial, isLoading: isLoadingTotalSuppliesInitial } =
@@ -97,20 +96,24 @@ export const TokensTable: FC = () => {
       staleTime: 30000, // Reduce refetches
       cacheTime: 1000 * 60 * 5, // Cache for 5 minutes
     })
-  const { data: totalSupplies, isLoading: isLoadingTotalSuppliesDetailed } = api.getTokens.allTotalSupply.useQuery(
-    undefined,
-    {
+  const { data: totalSuppliesDetailed, isLoading: isLoadingTotalSuppliesDetailed } =
+    api.getTokens.allTotalSupply.useQuery(undefined, {
       staleTime: 30000,
       cacheTime: 1000 * 60 * 5,
-    }
-  )
+      enabled: !!totalSuppliesInitial,
+    })
 
   const prices24h = prices24hDetailed || prices24hInitial
   const allPools = allPoolsDetailed || allPoolsInitial
   const prices = pricesDetailed || pricesInitial
+  const totalSupplies = totalSuppliesDetailed || totalSuppliesInitial
 
   const isLoadingInitial =
-    isLoadingPoolsInitial || isLoadingPrices24hInitial || isLoadingTotalSuppliesInitial || isLoadingPricesInitial
+    isLoadingPoolsInitial ||
+    isLoadingPrices24hInitial ||
+    isLoadingTotalSuppliesInitial ||
+    isLoadingPricesInitial ||
+    isLoadingTokens
   const isLoadingDetailed =
     isLoadingPoolsDetailed || isLoadingPrices24hDetailed || isLoadingTotalSuppliesDetailed || isLoadingPricesDetailed
 

@@ -317,29 +317,126 @@ export const pricesRouter = createTRPCRouter({
     return prices24hUSD
   }),
   all24h: procedure.query(async ({ ctx }) => {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000) // 24 hours ago
+
+    // First, get the HTR-USDT pool for reference prices
+    const htrUsdtPool = await ctx.prisma.pool.findFirst({
+      where: {
+        AND: [
+          {
+            OR: [
+              {
+                token0: { symbol: 'HTR' },
+                token1: { symbol: 'USDT' },
+              },
+              {
+                token0: { symbol: 'USDT' },
+                token1: { symbol: 'HTR' },
+              },
+            ],
+          },
+        ],
+      },
+      select: {
+        id: true,
+        token0: { select: { symbol: true } },
+        token1: { select: { symbol: true } },
+        hourSnapshots: {
+          where: { date: { gte: since } },
+          select: {
+            date: true,
+            reserve0: true,
+            reserve1: true,
+            priceHTR: true,
+          },
+          orderBy: { date: 'asc' },
+        },
+      },
+    })
+
+    // Get all tokens we need prices for
     const tokens = await ctx.prisma.token.findMany({
       select: {
         uuid: true,
-        chainId: true,
+        symbol: true,
+        pools0: {
+          where: { token1: { symbol: 'HTR' } },
+          select: {
+            id: true,
+            hourSnapshots: {
+              where: { date: { gte: since } },
+              select: {
+                date: true,
+                reserve0: true,
+                reserve1: true,
+                priceHTR: true,
+              },
+              orderBy: { date: 'asc' },
+            },
+          },
+        },
+        pools1: {
+          where: { token0: { symbol: 'HTR' } },
+          select: {
+            id: true,
+            hourSnapshots: {
+              where: { date: { gte: since } },
+              select: {
+                date: true,
+                reserve0: true,
+                reserve1: true,
+                priceHTR: true,
+              },
+              orderBy: { date: 'asc' },
+            },
+          },
+        },
       },
     })
-    if (!tokens) {
-      throw new Error(`Failed to fetch tokens, received ${tokens}`)
-    }
-    const prices24hUSD: { [key: string]: number[] } = {}
-    await Promise.all(
-      tokens.map(async (token) => {
-        const token_prices24hUSD: number[] = []
 
-        const since = Date.now() - 24 * 60 * 60 * 1000 // 24 hours ago
-        const snaps24h = await getPricesSince(token.uuid, ctx.prisma, since) //from db snaps
-        snaps24h.forEach((snaps) => {
-          const priceHTR = snaps.priceHTR
-          token_prices24hUSD.push((token.uuid == '00' ? 1 : snaps.price) * priceHTR)
-        })
-        if (!prices24hUSD[token.uuid]) prices24hUSD[token.uuid] = token_prices24hUSD
-      })
-    )
+    const prices24hUSD: { [key: string]: number[] } = {}
+
+    // Process each token
+    for (const token of tokens) {
+      const token_prices24hUSD: number[] = []
+
+      if (token.symbol === 'USDT') {
+        // USDT is always 1
+        token_prices24hUSD.push(...Array(24).fill(1))
+      } else if (token.uuid === '00') {
+        // HTR prices come directly from HTR-USDT pool
+        if (htrUsdtPool && htrUsdtPool.hourSnapshots.length > 0) {
+          token_prices24hUSD.push(
+            ...htrUsdtPool.hourSnapshots.map((snap) => {
+              const isHtrToken0 = htrUsdtPool.token0.symbol === 'HTR'
+              return isHtrToken0 ? snap.reserve1 / snap.reserve0 : snap.reserve0 / snap.reserve1
+            })
+          )
+        }
+      } else {
+        // Other tokens need to be calculated through their HTR pair
+        const pool = token.pools0[0] || token.pools1[0] // Get the first available pool
+        if (pool && pool.hourSnapshots.length > 0) {
+          const isTokenToken0 = token.pools0.length > 0
+
+          pool.hourSnapshots.forEach((snap) => {
+            const tokenPrice = isTokenToken0
+              ? snap.reserve1 / snap.reserve0 // token is token0
+              : snap.reserve0 / snap.reserve1 // token is token1
+
+            token_prices24hUSD.push(tokenPrice * snap.priceHTR)
+          })
+        }
+      }
+
+      // If we have no prices, fill with zeros to maintain consistency
+      if (token_prices24hUSD.length === 0) {
+        token_prices24hUSD.push(0)
+      }
+
+      prices24hUSD[token.uuid] = token_prices24hUSD
+    }
+
     return prices24hUSD
   }),
   allAtTimestamp: procedure.input(z.object({ timestamp: z.number() })).query(async ({ ctx, input }) => {
