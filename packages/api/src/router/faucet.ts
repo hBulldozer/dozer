@@ -35,8 +35,11 @@ export const faucetRouter = createTRPCRouter({
         token: '00',
       }),
     })
+    console.log(response)
 
     const data = await response.json()
+
+    console.log(data)
 
     if (!data || !data.hash) {
       throw new Error('Failed to create token on blockchain')

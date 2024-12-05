@@ -7,6 +7,7 @@ import { pricesRouter } from './router/prices'
 import { profileRouter } from './router/profile'
 import { rewardsRouter } from './router/rewards'
 import { tokenRouter } from './router/token'
+import { statsRouter } from './router/stats'
 import { createTRPCRouter } from './trpc'
 
 export const appRouter = createTRPCRouter({
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   getNetwork: networkRouter,
   getFaucet: faucetRouter,
   getRewards: rewardsRouter,
+  getStats: statsRouter,
 })
 
 // export type definition of API
