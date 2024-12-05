@@ -1,9 +1,26 @@
+import { useRouter } from 'next/router'
+import { useEffect, useState } from 'react'
 import { api } from 'utils/api'
 
 const Stats = () => {
-  const { data: visitors24h } = api.getStats.visitors24h.useQuery()
-  const { data: qtyVisitors } = api.getStats.qtyVisitors.useQuery()
-  const { data: qtyFaucet } = api.getStats.userFaucetQty.useQuery()
+  const router = useRouter()
+  const [apiKey, setApiKey] = useState<string>('')
+
+  // Wait for router to be ready and get the key from URL
+  useEffect(() => {
+    if (router.isReady) {
+      const key = router.query.key as string
+      setApiKey(key || '')
+    }
+  }, [router.isReady, router.query.key])
+
+  const { data: visitors24h } = api.getStats.visitors24h.useQuery({ apiKey }, { enabled: !!apiKey })
+  const { data: qtyVisitors } = api.getStats.qtyVisitors.useQuery({ apiKey }, { enabled: !!apiKey })
+  const { data: qtyFaucet } = api.getStats.userFaucetQty.useQuery({ apiKey }, { enabled: !!apiKey })
+
+  if (!apiKey) {
+    return <div>No key provided</div>
+  }
 
   return (
     <div className="flex flex-row gap-10">

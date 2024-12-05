@@ -1,7 +1,18 @@
+import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
+
+// you can reuse this for any procedure
+export const protectedProcedure = procedure.input(z.object({ apiKey: z.string() })).use(async function isAuthed(opts) {
+  const { input } = opts
+  // `ctx.user` is nullable
+  if (input.apiKey !== process.env.API_KEY) {
+    //     ^?
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  return opts.next()
+})
 
 const matomoFetch = async (period: string, date: string) => {
   const matomo_url = process.env.NEXT_PUBLIC_MATOMO_URL || 'https://matomo.self2.dozer.finance'
@@ -17,7 +28,6 @@ const matomoFetch = async (period: string, date: string) => {
     format: 'json',
   }
   const url = `${matomo_url}?${new URLSearchParams(params)}`
-  console.log(url)
   const response = await fetch(url, {
     method: 'POST',
     body: `token_auth=${token}`,
@@ -28,26 +38,26 @@ const matomoFetch = async (period: string, date: string) => {
 }
 
 export const statsRouter = createTRPCRouter({
-  tokensQty: procedure.query(async ({ ctx }) => {
+  tokensQty: protectedProcedure.query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany()
     return tokens.length
   }),
-  userFaucetQty: procedure.query(async ({ ctx }) => {
+  userFaucetQty: protectedProcedure.query(async ({ ctx }) => {
     const users = await ctx.prisma.faucet.findMany()
     return users.length
   }),
-  visitors24h: procedure.query(async ({ ctx }) => {
+  visitors24h: protectedProcedure.query(async () => {
     const period = 'day'
     const yesterday = new Date(new Date().setDate(new Date().getDate() - 1))
     const date = yesterday.toISOString().split('T')[0] || ''
     const data = await matomoFetch(period, date)
     return data
   }),
-  qtyVisitors: procedure.query(async ({ ctx }) => {
+  qtyVisitors: protectedProcedure.query(async () => {
     const data = await matomoFetch('year', 'today')
     return data
   }),
-  poolsStats: procedure.query(async ({ ctx }) => {
+  poolsStats: protectedProcedure.query(async ({ ctx }) => {
     const pools = await ctx.prisma.pool.findMany()
     const stats = pools.map((pool) => {
       return {
