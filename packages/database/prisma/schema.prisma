@@ -126,6 +126,8 @@ model hourSnapshot {
   pool         Pool     @relation(fields: [poolId], references: [id])
 
   @@index([poolId])
+  @@index([date])
+  @@index([poolId, date]) // Composite index for queries that filter by both
 }
 
 model Incentive {//
