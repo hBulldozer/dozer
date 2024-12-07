@@ -31,6 +31,6 @@ export async function fetchNodeData(endpoint: string, queryParams: string[]): Pr
       }
     }
   } catch (error: any) {
-    throw new Error('Error fetching data: ' + error.message)
+    throw new Error('Error fetching data to ' + endpoint + 'with params ' + queryParams + ': ' + error.message)
   }
 }
