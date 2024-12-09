@@ -42,6 +42,7 @@ model Token {
   twitter          String      @default("")
   website          String      @default("")
   custom           Boolean     @default(false)
+  oasis            Oasis[]     @relation("token")
 
   @@unique([chainId, uuid])
   @@index([id])
@@ -76,6 +77,7 @@ model Pool {
   daySnapshots  daySnapshot[]
   hourSnapshots hourSnapshot[]
   Incentive     Incentive[]//
+  oasis         Oasis[]        @relation("pool")
 
   @@index([id])
   @@index([chainId])
@@ -144,4 +146,13 @@ model Incentive {//
   @@index([poolId])
   @@index([rewardTokenId])
   @@index([chainId, rewardTokenId])
+}
+
+model Oasis {
+  id          String @id @default(uuid())
+  name        String
+  token        Token          @relation("token", fields: [tokenId], references: [id])
+  pool        Pool   @relation("pool",fields: [poolId], references: [id])
+  poolId      String
+  tokenId      String
 }

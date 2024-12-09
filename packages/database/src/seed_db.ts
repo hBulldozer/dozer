@@ -22,9 +22,15 @@ export interface PoolConfig {
   protocolFee: number
 }
 
+export interface OasisConfig {
+  tokenSymbol: string
+  htrQuantity: number
+}
+
 export interface SeedConfig {
   tokens: TokenConfig[]
   pools: PoolConfig[]
+  oasis: OasisConfig[]
 }
 
 export interface NanoInfoType {
@@ -38,9 +44,11 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
   console.log('Deleted hourSnapshot Table')
   const delete2 = await prisma.daySnapshot.deleteMany()
   console.log('Deleted daySnapshot Table')
-  const delete3 = await prisma.pool.deleteMany()
+  const delete3 = await prisma.oasis.deleteMany()
+  console.log('Deleted Oasis Table')
+  const delete4 = await prisma.pool.deleteMany()
   console.log('Deleted Pool Table')
-  const delete4 = await prisma.token.deleteMany()
+  const delete5 = await prisma.token.deleteMany()
   console.log('Deleted Token Table')
   const tokenSymbolToId: { [symbol: string]: string } = {}
 
@@ -120,6 +128,24 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
   })
   console.log('Created Pools')
 
+  // Create a map to store oasis names and their corresponding IDs
+  const oasisNameToId: { [name: string]: string } = {}
+
+  const oasis = await prisma.oasis.createMany({
+    data: config.oasis.map((oasis, index) => {
+      const name = `${oasis.tokenSymbol}-HTR`
+      const id = index.toString()
+      oasisNameToId[name] = id
+      return {
+        name: name,
+        tokenId: tokenSymbolToId[oasis.tokenSymbol] || '',
+        poolId: poolNameToId[name] || '',
+        id,
+      }
+    }),
+  })
+  console.log('Created Oasis')
+
   if (snaps_period) {
     console.log(`Creating snapshots for ${snaps_period} days...`)
     const allPools = await prisma.pool.findMany()
@@ -196,7 +222,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
             where: { id: tokenId },
             data: { uuid },
           })
-          console.log(`Updated ${tokenSymbol} UUID.`)
+          console.log(`Updated Token ${tokenSymbol} UUID.`)
         } else {
           console.error(`Token ID not found for symbol: ${tokenSymbol}`)
         }
@@ -208,9 +234,21 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
             where: { id: poolId },
             data: { id: uuid },
           })
-          console.log(`Updated ${poolName} nano contract ID.`)
+          console.log(`Updated Pool ${poolName} nano contract ID.`)
         } else {
           console.error(`Pool ID not found for name: ${poolName}`)
+        }
+      } else if (key.endsWith('_oasisncid')) {
+        const oasisName = key.replace('_oasisncid', '').replace('_', '-')
+        const oasisId = oasisNameToId[oasisName]
+        if (oasisId) {
+          await prisma.oasis.update({
+            where: { id: oasisId },
+            data: { id: uuid },
+          })
+          console.log(`Updated Oasis ${oasisName} nano contract ID.`)
+        } else {
+          console.error(`Pool ID not found for name: ${oasisName}`)
         }
       }
     }

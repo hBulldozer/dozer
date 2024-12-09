@@ -13,9 +13,15 @@ export interface PoolConfig {
   protocolFee: number
 }
 
+export interface OasisConfig {
+  tokenSymbol: string
+  htrQuantity: number
+}
+
 export interface SeedConfig {
   tokens: TokenConfig[]
   pools: PoolConfig[]
+  oasis: OasisConfig[]
 }
 
 export const seedConfig: SeedConfig = {
@@ -38,7 +44,7 @@ export const seedConfig: SeedConfig = {
     {
       tokenSymbol: 'DZR',
       htrQuantity: 100000,
-      tokenQuantity: 70000,
+      tokenQuantity: 10000,
       fee: 0.05,
       protocolFee: 0.01,
     },
@@ -48,6 +54,12 @@ export const seedConfig: SeedConfig = {
       tokenQuantity: 18480,
       fee: 0.05,
       protocolFee: 0.01,
+    },
+  ],
+  oasis: [
+    {
+      tokenSymbol: 'USDT',
+      htrQuantity: 1_000_000,
     },
   ],
 }

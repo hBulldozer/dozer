@@ -1,4 +1,5 @@
 import { LiquidityPool } from './liquiditypool'
+import { Oasis } from './oasis'
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -27,6 +28,47 @@ async function check_wallet(wallet: string) {
   }
 
   return response
+}
+
+async function wait_next_block() {
+  const response = await fetchNodeData('status', [])
+  const height = response.dag.best_block.height
+  console.log('Waiting for next block, last block height:', height)
+  for (let i = 0; i < 120; i++) {
+    const new_height = await fetchNodeData('status', [])
+    if (new_height.dag.best_block.height > height) {
+      console.log('Next block arrived!')
+      return
+    }
+    await delay(1000)
+  }
+  throw new Error('Timeout waiting for next block')
+}
+
+export async function fetchNodeData(endpoint: string, queryParams: string[]): Promise<any> {
+  if (!process.env.NEXT_PUBLIC_LOCAL_NODE_URL && !process.env.NEXT_PUBLIC_PUBLIC_NODE_URL) {
+    // If Node URL is not given, returns fake data
+    throw new Error(`Failed to fetch node, inform the NEXT_PUBLIC_LOCAL_NODE_URL or NEXT_PUBLIC_PUBLIC_NODE_URL`)
+  }
+  try {
+    const localNodeUrl = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}${endpoint}?${queryParams.join('&')}`
+    if (localNodeUrl) {
+      try {
+        const response = await fetch(localNodeUrl)
+        return await response.json()
+      } catch {
+        const publicNodeUrl = `${process.env.NEXT_PUBLIC_PUBLIC_NODE_URL}${endpoint}?${queryParams.join('&')}`
+        if (publicNodeUrl) {
+          const response = await fetch(publicNodeUrl)
+          return await response.json()
+        }
+
+        throw new Error('Failed to fetch data from both local and public nodes')
+      }
+    }
+  } catch (error: any) {
+    throw new Error('Error fetching data: ' + error.message)
+  }
 }
 
 async function PostHeadless(wallet: string, path: string, headers: any, body: any): Promise<any> {
@@ -100,9 +142,15 @@ export interface PoolConfig {
   protocolFee: number
 }
 
+export interface OasisConfig {
+  tokenSymbol: string
+  htrQuantity: number
+}
+
 export interface SeedConfig {
   tokens: TokenConfig[]
   pools: PoolConfig[]
+  oasis: OasisConfig[]
 }
 
 export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
@@ -126,6 +174,7 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
 
   const tokenUUIDs: { [key: string]: string } = {}
   const poolNCIDs: { [key: string]: string } = {}
+  const oasisNCIDs: { [key: string]: string } = {}
 
   // Create tokens
   for (const token of config.tokens) {
@@ -175,6 +224,27 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
     await check_wallet('master')
   }
 
+  await wait_next_block()
+
+  // Create oasis
+  for (const oasis of config.oasis) {
+    console.log(`Creating ${oasis.tokenSymbol}-HTR Oasis...`)
+    if (oasis.tokenSymbol && tokenUUIDs[`${oasis.tokenSymbol}_uuid`] && admin_address) {
+      const newOasis = new Oasis(
+        '00',
+        poolNCIDs[`${oasis.tokenSymbol}_HTR_ncid`] || '',
+        tokenUUIDs[`${oasis.tokenSymbol}_uuid`] || ''
+      )
+      const response = await newOasis.initialize(admin_address, oasis.htrQuantity)
+      newOasis.ncid = response.hash
+      oasisNCIDs[`${oasis.tokenSymbol}_HTR_oasisncid`] = response.hash
+      console.log(`${oasis.tokenSymbol}-HTR Oasis created. ncid: ${newOasis.ncid}`)
+    } else throw new Error(`${oasis.tokenSymbol} UUID and/or admin_address not found.`)
+    await check_wallet('master')
+  }
+
+  await wait_next_block()
+
   // 7. Start the users wallet
   console.log('Starting users wallet...')
   await PostHeadless('users', '/start', {}, { 'wallet-id': 'default', seedKey: 'default' }).then(async (data) => {
@@ -214,7 +284,7 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
       if (data.success) {
         console.log(`Sent 5k USDT to ${address}.`)
       } else {
-        throw new Error(`Failed to send HTR to ${address}.` + data)
+        throw new Error(`Failed to send USDT to ${address}.` + data)
       }
     })
     await delay(2000)
@@ -226,5 +296,6 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
   return {
     ...tokenUUIDs,
     ...poolNCIDs,
+    ...oasisNCIDs,
   }
 }

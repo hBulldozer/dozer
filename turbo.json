@@ -63,6 +63,7 @@
         "WALLET_API_KEY",
         "WALLET_ID",
         "LPBLUEPRINT",
+        "OASISBLUEPRINT",
         "BETBLUEPRINT",
         "SUPABASE_ANON_KEY"
       ],
@@ -128,6 +129,7 @@
         "WALLET_API_KEY",
         "WALLET_ID",
         "LPBLUEPRINT",
+        "OASISBLUEPRINT",
         "BETBLUEPRINT",
         "SUPABASE_ANON_KEY"
       ],

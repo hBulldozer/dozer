@@ -6,6 +6,7 @@ import { Token } from '@dozer/currency'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import backgroundOasis from '../public/background_oasis.jpeg'
 import { Tab, Transition } from '@headlessui/react'
+import { Connected } from '@dozer/higmi/systems/Checker/Connected'
 
 const TokenOption = ({ token }: { token: string }) => {
   const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
@@ -339,9 +340,11 @@ const OasisProgram = () => {
                               you'll not be able to remove them for {lockPeriod} months
                             </Typography>
 
-                            <Button className="w-full mt-4" disabled={!amount || Number(amount) <= 0}>
-                              Get tokens then ignite now
-                            </Button>
+                            <Connected fullWidth size="md">
+                              <Button className="w-full mt-4" disabled={!amount || Number(amount) <= 0}>
+                                Get tokens then ignite now
+                              </Button>
+                            </Connected>
 
                             <div className="w-full mt-4">
                               <Typography variant="xs" className="text-stone-400">
