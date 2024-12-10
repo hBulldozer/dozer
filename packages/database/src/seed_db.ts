@@ -50,6 +50,8 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
   console.log('Deleted Pool Table')
   const delete5 = await prisma.token.deleteMany()
   console.log('Deleted Token Table')
+  const delete6 = await prisma.faucet.deleteMany()
+  console.log('Deleted Faucet Table')
   const tokenSymbolToId: { [symbol: string]: string } = {}
 
   const tokens = await prisma.token.createMany({

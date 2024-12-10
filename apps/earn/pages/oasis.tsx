@@ -1,5 +1,17 @@
-import React, { Fragment, useState } from 'react'
-import { Widget, Select, Input, Button, Typography, Slider, classNames } from '@dozer/ui'
+import React, { Fragment, useEffect, useState } from 'react'
+import {
+  Widget,
+  Select,
+  Input,
+  Button,
+  Typography,
+  Slider,
+  classNames,
+  NotificationData,
+  createSuccessToast,
+  createErrorToast,
+  Dots,
+} from '@dozer/ui'
 import { OasisChart } from '../components/OasisChart'
 import Image, { ImageProps } from 'next/legacy/image'
 import { Token } from '@dozer/currency'
@@ -7,18 +19,33 @@ import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import backgroundOasis from '../public/background_oasis.jpeg'
 import { Tab, Transition } from '@headlessui/react'
 import { Connected } from '@dozer/higmi/systems/Checker/Connected'
+import { api } from '@dozer/higmi/utils/api'
+import { Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { get, set } from 'lodash'
+import { Oasis } from '@dozer/nanocontracts'
+import { useAccount, useNetwork } from '@dozer/zustand'
+import { ChainId } from '@dozer/chain'
 
-const TokenOption = ({ token }: { token: string }) => {
+const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean }) => {
   const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
   return (
-    <div className="flex flex-row items-center w-full gap-4">
-      <div className="flex-shrink-0 w-7 h-7">
-        <Image key={token} src={`/logos/${currency}.svg`} width={28} height={28} alt={token} className="rounded-full" />
-      </div>
-      <div className="flex flex-col items-start min-w-0">
-        <Typography variant="sm" weight={500} className="truncate text-stone-200 group-hover:text-stone-50">
-          {token}
-        </Typography>
+    <div className={classNames('flex flex-row items-center w-full gap-4', disabled && 'opacity-50')}>
+      <div className="flex flex-row items-center w-full gap-4">
+        <div className="flex-shrink-0 w-7 h-7">
+          <Image
+            key={token}
+            src={`/logos/${currency}.svg`}
+            width={28}
+            height={28}
+            alt={token}
+            className="rounded-full"
+          />
+        </div>
+        <div className="flex flex-col items-start min-w-0">
+          <Typography variant="sm" weight={500} className="truncate text-stone-200 group-hover:text-stone-50">
+            {token}
+          </Typography>
+        </div>
       </div>
     </div>
   )
@@ -31,59 +58,166 @@ const OasisProgram = () => {
   const [tokenPriceChange, setTokenPriceChange] = useState<number>(0)
   const [hover, setHover] = useState(false)
   const [selectedTab, setSelectedTab] = useState(0)
-  const maxHTR = 1000
-  const availableHTR = 500
-  const progress = (availableHTR / maxHTR) * 100
+  const [unlockDate, setUnlockDate] = useState<Date>(new Date())
+  const [htrMatch, setHtrMatch] = useState<number>(0)
+  const [fetchLoading, setFetchLoading] = useState<boolean>(false)
+  const [hasPosition, setHasPosition] = useState<boolean>(false)
+  const [bonus, setBonus] = useState<number>(0)
+  const [sentTX, setSentTX] = useState(false)
+
+  const { network } = useNetwork()
+  const { addNotification } = useAccount()
+  const { accounts } = useWalletConnectClient()
+  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
+
+  const utils = api.useUtils()
+  const { data: htrPrice } = api.getPrices.htr.useQuery()
 
   // Bonus rate based on lock period
   const bonusRate = lockPeriod === 6 ? 0.1 : lockPeriod === 9 ? 0.15 : 0.2
 
   // Current HTR price - in real implementation, get this from API
   const initialPrices = {
-    htr: 0.07,
+    htr: htrPrice || 0,
     btc: 98520,
     eth: 3339,
     usdc: 1,
     usdt: 1,
   }
+  const maxHTR = 1000
+  const availableHTR = 500
+  const progress = (availableHTR / maxHTR) * 100
 
   // Unlock date calculation
-  const unlockDate = new Date(Date.now() + lockPeriod * 30 * 24 * 60 * 60 * 1000)
+  // const unlockDate = new Date(Date.now() + lockPeriod * 30 * 24 * 60 * 60 * 1000)
   const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
+  const { data: allOasis } = api.getOasis.all.useQuery()
+
+  const oasis = allOasis?.find((oasis) => oasis.token.symbol == currency)
+  const oasisId = oasis?.id
+  const oasisName = oasis?.name || ''
+  const poolId = oasis?.pool.id || ''
+  const tokenUuid = oasis?.token.uuid || ''
+  const oasisObj = new Oasis(tokenUuid, poolId)
+
+  const onClick = async () => {
+    setSentTX(true)
+    if (amount && lockPeriod && oasisId) {
+      const response = await oasisObj.user_deposit(hathorRpc, address, lockPeriod, oasisId, parseFloat(amount))
+    }
+  }
+
+  useEffect(() => {
+    if (rpcResult?.valid && rpcResult?.result && sentTX) {
+      if (amount && lockPeriod && oasisId) {
+        const hash = get(rpcResult, 'result.response.hash') as string
+        if (hash) {
+          const notificationData: NotificationData = {
+            type: 'swap',
+            chainId: network,
+            summary: {
+              pending: `Waiting for next block. Add liquidity in ${oasisName} Oasis pool.`,
+              completed: `Success! Added ${amount} ${token} in ${oasisName} Oasis pool.`,
+              failed: 'Failed summary',
+              info: `Adding Liquidity in ${oasisName} Oasis pool: ${amount} ${token}.`,
+            },
+            status: 'pending',
+            txHash: hash,
+            groupTimestamp: Math.floor(Date.now() / 1000),
+            timestamp: Math.floor(Date.now() / 1000),
+            promise: new Promise((resolve) => {
+              setTimeout(resolve, 500)
+            }),
+            account: address,
+          }
+          const notificationGroup: string[] = []
+          notificationGroup.push(JSON.stringify(notificationData))
+          addNotification(notificationGroup)
+          createSuccessToast(notificationData)
+          setSentTX(false)
+        } else {
+          createErrorToast(`Error`, true)
+          setSentTX(false)
+        }
+      }
+    }
+  }, [rpcResult])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setFetchLoading(true)
+      const response =
+        amount && lockPeriod && oasisId
+          ? await utils.getOasis.getFrontQuoteLiquidityIn.fetch({
+              id: oasisId,
+              amount_in: parseFloat(amount),
+              timelock: lockPeriod,
+              now: Math.floor(Date.now()),
+              address: address,
+            })
+          : {
+              bonus: 0,
+              htr_amount: 0,
+              withdrawal_time: new Date(),
+              has_position: false,
+            }
+
+      return response
+    }
+
+    // call the function
+    if (amount && oasisId) {
+      fetchData()
+        .then((response) => {
+          setFetchLoading(false)
+          setHtrMatch(response['htr_amount'])
+          setUnlockDate(response['withdrawal_time'])
+          setBonus(response['bonus'])
+          setHasPosition(response['has_position'])
+        })
+        // make sure to catch any error
+        .catch((err) => {
+          console.error(err)
+          setFetchLoading(false)
+        })
+    } else {
+      setHtrMatch(0)
+      setUnlockDate(new Date())
+      setBonus(0)
+      setHasPosition(false)
+    }
+  }, [amount, lockPeriod])
 
   return (
     <div className="relative min-h-screen">
-      {/* Background Image with Gradient Overlay */}
       <div className="fixed inset-0 z-0">
         <Image
-          src={backgroundOasis} // Make sure to include the file extension
+          src={backgroundOasis}
           alt="Background"
           layout="fill"
-          objectFit="cover" // Add this
-          quality={100} // Add this
-          priority // Add this as a proper prop
-          className="opacity-50" // Add some opacity to help with the overlay
+          objectFit="cover"
+          quality={100}
+          priority
+          className="opacity-50"
         />
         <div
           className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"
-          style={{ mixBlendMode: 'multiply' }} // Add this for better gradient blending
+          style={{ mixBlendMode: 'multiply' }}
         />
       </div>
 
-      {/* Your content - now with relative positioning and z-index */}
       <div className="relative z-10 flex flex-col gap-6 p-6">
         <div className="flex flex-col gap-6 px-6 bg-black/80">
           <div className="flex flex-col items-center text-center">
             <div className="flex flex-col items-center pt-10">
               <h1 className="relative z-20 text-4xl font-bold text-center text-white sm:text-7xl lg:text-9xl">OASIS</h1>
               <div className="w-full max-w-[40rem] h-40 relative px-4">
-                {/* First (wider) gradient pair */}
                 <div className="absolute w-full sm:w-3/4 h-[2px] left-1/2 -translate-x-1/2 top-0">
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500 to-transparent blur-sm" />
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
                 </div>
 
-                {/* Second (narrower) gradient pair */}
                 <div className="absolute w-2/3 sm:w-1/3 h-[2px] left-1/2 -translate-x-1/2 top-0">
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-500 to-transparent h-[5px] blur-sm" />
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-500 to-transparent" />
@@ -140,7 +274,6 @@ const OasisProgram = () => {
           <Widget id="oasisInput" maxWidth="full" className="py-10 my-20">
             <Widget.Content>
               <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6">
-                {/* Left column with tabs */}
                 <div className="flex flex-col gap-4 ">
                   <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
                     <div>
@@ -177,7 +310,6 @@ const OasisProgram = () => {
                                 </Typography>
                                 <div className="h-[51px]">
                                   {' '}
-                                  {/* h-10 = 40px, standard input height */}
                                   <Input.Numeric
                                     value={amount}
                                     onUserInput={(val) => setAmount(val)}
@@ -226,11 +358,11 @@ const OasisProgram = () => {
                                     <Select.Option value="hUSDT">
                                       <TokenOption token="hUSDT" />
                                     </Select.Option>
-                                    <Select.Option value="hETH">
-                                      <TokenOption token="hETH" />
+                                    <Select.Option disabled value="hETH">
+                                      <TokenOption disabled token="hETH" />
                                     </Select.Option>
-                                    <Select.Option value="hBTC">
-                                      <TokenOption token="hBTC" />
+                                    <Select.Option disabled value="hBTC">
+                                      <TokenOption disabled token="hBTC" />
                                     </Select.Option>
                                   </Select.Options>
                                 </Select>
@@ -306,45 +438,110 @@ const OasisProgram = () => {
                             </div>
 
                             <div className="p-4 mt-2 sm:mt-4 bg-stone-800 rounded-xl">
-                              <div className="flex flex-col gap-4">
-                                <div className="flex justify-between">
-                                  <Typography variant="sm" className="text-stone-400">
-                                    Bonus you'll get now:
-                                  </Typography>
-                                  <Typography variant="sm" className="text-yellow">
-                                    {amount ? `${(Number(amount) * bonusRate).toFixed(2)} HTR` : '-'}
-                                  </Typography>
+                              {fetchLoading ? (
+                                <div className="flex flex-col gap-4">
+                                  <div className="flex justify-between">
+                                    <Typography variant="sm" className="text-stone-400">
+                                      Bonus you'll get now:
+                                    </Typography>
+                                    <Typography variant="sm" className="text-stone-600">
+                                      Calculating...
+                                    </Typography>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <Typography variant="sm" className="text-stone-400">
+                                      HTR matched:
+                                    </Typography>
+                                    <Typography variant="sm" className="text-stone-600">
+                                      Calculating...
+                                    </Typography>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <Typography variant="sm" className="text-stone-400">
+                                      Unlock date:
+                                    </Typography>
+                                    <Typography variant="sm" className="text-stone-600">
+                                      Calculating...
+                                    </Typography>
+                                  </div>
                                 </div>
-                                <div className="flex justify-between">
-                                  <Typography variant="sm" className="text-stone-400">
-                                    HTR Match:
-                                  </Typography>
-                                  <Typography variant="sm" className="text-yellow">
-                                    {amount ? `${Number(amount).toFixed(2)} HTR` : '-'}
-                                  </Typography>
+                              ) : (
+                                <div className="flex flex-col gap-4">
+                                  <div className="flex justify-between">
+                                    <Typography variant="sm" className="text-stone-400">
+                                      Bonus you'll get now:
+                                    </Typography>
+                                    <Typography variant="sm" className="text-yellow">
+                                      {amount ? `${bonus.toFixed(2)} HTR` : '-'}
+                                    </Typography>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <Typography variant="sm" className="text-stone-400">
+                                      HTR Match:
+                                    </Typography>
+                                    <Typography variant="sm" className="text-yellow">
+                                      {amount ? `${htrMatch.toFixed(2)} HTR` : '-'}
+                                    </Typography>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <div className="flex flex-col gap-1">
+                                      <Typography variant="sm" className="text-stone-400">
+                                        Unlock date:
+                                      </Typography>
+                                      {hasPosition && (
+                                        <Typography variant="xs" className="text-stone-600">
+                                          User already have a position in Oasis, unlock date is calculated based on the
+                                          last deposit and time remaining
+                                        </Typography>
+                                      )}
+                                    </div>
+                                    <Typography variant="sm" className="text-yellow">
+                                      {amount ? unlockDate.toLocaleDateString() : '-'}
+                                    </Typography>
+                                  </div>
                                 </div>
-                                <div className="flex justify-between">
-                                  <Typography variant="sm" className="text-stone-400">
-                                    Unlock date:
-                                  </Typography>
-                                  <Typography variant="sm" className="text-yellow">
-                                    {amount ? unlockDate.toLocaleDateString() : '-'}
-                                  </Typography>
-                                </div>
-                              </div>
+                              )}
                             </div>
 
-                            <Typography variant="xs" className="mt-2 text-center text-stone-500">
-                              By locking up your tokens,
-                              <br />
-                              you'll not be able to remove them for {lockPeriod} months
-                            </Typography>
-
-                            <Connected fullWidth size="md">
-                              <Button className="w-full mt-4" disabled={!amount || Number(amount) <= 0}>
-                                Get tokens then ignite now
-                              </Button>
-                            </Connected>
+                            <Checker.Amounts
+                              fullWidth
+                              size="md"
+                              // chainId={chainId}
+                              // fundSource={FundSource.WALLET}
+                              amount={Number(amount)}
+                              token={new Token({ chainId: ChainId.HATHOR, uuid: tokenUuid, decimals: 2 })}
+                            >
+                              <Connected fullWidth size="md">
+                                <div className="flex flex-col justify-between gap-2">
+                                  <Button
+                                    size="md"
+                                    disabled={isRpcRequestPending}
+                                    fullWidth
+                                    onClick={() => {
+                                      onClick()
+                                    }}
+                                  >
+                                    {isRpcRequestPending ? (
+                                      <Dots>Confirm transaction in your wallet</Dots>
+                                    ) : (
+                                      <>Add Liquidity</>
+                                    )}
+                                  </Button>
+                                  {isRpcRequestPending && (
+                                    <Button
+                                      size="md"
+                                      testdata-id="swap-review-reset-button"
+                                      fullWidth
+                                      variant="outlined"
+                                      color="red"
+                                      onClick={() => reset()}
+                                    >
+                                      Cancel Transaction
+                                    </Button>
+                                  )}
+                                </div>
+                              </Connected>
+                            </Checker.Amounts>
 
                             <div className="w-full mt-4">
                               <Typography variant="xs" className="text-stone-400">

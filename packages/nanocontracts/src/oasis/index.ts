@@ -32,53 +32,6 @@ export class Oasis extends NanoContract {
     return response
   }
 
-  // public async swap_tokens_for_exact_tokens(
-  //   token_in: string,
-  //   amount_in: number,
-  //   token_out: string,
-  //   amount_out: number,
-  //   address: string,
-  //   wallet?: string
-  // ) {
-  //   const actions: NCAction[] = [
-  //     {
-  //       type: 'deposit',
-  //       token: token_in,
-  //       amount: Math.ceil(amount_in * 100),
-  //       address: address,
-  //       changeAddress: address,
-  //     },
-  //     { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
-  //   ]
-  //   const args: NCArgs[] = []
-  //   // console.log('actions', actions)
-  //   const response = await this.execute(address, 'swap_tokens_for_exact_tokens', actions, args, wallet)
-  //   return response
-  // }
-  // public async swap_exact_tokens_for_tokens(
-  //   token_in: string,
-  //   amount_in: number,
-  //   token_out: string,
-  //   amount_out: number,
-  //   address: string,
-  //   wallet?: string
-  // ) {
-  //   const actions: NCAction[] = [
-  //     {
-  //       type: 'deposit',
-  //       token: token_in,
-  //       amount: Math.ceil(amount_in * 100),
-  //       address: address,
-  //       changeAddress: address,
-  //     },
-  //     { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
-  //   ]
-  //   const args: NCArgs[] = []
-  //   // console.log('actions', actions)
-  //   const response = await this.execute(address, 'swap_exact_tokens_for_tokens', actions, args, wallet)
-  //   return response
-  // }
-
   public async wc_initialize(hathorRpc: IHathorRpc, address: string, token: string, pool: string, amount: number) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'initialize',
@@ -103,7 +56,7 @@ export class Oasis extends NanoContract {
     return rpcResponse
   }
 
-  public async user_deposit(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number) {
+  public async user_deposit(hathorRpc: IHathorRpc, address: string, timelock: number, ncId: string, amount: number) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_deposit',
       '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
@@ -116,9 +69,9 @@ export class Oasis extends NanoContract {
           changeAddress: address,
         },
       ],
-      [],
+      [timelock],
       true,
-      this.ncid
+      ncId
     )
 
     console.log('Will send rpc req: ', ncTxRpcReq)
