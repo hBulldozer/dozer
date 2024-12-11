@@ -11,11 +11,16 @@ import {
   createSuccessToast,
   createErrorToast,
   Dots,
+  Tooltip,
 } from '@dozer/ui'
 import { OasisChart } from '../components/OasisChart'
 import Image, { ImageProps } from 'next/legacy/image'
 import { Token } from '@dozer/currency'
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import {
+  ArrowLeftStartOnRectangleIcon,
+  ArrowRightEndOnRectangleIcon,
+  ArrowTopRightOnSquareIcon,
+} from '@heroicons/react/24/outline'
 import backgroundOasis from '../public/background_oasis.jpeg'
 import { Tab, Transition } from '@headlessui/react'
 import { Connected } from '@dozer/higmi/systems/Checker/Connected'
@@ -25,6 +30,7 @@ import { get, set } from 'lodash'
 import { Oasis } from '@dozer/nanocontracts'
 import { useAccount, useNetwork } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
+import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
 const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean }) => {
   const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
@@ -85,16 +91,19 @@ const OasisProgram = () => {
     usdc: 1,
     usdt: 1,
   }
-  const maxHTR = 1000
-  const availableHTR = 500
-  const progress = (availableHTR / maxHTR) * 100
+  const maxHTR = 10000000
 
   // Unlock date calculation
   // const unlockDate = new Date(Date.now() + lockPeriod * 30 * 24 * 60 * 60 * 1000)
   const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
   const { data: allOasis } = api.getOasis.all.useQuery()
+  const { data: allReserves } = api.getOasis.allReserves.useQuery()
+  const { data: allUserOasis } = api.getOasis.allUser.useQuery({ address: address }, { enabled: Boolean(address) })
 
   const oasis = allOasis?.find((oasis) => oasis.token.symbol == currency)
+  const oasisReserve = allReserves?.find((oasis) => oasis.token.symbol == currency)
+  const usedHTR = oasisReserve?.dev_balance || 0
+  const progress = (usedHTR / maxHTR) * 100
   const oasisId = oasis?.id
   const oasisName = oasis?.name || ''
   const poolId = oasis?.pool.id || ''
@@ -105,6 +114,14 @@ const OasisProgram = () => {
     setSentTX(true)
     if (amount && lockPeriod && oasisId) {
       const response = await oasisObj.user_deposit(hathorRpc, address, lockPeriod, oasisId, parseFloat(amount))
+    }
+  }
+
+  const onClickWithdraw = async (oasisId: string) => {
+    setSentTX(true)
+    if (amount && lockPeriod && oasis) {
+      // const response = await oasisObj.user_withdraw(hathorRpc, address, oasisId)
+      console.log('user_withdraw')
     }
   }
 
@@ -191,6 +208,7 @@ const OasisProgram = () => {
 
   return (
     <div className="relative min-h-screen">
+      <BlockTracker client={api} className="z-50" />
       <div className="fixed inset-0 z-0">
         <Image
           src={backgroundOasis}
@@ -561,7 +579,7 @@ const OasisProgram = () => {
                                   HTR matched
                                 </Typography>
                                 <Typography variant="sm" className="text-center text-neutral-200">
-                                  {availableHTR.toLocaleString()} / {maxHTR.toLocaleString()} HTR
+                                  {usedHTR.toLocaleString()} / {maxHTR.toLocaleString()} HTR
                                 </Typography>
                               </div>
                             </div>
@@ -575,50 +593,87 @@ const OasisProgram = () => {
                                 Your Active Positions
                               </Typography>
 
-                              {/* Example position card */}
-                              <div className="p-4 mb-4 border rounded-lg border-stone-700">
-                                <div className="flex justify-between mb-2">
-                                  <Typography variant="sm" className="text-stone-400">
-                                    Locked Amount:
-                                  </Typography>
-                                  <Typography variant="sm" className="text-stone-200">
-                                    1,000 hUSDT
+                              {allUserOasis?.length == 0 ? (
+                                <div className="py-8 text-center">
+                                  <Typography variant="sm" className="text-stone-500">
+                                    No active positions found.
+                                    <br />
+                                    Start by making a deposit!
                                   </Typography>
                                 </div>
-                                <div className="flex justify-between mb-2">
-                                  <Typography variant="sm" className="text-stone-400">
-                                    HTR Matched:
-                                  </Typography>
-                                  <Typography variant="sm" className="text-stone-200">
-                                    1,000 HTR
-                                  </Typography>
-                                </div>
-                                <div className="flex justify-between mb-2">
-                                  <Typography variant="sm" className="text-stone-400">
-                                    Unlock Date:
-                                  </Typography>
-                                  <Typography variant="sm" className="text-stone-200">
-                                    Dec 24, 2024
-                                  </Typography>
-                                </div>
-                                <div className="flex justify-between">
-                                  <Typography variant="sm" className="text-stone-400">
-                                    Status:
-                                  </Typography>
-                                  <Typography variant="sm" className="text-green-500">
-                                    Active
-                                  </Typography>
-                                </div>
-                              </div>
+                              ) : (
+                                allUserOasis?.map((oasis) => {
+                                  return (
+                                    <div className="flex flex-row my-2 border rounded-lg border-stone-700">
+                                      <div className="flex flex-col items-center gap-2 p-4 my-auto">
+                                        <div className="flex-shrink-0 w-7 h-7">
+                                          <Image
+                                            key={`position-${oasis.token.symbol}`}
+                                            src={`/logos/${oasis.token.symbol}.svg`}
+                                            width={28}
+                                            height={28}
+                                            alt={`position-${oasis.token.symbol}`}
+                                            className="rounded-full"
+                                          />
+                                        </div>
+                                        <div className="flex flex-col items-start min-w-0">
+                                          <Typography
+                                            variant="xs"
+                                            weight={500}
+                                            className="truncate text-stone-200 group-hover:text-stone-50"
+                                          >
+                                            {oasis.token.symbol}
+                                          </Typography>
+                                        </div>
+                                      </div>
 
-                              {/* Empty state */}
-                              <div className="py-8 text-center">
-                                <Typography variant="sm" className="text-stone-500">
-                                  No active positions found.
-                                  <br />
-                                  Start by making a deposit!
-                                </Typography>
-                              </div>
+                                      <div className="h-10 w-[1px] bg-stone-600 my-auto" />
+                                      <div className="flex flex-col gap-3 p-4">
+                                        <div className="flex flex-row gap-1">
+                                          <Typography variant="sm" className="text-stone-400">
+                                            Locked Amount:
+                                          </Typography>
+                                          <Typography variant="sm" className="text-stone-200">
+                                            {oasis.user_deposit_b} {oasis.token.symbol}
+                                          </Typography>
+                                        </div>
+
+                                        <div className="flex flex-row gap-1">
+                                          <Typography variant="sm" className="text-stone-400">
+                                            Unlock Date:
+                                          </Typography>
+                                          <Typography variant="sm" className="text-stone-200">
+                                            {oasis.user_withdrawal_time.toLocaleDateString()}
+                                          </Typography>
+                                        </div>
+                                      </div>
+
+                                      {oasis.user_withdrawal_time.getTime() > Date.now() && (
+                                        <Tooltip
+                                          placement="bottom"
+                                          button={
+                                            <div
+                                              className="relative my-auto transition-all cursor-pointer group"
+                                              onClick={() => {
+                                                onClickWithdraw(oasis.id)
+                                              }}
+                                            >
+                                              <ArrowRightEndOnRectangleIcon
+                                                width={16}
+                                                height={16}
+                                                className="text-yellow-500 transition-all group-hover:text-yellow-400 group-hover:animate-pulse" // Glow effect on the icon itself
+                                              />
+                                            </div>
+                                          }
+                                          panel={<div className="text-xs rounded-2xl text-stone-300">Withdraw now</div>}
+                                        >
+                                          <></>
+                                        </Tooltip>
+                                      )}
+                                    </div>
+                                  )
+                                })
+                              )}
                             </div>
                           </div>
                         </Tab.Panel>
