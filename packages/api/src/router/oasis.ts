@@ -24,6 +24,10 @@ const fetchAndProcessUserOasis = async (
     total_liquidity: result['total_liquidity'] / 100,
     user_balance_a: result['user_balance_a'] / 100,
     user_balance_b: result['user_balance_b'] / 100,
+    user_lp_b: result['user_lp_b'],
+    user_lp_htr: result['user_lp_htr'],
+    max_withdraw_htr: result['max_withdraw_htr'] / 100,
+    max_withdraw_b: result['max_withdraw_b'] / 100,
   }
   return parsed_result
 }

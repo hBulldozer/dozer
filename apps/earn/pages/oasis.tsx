@@ -57,6 +57,99 @@ const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean })
   )
 }
 
+const UserOasisPosition = ({
+  oasis,
+  buttonWithdraw,
+  buttonWithdrawBonus,
+}: {
+  oasis: {
+    id: string
+    user_deposit_b: number
+    user_balance_a: number
+    user_withdrawal_time: Date
+    max_withdraw_htr: number
+    max_withdraw_b: number
+    token: { symbol: string }
+    user_lp_htr: number
+    user_lp_b: number
+  }
+  buttonWithdraw: JSX.Element
+  buttonWithdrawBonus: JSX.Element
+}) => {
+  return (
+    <div className="flex flex-col border rounded-lg border-stone-700">
+      <div className="flex flex-col mt-2 ">
+        <div className="flex flex-row items-center justify-center gap-2 p-4 my-auto">
+          <div className="flex-shrink-0 w-7 h-7">
+            <Image
+              key={`position-${oasis.token.symbol}`}
+              src={`/logos/${oasis.token.symbol}.svg`}
+              width={28}
+              height={28}
+              alt={`position-${oasis.token.symbol}`}
+              className="rounded-full"
+            />
+          </div>
+          <div className="flex flex-col items-start min-w-0">
+            <Typography variant="h3" weight={500} className="truncate text-stone-200 group-hover:text-stone-50">
+              {oasis.token.symbol}
+            </Typography>
+          </div>
+        </div>
+
+        <div className="h-[1px] w-4/5 mx-auto bg-stone-600 " />
+        <div className="flex flex-col gap-3 p-4">
+          <div className="flex flex-row gap-1">
+            <Typography variant="sm" className="text-stone-400">
+              Locked Amount:
+            </Typography>
+            <Typography variant="sm" className="text-stone-200">
+              {oasis.user_deposit_b} {oasis.token.symbol}
+            </Typography>
+          </div>
+
+          <div className="flex flex-row gap-1">
+            <Typography variant="sm" className="text-stone-400">
+              Unlock Date:
+            </Typography>
+            <Typography variant="sm" className="text-stone-200">
+              {oasis.user_withdrawal_time.toLocaleDateString()}
+            </Typography>
+          </div>
+          <div className="flex flex-row gap-1">
+            <Typography variant="sm" className="text-stone-400">
+              Max withdraw {oasis.token.symbol}:
+            </Typography>
+            <Typography variant="sm" className="text-stone-200">
+              {oasis.max_withdraw_b} {oasis.token.symbol}
+            </Typography>
+          </div>
+          <div className="flex flex-row gap-1">
+            <Typography variant="sm" className="text-stone-400">
+              Max withdraw HTR:
+            </Typography>
+            <Typography variant="sm" className="text-stone-200">
+              {oasis.max_withdraw_htr} HTR
+            </Typography>
+          </div>
+          <div className="flex flex-row gap-1">
+            <Typography variant="sm" className="text-stone-400">
+              HTR Bonus available:
+            </Typography>
+            <Typography variant="sm" className="text-stone-200">
+              {oasis.user_balance_a} HTR
+            </Typography>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        {oasis.user_withdrawal_time.getTime() > Date.now() && buttonWithdraw}
+        {oasis.user_balance_a > 0 && buttonWithdrawBonus}
+      </div>
+    </div>
+  )
+}
+
 const OasisProgram = () => {
   const [amount, setAmount] = useState<string>('')
   const [token, setToken] = useState<string>('hUSDT')
@@ -121,7 +214,15 @@ const OasisProgram = () => {
     setSentTX(true)
     if (amount && lockPeriod && oasis) {
       // const response = await oasisObj.user_withdraw(hathorRpc, address, oasisId)
-      console.log('user_withdraw')
+      console.log('user_withdraw', oasisId)
+    }
+  }
+
+  const onClickWithdrawBonus = async (oasisId: string) => {
+    setSentTX(true)
+    if (amount && lockPeriod && oasis) {
+      // const response = await oasisObj.user_withdraw(hathorRpc, address, oasisId)
+      console.log('user_withdraw_bonus', oasisId)
     }
   }
 
@@ -604,73 +705,69 @@ const OasisProgram = () => {
                               ) : (
                                 allUserOasis?.map((oasis) => {
                                   return (
-                                    <div className="flex flex-row my-2 border rounded-lg border-stone-700">
-                                      <div className="flex flex-col items-center gap-2 p-4 my-auto">
-                                        <div className="flex-shrink-0 w-7 h-7">
-                                          <Image
-                                            key={`position-${oasis.token.symbol}`}
-                                            src={`/logos/${oasis.token.symbol}.svg`}
-                                            width={28}
-                                            height={28}
-                                            alt={`position-${oasis.token.symbol}`}
-                                            className="rounded-full"
-                                          />
-                                        </div>
-                                        <div className="flex flex-col items-start min-w-0">
-                                          <Typography
-                                            variant="xs"
-                                            weight={500}
-                                            className="truncate text-stone-200 group-hover:text-stone-50"
+                                    <UserOasisPosition
+                                      oasis={oasis}
+                                      key={oasis.id}
+                                      buttonWithdraw={
+                                        <div className="flex flex-col justify-between gap-2 px-4">
+                                          <Button
+                                            size="sm"
+                                            disabled={isRpcRequestPending}
+                                            onClick={() => {
+                                              onClickWithdraw(oasis.id)
+                                            }}
                                           >
-                                            {oasis.token.symbol}
-                                          </Typography>
-                                        </div>
-                                      </div>
-
-                                      <div className="h-10 w-[1px] bg-stone-600 my-auto" />
-                                      <div className="flex flex-col gap-3 p-4">
-                                        <div className="flex flex-row gap-1">
-                                          <Typography variant="sm" className="text-stone-400">
-                                            Locked Amount:
-                                          </Typography>
-                                          <Typography variant="sm" className="text-stone-200">
-                                            {oasis.user_deposit_b} {oasis.token.symbol}
-                                          </Typography>
-                                        </div>
-
-                                        <div className="flex flex-row gap-1">
-                                          <Typography variant="sm" className="text-stone-400">
-                                            Unlock Date:
-                                          </Typography>
-                                          <Typography variant="sm" className="text-stone-200">
-                                            {oasis.user_withdrawal_time.toLocaleDateString()}
-                                          </Typography>
-                                        </div>
-                                      </div>
-
-                                      {oasis.user_withdrawal_time.getTime() > Date.now() && (
-                                        <Tooltip
-                                          placement="bottom"
-                                          button={
-                                            <div
-                                              className="relative my-auto transition-all cursor-pointer group"
-                                              onClick={() => {
-                                                onClickWithdraw(oasis.id)
-                                              }}
+                                            {isRpcRequestPending ? (
+                                              <Dots>Confirm transaction in your wallet</Dots>
+                                            ) : (
+                                              <>Remove Liquidity</>
+                                            )}
+                                          </Button>
+                                          {isRpcRequestPending && (
+                                            <Button
+                                              size="md"
+                                              testdata-id="swap-review-reset-button"
+                                              fullWidth
+                                              variant="outlined"
+                                              color="red"
+                                              onClick={() => reset()}
                                             >
-                                              <ArrowRightEndOnRectangleIcon
-                                                width={16}
-                                                height={16}
-                                                className="text-yellow-500 transition-all group-hover:text-yellow-400 group-hover:animate-pulse" // Glow effect on the icon itself
-                                              />
-                                            </div>
-                                          }
-                                          panel={<div className="text-xs rounded-2xl text-stone-300">Withdraw now</div>}
-                                        >
-                                          <></>
-                                        </Tooltip>
-                                      )}
-                                    </div>
+                                              Cancel Transaction
+                                            </Button>
+                                          )}
+                                        </div>
+                                      }
+                                      buttonWithdrawBonus={
+                                        <div className="flex flex-col justify-between gap-2 p-4">
+                                          <Button
+                                            size="sm"
+                                            variant="empty"
+                                            disabled={isRpcRequestPending}
+                                            onClick={() => {
+                                              onClickWithdrawBonus(oasis.id)
+                                            }}
+                                          >
+                                            {isRpcRequestPending ? (
+                                              <Dots>Confirm transaction in your wallet</Dots>
+                                            ) : (
+                                              <>Withdraw Bonus</>
+                                            )}
+                                          </Button>
+                                          {isRpcRequestPending && (
+                                            <Button
+                                              size="md"
+                                              testdata-id="swap-review-reset-button"
+                                              fullWidth
+                                              variant="outlined"
+                                              color="red"
+                                              onClick={() => reset()}
+                                            >
+                                              Cancel Transaction
+                                            </Button>
+                                          )}
+                                        </div>
+                                      }
+                                    />
                                   )
                                 })
                               )}
@@ -682,7 +779,7 @@ const OasisProgram = () => {
                   </Tab.Group>
                 </div>
 
-                <div className="hidden p-4 sm:block">
+                <div className="hidden p-4 max-w-screen-2xl sm:block">
                   <OasisChart
                     liquidityValue={Number(amount)}
                     initialPrices={initialPrices}
