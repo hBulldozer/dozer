@@ -12,7 +12,7 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
   onReset,
 }) => {
   const [amount, setAmount] = useState<string>('')
-  const maxAmount = oasis?.user_deposit_b ?? 0
+  const maxAmount = oasis?.max_withdraw_b ?? 0
 
   if (!oasis) return null
 
@@ -29,9 +29,14 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Typography variant="sm" className="text-stone-400">
-              Amount to remove (max: {maxAmount} {oasis.token.symbol})
-            </Typography>
+            <div className="flex flex-row">
+              <Typography variant="sm" className="text-stone-400">
+                Amount to remove
+              </Typography>
+              <Typography variant="sm" className="text-stone-400" onClick={() => setAmount(maxAmount.toFixed(2))}>
+                (max: {maxAmount.toFixed(2)} {oasis.token.symbol})
+              </Typography>
+            </div>
             <Input.Numeric value={amount} onUserInput={(val: string) => setAmount(val)} className="w-full" />
           </div>
 
@@ -41,7 +46,7 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
                 Current Position:
               </Typography>
               <Typography variant="sm">
-                {oasis.user_deposit_b} {oasis.token.symbol}
+                {oasis.max_withdraw_b} {oasis.token.symbol}
               </Typography>
             </div>
             <div className="flex justify-between">
@@ -49,7 +54,7 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
                 Position After Removal:
               </Typography>
               <Typography variant="sm">
-                {(oasis.user_deposit_b - Number(amount || 0)).toFixed(2)} {oasis.token.symbol}
+                {(oasis.max_withdraw_b - Number(amount || 0)).toFixed(2)} {oasis.token.symbol}
               </Typography>
             </div>
           </div>
@@ -65,6 +70,82 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
               }}
             >
               {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Remove Liquidity'}
+            </Button>
+            {isRpcRequestPending && (
+              <Button size="md" fullWidth variant="outlined" color="red" onClick={onReset}>
+                Cancel Transaction
+              </Button>
+            )}
+          </div>
+        </div>
+      </Dialog.Content>
+    </Dialog>
+  )
+}
+
+export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
+  open,
+  setOpen,
+  oasis,
+  onConfirm,
+  isRpcRequestPending,
+  onReset,
+}) => {
+  const [amount, setAmount] = useState<string>('')
+  const maxAmount = oasis?.max_withdraw_htr ?? 0
+
+  if (!oasis) return null
+
+  return (
+    <Dialog open={open} onClose={() => setOpen(false)}>
+      <Dialog.Content className="max-w-sm !pb-4">
+        <Dialog.Header border={false} title="Withdraw Bonus" onClose={() => setOpen(false)} />
+        <div className="flex flex-col gap-4 p-4">
+          <div className="flex items-center gap-4">
+            <div className="w-8 h-8">
+              <img src={`/logos/${oasis.token.symbol}.svg`} alt={oasis.token.symbol} />
+            </div>
+            <Typography variant="h3">{oasis.token.symbol}</Typography>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-row">
+              <Typography variant="sm" className="text-stone-400">
+                Amount to remove
+              </Typography>
+              <Typography variant="sm" className="text-stone-400" onClick={() => setAmount(maxAmount.toFixed(2))}>
+                (max: {maxAmount.toFixed(2)} HTR)
+              </Typography>
+            </div>
+            <Input.Numeric value={amount} onUserInput={(val: string) => setAmount(val)} className="w-full" />
+          </div>
+
+          <div className="p-4 mt-2 bg-stone-800 rounded-xl">
+            <div className="flex justify-between mb-2">
+              <Typography variant="sm" className="text-stone-400">
+                Current Bonus Available:
+              </Typography>
+              <Typography variant="sm">{oasis.max_withdraw_htr.toFixed(2)} HTR</Typography>
+            </div>
+            <div className="flex justify-between">
+              <Typography variant="sm" className="text-stone-400">
+                Bonus After Removal:
+              </Typography>
+              <Typography variant="sm">{(oasis.max_withdraw_htr - Number(amount || 0)).toFixed(2)} HTR</Typography>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Button
+              size="md"
+              disabled={isRpcRequestPending || !amount || Number(amount) > maxAmount}
+              fullWidth
+              onClick={async () => {
+                await onConfirm(amount)
+                setAmount('')
+              }}
+            >
+              {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Withdraw Bonus'}
             </Button>
             {isRpcRequestPending && (
               <Button size="md" fullWidth variant="outlined" color="red" onClick={onReset}>

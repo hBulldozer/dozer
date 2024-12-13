@@ -26,7 +26,7 @@ import { Oasis } from '@dozer/nanocontracts'
 import { useAccount, useNetwork } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
-import { OasisAddModal, OasisRemoveModal } from '../components/OasisModal'
+import { OasisAddModal, OasisRemoveBonusModal, OasisRemoveModal } from '../components/OasisModal'
 import type { OasisPosition } from '../components/OasisModal/types'
 import Link from 'next/link'
 
@@ -141,7 +141,7 @@ const UserOasisPosition = ({
         </div>
       </div>
       <div className="flex flex-col gap-1">
-        {oasis.user_withdrawal_time.getTime() < Date.now() && buttonWithdraw}
+        {oasis.user_withdrawal_time.getTime() > Date.now() && buttonWithdraw}
         {oasis.user_balance_a > 0 && buttonWithdrawBonus}
       </div>
     </div>
@@ -162,6 +162,8 @@ const OasisProgram = () => {
   const [addModalOpen, setAddModalOpen] = useState<boolean>(false)
   const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
   const [selectedOasisForRemove, setSelectedOasisForRemove] = useState<OasisPosition | null>(null)
+  const [selectedOasisForRemoveBonus, setSelectedOasisForRemoveBonus] = useState<OasisPosition | null>(null)
+  const [removeBonusModalOpen, setRemoveBonusModalOpen] = useState<boolean>(false)
 
   const { network } = useNetwork()
   const { addNotification } = useAccount()
@@ -497,53 +499,6 @@ const OasisProgram = () => {
                                 </div>
                               </div>
 
-                              {/* <div
-                                  className="relative"
-                                  onMouseEnter={() => setHover(true)}
-                                  onMouseLeave={() => setHover(false)}
-                                >
-                                  <Transition
-                                    show={Boolean(hover && token == 'hUSDT')}
-                                    as={Fragment}
-                                    enter="transition duration-300 origin-center ease-out"
-                                    enterFrom="transform opacity-0"
-                                    enterTo="transform opacity-100"
-                                    leave="transition duration-75 ease-out"
-                                    leaveFrom="transform opacity-100"
-                                    leaveTo="transform opacity-0"
-                                  >
-                                    <div className="py-6 border border-stone-200/5 flex justify-center items-center z-[100] absolute inset-0 backdrop-blur bg-black bg-opacity-[0.24] ">
-                                      <Typography
-                                        variant="xs"
-                                        weight={600}
-                                        className="bg-white bg-opacity-[0.12] rounded-full p-2 px-3"
-                                      >
-                                        USDT has no price change
-                                      </Typography>
-                                    </div>
-                                  </Transition>
-                                  <div className="flex flex-col w-full gap-2">
-                                    <div className="flex justify-between">
-                                      <Typography variant="sm" className="text-stone-400">
-                                        {currency} Price Change
-                                      </Typography>
-                                      <Typography variant="sm" className="text-yellow">
-                                        {tokenPriceChange.toFixed(2)}%
-                                      </Typography>
-                                    </div>
-                                    <Slider
-                                      value={[tokenPriceChange]}
-                                      onValueChange={(vals: number[]) => {
-                                        if (token !== 'hUSDT') setTokenPriceChange(vals[0])
-                                      }}
-                                      min={-100}
-                                      max={100}
-                                      step={1}
-                                      className="w-full"
-                                    />
-                                  </div>
-                                </div> */}
-
                               <div className="flex flex-col gap-2">
                                 <Typography variant="sm" className="text-stone-400">
                                   Lock up time
@@ -715,7 +670,8 @@ const OasisProgram = () => {
                                               variant="empty"
                                               disabled={isRpcRequestPending}
                                               onClick={() => {
-                                                onClickWithdrawBonus(oasis.id)
+                                                setSelectedOasisForRemoveBonus(oasis)
+                                                setRemoveBonusModalOpen(true)
                                               }}
                                             >
                                               {isRpcRequestPending ? (
@@ -754,7 +710,7 @@ const OasisProgram = () => {
             </Widget>
 
             {/* Reserve Info Box */}
-            <div className="mt-4 p-4 rounded-lg bg-[rgba(0,0,0,0.4)] border border-stone-800">
+            <div className="p-4 rounded-lg bg-[rgba(0,0,0,0.4)] border border-stone-800">
               <Typography variant="xs" className="text-stone-400">
                 Oasis Reserve available
               </Typography>
@@ -797,6 +753,15 @@ const OasisProgram = () => {
         setOpen={setRemoveModalOpen}
         oasis={selectedOasisForRemove}
         onConfirm={handleRemoveLiquidity}
+        isRpcRequestPending={isRpcRequestPending}
+        onReset={reset}
+      />
+
+      <OasisRemoveBonusModal
+        open={removeBonusModalOpen}
+        setOpen={setRemoveBonusModalOpen}
+        oasis={selectedOasisForRemoveBonus}
+        onConfirm={onClickWithdrawBonus}
         isRpcRequestPending={isRpcRequestPending}
         onReset={reset}
       />
