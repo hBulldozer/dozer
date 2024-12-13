@@ -28,6 +28,7 @@ import { ChainId } from '@dozer/chain'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 import { OasisAddModal, OasisRemoveModal } from '../components/OasisModal'
 import type { OasisPosition } from '../components/OasisModal/types'
+import Link from 'next/link'
 
 const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean }) => {
   const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
@@ -151,8 +152,6 @@ const OasisProgram = () => {
   const [amount, setAmount] = useState<string>('')
   const [token, setToken] = useState<string>('hUSDT')
   const [lockPeriod, setLockPeriod] = useState<number>(12)
-  const [tokenPriceChange, setTokenPriceChange] = useState<number>(0)
-  const [hover, setHover] = useState(false)
   const [selectedTab, setSelectedTab] = useState(0)
   const [unlockDate, setUnlockDate] = useState<Date>(new Date())
   const [htrMatch, setHtrMatch] = useState<number>(0)
@@ -176,14 +175,6 @@ const OasisProgram = () => {
   // Bonus rate based on lock period
   const bonusRate = lockPeriod === 6 ? 0.1 : lockPeriod === 9 ? 0.15 : 0.2
 
-  // Current HTR price - in real implementation, get this from API
-  const initialPrices = {
-    htr: htrPrice || 0,
-    btc: 98520,
-    eth: 3339,
-    usdc: 1,
-    usdt: 1,
-  }
   const maxHTR = 10000000
 
   // Unlock date calculation
@@ -326,188 +317,187 @@ const OasisProgram = () => {
         />
       </div>
 
-      <div className="relative z-10 flex flex-col gap-6 p-6">
-        <div className="flex flex-col gap-6 px-6 bg-black/80">
-          {/* Title Section - Keep centered */}
-          <div className="flex flex-col items-center mb-10 text-center">
-            <div className="flex flex-col items-center pt-10">
-              <h1 className="relative z-20 text-4xl font-bold text-center text-white sm:text-7xl lg:text-9xl">OASIS</h1>
-              <div className="w-full max-w-[40rem] relative px-4">
-                <div className="absolute w-full sm:w-3/4 h-[2px] left-1/2 -translate-x-1/2 top-0">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500 to-transparent blur-sm" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
-                </div>
+      <div className="relative z-10 min-h-screen px-4 py-2 lg:mx-8 lg:my-4 bg-black/80">
+        {/* Title Section */}
+        <div className="flex flex-col items-center pt-6 mb-4 lg:pt-10 lg:mb-16">
+          <h1 className="relative z-20 text-6xl font-bold text-center text-white sm:text-7xl lg:text-9xl">OASIS</h1>
+          <div className="w-full max-w-[40rem] relative px-4">
+            <div className="absolute w-full sm:w-3/4 h-[2px] left-1/2 -translate-x-1/2 top-0">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500 to-transparent blur-sm" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+            </div>
+          </div>
+          <Typography variant="lg" className="mt-8 text-center text-stone-400">
+            The Official Hathor Liquidity Incentive program
+          </Typography>
+        </div>
+
+        {/* Three Column Layout */}
+        {/* Three Column Layout - Change to stack on mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_520px_320px] gap-10 max-w-[1200px] mx-auto">
+          {/* Left Column - Info Section */}
+          <div className="order-2 space-y-6 lg:order-1">
+            <Typography variant="lg" weight={600} className="text-stone-200">
+              How does this work?
+            </Typography>
+
+            {/* Feature boxes */}
+            <div className="px-4 space-y-4 lg:px-0">
+              <div className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
+                <Typography variant="lg" weight={500} className="mb-2 text-yellow">
+                  1. Equal HTR Matching
+                </Typography>
+                <Typography variant="sm" className="text-stone-400">
+                  For every $1 worth of tokens you provide, Oasis will match with $1 worth of HTR, doubling the
+                  effective liquidity you provide to the pool.
+                </Typography>
               </div>
-              <Typography variant="lg" className="mt-8 text-stone-400">
-                The Official Hathor Liquidity Incentive program
-              </Typography>
+
+              <div className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
+                <Typography variant="lg" weight={500} className="mb-2 text-yellow">
+                  2. Instant Bonus
+                </Typography>
+                <Typography variant="sm" className="text-stone-400">
+                  Get an immediate upfront payment of up to 20% of your deposit value in HTR, depending on your chosen
+                  lock period.
+                </Typography>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
+                <Typography variant="lg" weight={500} className="mb-2 text-yellow">
+                  3. IL Protection
+                </Typography>
+                <Typography variant="sm" className="text-stone-400">
+                  Your deposit is protected against impermanent loss up to a 4x price difference between HTR and your
+                  deposited token.
+                </Typography>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 px-4 lg:px-0">
+              <Link href="https://docs.dozer.finance/oasis">
+                <Button variant="outlined" className="w-full border text-yellow hover:text-yellow-600 border-yellow">
+                  <Typography variant="sm" weight={500}>
+                    Learn More
+                  </Typography>
+                  <ArrowTopRightOnSquareIcon width={16} height={16} className="ml-2 text-yellow" />
+                </Button>
+              </Link>
+              <Link href="/oasis_simulation">
+                <Button variant="outlined" className="w-full border text-yellow hover:text-yellow-600 border-yellow">
+                  <Typography variant="sm" weight={500}>
+                    Simulate Gains
+                  </Typography>
+                  <ArrowTopRightOnSquareIcon width={16} height={16} className="ml-2 text-yellow" />
+                </Button>
+              </Link>
             </div>
           </div>
 
-          {/* Main Content Area - New Layout */}
-          <div className="flex justify-center w-full py-4 max-w-[1400px] mx-auto -my-8">
-            {/* Left Column - Info Section (smaller) */}
-            <div className="w-[300px] flex-shrink-0 mr-10">
-              <div className="space-y-6">
-                <Typography variant="lg" weight={600} className="text-stone-200">
-                  How does this work?
-                </Typography>
+          {/* Center Column - Widget */}
+          <div className="w-full lg:w-[520px] order-1 lg:order-2">
+            <Widget id="oasisInput" maxWidth="full" className="py-5 mb-10">
+              <Widget.Content>
+                <div className="grid ">
+                  <div className="flex flex-col gap-2">
+                    <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
+                      <div>
+                        <div className="flex items-center gap-4 mb-6 ml-4 sm:gap-6 sm:ml-8">
+                          <Tab
+                            className={({ selected }) =>
+                              classNames(
+                                'transition-colors duration-200 font-medium !outline-none text-sm sm:text-base',
+                                selected
+                                  ? 'text-yellow border-b-2 border-yellow'
+                                  : 'text-stone-500 hover:text-stone-200'
+                              )
+                            }
+                          >
+                            Deposit Now
+                          </Tab>
+                          <Tab
+                            className={({ selected }) =>
+                              classNames(
+                                'transition-colors duration-200 font-medium !outline-none',
+                                selected
+                                  ? 'text-yellow border-b-2 border-yellow'
+                                  : 'text-stone-500 hover:text-stone-200'
+                              )
+                            }
+                          >
+                            My Position
+                          </Tab>
+                        </div>
 
-                {/* Feature boxes - Now narrower */}
-                <div className="space-y-4">
-                  <div className="p-4 bg-stone-800/50 rounded-xl">
-                    <Typography variant="lg" weight={500} className="mb-2 text-yellow">
-                      1. Equal HTR Matching
-                    </Typography>
-                    <Typography variant="sm" className="text-stone-400">
-                      For every $1 worth of tokens you provide, Oasis will match with $1 worth of HTR, doubling the
-                      effective liquidity you provide to the pool.
-                    </Typography>
-                  </div>
-
-                  <div className="p-4 bg-stone-800/50 rounded-xl">
-                    <Typography variant="lg" weight={500} className="mb-2 text-yellow">
-                      2. Instant Bonus
-                    </Typography>
-                    <Typography variant="sm" className="text-stone-400">
-                      Get an immediate upfront payment of up to 20% of your deposit value in HTR, depending on your
-                      chosen lock period.
-                    </Typography>
-                  </div>
-
-                  <div className="p-4 bg-stone-800/50 rounded-xl">
-                    <Typography variant="lg" weight={500} className="mb-2 text-yellow">
-                      3. IL Protection
-                    </Typography>
-                    <Typography variant="sm" className="text-stone-400">
-                      Your deposit is protected against impermanent loss up to a 4x price difference between HTR and
-                      your deposited token.
-                    </Typography>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <Button variant="outlined" className="text-yellow hover:text-yellow-600">
-                    <Typography variant="sm" weight={500}>
-                      Learn More
-                    </Typography>
-                    <ArrowTopRightOnSquareIcon width={16} height={16} className="ml-2 text-yellow" />
-                  </Button>
-                  <Button variant="outlined" className="text-yellow hover:text-yellow-600">
-                    <Typography variant="sm" weight={500}>
-                      Simulate Gains
-                    </Typography>
-                    <ArrowTopRightOnSquareIcon width={16} height={16} className="ml-2 text-yellow" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Center Column - Widget (wider) */}
-            <div className="w-[600px]">
-              <Widget id="oasisInput" maxWidth="full" className="py-5 mb-10">
-                <Widget.Content>
-                  <div className="grid ">
-                    <div className="flex flex-col gap-2">
-                      <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
-                        <div>
-                          <div className="flex items-center gap-4 mb-6 ml-4 sm:gap-6 sm:ml-8">
-                            <Tab
-                              className={({ selected }) =>
-                                classNames(
-                                  'transition-colors duration-200 font-medium !outline-none text-sm sm:text-base',
-                                  selected
-                                    ? 'text-yellow border-b-2 border-yellow'
-                                    : 'text-stone-500 hover:text-stone-200'
-                                )
-                              }
-                            >
-                              Deposit Now
-                            </Tab>
-                            <Tab
-                              className={({ selected }) =>
-                                classNames(
-                                  'transition-colors duration-200 font-medium !outline-none',
-                                  selected
-                                    ? 'text-yellow border-b-2 border-yellow'
-                                    : 'text-stone-500 hover:text-stone-200'
-                                )
-                              }
-                            >
-                              My Position
-                            </Tab>
-                          </div>
-
-                          <Tab.Panels>
-                            <Tab.Panel>
-                              <div className="flex flex-col gap-4 px-4 sm:px-8">
-                                <div className="flex flex-col gap-4 sm:flex-row sm:gap-2 justify-items-end">
-                                  <div className="flex flex-col flex-1 gap-2">
-                                    <Typography variant="sm" className="text-stone-400">
-                                      Amount to lock up
-                                    </Typography>
-                                    <div className="h-[51px]">
-                                      {' '}
-                                      <Input.Numeric
-                                        value={amount}
-                                        onUserInput={(val) => setAmount(val)}
-                                        className="h-full"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col w-full sm:w-[180px] gap-2">
-                                    <Typography variant="sm" className="text-stone-400">
-                                      Choose token
-                                    </Typography>
-
-                                    <Select
-                                      value={token}
-                                      onChange={(val: string) => {
-                                        if (val == 'hUSDT') setTokenPriceChange(0)
-                                        setToken(val as string)
-                                      }}
-                                      button={
-                                        <Select.Button>
-                                          <div className="flex flex-row items-center flex-grow gap-4 mr-8">
-                                            <div className="flex-shrink-0 w-7 h-7">
-                                              <Image
-                                                key={currency}
-                                                src={`/logos/${currency}.svg`}
-                                                width={28}
-                                                height={28}
-                                                alt={currency}
-                                                className="rounded-full"
-                                              />
-                                            </div>
-                                            <div className="flex flex-col items-start min-w-0">
-                                              <Typography
-                                                variant="sm"
-                                                weight={500}
-                                                className="truncate text-stone-200 group-hover:text-stone-50"
-                                              >
-                                                {token}
-                                              </Typography>
-                                            </div>
-                                          </div>
-                                        </Select.Button>
-                                      }
-                                    >
-                                      <Select.Options>
-                                        <Select.Option value="hUSDT">
-                                          <TokenOption token="hUSDT" />
-                                        </Select.Option>
-                                        <Select.Option disabled value="hETH">
-                                          <TokenOption disabled token="hETH" />
-                                        </Select.Option>
-                                        <Select.Option disabled value="hBTC">
-                                          <TokenOption disabled token="hBTC" />
-                                        </Select.Option>
-                                      </Select.Options>
-                                    </Select>
+                        <Tab.Panels>
+                          <Tab.Panel>
+                            <div className="flex flex-col gap-4 px-4 sm:px-8">
+                              <div className="flex flex-col gap-4 sm:flex-row sm:gap-2 justify-items-end">
+                                <div className="flex flex-col flex-1 gap-2">
+                                  <Typography variant="sm" className="text-stone-400">
+                                    Amount to lock up
+                                  </Typography>
+                                  <div className="h-[51px]">
+                                    {' '}
+                                    <Input.Numeric
+                                      value={amount}
+                                      onUserInput={(val) => setAmount(val)}
+                                      className="h-full"
+                                    />
                                   </div>
                                 </div>
+                                <div className="flex flex-col w-full sm:w-[180px] gap-2">
+                                  <Typography variant="sm" className="text-stone-400">
+                                    Choose token
+                                  </Typography>
 
-                                {/* <div
+                                  <Select
+                                    value={token}
+                                    onChange={(val: string) => {
+                                      setToken(val as string)
+                                    }}
+                                    button={
+                                      <Select.Button>
+                                        <div className="flex flex-row items-center flex-grow gap-4 mr-8">
+                                          <div className="flex-shrink-0 w-7 h-7">
+                                            <Image
+                                              key={currency}
+                                              src={`/logos/${currency}.svg`}
+                                              width={28}
+                                              height={28}
+                                              alt={currency}
+                                              className="rounded-full"
+                                            />
+                                          </div>
+                                          <div className="flex flex-col items-start min-w-0">
+                                            <Typography
+                                              variant="sm"
+                                              weight={500}
+                                              className="truncate text-stone-200 group-hover:text-stone-50"
+                                            >
+                                              {token}
+                                            </Typography>
+                                          </div>
+                                        </div>
+                                      </Select.Button>
+                                    }
+                                  >
+                                    <Select.Options>
+                                      <Select.Option value="hUSDT">
+                                        <TokenOption token="hUSDT" />
+                                      </Select.Option>
+                                      <Select.Option disabled value="hETH">
+                                        <TokenOption disabled token="hETH" />
+                                      </Select.Option>
+                                      <Select.Option disabled value="hBTC">
+                                        <TokenOption disabled token="hBTC" />
+                                      </Select.Option>
+                                    </Select.Options>
+                                  </Select>
+                                </div>
+                              </div>
+
+                              {/* <div
                                   className="relative"
                                   onMouseEnter={() => setHover(true)}
                                   onMouseLeave={() => setHover(false)}
@@ -554,241 +544,239 @@ const OasisProgram = () => {
                                   </div>
                                 </div> */}
 
-                                <div className="flex flex-col gap-2">
-                                  <Typography variant="sm" className="text-stone-400">
-                                    Lock up time
-                                  </Typography>
-                                  <Select
-                                    value={lockPeriod.toString()}
-                                    onChange={(val: string) => setLockPeriod(Number(val))}
-                                    button={
-                                      <Select.Button>
-                                        {lockPeriod} months - Bonus {(bonusRate * 100).toFixed(2)}%
-                                      </Select.Button>
-                                    }
-                                  >
-                                    <Select.Options>
-                                      <Select.Option value="6">6 months - Bonus 10.00%</Select.Option>
-                                      <Select.Option value="9">9 months - Bonus 15.00%</Select.Option>
-                                      <Select.Option value="12">12 months - Bonus 20.00%</Select.Option>
-                                    </Select.Options>
-                                  </Select>
-                                </div>
+                              <div className="flex flex-col gap-2">
+                                <Typography variant="sm" className="text-stone-400">
+                                  Lock up time
+                                </Typography>
+                                <Select
+                                  value={lockPeriod.toString()}
+                                  onChange={(val: string) => setLockPeriod(Number(val))}
+                                  button={
+                                    <Select.Button>
+                                      {lockPeriod} months - Bonus {(bonusRate * 100).toFixed(2)}%
+                                    </Select.Button>
+                                  }
+                                >
+                                  <Select.Options>
+                                    <Select.Option value="6">6 months - Bonus 10.00%</Select.Option>
+                                    <Select.Option value="9">9 months - Bonus 15.00%</Select.Option>
+                                    <Select.Option value="12">12 months - Bonus 20.00%</Select.Option>
+                                  </Select.Options>
+                                </Select>
+                              </div>
 
-                                <div className="p-4 mt-2 sm:mt-4 bg-stone-800 rounded-xl">
-                                  {fetchLoading ? (
-                                    <div className="flex flex-col gap-4">
-                                      <div className="flex justify-between">
-                                        <Typography variant="sm" className="text-stone-400">
-                                          Bonus you'll get now:
-                                        </Typography>
-                                        <Typography variant="sm" className="text-stone-600">
-                                          Calculating...
-                                        </Typography>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <Typography variant="sm" className="text-stone-400">
-                                          HTR matched:
-                                        </Typography>
-                                        <Typography variant="sm" className="text-stone-600">
-                                          Calculating...
-                                        </Typography>
-                                      </div>
-                                      <div className="flex justify-between">
+                              <div className="p-4 mt-2 sm:mt-4 bg-stone-800 rounded-xl">
+                                {fetchLoading ? (
+                                  <div className="flex flex-col gap-4">
+                                    <div className="flex justify-between">
+                                      <Typography variant="sm" className="text-stone-400">
+                                        Bonus you'll get now:
+                                      </Typography>
+                                      <Typography variant="sm" className="text-stone-600">
+                                        Calculating...
+                                      </Typography>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <Typography variant="sm" className="text-stone-400">
+                                        HTR matched:
+                                      </Typography>
+                                      <Typography variant="sm" className="text-stone-600">
+                                        Calculating...
+                                      </Typography>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <Typography variant="sm" className="text-stone-400">
+                                        Unlock date:
+                                      </Typography>
+                                      <Typography variant="sm" className="text-stone-600">
+                                        Calculating...
+                                      </Typography>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col gap-4">
+                                    <div className="flex justify-between">
+                                      <Typography variant="sm" className="text-stone-400">
+                                        Bonus you'll get now:
+                                      </Typography>
+                                      <Typography variant="sm" className="text-yellow">
+                                        {amount ? `${bonus.toFixed(2)} HTR` : '-'}
+                                      </Typography>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <Typography variant="sm" className="text-stone-400">
+                                        HTR Match:
+                                      </Typography>
+                                      <Typography variant="sm" className="text-yellow">
+                                        {amount ? `${htrMatch.toFixed(2)} HTR` : '-'}
+                                      </Typography>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <div className="flex flex-col gap-1">
                                         <Typography variant="sm" className="text-stone-400">
                                           Unlock date:
                                         </Typography>
-                                        <Typography variant="sm" className="text-stone-600">
-                                          Calculating...
-                                        </Typography>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-col gap-4">
-                                      <div className="flex justify-between">
-                                        <Typography variant="sm" className="text-stone-400">
-                                          Bonus you'll get now:
-                                        </Typography>
-                                        <Typography variant="sm" className="text-yellow">
-                                          {amount ? `${bonus.toFixed(2)} HTR` : '-'}
-                                        </Typography>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <Typography variant="sm" className="text-stone-400">
-                                          HTR Match:
-                                        </Typography>
-                                        <Typography variant="sm" className="text-yellow">
-                                          {amount ? `${htrMatch.toFixed(2)} HTR` : '-'}
-                                        </Typography>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <div className="flex flex-col gap-1">
-                                          <Typography variant="sm" className="text-stone-400">
-                                            Unlock date:
+                                        {hasPosition && (
+                                          <Typography variant="xs" className="text-stone-600">
+                                            User already have a position in Oasis, unlock date is calculated based on
+                                            the last deposit and time remaining
                                           </Typography>
-                                          {hasPosition && (
-                                            <Typography variant="xs" className="text-stone-600">
-                                              User already have a position in Oasis, unlock date is calculated based on
-                                              the last deposit and time remaining
-                                            </Typography>
-                                          )}
-                                        </div>
-                                        <Typography variant="sm" className="text-yellow">
-                                          {amount ? unlockDate.toLocaleDateString() : '-'}
-                                        </Typography>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <Checker.Amounts
-                                  fullWidth
-                                  size="md"
-                                  // chainId={chainId}
-                                  // fundSource={FundSource.WALLET}
-                                  amount={Number(amount)}
-                                  token={new Token({ chainId: ChainId.HATHOR, uuid: tokenUuid, decimals: 2 })}
-                                >
-                                  <Connected fullWidth size="md">
-                                    <div className="flex flex-col justify-between gap-2">
-                                      <Button
-                                        size="md"
-                                        disabled={isRpcRequestPending}
-                                        fullWidth
-                                        onClick={() => setAddModalOpen(true)}
-                                      >
-                                        {isRpcRequestPending ? (
-                                          <Dots>Confirm transaction in your wallet</Dots>
-                                        ) : (
-                                          <>Add Liquidity</>
                                         )}
-                                      </Button>
-                                    </div>
-                                  </Connected>
-                                </Checker.Amounts>
-
-                                <div className="w-full mt-4">
-                                  <Typography variant="xs" className="text-stone-400">
-                                    Oasis Reserve available
-                                  </Typography>
-                                  <div className="relative h-[23px] w-full">
-                                    <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500 "></div>
-                                    <div
-                                      className="absolute inset-y-0 left-0 overflow-hidden rounded-md"
-                                      style={{ width: `${progress}%` }}
-                                    >
-                                      <div className="h-full bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-500" />
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-row items-center justify-between mt-2">
-                                    <Typography variant="sm" className="text-center text-neutral-200">
-                                      HTR matched
-                                    </Typography>
-                                    <Typography variant="sm" className="text-center text-neutral-200">
-                                      {usedHTR.toLocaleString()} / {maxHTR.toLocaleString()} HTR
-                                    </Typography>
-                                  </div>
-                                </div>
-                              </div>
-                            </Tab.Panel>
-
-                            <Tab.Panel>
-                              <div className="flex flex-col gap-4 p-8">
-                                <div className="p-4 bg-stone-800/50 rounded-xl">
-                                  <Typography variant="lg" weight={500} className="mb-4 text-yellow">
-                                    Your Active Positions
-                                  </Typography>
-
-                                  {allUserOasis?.length == 0 ? (
-                                    <div className="py-8 text-center">
-                                      <Typography variant="sm" className="text-stone-500">
-                                        No active positions found.
-                                        <br />
-                                        Start by making a deposit!
+                                      </div>
+                                      <Typography variant="sm" className="text-yellow">
+                                        {amount ? unlockDate.toLocaleDateString() : '-'}
                                       </Typography>
                                     </div>
-                                  ) : (
-                                    allUserOasis?.map((oasis) => {
-                                      return (
-                                        <UserOasisPosition
-                                          oasis={oasis}
-                                          key={oasis.id}
-                                          buttonWithdraw={
-                                            <div className="flex flex-col justify-between gap-2 px-4">
-                                              <Button
-                                                size="sm"
-                                                disabled={isRpcRequestPending}
-                                                onClick={() => {
-                                                  setSelectedOasisForRemove(oasis)
-                                                  setRemoveModalOpen(true)
-                                                }}
-                                              >
-                                                {isRpcRequestPending ? (
-                                                  <Dots>Confirm transaction in your wallet</Dots>
-                                                ) : (
-                                                  <>Remove Liquidity</>
-                                                )}
-                                              </Button>
-                                              {isRpcRequestPending && (
-                                                <Button
-                                                  size="md"
-                                                  testdata-id="swap-review-reset-button"
-                                                  fullWidth
-                                                  variant="outlined"
-                                                  color="red"
-                                                  onClick={() => reset()}
-                                                >
-                                                  Cancel Transaction
-                                                </Button>
-                                              )}
-                                            </div>
-                                          }
-                                          buttonWithdrawBonus={
-                                            <div className="flex flex-col justify-between gap-2 p-4">
-                                              <Button
-                                                size="sm"
-                                                variant="empty"
-                                                disabled={isRpcRequestPending}
-                                                onClick={() => {
-                                                  onClickWithdrawBonus(oasis.id)
-                                                }}
-                                              >
-                                                {isRpcRequestPending ? (
-                                                  <Dots>Confirm transaction in your wallet</Dots>
-                                                ) : (
-                                                  <>Withdraw Bonus</>
-                                                )}
-                                              </Button>
-                                              {isRpcRequestPending && (
-                                                <Button
-                                                  size="md"
-                                                  testdata-id="swap-review-reset-button"
-                                                  fullWidth
-                                                  variant="outlined"
-                                                  color="red"
-                                                  onClick={() => reset()}
-                                                >
-                                                  Cancel Transaction
-                                                </Button>
-                                              )}
-                                            </div>
-                                          }
-                                        />
-                                      )
-                                    })
-                                  )}
-                                </div>
+                                  </div>
+                                )}
                               </div>
-                            </Tab.Panel>
-                          </Tab.Panels>
-                        </div>
-                      </Tab.Group>
-                    </div>
+
+                              <Checker.Amounts
+                                fullWidth
+                                size="md"
+                                amount={Number(amount)}
+                                token={new Token({ chainId: ChainId.HATHOR, uuid: tokenUuid, decimals: 2 })}
+                              >
+                                <Connected fullWidth size="md">
+                                  <div className="flex flex-col justify-between gap-2">
+                                    <Button
+                                      size="md"
+                                      disabled={isRpcRequestPending}
+                                      fullWidth
+                                      onClick={() => setAddModalOpen(true)}
+                                    >
+                                      {isRpcRequestPending ? (
+                                        <Dots>Confirm transaction in your wallet</Dots>
+                                      ) : (
+                                        <>Add Liquidity</>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </Connected>
+                              </Checker.Amounts>
+                            </div>
+                          </Tab.Panel>
+
+                          <Tab.Panel>
+                            <div className="flex flex-col gap-4 p-8">
+                              <div className="p-4 bg-stone-800/50 rounded-xl">
+                                <Typography variant="lg" weight={500} className="mb-4 text-yellow">
+                                  Your Active Positions
+                                </Typography>
+
+                                {allUserOasis?.length == 0 ? (
+                                  <div className="py-8 text-center">
+                                    <Typography variant="sm" className="text-stone-500">
+                                      No active positions found.
+                                      <br />
+                                      Start by making a deposit!
+                                    </Typography>
+                                  </div>
+                                ) : (
+                                  allUserOasis?.map((oasis) => {
+                                    return (
+                                      <UserOasisPosition
+                                        oasis={oasis}
+                                        key={oasis.id}
+                                        buttonWithdraw={
+                                          <div className="flex flex-col justify-between gap-2 px-4">
+                                            <Button
+                                              size="sm"
+                                              disabled={isRpcRequestPending}
+                                              onClick={() => {
+                                                setSelectedOasisForRemove(oasis)
+                                                setRemoveModalOpen(true)
+                                              }}
+                                            >
+                                              {isRpcRequestPending ? (
+                                                <Dots>Confirm transaction in your wallet</Dots>
+                                              ) : (
+                                                <>Remove Liquidity</>
+                                              )}
+                                            </Button>
+                                            {isRpcRequestPending && (
+                                              <Button
+                                                size="md"
+                                                testdata-id="swap-review-reset-button"
+                                                fullWidth
+                                                variant="outlined"
+                                                color="red"
+                                                onClick={() => reset()}
+                                              >
+                                                Cancel Transaction
+                                              </Button>
+                                            )}
+                                          </div>
+                                        }
+                                        buttonWithdrawBonus={
+                                          <div className="flex flex-col justify-between gap-2 p-4">
+                                            <Button
+                                              size="sm"
+                                              variant="empty"
+                                              disabled={isRpcRequestPending}
+                                              onClick={() => {
+                                                onClickWithdrawBonus(oasis.id)
+                                              }}
+                                            >
+                                              {isRpcRequestPending ? (
+                                                <Dots>Confirm transaction in your wallet</Dots>
+                                              ) : (
+                                                <>Withdraw Bonus</>
+                                              )}
+                                            </Button>
+                                            {isRpcRequestPending && (
+                                              <Button
+                                                size="md"
+                                                testdata-id="swap-review-reset-button"
+                                                fullWidth
+                                                variant="outlined"
+                                                color="red"
+                                                onClick={() => reset()}
+                                              >
+                                                Cancel Transaction
+                                              </Button>
+                                            )}
+                                          </div>
+                                        }
+                                      />
+                                    )
+                                  })
+                                )}
+                              </div>
+                            </div>
+                          </Tab.Panel>
+                        </Tab.Panels>
+                      </div>
+                    </Tab.Group>
                   </div>
-                </Widget.Content>
-              </Widget>
+                </div>
+              </Widget.Content>
+            </Widget>
+
+            {/* Reserve Info Box */}
+            <div className="mt-4 p-4 rounded-lg bg-[rgba(0,0,0,0.4)] border border-stone-800">
+              <Typography variant="xs" className="text-stone-400">
+                Oasis Reserve available
+              </Typography>
+              <div className="relative h-[23px] w-full mt-2">
+                <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500" />
+                <div className="absolute inset-y-0 left-0 overflow-hidden rounded-md" style={{ width: `${progress}%` }}>
+                  <div className="h-full bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-500" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <Typography variant="sm" className="text-stone-400">
+                  HTR matched
+                </Typography>
+                <Typography variant="sm" className="text-stone-200">
+                  {usedHTR.toLocaleString()} / {maxHTR.toLocaleString()} HTR
+                </Typography>
+              </div>
             </div>
           </div>
+
+          {/* Right Column - Empty */}
+          <div className="order-3 hidden lg:block"></div>
         </div>
       </div>
       <OasisAddModal
