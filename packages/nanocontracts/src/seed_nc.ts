@@ -277,7 +277,7 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
       {
         address: address,
         value: 5_000_00,
-        token: tokenUUIDs['USDT'],
+        token: tokenUUIDs['USDT_uuid'],
       }
     ).then(async (data) => {
       if (data.success) {
