@@ -263,7 +263,7 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
     let address = ''
     await GetHeadless('users', `/wallet/address?index=${i}`, { 'x-wallet-id': 'default' }, {}).then((data) => {
       if (data.address) {
-        address = data.address
+        address = 'WX6vyaJ1Xs2NWVbfV9eCiNYpnNLD7HRBQZ'
         console.log(`User #${i + 1} address: ${address}`)
       } else {
         throw new Error(`Failed to get user address. ${data.message}`)
@@ -277,7 +277,7 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
       {
         address: address,
         value: 5_000_00,
-        token: USDT_uuid,
+        token: tokenUUIDs['USDT'],
       }
     ).then(async (data) => {
       if (data.success) {

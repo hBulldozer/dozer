@@ -11,16 +11,11 @@ import {
   createSuccessToast,
   createErrorToast,
   Dots,
-  Tooltip,
 } from '@dozer/ui'
 import { OasisChart } from '../components/OasisChart'
-import Image, { ImageProps } from 'next/legacy/image'
+import Image from 'next/legacy/image'
 import { Token } from '@dozer/currency'
-import {
-  ArrowLeftStartOnRectangleIcon,
-  ArrowRightEndOnRectangleIcon,
-  ArrowTopRightOnSquareIcon,
-} from '@heroicons/react/24/outline'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import backgroundOasis from '../public/background_oasis.jpeg'
 import { Tab, Transition } from '@headlessui/react'
 import { Connected } from '@dozer/higmi/systems/Checker/Connected'
@@ -31,6 +26,8 @@ import { Oasis } from '@dozer/nanocontracts'
 import { useAccount, useNetwork } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
+import { OasisAddModal, OasisRemoveModal } from '../components/OasisModal'
+import type { OasisPosition } from '../components/OasisModal/types'
 
 const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean }) => {
   const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
@@ -143,7 +140,7 @@ const UserOasisPosition = ({
         </div>
       </div>
       <div className="flex flex-col gap-1">
-        {oasis.user_withdrawal_time.getTime() > Date.now() && buttonWithdraw}
+        {oasis.user_withdrawal_time.getTime() < Date.now() && buttonWithdraw}
         {oasis.user_balance_a > 0 && buttonWithdrawBonus}
       </div>
     </div>
@@ -163,6 +160,9 @@ const OasisProgram = () => {
   const [hasPosition, setHasPosition] = useState<boolean>(false)
   const [bonus, setBonus] = useState<number>(0)
   const [sentTX, setSentTX] = useState(false)
+  const [addModalOpen, setAddModalOpen] = useState<boolean>(false)
+  const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
+  const [selectedOasisForRemove, setSelectedOasisForRemove] = useState<OasisPosition | null>(null)
 
   const { network } = useNetwork()
   const { addNotification } = useAccount()
@@ -202,19 +202,17 @@ const OasisProgram = () => {
   const poolId = oasis?.pool.id || ''
   const tokenUuid = oasis?.token.uuid || ''
   const oasisObj = new Oasis(tokenUuid, poolId)
-
-  const onClick = async () => {
+  const handleAddLiquidity = async (): Promise<void> => {
     setSentTX(true)
     if (amount && lockPeriod && oasisId) {
       const response = await oasisObj.user_deposit(hathorRpc, address, lockPeriod, oasisId, parseFloat(amount))
     }
   }
 
-  const onClickWithdraw = async (oasisId: string) => {
+  const handleRemoveLiquidity = async (removeAmount: string): Promise<void> => {
     setSentTX(true)
-    if (amount && lockPeriod && oasis) {
-      // const response = await oasisObj.user_withdraw(hathorRpc, address, oasisId)
-      console.log('user_withdraw', oasisId)
+    if (removeAmount && selectedOasisForRemove?.id) {
+      console.log('user_withdraw', selectedOasisForRemove.id, removeAmount)
     }
   }
 
@@ -253,9 +251,11 @@ const OasisProgram = () => {
           notificationGroup.push(JSON.stringify(notificationData))
           addNotification(notificationGroup)
           createSuccessToast(notificationData)
+          setAddModalOpen(false)
           setSentTX(false)
         } else {
           createErrorToast(`Error`, true)
+          setAddModalOpen(false)
           setSentTX(false)
         }
       }
@@ -636,9 +636,7 @@ const OasisProgram = () => {
                                     size="md"
                                     disabled={isRpcRequestPending}
                                     fullWidth
-                                    onClick={() => {
-                                      onClick()
-                                    }}
+                                    onClick={() => setAddModalOpen(true)}
                                   >
                                     {isRpcRequestPending ? (
                                       <Dots>Confirm transaction in your wallet</Dots>
@@ -646,18 +644,6 @@ const OasisProgram = () => {
                                       <>Add Liquidity</>
                                     )}
                                   </Button>
-                                  {isRpcRequestPending && (
-                                    <Button
-                                      size="md"
-                                      testdata-id="swap-review-reset-button"
-                                      fullWidth
-                                      variant="outlined"
-                                      color="red"
-                                      onClick={() => reset()}
-                                    >
-                                      Cancel Transaction
-                                    </Button>
-                                  )}
                                 </div>
                               </Connected>
                             </Checker.Amounts>
@@ -714,7 +700,8 @@ const OasisProgram = () => {
                                             size="sm"
                                             disabled={isRpcRequestPending}
                                             onClick={() => {
-                                              onClickWithdraw(oasis.id)
+                                              setSelectedOasisForRemove(oasis)
+                                              setRemoveModalOpen(true)
                                             }}
                                           >
                                             {isRpcRequestPending ? (
@@ -794,6 +781,27 @@ const OasisProgram = () => {
           </Widget>
         </div>
       </div>
+      <OasisAddModal
+        open={addModalOpen}
+        setOpen={setAddModalOpen}
+        amount={amount}
+        token={currency}
+        bonus={bonus}
+        htrMatch={htrMatch}
+        unlockDate={unlockDate}
+        onConfirm={handleAddLiquidity}
+        isRpcRequestPending={isRpcRequestPending}
+        onReset={reset}
+      />
+
+      <OasisRemoveModal
+        open={removeModalOpen}
+        setOpen={setRemoveModalOpen}
+        oasis={selectedOasisForRemove}
+        onConfirm={handleRemoveLiquidity}
+        isRpcRequestPending={isRpcRequestPending}
+        onReset={reset}
+      />
     </div>
   )
 }

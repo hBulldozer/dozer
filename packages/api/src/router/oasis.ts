@@ -12,23 +12,41 @@ const fetchAndProcessUserOasis = async (
   const queryParams = [`id=${oasis.id}`, `calls[]=${call}`]
   const response = await fetchNodeData(endpoint, queryParams)
   const result = response['calls'][`${call}`]['value']
-  const parsed_result = {
-    token: oasis.token,
-    pool: oasis.pool,
-    id: oasis.id,
-    user_deposit_b: result['user_deposit_b'] / 100,
-    user_deposit_a: result['user_deposit_a'] / 100,
-    user_liquidity: result['user_liquidity'],
-    user_withdrawal_time: new Date(result['user_withdrawal_time'] * 1000),
-    dev_balance: result['dev_balance'] / 100,
-    total_liquidity: result['total_liquidity'] / 100,
-    user_balance_a: result['user_balance_a'] / 100,
-    user_balance_b: result['user_balance_b'] / 100,
-    user_lp_b: result['user_lp_b'],
-    user_lp_htr: result['user_lp_htr'],
-    max_withdraw_htr: result['max_withdraw_htr'] / 100,
-    max_withdraw_b: result['max_withdraw_b'] / 100,
-  }
+  const parsed_result = result
+    ? {
+        token: oasis.token,
+        pool: oasis.pool,
+        id: oasis.id,
+        user_deposit_b: result.user_deposit_b / 100 || 0,
+        user_deposit_a: result.user_deposit_a / 100 || 0,
+        user_liquidity: result.user_liquidity || 0,
+        user_withdrawal_time: new Date(result.user_withdrawal_time || 0 * 1000),
+        dev_balance: result.dev_balance / 100 || 0,
+        total_liquidity: result.total_liquidity || 0,
+        user_balance_a: result.user_balance_a / 100 || 0,
+        user_balance_b: result.user_balance_b / 100 || 0,
+        user_lp_b: result.user_lp_b || 0,
+        user_lp_htr: result.user_lp_htr || 0,
+        max_withdraw_htr: result.max_withdraw_htr / 100 || 0,
+        max_withdraw_b: result.max_withdraw_b / 100 || 0,
+      }
+    : {
+        token: oasis.token,
+        pool: oasis.pool,
+        id: oasis.id,
+        user_deposit_b: 0,
+        user_deposit_a: 0,
+        user_liquidity: 0,
+        user_withdrawal_time: new Date(0),
+        dev_balance: 0,
+        total_liquidity: 0,
+        user_balance_a: 0,
+        user_balance_b: 0,
+        user_lp_b: 0,
+        user_lp_htr: 0,
+        max_withdraw_htr: 0,
+        max_withdraw_b: 0,
+      }
   return parsed_result
 }
 
@@ -91,7 +109,9 @@ export const oasisRouter = createTRPCRouter({
     const userOasisPromises = allOasis.map((oasis) => fetchAndProcessUserOasis(oasis, input.address))
     const userOasis = await Promise.all(userOasisPromises)
 
-    return userOasis.filter((oasis) => oasis.user_deposit_b > 0 && oasis.user_liquidity > 0)
+    return userOasis.filter(
+      (oasis) => oasis.user_deposit_b && oasis.user_deposit_b > 0 && oasis.user_liquidity && oasis.user_liquidity > 0
+    )
   }),
   allReserves: procedure.query(async ({ ctx }) => {
     const allOasis = await ctx.prisma.oasis.findMany({
