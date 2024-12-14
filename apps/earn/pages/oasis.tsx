@@ -12,7 +12,6 @@ import {
   createErrorToast,
   Dots,
 } from '@dozer/ui'
-import { OasisChart } from '../components/OasisChart'
 import Image from 'next/legacy/image'
 import { Token } from '@dozer/currency'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
