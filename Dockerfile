@@ -44,7 +44,8 @@ ENV PORT 9000
 ENV HOSTNAME "0.0.0.0"
 
 # Create app directory
-RUN mkdir -p /app/apps/_root && mkdir -p /app/apps/_root/.next/cache/images && chown -R nextjs:nodejs /app
+RUN mkdir -p /app/apps/_root && chown -R nextjs:nodejs /app
+RUN mkdir -p /app/apps/_root/.next/cache/images && chown -R nextjs:nodejs /app
 
 # Copy standalone build and required files for root app
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/.next/standalone/ ./
@@ -67,7 +68,8 @@ ENV NEXT_TELEMETRY_DISABLED 1
 ENV PORT 9001
 ENV HOSTNAME "0.0.0.0"
 
-RUN mkdir -p /app/apps/swap && mkdir -p /app/apps/_root/.next/cache/images &&  chown -R nextjs:nodejs /app
+RUN mkdir -p /app/apps/swap && chown -R nextjs:nodejs /app
+RUN mkdir -p /app/apps/swap/.next/cache/images && chown -R nextjs:nodejs /app
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/static ./apps/swap/.next/static
@@ -89,7 +91,8 @@ ENV NEXT_TELEMETRY_DISABLED 1
 ENV PORT 9002
 ENV HOSTNAME "0.0.0.0"
 
-RUN mkdir -p /app/apps/earn && mkdir -p /app/apps/_root/.next/cache/images&& chown -R nextjs:nodejs /app
+RUN mkdir -p /app/apps/earn && chown -R nextjs:nodejs /app
+RUN mkdir -p /app/apps/earn/.next/cache/images && chown -R nextjs:nodejs /app
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/static ./apps/earn/.next/static
