@@ -43,13 +43,15 @@ ENV NEXT_TELEMETRY_DISABLED 1
 ENV PORT 9000
 ENV HOSTNAME "0.0.0.0"
 
-# Create app directory
-RUN mkdir -p /app/apps/_root && mkdir -p /app/apps/_root/.next/cache/images && chown -R nextjs:nodejs /app
+# Create app directory and cache directories with correct permissions
+RUN mkdir -p /app/apps/_root/.next/cache/images && \
+    chown -R nextjs:nodejs /app
 
 # Copy standalone build and required files for root app
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/.next/static ./apps/_root/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/public ./apps/_root/public
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
 
 USER nextjs
 
@@ -67,11 +69,14 @@ ENV NEXT_TELEMETRY_DISABLED 1
 ENV PORT 9001
 ENV HOSTNAME "0.0.0.0"
 
-RUN mkdir -p /app/apps/swap && mkdir -p /app/apps/_root/.next/cache/images &&  chown -R nextjs:nodejs /app
+# Create app directory and cache directories with correct permissions
+RUN mkdir -p /app/apps/swap/.next/cache/images && \
+    chown -R nextjs:nodejs /app
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/static ./apps/swap/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/public ./apps/swap/public
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
 
 USER nextjs
 
@@ -89,11 +94,14 @@ ENV NEXT_TELEMETRY_DISABLED 1
 ENV PORT 9002
 ENV HOSTNAME "0.0.0.0"
 
-RUN mkdir -p /app/apps/earn && mkdir -p /app/apps/_root/.next/cache/images&& chown -R nextjs:nodejs /app
+# Create app directory and cache directories with correct permissions
+RUN mkdir -p /app/apps/earn/.next/cache/images && \
+    chown -R nextjs:nodejs /app
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/static ./apps/earn/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/public ./apps/earn/public
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
 
 USER nextjs
 

@@ -1,5 +1,9 @@
 import defaultNextConfig from '@dozer/nextjs-config'
-import { truncate } from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const { ROOT_URL, SWAP_URL, EARN_URL } = process.env
 
@@ -7,6 +11,12 @@ const { ROOT_URL, SWAP_URL, EARN_URL } = process.env
 const nextConfig = {
   ...defaultNextConfig,
   transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database', '@dozer/currency'],
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname, '../../'),
+    outputFileTracingIncludes: {
+      '/node_modules/sharp/**/*': true,
+    },
+  },
   output: 'standalone',
   images: {
     minimumCacheTTL: 86400, // 24 hours

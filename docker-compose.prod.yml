@@ -7,7 +7,6 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
-      - nginx_cache:/tmp/nginx_cache
     depends_on:
       - root
       - swap
@@ -29,6 +28,7 @@ services:
       - EARN_URL=https://testnet.dozer.finance
     volumes:
       - root_cache:/app/apps/_root/.next/cache
+    user: "1001:1001"
     networks:
       - app-network
     restart: unless-stopped
@@ -43,6 +43,7 @@ services:
       - HOSTNAME=0.0.0.0
     volumes:
       - swap_cache:/app/apps/swap/.next/cache
+    user: "1001:1001"
     networks:
       - app-network
     restart: unless-stopped
@@ -57,6 +58,7 @@ services:
       - HOSTNAME=0.0.0.0
     volumes:
       - earn_cache:/app/apps/earn/.next/cache
+    user: "1001:1001"
     networks:
       - app-network
     restart: unless-stopped
@@ -67,6 +69,8 @@ networks:
 
 volumes:
   root_cache:
+    driver: local
   swap_cache:
+    driver: local
   earn_cache:
-  nginx_cache:
+    driver: local
