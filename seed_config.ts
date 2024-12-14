@@ -39,6 +39,12 @@ export const seedConfig: SeedConfig = {
       totalSupply: 280000000,
       about: 'Tether (USDT) is a cryptocurrency with a value meant to mirror the value of the U.S. dollar.',
     },
+    {
+      name: 'Bitcoin',
+      symbol: 'BTC',
+      totalSupply: 10000000,
+      about: 'Bitcoin (BTC) is a decentralized digital currency.',
+    },
   ],
   pools: [
     {
@@ -55,11 +61,22 @@ export const seedConfig: SeedConfig = {
       fee: 0.05,
       protocolFee: 0.01,
     },
+    {
+      tokenSymbol: 'BTC',
+      htrQuantity: 100000000,
+      tokenQuantity: 100,
+      fee: 0.05,
+      protocolFee: 0.01,
+    },
   ],
   oasis: [
     {
       tokenSymbol: 'USDT',
       htrQuantity: 1_000_000,
+    },
+    {
+      tokenSymbol: 'BTC',
+      htrQuantity: 10_000_000,
     },
   ],
 }

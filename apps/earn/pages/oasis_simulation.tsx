@@ -480,8 +480,8 @@ const OasisProgram = () => {
                                     <Select.Option disabled value="hETH">
                                       <TokenOption disabled token="hETH" />
                                     </Select.Option>
-                                    <Select.Option disabled value="hBTC">
-                                      <TokenOption disabled token="hBTC" />
+                                    <Select.Option value="hBTC">
+                                      <TokenOption token="hBTC" />
                                     </Select.Option>
                                   </Select.Options>
                                 </Select>

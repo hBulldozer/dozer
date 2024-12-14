@@ -80,4 +80,54 @@ export class Oasis extends NanoContract {
 
     return rpcResponse
   }
+
+  public async user_withdraw(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number) {
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'user_withdraw',
+      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
+      [
+        {
+          type: NanoContractActionType.WITHDRAWAL,
+          token: this.token,
+          amount: Math.ceil(amount * 100),
+          address: address,
+          changeAddress: address,
+        },
+      ],
+      [],
+      true,
+      ncId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+
+    return rpcResponse
+  }
+
+  public async user_withdraw_bonus(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number) {
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'user_withdraw_bonus',
+      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
+      [
+        {
+          type: NanoContractActionType.WITHDRAWAL,
+          token: '00',
+          amount: Math.ceil(amount * 100),
+          address: address,
+          changeAddress: address,
+        },
+      ],
+      [],
+      true,
+      ncId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+
+    return rpcResponse
+  }
 }

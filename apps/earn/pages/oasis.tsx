@@ -204,15 +204,25 @@ const OasisProgram = () => {
   const handleRemoveLiquidity = async (removeAmount: string): Promise<void> => {
     setSentTX(true)
     if (removeAmount && selectedOasisForRemove?.id) {
-      console.log('user_withdraw', selectedOasisForRemove.id, removeAmount)
+      const response = await oasisObj.user_withdraw(
+        hathorRpc,
+        address,
+        selectedOasisForRemove.id,
+        parseFloat(removeAmount)
+      )
     }
   }
 
-  const onClickWithdrawBonus = async (oasisId: string) => {
+  const handleRemoveBonus = async (removeAmount: string): Promise<void> => {
     setSentTX(true)
-    if (amount && lockPeriod && oasis) {
-      // const response = await oasisObj.user_withdraw(hathorRpc, address, oasisId)
-      console.log('user_withdraw_bonus', oasisId)
+    setSentTX(true)
+    if (removeAmount && selectedOasisForRemoveBonus?.id) {
+      const response = await oasisObj.user_withdraw_bonus(
+        hathorRpc,
+        address,
+        selectedOasisForRemoveBonus.id,
+        parseFloat(removeAmount)
+      )
     }
   }
 
@@ -490,8 +500,8 @@ const OasisProgram = () => {
                                       <Select.Option disabled value="hETH">
                                         <TokenOption disabled token="hETH" />
                                       </Select.Option>
-                                      <Select.Option disabled value="hBTC">
-                                        <TokenOption disabled token="hBTC" />
+                                      <Select.Option value="hBTC">
+                                        <TokenOption token="hBTC" />
                                       </Select.Option>
                                     </Select.Options>
                                   </Select>
@@ -760,7 +770,7 @@ const OasisProgram = () => {
         open={removeBonusModalOpen}
         setOpen={setRemoveBonusModalOpen}
         oasis={selectedOasisForRemoveBonus}
-        onConfirm={onClickWithdrawBonus}
+        onConfirm={handleRemoveBonus}
         isRpcRequestPending={isRpcRequestPending}
         onReset={reset}
       />
