@@ -1,5 +1,5 @@
 # Specify base image
-FROM node:20-alpine AS base
+FROM node:20.1.0-alpine AS base
 
 # Install required system dependencies
 RUN apk add --no-cache libc6-compat python3 make g++
