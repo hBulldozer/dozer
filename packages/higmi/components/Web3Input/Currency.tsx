@@ -195,19 +195,8 @@ type BalancePanel = Pick<CurrencyInputProps, 'onChange' | 'chainId' | 'currency'
   account: AccountState
 }
 
-const BalancePanel: FC<BalancePanel> = ({
-  id,
-  // chainId,
-  // account,
-  onChange,
-  currency,
-  disableMaxButton,
-  // fundSource = FundSource.WALLET,
-  // loading,
-}) => {
+const BalancePanel: FC<BalancePanel> = ({ id, onChange, currency, disableMaxButton }) => {
   const isMounted = useIsMounted()
-
-  // const address = useAccount((state) => state.address)
   const balance = useAccount((state) => state.balance)
   const [tokenBalance, setTokenBalance] = useState(0)
   const { accounts } = useWalletConnectClient()
@@ -222,16 +211,48 @@ const BalancePanel: FC<BalancePanel> = ({
     }
   }, [currency, balance, address])
 
+  const handlePercentageClick = (percentage: number) => {
+    const amount = (tokenBalance * percentage) / 100
+    onChange(amount.toFixed(2))
+  }
+
   return (
-    <button
-      data-testid={`${id}-balance-button`}
-      type="button"
-      onClick={() => onChange(tokenBalance.toFixed(2))}
-      className="py-1 text-xs text-stone-400 hover:text-stone-300"
-      disabled={disableMaxButton}
-    >
-      {isMounted && balance ? `Balance: ${tokenBalance.toFixed(2)}` : 'Balance: 0'}
-    </button>
+    <div className="flex items-center gap-2 py-1 text-xs">
+      <div className="flex gap-1">
+        <button
+          className="px-1.5 py-0.5 text-stone-400 hover:text-stone-300 hover:bg-stone-800 rounded-lg transition-colors"
+          onClick={() => handlePercentageClick(25)}
+          disabled={disableMaxButton}
+        >
+          25%
+        </button>
+        <button
+          className="px-1.5 py-0.5 text-stone-400 hover:text-stone-300 hover:bg-stone-800 rounded-lg transition-colors"
+          onClick={() => handlePercentageClick(50)}
+          disabled={disableMaxButton}
+        >
+          50%
+        </button>
+        <button
+          className="px-1.5 py-0.5 text-stone-400 hover:text-stone-300 hover:bg-stone-800 rounded-lg transition-colors"
+          onClick={() => handlePercentageClick(75)}
+          disabled={disableMaxButton}
+        >
+          75%
+        </button>
+        <button
+          data-testid={`${id}-balance-button`}
+          onClick={() => onChange(tokenBalance.toFixed(2))}
+          className="px-1.5 py-0.5 text-stone-400 hover:text-stone-300 hover:bg-stone-800 rounded-lg transition-colors"
+          disabled={disableMaxButton}
+        >
+          MAX
+        </button>
+      </div>
+      <span className="text-stone-400">
+        {isMounted && balance ? `Balance: ${tokenBalance.toFixed(2)}` : 'Balance: 0'}
+      </span>
+    </div>
   )
 }
 
