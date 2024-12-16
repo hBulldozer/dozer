@@ -76,26 +76,6 @@ const BalancePanel: FC<BalancePanelProps> = ({
     onChange(amount.toFixed(2))
   }
 
-  // For mobile: display buttons in a fixed position at bottom
-  if (!isSm && !hidePercentageButtons && showPercentageButtons) {
-    return (
-      <>
-        <button
-          data-testid={`${id}-balance-button`}
-          type="button"
-          onClick={() => onChange(tokenBalance.toFixed(2))}
-          className="px-2 py-2 text-xs transition-colors rounded-lg text-stone-400 hover:text-stone-300 hover:bg-stone-800"
-          disabled={disableMaxButton}
-        >
-          {isMounted && balance ? `Balance: ${tokenBalance.toFixed(2)}` : 'Balance: 0'}
-        </button>
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 border-t bg-stone-800 border-stone-700">
-          <PercentageButtons onSelect={handlePercentageClick} disabled={disableMaxButton} />
-        </div>
-      </>
-    )
-  }
-
   // For desktop: display buttons inline when input is focused
   return (
     <div className="flex flex-row items-end gap-2">
