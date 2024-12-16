@@ -6,7 +6,7 @@ import { FC, useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { AccountState, useAccount } from '@dozer/zustand'
 
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
-import { useWalletConnectClient } from '../contexts'
+import BalancePanel from './BalancePanel'
 
 export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' | 'chainId'> {
   id?: string
@@ -22,6 +22,7 @@ export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' 
   includeNative?: boolean
   prices?: { [key: string]: number }
   tokens?: Token[]
+  hidePercentageButtons?: boolean
 }
 
 export const CurrencyInput: FC<CurrencyInputProps> = ({
@@ -44,11 +45,24 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   loading,
   prices,
   tokens,
+  hidePercentageButtons = false,
 }) => {
   const isMounted = useIsMounted()
-  const account = useAccount()
-  const inputRef = useRef<HTMLInputElement>(null)
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
+
+  const [isInputFocused, setIsInputFocused] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleInputFocus = () => {
+    setIsInputFocused(true)
+  }
+
+  const handleInputBlur = () => {
+    // Add a small delay to keep the buttons visible briefly after blur
+    setTimeout(() => {
+      setIsInputFocused(false)
+    }, 200)
+  }
 
   const focusInput = useCallback(() => {
     if (disabled) return
@@ -74,6 +88,8 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               variant="unstyled"
               disabled={disabled}
               onUserInput={onChange}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
               className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-3xl py-1 text-stone-200 hover:text-stone-100')}
               value={value}
               readOnly={disabled}
@@ -137,11 +153,12 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               id={id}
               loading={loading}
               chainId={chainId}
-              account={account}
+              // account={account}
               onChange={onChange}
               currency={currency}
-              // fundSource={fundSource}
               disableMaxButton={disableMaxButton}
+              hidePercentageButtons={hidePercentageButtons}
+              showPercentageButtons={isInputFocused}
             />
           </div>
         </div>
@@ -167,7 +184,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
       </div>
     ),
     [
-      account,
+      // account,
       chainId,
       className,
       currency,
@@ -186,6 +203,8 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
       tokens,
       usdPctChange,
       value,
+      hidePercentageButtons,
+      isInputFocused,
     ]
   )
 }
@@ -193,67 +212,6 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
 type BalancePanel = Pick<CurrencyInputProps, 'onChange' | 'chainId' | 'currency' | 'disableMaxButton' | 'loading'> & {
   id?: string
   account: AccountState
-}
-
-const BalancePanel: FC<BalancePanel> = ({ id, onChange, currency, disableMaxButton }) => {
-  const isMounted = useIsMounted()
-  const balance = useAccount((state) => state.balance)
-  const [tokenBalance, setTokenBalance] = useState(0)
-  const { accounts } = useWalletConnectClient()
-  const address = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
-
-  useEffect(() => {
-    if (currency && balance) {
-      const token = balance.find((obj) => {
-        return obj.token_uuid === currency.uuid
-      })
-      setTokenBalance(token && address ? token.token_balance / 100 : 0)
-    }
-  }, [currency, balance, address])
-
-  const handlePercentageClick = (percentage: number) => {
-    const amount = (tokenBalance * percentage) / 100
-    onChange(amount.toFixed(2))
-  }
-
-  return (
-    <div className="flex items-center gap-2 py-1 text-xs">
-      <div className="flex gap-1">
-        <button
-          className="px-1.5 py-0.5 text-stone-400 hover:text-stone-300 hover:bg-stone-800 rounded-lg transition-colors"
-          onClick={() => handlePercentageClick(25)}
-          disabled={disableMaxButton}
-        >
-          25%
-        </button>
-        <button
-          className="px-1.5 py-0.5 text-stone-400 hover:text-stone-300 hover:bg-stone-800 rounded-lg transition-colors"
-          onClick={() => handlePercentageClick(50)}
-          disabled={disableMaxButton}
-        >
-          50%
-        </button>
-        <button
-          className="px-1.5 py-0.5 text-stone-400 hover:text-stone-300 hover:bg-stone-800 rounded-lg transition-colors"
-          onClick={() => handlePercentageClick(75)}
-          disabled={disableMaxButton}
-        >
-          75%
-        </button>
-        <button
-          data-testid={`${id}-balance-button`}
-          onClick={() => onChange(tokenBalance.toFixed(2))}
-          className="px-1.5 py-0.5 text-stone-400 hover:text-stone-300 hover:bg-stone-800 rounded-lg transition-colors"
-          disabled={disableMaxButton}
-        >
-          MAX
-        </button>
-      </div>
-      <span className="text-stone-400">
-        {isMounted && balance ? `Balance: ${tokenBalance.toFixed(2)}` : 'Balance: 0'}
-      </span>
-    </div>
-  )
 }
 
 type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange' | 'prices' | 'loading'>

@@ -141,6 +141,7 @@ export const ConnectHero: FC = () => {
                       inputType={TradeType.EXACT_INPUT}
                       tradeType={TradeType.EXACT_INPUT}
                       prices={prices}
+                      hidePercentageButtons={true}
                     />
                     <div className="p-3 pt-0">
                       <motion.div
