@@ -24,8 +24,6 @@ jobs:
       - name: Create .env file
         run: |
           echo "${{ secrets.GCP_ENV_FILE }}" > .env
-          # Debug: Print first line of env file (excluding sensitive data)
-          head -n 1 .env | sed 's/=.*/=***/'
 
       - name: Set up Docker Buildx
         uses: docker/build-push-action@v3
@@ -95,16 +93,20 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Create ENV variables file and debug
+      - name: Prepare env files for services
         run: |
+          # Create base env file
           echo "${{ secrets.GCP_ENV_FILE }}" > .env
-          # Convert .env file to comma-separated format for Cloud Run
-          ENV_VARS=$(cat .env | grep -v '^#' | grep '=' | sed 's/\r//g' | sed 's/^//' | paste -sd,)
-          # Debug: Print number of env vars (without values)
-          echo "Number of env vars: $(echo $ENV_VARS | tr ',' '\n' | wc -l)"
-          # Debug: Print env var names (without values)
-          echo "Env var names:"
-          echo $ENV_VARS | tr ',' '\n' | cut -d'=' -f1
+
+          # Create service-specific env files
+          cp .env swap.env
+          cp .env earn.env
+          
+          # Create root env file with specific URLs
+          cp .env root.env
+          echo "NODE_ENV=production" >> root.env
+          echo "HOSTNAME=0.0.0.0" >> root.env
+          echo "ROOT_URL=https://gcp-testnet.dozer.finance" >> root.env
 
       # Deploy swap app
       - name: Deploy swap app to Cloud Run
@@ -114,10 +116,7 @@ jobs:
           service: swap-app
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/swap-app:${{ github.sha }}
           region: ${{ secrets.GCP_REGION }}
-          env_vars: |
-            ${{ env.ENV_VARS }}
-            NODE_ENV=production
-            HOSTNAME=0.0.0.0
+          env_vars_file: swap.env
           flags: --allow-unauthenticated
 
       # Deploy earn app
@@ -128,13 +127,15 @@ jobs:
           service: earn-app
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/earn-app:${{ github.sha }}
           region: ${{ secrets.GCP_REGION }}
-          env_vars: |
-            ${{ env.ENV_VARS }}
-            NODE_ENV=production
-            HOSTNAME=0.0.0.0
+          env_vars_file: earn.env
           flags: --allow-unauthenticated
 
-      # Deploy root app with debug output
+      # Update root env with service URLs and deploy
+      - name: Update root env and deploy
+        run: |
+          echo "SWAP_URL=${{ steps.deploy-swap.outputs.url }}" >> root.env
+          echo "EARN_URL=${{ steps.deploy-earn.outputs.url }}" >> root.env
+        
       - name: Deploy root app to Cloud Run
         id: deploy-root
         uses: google-github-actions/deploy-cloudrun@v2
@@ -142,22 +143,11 @@ jobs:
           service: root-app
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/root-app:${{ github.sha }}
           region: ${{ secrets.GCP_REGION }}
-          env_vars: |
-            ${{ env.ENV_VARS }}
-            NODE_ENV=production
-            HOSTNAME=0.0.0.0
-            ROOT_URL=https://gcp-testnet.dozer.finance
-            SWAP_URL=${{ steps.deploy-swap.outputs.url }}
-            EARN_URL=${{ steps.deploy-earn.outputs.url }}
+          env_vars_file: root.env
           flags: --allow-unauthenticated
 
-      - name: Debug Environment URLs
+      - name: Show URLs
         run: |
           echo "Root app URL: ${{ steps.deploy-root.outputs.url }}"
           echo "Swap app URL: ${{ steps.deploy-swap.outputs.url }}"
           echo "Earn app URL: ${{ steps.deploy-earn.outputs.url }}"
-          
-          # Verify the services are responding
-          curl -I ${{ steps.deploy-root.outputs.url }}
-          curl -I ${{ steps.deploy-swap.outputs.url }}
-          curl -I ${{ steps.deploy-earn.outputs.url }}
