@@ -13,8 +13,7 @@ WORKDIR /app
 COPY . .
 
 # Clean install dependencies
-RUN --mount=type=secret,id=env,target=/app/.env \
-    pnpm install --no-frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -25,9 +24,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build with environment variables
-RUN --mount=type=secret,id=env,target=/app/.env \
-    --mount=type=secret,id=HOSTS,target=/app/.hosts \
-    pnpm build
+RUN pnpm build
 
 ENV NEXT_TELEMETRY_DISABLED 1
 
@@ -49,7 +46,6 @@ RUN mkdir -p /app/apps/_root && chown -R nextjs:nodejs /app
 RUN mkdir -p /app/apps/_root/.next/cache/images && chown -R nextjs:nodejs /app
 
 # Copy standalone build and required files for root app
-COPY --from=builder /app/.hosts /etc/hosts
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/.next/static ./apps/_root/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/public ./apps/_root/public
@@ -73,7 +69,6 @@ ENV HOSTNAME "0.0.0.0"
 RUN mkdir -p /app/apps/swap && chown -R nextjs:nodejs /app
 RUN mkdir -p /app/apps/swap/.next/cache/images && chown -R nextjs:nodejs /app
 
-COPY --from=builder /app/.hosts /etc/hosts
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/static ./apps/swap/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/public ./apps/swap/public
@@ -97,7 +92,6 @@ ENV HOSTNAME "0.0.0.0"
 RUN mkdir -p /app/apps/earn && chown -R nextjs:nodejs /app
 RUN mkdir -p /app/apps/earn/.next/cache/images && chown -R nextjs:nodejs /app
 
-COPY --from=builder /app/.hosts /etc/hosts
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/static ./apps/earn/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/public ./apps/earn/public
