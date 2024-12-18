@@ -1,0 +1,128 @@
+name: GCP Testnet Deployment
+
+on:
+  push:
+    branches: [ gcp-testnet ]
+  pull_request:
+    branches: [ gcp-testnet ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCP
+        run: |
+          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+          
+      - name: Cache for Turbo
+        uses: rharkor/caching-for-turbo@v1.5
+
+      - name: Build and push root image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/root-app:latest
+          target: root-runner
+          secret-files: |
+            env=.env
+
+      - name: Build and push swap image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/swap-app:latest
+          target: swap-runner
+          secret-files: |
+            env=.env
+
+      - name: Build and push earn image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/earn-app:latest
+          target: earn-runner
+          secret-files: |
+            env=.env
+
+      # Deploy root app with public access
+      - name: Deploy root app to Cloud Run
+        id: deploy-root
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: root-app
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/root-app:latest
+          region: ${{ secrets.GCP_REGION }}
+          env_vars: |
+            NODE_ENV=production
+            PORT=9000
+            HOSTNAME=0.0.0.0
+            ROOT_URL=https://root-app-xxxxx-xx.a.run.app
+            SWAP_URL=https://swap-app-xxxxx-xx.a.run.app
+            EARN_URL=https://earn-app-xxxxx-xx.a.run.app
+
+      # Deploy swap app with internal access only
+      - name: Deploy swap app to Cloud Run
+        id: deploy-swap
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: swap-app
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/swap-app:latest
+          region: ${{ secrets.GCP_REGION }}
+          env_vars: |
+            NODE_ENV=production
+            PORT=9001
+            HOSTNAME=0.0.0.0
+
+      # Deploy earn app with internal access only
+      - name: Deploy earn app to Cloud Run
+        id: deploy-earn
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: earn-app
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/earn-app:latest
+          region: ${{ secrets.GCP_REGION }}
+          env_vars: |
+            NODE_ENV=production
+            PORT=9002
+            HOSTNAME=0.0.0.0
+
+      # Update root app with actual service URLs
+      - name: Update root app with service URLs
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: root-app
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/root-app:latest
+          region: ${{ secrets.GCP_REGION }}
+          env_vars: |
+            NODE_ENV=production
+            PORT=9000
+            HOSTNAME=0.0.0.0
+            ROOT_URL=https://${{ steps.deploy-root.outputs.url }}
+            SWAP_URL=https://${{ steps.deploy-swap.outputs.url }}
+            EARN_URL=https://${{ steps.deploy-earn.outputs.url }}
