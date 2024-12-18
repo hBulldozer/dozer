@@ -7,12 +7,15 @@ on:
     branches: [ gcp-testnet ]
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      id-token: write
+    outputs:
+      root_image: ${{ steps.build-root.outputs.imageid }}
+      swap_image: ${{ steps.build-swap.outputs.imageid }}
+      earn_image: ${{ steps.build-earn.outputs.imageid }}
 
     steps:
       - name: Checkout repository
@@ -41,88 +44,96 @@ jobs:
         uses: rharkor/caching-for-turbo@v1.5
 
       - name: Build and push root image
+        id: build-root
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/root-app:latest
+          tags: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/root-app:${{ github.sha }}
           target: root-runner
           secret-files: |
             env=.env
 
       - name: Build and push swap image
+        id: build-swap
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/swap-app:latest
+          tags: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/swap-app:${{ github.sha }}
           target: swap-runner
           secret-files: |
             env=.env
 
       - name: Build and push earn image
+        id: build-earn
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/earn-app:latest
+          tags: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/earn-app:${{ github.sha }}
           target: earn-runner
           secret-files: |
             env=.env
 
-      # Deploy root app with public access
-      - name: Deploy root app to Cloud Run
-        id: deploy-root
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: root-app
-          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/root-app:latest
-          region: ${{ secrets.GCP_REGION }}
-          env_vars: |
-            NODE_ENV=production
-            PORT=9000
-            HOSTNAME=0.0.0.0
-            ROOT_URL=https://root-app-xxxxx-xx.a.run.app
-            SWAP_URL=https://swap-app-xxxxx-xx.a.run.app
-            EARN_URL=https://earn-app-xxxxx-xx.a.run.app
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
 
-      # Deploy swap app with internal access only
+    steps:
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Deploy swap app
       - name: Deploy swap app to Cloud Run
         id: deploy-swap
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: swap-app
-          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/swap-app:latest
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/swap-app:${{ github.sha }}
           region: ${{ secrets.GCP_REGION }}
           env_vars: |
             NODE_ENV=production
-            PORT=9001
             HOSTNAME=0.0.0.0
 
-      # Deploy earn app with internal access only
+      # Deploy earn app
       - name: Deploy earn app to Cloud Run
         id: deploy-earn
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: earn-app
-          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/earn-app:latest
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/earn-app:${{ github.sha }}
           region: ${{ secrets.GCP_REGION }}
           env_vars: |
             NODE_ENV=production
-            PORT=9002
             HOSTNAME=0.0.0.0
 
-      # Update root app with actual service URLs
-      - name: Update root app with service URLs
+      # Deploy root app
+      - name: Deploy root app to Cloud Run
+        id: deploy-root
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: root-app
-          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/root-app:latest
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/root-app:${{ github.sha }}
           region: ${{ secrets.GCP_REGION }}
           env_vars: |
             NODE_ENV=production
-            PORT=9000
             HOSTNAME=0.0.0.0
-            ROOT_URL=https://${{ steps.deploy-root.outputs.url }}
-            SWAP_URL=https://${{ steps.deploy-swap.outputs.url }}
-            EARN_URL=https://${{ steps.deploy-earn.outputs.url }}
+            ROOT_URL=https://testnet-gcp.dozer.finance
+            SWAP_URL=https://testnet-gcp.dozer.finance
+            EARN_URL=https://testnet-gcp.dozer.finance
+
+      - name: Show URLs
+        run: |
+          echo "Root app URL: ${{ steps.deploy-root.outputs.url }}"
+          echo "Swap app URL: ${{ steps.deploy-swap.outputs.url }}"
+          echo "Earn app URL: ${{ steps.deploy-earn.outputs.url }}"
