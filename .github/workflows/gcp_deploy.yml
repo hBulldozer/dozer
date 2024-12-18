@@ -17,10 +17,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create .env file
+      - name: Create and debug .env file
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
-          echo "${{ secrets.GCP_ENV_FILE }}" > .env.gcp
+          
+          # Debug: Check if file exists and has content
+          echo "Debug: Checking .env file"
+          ls -la .env
+          echo "Number of lines in .env:"
+          wc -l .env
+          echo "First line of .env (hiding values):"
+          head -n 1 .env | sed 's/=.*/=***/'
 
       - name: Set up Docker Buildx
         uses: docker/build-push-action@v3
@@ -39,6 +46,14 @@ jobs:
           
       - name: Cache for Turbo
         uses: rharkor/caching-for-turbo@v1.5
+
+      # Debug step before building
+      - name: Debug Docker build environment
+        run: |
+          echo "Checking build context:"
+          ls -la
+          echo "Checking .env content structure (hiding values):"
+          cat .env | sed 's/=.*/=***/'
 
       - name: Build and push root image
         id: build-root
@@ -90,23 +105,31 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Prepare env files
+      - name: Create and debug env files
         run: |
-          # Create base env file from GCP environment variables
+          # Create base env file
           echo "${{ secrets.GCP_ENV_FILE }}" > .env
-
-          # Create service-specific env files
+          
+          # Debug env file
+          echo "Debug: Checking .env file"
+          ls -la .env
+          echo "Number of lines in .env:"
+          wc -l .env
+          echo "Env variable names (hiding values):"
+          cat .env | sed 's/=.*/=***/'
+          
+          # Create service env files
           cp .env swap.env
           cp .env earn.env
           cp .env root.env
-
-          # Add common env vars to all services
-          for file in root.env swap.env earn.env; do
+          
+          # Add common variables
+          for file in swap.env earn.env root.env; do
             echo "NODE_ENV=production" >> $file
             echo "HOSTNAME=0.0.0.0" >> $file
           done
 
-      # Deploy swap app
+      # Deploy swap app with debug
       - name: Deploy swap app to Cloud Run
         id: deploy-swap
         uses: google-github-actions/deploy-cloudrun@v2
@@ -116,6 +139,12 @@ jobs:
           region: ${{ secrets.GCP_REGION }}
           env_vars_file: swap.env
           flags: --allow-unauthenticated
+
+      - name: Debug swap deployment
+        run: |
+          echo "Swap app deployed to: ${{ steps.deploy-swap.outputs.url }}"
+          echo "Checking swap.env content (hiding values):"
+          cat swap.env | sed 's/=.*/=***/'
 
       # Deploy earn app
       - name: Deploy earn app to Cloud Run
@@ -128,12 +157,14 @@ jobs:
           env_vars_file: earn.env
           flags: --allow-unauthenticated
 
-      # Update root env with URLs and deploy
-      - name: Update root URLs and deploy
+      - name: Update and debug root env
         run: |
           echo "ROOT_URL=https://gcp-testnet.dozer.finance" >> root.env
           echo "SWAP_URL=${{ steps.deploy-swap.outputs.url }}" >> root.env
           echo "EARN_URL=${{ steps.deploy-earn.outputs.url }}" >> root.env
+          
+          echo "Final root.env content (hiding values):"
+          cat root.env | sed 's/=.*/=***/'
 
       - name: Deploy root app to Cloud Run
         id: deploy-root
@@ -145,8 +176,12 @@ jobs:
           env_vars_file: root.env
           flags: --allow-unauthenticated
 
-      - name: Show URLs
+      - name: Show final URLs and status
         run: |
           echo "Root app URL: ${{ steps.deploy-root.outputs.url }}"
           echo "Swap app URL: ${{ steps.deploy-swap.outputs.url }}"
           echo "Earn app URL: ${{ steps.deploy-earn.outputs.url }}"
+          
+          # Check if services are responding
+          echo "Checking root app response:"
+          curl -I ${{ steps.deploy-root.outputs.url }} || true
