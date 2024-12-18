@@ -93,6 +93,12 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Create ENV variables file
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          # Convert .env file to comma-separated format for Cloud Run
+          ENV_VARS=$(cat .env | grep -v '^#' | grep '=' | sed 's/\r//g' | sed 's/^//' | paste -sd,)
+
       # Deploy swap app
       - name: Deploy swap app to Cloud Run
         id: deploy-swap
@@ -102,6 +108,7 @@ jobs:
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/swap-app:${{ github.sha }}
           region: ${{ secrets.GCP_REGION }}
           env_vars: |
+            ${{ env.ENV_VARS }}
             NODE_ENV=production
             HOSTNAME=0.0.0.0
           flags: --allow-unauthenticated
@@ -115,6 +122,7 @@ jobs:
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/earn-app:${{ github.sha }}
           region: ${{ secrets.GCP_REGION }}
           env_vars: |
+            ${{ env.ENV_VARS }}
             NODE_ENV=production
             HOSTNAME=0.0.0.0
           flags: --allow-unauthenticated
@@ -128,6 +136,7 @@ jobs:
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/dozer/root-app:${{ github.sha }}
           region: ${{ secrets.GCP_REGION }}
           env_vars: |
+            ${{ env.ENV_VARS }}
             NODE_ENV=production
             HOSTNAME=0.0.0.0
             ROOT_URL=https://gcp-testnet.dozer.finance
