@@ -104,6 +104,7 @@ jobs:
           env_vars: |
             NODE_ENV=production
             HOSTNAME=0.0.0.0
+          flags: --allow-unauthenticated
 
       # Deploy earn app
       - name: Deploy earn app to Cloud Run
@@ -116,6 +117,7 @@ jobs:
           env_vars: |
             NODE_ENV=production
             HOSTNAME=0.0.0.0
+          flags: --allow-unauthenticated
 
       # Deploy root app
       - name: Deploy root app to Cloud Run
@@ -128,9 +130,10 @@ jobs:
           env_vars: |
             NODE_ENV=production
             HOSTNAME=0.0.0.0
-            ROOT_URL=https://testnet-gcp.dozer.finance
-            SWAP_URL=https://testnet-gcp.dozer.finance
-            EARN_URL=https://testnet-gcp.dozer.finance
+            ROOT_URL=https://gcp-testnet.dozer.finance
+            SWAP_URL=${{ steps.deploy-swap.outputs.url }}
+            EARN_URL=${{ steps.deploy-earn.outputs.url }}
+          flags: --allow-unauthenticated
 
       - name: Show URLs
         run: |
