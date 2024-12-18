@@ -12,10 +12,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    outputs:
-      root_image: ${{ steps.build-root.outputs.imageid }}
-      swap_image: ${{ steps.build-swap.outputs.imageid }}
-      earn_image: ${{ steps.build-earn.outputs.imageid }}
 
     steps:
       - name: Checkout repository
@@ -23,7 +19,8 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo "${{ secrets.GCP_ENV_FILE }}" > .env
+          echo "${{ secrets.ENV_FILE }}" > .env
+          echo "${{ secrets.GCP_ENV_FILE }}" > .env.gcp
 
       - name: Set up Docker Buildx
         uses: docker/build-push-action@v3
@@ -93,20 +90,21 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Prepare env files for services
+      - name: Prepare env files
         run: |
-          # Create base env file
+          # Create base env file from GCP environment variables
           echo "${{ secrets.GCP_ENV_FILE }}" > .env
 
           # Create service-specific env files
           cp .env swap.env
           cp .env earn.env
-          
-          # Create root env file with specific URLs
           cp .env root.env
-          echo "NODE_ENV=production" >> root.env
-          echo "HOSTNAME=0.0.0.0" >> root.env
-          echo "ROOT_URL=https://gcp-testnet.dozer.finance" >> root.env
+
+          # Add common env vars to all services
+          for file in root.env swap.env earn.env; do
+            echo "NODE_ENV=production" >> $file
+            echo "HOSTNAME=0.0.0.0" >> $file
+          done
 
       # Deploy swap app
       - name: Deploy swap app to Cloud Run
@@ -130,12 +128,13 @@ jobs:
           env_vars_file: earn.env
           flags: --allow-unauthenticated
 
-      # Update root env with service URLs and deploy
-      - name: Update root env and deploy
+      # Update root env with URLs and deploy
+      - name: Update root URLs and deploy
         run: |
+          echo "ROOT_URL=https://gcp-testnet.dozer.finance" >> root.env
           echo "SWAP_URL=${{ steps.deploy-swap.outputs.url }}" >> root.env
           echo "EARN_URL=${{ steps.deploy-earn.outputs.url }}" >> root.env
-        
+
       - name: Deploy root app to Cloud Run
         id: deploy-root
         uses: google-github-actions/deploy-cloudrun@v2
