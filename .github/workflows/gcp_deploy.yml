@@ -22,11 +22,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create .env file
+      - name: Create .env and .hosts files
         id: env-file
         run: |
           echo "${{ secrets.GCP_ENV_FILE }}" > .env
-        
+          echo "${{ secrets.GCP_HOSTS_FILE }}" > .hosts
+          # Debug: Verify files (without showing sensitive content)
+          echo "Checking files:"
+          ls -la .env .hosts
+          echo "Number of lines in .hosts:"
+          wc -l .hosts
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -56,6 +61,7 @@ jobs:
           target: root-runner
           secret-files: |
             env=.env
+            hosts=.hosts
 
       - name: Build and push swap image
         id: build-swap
@@ -67,6 +73,7 @@ jobs:
           target: swap-runner
           secret-files: |
             env=.env
+            hosts=.hosts
 
       - name: Build and push earn image
         id: build-earn
@@ -78,6 +85,7 @@ jobs:
           target: earn-runner
           secret-files: |
             env=.env
+            hosts=.hosts
 
   deploy:
     needs: build
@@ -100,6 +108,10 @@ jobs:
         run: |
           echo "${{ secrets.GCP_ENV_FILE }}" > .env
 
+      - name: Prepare hosts file
+        run: |
+          echo "${{ secrets.GCP_HOSTS_FILE }}" >> /etc/hosts
+
       # Deploy swap app
       - name: Deploy swap app to Cloud Run
         id: deploy-swap
@@ -115,6 +127,7 @@ jobs:
           flags: |
             --allow-unauthenticated
             --vpc-connector=projects/${{ secrets.GCP_PROJECT_ID }}/locations/${{ secrets.GCP_REGION }}/connectors/cloudrun-connector
+
       # Deploy earn app
       - name: Deploy earn app to Cloud Run
         id: deploy-earn
@@ -130,6 +143,7 @@ jobs:
           flags: |
             --allow-unauthenticated
             --vpc-connector=projects/${{ secrets.GCP_PROJECT_ID }}/locations/${{ secrets.GCP_REGION }}/connectors/cloudrun-connector
+
       # Deploy root app
       - name: Deploy root app to Cloud Run
         id: deploy-root
@@ -148,6 +162,7 @@ jobs:
           flags: |
             --allow-unauthenticated
             --vpc-connector=projects/${{ secrets.GCP_PROJECT_ID }}/locations/${{ secrets.GCP_REGION }}/connectors/cloudrun-connector
+
       - name: Show URLs
         run: |
           echo "Root app URL: ${{ steps.deploy-root.outputs.url }}"

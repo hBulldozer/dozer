@@ -26,6 +26,8 @@ COPY . .
 
 # Build with environment variables
 RUN --mount=type=secret,id=env,target=/app/.env \
+    --mount=type=secret,id=HOSTS,target=/app/.hosts \
+    cat /app/.hosts >> /etc/hosts \
     pnpm build
 
 ENV NEXT_TELEMETRY_DISABLED 1
