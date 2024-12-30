@@ -5,6 +5,7 @@ import { createTRPCRouter, procedure } from '../trpc'
 
 export const faucetRouter = createTRPCRouter({
   sendHTR: procedure.input(z.object({ address: z.string() })).mutation(async ({ ctx, input }) => {
+    console.log(`Sending HTR to ${input.address}`)
     const transactions = await ctx.prisma.faucet.findMany()
     for (const transaction of transactions) {
       if (transaction.address == input.address)
@@ -14,6 +15,7 @@ export const faucetRouter = createTRPCRouter({
           hash: transaction.hash,
         }
     }
+    console.log(`Trying to start wallet`)
     const start = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/start`, {
       method: 'POST',
       headers: {
@@ -22,6 +24,7 @@ export const faucetRouter = createTRPCRouter({
       },
       body: JSON.stringify({ 'wallet-id': process.env.WALLET_ID, seedKey: 'genesis' }),
     })
+    console.log(`Started wallet. Sending TX`)
     const response = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/wallet/simple-send-tx`, {
       method: 'POST',
       headers: {
