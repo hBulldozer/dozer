@@ -64,7 +64,13 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
     <>
       {/* <LoadingOverlay show={isLoading} /> */}
       <Head>
-        <title>{pathname.includes('create_token') ? 'Dozer - Create Token 🧪' : 'Dozer Finance - Pools 💦'}</title>
+        <title>
+          {pathname.includes('create_token')
+            ? 'Dozer - Create Token 🧪'
+            : pathname.includes('oasis')
+            ? 'Dozer - Oasis 🏝️'
+            : 'Dozer Finance - Pools 💦'}
+        </title>
         <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=1" />
         <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png?v=1" />
         <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png?v=1" />

@@ -29,6 +29,18 @@ import { OasisAddModal, OasisRemoveBonusModal, OasisRemoveModal } from '../compo
 import type { OasisPosition } from '../components/OasisModal/types'
 import Link from 'next/link'
 
+interface OasisInterface {
+  id: string
+  user_deposit_b: number
+  user_balance_a: number
+  user_withdrawal_time: Date
+  max_withdraw_htr: number
+  max_withdraw_b: number
+  token: { symbol: string }
+  user_lp_htr: number
+  user_lp_b: number
+}
+
 const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean }) => {
   const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
   return (
@@ -59,17 +71,7 @@ const UserOasisPosition = ({
   buttonWithdraw,
   buttonWithdrawBonus,
 }: {
-  oasis: {
-    id: string
-    user_deposit_b: number
-    user_balance_a: number
-    user_withdrawal_time: Date
-    max_withdraw_htr: number
-    max_withdraw_b: number
-    token: { symbol: string }
-    user_lp_htr: number
-    user_lp_b: number
-  }
+  oasis: OasisInterface
   buttonWithdraw: JSX.Element
   buttonWithdrawBonus: JSX.Element
 }) => {
@@ -185,8 +187,8 @@ const OasisProgram = () => {
   const { data: allReserves } = api.getOasis.allReserves.useQuery()
   const { data: allUserOasis } = api.getOasis.allUser.useQuery({ address: address }, { enabled: Boolean(address) })
 
-  const oasis = allOasis?.find((oasis) => oasis.token.symbol == currency)
-  const oasisReserve = allReserves?.find((oasis) => oasis.token.symbol == currency)
+  const oasis = allOasis?.find((oasis: OasisInterface) => oasis.token.symbol == currency)
+  const oasisReserve = allReserves?.find((oasis: OasisInterface) => oasis.token.symbol == currency)
   const usedHTR = oasisReserve?.dev_balance || 0
   const progress = (usedHTR / maxHTR) * 100
   const oasisId = oasis?.id
@@ -623,21 +625,21 @@ const OasisProgram = () => {
 
                           <Tab.Panel>
                             <div className="flex flex-col gap-4 p-8">
-                              <div className="p-4 bg-stone-800/50 rounded-xl">
-                                <Typography variant="lg" weight={500} className="mb-4 text-yellow">
-                                  Your Active Positions
-                                </Typography>
+                              {allUserOasis?.length == 0 ? (
+                                <div className="py-8 text-center">
+                                  <Typography variant="sm" className="text-stone-500">
+                                    No active positions found.
+                                    <br />
+                                    Start by making a deposit!
+                                  </Typography>
+                                </div>
+                              ) : (
+                                <div className="p-4 bg-stone-800/50 rounded-xl">
+                                  <Typography variant="lg" weight={500} className="mb-4 text-yellow">
+                                    Your Active Positions
+                                  </Typography>
 
-                                {allUserOasis?.length == 0 ? (
-                                  <div className="py-8 text-center">
-                                    <Typography variant="sm" className="text-stone-500">
-                                      No active positions found.
-                                      <br />
-                                      Start by making a deposit!
-                                    </Typography>
-                                  </div>
-                                ) : (
-                                  allUserOasis?.map((oasis) => {
+                                  {allUserOasis?.map((oasis: OasisInterface) => {
                                     return (
                                       <UserOasisPosition
                                         oasis={oasis}
@@ -705,9 +707,9 @@ const OasisProgram = () => {
                                         }
                                       />
                                     )
-                                  })
-                                )}
-                              </div>
+                                  })}
+                                </div>
+                              )}
                             </div>
                           </Tab.Panel>
                         </Tab.Panels>
