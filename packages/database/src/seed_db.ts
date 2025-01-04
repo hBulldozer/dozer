@@ -120,6 +120,56 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
   })
   console.log('Created Pools')
 
+  poolNameToId['YIN-YANG'] = '10'
+  const pool_custom = await prisma.pool.create({
+    data: {
+      name: `YIN-YANG`,
+      apr: 0.15,
+      chainId: 1,
+      version: '0.1',
+      token0Id: tokenSymbolToId['YIN'] || '',
+      token1Id: tokenSymbolToId['YANG'] || '',
+      swapFee: 0.05,
+      feeUSD: 0,
+      reserve0: '50000',
+      reserve1: '50000',
+      liquidityUSD: 0,
+      volumeUSD: 0,
+      liquidity: 0,
+      volume1d: 0,
+      fees1d: 0,
+      generatedAt: new Date(),
+      updatedAt: new Date(),
+      tokenLPId: '0',
+      id: '10',
+    },
+  })
+
+  poolNameToId['YANG-YIN'] = '20'
+  const pool_custom_2 = await prisma.pool.create({
+    data: {
+      name: `YANG-YIN`,
+      apr: 0.15,
+      chainId: 1,
+      version: '0.1',
+      token0Id: tokenSymbolToId['YANG'] || '',
+      token1Id: tokenSymbolToId['YIN'] || '',
+      swapFee: 0.05,
+      feeUSD: 0,
+      reserve0: '50000',
+      reserve1: '50000',
+      liquidityUSD: 0,
+      volumeUSD: 0,
+      liquidity: 0,
+      volume1d: 0,
+      fees1d: 0,
+      generatedAt: new Date(),
+      updatedAt: new Date(),
+      tokenLPId: '0',
+      id: '20',
+    },
+  })
+
   if (snaps_period) {
     console.log(`Creating snapshots for ${snaps_period} days...`)
     const allPools = await prisma.pool.findMany()

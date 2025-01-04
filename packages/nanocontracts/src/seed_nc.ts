@@ -175,6 +175,36 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
     await check_wallet('master')
   }
 
+  console.log(`Creating YIN-YANG Pool...`)
+  if (admin_address) {
+    const newPool = new LiquidityPool(
+      tokenUUIDs[`YIN_uuid`] || '',
+      tokenUUIDs[`YANG_uuid`] || '',
+      0.05 * 100,
+      0.01 * 100
+    )
+    const response = await newPool.initialize(admin_address, 65000, 50000)
+    newPool.ncid = response.hash
+    poolNCIDs[`YIN_YANG_ncid`] = response.hash
+    console.log(`YIN_YANG Pool created. ncid: ${newPool.ncid}`)
+  } else throw new Error(`UUID and/or admin_address not found.`)
+
+  await check_wallet('master')
+
+  console.log(`Creating YANG-YIN Pool...`)
+  if (admin_address) {
+    const newPool = new LiquidityPool(
+      tokenUUIDs[`YANG_uuid`] || '',
+      tokenUUIDs[`YIN_uuid`] || '',
+      0.05 * 100,
+      0.01 * 100
+    )
+    const response = await newPool.initialize(admin_address, 65000, 50000)
+    newPool.ncid = response.hash
+    poolNCIDs[`YANG_YIN_ncid`] = response.hash
+    console.log(`YANG_YIN Pool created. ncid: ${newPool.ncid}`)
+  } else throw new Error(`UUID and/or admin_address not found.`)
+
   // 7. Start the users wallet
   console.log('Starting users wallet...')
   await PostHeadless('users', '/start', {}, { 'wallet-id': 'default', seedKey: 'default' }).then(async (data) => {

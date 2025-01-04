@@ -137,4 +137,27 @@ export const profileRouter = createTRPCRouter({
       )
       return poolInfo
     }),
+  leaderboard: procedure.query(async ({ ctx, input }) => {
+    const addresses = await ctx.prisma.faucet.findMany({
+      select: { address: true },
+    })
+    const tokensUuid = await ctx.prisma.token.findMany({
+      select: { uuid: true },
+    })
+    const balances: any[] = []
+    for (const address of addresses) {
+      const balances_user: { [key: string]: number } = {}
+      const endpoint = 'thin_wallet/address_balance'
+      const response = await fetchNodeData(endpoint, [`address=${address.address}`])
+      console.log(response)
+      for (const token of tokensUuid) {
+        const tokenBalance = response.tokens_data[token.uuid]
+        if (tokenBalance) {
+          balances_user[token.uuid] = tokenBalance.received - tokenBalance.spent
+        }
+      }
+      balances.push({ address: address.address, balances: balances_user })
+    }
+    return balances
+  }),
 })
