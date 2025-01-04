@@ -20,12 +20,12 @@ export interface SeedConfig {
 
 export const seedConfig: SeedConfig = {
   tokens: [
-    {
-      name: 'USD Tether',
-      symbol: 'USDT',
-      totalSupply: 280000000,
-      about: 'Tether (USDT) is a cryptocurrency with a value meant to mirror the value of the U.S. dollar.',
-    },
+    // {
+    //   name: 'USD Tether',
+    //   symbol: 'USDT',
+    //   totalSupply: 280000000,
+    //   about: 'Tether (USDT) is a cryptocurrency with a value meant to mirror the value of the U.S. dollar.',
+    // },
     {
       name: 'YIN',
       symbol: 'YIN',
@@ -42,13 +42,13 @@ export const seedConfig: SeedConfig = {
     },
   ],
   pools: [
-    {
-      tokenSymbol: 'USDT',
-      htrQuantity: 462000,
-      tokenQuantity: 18480,
-      fee: 0.05,
-      protocolFee: 0.01,
-    },
+    // {
+    //   tokenSymbol: 'USDT',
+    //   htrQuantity: 462000,
+    //   tokenQuantity: 18480,
+    //   fee: 0.05,
+    //   protocolFee: 0.01,
+    // },
     {
       tokenSymbol: 'YIN',
       htrQuantity: 100000,

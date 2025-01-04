@@ -35,21 +35,21 @@ const Pools: FC = () => {
           </div>
           <div className="flex justify-end flex-grow not-prose">
             <div className="flex flex-col gap-3 w-full lg:w-[420px]">
-              <div className="flex gap-3">
-                <Button
-                  as="a"
-                  href="/pool/add"
-                  fullWidth
-                  variant="outlined"
-                  color="yellow"
-                  startIcon={<PlusCircleIcon width={20} height={20} />}
-                >
-                  New Position
-                </Button>
-                <Button as="a" href="/pool/create" fullWidth startIcon={<BeakerIcon width={20} height={20} />}>
+              {/* <div className="flex gap-3"> */}
+              <Button
+                as="a"
+                href="/pool/add"
+                fullWidth
+                variant="outlined"
+                color="yellow"
+                startIcon={<PlusCircleIcon width={20} height={20} />}
+              >
+                New Position
+              </Button>
+              {/* <Button as="a" href="/pool/create" fullWidth startIcon={<BeakerIcon width={20} height={20} />}>
                   Create Pool
-                </Button>
-              </div>
+                </Button> */}
+              {/* </div> */}
             </div>
           </div>
         </section>
