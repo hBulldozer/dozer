@@ -25,8 +25,8 @@ export const Header: FC = () => {
             label="Presale"
             external
           />
-          <App.NavItem href="https://testnet.dozer.finance/swap" label="Swap" />
-          <App.NavItem href="https://testnet.dozer.finance/swap/tokens" label="Tokens" />
+          <App.NavItem href="https://5years.dozer.finance/swap" label="Swap" />
+          <App.NavItem href="https://5years.dozer.finance/swap/tokens" label="Tokens" />
           <App.NavItem href={'/'} label="Pools" />
           {/* <App.NavItem href={`https://mvp.dozer.finance/pool`} label="Pools" /> */}
           {/* <App.NavItem href="https://mvp.dozer.finance/bridge" label="Bridge" /> */}

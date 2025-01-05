@@ -29,7 +29,7 @@ export const Header: FC = () => {
           />
           <App.NavItem href="/" label="Swap" />
           <App.NavItem href="/tokens" label="Tokens" />
-          <App.NavItem href="https://testnet.dozer.finance/pool" label="Pools" />
+          <App.NavItem href="https://5years.dozer.finance/pool" label="Pools" />
           {/* <App.NavItem href="https://mvp.dozer.finance/bridge" label="Bridge" /> */}
           {/* <BuyCrypto address={address} /> */}
           {/* <App.OpenModal label="Donate" setOpen={setOpen} />

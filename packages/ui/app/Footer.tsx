@@ -12,17 +12,17 @@ const config: Record<
 > = {
   Features: {
     Swap: {
-      href: 'https://testnet.dozer.finance/swap',
+      href: 'https://5years.dozer.finance/swap',
       target: '_blank',
       rel: 'noopener noreferrer',
     },
     Earn: {
-      href: 'https://testnet.dozer.finance/pool',
+      href: 'https://5years.dozer.finance/pool',
       target: '_blank',
       rel: 'noopener noreferrer',
     },
     Launch: {
-      href: 'https://testnet.dozer.finance/pool/create_token',
+      href: 'https://5years.dozer.finance/pool/create_token',
       target: '_blank',
       rel: 'noopener noreferrer',
     },

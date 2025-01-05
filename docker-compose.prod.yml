@@ -24,9 +24,9 @@ services:
       - NODE_ENV=production
       - PORT=9000
       - HOSTNAME=0.0.0.0
-      - ROOT_URL=https://testnet.dozer.finance
-      - SWAP_URL=https://testnet.dozer.finance
-      - EARN_URL=https://testnet.dozer.finance
+      - ROOT_URL=https://5years.dozer.finance
+      - SWAP_URL=https://5years.dozer.finance
+      - EARN_URL=https://5years.dozer.finance
     volumes:
       - root_cache:/app/apps/_root/.next/cache
     networks:
