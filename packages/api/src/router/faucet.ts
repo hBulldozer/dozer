@@ -37,6 +37,7 @@ export const faucetRouter = createTRPCRouter({
           address: input.address,
           value: 5_000_00,
           token: '00',
+          change_address: process.env.LOCAL_WALLET_MASTER_ADDRESS || '',
         }),
       })
       console.log(response)
