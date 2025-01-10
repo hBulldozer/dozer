@@ -31,8 +31,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Cache for Turbo
-        uses: rharkor/caching-for-turbo@v1.5
+      - name: Build apps
+        run: |
+          docker build --target builder -t builder . 
+
+      - name: Copy artifacts to cache
+        run: |
+          docker create --name artifacts builder
+          docker cp artifacts:/app/apps ./apps
+
+      - uses: actions/cache@v3
+        with:
+          path: ./apps
+          key: ${{ runner.os }}-apps-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Build and push root image
         uses: docker/build-push-action@v5
@@ -41,8 +52,6 @@ jobs:
           push: true
           tags: ghcr.io/hbulldozer/dozer/root-app-testnet:latest
           target: root-runner
-          secret-files: |
-            env=.env
 
       - name: Build and push swap image
         uses: docker/build-push-action@v5
@@ -51,8 +60,6 @@ jobs:
           push: true
           tags: ghcr.io/hbulldozer/dozer/swap-app-testnet:latest
           target: swap-runner
-          secret-files: |
-            env=.env
 
       - name: Build and push earn image
         uses: docker/build-push-action@v5
@@ -61,8 +68,6 @@ jobs:
           push: true
           tags: ghcr.io/hbulldozer/dozer/earn-app-testnet:latest
           target: earn-runner
-          secret-files: |
-            env=.env
 
   deploy:
     needs: build-and-push

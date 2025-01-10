@@ -48,7 +48,7 @@ RUN mkdir -p /app/apps/_root && chown -R nextjs:nodejs /app
 RUN mkdir -p /app/apps/_root/.next/cache/images && chown -R nextjs:nodejs /app
 
 # Copy standalone build and required files for root app
-COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/.next/standalone/ ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/.next/standalone/ ./apps/_root/
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/.next/static ./apps/_root/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/_root/public ./apps/_root/public
 
@@ -71,7 +71,7 @@ ENV HOSTNAME "0.0.0.0"
 RUN mkdir -p /app/apps/swap && chown -R nextjs:nodejs /app
 RUN mkdir -p /app/apps/swap/.next/cache/images && chown -R nextjs:nodejs /app
 
-COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/standalone/ ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/standalone/ ./apps/swap/
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/.next/static ./apps/swap/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/swap/public ./apps/swap/public
 
@@ -94,7 +94,7 @@ ENV HOSTNAME "0.0.0.0"
 RUN mkdir -p /app/apps/earn && chown -R nextjs:nodejs /app
 RUN mkdir -p /app/apps/earn/.next/cache/images && chown -R nextjs:nodejs /app
 
-COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/standalone/ ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/standalone/ ./apps/earn/
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/.next/static ./apps/earn/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/earn/public ./apps/earn/public
 
