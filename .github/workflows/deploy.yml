@@ -33,80 +33,64 @@ jobs:
       
       - name: Build apps
         run: |
-          docker build --target builder -t builder . 
+          docker build --target builder -t builder .
 
-      - name: Copy artifacts to cache
+      - name: Create root image
         run: |
-          docker create --name artifacts builder
-          docker cp artifacts:/app/apps ./apps
+          docker build --target root-runner -t ghcr.io/hbulldozer/dozer/root-app-testnet:latest .
 
-      - uses: actions/cache@v3
-        with:
-          path: ./apps
-          key: ${{ runner.os }}-apps-${{ hashFiles('**/pnpm-lock.yaml') }}
-
-      - name: Build and push root image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/hbulldozer/dozer/root-app-testnet:latest
-          target: root-runner
-
-      - name: Build and push swap image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/hbulldozer/dozer/swap-app-testnet:latest
-          target: swap-runner
-
-      - name: Build and push earn image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/hbulldozer/dozer/earn-app-testnet:latest
-          target: earn-runner
-
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    environment: testnet
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Create SSH key
+      - name: Create swap image
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+          docker build --target swap-runner -t ghcr.io/hbulldozer/dozer/swap-app-testnet:latest .
 
-      - name: Deploy to VM
+      - name: Create earn image
         run: |
-          # Create temporary .env file
-          echo "${{ secrets.ENV_FILE }}" > .env
+          docker build --target earn-runner -t ghcr.io/hbulldozer/dozer/earn-app-testnet:latest .
 
-          # Copy configuration files
-          scp -i ~/.ssh/deploy_key docker-compose.prod.yml ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/docker-compose.yml
-          scp -i ~/.ssh/deploy_key nginx.conf ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/nginx.conf
-          scp -i ~/.ssh/deploy_key .env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env
+      - name: Push images
+        run: |
+          docker push ghcr.io/hbulldozer/dozer/root-app-testnet:latest
+          docker push ghcr.io/hbulldozer/dozer/swap-app-testnet:latest
+          docker push ghcr.io/hbulldozer/dozer/earn-app-testnet:latest
 
-          # Remove temporary .env file
-          rm .env
+  # deploy:
+  #   needs: build-and-push
+  #   runs-on: ubuntu-latest
+  #   environment: testnet
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
-            # Login to registry
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+  #     - name: Create SSH key
+  #       run: |
+  #         mkdir -p ~/.ssh
+  #         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+  #         chmod 600 ~/.ssh/deploy_key
+  #         ssh-keyscan ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
-            # Pull latest images
-            docker pull ghcr.io/hbulldozer/dozer/root-app-testnet:latest
-            docker pull ghcr.io/hbulldozer/dozer/swap-app-testnet:latest
-            docker pull ghcr.io/hbulldozer/dozer/earn-app-testnet:latest
+  #     - name: Deploy to VM
+  #       run: |
+  #         # Create temporary .env file
+  #         echo "${{ secrets.ENV_FILE }}" > .env
 
-            # Restart containers
-            docker compose down
-            docker compose up -d
-          "
+  #         # Copy configuration files
+  #         scp -i ~/.ssh/deploy_key docker-compose.prod.yml ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/docker-compose.yml
+  #         scp -i ~/.ssh/deploy_key nginx.conf ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/nginx.conf
+  #         scp -i ~/.ssh/deploy_key .env ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USERNAME }}/.env
+
+  #         # Remove temporary .env file
+  #         rm .env
+
+  #         ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "
+  #           # Login to registry
+  #           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+  #           # Pull latest images
+  #           docker pull ghcr.io/hbulldozer/dozer/root-app-testnet:latest
+  #           docker pull ghcr.io/hbulldozer/dozer/swap-app-testnet:latest
+  #           docker pull ghcr.io/hbulldozer/dozer/earn-app-testnet:latest
+
+  #           # Restart containers
+  #           docker compose down
+  #           docker compose up -d
+  #         "
