@@ -23,6 +23,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
     return response.status(400).json({ message: 'Pool not found !' })
   }
 
+  prisma.$disconnect()
+
   const { latest_timestamp } = await client.getNetwork.getBestBlock.query()
   const success = await client.getRewards.checkClaim.query({
     contractId: pool_ncid.id,

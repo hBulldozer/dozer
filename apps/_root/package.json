@@ -49,6 +49,6 @@
     "dev": "next dev --port 9000",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start --port 9000"
   }
 }
