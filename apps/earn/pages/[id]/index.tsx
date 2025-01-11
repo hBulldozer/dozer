@@ -95,35 +95,60 @@ const Pool = () => {
 
   const id = router.query.id as string
 
-  const { data: prices = {} } = api.getPrices.firstLoadAll.useQuery()
-  if (!prices) return <></>
-  const { data: poolsDay } = api.getPools.firstLoadAllDay.useQuery()
-  if (!poolsDay) return <></>
-  const { data: pools } = api.getPools.firstLoadAll.useQuery()
-  if (!pools) return <></>
-  const pair_day = poolsDay.find((pool) => pool.id === id)
-  if (!pair_day) return <></>
-  const pair_without_snaps = pools.find((pool) => pool.id === id)
-  if (!pair_without_snaps) return <></>
-  const snaps = api.getPools.snapsById.useQuery({ id: pair_without_snaps.id })
+  const { data: initialPrices = {} } = api.getPrices.firstLoadAll.useQuery()
+  if (!initialPrices) return <></>
+  const { data: initialPoolsDay } = api.getPools.firstLoadAllDay.useQuery()
+  if (!initialPoolsDay) return <></>
+  const { data: initialPools } = api.getPools.firstLoadAll.useQuery()
+  if (!initialPools) return <></>
+  const initialPair_day = initialPoolsDay.find((pool) => pool.id === id)
+  if (!initialPair_day) return <></>
+  const initialPair_without_snaps = initialPools.find((pool) => pool.id === id)
+  if (!initialPair_without_snaps) return <></>
+  const snaps = api.getPools.snapsById.useQuery({ id: initialPair_without_snaps.id })
   if (!snaps || !snaps.data) return <></>
-  const pair = pair_without_snaps
-    ? { ...pair_without_snaps, hourSnapshots: snaps.data.hourSnapshots, daySnapshots: snaps.data.daySnapshots }
+  const initialPair = initialPair_without_snaps
+    ? { ...initialPair_without_snaps, hourSnapshots: snaps.data.hourSnapshots, daySnapshots: snaps.data.daySnapshots }
     : undefined
-  if (!pair) return <></>
-  const tokens = pair ? [pair.token0, pair.token1] : []
+  if (!initialPair) return <></>
+  const tokens = initialPair ? [initialPair.token0, initialPair.token1] : []
   if (!tokens) return <></>
+
+  const { data: detailedPrices = {}, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
+  const { data: detailedPoolsDay, isLoading: isLoadingPoolsDay } = api.getPools.allDay.useQuery()
+  const { data: detailedPools, isLoading: isLoadingPools } = api.getPools.all.useQuery()
+  const detailedPair_without_snaps = detailedPools?.find((pool) => pool.id === id)
+  const detailedPair = detailedPair_without_snaps
+    ? { ...detailedPair_without_snaps, hourSnapshots: snaps.data.hourSnapshots, daySnapshots: snaps.data.daySnapshots }
+    : undefined
+
+  const detailedPair_day = detailedPoolsDay?.find((pool) => pool.id === id)
+
+  const isLoadingDetailed = isLoadingPrices || isLoadingPoolsDay || isLoadingPools
+
+  const prices = detailedPrices || initialPrices || {}
+  const pair = detailedPair || initialPair
+  const pair_day = detailedPair_day || initialPair_day
 
   return (
     <PoolPositionProvider pair={pair} prices={prices}>
       <>
         <LoadingOverlay
-          show={!prices || !pools || !poolsDay || !pair_day || !pair_without_snaps || !snaps || !tokens || !pair}
+          show={
+            !initialPrices ||
+            !initialPools ||
+            !initialPoolsDay ||
+            !initialPair_day ||
+            !initialPair_without_snaps ||
+            !snaps ||
+            !tokens ||
+            !pair
+          }
         />
         <Layout breadcrumbs={LINKS({ pair })}>
           <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
             <div className="flex flex-col order-1 gap-9">
-              <PoolHeader pair={pair} prices={prices} />
+              <PoolHeader pair={pair} prices={prices} isLoading={isLoadingDetailed} />
               {/* uses chainid, swapfee, apr, incentivesapr */}
               <hr className="my-3 border-t border-stone-200/5" />
               <PoolChart pair={pair} />
@@ -140,9 +165,9 @@ const Pool = () => {
             <div className="flex flex-col order-2 gap-4">
               <AppearOnMount>
                 <div className="flex flex-col gap-10">
-                  <PoolComposition pair={pair} prices={prices} />
+                  <PoolComposition pair={pair} prices={prices} isLoading={isLoadingDetailed} />
                   {/* <PoolMyRewards pair={pair} /> */}
-                  <PoolPosition pair={pair} />
+                  <PoolPosition pair={pair} isLoading={isLoadingDetailed} />
                 </div>
               </AppearOnMount>
               <div className="hidden lg:flex">

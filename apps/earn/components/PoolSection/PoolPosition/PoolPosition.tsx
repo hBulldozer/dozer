@@ -1,7 +1,7 @@
 import { formatPercentChange, formatUSD } from '@dozer/format'
 import { Pair } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
-import { ArrowIcon, Typography } from '@dozer/ui'
+import { ArrowIcon, Dots, Typography } from '@dozer/ui'
 import { FC, useMemo } from 'react'
 
 import { PoolPositionDesktop } from './PoolPositionDesktop'
@@ -9,9 +9,10 @@ import { usePoolPosition } from '../../PoolPositionProvider'
 
 interface PoolPositionProps {
   pair: Pair
+  isLoading?: boolean
 }
 
-export const PoolPosition: FC<PoolPositionProps> = ({ pair }) => {
+export const PoolPosition: FC<PoolPositionProps> = ({ pair, isLoading }) => {
   const isLg = useBreakpoint('lg')
 
   const { value0, value1 } = usePoolPosition()
@@ -25,9 +26,13 @@ export const PoolPosition: FC<PoolPositionProps> = ({ pair }) => {
           My Position
         </Typography>
         <div className="flex ">
-          <Typography variant="sm" weight={600} className="text-right text-stone-50">
-            {formatUSD(value0 + value1)}
-          </Typography>
+          {isLoading ? (
+            <Dots>Loading</Dots>
+          ) : (
+            <Typography variant="sm" weight={600} className="text-right text-stone-50">
+              {formatUSD(value0 + value1)}
+            </Typography>
+          )}
         </div>
       </div>
       {value0 + value1 > 0 && <PoolPositionDesktop pair={pair} />}

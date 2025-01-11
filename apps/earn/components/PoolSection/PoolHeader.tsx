@@ -4,7 +4,7 @@ import { Price } from '@dozer/currency'
 import { formatPercent, formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
 import { Pair } from '@dozer/api'
-import { AppearOnMount, CopyHelper, Currency, IconButton, Link, NetworkIcon, Typography } from '@dozer/ui'
+import { AppearOnMount, CopyHelper, Currency, Dots, IconButton, Link, NetworkIcon, Typography } from '@dozer/ui'
 import { FC, useMemo } from 'react'
 
 // import { useTokensFromPair } from '../../lib/hooks'
@@ -14,9 +14,10 @@ import { FarmRewardsAvailableTooltip } from '../FarmRewardsAvailableTooltip'
 interface PoolHeader {
   pair: Pair
   prices: { [key: string]: number }
+  isLoading?: boolean
 }
 
-export const PoolHeader: FC<PoolHeader> = ({ pair, prices }) => {
+export const PoolHeader: FC<PoolHeader> = ({ pair, prices, isLoading }) => {
   const { token0, token1, reserve1, reserve0 } = useTokensFromPair(pair)
   // const price = useMemo(() => new Price({ baseAmount: reserve0, quoteAmount: reserve1 }), [reserve0, reserve1])
   const price = Number(reserve0) / Number(reserve1)
@@ -93,25 +94,33 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices }) => {
         <div className="flex gap-3 p-3 rounded-lg shadow-md bg-stone-800 shadow-black/10">
           <Currency.Icon currency={token0} width={20} height={20} />
           <Typography variant="sm" weight={600} className="text-stone-300">
-            <AppearOnMount>
-              {token0.symbol} ={' '}
-              {prices?.[token0.uuid]
-                ? formatUSD(prices[token0.uuid])
-                : // ?  formatUSD(100)
-                  `$0.00`}
-            </AppearOnMount>
+            {isLoading ? (
+              <Dots>Loading</Dots>
+            ) : (
+              <AppearOnMount>
+                {token0.symbol} ={' '}
+                {prices?.[token0.uuid]
+                  ? formatUSD(prices[token0.uuid])
+                  : // ?  formatUSD(100)
+                    `$0.00`}
+              </AppearOnMount>
+            )}
           </Typography>
         </div>
         <div className="flex gap-3 p-3 rounded-lg shadow-md bg-stone-800 shadow-black/10">
           <Currency.Icon currency={token1} width={20} height={20} />
           <Typography variant="sm" weight={600} className="text-stone-300">
-            <AppearOnMount>
-              {token1.symbol} ={' '}
-              {prices?.[token1.uuid]
-                ? formatUSD(prices[token1.uuid])
-                : // ?  formatUSD(100)
-                  `$0.00`}
-            </AppearOnMount>
+            {isLoading ? (
+              <Dots>Loading</Dots>
+            ) : (
+              <AppearOnMount>
+                {token1.symbol} ={' '}
+                {prices?.[token1.uuid]
+                  ? formatUSD(prices[token1.uuid])
+                  : // ?  formatUSD(100)
+                    `$0.00`}
+              </AppearOnMount>
+            )}
           </Typography>
         </div>
       </div>
