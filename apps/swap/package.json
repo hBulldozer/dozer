@@ -55,6 +55,6 @@
     "dev": "next dev --port 9001",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "next lint",
-    "start": "next start --port 9001"
+    "start": "PORT=9001 /bin/bash -c 'node .next/standalone/apps/swap/server.js'"
   }
 }

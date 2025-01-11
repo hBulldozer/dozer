@@ -44,7 +44,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const uuid = params?.uuid as string
 
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
+  const pools = await ssg.getPools.firstLoadAll.fetch()
 
   const USDT_token = await ssg.getTokens.bySymbol.fetch({ symbol: 'USDT' })
   if (!USDT_token) {
@@ -77,10 +77,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     await ssg.getPools.snapsById.prefetch({ id: pool.id })
     await ssg.getPools.snapsById.prefetch({ id: HTR_USDT_pool.id })
 
-    await ssg.getPools.allDay.prefetch()
-    await ssg.getPools.all.prefetch()
+    await ssg.getPools.firstLoadAllDay.prefetch()
+    await ssg.getPools.firstLoadAllDay.prefetch()
     await ssg.getTokens.all.prefetch()
-    await ssg.getPrices.all.prefetch()
+    await ssg.getPrices.firstLoadAll.prefetch()
     await ssg.getNetwork.getBestBlock.prefetch()
   }
   return {
@@ -110,14 +110,14 @@ const Token = () => {
   const { data: USDT_uuid } = api.getTokens.bySymbol.useQuery({ symbol: 'USDT' })
   if (!USDT_uuid) return <></>
 
-  const { data: prices = {} } = api.getPrices.all.useQuery()
+  const { data: prices = {} } = api.getPrices.firstLoadAll.useQuery()
   if (!prices) return <></>
 
-  const { data: pools } = api.getPools.all.useQuery()
+  const { data: pools } = api.getPools.firstLoadAll.useQuery()
   let pair: Pair | undefined
   let pair_day: Pair | undefined
   if (!pools) return <></>
-  const { data: poolsDay } = api.getPools.allDay.useQuery()
+  const { data: poolsDay } = api.getPools.firstLoadAllDay.useQuery()
   if (!poolsDay) return <></>
   const pair_usdt_htr = pools.find((pool) => {
     return (

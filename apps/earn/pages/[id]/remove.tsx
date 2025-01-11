@@ -33,13 +33,13 @@ const Remove: NextPage = () => {
   const router = useRouter()
   const id = router.query.id as string
 
-  const { data: pools } = api.getPools.all.useQuery()
+  const { data: pools } = api.getPools.firstLoadAll.useQuery()
   if (!pools) return <></>
   const pair = pools.find((pool) => pool.id === id)
   if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
-  const { data: prices = {} } = api.getPrices.all.useQuery()
+  const { data: prices = {} } = api.getPrices.firstLoadAll.useQuery()
   if (!prices) return <></>
 
   return (
@@ -76,7 +76,7 @@ const Remove: NextPage = () => {
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
+  const pools = await ssg.getPools.firstLoadAll.fetch()
 
   if (!pools) {
     throw new Error(`Failed to fetch pool, received ${pools}`)
@@ -95,7 +95,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
+  const pools = await ssg.getPools.firstLoadAll.fetch()
   if (!pools) {
     throw new Error(`Failed to fetch pools, received ${pools}`)
   }
@@ -105,7 +105,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   }
   const tokens = [pool.token0, pool.token1]
   await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.all.prefetch()
+  await ssg.getPrices.firstLoadAll.prefetch()
+  await ssg.getPools.firstLoadAll.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),

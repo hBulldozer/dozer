@@ -29,7 +29,7 @@ export const config = {
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
+  const pools = await ssg.getPools.firstLoadAll.fetch()
 
   if (!pools) {
     throw new Error(`Failed to fetch pool, received ${pools}`)
@@ -48,14 +48,14 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
+  const pools = await ssg.getPools.firstLoadAll.fetch()
   if (!pools) {
     throw new Error(`Failed to fetch pool, received ${pools}`)
   }
-  const poolsDay = await ssg.getPools.allDay.fetch()
-  if (!poolsDay) {
-    throw new Error(`Failed to fetch pool, received ${pools}`)
-  }
+  // const poolsDay = await ssg.getPools.allDay.fetch()
+  // if (!poolsDay) {
+  //   throw new Error(`Failed to fetch pool, received ${pools}`)
+  // }
   const pool = pools.find((pool) => pool.id === id)
   if (!pool) {
     throw new Error(`Failed to find pool with id ${id}`)
@@ -64,11 +64,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   // if (!poolNC) {
   //   throw new Error(`Failed to fetch pool, received ${poolNC}`)
   // }
-  const tokens = [pool.token0, pool.token1]
-  await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.all.prefetch()
+  // const tokens = [pool.token0, pool.token1]
+  // await ssg.getTokens.all.prefetch()
+  // await ssg.getPrices.all.prefetch()
   await ssg.getPools.snapsById.prefetch({ id: pool.id })
-  await ssg.getPools.allDay.prefetch()
+  await ssg.getPools.firstLoadAllDay.prefetch()
+  await ssg.getPools.firstLoadAll.prefetch()
+  await ssg.getPrices.firstLoadAll.prefetch()
+  // await ssg.getPools.allDay.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),
@@ -92,11 +95,11 @@ const Pool = () => {
 
   const id = router.query.id as string
 
-  const { data: prices = {} } = api.getPrices.all.useQuery()
+  const { data: prices = {} } = api.getPrices.firstLoadAll.useQuery()
   if (!prices) return <></>
-  const { data: poolsDay } = api.getPools.allDay.useQuery()
+  const { data: poolsDay } = api.getPools.firstLoadAllDay.useQuery()
   if (!poolsDay) return <></>
-  const { data: pools } = api.getPools.all.useQuery()
+  const { data: pools } = api.getPools.firstLoadAll.useQuery()
   if (!pools) return <></>
   const pair_day = poolsDay.find((pool) => pool.id === id)
   if (!pair_day) return <></>
