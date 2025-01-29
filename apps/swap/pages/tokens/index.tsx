@@ -36,7 +36,7 @@ const Tokens: FC = () => {
             </Typography>
             <Typography className="text-stone-300">Dozer Protocol featured Tokens.</Typography>
           </div>
-          <div className="flex justify-end flex-grow not-prose">
+          {/* <div className="flex justify-end flex-grow not-prose">
             <Button
               as="a"
               href="/pool/create_token"
@@ -49,7 +49,7 @@ const Tokens: FC = () => {
               <PlusIcon className="w-5 h-5" />
               Create Token
             </Button>
-          </div>
+          </div> */}
         </section>
         <TokensSection />
       </div>

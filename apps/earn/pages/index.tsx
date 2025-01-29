@@ -46,9 +46,9 @@ const Pools: FC = () => {
                 >
                   New Position
                 </Button>
-                <Button as="a" href="/pool/create" fullWidth startIcon={<BeakerIcon width={20} height={20} />}>
+                {/* <Button as="a" href="/pool/create" fullWidth startIcon={<BeakerIcon width={20} height={20} />}>
                   Create Pool
-                </Button>
+                </Button> */}
               </div>
             </div>
           </div>
