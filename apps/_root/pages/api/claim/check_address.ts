@@ -3,19 +3,27 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { client } from 'utils/api'
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   const payload = request.body
-  const checkZealyUserAddress = await client.getRewards.checkZealyUserAddress.query({
+  const checkZealyUser = await client.getRewards.checkZealyUserAddress.query({
     zealyId: payload.userId.replace(/['"]+/g, ''),
     subdomain: 'hathornetwork',
   })
   // const success = false
   if (request.headers['x-api-key'] && request.headers['x-api-key'] === process.env.API_KEY) {
-    if (checkZealyUserAddress) {
+    if (checkZealyUser.address) {
       const network = hathorLib.config.getNetwork()
       console.log(network)
-      console.log(checkZealyUserAddress)
-      const addressObj = new hathorLib.Address(checkZealyUserAddress, { network })
+      console.log(checkZealyUser)
+      const addressObj = new hathorLib.Address(checkZealyUser.address, { network })
       if (addressObj.isValid()) {
-        return response.status(200).json({ message: 'Claimed!' })
+        try {
+          await client.getRewards.dzdOptin.mutate({ zealyUser: checkZealyUser })
+          return response.status(200).json({ message: 'You successfully opted-in to receive DZD!' })
+        } catch (e) {
+          console.log(e)
+          return response.status(400).json({
+            message: 'Error in trying to opt-in to receive DZD. Please try again later.',
+          })
+        }
       } else {
         return response.status(400).json({
           message:

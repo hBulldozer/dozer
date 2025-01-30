@@ -16,6 +16,14 @@ model Faucet {
   hash        String
 }
 
+model dzd {
+  id          Int @id @default(autoincrement())
+  address     String
+  userId      String
+  name        String
+  telegram    String
+}
+
 model Token {
   id               String      @id
   uuid             String
