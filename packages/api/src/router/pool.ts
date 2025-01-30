@@ -372,7 +372,7 @@ export const poolRouter = createTRPCRouter({
       if ('errmsg' in response['calls'][`front_quote_add_liquidity_in(${amount},"${input.token_in}")`]) return 0
       else {
         const result = response['calls'][`front_quote_add_liquidity_in(${amount},"${input.token_in}")`]['value']
-        const quote = result / 100 // correcting output to the frontend
+        const quote = Number((result / 100).toFixed(2)) // correcting output to the frontend
         return quote
       }
     }),
@@ -387,7 +387,7 @@ export const poolRouter = createTRPCRouter({
       if ('errmsg' in response['calls'][`front_quote_add_liquidity_out(${amount},"${input.token_in}")`]) return 0
       else {
         const result = response['calls'][`front_quote_add_liquidity_out(${amount},"${input.token_in}")`]['value']
-        const quote = result / 100 // correcting output to the frontend
+        const quote = Number((result / 100).toFixed(2)) // correcting output to the frontend
         return quote
       }
     }),
@@ -407,7 +407,7 @@ export const poolRouter = createTRPCRouter({
         return { amount_out: 0, price_impact: 0 }
       else {
         const result = response['calls'][`front_quote_exact_tokens_for_tokens(${amount},"${input.token_in}")`]['value']
-        const amount_out = result['amount_out'] / 100 // correcting output to the frontend
+        const amount_out = Number((result['amount_out'] / 100).toFixed(2)) // correcting output to the frontend
         return { amount_out, price_impact: result['price_impact'] }
       }
     }),
@@ -426,7 +426,7 @@ export const poolRouter = createTRPCRouter({
         return { amount_in: 0, price_impact: 0 }
       else {
         const result = response['calls'][`front_quote_tokens_for_exact_tokens(${amount},"${input.token_in}")`]['value']
-        const amount_in = result['amount_in'] / 100 // correcting output to the frontend
+        const amount_in = Number((result['amount_in'] / 100).toFixed(2)) // correcting output to the frontend
         return { amount_in, price_impact: result['price_impact'] }
       }
     }),
