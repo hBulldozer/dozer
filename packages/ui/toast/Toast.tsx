@@ -13,7 +13,7 @@ import { ToastPending } from './ToastPending'
 import { ChainId } from '@dozer/chain'
 
 export const TOAST_OPTIONS: ToastOptions = {
-  position: 'top-right',
+  position: 'bottom-right',
   autoClose: false,
   hideProgressBar: true,
   closeOnClick: false,

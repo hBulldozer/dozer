@@ -165,6 +165,7 @@ const OasisProgram = () => {
   const [selectedOasisForRemove, setSelectedOasisForRemove] = useState<OasisPosition | null>(null)
   const [selectedOasisForRemoveBonus, setSelectedOasisForRemoveBonus] = useState<OasisPosition | null>(null)
   const [removeBonusModalOpen, setRemoveBonusModalOpen] = useState<boolean>(false)
+  const [txType, setTxType] = useState<string>('Add liquidity')
 
   const { network } = useNetwork()
   const { addNotification } = useAccount()
@@ -187,8 +188,8 @@ const OasisProgram = () => {
   const { data: allReserves } = api.getOasis.allReserves.useQuery()
   const { data: allUserOasis } = api.getOasis.allUser.useQuery({ address: address }, { enabled: Boolean(address) })
 
-  const oasis = allOasis?.find((oasis: OasisInterface) => oasis.token.symbol == currency)
-  const oasisReserve = allReserves?.find((oasis: OasisInterface) => oasis.token.symbol == currency)
+  const oasis = allOasis?.find((oasis) => oasis.token.symbol == currency)
+  const oasisReserve = allReserves?.find((oasis) => oasis.token.symbol == currency)
   const usedHTR = oasisReserve?.dev_balance || 0
   const progress = (usedHTR / maxHTR) * 100
   const oasisId = oasis?.id
@@ -198,6 +199,7 @@ const OasisProgram = () => {
   const oasisObj = new Oasis(tokenUuid, poolId)
   const handleAddLiquidity = async (): Promise<void> => {
     setSentTX(true)
+    setTxType('Add liquidity')
     if (amount && lockPeriod && oasisId) {
       const response = await oasisObj.user_deposit(hathorRpc, address, lockPeriod, oasisId, parseFloat(amount))
     }
@@ -205,6 +207,7 @@ const OasisProgram = () => {
 
   const handleRemoveLiquidity = async (removeAmount: string): Promise<void> => {
     setSentTX(true)
+    setTxType('Remove liquidity')
     if (removeAmount && selectedOasisForRemove?.id) {
       const response = await oasisObj.user_withdraw(
         hathorRpc,
@@ -217,7 +220,7 @@ const OasisProgram = () => {
 
   const handleRemoveBonus = async (removeAmount: string): Promise<void> => {
     setSentTX(true)
-    setSentTX(true)
+    setTxType('Remove bonus')
     if (removeAmount && selectedOasisForRemoveBonus?.id) {
       const response = await oasisObj.user_withdraw_bonus(
         hathorRpc,
@@ -237,10 +240,10 @@ const OasisProgram = () => {
             type: 'swap',
             chainId: network,
             summary: {
-              pending: `Waiting for next block. Add liquidity in ${oasisName} Oasis pool.`,
-              completed: `Success! Added ${amount} ${token} in ${oasisName} Oasis pool.`,
+              pending: `Waiting for next block. ${txType} in ${oasisName} Oasis pool.`,
+              completed: `${txType} in ${oasisName} Oasis pool.`,
               failed: 'Failed summary',
-              info: `Adding Liquidity in ${oasisName} Oasis pool: ${amount} ${token}.`,
+              info: `${txType} in ${oasisName} Oasis pool: ${amount} ${token}.`,
             },
             status: 'pending',
             txHash: hash,
