@@ -1,5 +1,4 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import prisma from '@dozer/database'
 import { client } from 'utils/api'
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   const payload = request.body

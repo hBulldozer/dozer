@@ -68,6 +68,21 @@ export const tokenRouter = createTRPCRouter({
     const rawTokenData = await fetchNodeData(endpoint, queryParams)
     return rawTokenData.total
   }),
+  firstLoadAllTotalSupply: procedure.query(async ({ ctx }) => {
+    const tokens = await ctx.prisma.token.findMany({
+      select: {
+        uuid: true,
+      },
+    })
+    if (!tokens) {
+      throw new Error(`Failed to fetch tokens, received ${tokens}`)
+    }
+    const totalSupplies: Record<string, number> = {}
+    tokens.map(async (token) => {
+      totalSupplies[token.uuid] = 0
+    })
+    return totalSupplies
+  }),
   allTotalSupply: procedure.query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
       select: {

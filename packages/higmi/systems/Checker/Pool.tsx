@@ -26,11 +26,9 @@ export const Pool: FC<PoolProps> = ({
   return useMemo(() => {
     if (!poolExist && token0 && token1)
       return (
-        <Link href="/create">
-          <Button fullWidth onClick={() => router.push('/pool/create')} size="md">
-            Create Pool
-          </Button>
-        </Link>
+        <Button fullWidth disabled size="md">
+          Pool does not exist
+        </Button>
       )
 
     return <>{children}</>

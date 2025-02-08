@@ -1,98 +1,20 @@
-// import { ChainId } from '@dozer/chain'
-// import { Pair, PairType, QuerypairsArgs } from '@dozer/graph-client'
 import { Pair } from '@dozer/api'
 import { useBreakpoint } from '@dozer/hooks'
-import {
-  GenericTable,
-  IconButton,
-  Table,
-  classNames,
-  DEFAULT_INPUT_UNSTYLED,
-  FilterPools,
-  Filters,
-  LoadingOverlay,
-} from '@dozer/ui'
+import { GenericTable, FilterPools, Filters, LoadingOverlay, Typography } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
-// import stringify from 'fast-json-stable-stringify'
 
-// import { usePoolFilters } from '../../../PoolsFiltersProvider'
 import { PAGE_SIZE } from '../contants'
 import { APR_COLUMN, FEES_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN } from './Cells/columns'
-import { getTokens } from '@dozer/currency'
-import { ChainId, Network } from '@dozer/chain'
+import { ChainId } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
-import { RouterOutputs, api } from '../../../../utils/api'
-import { Transition } from '@headlessui/react'
-import { XCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { api } from '../../../../utils/api'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 // const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN]
 const COLUMNS = [NAME_COLUMN, TVL_COLUMN, VOLUME_COLUMN, FEES_COLUMN, APR_COLUMN]
-
-const dummyPools: Pair[] = [
-  // {
-  //   id: '1',
-  //   name: 'Dummy Pool 1',
-  //   liquidityUSD: 200000,
-  //   volumeUSD: 10000,
-  //   feeUSD: 300,
-  //   apr: 0.25,
-  //   token0: getTokens(ChainId.HATHOR)[0],
-  //   token1: getTokens(ChainId.HATHOR)[1],
-  //   reserve0: 1,
-  //   reserve1: 2,
-  //   chainId: 2,
-  //   liquidity: 10000,
-  //   volume1d: 45553,
-  //   fees1d: 10000,
-  //   swapFee: 0.05,
-  //   hourSnapshots: [],
-  //   daySnapshots: [],
-  // },
-  // {
-  //   id: '2',
-  //   name: 'Dummy Pool 2',
-  //   liquidityUSD: 100000,
-  //   volumeUSD: 5000,
-  //   feeUSD: 150,
-  //   apr: 0.15,
-  //   token0: getTokens(ChainId.HATHOR)[0],
-  //   token1: getTokens(ChainId.HATHOR)[2],
-  //   reserve0: 1,
-  //   reserve1: 2,
-  //   chainId: 2,
-  //   liquidity: 10000,
-  //   volume1d: 45266,
-  //   fees1d: 15469,
-  //   swapFee: 0.05,
-  //   hourSnapshots: [],
-  //   daySnapshots: [],
-  // },
-  // {
-  //   id: '3',
-  //   name: 'Dummy Pool 3',
-  //   liquidityUSD: 50000,
-  //   volumeUSD: 2500,
-  //   feeUSD: 75,
-  //   apr: 0.1,
-  //   token0: getTokens(ChainId.HATHOR)[0],
-  //   token1: getTokens(ChainId.HATHOR)[3],
-  //   reserve0: 1,
-  //   reserve1: 2,
-  //   chainId: 2,
-  //   liquidity: 10000,
-  //   volume1d: 4523,
-  //   fees1d: 7651,
-  //   swapFee: 0.05,
-  //   hourSnapshots: [],
-  //   daySnapshots: [],
-  // },
-]
-
-type PoolsOutput = RouterOutputs['getPools']['all']
 
 export interface ExtendedPair extends Pair {
   priceHtr?: number
@@ -103,8 +25,6 @@ export interface ExtendedPair extends Pair {
 }
 
 export const PoolsTable: FC = () => {
-  // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
-  // usePoolFilters()
   const { isSm } = useBreakpoint('sm')
   const { isMd } = useBreakpoint('md')
 
@@ -129,20 +49,38 @@ export const PoolsTable: FC = () => {
     setRendNetwork(network)
   }, [network])
 
-  const { data: _pools, isLoading: isLoadingPools } = api.getPools.allDay.useQuery()
-  const { data: prices, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
+  // Use enabled option to control when queries run
+  const initialQuery = api.getPools.firstLoadAllDay.useQuery(undefined, {
+    suspense: false, // Important for hydration
+    refetchOnMount: false,
+    staleTime: 30000, // Reduce refetches
+    cacheTime: 1000 * 60 * 5, // Cache for 5 minutes
+  })
 
-  const isLoading = useMemo(() => {
-    return isLoadingPools || isLoadingPrices
-  }, [isLoadingPools, isLoadingPrices])
+  const detailedQuery = api.getPools.allDay.useQuery(undefined, {
+    suspense: false, // Important for hydration
+    refetchOnMount: false,
+    staleTime: 30000,
+    cacheTime: 1000 * 60 * 5,
+    // Only run this query after initial data is loaded
+    enabled: !!initialQuery.data,
+  })
+
+  const pricesQuery = api.getPrices.all.useQuery(undefined, {
+    staleTime: 30000,
+    cacheTime: 1000 * 60 * 5,
+  })
+
+  // Combine the data based on what's available
+  const _pools = detailedQuery.data || initialQuery.data || []
+  const prices = pricesQuery.data || {}
 
   const pools = useMemo(() => {
-    const allPools = _pools?.concat(dummyPools)
-    const maxAPR = Math.max(...(allPools?.map((pool) => pool.apr) || [])) * 100
-    const maxTVL = Math.max(...(allPools?.map((pool) => pool.liquidityUSD) || []))
-    const maxFees = Math.max(...(allPools?.map((pool) => pool.fees1d) || []))
-    const maxVolume = Math.max(...(allPools?.map((pool) => pool.volume1d) || []))
-    return allPools
+    const maxAPR = Math.max(...(_pools?.map((pool) => pool.apr) || [])) * 100
+    const maxTVL = Math.max(...(_pools?.map((pool) => pool.liquidityUSD) || []))
+    const maxFees = Math.max(...(_pools?.map((pool) => pool.fees1d) || []))
+    const maxVolume = Math.max(...(_pools?.map((pool) => pool.volume1d) || []))
+    return _pools
       ?.filter((pool) => {
         return pool.name?.toLowerCase().includes(query.toLowerCase())
       })
@@ -168,11 +106,10 @@ export const PoolsTable: FC = () => {
   }, [_pools, query, filters])
 
   const maxValues = useMemo(() => {
-    const allPools = _pools?.concat(dummyPools)
-    const maxTVL = Math.max(...(allPools?.map((pool) => pool.liquidityUSD) || []))
-    const maxVolume = Math.max(...(allPools?.map((pool) => pool.volume1d) || []))
-    const maxFees = Math.max(...(allPools?.map((pool) => pool.fees1d) || []))
-    const maxAPR = Math.max(...(allPools?.map((pool) => pool.apr) || []))
+    const maxTVL = Math.max(...(_pools?.map((pool) => pool.liquidityUSD) || []))
+    const maxVolume = Math.max(...(_pools?.map((pool) => pool.volume1d) || []))
+    const maxFees = Math.max(...(_pools?.map((pool) => pool.fees1d) || []))
+    const maxAPR = Math.max(...(_pools?.map((pool) => pool.apr) || []))
     return {
       tvl: maxTVL,
       volume: maxVolume,
@@ -180,14 +117,6 @@ export const PoolsTable: FC = () => {
       apr: maxAPR,
     }
   }, [_pools])
-  // const _pairs_array: Pair[] = pools
-  //   ? pools.map((pool) => {
-  //       return pairFromPool(pool)
-  //     })
-  //   : []
-  // const pairs_array = irs_array?.filter((pair: Pair) => {
-  //   return pair.chainId == rendNetwork
-  // })
 
   const args = useMemo(
     () => ({
@@ -250,12 +179,18 @@ export const PoolsTable: FC = () => {
 
   return (
     <>
-      <LoadingOverlay show={isSomePending ? false : isLoading} />
-      <FilterPools maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
+      <LoadingOverlay show={isSomePending ? false : initialQuery.isLoading} />
+      <div className="flex flex-row items-center ">
+        <FilterPools maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
+        {detailedQuery.isLoading && (
+          <Typography variant="xs" className="text-balance text-stone-500">
+            Loading detailed data for all pools...
+          </Typography>
+        )}
+      </div>
       <GenericTable<ExtendedPair>
         table={table}
-        // loading={isSomePending ? false : isLoading}
-        loading={false}
+        loading={initialQuery.isLoading}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
         placeholder={'No pools found'}
         pageSize={PAGE_SIZE}

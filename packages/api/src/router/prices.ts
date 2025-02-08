@@ -217,6 +217,23 @@ const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, s
   }
 }
 export const pricesRouter = createTRPCRouter({
+  firstLoadAll: procedure.query(async ({ ctx }) => {
+    const tokens = await ctx.prisma.token.findMany({
+      select: {
+        uuid: true,
+        symbol: true,
+        chainId: true,
+      },
+    })
+    if (!tokens) {
+      throw new Error(`Failed to fetch tokens, received ${tokens}`)
+    }
+    const prices: { [key: string]: number } = {}
+    tokens.map(async (token) => {
+      prices[token.uuid] = 0
+    })
+    return prices
+  }),
   all: procedure.query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
       select: {
@@ -283,7 +300,7 @@ export const pricesRouter = createTRPCRouter({
     }
     return prices
   }),
-  all24h: procedure.query(async ({ ctx }) => {
+  firstLoadAll24h: procedure.query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
       select: {
         uuid: true,
@@ -294,19 +311,118 @@ export const pricesRouter = createTRPCRouter({
       throw new Error(`Failed to fetch tokens, received ${tokens}`)
     }
     const prices24hUSD: { [key: string]: number[] } = {}
+    tokens.map(async (token) => {
+      prices24hUSD[token.uuid] = [0, 0]
+    })
+    return prices24hUSD
+  }),
+  all24h: procedure.query(async ({ ctx }) => {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+    // Combine queries to reduce connection time
+    const [htrUsdtPool, tokens] = await Promise.all([
+      ctx.prisma.pool.findFirst({
+        where: {
+          OR: [
+            {
+              token0: { symbol: 'HTR' },
+              token1: { symbol: 'USDT' },
+            },
+            {
+              token0: { symbol: 'USDT' },
+              token1: { symbol: 'HTR' },
+            },
+          ],
+        },
+        select: {
+          id: true,
+          token0: { select: { symbol: true } },
+          token1: { select: { symbol: true } },
+          hourSnapshots: {
+            where: { date: { gte: since } },
+            select: {
+              date: true,
+              reserve0: true,
+              reserve1: true,
+              priceHTR: true,
+            },
+            orderBy: { date: 'asc' },
+          },
+        },
+      }),
+
+      // Optimize token query to fetch only necessary data
+      ctx.prisma.token.findMany({
+        select: {
+          uuid: true,
+          symbol: true,
+          pools0: {
+            where: { token1: { symbol: 'HTR' } },
+            select: {
+              id: true,
+              hourSnapshots: {
+                where: { date: { gte: since } },
+                select: {
+                  date: true,
+                  reserve0: true,
+                  reserve1: true,
+                  priceHTR: true,
+                },
+                orderBy: { date: 'asc' },
+              },
+            },
+            take: 1, // Optimize by taking only the first pool
+          },
+          pools1: {
+            where: { token0: { symbol: 'HTR' } },
+            select: {
+              id: true,
+              hourSnapshots: {
+                where: { date: { gte: since } },
+                select: {
+                  date: true,
+                  reserve0: true,
+                  reserve1: true,
+                  priceHTR: true,
+                },
+                orderBy: { date: 'asc' },
+              },
+            },
+            take: 1, // Optimize by taking only the first pool
+          },
+        },
+      }),
+    ])
+
+    const prices24hUSD: { [key: string]: number[] } = {}
+
+    // Process tokens in parallel using Promise.all
     await Promise.all(
       tokens.map(async (token) => {
-        const token_prices24hUSD: number[] = []
+        let token_prices24hUSD: number[] = []
 
-        const since = Date.now() - 24 * 60 * 60 * 1000 // 24 hours ago
-        const snaps24h = await getPricesSince(token.uuid, ctx.prisma, since) //from db snaps
-        snaps24h.forEach((snaps) => {
-          const priceHTR = snaps.priceHTR
-          token_prices24hUSD.push((token.uuid == '00' ? 1 : snaps.price) * priceHTR)
-        })
-        if (!prices24hUSD[token.uuid]) prices24hUSD[token.uuid] = token_prices24hUSD
+        if (token.symbol === 'USDT') {
+          token_prices24hUSD = Array(24).fill(1)
+        } else if (token.uuid === '00' && htrUsdtPool?.hourSnapshots.length) {
+          const isHtrToken0 = htrUsdtPool.token0.symbol === 'HTR'
+          token_prices24hUSD = htrUsdtPool.hourSnapshots.map((snap) =>
+            isHtrToken0 ? snap.reserve1 / snap.reserve0 : snap.reserve0 / snap.reserve1
+          )
+        } else {
+          const pool = token.pools0[0] || token.pools1[0]
+          if (pool?.hourSnapshots.length) {
+            const isTokenToken0 = token.pools0.length > 0
+            token_prices24hUSD = pool.hourSnapshots.map((snap) => {
+              const tokenPrice = isTokenToken0 ? snap.reserve1 / snap.reserve0 : snap.reserve0 / snap.reserve1
+              return tokenPrice * snap.priceHTR
+            })
+          }
+        }
+
+        prices24hUSD[token.uuid] = token_prices24hUSD.length ? token_prices24hUSD : [0]
       })
     )
+
     return prices24hUSD
   }),
   allAtTimestamp: procedure.input(z.object({ timestamp: z.number() })).query(async ({ ctx, input }) => {

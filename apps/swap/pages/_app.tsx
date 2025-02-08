@@ -11,11 +11,6 @@ import Head from 'next/head'
 import { ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 import { config } from '@hathor/wallet-lib'
 
-import { init } from '@socialgouv/matomo-next'
-
-const MATOMO_URL = process.env.NEXT_PUBLIC_MATOMO_URL || 'https://matomo.self2.dozer.finance/'
-const MATOMO_SITE_ID = process.env.NEXT_PUBLIC_MATOMO_SITE_ID || '1'
-
 config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
 config.setNetwork('testnet')
 
@@ -26,42 +21,8 @@ declare global {
 }
 
 const MyApp = ({ Component, pageProps }: AppProps) => {
-  // const router = useRouter()
-  // const [isLoading, setIsLoading] = useState(false)
-  // useEffect(() => {
-  //   const handler = (page: any) => {
-  //     window.dataLayer.push({
-  //       event: 'pageview',
-  //       page,
-  //     })
-  //   }
-  //   return () => {
-  //     router.events.off('routeChangeComplete', handler)
-  //     router.events.off('hashChangeComplete', handler)
-  //   }
-  // }, [router.events])
-
-  // useEffect(() => {
-  //   router.events.on('routeChangeStart', (url) => {
-  //     setIsLoading(true)
-  //   })
-
-  //   router.events.on('routeChangeComplete', (url) => {
-  //     setIsLoading(false)
-  //   })
-
-  //   router.events.on('routeChangeError', (url) => {
-  //     setIsLoading(false)
-  //   })
-  // }, [isLoading, router])
-
-  useEffect(() => {
-    init({ url: MATOMO_URL, siteId: MATOMO_SITE_ID, disableCookies: true })
-  }, [])
-
   return (
     <>
-      {/* <LoadingOverlay show={isLoading} /> */}
       <Head>
         <title>Dozer Finance - Swap 📈</title>
         <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=1" />

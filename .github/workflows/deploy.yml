@@ -31,38 +31,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Cache for Turbo
-        uses: rharkor/caching-for-turbo@v1.5
+      - name: Build apps
+        run: |
+          docker build --target builder -t builder .
 
-      - name: Build and push root image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/hbulldozer/dozer/root-app-testnet:latest
-          target: root-runner
-          secret-files: |
-            env=.env
+      - name: Create root image
+        run: |
+          docker build --target root-runner -t ghcr.io/hbulldozer/dozer/root-app-testnet:latest .
 
-      - name: Build and push swap image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/hbulldozer/dozer/swap-app-testnet:latest
-          target: swap-runner
-          secret-files: |
-            env=.env
+      - name: Create swap image
+        run: |
+          docker build --target swap-runner -t ghcr.io/hbulldozer/dozer/swap-app-testnet:latest .
 
-      - name: Build and push earn image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/hbulldozer/dozer/earn-app-testnet:latest
-          target: earn-runner
-          secret-files: |
-            env=.env
+      - name: Create earn image
+        run: |
+          docker build --target earn-runner -t ghcr.io/hbulldozer/dozer/earn-app-testnet:latest .
+
+      - name: Push images
+        run: |
+          docker push ghcr.io/hbulldozer/dozer/root-app-testnet:latest
+          docker push ghcr.io/hbulldozer/dozer/swap-app-testnet:latest
+          docker push ghcr.io/hbulldozer/dozer/earn-app-testnet:latest
 
   deploy:
     needs: build-and-push

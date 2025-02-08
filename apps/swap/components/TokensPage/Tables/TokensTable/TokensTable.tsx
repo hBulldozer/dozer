@@ -1,7 +1,7 @@
-import { AllTokensDBOutput, Pair, dbPoolWithTokens } from '@dozer/api'
+import { AllTokensDBOutput, Pair } from '@dozer/api'
 // EDIT
 import { useBreakpoint } from '@dozer/hooks'
-import { FilterTokens, FiltersTokens, GenericTable, LoadingOverlay } from '@dozer/ui'
+import { FilterTokens, FiltersTokens, GenericTable, LoadingOverlay, Typography } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -18,8 +18,6 @@ import {
 import { ChainId } from '@dozer/chain'
 import { useNetwork } from '@dozer/zustand'
 import { api } from '../../../../utils/api'
-import { set } from 'date-fns'
-import { getTokens } from '@dozer/currency'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -33,8 +31,6 @@ export interface ExtendedPair extends Pair {
 }
 
 export const TokensTable: FC = () => {
-  // const { query, extraQuery, selectedNetworks, selectedPoolTypes, farmsOnly, atLeastOneFilterSelected } =
-  // usePoolFilters()
   const { isSm } = useBreakpoint('sm')
   const { isMd } = useBreakpoint('md')
 
@@ -48,10 +44,78 @@ export const TokensTable: FC = () => {
   const { network } = useNetwork()
   const [tokens_array, setTokens_array] = useState<AllTokensDBOutput[]>([])
 
-  const { data: all_pools, isLoading: isLoadingPools } = api.getPools.allDay.useQuery()
-  const { data: tokens, isLoading } = api.getTokens.all.useQuery()
-  const { data: prices24h, isLoading: isLoadingPrices24h } = api.getPrices.all24h.useQuery()
-  const { data: lastPrices, isLoading: isLoadingLastPrice } = api.getPrices.all.useQuery()
+  const { data: allPoolsInitial, isLoading: isLoadingPoolsInitial } = api.getPools.firstLoadAll.useQuery(undefined, {
+    suspense: false, // Important for hydration
+    refetchOnMount: false,
+    staleTime: 30000, // Reduce refetches
+    cacheTime: 1000 * 60 * 5, // Cache for 5 minutes
+  })
+  const { data: allPoolsDetailed, isLoading: isLoadingPoolsDetailed } = api.getPools.allDay.useQuery(undefined, {
+    suspense: false, // Important for hydration
+    refetchOnMount: false,
+    staleTime: 30000,
+    cacheTime: 1000 * 60 * 5,
+    enabled: !!allPoolsInitial,
+  })
+
+  const { data: prices24hInitial, isLoading: isLoadingPrices24hInitial } = api.getPrices.firstLoadAll24h.useQuery(
+    undefined,
+    {
+      suspense: false, // Important for hydration
+      refetchOnMount: false,
+      staleTime: 30000, // Reduce refetches
+      cacheTime: 1000 * 60 * 5, // Cache for 5 minutes
+    }
+  )
+  const { data: prices24hDetailed, isLoading: isLoadingPrices24hDetailed } = api.getPrices.all24h.useQuery(undefined, {
+    suspense: false, // Important for hydration
+    refetchOnMount: false,
+    staleTime: 30000,
+    cacheTime: 1000 * 60 * 5,
+    enabled: !!prices24hInitial,
+  })
+
+  const { data: tokens, isLoading: isLoadingTokens } = api.getTokens.all.useQuery()
+
+  const { data: pricesInitial, isLoading: isLoadingPricesInitial } = api.getPrices.firstLoadAll.useQuery(undefined, {
+    suspense: false, // Important for hydration
+    refetchOnMount: false,
+    staleTime: 30000, // Reduce refetches
+    cacheTime: 1000 * 60 * 5, // Cache for 5 minutes
+  })
+  const { data: pricesDetailed, isLoading: isLoadingPricesDetailed } = api.getPrices.all.useQuery(undefined, {
+    staleTime: 30000,
+    cacheTime: 1000 * 60 * 5,
+    enabled: !!pricesInitial,
+  })
+
+  const { data: totalSuppliesInitial, isLoading: isLoadingTotalSuppliesInitial } =
+    api.getTokens.firstLoadAllTotalSupply.useQuery(undefined, {
+      suspense: false, // Important for hydration
+      refetchOnMount: false,
+      staleTime: 30000, // Reduce refetches
+      cacheTime: 1000 * 60 * 5, // Cache for 5 minutes
+    })
+  const { data: totalSuppliesDetailed, isLoading: isLoadingTotalSuppliesDetailed } =
+    api.getTokens.allTotalSupply.useQuery(undefined, {
+      staleTime: 30000,
+      cacheTime: 1000 * 60 * 5,
+      enabled: !!totalSuppliesInitial,
+    })
+
+  const prices24h = prices24hDetailed || prices24hInitial
+  const allPools = allPoolsDetailed || allPoolsInitial
+  const prices = pricesDetailed || pricesInitial
+  const totalSupplies = totalSuppliesDetailed || totalSuppliesInitial
+
+  const isLoadingInitial =
+    isLoadingPoolsInitial ||
+    isLoadingPrices24hInitial ||
+    isLoadingTotalSuppliesInitial ||
+    isLoadingPricesInitial ||
+    isLoadingTokens
+  const isLoadingDetailed =
+    isLoadingPoolsDetailed || isLoadingPrices24hDetailed || isLoadingTotalSuppliesDetailed || isLoadingPricesDetailed
 
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<FiltersTokens>({
@@ -92,8 +156,8 @@ export const TokensTable: FC = () => {
       htr_pools0 ? pools_idx.push(htr_pools0.id) : null
       htr_pools1 ? pools_idx.push(htr_pools1.id) : null
       if (token.uuid == '00') {
-        const pairs_htr: Pair[] = all_pools
-          ? all_pools
+        const pairs_htr: Pair[] = allPools
+          ? allPools
               .filter((pool) => pool.chainId == rendNetwork)
               .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
               .map((pool) => {
@@ -125,8 +189,8 @@ export const TokensTable: FC = () => {
               }
         return fakeHTRPair
       } else if (token.symbol == 'USDT') {
-        const pairs_usdt: Pair[] = all_pools
-          ? all_pools
+        const pairs_usdt: Pair[] = allPools
+          ? allPools
               .filter((pool) => pool.chainId == rendNetwork)
               .filter((pool) => pool.token0.symbol == 'USDT' || pool.token1.symbol == 'USDT')
               .map((pool) => {
@@ -161,15 +225,12 @@ export const TokensTable: FC = () => {
         const pool_with_htr = pools_idx[0]
 
         if (!pool_with_htr) return {} as Pair
-        const _poolDB = all_pools ? all_pools.find((pool) => pool.id == pool_with_htr) : undefined
+        const _poolDB = allPools ? allPools.find((pool) => pool.id == pool_with_htr) : undefined
         if (!_poolDB) return {} as Pair
         const pair = _poolDB ? { ..._poolDB, liquidityUSD: _poolDB.liquidityUSD / 2 } : ({} as Pair)
         return pair
       }
     })
-
-  const { data: prices } = api.getPrices.all.useQuery()
-  const { data: totalSupplies } = api.getTokens.allTotalSupply.useQuery()
 
   const pairs_array = useMemo(() => {
     const allPools = _pairs_array?.filter((pair) => (pair.name ? pair : null))
@@ -247,7 +308,7 @@ export const TokensTable: FC = () => {
   const extended_pairs_array = pairs_array.map((pair) => {
     const tokenUuid = pair.id.includes('native') ? pair.token0.uuid : pair.token1.uuid
     const prices24h_token = prices24h?.[tokenUuid]
-    const lastPrice = lastPrices?.[tokenUuid]
+    const lastPrice = prices?.[tokenUuid]
     const previousPrice = prices24h_token?.[0]
     const change =
       lastPrice && previousPrice
@@ -339,8 +400,16 @@ export const TokensTable: FC = () => {
 
   return (
     <>
-      <LoadingOverlay show={isLoading || isLoadingPools || isLoadingPrices24h || isLoadingLastPrice} />
-      <FilterTokens maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
+      <LoadingOverlay show={isLoadingTokens} />
+      <div className="flex flex-row items-center ">
+        <FilterTokens maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
+        {isLoadingDetailed && (
+          <Typography variant="xs" className="text-balance text-stone-500">
+            Loading detailed data for all tokens...
+          </Typography>
+        )}
+      </div>
+
       <GenericTable<ExtendedPair>
         table={table}
         loading={false}

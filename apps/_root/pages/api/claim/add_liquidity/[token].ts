@@ -16,6 +16,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
     return response.status(400).json({ message: 'Pool not found !' })
   }
 
+  prisma.$disconnect()
+
   const success = await client.getRewards.checkClaim.query({
     contractId: pool_ncid.id,
     address: payload.accounts['zealy-connect'].replace(/['"]+/g, ''),

@@ -11,16 +11,17 @@ import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 
 export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
-  await ssg.getPools.all.prefetch()
+  await ssg.getPools.allDay.prefetch()
   await ssg.getTokens.all.prefetch()
   await ssg.getPrices.all.prefetch()
   await ssg.getPrices.all24h.prefetch()
+  await ssg.getTokens.allTotalSupply.prefetch()
   await ssg.getNetwork.getBestBlock.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),
     },
-    revalidate: 3600,
+    revalidate: 30,
   }
 }
 
@@ -35,7 +36,7 @@ const Tokens: FC = () => {
             </Typography>
             <Typography className="text-stone-300">Dozer Protocol featured Tokens.</Typography>
           </div>
-          <div className="flex justify-end flex-grow not-prose">
+          {/* <div className="flex justify-end flex-grow not-prose">
             <Button
               as="a"
               href="/pool/create_token"
@@ -48,7 +49,7 @@ const Tokens: FC = () => {
               <PlusIcon className="w-5 h-5" />
               Create Token
             </Button>
-          </div>
+          </div> */}
         </section>
         <TokensSection />
       </div>

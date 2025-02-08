@@ -9,6 +9,7 @@
     "bierner.markdown-mermaid",
     "supermaven.supermaven",
     "prisma.prisma",
-    "yoavbls.pretty-ts-errors"
+    "yoavbls.pretty-ts-errors",
+    "william-voyek.vscode-nginx"
   ]
 }

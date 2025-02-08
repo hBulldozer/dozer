@@ -192,7 +192,7 @@ export const rewardsRouter = createTRPCRouter({
   checkZealyUserAddress: procedure
     .input(z.object({ zealyId: z.string(), subdomain: z.string() }))
     .query(async ({ ctx, input }) => {
-      const url = `https://api-v2.zealy.io/public/communities/${input.subdomain}/leaderboard`
+      const url = `https://api-v2.zealy.io/public/communities/${input.subdomain}/leaderboard?limit=500`
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -203,7 +203,22 @@ export const rewardsRouter = createTRPCRouter({
       if (data.data.length > 0) {
         const zealyUser = data.data.find((user: any) => user.userId == input.zealyId)
         console.log(zealyUser)
-        return zealyUser ? zealyUser.address : undefined
+        return zealyUser ? zealyUser : undefined
       }
     }),
+  dzdOptin: procedure.input(z.object({ zealyUser: z.any() })).mutation(async ({ ctx, input }) => {
+    try {
+      const create = await ctx.prisma.dzd.create({
+        data: {
+          address: input.zealyUser.address,
+          userId: input.zealyUser.userId || '',
+          name: input.zealyUser.name || '',
+          telegram: input.zealyUser.twitterUsername || '',
+        },
+      })
+    } catch (e) {
+      throw new Error(`Failed to save address. Please try again. ${e}`)
+      console.log(e)
+    }
+  }),
 })

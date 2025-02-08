@@ -1,6 +1,6 @@
 import { useInViewport } from '@dozer/hooks'
 import { Currency, Typography, classNames } from '@dozer/ui'
-import { FC, useRef } from 'react'
+import { FC, useMemo, useRef } from 'react'
 
 import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
@@ -8,34 +8,45 @@ import { Token } from '@dozer/currency'
 import { UsersIcon } from '@heroicons/react/24/outline'
 
 export const TokenNameCell: FC<CellProps> = ({ row }) => {
-  let token: Token
-  if (row.id.includes('native')) {
-    const _token = row.token0.uuid == '00' ? row.token0 : row.token1
-    token = new Token({
-      uuid: _token.uuid,
-      name: _token.name,
-      decimals: _token.decimals,
-      symbol: _token.symbol,
-      chainId: _token.chainId,
-    })
-  } else {
-    const _token = row.token0.uuid != '00' ? row.token0 : row.token1
-    token = new Token({
-      uuid: _token.uuid,
-      name: _token.name,
-      decimals: _token.decimals,
-      symbol: _token.symbol,
-      chainId: _token.chainId,
-      imageUrl: _token.imageUrl || undefined,
-    })
-  }
   const ref = useRef<HTMLDivElement>(null)
   const inViewport = useInViewport(ref)
+
+  // Memoize token creation to avoid unnecessary recreations
+  const token = useMemo(() => {
+    if (row.id.includes('native')) {
+      const _token = row.token0.uuid == '00' ? row.token0 : row.token1
+      return new Token({
+        uuid: _token.uuid,
+        name: _token.name,
+        decimals: _token.decimals,
+        symbol: _token.symbol,
+        chainId: _token.chainId,
+      })
+    } else {
+      const _token = row.token0.uuid != '00' ? row.token0 : row.token1
+      return new Token({
+        uuid: _token.uuid,
+        name: _token.name,
+        decimals: _token.decimals,
+        symbol: _token.symbol,
+        chainId: _token.chainId,
+        imageUrl: _token.imageUrl || undefined,
+      })
+    }
+  }, [row])
+
+  const shouldPrioritize = inViewport || (!ref.current && token.symbol === 'HTR')
 
   return (
     <div className="flex items-center">
       <div className="flex-shrink-0" style={{ width: `${ICON_SIZE}px` }}>
-        <Currency.Icon width={ICON_SIZE} height={ICON_SIZE} currency={token} priority={inViewport} />
+        <Currency.Icon
+          width={ICON_SIZE}
+          height={ICON_SIZE}
+          currency={token}
+          priority={shouldPrioritize}
+          loading={shouldPrioritize ? 'eager' : 'lazy'}
+        />
       </div>
       <div className="flex items-center flex-grow min-w-0 ml-3">
         <div className="flex flex-col flex-grow min-w-0 mr-2">

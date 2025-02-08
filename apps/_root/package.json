@@ -49,6 +49,6 @@
     "dev": "next dev --port 9000",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "next lint",
-    "start": "next start"
+    "start": "PORT=9000 /bin/bash -c 'node .next/standalone/apps/_root/server.js'"
   }
 }

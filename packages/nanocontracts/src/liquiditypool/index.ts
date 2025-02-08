@@ -51,11 +51,11 @@ export class LiquidityPool extends NanoContract {
   //     {
   //       type: 'deposit',
   //       token: token_in,
-  //       amount: Math.ceil(amount_in * 100),
+  //       amount: (amount_in * 100),
   //       address: address,
   //       changeAddress: address,
   //     },
-  //     { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
+  //     { type: 'withdrawal', token: token_out, amount: (amount_out * 100), address: address },
   //   ]
   //   const args: NCArgs[] = []
   //   // console.log('actions', actions)
@@ -74,11 +74,11 @@ export class LiquidityPool extends NanoContract {
   //     {
   //       type: 'deposit',
   //       token: token_in,
-  //       amount: Math.ceil(amount_in * 100),
+  //       amount: (amount_in * 100),
   //       address: address,
   //       changeAddress: address,
   //     },
-  //     { type: 'withdrawal', token: token_out, amount: Math.ceil(amount_out * 100), address: address },
+  //     { type: 'withdrawal', token: token_out, amount: (amount_out * 100), address: address },
   //   ]
   //   const args: NCArgs[] = []
   //   // console.log('actions', actions)
@@ -142,14 +142,14 @@ export class LiquidityPool extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: token_in,
-          amount: Math.ceil(amount_in * 100),
+          amount: amount_in * 100,
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: token_out,
-          amount: Math.ceil(amount_out * 100),
+          amount: amount_out * 100,
           address: address,
           changeAddress: address,
         },
@@ -182,14 +182,14 @@ export class LiquidityPool extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: token_in,
-          amount: Math.ceil(amount_in * 100),
+          amount: amount_in * 100,
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: token_out,
-          amount: Math.ceil(amount_out * 100),
+          amount: amount_out * 100,
           address: address,
           changeAddress: address,
         },
@@ -222,14 +222,14 @@ export class LiquidityPool extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: token_a,
-          amount: Math.ceil(amount_a * 100),
+          amount: amount_a * 100,
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.DEPOSIT,
           token: token_b,
-          amount: Math.ceil(amount_b * 100),
+          amount: amount_b * 100,
           address: address,
           changeAddress: address,
         },
@@ -261,14 +261,14 @@ export class LiquidityPool extends NanoContract {
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: token_a,
-          amount: Math.ceil(amount_a * 100),
+          amount: amount_a * 100,
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: token_b,
-          amount: Math.ceil(amount_b * 100),
+          amount: amount_b * 100,
           address: address,
           changeAddress: address,
         },

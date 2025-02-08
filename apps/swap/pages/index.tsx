@@ -316,6 +316,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             onChange={onInput1}
             currency={token1}
             onSelect={_setToken1}
+            hidePercentageButtons={true}
             // customTokenMap={customTokensMap}
             // onAddToken={addCustomToken}
             // onRemoveToken={removeCustomToken}

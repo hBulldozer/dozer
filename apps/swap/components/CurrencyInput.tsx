@@ -13,6 +13,7 @@ interface CurrencyInput extends CurrencyInputProps {
   tradeType: TradeType
   prices: { [key: string]: number }
   tokens?: Token[]
+  hidePercentageButtons?: boolean
   // isWrap?: boolean
 }
 
@@ -34,6 +35,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
   loading = false,
   prices,
   tokens,
+  hidePercentageButtons = false,
   // isWrap = false,
 }) => {
   const trade = useTrade()
@@ -70,6 +72,7 @@ export const CurrencyInput: FC<CurrencyInput> = ({
       usdPctChange={inputType === TradeType.EXACT_OUTPUT ? usdPctChange : undefined}
       prices={prices}
       tokens={tokens}
+      hidePercentageButtons={hidePercentageButtons}
     />
   )
 }

@@ -56,6 +56,6 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf .next && rm -rf .swc",
     "dev": "next dev --port 9002",
     "lint": "next lint",
-    "start": "next start"
+    "start": "PORT=9002 /bin/bash -c 'node .next/standalone/apps/earn/server.js'"
   }
 }

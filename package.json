@@ -72,6 +72,7 @@
     "seed_all": "dotenv -- tsx ./seed_all.ts",
     "sort": "sort-package-json 'package.json' 'apis/*/package.json' 'apps/*/package.json' 'config/*/package.json' 'examples/*/package.json' 'packages/{,!(node_modules)/}**/package.json' 'protocols/{,!(node_modules)/}**/package.json' 'scripts/*/package.json'",
     "sort-check": "sort-package-json 'package.json' 'apis/*/package.json' 'apps/*/package.json' 'examples/*/package.json' 'packages/{,!(node_modules)/}**/package.json' 'protocols/{,!(node_modules)/}**/package.json' --check",
+    "start": "dotenv -- turbo run start --parallel",
     "test": "dotenv -- turbo run test --parallel",
     "test-apps": "dotenv -- turbo run test --filter={./apps/*}[HEAD^1]...",
     "test-config": "dotenv -- turbo run test --filter={./config/*}[HEAD^1]...",
