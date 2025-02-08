@@ -40,7 +40,7 @@ export class Oasis extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: '00',
-          amount: Math.ceil(amount * 100),
+          amount: amount,
           address: address,
           changeAddress: address,
         },
@@ -64,7 +64,7 @@ export class Oasis extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: this.token,
-          amount: Math.ceil(amount * 100),
+          amount: amount,
           address: address,
           changeAddress: address,
         },
@@ -89,7 +89,7 @@ export class Oasis extends NanoContract {
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: this.token,
-          amount: Math.ceil(amount * 100),
+          amount: amount,
           address: address,
           changeAddress: address,
         },
@@ -114,7 +114,7 @@ export class Oasis extends NanoContract {
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: '00',
-          amount: Math.ceil(amount * 100),
+          amount: amount,
           address: address,
           changeAddress: address,
         },

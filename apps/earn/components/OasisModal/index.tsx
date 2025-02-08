@@ -92,7 +92,7 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
   onReset,
 }) => {
   const [amount, setAmount] = useState<string>('')
-  const maxAmount = oasis?.max_withdraw_htr ?? 0
+  const maxAmount = oasis?.user_balance_a ?? 0
 
   if (!oasis) return null
 
@@ -125,13 +125,13 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
               <Typography variant="sm" className="text-stone-400">
                 Current Bonus Available:
               </Typography>
-              <Typography variant="sm">{oasis.max_withdraw_htr.toFixed(2)} HTR</Typography>
+              <Typography variant="sm">{oasis.user_balance_a.toFixed(2)} HTR</Typography>
             </div>
             <div className="flex justify-between">
               <Typography variant="sm" className="text-stone-400">
                 Bonus After Removal:
               </Typography>
-              <Typography variant="sm">{(oasis.max_withdraw_htr - Number(amount || 0)).toFixed(2)} HTR</Typography>
+              <Typography variant="sm">{(oasis.user_balance_a - Number(amount || 0)).toFixed(2)} HTR</Typography>
             </div>
           </div>
 

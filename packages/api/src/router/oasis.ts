@@ -20,7 +20,7 @@ const fetchAndProcessUserOasis = async (
         user_deposit_b: result.user_deposit_b / 100 || 0,
         user_deposit_a: result.user_deposit_a / 100 || 0,
         user_liquidity: result.user_liquidity || 0,
-        user_withdrawal_time: new Date(result.user_withdrawal_time || 0 * 1000),
+        user_withdrawal_time: new Date((result.user_withdrawal_time || 0) * 1000),
         dev_balance: result.dev_balance / 100 || 0,
         total_liquidity: result.total_liquidity || 0,
         user_balance_a: result.user_balance_a / 100 || 0,

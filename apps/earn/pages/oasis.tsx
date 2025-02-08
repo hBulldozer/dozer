@@ -11,10 +11,11 @@ import {
   createSuccessToast,
   createErrorToast,
   Dots,
+  Tooltip,
 } from '@dozer/ui'
 import Image from 'next/legacy/image'
 import { Token } from '@dozer/currency'
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import { ArrowTopRightOnSquareIcon, ChartBarIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import backgroundOasis from '../public/background_oasis.jpeg'
 import { Tab, Transition } from '@headlessui/react'
 import { Connected } from '@dozer/higmi/systems/Checker/Connected'
@@ -117,22 +118,26 @@ const UserOasisPosition = ({
               {oasis.user_withdrawal_time.toLocaleDateString()}
             </Typography>
           </div>
-          <div className="flex flex-row gap-1">
-            <Typography variant="sm" className="text-stone-400">
-              Max withdraw {oasis.token.symbol}:
-            </Typography>
-            <Typography variant="sm" className="text-stone-200">
-              {oasis.max_withdraw_b} {oasis.token.symbol}
-            </Typography>
-          </div>
-          <div className="flex flex-row gap-1">
-            <Typography variant="sm" className="text-stone-400">
-              Max withdraw HTR:
-            </Typography>
-            <Typography variant="sm" className="text-stone-200">
-              {oasis.max_withdraw_htr} HTR
-            </Typography>
-          </div>
+          {oasis.user_withdrawal_time.getTime() < Date.now() && (
+            <>
+              <div className="flex flex-row gap-1">
+                <Typography variant="sm" className="text-stone-400">
+                  Max withdraw {oasis.token.symbol}:
+                </Typography>
+                <Typography variant="sm" className="text-stone-200">
+                  {oasis.max_withdraw_b} {oasis.token.symbol}
+                </Typography>
+              </div>
+              <div className="flex flex-row gap-1">
+                <Typography variant="sm" className="text-stone-400">
+                  Max withdraw HTR:
+                </Typography>
+                <Typography variant="sm" className="text-stone-200">
+                  {oasis.max_withdraw_htr} HTR
+                </Typography>
+              </div>
+            </>
+          )}
           <div className="flex flex-row gap-1">
             <Typography variant="sm" className="text-stone-400">
               HTR Bonus available:
@@ -144,7 +149,7 @@ const UserOasisPosition = ({
         </div>
       </div>
       <div className="flex flex-col gap-1">
-        {oasis.user_withdrawal_time.getTime() > Date.now() && buttonWithdraw}
+        {oasis.user_withdrawal_time.getTime() < Date.now() && buttonWithdraw}
         {oasis.user_balance_a > 0 && buttonWithdrawBonus}
       </div>
     </div>
@@ -213,7 +218,13 @@ const OasisProgram = () => {
     setSentTX(true)
     setTxType('Add liquidity')
     if (amount && lockPeriod && oasisId) {
-      const response = await oasisObj.user_deposit(hathorRpc, address, lockPeriod, oasisId, parseFloat(amount))
+      const response = await oasisObj.user_deposit(
+        hathorRpc,
+        address,
+        lockPeriod,
+        oasisId,
+        Math.floor(parseFloat(amount)) * 100
+      )
     }
   }
 
@@ -225,7 +236,7 @@ const OasisProgram = () => {
         hathorRpc,
         address,
         selectedOasisForRemove.id,
-        parseFloat(removeAmount)
+        Math.floor(parseFloat(removeAmount) * 100)
       )
     }
   }
@@ -238,7 +249,7 @@ const OasisProgram = () => {
         hathorRpc,
         address,
         selectedOasisForRemoveBonus.id,
-        parseFloat(removeAmount)
+        Math.floor(parseFloat(removeAmount) * 100)
       )
     }
   }
@@ -271,6 +282,8 @@ const OasisProgram = () => {
           addNotification(notificationGroup)
           createSuccessToast(notificationData)
           setAddModalOpen(false)
+          setRemoveModalOpen(false)
+          setRemoveBonusModalOpen(false)
           setSentTX(false)
         } else {
           createErrorToast(`Error`, true)
@@ -288,7 +301,7 @@ const OasisProgram = () => {
         amount && lockPeriod && oasisId
           ? await utils.getOasis.getFrontQuoteLiquidityIn.fetch({
               id: oasisId,
-              amount_in: parseFloat(amount),
+              amount_in: Math.floor(parseFloat(amount)),
               timelock: lockPeriod,
               now: Math.floor(Date.now()),
               address: address,
@@ -404,18 +417,17 @@ const OasisProgram = () => {
                     deposited token.
                   </Typography>
                 </motion.div>
-                {/* Learn More Button */}
                 <motion.div
                   layout
                   className={`${showChart ? 'col-span-full flex justify-center mt-4' : 'col-start-1 mt-4'}`}
                 >
-                  <div className={`${showChart ? 'flex flex-row gap-2' : 'flex flex-col gap-4'} w-full`}>
+                  <div className={`${showChart ? 'flex flex-row gap-2' : 'flex flex-col gap-4'}`}>
                     <Link href="https://docs.dozer.finance/oasis">
                       <Button
                         variant="outlined"
                         className="w-full border text-yellow hover:text-yellow-600 border-yellow"
                       >
-                        <Typography variant="sm" weight={500}>
+                        <Typography variant="sm" className="text-nowrap" weight={500}>
                           Learn More
                         </Typography>
                         <ArrowTopRightOnSquareIcon width={16} height={16} className="ml-2 text-yellow" />
@@ -429,7 +441,7 @@ const OasisProgram = () => {
                       <Typography variant="sm" weight={500}>
                         {showChart ? 'Hide Simulation' : 'Simulate Gains'}
                       </Typography>
-                      <ArrowTopRightOnSquareIcon width={16} height={16} className="ml-2 text-yellow" />
+                      <ChartBarIcon width={16} height={16} className="ml-2 text-yellow" />
                     </Button>
                   </div>
                 </motion.div>
@@ -658,22 +670,35 @@ const OasisProgram = () => {
                                           </div>
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
-                                              HTR Match:
+                                              HTR Matched:
                                             </Typography>
                                             <Typography variant="sm" className="text-yellow">
                                               {amount ? `${htrMatch.toFixed(2)} HTR` : '-'}
                                             </Typography>
                                           </div>
                                           <div className="flex justify-between">
-                                            <div className="flex flex-col gap-1">
+                                            <div className="flex flex-row gap-1">
                                               <Typography variant="sm" className="text-stone-400">
                                                 Unlock date:
                                               </Typography>
                                               {hasPosition && (
-                                                <Typography variant="xs" className="text-stone-600">
-                                                  User already have a position in Oasis, unlock date is calculated based
-                                                  on the last deposit and time remaining
-                                                </Typography>
+                                                <Tooltip
+                                                  panel={
+                                                    <Typography variant="xs">
+                                                      User already have a position in Oasis, unlock date is calculated
+                                                      based on the last deposit and time remaining
+                                                    </Typography>
+                                                  }
+                                                  button={
+                                                    <InformationCircleIcon
+                                                      width={16}
+                                                      height={16}
+                                                      className="mt-0.5 text-sm text-yellow-500 "
+                                                    />
+                                                  }
+                                                >
+                                                  <></>
+                                                </Tooltip>
                                               )}
                                             </div>
                                             <Typography variant="sm" className="text-yellow">
@@ -808,7 +833,7 @@ const OasisProgram = () => {
                   </Widget>
 
                   {/* Reserve Info Box */}
-                  <motion.div layout className="p-4 rounded-lg bg-[rgba(0,0,0,0.4)] border border-stone-800">
+                  <motion.div layout className="p-4 my-6 rounded-lg bg-[rgba(0,0,0,0.4)] border border-stone-800">
                     <Typography variant="xs" className="text-stone-400">
                       Oasis Reserve available
                     </Typography>
@@ -840,15 +865,8 @@ const OasisProgram = () => {
                       animate={{ x: 0, opacity: 1 }}
                       exit={{ x: '100%', opacity: 0 }}
                       transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-                      className="w-full h-[600px] bg-stone-800/50 rounded-lg overflow-hidden relative"
+                      className="w-full h-[670px] bg-stone-800/50 rounded-lg overflow-hidden relative p-4 mb-4"
                     >
-                      {fetchLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-stone-800/50 backdrop-blur-sm">
-                          <Typography variant="lg" className="text-stone-400">
-                            Loading...
-                          </Typography>
-                        </div>
-                      )}
                       <OasisChart
                         liquidityValue={Number(amount)}
                         initialPrices={initialPrices}
