@@ -160,7 +160,7 @@ export const oasisRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
-      const amount = input.amount_in * 100 // correcting input to the backend
+      const amount = input.amount_in
       const call = `front_quote_add_liquidity_in(${amount},${input.timelock},${Math.floor(input.now / 1000)},"a'${
         input.address
       }'")`

@@ -223,7 +223,7 @@ const OasisProgram = () => {
         address,
         lockPeriod,
         oasisId,
-        Math.floor(parseFloat(amount)) * 100
+        Math.floor(parseFloat(amount) * 100)
       )
     }
   }
@@ -301,7 +301,7 @@ const OasisProgram = () => {
         amount && lockPeriod && oasisId
           ? await utils.getOasis.getFrontQuoteLiquidityIn.fetch({
               id: oasisId,
-              amount_in: Math.floor(parseFloat(amount)),
+              amount_in: Math.floor(parseFloat(amount) * 100),
               timelock: lockPeriod,
               now: Math.floor(Date.now()),
               address: address,
