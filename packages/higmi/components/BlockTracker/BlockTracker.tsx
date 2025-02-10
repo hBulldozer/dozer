@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, Tooltip, Typography, classNames } from '@dozer/ui' // Assuming Dozer UI for text styling
-import { useNetwork, useTempTxStore } from '@dozer/zustand'
+import { useNetwork, useOasisTempTxStore, useTempTxStore } from '@dozer/zustand'
 import chains from '@dozer/chain'
 import { client } from '@dozer/api'
 
@@ -20,6 +20,7 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000, class
   const [hash, setHash] = useState<string | undefined>(data?.hash)
 
   const clearOldTempTxs = useTempTxStore((state) => state.clearOldTempTxs)
+  const clearOldPendingTxs = useOasisTempTxStore((state) => state.clearOldPendingPositions)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,6 +33,7 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000, class
           setHash(hash)
           utils.invalidate()
           clearOldTempTxs(newNumber)
+          clearOldPendingTxs(newNumber)
         }
       } catch (error) {
         console.error('Error fetching data:', error)

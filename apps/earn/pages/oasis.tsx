@@ -23,7 +23,7 @@ import { api } from '@dozer/higmi/utils/api'
 import { Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { get } from 'lodash'
 import { Oasis } from '@dozer/nanocontracts'
-import { useAccount, useNetwork } from '@dozer/zustand'
+import { useAccount, useNetwork, useOasisTempTxStore } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 import { OasisAddModal, OasisRemoveBonusModal, OasisRemoveModal } from '../components/OasisModal'
@@ -71,15 +71,22 @@ const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean })
 
 const UserOasisPosition = ({
   oasis,
+  isLoading,
   buttonWithdraw,
   buttonWithdrawBonus,
 }: {
   oasis: OasisInterface
+  isLoading?: boolean
   buttonWithdraw: JSX.Element
   buttonWithdrawBonus: JSX.Element
 }) => {
   return (
-    <div className="flex flex-col border rounded-lg border-stone-700">
+    <div className={classNames('relative flex flex-col border rounded-lg border-stone-700', isLoading && 'opacity-70')}>
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/80">
+          <Dots>Processing Transaction</Dots>
+        </div>
+      )}
       <div className="flex flex-col mt-2 ">
         <div className="flex flex-row items-center justify-center gap-2 p-4 my-auto">
           <div className="flex-shrink-0 w-7 h-7">
@@ -183,6 +190,11 @@ const OasisProgram = () => {
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
+  const { addPendingPosition, getPendingPositions } = useOasisTempTxStore()
+  const { data: currentBlock } = api.getNetwork.getBestBlock.useQuery(undefined, { refetchInterval: 30000 })
+  const currentBlockHeight = currentBlock?.number || 0
+  const pendingPositions = getPendingPositions(address)
+
   const utils = api.useUtils()
   const { data: htrPrice } = api.getPrices.htr.useQuery()
   const initialPrices = {
@@ -285,6 +297,21 @@ const OasisProgram = () => {
           setRemoveModalOpen(false)
           setRemoveBonusModalOpen(false)
           setSentTX(false)
+          addPendingPosition(
+            address,
+            {
+              id: `pending-${hash}`,
+              token: { symbol: currency },
+              user_deposit_b: parseFloat(amount),
+              user_balance_a: bonus,
+              user_withdrawal_time: unlockDate,
+              max_withdraw_htr: bonus,
+              max_withdraw_b: parseFloat(amount),
+              user_lp_htr: 0,
+              user_lp_b: 0,
+            },
+            currentBlockHeight // Get this from BlockTracker
+          )
         } else {
           createErrorToast(`Error`, true)
           setAddModalOpen(false)
@@ -759,6 +786,23 @@ const OasisProgram = () => {
 
                                 <Tab.Panel>
                                   <div className="flex flex-col gap-4 p-8">
+                                    {pendingPositions.length > 0 && (
+                                      <div className="p-4 bg-stone-800/50 rounded-xl">
+                                        <Typography variant="lg" weight={500} className="mb-4 text-yellow">
+                                          Your Pending Positions
+                                        </Typography>
+                                        {pendingPositions.map((position) => (
+                                          <UserOasisPosition
+                                            key={position.id}
+                                            oasis={position}
+                                            isLoading={true}
+                                            buttonWithdraw={<div />}
+                                            buttonWithdrawBonus={<div />}
+                                          />
+                                        ))}
+                                      </div>
+                                    )}
+
                                     {allUserOasis?.length == 0 ? (
                                       <div className="py-8 text-center">
                                         <Typography variant="sm" className="text-stone-500">
