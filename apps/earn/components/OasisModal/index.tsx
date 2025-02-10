@@ -195,7 +195,7 @@ export const OasisAddModal: React.FC<OasisAddModalProps> = ({
               </div>
               <div className="flex justify-between">
                 <Typography variant="sm" className="text-stone-400">
-                  HTR Match:
+                  HTR matched:
                 </Typography>
                 <Typography variant="sm">{htrMatch.toFixed(2)} HTR</Typography>
               </div>

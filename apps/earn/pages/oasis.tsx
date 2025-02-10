@@ -670,7 +670,7 @@ const OasisProgram = () => {
                                           </div>
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
-                                              HTR Matched:
+                                              HTR matched:
                                             </Typography>
                                             <Typography variant="sm" className="text-yellow">
                                               {amount ? `${htrMatch.toFixed(2)} HTR` : '-'}
