@@ -23,13 +23,13 @@ export const Header: FC = () => {
         <App.NavItemList>
           <App.NavItem
             className="text-transparent bg-clip-text bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500"
-            href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
-            label="Presale"
-            external
+            href={`${process.env.NEXT_PUBLIC_SITE_URL}/pool/oasis`}
+            label="Oasis"
           />
           <App.NavItem href="/" label="Swap" />
           <App.NavItem href="/tokens" label="Tokens" />
-          <App.NavItem href="https://testnet.dozer.finance/pool" label="Pools" />
+          <App.NavItem href={`${process.env.NEXT_PUBLIC_SITE_URL}/pool`} label="Pools" />
+          <App.NavItem href="https://t.me/hathor_solana_bot" label="Get HTR" external />
           {/* <App.NavItem href="https://mvp.dozer.finance/bridge" label="Bridge" /> */}
           {/* <BuyCrypto address={address} /> */}
           {/* <App.OpenModal label="Donate" setOpen={setOpen} />

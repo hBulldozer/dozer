@@ -186,6 +186,21 @@ export function Header({
                         Earn fees by providing liquidity
                       </Typography>
                     </Select.Option>
+
+                    <Select.Option
+                      as="a"
+                      href="/pool/oasis"
+                      key={AppType.Invest}
+                      value={AppType.Invest}
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      <div className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500 !hover:text-transparent">
+                        Oasis
+                      </div>
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        The liquidity incentive program
+                      </Typography>
+                    </Select.Option>
                   </div>
                   {/* <div>
                     <Typography
@@ -206,18 +221,16 @@ export function Header({
                     </Typography>
                     <Select.Option
                       as="a"
-                      href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
+                      href="https://t.me/hathor_solana_bot"
                       target="_blank"
                       rel="noopener noreferrer"
                       key={AppType.Blog}
                       value={AppType.Blog}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
                     >
-                      <div className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500 !hover:text-transparent">
-                        Presale
-                      </div>
+                      Get HTR
                       <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
-                        Don't be late anon!
+                        No-KYC on-ramp option
                       </Typography>
                     </Select.Option>
                     {/* <Select.Option
