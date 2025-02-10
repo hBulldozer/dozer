@@ -172,6 +172,7 @@ const OasisProgram = () => {
   const [htrMatch, setHtrMatch] = useState<number>(0)
   const [fetchLoading, setFetchLoading] = useState<boolean>(false)
   const [hasPosition, setHasPosition] = useState<boolean>(false)
+  const [depositAmount, setDepositAmount] = useState<number>(0)
   const [bonus, setBonus] = useState<number>(0)
   const [sentTX, setSentTX] = useState(false)
   const [addModalOpen, setAddModalOpen] = useState<boolean>(false)
@@ -338,6 +339,7 @@ const OasisProgram = () => {
               htr_amount: 0,
               withdrawal_time: new Date(),
               has_position: false,
+              deposit_amount: 0,
             }
 
       return response
@@ -352,6 +354,7 @@ const OasisProgram = () => {
           setUnlockDate(response['withdrawal_time'])
           setBonus(response['bonus'])
           setHasPosition(response['has_position'])
+          setDepositAmount(response['deposit_amount'])
         })
         // make sure to catch any error
         .catch((err) => {
@@ -362,6 +365,7 @@ const OasisProgram = () => {
       setHtrMatch(0)
       setUnlockDate(new Date())
       setBonus(0)
+      setDepositAmount(0)
       setHasPosition(false)
     }
   }, [amount, lockPeriod])
@@ -684,6 +688,14 @@ const OasisProgram = () => {
                                         <div className="hidden gap-4 lg:flex lg:flex-col">
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
+                                              Amount deposited:
+                                            </Typography>
+                                            <Typography variant="sm" className="text-stone-600">
+                                              Calculating...
+                                            </Typography>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <Typography variant="sm" className="text-stone-400">
                                               Bonus you'll get now:
                                             </Typography>
                                             <Typography variant="sm" className="text-stone-600">
@@ -709,6 +721,14 @@ const OasisProgram = () => {
                                         </div>
                                       ) : (
                                         <div className={`flex flex-col gap-4`}>
+                                          <div className="flex justify-between">
+                                            <Typography variant="sm" className="text-stone-400">
+                                              Amount deposited:
+                                            </Typography>
+                                            <Typography variant="sm" className="text-yellow">
+                                              {amount ? `${depositAmount.toFixed(2)} ${currency}` : '-'}
+                                            </Typography>
+                                          </div>
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
                                               Bonus you'll get now:
@@ -959,7 +979,7 @@ const OasisProgram = () => {
       <OasisAddModal
         open={addModalOpen}
         setOpen={setAddModalOpen}
-        amount={amount}
+        amount={depositAmount.toFixed(2)}
         token={currency}
         bonus={bonus}
         htrMatch={htrMatch}

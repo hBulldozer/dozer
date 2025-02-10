@@ -156,6 +156,7 @@ export const oasisRouter = createTRPCRouter({
         htr_amount: z.number(),
         withdrawal_time: z.date(),
         has_position: z.boolean(),
+        deposit_amount: z.number(),
       })
     )
     .query(async ({ input }) => {
@@ -172,6 +173,7 @@ export const oasisRouter = createTRPCRouter({
         htr_amount: result['htr_amount'] / 100,
         withdrawal_time: new Date(result['withdrawal_time'] * 1000),
         has_position: Boolean(result['has_position']),
+        deposit_amount: result['deposit_amount'] / 100,
       }
       return parsed_result
     }),
