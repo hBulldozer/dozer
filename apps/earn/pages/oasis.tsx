@@ -392,7 +392,7 @@ const OasisProgram = () => {
                 }`}
               >
                 {/* Card 1 */}
-                <motion.div className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
+                <motion.div layout className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
                   <Typography variant="lg" weight={500} className="mb-2 text-yellow">
                     1. Equal HTR Matching
                   </Typography>
@@ -403,7 +403,7 @@ const OasisProgram = () => {
                 </motion.div>
 
                 {/* Card 2 */}
-                <motion.div className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
+                <motion.div layout className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
                   <Typography variant="lg" weight={500} className="mb-2 text-yellow">
                     2. Instant Bonus
                   </Typography>
@@ -414,7 +414,7 @@ const OasisProgram = () => {
                 </motion.div>
 
                 {/* Card 3 */}
-                <motion.div className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
+                <motion.div layout className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
                   <Typography variant="lg" weight={500} className="mb-2 text-yellow">
                     3. IL Protection
                   </Typography>
@@ -440,11 +440,15 @@ const OasisProgram = () => {
                 </div>
 
                 {/* Desktop Buttons */}
-                <div className={`${showChart ? 'flex flex-row justify-center gap-4' : 'flex flex-col gap-4'} `}>
+                <div
+                  className={`${
+                    showChart ? 'flex flex-row justify-center col-span-full gap-4' : 'flex flex-col gap-4'
+                  } `}
+                >
                   <Link href="https://docs.dozer.finance/oasis">
                     <Button
                       variant="outlined"
-                      className="hidden w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"
+                      className="justify-center hidden w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"
                     >
                       <Typography variant="sm" className="text-nowrap" weight={500}>
                         Learn More
@@ -454,7 +458,7 @@ const OasisProgram = () => {
                   </Link>
                   <Button
                     variant="outlined"
-                    className="items-center justify-center hidden w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"
+                    className="justify-center hidden border lg:flex text-yellow hover:text-yellow-600 border-yellow"
                     onClick={() => setShowChart(!showChart)}
                   >
                     <Typography variant="sm" weight={500}>
@@ -475,7 +479,7 @@ const OasisProgram = () => {
                 }`}
               >
                 {/* Input Form */}
-                <motion.div layout className="w-full">
+                <motion.div className="w-full">
                   <Widget id="oasisInput" maxWidth="full" className="py-5 mb-4">
                     <Widget.Content>
                       <div className="grid ">
@@ -677,7 +681,7 @@ const OasisProgram = () => {
                                           </div>
                                         </div>
                                       ) : (
-                                        <div className={`flex ${showChart ? 'flex-row' : 'flex-col'} gap-4`}>
+                                        <div className={`flex flex-col gap-4`}>
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
                                               Bonus you'll get now:
@@ -727,13 +731,13 @@ const OasisProgram = () => {
                                       )}
                                     </div>
 
-                                    <Checker.Amounts
-                                      fullWidth
-                                      size="md"
-                                      amount={Number(amount)}
-                                      token={new Token({ chainId: ChainId.HATHOR, uuid: tokenUuid, decimals: 2 })}
-                                    >
-                                      <Connected fullWidth size="md">
+                                    <Checker.Connected fullWidth size="md">
+                                      <Checker.Amounts
+                                        fullWidth
+                                        size="md"
+                                        amount={Number(amount)}
+                                        token={new Token({ chainId: ChainId.HATHOR, uuid: tokenUuid, decimals: 2 })}
+                                      >
                                         <div className="flex flex-col justify-between gap-2">
                                           <Button
                                             size="md"
@@ -748,8 +752,8 @@ const OasisProgram = () => {
                                             )}
                                           </Button>
                                         </div>
-                                      </Connected>
-                                    </Checker.Amounts>
+                                      </Checker.Amounts>
+                                    </Checker.Connected>
                                   </div>
                                 </Tab.Panel>
 
@@ -761,6 +765,12 @@ const OasisProgram = () => {
                                           No active positions found.
                                           <br />
                                           Start by making a deposit!
+                                        </Typography>
+                                      </div>
+                                    ) : !address ? (
+                                      <div className="py-8 text-center">
+                                        <Typography variant="sm" className="text-stone-500">
+                                          Please connect your wallet to view your positions.
                                         </Typography>
                                       </div>
                                     ) : (
@@ -876,26 +886,26 @@ const OasisProgram = () => {
                 </motion.div>
 
                 {/* Chart Section */}
-                <AnimatePresence mode="wait">
-                  {showChart && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="w-full col-span-full lg:col-span-1 h-[670px] bg-stone-800/50 rounded-lg overflow-hidden relative p-4 mb-4 order-last"
-                    >
-                      <OasisChart
-                        liquidityValue={Number(amount)}
-                        initialPrices={initialPrices}
-                        bonusRate={bonusRate}
-                        holdPeriod={lockPeriod}
-                        currency={currency}
-                        tokenPriceChange={tokenPriceChange}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {/* <AnimatePresence mode="wait"> */}
+                {showChart && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full col-span-full lg:col-span-1 h-[670px] bg-stone-800/50 rounded-lg overflow-hidden relative p-4 mb-4 order-last"
+                  >
+                    <OasisChart
+                      liquidityValue={Number(amount)}
+                      initialPrices={initialPrices}
+                      bonusRate={bonusRate}
+                      holdPeriod={lockPeriod}
+                      currency={currency}
+                      tokenPriceChange={tokenPriceChange}
+                    />
+                  </motion.div>
+                )}
+                {/* </AnimatePresence> */}
               </motion.div>
             </motion.div>
           </motion.div>
