@@ -375,20 +375,24 @@ const OasisProgram = () => {
 
         <LayoutGroup>
           {/* Main Content */}
-          <motion.div layout className={`w-full ${showChart ? 'max-w-full px-6' : 'max-w-[1200px]'} mx-auto`}>
+          <motion.div layout className={`w-full mx-auto ${showChart ? 'px-0' : 'max-w-[1200px]'}`}>
             {/* Info Cards and Main Layout */}
             <motion.div
               layout
-              className={`grid ${showChart ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[300px_520px_320px] gap-10'}`}
+              className={`flex flex-col lg:${
+                showChart ? 'flex flex-col max-w-[1400px] mx-auto px-6' : 'grid grid-cols-[300px_520px_320px]'
+              } gap-6 lg:gap-10`}
             >
-              {/* Info Cards */}
               <motion.div
                 layout
                 className={`${
-                  showChart ? 'col-span-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-6' : 'col-start-1 space-y-6'
+                  showChart
+                    ? 'grid grid-cols-1 lg:grid-cols-3 gap-4 col-span-full mb-6'
+                    : 'flex flex-col col-start-1 order-2 lg:order-none space-y-6'
                 }`}
               >
-                <motion.div layout className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
+                {/* Card 1 */}
+                <motion.div className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
                   <Typography variant="lg" weight={500} className="mb-2 text-yellow">
                     1. Equal HTR Matching
                   </Typography>
@@ -398,7 +402,8 @@ const OasisProgram = () => {
                   </Typography>
                 </motion.div>
 
-                <motion.div layout className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
+                {/* Card 2 */}
+                <motion.div className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
                   <Typography variant="lg" weight={500} className="mb-2 text-yellow">
                     2. Instant Bonus
                   </Typography>
@@ -408,7 +413,8 @@ const OasisProgram = () => {
                   </Typography>
                 </motion.div>
 
-                <motion.div layout className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
+                {/* Card 3 */}
+                <motion.div className="p-4 rounded-xl bg-[rgba(0,0,0,0.4)] border border-stone-800">
                   <Typography variant="lg" weight={500} className="mb-2 text-yellow">
                     3. IL Protection
                   </Typography>
@@ -417,34 +423,46 @@ const OasisProgram = () => {
                     deposited token.
                   </Typography>
                 </motion.div>
-                <motion.div
-                  layout
-                  className={`${showChart ? 'col-span-full flex justify-center mt-4' : 'col-start-1 mt-4'}`}
-                >
-                  <div className={`${showChart ? 'flex flex-row gap-2' : 'flex flex-col gap-4'}`}>
-                    <Link href="https://docs.dozer.finance/oasis">
-                      <Button
-                        variant="outlined"
-                        className="w-full border text-yellow hover:text-yellow-600 border-yellow"
-                      >
-                        <Typography variant="sm" className="text-nowrap" weight={500}>
-                          Learn More
-                        </Typography>
-                        <ArrowTopRightOnSquareIcon width={16} height={16} className="ml-2 text-yellow" />
-                      </Button>
-                    </Link>
+
+                {/* Mobile Learn More Button */}
+                <div className="flex flex-col gap-4 lg:hidden">
+                  <Link href="https://docs.dozer.finance/oasis">
                     <Button
                       variant="outlined"
                       className="w-full border text-yellow hover:text-yellow-600 border-yellow"
-                      onClick={() => setShowChart(!showChart)}
                     >
-                      <Typography variant="sm" weight={500}>
-                        {showChart ? 'Hide Simulation' : 'Simulate Gains'}
+                      <Typography variant="sm" className="text-nowrap" weight={500}>
+                        Learn More
                       </Typography>
-                      <ChartBarIcon width={16} height={16} className="ml-2 text-yellow" />
+                      <ArrowTopRightOnSquareIcon width={16} height={16} className="ml-2 text-yellow" />
                     </Button>
-                  </div>
-                </motion.div>
+                  </Link>
+                </div>
+
+                {/* Desktop Buttons */}
+                <div className={`${showChart ? 'flex flex-row justify-center gap-4' : 'flex flex-col gap-4'} `}>
+                  <Link href="https://docs.dozer.finance/oasis">
+                    <Button
+                      variant="outlined"
+                      className="hidden w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"
+                    >
+                      <Typography variant="sm" className="text-nowrap" weight={500}>
+                        Learn More
+                      </Typography>
+                      <ArrowTopRightOnSquareIcon width={16} height={16} className="ml-2 text-yellow" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="outlined"
+                    className="items-center justify-center hidden w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"
+                    onClick={() => setShowChart(!showChart)}
+                  >
+                    <Typography variant="sm" weight={500}>
+                      {showChart ? 'Hide Simulation' : 'Simulate Gains'}
+                    </Typography>
+                    <ChartBarIcon width={16} height={16} className="ml-2 text-yellow" />
+                  </Button>
+                </div>
               </motion.div>
 
               {/* Input Form and Chart */}
@@ -452,8 +470,8 @@ const OasisProgram = () => {
                 layout
                 className={`${
                   showChart
-                    ? 'col-span-full grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 items-start'
-                    : 'col-start-2 w-[520px]'
+                    ? 'grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 items-start'
+                    : 'order-1 lg:order-none col-start-2 w-full lg:w-[520px]'
                 }`}
               >
                 {/* Input Form */}
@@ -632,7 +650,7 @@ const OasisProgram = () => {
 
                                     <div className="p-4 mt-2 sm:mt-4 bg-stone-800 rounded-xl">
                                       {fetchLoading ? (
-                                        <div className="flex flex-col gap-4">
+                                        <div className="hidden gap-4 lg:flex lg:flex-col">
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
                                               Bonus you'll get now:
@@ -659,7 +677,7 @@ const OasisProgram = () => {
                                           </div>
                                         </div>
                                       ) : (
-                                        <div className="flex flex-col gap-4">
+                                        <div className={`flex ${showChart ? 'flex-row' : 'flex-col'} gap-4`}>
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
                                               Bonus you'll get now:
@@ -861,11 +879,11 @@ const OasisProgram = () => {
                 <AnimatePresence mode="wait">
                   {showChart && (
                     <motion.div
-                      initial={{ x: '100%', opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: '100%', opacity: 0 }}
-                      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-                      className="w-full h-[670px] bg-stone-800/50 rounded-lg overflow-hidden relative p-4 mb-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="w-full col-span-full lg:col-span-1 h-[670px] bg-stone-800/50 rounded-lg overflow-hidden relative p-4 mb-4 order-last"
                     >
                       <OasisChart
                         liquidityValue={Number(amount)}
