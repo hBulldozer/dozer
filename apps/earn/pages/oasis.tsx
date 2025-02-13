@@ -241,7 +241,7 @@ const OasisProgram = () => {
     }
   }
 
-  const handleRemoveLiquidity = async (removeAmount: string): Promise<void> => {
+  const handleRemoveLiquidity = async (removeAmount: string, removeAmountHtr: string): Promise<void> => {
     setSentTX(true)
     setTxType('Remove liquidity')
     if (removeAmount && selectedOasisForRemove?.id) {
@@ -249,7 +249,8 @@ const OasisProgram = () => {
         hathorRpc,
         address,
         selectedOasisForRemove.id,
-        Math.floor(parseFloat(removeAmount) * 100)
+        Math.floor(parseFloat(removeAmount) * 100),
+        Math.floor(parseFloat(removeAmountHtr) * 100)
       )
     }
   }

@@ -19,7 +19,7 @@ export interface OasisRemoveModalProps {
   open: boolean
   setOpen: (open: boolean) => void
   oasis: OasisPosition | null
-  onConfirm: (amount: string) => Promise<void>
+  onConfirm: (amount: string, htr_amount: string) => Promise<void>
   isRpcRequestPending: boolean
   onReset: () => void
 }

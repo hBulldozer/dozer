@@ -65,7 +65,7 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
               disabled={isRpcRequestPending || !amount || Number(amount) > maxAmount}
               fullWidth
               onClick={async () => {
-                await onConfirm(amount)
+                await onConfirm(amount, oasis.max_withdraw_htr.toFixed(2))
                 setAmount('')
               }}
             >
@@ -141,7 +141,7 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
               disabled={isRpcRequestPending || !amount || Number(amount) > maxAmount}
               fullWidth
               onClick={async () => {
-                await onConfirm(amount)
+                await onConfirm(amount, oasis.max_withdraw_htr.toFixed(2))
                 setAmount('')
               }}
             >
