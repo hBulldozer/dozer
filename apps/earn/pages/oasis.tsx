@@ -269,7 +269,7 @@ const OasisProgram = () => {
 
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result && sentTX) {
-      if (amount && lockPeriod && oasisId) {
+      if (oasisId || selectedOasisForRemove || selectedOasisForRemoveBonus) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
           const notificationData: NotificationData = {
@@ -849,7 +849,7 @@ const OasisProgram = () => {
                                               oasis={oasis}
                                               key={oasis.id}
                                               buttonWithdraw={
-                                                <div className="flex flex-col justify-between gap-2 px-4">
+                                                <div className="flex flex-col justify-between gap-2 p-4">
                                                   <Button
                                                     size="sm"
                                                     disabled={isRpcRequestPending}
