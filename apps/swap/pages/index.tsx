@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from '@heroicons/react/24/solid'
+import { ArrowTopRightOnSquareIcon, ChevronDownIcon } from '@heroicons/react/24/solid'
 import { App, Button, classNames, Widget } from '@dozer/ui'
 import { Layout } from '../components/Layout'
 import { CurrencyInput } from '../components/CurrencyInput'
@@ -17,6 +17,8 @@ import type { GetStaticProps } from 'next'
 import type { dbPoolWithTokens, Pair } from '@dozer/api'
 import { tr } from 'date-fns/locale'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
+import Image from 'next/legacy/image'
+import bridgeIcon from '../public/bridge-icon.jpeg'
 
 type TokenOutputArray = RouterOutputs['getTokens']['all']
 
@@ -62,7 +64,24 @@ const Home = () => {
   // }, true)
   return (
     <Layout>
-      <SwapWidget token0_idx={'2'} token1_idx={'0'} />
+      <div className="flex flex-col gap-4 max-w-[400px] mx-auto">
+        <SwapWidget token0_idx={'2'} token1_idx={'0'} />
+        <div
+          className="flex items-center justify-between gap-3 p-4 transition-colors border rounded-lg cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800"
+          onClick={() => window.open('https://t.me/hathor_solana_bot', '_blank')}
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-900/20">
+              <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white">HTR token bridge</span>
+              <span className="text-xs text-gray-400">Deposit tokens to the Hathor network.</span>
+            </div>
+          </div>
+          <ArrowTopRightOnSquareIcon width={20} height={20} className="text-gray-400" />
+        </div>
+      </div>
       <BlockTracker client={api} />
     </Layout>
   )

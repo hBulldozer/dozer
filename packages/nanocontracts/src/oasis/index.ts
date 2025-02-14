@@ -82,25 +82,28 @@ export class Oasis extends NanoContract {
   }
 
   public async user_withdraw(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number, amount_htr: number) {
+    const actions = [
+      {
+        type: NanoContractActionType.WITHDRAWAL,
+        token: this.token,
+        amount: amount,
+        address: address,
+        changeAddress: address,
+      },
+    ]
+    if (amount_htr > 0) {
+      actions.push({
+        type: NanoContractActionType.WITHDRAWAL,
+        token: '00',
+        amount: amount_htr,
+        address: address,
+        changeAddress: address,
+      })
+    }
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_withdraw',
       '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
-      [
-        {
-          type: NanoContractActionType.WITHDRAWAL,
-          token: this.token,
-          amount: amount,
-          address: address,
-          changeAddress: address,
-        },
-        {
-          type: NanoContractActionType.WITHDRAWAL,
-          token: '00',
-          amount: amount_htr,
-          address: address,
-          changeAddress: address,
-        },
-      ],
+      actions,
       [],
       true,
       ncId

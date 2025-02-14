@@ -122,7 +122,7 @@ const UserOasisPosition = ({
               Unlock Date:
             </Typography>
             <Typography variant="sm" className="text-stone-200">
-              {oasis.user_withdrawal_time.toLocaleDateString()}
+              {`${oasis.user_withdrawal_time.toLocaleDateString()} ${oasis.user_withdrawal_time.toLocaleTimeString()}`}
             </Typography>
           </div>
           {oasis.user_withdrawal_time.getTime() < Date.now() && (
@@ -299,21 +299,22 @@ const OasisProgram = () => {
           setRemoveModalOpen(false)
           setRemoveBonusModalOpen(false)
           setSentTX(false)
-          addPendingPosition(
-            address,
-            {
-              id: `pending-${hash}`,
-              token: { symbol: currency },
-              user_deposit_b: parseFloat(amount),
-              user_balance_a: bonus,
-              user_withdrawal_time: unlockDate,
-              max_withdraw_htr: bonus,
-              max_withdraw_b: parseFloat(amount),
-              user_lp_htr: 0,
-              user_lp_b: 0,
-            },
-            currentBlockHeight // Get this from BlockTracker
-          )
+          if (txType == 'Add liquidity')
+            addPendingPosition(
+              address,
+              {
+                id: `pending-${hash}`,
+                token: { symbol: currency },
+                user_deposit_b: parseFloat(amount),
+                user_balance_a: bonus,
+                user_withdrawal_time: unlockDate,
+                max_withdraw_htr: bonus,
+                max_withdraw_b: parseFloat(amount),
+                user_lp_htr: 0,
+                user_lp_b: 0,
+              },
+              currentBlockHeight // Get this from BlockTracker
+            )
         } else {
           createErrorToast(`Error`, true)
           setAddModalOpen(false)
@@ -416,7 +417,6 @@ const OasisProgram = () => {
               } gap-6 lg:gap-10`}
             >
               <motion.div
-                layout
                 className={`${
                   showChart
                     ? 'grid grid-cols-1 lg:grid-cols-3 gap-4 col-span-full mb-6'
@@ -772,7 +772,9 @@ const OasisProgram = () => {
                                               )}
                                             </div>
                                             <Typography variant="sm" className="text-yellow">
-                                              {amount ? unlockDate.toLocaleDateString() : '-'}
+                                              {amount
+                                                ? `${unlockDate.toLocaleDateString()} ${unlockDate.toLocaleTimeString()}`
+                                                : '-'}
                                             </Typography>
                                           </div>
                                         </div>
