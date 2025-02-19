@@ -22,7 +22,7 @@ import { Connected } from '@dozer/higmi/systems/Checker/Connected'
 import { api } from '@dozer/higmi/utils/api'
 import { Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { get } from 'lodash'
-import { Oasis } from '@dozer/nanocontracts'
+import { hathorLib, Oasis } from '@dozer/nanocontracts'
 import { useAccount, useNetwork, useOasisTempTxStore } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
@@ -334,7 +334,7 @@ const OasisProgram = () => {
               amount_in: Math.floor(parseFloat(amount) * 100),
               timelock: lockPeriod,
               now: Math.floor(Date.now()),
-              address: address,
+              address: address || 'WZhKusv57pvzotZrf4s7yt7P7PXEqyFTHk',
             })
           : {
               bonus: 0,
