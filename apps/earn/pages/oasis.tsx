@@ -284,12 +284,6 @@ const OasisProgram = () => {
       selectedOasisForRemoveBonus.id,
       Math.floor(parseFloat(removeAmount) * 100)
     )
-
-    // Add transaction to store when sent
-    const hash = get(rpcResult, 'result.response.hash') as string
-    if (hash) {
-      addPendingPosition(address, selectedOasisForRemoveBonus, currentBlockHeight, 'bonus')
-    }
   }
 
   useEffect(() => {
@@ -340,6 +334,10 @@ const OasisProgram = () => {
               currentBlockHeight, // Get this from BlockTracker
               'add'
             )
+          if (txType == 'Remove bonus' && selectedOasisForRemoveBonus)
+            addPendingPosition(address, selectedOasisForRemoveBonus, currentBlockHeight, 'bonus')
+          if (txType == 'Remove liquidity' && selectedOasisForRemove)
+            addPendingPosition(address, selectedOasisForRemove, currentBlockHeight, 'withdraw')
         } else {
           createErrorToast(`Error`, true)
           setAddModalOpen(false)
