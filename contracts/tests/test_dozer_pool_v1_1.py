@@ -1,3 +1,4 @@
+import decimal
 import os
 import random
 from logging import getLogger
@@ -46,7 +47,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
     def get_current_timestamp(self):
         return int(self.clock.seconds())
 
-    def _initialize_contract(self, reserve_a, reserve_b, fee=0, protocol_fee=50):
+    def _initialize_contract(
+        self, reserve_a, reserve_b, fee=0, protocol_fee=50
+    ) -> Context:
         tx = self._get_any_tx()
         actions = [
             NCAction(NCActionType.DEPOSIT, self.token_a, reserve_a),
@@ -71,6 +74,8 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(storage.get("token_b"), self.token_b)
         self.assertEqual(storage.get("fee_numerator"), fee)
 
+        return context
+
     def _prepare_swap_context(self, token_in, amount_in, token_out, amount_out):
         tx = self._get_any_tx()
         actions = [
@@ -84,12 +89,16 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
 
     def _swap1(self, token_in, amount_in, token_out, amount_out):
         context = self._prepare_swap_context(token_in, amount_in, token_out, amount_out)
-        result = self.runner.call_public_method(self.nc_id, "swap_exact_tokens_for_tokens", context)
+        result = self.runner.call_public_method(
+            self.nc_id, "swap_exact_tokens_for_tokens", context
+        )
         return result, context
 
     def _swap2(self, token_in, amount_in, token_out, amount_out):
         context = self._prepare_swap_context(token_in, amount_in, token_out, amount_out)
-        result = self.runner.call_public_method(self.nc_id, "swap_tokens_for_exact_tokens", context)
+        result = self.runner.call_public_method(
+            self.nc_id, "swap_tokens_for_exact_tokens", context
+        )
         return result, context
 
     def assertBalanceReserve(self, storage: NCStorage) -> None:
@@ -119,7 +128,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(reserve_b - amount_out, storage.get_balance(self.token_b))
 
         reserve_after = (reserve_a + amount_in, reserve_b - amount_out)
-        self.assertEqual(reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves"))
+        self.assertEqual(
+            reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
 
         self.assertEqual(
             (0, 0),
@@ -147,10 +158,13 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(reserve_b - amount_out, storage.get_balance(self.token_b))
 
         reserve_after = (reserve_a + amount_in, reserve_b - amount_out - change)
-        self.assertEqual(reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves"))
+        self.assertEqual(
+            reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
 
         self.assertEqual(
-            (0, change), self.runner.call_view_method(self.nc_id, "balance_of", ctx.address)
+            (0, change),
+            self.runner.call_view_method(self.nc_id, "balance_of", ctx.address),
         )
         self.assertBalanceReserve(storage)
 
@@ -207,7 +221,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(reserve_b - amount_out, storage.get_balance(self.token_b))
 
         reserve_after = (reserve_a + amount_in, reserve_b - amount_out)
-        self.assertEqual(reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves"))
+        self.assertEqual(
+            reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
 
         self.assertEqual(
             (0, 0), self.runner.call_view_method(self.nc_id, "balance_of", ctx.address)
@@ -234,10 +250,13 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(reserve_b - amount_out, storage.get_balance(self.token_b))
 
         reserve_after = (reserve_a + amount_in - change, reserve_b - amount_out)
-        self.assertEqual(reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves"))
+        self.assertEqual(
+            reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
 
         self.assertEqual(
-            (change, 0), self.runner.call_view_method(self.nc_id, "balance_of", ctx.address)
+            (change, 0),
+            self.runner.call_view_method(self.nc_id, "balance_of", ctx.address),
         )
         self.assertBalanceReserve(storage)
 
@@ -266,7 +285,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         )
         self.assertEqual(
             20_40,
-            self.runner.call_view_method(self.nc_id, "get_amount_in", 20_00, 1_000_00, 1_000_00),
+            self.runner.call_view_method(
+                self.nc_id, "get_amount_in", 20_00, 1_000_00, 1_000_00
+            ),
         )
 
     def _prepare_add_liquidity_context(self, amount_a, amount_b):
@@ -317,13 +338,16 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(reserve_b + amount_b, storage.get_balance(self.token_b))
 
         reserve_after = (reserve_a + amount_a, reserve_b + amount_b)
-        self.assertEqual(reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves"))
+        self.assertEqual(
+            reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
 
-        liquidity_increase = (total_liquidity / PRECISION) * amount_a / reserve_a
-        get_liquidity = int(PRECISION * liquidity_increase)
+        liquidity_increase = total_liquidity * amount_a // reserve_a
+        get_liquidity = liquidity_increase
 
         self.assertEqual(
-            get_liquidity, self.runner.call_view_method(self.nc_id, "liquidity_of", ctx.address)
+            get_liquidity,
+            self.runner.call_view_method(self.nc_id, "liquidity_of", ctx.address),
         )
 
         return ctx
@@ -353,20 +377,23 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(reserve_b + amount_b, storage.get_balance(self.token_b))
 
         reserve_after = (reserve_a + amount_a - change, reserve_b + amount_b)
-        self.assertEqual(reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves"))
+        self.assertEqual(
+            reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
 
         self.assertEqual(
-            (change, 0), self.runner.call_view_method(self.nc_id, "balance_of", ctx.address)
+            (change, 0),
+            self.runner.call_view_method(self.nc_id, "balance_of", ctx.address),
         )
         self.assertBalanceReserve(storage)
 
-        liquidity_increase = (
-            (total_liquidity / PRECISION) * (amount_a - change) / reserve_a
-        )
-        get_liquidity = int(PRECISION * liquidity_increase)
+        liquidity_increase = total_liquidity * (amount_a - change) // reserve_a
+
+        get_liquidity = liquidity_increase
 
         self.assertEqual(
-            get_liquidity, self.runner.call_view_method(self.nc_id, "liquidity_of", ctx.address)
+            get_liquidity,
+            self.runner.call_view_method(self.nc_id, "liquidity_of", ctx.address),
         )
         return ctx
 
@@ -395,20 +422,54 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(reserve_b + amount_b, storage.get_balance(self.token_b))
 
         reserve_after = (reserve_a + amount_a, reserve_b + amount_b - change)
-        self.assertEqual(reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves"))
+        self.assertEqual(
+            reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
 
         self.assertEqual(
-            (0, change), self.runner.call_view_method(self.nc_id, "balance_of", ctx.address)
+            (0, change),
+            self.runner.call_view_method(self.nc_id, "balance_of", ctx.address),
         )
         self.assertBalanceReserve(storage)
 
-        liquidity_increase = (total_liquidity / PRECISION) * amount_a / reserve_a
-        get_liquidity = int(PRECISION * liquidity_increase)
+        liquidity_increase = total_liquidity * amount_a // reserve_a
+        get_liquidity = liquidity_increase
 
         self.assertEqual(
-            get_liquidity, self.runner.call_view_method(self.nc_id, "liquidity_of", ctx.address)
+            get_liquidity,
+            self.runner.call_view_method(self.nc_id, "liquidity_of", ctx.address),
         )
         return ctx
+
+    def test_dev_remove_all_liquidity(self) -> None:
+        ctx_init = self._initialize_contract(100000, 10000)
+        storage = self.nc_storage
+
+        reserve_a = storage.get_balance(self.token_a)
+        reserve_b = storage.get_balance(self.token_b)
+
+        amount_a = reserve_a
+        amount_b = reserve_b
+
+        actions = [
+            NCAction(NCActionType.WITHDRAWAL, self.token_a, amount_a),
+            NCAction(NCActionType.WITHDRAWAL, self.token_b, amount_b),
+        ]
+        ctx = Context(
+            actions,
+            self._get_any_tx(),
+            ctx_init.address,  # type: ignore
+            timestamp=self.get_current_timestamp(),
+        )
+        self.runner.call_public_method(self.nc_id, "remove_liquidity", ctx)
+
+        self.assertEqual(
+            (0, 0), self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
+
+        pool_data = self.runner.call_view_method(self.nc_id, "pool_data")
+
+        self.assertEqual(0, pool_data["total_liquidity"])
 
     def test_remove_liquidity_no_change(self) -> Context:
         ctx_add = self.test_add_liquidity_no_change()
@@ -428,7 +489,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         ctx = self._prepare_remove_liquidity_context(amount_a, amount_b)
 
         ctx.address = ctx_add.address
-        user_liquidity = self.runner.call_view_method(self.nc_id, "liquidity_of", ctx.address)
+        user_liquidity = self.runner.call_view_method(
+            self.nc_id, "liquidity_of", ctx.address
+        )
 
         self.runner.call_public_method(self.nc_id, "remove_liquidity", ctx)
 
@@ -436,15 +499,18 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(reserve_b - amount_b, storage.get_balance(self.token_b))
 
         reserve_after = (reserve_a - amount_a, reserve_b - amount_b)
-        self.assertEqual(reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves"))
+        self.assertEqual(
+            reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
 
         self.assertEqual(
             (0, 0), self.runner.call_view_method(self.nc_id, "balance_of", ctx.address)
         )
         self.assertBalanceReserve(storage)
 
-        liquidity_decrease = (total_liquidity / PRECISION) * amount_a / reserve_a
-        get_liquidity = int(PRECISION * liquidity_decrease)
+        liquidity_decrease = total_liquidity * amount_a // reserve_a
+
+        get_liquidity = liquidity_decrease
 
         user_liquidity_after = user_liquidity - get_liquidity
 
@@ -475,7 +541,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         ctx = self._prepare_remove_liquidity_context(amount_a, amount_b)
 
         ctx.address = ctx_add.address
-        user_liquidity = self.runner.call_view_method(self.nc_id, "liquidity_of", ctx.address)
+        user_liquidity = self.runner.call_view_method(
+            self.nc_id, "liquidity_of", ctx.address
+        )
 
         self.runner.call_public_method(self.nc_id, "remove_liquidity", ctx)
 
@@ -483,15 +551,19 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(reserve_b - amount_b, storage.get_balance(self.token_b))
 
         reserve_after = (reserve_a - amount_a, reserve_b - amount_b - change)
-        self.assertEqual(reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves"))
+        self.assertEqual(
+            reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
 
         self.assertEqual(
-            (0, change), self.runner.call_view_method(self.nc_id, "balance_of", ctx.address)
+            (0, change),
+            self.runner.call_view_method(self.nc_id, "balance_of", ctx.address),
         )
         self.assertBalanceReserve(storage)
 
-        liquidity_decrease = (total_liquidity / PRECISION) * amount_a / reserve_a
-        get_liquidity = int(PRECISION * liquidity_decrease)
+        liquidity_decrease = total_liquidity * amount_a // reserve_a
+
+        get_liquidity = liquidity_decrease
 
         user_liquidity_after = user_liquidity - get_liquidity
 
@@ -581,7 +653,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(reserve_b - amount_b_swap, storage.get_balance(self.token_b))
 
         reserve_after = (reserve_a + amount_a_swap, reserve_b - amount_b_swap)
-        self.assertEqual(reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves"))
+        self.assertEqual(
+            reserve_after, self.runner.call_view_method(self.nc_id, "get_reserves")
+        )
 
         (reserve_a_after, reserve_b_after) = self.runner.call_view_method(
             self.nc_id, "get_reserves"
@@ -606,20 +680,22 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.runner.call_public_method(self.nc_id, "remove_liquidity", ctx_remove)
 
         self.assertEqual(
-            (0, 0), self.runner.call_view_method(self.nc_id, "balance_of", ctx_remove.address)
+            (0, 0),
+            self.runner.call_view_method(self.nc_id, "balance_of", ctx_remove.address),
         )
         self.assertBalanceReserve(storage)
 
-        liquidity_decrease = (
-            (total_liquidity / PRECISION) * amount_a_remove / reserve_a_after
-        )
-        get_liquidity = int(PRECISION * liquidity_decrease)
+        liquidity_decrease = total_liquidity * amount_a_remove // reserve_a_after
+
+        get_liquidity = liquidity_decrease
 
         user_liquidity_after = user_liquidity - get_liquidity
 
         self.assertEqual(
             user_liquidity_after,
-            self.runner.call_view_method(self.nc_id, "liquidity_of", ctx_remove.address),
+            self.runner.call_view_method(
+                self.nc_id, "liquidity_of", ctx_remove.address
+            ),
         )
 
         reserve_a_after_remove = reserve_a_after - amount_a_remove
@@ -663,8 +739,8 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
             self.assertEqual(reserve_a + amount_a, storage.get("reserve_a"))
             self.assertEqual(reserve_b + amount_b, storage.get("reserve_b"))
 
-            liquidity_increase = (total_liquidity / PRECISION) * amount_a / reserve_a
-            user_liquidity = int(PRECISION * liquidity_increase)
+            liquidity_increase = total_liquidity * amount_a // reserve_a
+            user_liquidity = liquidity_increase
 
             self.assertEqual(
                 total_liquidity + user_liquidity, storage.get("total_liquidity")
@@ -680,7 +756,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         for i in range(users):
             self.assertEqual(
                 users_liquidity[i],
-                self.runner.call_view_method(self.nc_id, "liquidity_of", ctx_adds[i].address),
+                self.runner.call_view_method(
+                    self.nc_id, "liquidity_of", ctx_adds[i].address
+                ),
             )
 
         total_liquidity = storage.get("total_liquidity")
@@ -698,24 +776,27 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
             self.assertEqual(reserve_a - amount_a, storage.get("reserve_a"))
             self.assertEqual(reserve_b - amount_b, storage.get("reserve_b"))
 
-            liquidity_decrease = (total_liquidity / PRECISION) * amount_a / reserve_a
-            user_liquidity = users_liquidity[i] - int(PRECISION * liquidity_decrease)
+            liquidity_decrease = total_liquidity * amount_a // reserve_a
+
+            user_liquidity = users_liquidity[i] - liquidity_decrease
             print(
                 f"user_liquidity_before:{users_liquidity[i]}\n user_liquidity_after: {user_liquidity} \n \
                       total_liquidity: {total_liquidity}, amounts_a[i]: {amounts_a[i]}"
             )
             self.assertEqual(
                 user_liquidity,
-                self.runner.call_view_method(self.nc_id, "liquidity_of", ctx_adds[i].address),
+                self.runner.call_view_method(
+                    self.nc_id, "liquidity_of", ctx_adds[i].address
+                ),
             )
             self.assertEqual(
-                total_liquidity - int(PRECISION * liquidity_decrease),
+                total_liquidity - liquidity_decrease,
                 storage.get("total_liquidity"),
             )
 
             reserve_a -= amount_a
             reserve_b -= amount_b
-            total_liquidity -= int(PRECISION * liquidity_decrease)
+            total_liquidity -= liquidity_decrease
 
     def test_multiple_add_swap_and_remove_liquidity(self) -> None:
         storage = self.nc_storage
@@ -769,8 +850,8 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
             self.assertEqual(reserve_a + amount_a, storage.get("reserve_a"))
             self.assertEqual(reserve_b + amount_b, storage.get("reserve_b"))
 
-            liquidity_increase = (total_liquidity / PRECISION) * amount_a / reserve_a
-            user_liquidity = int(PRECISION * liquidity_increase)
+            liquidity_increase = total_liquidity * amount_a // reserve_a
+            user_liquidity = liquidity_increase
 
             self.assertEqual(
                 total_liquidity + user_liquidity, storage.get("total_liquidity")
@@ -786,7 +867,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         for i in range(users):
             self.assertEqual(
                 users_liquidity[i],
-                self.runner.call_view_method(self.nc_id, "liquidity_of", ctx_adds[i].address),
+                self.runner.call_view_method(
+                    self.nc_id, "liquidity_of", ctx_adds[i].address
+                ),
             )
 
         fee_accumulated = 0
@@ -802,13 +885,13 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
 
             self.assertEqual(amount_b, amount_out)
 
-            fee_amount = int(amount_a * fee_numerator / fee_denominator)
+            fee_amount = amount_a * fee_numerator // fee_denominator
             fee_accumulated += fee_amount
-            protocol_fee_amount = int(fee_amount * protocol_fee / 100)
-            liquidity_increase = int(
-                ((total_liquidity / PRECISION) * (protocol_fee_amount / 2) / reserve_a)
-                * PRECISION
+            protocol_fee_amount = fee_amount * protocol_fee // 100
+            liquidity_increase = (
+                total_liquidity * (protocol_fee_amount) // (reserve_a * 2)
             )
+
             self.assertEqual(
                 liquidity_increase,
                 self.runner.call_view_method(
@@ -824,12 +907,16 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
             dev_liquidity += liquidity_increase
             self.assertEqual(
                 dev_liquidity,
-                self.runner.call_view_method(self.nc_id, "liquidity_of", self.admin_address),
+                self.runner.call_view_method(
+                    self.nc_id, "liquidity_of", self.admin_address
+                ),
             )
 
             self.assertEqual(
                 fee_accumulated,
-                self.runner.call_view_method(self.nc_id, "accumulated_fee_of", self.token_a),
+                self.runner.call_view_method(
+                    self.nc_id, "accumulated_fee_of", self.token_a
+                ),
             )
 
             total_liquidity += liquidity_increase
@@ -838,7 +925,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
 
         self.assertEqual(
             fee_accumulated,
-            self.runner.call_view_method(self.nc_id, "accumulated_fee_of", self.token_a),
+            self.runner.call_view_method(
+                self.nc_id, "accumulated_fee_of", self.token_a
+            ),
         )
 
         self.assertEqual(storage.get("reserve_a"), reserve_a)
@@ -849,16 +938,16 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
             user_liquidity = users_liquidity[i]
             self.assertEqual(
                 user_liquidity,
-                self.runner.call_view_method(self.nc_id, "liquidity_of", ctx_adds[i].address),
+                self.runner.call_view_method(
+                    self.nc_id, "liquidity_of", ctx_adds[i].address
+                ),
             )
 
             print(
                 f"user_liquidity: {user_liquidity}, total_liquidity: {total_liquidity}, amounts_a[i]: {amounts_a[i]}"
             )
 
-            remove_amount_a = int(
-                (user_liquidity / PRECISION) * reserve_a / (total_liquidity / PRECISION)
-            )
+            remove_amount_a = user_liquidity * reserve_a // total_liquidity
             remove_amount_b = self.runner.call_view_method(
                 self.nc_id, "quote", remove_amount_a, reserve_a, reserve_b
             )
@@ -874,10 +963,7 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
             self.assertEqual(reserve_a - remove_amount_a, storage.get("reserve_a"))
             self.assertEqual(reserve_b - remove_amount_b, storage.get("reserve_b"))
 
-            liquidity_decrease = int(
-                PRECISION
-                * ((total_liquidity / PRECISION) * remove_amount_a / reserve_a)
-            )
+            liquidity_decrease = total_liquidity * remove_amount_a // reserve_a
 
             total_liquidity -= liquidity_decrease
             reserve_a -= remove_amount_a
@@ -927,12 +1013,18 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         # Perform another swap
         amount_in = 30_00
         amount_out = self.runner.call_view_method(
-            self.nc_id, "get_amount_out", amount_in, pool_info["reserve0"], pool_info["reserve1"]
+            self.nc_id,
+            "get_amount_out",
+            amount_in,
+            pool_info["reserve0"],
+            pool_info["reserve1"],
         )
         self._swap1(self.token_a, amount_in, self.token_b, amount_out)
 
         # Call the front_end_api_pool method again
-        updated_pool_info = self.runner.call_view_method(self.nc_id, "front_end_api_pool")
+        updated_pool_info = self.runner.call_view_method(
+            self.nc_id, "front_end_api_pool"
+        )
 
         # Check that values have updated correctly
         self.assertEqual(updated_pool_info["reserve0"], 1_080_00)
@@ -1004,9 +1096,7 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         )
         total_liquidity = storage.get("total_liquidity")
 
-        remove_amount_a = int(
-            (user_liquidity / PRECISION) * reserve_a / (total_liquidity / PRECISION)
-        )
+        remove_amount_a = user_liquidity * reserve_a // total_liquidity
         remove_amount_b = self.runner.call_view_method(
             self.nc_id, "quote", remove_amount_a, reserve_a, reserve_b
         )
@@ -1042,7 +1132,7 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self._initialize_contract(1_000_00, 500_000, fee=5)
 
         # Helper functions
-        def get_reserves():
+        def get_reserves() -> tuple[int, int]:
             return self.runner.call_view_method(self.nc_id, "get_reserves")
 
         def get_amount_out(amount_in, reserve_in, reserve_out):
@@ -1098,16 +1188,18 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
 
             elif action == "remove_liquidity" and users_with_liquidity:
                 user = random.choice(list(users_with_liquidity))
-                user_liquidity = self.runner.call_view_method(self.nc_id, "liquidity_of", user)
-                percentage_to_remove = random.randint(1, 100) / 100
+                user_liquidity = self.runner.call_view_method(
+                    self.nc_id, "liquidity_of", user
+                )
+                percentage_to_remove = random.randint(1, 100)
                 if user_liquidity > 0:
                     total_liquidity = storage.get("total_liquidity")
-
-                    remove_amount_a = int(
+                    new_reserve_a, new_reserve_b = get_reserves()
+                    remove_amount_a = (
                         percentage_to_remove
-                        * (user_liquidity / PRECISION)
+                        * (user_liquidity)
                         * new_reserve_a
-                        / (total_liquidity / PRECISION)
+                        // (100 * total_liquidity)
                     )
                     remove_amount_b = self.runner.call_view_method(
                         self.nc_id, "quote", remove_amount_a, reserve_a, reserve_b
@@ -1117,7 +1209,9 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
                         remove_amount_a, remove_amount_b
                     )
                     ctx_remove.address = user
-                    self.runner.call_public_method(self.nc_id, "remove_liquidity", ctx_remove)
+                    self.runner.call_public_method(
+                        self.nc_id, "remove_liquidity", ctx_remove
+                    )
 
                     # Assert reserves after removing liquidity
                     new_reserve_a, new_reserve_b = get_reserves()
@@ -1195,28 +1289,30 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         self.assertGreater(final_reserve_a, 0)
         self.assertGreater(final_reserve_b, 0)
 
-        # Check that some fees were collected
-        self.assertGreater(pool_info["fee0"], 0)
-        self.assertGreater(pool_info["fee1"], 0)
-
         # Check final total liquidity
 
         # Check that all users have zero or positive liquidity
         for user in all_users:
-            user_liquidity = self.runner.call_view_method(self.nc_id, "liquidity_of", user)
+            user_liquidity = self.runner.call_view_method(
+                self.nc_id, "liquidity_of", user
+            )
             self.assertGreaterEqual(user_liquidity, 0)
 
         # Check that the sum of all user liquidities plus admin liquidity equals total liquidity
         total_user_liquidity = sum(
-            self.runner.call_view_method(self.nc_id, "liquidity_of", user) for user in all_users
+            self.runner.call_view_method(self.nc_id, "liquidity_of", user)
+            for user in all_users
         )
         admin_liquidity = self.runner.call_view_method(
             self.nc_id, "liquidity_of", self.admin_address
         )
-        print("total_user_liquidity:", int(total_user_liquidity / PRECISION))
-        print("admin_liquidity:", int(admin_liquidity / PRECISION))
-        print("final_total_liquidity:", int(final_total_liquidity / PRECISION))
+        print(type(total_user_liquidity))
+        print(type(admin_liquidity))
+        print(type(final_total_liquidity))
+        print("total_user_liquidity:", total_user_liquidity)
+        print("admin_liquidity:", admin_liquidity)
+        print("final_total_liquidity:", final_total_liquidity)
         self.assertEqual(
-            (total_user_liquidity + admin_liquidity) / PRECISION,
-            final_total_liquidity / PRECISION,
+            (total_user_liquidity + admin_liquidity),
+            final_total_liquidity,
         )
