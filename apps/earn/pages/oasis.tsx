@@ -87,6 +87,20 @@ const UserOasisPosition = ({
   const { getPendingPositions } = useOasisTempTxStore()
   const pendingTxs = getPendingPositions(address)
   const isPending = pendingTxs.some((tx) => tx.id === oasis.id && tx.blockHeight === currentBlockHeight)
+
+  const getWithdrawalDate = () => {
+    if (!oasis.user_withdrawal_time) return null;
+    return typeof oasis.user_withdrawal_time === 'string' 
+      ? new Date(oasis.user_withdrawal_time)
+      : oasis.user_withdrawal_time;
+  };
+
+  const withdrawalDate = getWithdrawalDate();
+  const formattedDate = withdrawalDate
+    ? `${withdrawalDate.toLocaleDateString()} ${withdrawalDate.toLocaleTimeString()}`
+    : '-';
+  const isUnlocked = withdrawalDate ? withdrawalDate.getTime() < Date.now() : false;
+
   return (
     <div
       className={classNames(
@@ -94,7 +108,13 @@ const UserOasisPosition = ({
         (isLoading || isPending) && 'opacity-70'
       )}
     >
-      {(isLoading || isPending) && (
+      {(isLoading ||
+        isPending ||
+        !oasis.user_deposit_b ||
+        !oasis.user_withdrawal_time ||
+        !oasis.max_withdraw_b ||
+        !oasis.max_withdraw_htr ||
+        !oasis.user_balance_a) && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/80">
           <Dots>Processing Transaction</Dots>
         </div>
@@ -134,10 +154,10 @@ const UserOasisPosition = ({
               Unlock Date:
             </Typography>
             <Typography variant="sm" className="text-stone-200">
-              {`${oasis.user_withdrawal_time.toLocaleDateString()} ${oasis.user_withdrawal_time.toLocaleTimeString()}`}
+              {formattedDate}
             </Typography>
           </div>
-          {oasis.user_withdrawal_time.getTime() < Date.now() && (
+          {isUnlocked && (
             <>
               <div className="flex flex-row gap-1">
                 <Typography variant="sm" className="text-stone-400">
@@ -168,8 +188,8 @@ const UserOasisPosition = ({
         </div>
       </div>
       <div className="flex flex-col gap-1">
-        {oasis.user_withdrawal_time.getTime() < Date.now() && buttonWithdraw}
-        {oasis.user_balance_a > 0 && oasis.user_withdrawal_time.getTime() > Date.now() && buttonWithdrawBonus}
+        {isUnlocked && buttonWithdraw}
+        {oasis.user_balance_a > 0 && withdrawalDate && !isUnlocked && buttonWithdrawBonus}
       </div>
     </div>
   )
