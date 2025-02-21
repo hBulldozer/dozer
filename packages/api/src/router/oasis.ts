@@ -109,9 +109,7 @@ export const oasisRouter = createTRPCRouter({
     const userOasisPromises = allOasis.map((oasis) => fetchAndProcessUserOasis(oasis, input.address))
     const userOasis = await Promise.all(userOasisPromises)
 
-    return userOasis.filter(
-      (oasis) => oasis.user_deposit_b && oasis.user_deposit_b > 0 && oasis.user_liquidity && oasis.user_liquidity > 0
-    )
+    return userOasis.filter((oasis) => oasis.user_deposit_b && oasis.user_deposit_b > 0)
   }),
   allReserves: procedure.query(async ({ ctx }) => {
     const allOasis = await ctx.prisma.oasis.findMany({

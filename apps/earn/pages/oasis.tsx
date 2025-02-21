@@ -834,22 +834,24 @@ const OasisProgram = () => {
 
                                 <Tab.Panel>
                                   <div className="flex flex-col gap-4 p-8">
-                                    {pendingPositions.length > 0 && (
+                                    {pendingPositions.filter((pos) => pos.txType === 'add').length > 0 && (
                                       <div className="p-4 bg-stone-800/50 rounded-xl">
                                         <Typography variant="lg" weight={500} className="mb-4 text-yellow">
                                           Your Pending Positions
                                         </Typography>
-                                        {pendingPositions.map((position) => (
-                                          <UserOasisPosition
-                                            address={address}
-                                            currentBlockHeight={currentBlockHeight}
-                                            key={position.id}
-                                            oasis={position}
-                                            isLoading={true}
-                                            buttonWithdraw={<div />}
-                                            buttonWithdrawBonus={<div />}
-                                          />
-                                        ))}
+                                        {pendingPositions
+                                          .filter((pos) => pos.txType === 'add')
+                                          .map((position) => (
+                                            <UserOasisPosition
+                                              address={address}
+                                              currentBlockHeight={currentBlockHeight}
+                                              key={position.id}
+                                              oasis={position}
+                                              isLoading={true}
+                                              buttonWithdraw={<div />}
+                                              buttonWithdrawBonus={<div />}
+                                            />
+                                          ))}
                                       </div>
                                     )}
 
@@ -880,6 +882,9 @@ const OasisProgram = () => {
                                               currentBlockHeight={currentBlockHeight}
                                               oasis={oasis}
                                               key={oasis.id}
+                                              isLoading={pendingPositions.some(
+                                                (pos) => pos.id === oasis.id && pos.txType != 'add'
+                                              )}
                                               buttonWithdraw={
                                                 <div className="flex flex-col justify-between gap-2 p-4">
                                                   <Button
