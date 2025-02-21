@@ -70,19 +70,31 @@ const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean })
 }
 
 const UserOasisPosition = ({
+  address,
+  currentBlockHeight,
   oasis,
   isLoading,
   buttonWithdraw,
   buttonWithdrawBonus,
 }: {
+  address: string
+  currentBlockHeight: number
   oasis: OasisInterface
   isLoading?: boolean
   buttonWithdraw: JSX.Element
   buttonWithdrawBonus: JSX.Element
 }) => {
+  const { getPendingPositions } = useOasisTempTxStore()
+  const pendingTxs = getPendingPositions(address)
+  const isPending = pendingTxs.some((tx) => tx.id === oasis.id && tx.blockHeight === currentBlockHeight)
   return (
-    <div className={classNames('relative flex flex-col border rounded-lg border-stone-700', isLoading && 'opacity-70')}>
-      {isLoading && (
+    <div
+      className={classNames(
+        'relative flex flex-col border rounded-lg border-stone-700',
+        (isLoading || isPending) && 'opacity-70'
+      )}
+    >
+      {(isLoading || isPending) && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/80">
           <Dots>Processing Transaction</Dots>
         </div>
@@ -157,7 +169,7 @@ const UserOasisPosition = ({
       </div>
       <div className="flex flex-col gap-1">
         {oasis.user_withdrawal_time.getTime() < Date.now() && buttonWithdraw}
-        {oasis.user_balance_a > 0 && buttonWithdrawBonus}
+        {oasis.user_balance_a > 0 && oasis.user_withdrawal_time.getTime() > Date.now() && buttonWithdrawBonus}
       </div>
     </div>
   )
@@ -242,29 +254,41 @@ const OasisProgram = () => {
   }
 
   const handleRemoveLiquidity = async (removeAmount: string, removeAmountHtr: string): Promise<void> => {
+    if (!removeAmount || !selectedOasisForRemove?.id) return
     setSentTX(true)
     setTxType('Remove liquidity')
-    if (removeAmount && selectedOasisForRemove?.id) {
-      const response = await oasisObj.user_withdraw(
-        hathorRpc,
-        address,
-        selectedOasisForRemove.id,
-        Math.floor(parseFloat(removeAmount) * 100),
-        Math.floor(parseFloat(removeAmountHtr) * 100)
-      )
+
+    const response = await oasisObj.user_withdraw(
+      hathorRpc,
+      address,
+      selectedOasisForRemove.id,
+      Math.floor(parseFloat(removeAmount) * 100),
+      Math.floor(parseFloat(removeAmountHtr) * 100)
+    )
+
+    // Add transaction to store when sent
+    const hash = get(rpcResult, 'result.response.hash') as string
+    if (hash) {
+      addPendingPosition(address, selectedOasisForRemove, currentBlockHeight, 'withdraw')
     }
   }
 
   const handleRemoveBonus = async (removeAmount: string): Promise<void> => {
+    if (!removeAmount || !selectedOasisForRemoveBonus?.id) return
     setSentTX(true)
     setTxType('Remove bonus')
-    if (removeAmount && selectedOasisForRemoveBonus?.id) {
-      const response = await oasisObj.user_withdraw_bonus(
-        hathorRpc,
-        address,
-        selectedOasisForRemoveBonus.id,
-        Math.floor(parseFloat(removeAmount) * 100)
-      )
+
+    const response = await oasisObj.user_withdraw_bonus(
+      hathorRpc,
+      address,
+      selectedOasisForRemoveBonus.id,
+      Math.floor(parseFloat(removeAmount) * 100)
+    )
+
+    // Add transaction to store when sent
+    const hash = get(rpcResult, 'result.response.hash') as string
+    if (hash) {
+      addPendingPosition(address, selectedOasisForRemoveBonus, currentBlockHeight, 'bonus')
     }
   }
 
@@ -313,7 +337,8 @@ const OasisProgram = () => {
                 user_lp_htr: 0,
                 user_lp_b: 0,
               },
-              currentBlockHeight // Get this from BlockTracker
+              currentBlockHeight, // Get this from BlockTracker
+              'add'
             )
         } else {
           createErrorToast(`Error`, true)
@@ -816,6 +841,8 @@ const OasisProgram = () => {
                                         </Typography>
                                         {pendingPositions.map((position) => (
                                           <UserOasisPosition
+                                            address={address}
+                                            currentBlockHeight={currentBlockHeight}
                                             key={position.id}
                                             oasis={position}
                                             isLoading={true}
@@ -849,6 +876,8 @@ const OasisProgram = () => {
                                         {allUserOasis?.map((oasis: OasisInterface) => {
                                           return (
                                             <UserOasisPosition
+                                              address={address}
+                                              currentBlockHeight={currentBlockHeight}
                                               oasis={oasis}
                                               key={oasis.id}
                                               buttonWithdraw={

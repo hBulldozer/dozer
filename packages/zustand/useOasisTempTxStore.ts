@@ -3,6 +3,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+type TransactionType = 'bonus' | 'withdraw' | 'add';
+
 interface OasisTempTx {
   id: string
   user_deposit_b: number
@@ -14,13 +16,14 @@ interface OasisTempTx {
   user_lp_htr: number
   user_lp_b: number
   blockHeight: number
+txType: TransactionType
 }
 
 interface OasisTempTxState {
   pendingPositions: {
     [address: string]: OasisTempTx[]
   }
-  addPendingPosition: (address: string, position: Omit<OasisTempTx, 'blockHeight'>, blockHeight: number) => void
+  addPendingPosition: (address: string, position: Omit<OasisTempTx, 'blockHeight' | 'txType'>, blockHeight: number, txType: TransactionType) => void
   clearOldPendingPositions: (currentBlockHeight: number) => void
   getPendingPositions: (address: string) => OasisTempTx[]
 }
@@ -30,13 +33,13 @@ export const useOasisTempTxStore = create<OasisTempTxState>()(
     (set, get) => ({
       pendingPositions: {},
 
-      addPendingPosition: (address, position, blockHeight) =>
+      addPendingPosition: (address, position, blockHeight, txType) =>
         set((state) => {
           const addressPositions = state.pendingPositions[address] || []
           return {
             pendingPositions: {
               ...state.pendingPositions,
-              [address]: [...addressPositions, { ...position, blockHeight }],
+              [address]: [...addressPositions, { ...position, blockHeight, txType }],
             },
           }
         }),
