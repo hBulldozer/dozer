@@ -1,0 +1,51 @@
+name: Test Hathor Blueprints
+
+on:
+  push:
+    paths:
+      - 'contracts/**'
+  pull_request:
+    paths:
+      - 'contracts/**'
+  workflow_dispatch:
+    inputs:
+      hathor_branch:
+        description: 'Hathor Core branch to use'
+        required: true
+        default: 'experimental/nano-testnet-v1.7.2'
+
+env:
+  HATHOR_BRANCH: ${{ github.event.inputs.hathor_branch || 'experimental/nano-testnet-v1.7.2' }}
+
+jobs:
+  test-blueprints:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dozer-tools
+        uses: actions/checkout@v4
+
+      - name: Checkout Hathor Core
+        uses: actions/checkout@v4
+        with:
+          repository: HathorNetwork/hathor-core
+          ref: ${{ env.HATHOR_BRANCH }}
+          path: hathor-core
+
+      - name: Copy blueprints to Hathor Core
+        run: |
+          cp -r contracts/* hathor-core/hathor/nanocontracts/blueprints/
+          cp -r contracts/tests/* hathor-core/tests/nanocontracts/blueprints/
+
+      - name: Build Docker image
+        working-directory: hathor-core
+        run: |
+          cp ../contracts/Dockerfile.node .
+          docker build -f Dockerfile.node -t hathor-test .
+
+      - name: Test Dozer Pool
+        working-directory: hathor-core
+        run: docker run hathor-test poetry run pytest -v tests/nanocontracts/blueprints/test_dozer_pool_v1_1.py
+
+      - name: Test Oasis
+        working-directory: hathor-core
+        run: docker run hathor-test poetry run pytest -v tests/nanocontracts/blueprints/test_oasis.py

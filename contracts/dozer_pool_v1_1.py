@@ -1,10 +1,19 @@
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from hathor.nanocontracts.blueprint import Blueprint
 from hathor.nanocontracts.context import Context
 from hathor.nanocontracts.exception import NCFail
-from hathor.nanocontracts.types import NCAction, NCActionType, public, view
-from hathor.types import Address, Amount, Timestamp, TokenUid
+from hathor.nanocontracts.types import (
+    Address,
+    Amount,
+    Timestamp,
+    TokenUid,
+    NCAction,
+    NCActionType,
+    public,
+    view,
+)
+from hathor.wallet.resources import balance
 
 PRECISION = 10**20
 
@@ -29,7 +38,7 @@ def require(condition: bool, errmsg: str) -> None:
         raise NCFail(errmsg)
 
 
-class Dozer_Pool(Blueprint):
+class Dozer_Pool_v1_1(Blueprint):
     """Liquidity pool inspired by Uniswap v2.
 
     The initial reserves for both Token A and Token B must be deposited at the contract creation.
@@ -281,12 +290,16 @@ class Dozer_Pool(Blueprint):
     def withdraw_cashback(self, ctx: Context) -> None:
         """Withdraw cashback"""
         action_a, action_b = self._get_actions_out_out(ctx)
-        if action_a.amount > self.balance_a[ctx.address]:
+        if action_a.amount > self.balance_a.get(ctx.address, 0):
             raise NCFail("not enough cashback")
-        if action_b.amount > self.balance_b[ctx.address]:
+        if action_b.amount > self.balance_b.get(ctx.address, 0):
             raise NCFail("not enough cashback")
-        self.balance_a[ctx.address] -= action_a.amount
-        self.balance_b[ctx.address] -= action_b.amount
+        self.balance_a[ctx.address] = (
+            self.balance_a.get(ctx.address, 0) - action_a.amount
+        )
+        self.balance_b[ctx.address] = (
+            self.balance_b.get(ctx.address, 0) - action_b.amount
+        )
 
     @view
     def _get_protocol_liquidity_increase(
@@ -295,20 +308,16 @@ class Dozer_Pool(Blueprint):
         """Calculate the liquidity increase equivalent to a defined percentage of the
         collected fee to be minted to the dev address."""
         if token == self.token_a:
-            liquidity_increase = int(
-                (
-                    (self.total_liquidity / PRECISION)
-                    * (protocol_fee_amount / 2)
-                    / self.reserve_a
-                )
-                * PRECISION
+            liquidity_increase = (
+                self.total_liquidity * (protocol_fee_amount) // (self.reserve_a * 2)
             )
+
         else:
             optimal_a = self.quote(protocol_fee_amount, self.reserve_b, self.reserve_a)
-            liquidity_increase = int(
-                ((self.total_liquidity / PRECISION) * (optimal_a / 2) / self.reserve_a)
-                * PRECISION
+            liquidity_increase = (self.total_liquidity * optimal_a) // (
+                self.reserve_a * 2
             )
+
         return liquidity_increase
 
     @public
@@ -319,9 +328,9 @@ class Dozer_Pool(Blueprint):
         reserve_out = self._get_reserve(action_out.token_uid)
 
         amount_in = action_in.amount
-        fee_amount = int(amount_in * self.fee_numerator / self.fee_denominator)
+        fee_amount = amount_in * self.fee_numerator // self.fee_denominator
         self.accumulated_fee[action_in.token_uid] += fee_amount
-        protocol_fee_amount = int(fee_amount * self.protocol_fee / 100)
+        protocol_fee_amount = fee_amount * self.protocol_fee // 100
         liquidity_increase = self._get_protocol_liquidity_increase(
             protocol_fee_amount, action_in.token_uid
         )
@@ -368,9 +377,9 @@ class Dozer_Pool(Blueprint):
             raise NCFail("insufficient funds")
 
         amount_in = self.get_amount_in(action_out.amount, reserve_in, reserve_out)
-        fee_amount = int(amount_in * self.fee_numerator / self.fee_denominator)
+        fee_amount = amount_in * self.fee_numerator // self.fee_denominator
         self.accumulated_fee[action_in.token_uid] += fee_amount
-        protocol_fee_amount = int(fee_amount * self.protocol_fee / 100)
+        protocol_fee_amount = fee_amount * self.protocol_fee // 100
         liquidity_increase = self._get_protocol_liquidity_increase(
             protocol_fee_amount, action_in.token_uid
         )
@@ -406,7 +415,7 @@ class Dozer_Pool(Blueprint):
         return (self.balance_a.get(owner, 0), self.balance_b.get(owner, 0))
 
     @view
-    def liquidity_of(self, owner: Address) -> float:
+    def liquidity_of(self, owner: Address) -> Amount:
         """Get owner's balance."""
         return self.user_liquidity.get(owner, 0)
 
@@ -453,7 +462,7 @@ class Dozer_Pool(Blueprint):
         self,
         ctx: Context,
         # amount_a_min: Amount, amount_b_min: Amount
-    ) -> None:
+    ) -> tuple[TokenUid, Amount]:
         """Add liquidity to the pool."""
         action_a, action_b = self._get_actions_in_in(ctx)
 
@@ -464,14 +473,15 @@ class Dozer_Pool(Blueprint):
             change = action_b.amount - optimal_b
             self._update_balance(ctx.address, change, self.token_b)
             liquidity_increase = (
-                (self.total_liquidity / PRECISION) * action_a.amount / self.reserve_a
+                self.total_liquidity * action_a.amount // self.reserve_a
             )
-            self.user_liquidity[ctx.address] = self.user_liquidity.get(
-                ctx.address, 0
-            ) + int(PRECISION * liquidity_increase)
-            self.total_liquidity += int(PRECISION * liquidity_increase)
+            self.user_liquidity[ctx.address] = (
+                self.user_liquidity.get(ctx.address, 0) + liquidity_increase
+            )
+            self.total_liquidity += liquidity_increase
             self.reserve_a += action_a.amount
             self.reserve_b += optimal_b
+            return (self.token_b, change)
 
         else:
             optimal_a = self.quote(action_b.amount, self.reserve_b, self.reserve_a)
@@ -480,15 +490,14 @@ class Dozer_Pool(Blueprint):
 
             change = action_a.amount - optimal_a
             self._update_balance(ctx.address, change, self.token_a)
-            liquidity_increase = (
-                (self.total_liquidity / PRECISION) * optimal_a / self.reserve_a
+            liquidity_increase = self.total_liquidity * optimal_a // self.reserve_a
+            self.user_liquidity[ctx.address] = (
+                self.user_liquidity.get(ctx.address, 0) + liquidity_increase
             )
-            self.user_liquidity[ctx.address] = self.user_liquidity.get(
-                ctx.address, 0
-            ) + int(PRECISION * liquidity_increase)
-            self.total_liquidity += int(PRECISION * liquidity_increase)
+            self.total_liquidity += liquidity_increase
             self.reserve_a += optimal_a
             self.reserve_b += action_b.amount
+            return (self.token_a, change)
 
     @public
     def remove_liquidity(self, ctx: Context):
@@ -496,11 +505,17 @@ class Dozer_Pool(Blueprint):
         action_a, action_b = self._get_actions_out_out(ctx)
         if self.user_liquidity[ctx.address] == 0:
             raise NCFail("no liquidity to remove")
-        max_withdraw = int(
-            (self.user_liquidity[ctx.address] / PRECISION)
+        # max_withdraw = int(
+        #     (self.user_liquidity[ctx.address] / PRECISION)
+        #     * self.reserve_a
+        #     / (self.total_liquidity / PRECISION)
+        # )
+        max_withdraw = (
+            (self.user_liquidity[ctx.address])
             * self.reserve_a
-            / (self.total_liquidity / PRECISION)
+            // (self.total_liquidity)
         )
+
         if max_withdraw < action_a.amount:
             raise NCFail(f"insufficient liquidity: {max_withdraw} < {action_a.amount}")
         optimal_b = self.quote(action_a.amount, self.reserve_a, self.reserve_b)
@@ -508,14 +523,11 @@ class Dozer_Pool(Blueprint):
             raise NCFail("insufficient b amount")
         change = optimal_b - action_b.amount
         self._update_balance(ctx.address, change, self.token_b)
-        liquidity_decrease = (
-            (self.total_liquidity / PRECISION) * action_a.amount / self.reserve_a
+        liquidity_decrease = self.total_liquidity * action_a.amount // self.reserve_a
+        self.user_liquidity[ctx.address] = (
+            self.user_liquidity.get(ctx.address, 0) - liquidity_decrease
         )
-        self.user_liquidity[ctx.address] = self.user_liquidity.get(
-            ctx.address, 0
-        ) - int(PRECISION * liquidity_decrease)
-        self.total_liquidity -= int(PRECISION * liquidity_decrease)
-        # makes sense change total liquidity after removing user liquidity?
+        self.total_liquidity -= liquidity_decrease
         self.reserve_a -= action_a.amount
         self.reserve_b -= optimal_b
 
@@ -552,6 +564,7 @@ class Dozer_Pool(Blueprint):
             "transactions": self.transactions,
         }
 
+    @view
     def front_quote_add_liquidity_in(
         self, amount_in: Amount, token_in: TokenUid
     ) -> float:
@@ -675,11 +688,12 @@ class Dozer_Pool(Blueprint):
         self,
         address: Address,
     ) -> dict[str, float]:
-        max_withdraw_a = int(
-            (self.user_liquidity[address] / PRECISION)
+        max_withdraw_a = (
+            (self.user_liquidity.get(address, 0))
             * self.reserve_a
-            / (self.total_liquidity / PRECISION)
+            // (self.total_liquidity)
         )
+
         max_withdraw_b = self.quote(max_withdraw_a, self.reserve_a, self.reserve_b)
         return {
             "balance_a": self.balance_a.get(address, 0),
@@ -688,11 +702,11 @@ class Dozer_Pool(Blueprint):
             "max_withdraw_a": max_withdraw_a,
             "max_withdraw_b": max_withdraw_b,
         }
-    
+
     @view
     def pool_data(
         self,
-    ) -> dict[str, float]:
+    ) -> dict[str, float | Amount]:
 
         return {
             "total_liquidity": self.total_liquidity,
@@ -708,4 +722,32 @@ class Dozer_Pool(Blueprint):
             "dzr_rewards": 1000,
             "transactions": self.transactions,
             "last_actvity_timestamp": self.last_activity_timestamp,
+        }
+
+    @view
+    def get_uuids(self) -> Any:
+        return self.token_a, self.token_b
+
+    @view
+    def max_withdraw_b(self, address: Address) -> float:
+        user_info = self.user_info(address)
+        return user_info["max_withdraw_b"]
+
+    @view
+    def quote_token_b(self, amount_b: Amount) -> Amount:
+        return self.quote(amount_b, self.reserve_b, self.reserve_a)
+
+    @view
+    def quote_remove_liquidity(self, address: Address) -> dict[str, float]:
+        user_liquidity = self.user_liquidity.get(address, 0)
+        max_withdraw_a = user_liquidity * self.reserve_a // (self.total_liquidity)
+        balance_b = self.balance_b.get(address, 0)
+        balance_a = self.balance_a.get(address, 0)
+        user_lp_b = self.quote(max_withdraw_a, self.reserve_a, self.reserve_b)  # type: ignore
+        return {
+            "liquidity": user_liquidity / self.total_liquidity,
+            "max_withdraw_a": max_withdraw_a,
+            "user_lp_b": user_lp_b,
+            "balance_b": balance_b,
+            "balance_a": balance_a,
         }

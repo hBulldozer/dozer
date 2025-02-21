@@ -695,14 +695,14 @@ const OasisProgram = () => {
                                         onChange={(val: string) => setLockPeriod(Number(val))}
                                         button={
                                           <Select.Button>
-                                            {lockPeriod} months - Bonus {(bonusRate * 100).toFixed(2)}%
+                                            {lockPeriod} minutes - Bonus {(bonusRate * 100).toFixed(2)}%
                                           </Select.Button>
                                         }
                                       >
                                         <Select.Options>
-                                          <Select.Option value="6">6 months - Bonus 10.00%</Select.Option>
-                                          <Select.Option value="9">9 months - Bonus 15.00%</Select.Option>
-                                          <Select.Option value="12">12 months - Bonus 20.00%</Select.Option>
+                                          <Select.Option value="6">6 minutes - Bonus 10.00%</Select.Option>
+                                          <Select.Option value="9">9 minutes - Bonus 15.00%</Select.Option>
+                                          <Select.Option value="12">12 minutes - Bonus 20.00%</Select.Option>
                                         </Select.Options>
                                       </Select>
                                     </div>

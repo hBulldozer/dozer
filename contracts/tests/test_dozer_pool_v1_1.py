@@ -4,7 +4,7 @@ from logging import getLogger
 
 from hathor.conf import HathorSettings
 from hathor.crypto.util import decode_address
-from hathor.nanocontracts.blueprints.dozer_pool import Dozer_Pool
+from hathor.nanocontracts.blueprints.dozer_pool_v1_1 import Dozer_Pool_v1_1
 from hathor.nanocontracts.context import Context
 from hathor.nanocontracts.exception import NCFail
 from hathor.nanocontracts.storage import NCStorage
@@ -25,7 +25,7 @@ class MVP_PoolBlueprintTestCase(BlueprintTestCase):
         super().setUp()
 
         self.nc_id = self.gen_random_nanocontract_id()
-        self.runner.register_contract(Dozer_Pool, self.nc_id)
+        self.runner.register_contract(Dozer_Pool_v1_1, self.nc_id)
         self.nc_storage = self.runner.get_storage(self.nc_id)
 
         self.token_a = self.gen_random_token_uid()
