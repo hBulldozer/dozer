@@ -250,7 +250,7 @@ const OasisProgram = () => {
 
   const oasis = allOasis?.find((oasis) => oasis.token.symbol == currency)
   const oasisReserve = allReserves?.find((oasis) => oasis.token.symbol == currency)
-  const availableHTR = oasisReserve?.dev_balance || 0
+  const availableHTR = oasisReserve?.oasis_htr_balance || 0
   const depositedHTR = oasisReserve?.dev_deposit_amount || 0
   const progress = (1 - availableHTR / depositedHTR) * 100
   const oasisId = oasis?.id

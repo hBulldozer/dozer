@@ -25,8 +25,9 @@ class Oasis(Blueprint):
     dozer_pool: ContractId
     protocol_fee: Amount
 
+    owner_address: Address
     dev_address: Address
-    dev_balance: Amount
+    oasis_htr_balance: Amount
     dev_deposit_amount: Amount
     user_deposit_b: dict[Address, Amount]
     user_liquidity: dict[Address, Amount]
@@ -42,6 +43,7 @@ class Oasis(Blueprint):
         dozer_pool: ContractId,
         token_b: TokenUid,
         protocol_fee: Amount,
+        owner_address: Address,
     ) -> None:
         """Initialize the contract with no dozer pool set."""
         pool_token_a, pool_token_b = self.call_view_method(dozer_pool, "get_uuids")
@@ -55,13 +57,14 @@ class Oasis(Blueprint):
         self.token_b = token_b
         self.dev_address = ctx.address
         self.dozer_pool = dozer_pool
-        self.dev_balance = action.amount
+        self.oasis_htr_balance = action.amount
         self.dev_deposit_amount = action.amount
         self.total_liquidity = 0
         self.protocol_fee = protocol_fee
+        self.owner_address = owner_address
 
     @public
-    def dev_deposit(self, ctx: Context) -> None:
+    def owner_deposit(self, ctx: Context) -> None:
         """Deposits token B with a timelock period for bonus rewards.
 
         Args:
@@ -72,9 +75,11 @@ class Oasis(Blueprint):
             NCFail: If deposit requirements not met or invalid timelock
         """
         action = self._get_action(ctx, NCActionType.DEPOSIT, auth=False)
+        if ctx.address not in [self.dev_address, self.owner_address]:
+            raise NCFail("Only dev or owner can deposit")
         if action.token_uid != HTR_UID:
             raise NCFail("Deposit token not HATHOR")
-        self.dev_balance += action.amount
+        self.oasis_htr_balance += action.amount
         self.dev_deposit_amount += action.amount
 
     @public
@@ -103,7 +108,7 @@ class Oasis(Blueprint):
         htr_amount = self._quote_add_liquidity_in(deposit_amount)
         bonus = self._get_user_bonus(timelock, htr_amount)
         now = ctx.timestamp
-        if htr_amount + bonus > self.dev_balance:
+        if htr_amount + bonus > self.oasis_htr_balance:
             raise NCFail("Not enough balance")
 
         if self.total_liquidity == 0:
@@ -141,7 +146,7 @@ class Oasis(Blueprint):
         else:
             self.user_withdrawal_time[ctx.address] = now + timelock * MONTHS_IN_SECONDS
 
-        self.dev_balance -= bonus + htr_amount
+        self.oasis_htr_balance -= bonus + htr_amount
         partial = self.user_balances.get(ctx.address, {})
         partial.update(
             {
@@ -244,7 +249,7 @@ class Oasis(Blueprint):
                 }
             )
         self.call_public_method(self.dozer_pool, "remove_liquidity", actions)
-        self.dev_balance = self.dev_balance + user_lp_htr - loss_htr
+        self.oasis_htr_balance = self.oasis_htr_balance + user_lp_htr - loss_htr
         self.user_balances[ctx.address] = partial
         self.user_liquidity[ctx.address] = 0
         self.user_deposit_b[ctx.address] = 0
@@ -357,6 +362,67 @@ class Oasis(Blueprint):
         return output
 
     @public
+    def owner_withdraw(self, ctx: Context) -> None:
+        """Allows owner to withdraw HTR from their balance.
+
+        Args:
+            ctx: Execution context
+
+        Raises:
+            NCFail: If caller is not owner or withdraw amount exceeds available balance
+        """
+        if ctx.address != self.owner_address:
+            raise NCFail("Only owner can withdraw")
+        action = self._get_action(ctx, NCActionType.WITHDRAWAL, auth=False)
+        if action.token_uid != HTR_UID:
+            raise NCFail("Withdrawal token not HATHOR")
+        if action.amount > self.oasis_htr_balance:
+            raise NCFail("Withdrawal amount too high")
+        self.oasis_htr_balance -= action.amount
+
+    @public
+    def dev_withdraw_fee(self, ctx: Context) -> None:
+        """Allows dev to withdraw collected protocol fees.
+
+        Args:
+            ctx: Execution context
+
+        Raises:
+            NCFail: If caller is not dev or withdraw amount exceeds available balance
+        """
+        if ctx.address != self.dev_address:
+            raise NCFail("Only dev can withdraw fees")
+
+        token_b_action = self._get_token_action(
+            ctx, NCActionType.WITHDRAWAL, self.token_b
+        )
+        if token_b_action.amount > self.user_balances.get(self.dev_address, {}).get(
+            self.token_b, 0
+        ):
+            raise NCFail("Withdrawal amount too high")
+
+        partial = self.user_balances.get(self.dev_address, {})
+        partial.update(
+            {self.token_b: partial.get(self.token_b, 0) - token_b_action.amount}
+        )
+        self.user_balances[self.dev_address] = partial
+
+    @public
+    def update_owner_address(self, ctx: Context, new_owner: Address) -> None:
+        """Updates the owner address. Can be called by dev or current owner.
+
+        Args:
+            ctx: Execution context
+            new_owner: New owner address
+
+        Raises:
+            NCFail: If caller is not dev or current owner
+        """
+        if ctx.address not in [self.dev_address, self.owner_address]:
+            raise NCFail("Only dev or owner can update owner address")
+        self.owner_address = new_owner
+
+    @public
     def check_pool_liquidity(self, ctx: Context, token_uid: bytes, amount: int) -> dict:
         """Check liquidity for adding tokens to the pool.
 
@@ -389,7 +455,7 @@ class Oasis(Blueprint):
             "user_deposit_b": self.user_deposit_b.get(address, 0),
             "user_liquidity": self.user_liquidity.get(address, 0),
             "user_withdrawal_time": self.user_withdrawal_time.get(address, 0),
-            "dev_balance": self.dev_balance,
+            "oasis_htr_balance": self.oasis_htr_balance,
             "total_liquidity": self.total_liquidity,
             "user_balance_a": self.user_balances.get(address, {HTR_UID: 0}).get(
                 HTR_UID, 0
@@ -407,7 +473,7 @@ class Oasis(Blueprint):
     def oasis_info(self) -> dict[str, float | str]:
         return {
             "total_liquidity": self.total_liquidity,
-            "dev_balance": self.dev_balance,
+            "oasis_htr_balance": self.oasis_htr_balance,
             "token_b": self.token_b.hex(),
             "protocol_fee": self.protocol_fee,
             "dev_deposit_amount": self.dev_deposit_amount,
