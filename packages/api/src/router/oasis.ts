@@ -65,6 +65,7 @@ const fetchAndProcessReserves = async (oasis: {
     pool: oasis.pool,
     id: oasis.id,
     dev_balance: result['dev_balance'] / 100,
+    dev_deposit_amount: result['dev_deposit_amount'] / 100,
     total_liquidity: result['total_liquidity'],
     token_b: result['token_b'],
   }

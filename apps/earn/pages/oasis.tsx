@@ -89,17 +89,17 @@ const UserOasisPosition = ({
   const isPending = pendingTxs.some((tx) => tx.id === oasis.id && tx.blockHeight === currentBlockHeight)
 
   const getWithdrawalDate = () => {
-    if (!oasis.user_withdrawal_time) return null;
-    return typeof oasis.user_withdrawal_time === 'string' 
+    if (!oasis.user_withdrawal_time) return null
+    return typeof oasis.user_withdrawal_time === 'string'
       ? new Date(oasis.user_withdrawal_time)
-      : oasis.user_withdrawal_time;
-  };
+      : oasis.user_withdrawal_time
+  }
 
-  const withdrawalDate = getWithdrawalDate();
+  const withdrawalDate = getWithdrawalDate()
   const formattedDate = withdrawalDate
     ? `${withdrawalDate.toLocaleDateString()} ${withdrawalDate.toLocaleTimeString()}`
-    : '-';
-  const isUnlocked = withdrawalDate ? withdrawalDate.getTime() < Date.now() : false;
+    : '-'
+  const isUnlocked = withdrawalDate ? withdrawalDate.getTime() < Date.now() : false
 
   return (
     <div
@@ -241,8 +241,6 @@ const OasisProgram = () => {
   // Bonus rate based on lock period
   const bonusRate = lockPeriod === 6 ? 0.1 : lockPeriod === 9 ? 0.15 : 0.2
 
-  const maxHTR = 10000000
-
   // Unlock date calculation
   // const unlockDate = new Date(Date.now() + lockPeriod * 30 * 24 * 60 * 60 * 1000)
   const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
@@ -252,8 +250,9 @@ const OasisProgram = () => {
 
   const oasis = allOasis?.find((oasis) => oasis.token.symbol == currency)
   const oasisReserve = allReserves?.find((oasis) => oasis.token.symbol == currency)
-  const usedHTR = oasisReserve?.dev_balance || 0
-  const progress = (usedHTR / maxHTR) * 100
+  const availableHTR = oasisReserve?.dev_balance || 0
+  const depositedHTR = oasisReserve?.dev_deposit_amount || 0
+  const progress = (1 - availableHTR / depositedHTR) * 100
   const oasisId = oasis?.id
   const oasisName = oasis?.name || ''
   const poolId = oasis?.pool.id || ''
@@ -501,7 +500,7 @@ const OasisProgram = () => {
 
                 {/* Mobile Learn More Button */}
                 <div className="flex flex-col gap-4 lg:hidden">
-                  <Link href="https://docs.dozer.finance/oasis">
+                  <Link href="https://docs.dozer.finance/oasis" target="_blank">
                     <Button
                       variant="outlined"
                       className="w-full border text-yellow hover:text-yellow-600 border-yellow"
@@ -520,7 +519,7 @@ const OasisProgram = () => {
                     showChart ? 'flex flex-row justify-center col-span-full gap-4' : 'flex flex-col gap-4'
                   } `}
                 >
-                  <Link href="https://docs.dozer.finance/oasis">
+                  <Link href="https://docs.dozer.finance/oasis" target="_blank">
                     <Button
                       variant="outlined"
                       className="justify-center hidden w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"
@@ -998,7 +997,7 @@ const OasisProgram = () => {
                         HTR matched
                       </Typography>
                       <Typography variant="sm" className="text-stone-200">
-                        {usedHTR.toLocaleString()} / {maxHTR.toLocaleString()} HTR
+                        {(depositedHTR - availableHTR).toLocaleString()} / {depositedHTR.toLocaleString()} HTR
                       </Typography>
                     </div>
                   </motion.div>
