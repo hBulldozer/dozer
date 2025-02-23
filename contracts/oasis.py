@@ -27,6 +27,7 @@ class Oasis(Blueprint):
 
     dev_address: Address
     dev_balance: Amount
+    dev_deposit_amount: Amount
     user_deposit_b: dict[Address, Amount]
     user_liquidity: dict[Address, Amount]
     total_liquidity: Amount
@@ -55,6 +56,7 @@ class Oasis(Blueprint):
         self.dev_address = ctx.address
         self.dozer_pool = dozer_pool
         self.dev_balance = action.amount
+        self.dev_deposit_amount = action.amount
         self.total_liquidity = 0
         self.protocol_fee = protocol_fee
 
@@ -73,6 +75,7 @@ class Oasis(Blueprint):
         if action.token_uid != HTR_UID:
             raise NCFail("Deposit token not HATHOR")
         self.dev_balance += action.amount
+        self.dev_deposit_amount += action.amount
 
     @public
     def user_deposit(self, ctx: Context, timelock: int) -> None:
@@ -406,7 +409,8 @@ class Oasis(Blueprint):
             "total_liquidity": self.total_liquidity,
             "dev_balance": self.dev_balance,
             "token_b": self.token_b.hex(),
-            "protocol_fee": self.protocol_fee,  # Added protocol fee to info
+            "protocol_fee": self.protocol_fee,
+            "dev_deposit_amount": self.dev_deposit_amount,
         }
 
     @view
