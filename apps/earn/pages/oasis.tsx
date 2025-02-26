@@ -109,13 +109,7 @@ const UserOasisPosition = ({
         (isLoading || isPending) && 'opacity-70'
       )}
     >
-      {(isLoading ||
-        isPending ||
-        !oasis.user_deposit_b ||
-        !oasis.user_withdrawal_time ||
-        !oasis.max_withdraw_b ||
-        !oasis.max_withdraw_htr ||
-        !oasis.user_balance_a) && (
+      {(isLoading || isPending) && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/80">
           <Dots>Processing Transaction</Dots>
         </div>
@@ -145,9 +139,11 @@ const UserOasisPosition = ({
             <Typography variant="sm" className="text-stone-400">
               Locked Amount:
             </Typography>
-            <Typography variant="sm" className="text-stone-200">
-              {oasis.user_deposit_b} {oasis.token.symbol}
-            </Typography>
+            {oasis.user_deposit_b && (
+              <Typography variant="sm" className="text-stone-200">
+                {oasis.user_deposit_b} {oasis.token.symbol}
+              </Typography>
+            )}
           </div>
 
           <div className="flex flex-row gap-1">
@@ -160,32 +156,38 @@ const UserOasisPosition = ({
           </div>
           {isUnlocked && (
             <>
-              <div className="flex flex-row gap-1">
-                <Typography variant="sm" className="text-stone-400">
-                  Max withdraw {oasis.token.symbol}:
-                </Typography>
-                <Typography variant="sm" className="text-stone-200">
-                  {oasis.max_withdraw_b} {oasis.token.symbol}
-                </Typography>
-              </div>
-              <div className="flex flex-row gap-1">
-                <Typography variant="sm" className="text-stone-400">
-                  Max withdraw HTR:
-                </Typography>
-                <Typography variant="sm" className="text-stone-200">
-                  {oasis.max_withdraw_htr} HTR
-                </Typography>
-              </div>
+              {oasis.max_withdraw_b && (
+                <div className="flex flex-row gap-1">
+                  <Typography variant="sm" className="text-stone-400">
+                    Max withdraw {oasis.token.symbol}:
+                  </Typography>
+                  <Typography variant="sm" className="text-stone-200">
+                    {oasis.max_withdraw_b} {oasis.token.symbol}
+                  </Typography>
+                </div>
+              )}
+              {oasis.max_withdraw_htr && oasis.max_withdraw_htr > 0 && (
+                <div className="flex flex-row gap-1">
+                  <Typography variant="sm" className="text-stone-400">
+                    Max withdraw HTR:
+                  </Typography>
+                  <Typography variant="sm" className="text-stone-200">
+                    {oasis.max_withdraw_htr} HTR
+                  </Typography>
+                </div>
+              )}
             </>
           )}
-          <div className="flex flex-row gap-1">
-            <Typography variant="sm" className="text-stone-400">
-              HTR Bonus available:
-            </Typography>
-            <Typography variant="sm" className="text-stone-200">
-              {oasis.user_balance_a} HTR
-            </Typography>
-          </div>
+          {oasis.user_balance_a && oasis.user_balance_a > 0 && (
+            <div className="flex flex-row gap-1">
+              <Typography variant="sm" className="text-stone-400">
+                HTR Bonus available:
+              </Typography>
+              <Typography variant="sm" className="text-stone-200">
+                {oasis.user_balance_a} HTR
+              </Typography>
+            </div>
+          )}
         </div>
       </div>
       <div className="flex flex-col gap-1">
@@ -274,7 +276,7 @@ const OasisProgram = () => {
   }
 
   const handleRemoveLiquidity = async (removeAmount: string, removeAmountHtr: string): Promise<void> => {
-    if (!removeAmount || !selectedOasisForRemove?.id) return
+    if (!selectedOasisForRemove?.id) return
     setSentTX(true)
     setTxType('Remove liquidity')
 
@@ -294,7 +296,7 @@ const OasisProgram = () => {
   }
 
   const handleRemoveBonus = async (removeAmount: string): Promise<void> => {
-    if (!removeAmount || !selectedOasisForRemoveBonus?.id) return
+    if (!selectedOasisForRemoveBonus?.id) return
     setSentTX(true)
     setTxType('Remove bonus')
 
@@ -592,7 +594,7 @@ const OasisProgram = () => {
                                 <Tab.Panel>
                                   <div className="flex flex-col gap-4 px-4 sm:px-8">
                                     <div className="flex flex-col gap-4 sm:flex-row sm:gap-2 justify-items-end">
-                                        <div className="flex flex-col flex-1 gap-2">
+                                      <div className="flex flex-col flex-1 gap-2">
                                         <Typography variant="sm" className="text-stone-400">
                                           Amount to lock up
                                         </Typography>
@@ -600,9 +602,9 @@ const OasisProgram = () => {
                                           <Input.Numeric
                                             value={amount}
                                             onUserInput={(val) => setAmount(val)}
-                                            className="h-full text-2xl pl-3"
+                                            className="h-full pl-3 text-2xl"
                                           />
-                                          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
+                                          <div className="absolute flex items-center -translate-y-1/2 right-4 top-1/2">
                                             <PricePanel
                                               amount={amount}
                                               tokenSymbol={token}
@@ -923,7 +925,7 @@ const OasisProgram = () => {
                                                     {isRpcRequestPending ? (
                                                       <Dots>Confirm transaction in your wallet</Dots>
                                                     ) : (
-                                                      <>Remove Liquidity</>
+                                                      <>Withdraw Position</>
                                                     )}
                                                   </Button>
                                                   {isRpcRequestPending && (
@@ -945,7 +947,7 @@ const OasisProgram = () => {
                                                   <Button
                                                     size="sm"
                                                     variant="empty"
-                                                    disabled={isRpcRequestPending}
+                                                    disabled={isRpcRequestPending || oasis.user_balance_a <= 0}
                                                     onClick={() => {
                                                       setSelectedOasisForRemoveBonus(oasis)
                                                       setRemoveBonusModalOpen(true)
@@ -988,7 +990,7 @@ const OasisProgram = () => {
 
                   {/* Reserve Info Box */}
                   <motion.div layout className="p-4 my-6 rounded-lg bg-[rgba(0,0,0,0.4)] border border-stone-800">
-                    <Typography variant="sm" className="text-stone-400 mb-2">
+                    <Typography variant="sm" className="mb-2 text-stone-400">
                       HTR bonus left:
                     </Typography>
                     <div className="relative h-[30px] w-full overflow-hidden rounded-md">

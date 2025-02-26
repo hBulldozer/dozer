@@ -24,10 +24,10 @@ export class Oasis extends NanoContract {
     // get info from network: it can be done by the ncid or by the tokens
   }
 
-  public async initialize(admin_address: string, amount: number, protocolFee: number, owner_address: string) {
+  public async initialize(admin_address: string, amount: number, protocolFee: number) {
     if (!process.env.OASISBLUEPRINT || '') throw new Error('Missing environment variables')
     const actions: NCAction[] = [{ type: 'deposit', token: '00', amount: 100 * amount }]
-    const args: NCArgs[] = [this.pool, this.token, protocolFee, owner_address]
+    const args: NCArgs[] = [this.pool, this.token, protocolFee]
     const response = await this.create(process.env.OASISBLUEPRINT || '', admin_address, actions, args)
     return response
   }
