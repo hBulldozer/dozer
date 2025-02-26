@@ -244,52 +244,52 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
 
   await wait_next_block()
 
-  // 7. Start the users wallet
-  console.log('Starting users wallet...')
-  await PostHeadless('users', '/start', {}, { 'wallet-id': 'default', seedKey: 'default' }).then(async (data) => {
-    if (data.success || data.errorCode == 'WALLET_ALREADY_STARTED') {
-      console.log(data.success ? 'Wallet started!' : 'Wallet was already started')
-    } else {
-      throw new Error(`Failed to start wallet. ${data.message}`)
-    }
-  })
-  await check_wallet('users')
+  // // 7. Start the users wallet
+  // console.log('Starting users wallet...')
+  // await PostHeadless('users', '/start', {}, { 'wallet-id': 'default', seedKey: 'default' }).then(async (data) => {
+  //   if (data.success || data.errorCode == 'WALLET_ALREADY_STARTED') {
+  //     console.log(data.success ? 'Wallet started!' : 'Wallet was already started')
+  //   } else {
+  //     throw new Error(`Failed to start wallet. ${data.message}`)
+  //   }
+  // })
+  // await check_wallet('users')
 
-  // 8. Sending 50 HTR for each user
-  console.log('Sending funds to users...')
-  for (let i = 0; i < n_users; i++) {
-    // Get user address
-    console.log(`Get address of #${i + 1} user...`)
-    let address = ''
-    await GetHeadless('users', `/wallet/address?index=${i}`, { 'x-wallet-id': 'default' }, {}).then((data) => {
-      if (data.address) {
-        address = 'WX6vyaJ1Xs2NWVbfV9eCiNYpnNLD7HRBQZ'
-        console.log(`User #${i + 1} address: ${address}`)
-      } else {
-        throw new Error(`Failed to get user address. ${data.message}`)
-      }
-    })
-    console.log(`Sending 5k USDT to ${address}...`)
-    await PostHeadless(
-      'master',
-      '/wallet/simple-send-tx',
-      { 'x-wallet-id': process.env.WALLET_ID },
-      {
-        address: address,
-        value: 5_000_00,
-        token: tokenUUIDs['USDT_uuid'],
-      }
-    ).then(async (data) => {
-      if (data.success) {
-        console.log(`Sent 5k USDT to ${address}.`)
-      } else {
-        throw new Error(`Failed to send USDT to ${address}.` + data)
-      }
-    })
-    await delay(2000)
-  }
+  // // 8. Sending 50 HTR for each user
+  // console.log('Sending funds to users...')
+  // for (let i = 0; i < n_users; i++) {
+  //   // Get user address
+  //   console.log(`Get address of #${i + 1} user...`)
+  //   let address = ''
+  //   await GetHeadless('users', `/wallet/address?index=${i}`, { 'x-wallet-id': 'default' }, {}).then((data) => {
+  //     if (data.address) {
+  //       address = 'WX6vyaJ1Xs2NWVbfV9eCiNYpnNLD7HRBQZ'
+  //       console.log(`User #${i + 1} address: ${address}`)
+  //     } else {
+  //       throw new Error(`Failed to get user address. ${data.message}`)
+  //     }
+  //   })
+  //   console.log(`Sending 5k USDT to ${address}...`)
+  //   await PostHeadless(
+  //     'master',
+  //     '/wallet/simple-send-tx',
+  //     { 'x-wallet-id': process.env.WALLET_ID },
+  //     {
+  //       address: address,
+  //       value: 5_000_00,
+  //       token: tokenUUIDs['USDT_uuid'],
+  //     }
+  //   ).then(async (data) => {
+  //     if (data.success) {
+  //       console.log(`Sent 5k USDT to ${address}.`)
+  //     } else {
+  //       throw new Error(`Failed to send USDT to ${address}.` + data)
+  //     }
+  //   })
+  //   await delay(2000)
+  // }
 
-  console.log('Users funding complete!')
+  // console.log('Users funding complete!')
   console.log('Seed Complete!')
 
   return {
