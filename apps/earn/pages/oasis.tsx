@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from 'react'
+import React, { Fragment, useEffect, useState, FC } from 'react'
 import {
   Widget,
   Select,
@@ -31,6 +31,7 @@ import type { OasisPosition } from '../components/OasisModal/types'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import Link from 'next/link'
 import { OasisChart } from '../components/OasisChart'
+import PricePanel from '../components/PricePanel'
 
 interface OasisInterface {
   id: string
@@ -591,17 +592,24 @@ const OasisProgram = () => {
                                 <Tab.Panel>
                                   <div className="flex flex-col gap-4 px-4 sm:px-8">
                                     <div className="flex flex-col gap-4 sm:flex-row sm:gap-2 justify-items-end">
-                                      <div className="flex flex-col flex-1 gap-2">
+                                        <div className="flex flex-col flex-1 gap-2">
                                         <Typography variant="sm" className="text-stone-400">
                                           Amount to lock up
                                         </Typography>
-                                        <div className="h-[51px]">
-                                          {' '}
+                                        <div className="h-[51px] relative">
                                           <Input.Numeric
                                             value={amount}
                                             onUserInput={(val) => setAmount(val)}
-                                            className="h-full"
+                                            className="h-full text-2xl pl-3"
                                           />
+                                          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
+                                            <PricePanel
+                                              amount={amount}
+                                              tokenSymbol={token}
+                                              prices={initialPrices}
+                                              loading={fetchLoading}
+                                            />
+                                          </div>
                                         </div>
                                       </div>
                                       <div className="flex flex-col w-full sm:w-[180px] gap-2">
