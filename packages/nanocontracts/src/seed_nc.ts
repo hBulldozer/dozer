@@ -234,7 +234,8 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
         tokenUUIDs[`${oasis.tokenSymbol}_uuid`] || '',
         poolNCIDs[`${oasis.tokenSymbol}_HTR_ncid`] || ''
       )
-      const response = await newOasis.initialize(admin_address, oasis.htrQuantity, 5)
+      const response = await newOasis.initialize(admin_address, oasis.htrQuantity, 5, admin_address)
+      console.log(response)
       newOasis.ncid = response.hash
       oasisNCIDs[`${oasis.tokenSymbol}_HTR_oasisncid`] = response.hash
       console.log(`${oasis.tokenSymbol}-HTR Oasis created. ncid: ${newOasis.ncid}`)

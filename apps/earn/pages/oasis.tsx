@@ -988,25 +988,25 @@ const OasisProgram = () => {
 
                   {/* Reserve Info Box */}
                   <motion.div layout className="p-4 my-6 rounded-lg bg-[rgba(0,0,0,0.4)] border border-stone-800">
-                    <Typography variant="xs" className="text-stone-400">
-                      Oasis Reserve available
+                    <Typography variant="sm" className="text-stone-400 mb-2">
+                      HTR bonus left:
                     </Typography>
-                    <div className="relative h-[23px] w-full mt-2">
-                      <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500" />
+                    <div className="relative h-[30px] w-full overflow-hidden rounded-md">
+                      <div className="absolute inset-0 bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500" />
                       <div
                         className="absolute inset-y-0 left-0 overflow-hidden rounded-md"
                         style={{ width: `${progress}%` }}
                       >
                         <div className="h-full bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-500" />
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <Typography variant="sm" className="text-stone-400">
-                        HTR matched
-                      </Typography>
-                      <Typography variant="sm" className="text-stone-200">
-                        {(depositedHTR - availableHTR).toLocaleString()} / {depositedHTR.toLocaleString()} HTR
-                      </Typography>
+                      <div className="absolute inset-0 flex items-center justify-between px-3">
+                        <Typography variant="base" weight={600} className="text-white drop-shadow-md">
+                          {availableHTR.toLocaleString()} HTR
+                        </Typography>
+                        <Typography variant="sm" className="text-white drop-shadow-md">
+                          ${(availableHTR * (initialPrices.htr || 0)).toLocaleString()}
+                        </Typography>
+                      </div>
                     </div>
                   </motion.div>
                 </motion.div>
