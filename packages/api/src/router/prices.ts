@@ -34,7 +34,7 @@ const htrKline = async (input: { period: number; size: number; prisma: PrismaCli
   // const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
   // const start = (input.size + 1) * (input.period == 0 ? 15 : input.period == 1 ? 60 : 24 * 60) * 60 // in seconds
   // const resp = await fetch(
-  //   `https://api.kucoin.com/api/v1/market/candles?type=${period}&symbol=HTR-USDT&startAt=${now - start}&endAt=${now}`
+  //   `https://api.kucoin.com/api/v1/market/candles?type=${period}&symbol=HTR-hUSDC&startAt=${now - start}&endAt=${now}`
   // )
   // const data = await resp.json()
   // return data.data
@@ -46,11 +46,11 @@ const htrKline = async (input: { period: number; size: number; prisma: PrismaCli
   const pool = await prisma.pool.findFirst({
     where: {
       token0: { symbol: 'HTR' },
-      token1: { symbol: 'USDT' },
+      token1: { symbol: 'hUSDC' },
     },
   })
   if (!pool) {
-    throw new Error('Pool with HTR-USDT pair not found')
+    throw new Error('Pool with HTR-hUSDC pair not found')
   }
 
   const now = Math.round(Date.now() / 1000)
@@ -88,7 +88,7 @@ const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: nu
           {
             pool: {
               token1: {
-                symbol: 'USDT',
+                symbol: 'hUSDC',
               },
             },
           },
@@ -157,7 +157,7 @@ const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, s
             {
               pool: {
                 token1: {
-                  symbol: 'USDT',
+                  symbol: 'hUSDC',
                 },
               },
             },
@@ -253,18 +253,18 @@ export const pricesRouter = createTRPCRouter({
         token1: { select: { symbol: true } },
       },
     })
-    const htrUsdtPool = pools.find((pool) => {
+    const htrHusdcPool = pools.find((pool) => {
       const symbols = [pool.token0.symbol, pool.token1.symbol]
-      return symbols.includes('HTR') && symbols.includes('USDT')
+      return symbols.includes('HTR') && symbols.includes('hUSDC')
     })
 
     const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrUsdtPool?.id}`, `calls[]=pool_data()`]
+    const queryParams = [`id=${htrHusdcPool?.id}`, `calls[]=pool_data()`]
 
     const rawPoolData = await fetchNodeData(endpoint, queryParams)
     const poolData = rawPoolData.calls['pool_data()'].value
-    const priceHTR = htrUsdtPool
-      ? htrUsdtPool.token0.symbol === 'HTR'
+    const priceHTR = htrHusdcPool
+      ? htrHusdcPool.token0.symbol === 'HTR'
         ? poolData.reserve1 / poolData.reserve0
         : poolData.reserve0 / poolData.reserve1
       : 1
@@ -273,7 +273,7 @@ export const pricesRouter = createTRPCRouter({
     await Promise.all(
       tokens.map(async (token) => {
         if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)
-        else if (token.symbol == 'USDT') prices[token.uuid] = 1
+        else if (token.symbol == 'hUSDC') prices[token.uuid] = 1
         else {
           const poolHTR = pools.find((pool) => {
             const symbols = [pool.token0.symbol, pool.token1.symbol]
@@ -320,16 +320,16 @@ export const pricesRouter = createTRPCRouter({
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
     // Combine queries to reduce connection time
-    const [htrUsdtPool, tokens] = await Promise.all([
+    const [htrHusdcPool, tokens] = await Promise.all([
       ctx.prisma.pool.findFirst({
         where: {
           OR: [
             {
               token0: { symbol: 'HTR' },
-              token1: { symbol: 'USDT' },
+              token1: { symbol: 'hUSDC' },
             },
             {
-              token0: { symbol: 'USDT' },
+              token0: { symbol: 'hUSDC' },
               token1: { symbol: 'HTR' },
             },
           ],
@@ -401,11 +401,11 @@ export const pricesRouter = createTRPCRouter({
       tokens.map(async (token) => {
         let token_prices24hUSD: number[] = []
 
-        if (token.symbol === 'USDT') {
+        if (token.symbol === 'hUSDC') {
           token_prices24hUSD = Array(24).fill(1)
-        } else if (token.uuid === '00' && htrUsdtPool?.hourSnapshots.length) {
-          const isHtrToken0 = htrUsdtPool.token0.symbol === 'HTR'
-          token_prices24hUSD = htrUsdtPool.hourSnapshots.map((snap) =>
+        } else if (token.uuid === '00' && htrHusdcPool?.hourSnapshots.length) {
+          const isHtrToken0 = htrHusdcPool.token0.symbol === 'HTR'
+          token_prices24hUSD = htrHusdcPool.hourSnapshots.map((snap) =>
             isHtrToken0 ? snap.reserve1 / snap.reserve0 : snap.reserve0 / snap.reserve1
           )
         } else {
@@ -445,7 +445,7 @@ export const pricesRouter = createTRPCRouter({
             price_old && price_old.price && price_old.priceHTR
               ? token.uuid == '00'
                 ? price_old.priceHTR
-                : token.symbol == 'USDT'
+                : token.symbol == 'hUSDC'
                 ? 1
                 : price_old.price * price_old.priceHTR
               : 0
@@ -458,11 +458,11 @@ export const pricesRouter = createTRPCRouter({
     // const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
     // const data = await resp.json()
     // return Number(data.data.HTR)
-    const USDT = await prisma.token.findFirst({ where: { symbol: 'USDT' } })
-    if (!USDT) {
-      throw new Error('Failed to get USDT Token')
+    const hUSDC = await prisma.token.findFirst({ where: { symbol: 'hUSDC' } })
+    if (!hUSDC) {
+      throw new Error('Failed to get hUSDC Token')
     }
-    const pool = await HTRPoolByTokenUuidFromContract(USDT?.uuid, USDT?.chainId, prisma)
+    const pool = await HTRPoolByTokenUuidFromContract(hUSDC?.uuid, hUSDC?.chainId, prisma)
     return Number(pool?.reserve1) / Number(pool?.reserve0)
   }),
   htrKline: procedure

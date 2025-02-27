@@ -14,8 +14,8 @@ const DATA: ExpendableCardData = {
     <>
       <p>
         Seamlessly connect the world of Ethereum Virtual Machine (EVM) networks with Hathor&apos;s cutting-edge
-        blockchain ecosystem; unlock a new range of opportunities with your EVM native tokens such as $ETH, $WBTC, $USDT
-        and more.
+        blockchain ecosystem; unlock a new range of opportunities with your EVM native tokens such as $ETH, $WBTC,
+        $hUSDC and more.
       </p>
       <p>
         Experience the ultimate trio: Zero Gas Fees, Scalability, and Security, all powered by Hathor BlockDag. Thanks

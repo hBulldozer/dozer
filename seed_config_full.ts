@@ -29,9 +29,9 @@ export const seedConfig: SeedConfig = {
     },
     {
       name: 'USD Tether',
-      symbol: 'USDT',
+      symbol: 'hUSDC',
       totalSupply: 280000000,
-      about: 'Tether (USDT) is a cryptocurrency with a value meant to mirror the value of the U.S. dollar.',
+      about: 'Tether (hUSDC) is a cryptocurrency with a value meant to mirror the value of the U.S. dollar.',
     },
     {
       name: 'NileSwap Token',
@@ -61,7 +61,7 @@ export const seedConfig: SeedConfig = {
       protocolFee: 0.01,
     },
     {
-      tokenSymbol: 'USDT',
+      tokenSymbol: 'hUSDC',
       htrQuantity: 462000,
       tokenQuantity: 18480,
       fee: 0.05,

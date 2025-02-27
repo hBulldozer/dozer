@@ -196,21 +196,21 @@ export const poolRouter = createTRPCRouter({
         },
       },
     })
-    const htrUsdtPool = pools.find((pool) => {
+    const htrHusdcPool = pools.find((pool) => {
       const symbols = [pool.token0.symbol, pool.token1.symbol]
-      return symbols.includes('HTR') && symbols.includes('USDT')
+      return symbols.includes('HTR') && symbols.includes('hUSDC')
     })
 
     const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrUsdtPool?.id}`, `calls[]=pool_data()`]
+    const queryParams = [`id=${htrHusdcPool?.id}`, `calls[]=pool_data()`]
 
     const rawPoolData = await fetchNodeData(endpoint, queryParams)
     const poolData = rawPoolData.calls['pool_data()'].value
-    const htrPrice = htrUsdtPool
-      ? htrUsdtPool.token0.symbol === 'HTR'
+    const htrPrice = htrHusdcPool
+      ? htrHusdcPool.token0.symbol === 'HTR'
         ? poolData.reserve1 / poolData.reserve0
         : poolData.reserve0 / poolData.reserve1
-      : 1 // Default to 1 if htrUsdtPool is undefined
+      : 1 // Default to 1 if htrHusdcPool is undefined
     // Process each pool concurrently (for efficiency)
     const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice))
     const allPoolData = await Promise.all(poolDataPromises)
@@ -252,21 +252,21 @@ export const poolRouter = createTRPCRouter({
         },
       },
     })
-    const htrUsdtPool = pools.find((pool) => {
+    const htrHusdcPool = pools.find((pool) => {
       const symbols = [pool.token0.symbol, pool.token1.symbol]
-      return symbols.includes('HTR') && symbols.includes('USDT')
+      return symbols.includes('HTR') && symbols.includes('hUSDC')
     })
 
     const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrUsdtPool?.id}`, `calls[]=pool_data()`]
+    const queryParams = [`id=${htrHusdcPool?.id}`, `calls[]=pool_data()`]
 
     const rawPoolData = await fetchNodeData(endpoint, queryParams)
     const poolData = rawPoolData.calls['pool_data()'].value
-    const htrPrice = htrUsdtPool
-      ? htrUsdtPool.token0.symbol === 'HTR'
+    const htrPrice = htrHusdcPool
+      ? htrHusdcPool.token0.symbol === 'HTR'
         ? poolData.reserve1 / poolData.reserve0
         : poolData.reserve0 / poolData.reserve1
-      : 1 // Default to 1 if htrUsdtPool is undefined
+      : 1 // Default to 1 if htrHusdcPool is undefined
     // Process each pool concurrently (for efficiency)
     const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice, true))
     const allPoolData = await Promise.all(poolDataPromises)
@@ -291,21 +291,21 @@ export const poolRouter = createTRPCRouter({
         volume1d: true,
       },
     })
-    const htrUsdtPool = pools.find((pool) => {
+    const htrHusdcPool = pools.find((pool) => {
       const symbols = [pool.token0.symbol, pool.token1.symbol]
-      return symbols.includes('HTR') && symbols.includes('USDT')
+      return symbols.includes('HTR') && symbols.includes('hUSDC')
     })
 
     const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrUsdtPool?.id}`, `calls[]=pool_data()`]
+    const queryParams = [`id=${htrHusdcPool?.id}`, `calls[]=pool_data()`]
 
     const rawPoolData = await fetchNodeData(endpoint, queryParams)
     const poolData = rawPoolData.calls['pool_data()'].value
-    const htrPrice = htrUsdtPool
-      ? htrUsdtPool.token0.symbol === 'HTR'
+    const htrPrice = htrHusdcPool
+      ? htrHusdcPool.token0.symbol === 'HTR'
         ? poolData.reserve1 / poolData.reserve0
         : poolData.reserve0 / poolData.reserve1
-      : 1 // Default to 1 if htrUsdtPool is undefined
+      : 1 // Default to 1 if htrHusdcPool is undefined
     // Process each pool concurrently (for efficiency)
     const allPoolData = pools.map((pool) => fetchInitialLoad(pool, htrPrice))
     // const allPoolData = await Promise.all(poolDataPromises)
@@ -330,21 +330,21 @@ export const poolRouter = createTRPCRouter({
         volume1d: true,
       },
     })
-    const htrUsdtPool = pools.find((pool) => {
+    const htrHusdcPool = pools.find((pool) => {
       const symbols = [pool.token0.symbol, pool.token1.symbol]
-      return symbols.includes('HTR') && symbols.includes('USDT')
+      return symbols.includes('HTR') && symbols.includes('hUSDC')
     })
 
     const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrUsdtPool?.id}`, `calls[]=pool_data()`]
+    const queryParams = [`id=${htrHusdcPool?.id}`, `calls[]=pool_data()`]
 
     const rawPoolData = await fetchNodeData(endpoint, queryParams)
     const poolData = rawPoolData.calls['pool_data()'].value
-    const htrPrice = htrUsdtPool
-      ? htrUsdtPool.token0.symbol === 'HTR'
+    const htrPrice = htrHusdcPool
+      ? htrHusdcPool.token0.symbol === 'HTR'
         ? poolData.reserve1 / poolData.reserve0
         : poolData.reserve0 / poolData.reserve1
-      : 1 // Default to 1 if htrUsdtPool is undefined
+      : 1 // Default to 1 if htrHusdcPool is undefined
     // Process each pool concurrently (for efficiency)
     const allPoolData = pools.map((pool) => fetchInitialLoad(pool, htrPrice))
     // const allPoolData = await Promise.all(poolDataPromises)

@@ -188,39 +188,41 @@ export const TokensTable: FC = () => {
                 daySnapshots: [],
               }
         return fakeHTRPair
-      } else if (token.symbol == 'USDT') {
-        const pairs_usdt: Pair[] = allPools
+      } else if (token.symbol == 'hUSDC') {
+        const pairs_husdc: Pair[] = allPools
           ? allPools
               .filter((pool) => pool.chainId == rendNetwork)
-              .filter((pool) => pool.token0.symbol == 'USDT' || pool.token1.symbol == 'USDT')
+              .filter((pool) => pool.token0.symbol == 'hUSDC' || pool.token1.symbol == 'hUSDC')
               .map((pool) => {
                 const pair = pool ? pool : ({} as Pair)
                 return pair
               })
           : []
-        const fakeUSDTPair: Pair =
-          pairs_usdt.length == 0
+        const fakehUSDCPair: Pair =
+          pairs_husdc.length == 0
             ? ({} as Pair)
             : {
-                id: network == ChainId.HATHOR ? 'usdt' : 'usdt-testnet',
-                name: network == ChainId.HATHOR ? 'USDT' : 'USDT testnet',
-                liquidityUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
-                volumeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-                feeUSD: pairs_usdt ? pairs_usdt.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
-                swapFee: pairs_usdt[0].swapFee,
+                id: network == ChainId.HATHOR ? 'husdc' : 'husdc-testnet',
+                name: network == ChainId.HATHOR ? 'hUSDC' : 'hUSDC testnet',
+                liquidityUSD: pairs_husdc
+                  ? pairs_husdc.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2
+                  : 0,
+                volumeUSD: pairs_husdc ? pairs_husdc.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
+                feeUSD: pairs_husdc ? pairs_husdc.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
+                swapFee: pairs_husdc[0].swapFee,
                 apr: 0,
-                token0: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
-                token1: pairs_usdt[0].token0.symbol == 'USDT' ? pairs_usdt[0].token0 : pairs_usdt[0].token1,
+                token0: pairs_husdc[0].token0.symbol == 'hUSDC' ? pairs_husdc[0].token0 : pairs_husdc[0].token1,
+                token1: pairs_husdc[0].token0.symbol == 'hUSDC' ? pairs_husdc[0].token0 : pairs_husdc[0].token1,
                 chainId: token.chainId,
                 reserve0: 0,
                 reserve1: 0,
-                liquidity: pairs_usdt ? pairs_usdt.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
-                volume1d: pairs_usdt ? pairs_usdt.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
-                fees1d: pairs_usdt ? pairs_usdt.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
+                liquidity: pairs_husdc ? pairs_husdc.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
+                volume1d: pairs_husdc ? pairs_husdc.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
+                fees1d: pairs_husdc ? pairs_husdc.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
                 hourSnapshots: [],
                 daySnapshots: [],
               }
-        return fakeUSDTPair
+        return fakehUSDCPair
       } else {
         const pool_with_htr = pools_idx[0]
 

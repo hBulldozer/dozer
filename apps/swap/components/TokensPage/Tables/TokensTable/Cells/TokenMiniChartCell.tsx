@@ -77,7 +77,7 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   price24h.push(lastPrice ? Number(lastPrice.toPrecision(5)) : price24h[0])
   const points = price24h.map((p, i) => ({ x: i, y: p }))
   const chartSVG =
-    row.id.includes('usdt') || Math.min(...price24h) == Math.max(...price24h)
+    row.id.includes('husdc') || Math.min(...price24h) == Math.max(...price24h)
       ? generateHorizontalLineSvg(110, 30, 6)
       : createSVGString(points, 110, 30, 6)
   return isLoading || isLoadingLast ? (

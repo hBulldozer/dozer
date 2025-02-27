@@ -27,7 +27,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
         price24h.push(lastPrice ? Number(lastPrice.toPrecision(5)) : price24h[0])
         const points = price24h.map((p, i) => ({ x: i, y: p }))
         const chartSVG =
-          pool.id.includes('usdt') || Math.min(...price24h) == Math.max(...price24h)
+          pool.id.includes('husdc') || Math.min(...price24h) == Math.max(...price24h)
             ? generateHorizontalLineSvg(110, 30, 6)
             : createSVGString(points, 110, 30, 6)
         svgStringArray.push(chartSVG && !chartSVG.includes('NaN') ? chartSVG : generateHorizontalLineSvg(110, 30, 6))

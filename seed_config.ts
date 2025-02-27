@@ -34,10 +34,10 @@ export const seedConfig: SeedConfig = {
         'DZR is the native utility token of Dozer Finance, a decentralized finance (DeFi) platform built on the Hathor Network.',
     },
     {
-      name: 'USD Tether',
-      symbol: 'USDT',
+      name: 'hUSDC',
+      symbol: 'hUSDC',
       totalSupply: 280000000,
-      about: 'Tether (USDT) is a cryptocurrency with a value meant to mirror the value of the U.S. dollar.',
+      about: 'hUSDC is the bridged version of USDC on the Hathor Network.',
     },
     {
       name: 'Bitcoin',
@@ -55,7 +55,7 @@ export const seedConfig: SeedConfig = {
       protocolFee: 0.01,
     },
     {
-      tokenSymbol: 'USDT',
+      tokenSymbol: 'hUSDC',
       htrQuantity: 462000,
       tokenQuantity: 18480,
       fee: 0.05,
@@ -71,7 +71,7 @@ export const seedConfig: SeedConfig = {
   ],
   oasis: [
     {
-      tokenSymbol: 'USDT',
+      tokenSymbol: 'hUSDC',
       htrQuantity: 1_000_000,
     },
     {

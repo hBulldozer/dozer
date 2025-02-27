@@ -113,7 +113,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair, setIsDialogOpen }) => {
           const priceInHTR = pair.id.includes('native')
             ? 1
             : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
-          const priceInUSD = pair.id.includes('usdt')
+          const priceInUSD = pair.id.includes('husdc')
             ? 1
             : pair.id.includes('native')
             ? Number(tokenReserve.reserve1) / Number(tokenReserve.reserve0)
@@ -390,7 +390,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair, setIsDialogOpen }) => {
         </div>
       </div>
       <div className="flex justify-end gap-4 text-right">
-        {!pair.id.includes('usdt') ? (
+        {!pair.id.includes('husdc') ? (
           <button
             onClick={() => setChartCurrency(TokenChartCurrency.USD)}
             className={classNames(

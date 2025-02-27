@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 
-const { USDT_UUID } = process.env
+const { hUSDC_UUID } = process.env
 export interface TokenBalance {
   token_uuid: string
   token_symbol: string
@@ -34,8 +34,8 @@ export const useAccount = create<AccountState>()(
           token_balance: 0,
         },
         {
-          token_uuid: USDT_UUID ? USDT_UUID : '',
-          token_symbol: 'USDT',
+          token_uuid: hUSDC_UUID ? hUSDC_UUID : '',
+          token_symbol: 'hUSDC',
           token_balance: 100,
         },
       ],

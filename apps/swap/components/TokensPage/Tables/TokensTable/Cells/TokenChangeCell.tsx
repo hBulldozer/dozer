@@ -7,7 +7,7 @@ import { api } from 'utils/api'
 
 export const TokenChangeCell: FC<CellProps> = ({ row }) => {
   const change = row.change || 0
-  return row.id.includes('usdt') ? (
+  return row.id.includes('husdc') ? (
     <div className="flex items-center gap-1">
       <ArrowIcon type={'up'} className={'text-green-400'} />
       <Typography key="changeCell" variant="sm" weight={600} className={'text-green-400'}>

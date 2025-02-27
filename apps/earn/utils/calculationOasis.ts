@@ -3,10 +3,10 @@ export interface TokenPrices {
   btc: number
   eth: number
   usdc: number
-  usdt: number
+  husdc: number
 }
 
-export type TradingPair = 'BTC' | 'ETH' | 'USDC' | 'USDT'
+export type TradingPair = 'BTC' | 'ETH' | 'hUSDC' | 'hUSDC'
 
 interface PoolConfig {
   liquidityValue: number // Initial deposit value in USD
@@ -73,10 +73,10 @@ export class ImprovedPairCalculator {
         return this.initialPrices.btc
       case 'ETH':
         return this.initialPrices.eth
-      case 'USDC':
+      case 'hUSDC':
         return this.initialPrices.usdc
-      case 'USDT':
-        return this.initialPrices.usdt
+      case 'hUSDC':
+        return this.initialPrices.husdc
       default:
         throw new Error(`Unsupported token: ${token}`)
     }
@@ -193,7 +193,7 @@ const calculator = new ImprovedPairCalculator(
     btc: 98472.35,
     eth: 3361.67,
     usdc: 1.0,
-    usdt: 1.0,
+    husdc: 1.0,
   },
   {
     liquidityValue: 10000,

@@ -155,7 +155,7 @@ export interface SeedConfig {
 
 export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
   // write the script to initialize wallet and create the contract
-  let USDT_uuid, admin_address
+  let hUSDC_uuid, admin_address
   console.log('*** Starting to seed NanoContracts... ***')
   // 1. Start the master wallet
   console.log('Starting wallet...')
@@ -269,7 +269,7 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
   //       throw new Error(`Failed to get user address. ${data.message}`)
   //     }
   //   })
-  //   console.log(`Sending 5k USDT to ${address}...`)
+  //   console.log(`Sending 5k hUSDC to ${address}...`)
   //   await PostHeadless(
   //     'master',
   //     '/wallet/simple-send-tx',
@@ -277,13 +277,13 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
   //     {
   //       address: address,
   //       value: 5_000_00,
-  //       token: tokenUUIDs['USDT_uuid'],
+  //       token: tokenUUIDs['hUSDC_uuid'],
   //     }
   //   ).then(async (data) => {
   //     if (data.success) {
-  //       console.log(`Sent 5k USDT to ${address}.`)
+  //       console.log(`Sent 5k hUSDC to ${address}.`)
   //     } else {
-  //       throw new Error(`Failed to send USDT to ${address}.` + data)
+  //       throw new Error(`Failed to send hUSDC to ${address}.` + data)
   //     }
   //   })
   //   await delay(2000)

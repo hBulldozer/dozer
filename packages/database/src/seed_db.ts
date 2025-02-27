@@ -163,7 +163,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
         const snapshotDate = new Date(snapshotTime)
 
         // Calculate changes with continuity
-        const reserve0Change = (Math.random() - (pool.name == 'USDT-HTR' ? 0.45 : 0.55)) * 1500 // Smaller, more gradual changes
+        const reserve0Change = (Math.random() - (pool.name == 'hUSDC-HTR' ? 0.45 : 0.55)) * 1500 // Smaller, more gradual changes
         const reserve1Change = (reserve0Change * prevReserve1) / (prevReserve0 + reserve0Change)
 
         prevReserve0 += reserve0Change
@@ -180,7 +180,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
           volumeUSD: 0, // pool.volumeUSD + Math.random() * 5000, // Reduced randomness
           reserve0: prevReserve0,
           reserve1: prevReserve1,
-          priceHTR: pool.name == 'USDT-HTR' ? prevReserve1 / prevReserve0 : 0.04,
+          priceHTR: pool.name == 'hUSDC-HTR' ? prevReserve1 / prevReserve0 : 0.04,
         })
 
         // Push data to daySnapshot if it's 9 PM
@@ -194,7 +194,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
               volumeUSD: 0, // pool.volumeUSD + Math.random() * 5000, // Reduced randomness
               reserve0: prevReserve0,
               reserve1: prevReserve1,
-              priceHTR: pool.name == 'USDT-HTR' ? prevReserve1 / prevReserve0 : 0.04,
+              priceHTR: pool.name == 'hUSDC-HTR' ? prevReserve1 / prevReserve0 : 0.04,
             },
           })
         }

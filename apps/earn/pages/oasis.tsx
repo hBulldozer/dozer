@@ -46,7 +46,7 @@ interface OasisInterface {
 }
 
 const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean }) => {
-  const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
+  const currency = token == 'hUSDC' ? 'hUSDC' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'hUSDC'
   return (
     <div className={classNames('flex flex-row items-center w-full gap-4', disabled && 'opacity-50')}>
       <div className="flex flex-row items-center w-full gap-4">
@@ -89,17 +89,12 @@ const UserOasisPosition = ({
   addingToOasisId?: string
   buttonWithdraw: JSX.Element
   buttonWithdrawBonus: JSX.Element
-  prices: {
-    htr: number
-    btc: number
-    eth: number
-    usdc: number
-    usdt: number
-  }
+  prices: Record<string, number>
 }) => {
   const { getPendingPositions } = useOasisTempTxStore()
   const pendingTxs = getPendingPositions(address)
   const isPending = pendingTxs.some((tx) => tx.id === oasis.id && tx.blockHeight === currentBlockHeight)
+  const { data: tokens } = api.getTokens.all.useQuery()
 
   const getWithdrawalDate = () => {
     if (!oasis.user_withdrawal_time) return null
@@ -148,10 +143,10 @@ const UserOasisPosition = ({
   // Calculate ROI
   const calculateROI = () => {
     // Only calculate if we have all the necessary data
-    if (!oasis.user_deposit_b || !prices) return null
+    if (!oasis.user_deposit_b || !prices || !tokens) return null
 
     const currencySymbol = oasis.token.symbol
-    const priceKey = currencySymbol === 'hUSDT' ? 'usdt' : currencySymbol === 'hBTC' ? 'btc' : 'usdt'
+    const priceKey = tokens.find((token) => token.symbol === currencySymbol)?.uuid || '00'
 
     // Initial investment value in USD
     const initialInvestmentUSD = oasis.user_deposit_b * prices[priceKey]
@@ -229,7 +224,7 @@ const UserOasisPosition = ({
             <Typography variant="lg" weight={600} className="text-stone-200">
               {oasis.token.symbol} Position
             </Typography>
-            <div className="flex items-start flex-wrap gap-1">
+            <div className="flex flex-wrap items-start gap-1">
               <div className="flex items-center gap-1">
                 <div className={`w-2 h-2 rounded-full ${isUnlocked ? 'bg-green-500' : 'bg-yellow-500'}`} />
                 <Typography variant="xs" className="text-stone-400">
@@ -392,15 +387,15 @@ const UserOasisPosition = ({
               </Typography>
             </div>
 
-            <div className="flex justify-between items-start">
+            <div className="flex items-start justify-between">
               <Typography variant="xs" className="text-stone-400">
                 Unlock Date
               </Typography>
               <div className="text-right">
-                <Typography variant="xs" weight={500} className="text-stone-300 block">
+                <Typography variant="xs" weight={500} className="block text-stone-300">
                   {withdrawalDate?.toLocaleDateString()}
                 </Typography>
-                <Typography variant="xs" weight={500} className="text-stone-300 block">
+                <Typography variant="xs" weight={500} className="block text-stone-300">
                   {withdrawalDate?.toLocaleTimeString()}
                 </Typography>
               </div>
@@ -457,7 +452,7 @@ const UserOasisPosition = ({
 
 const OasisProgram = () => {
   const [amount, setAmount] = useState<string>('')
-  const [token, setToken] = useState<string>('hUSDT')
+  const [token, setToken] = useState<string>('hUSDC')
   const [lockPeriod, setLockPeriod] = useState<number>(12)
   const [selectedTab, setSelectedTab] = useState(0)
   const [unlockDate, setUnlockDate] = useState<Date>(new Date())
@@ -491,13 +486,13 @@ const OasisProgram = () => {
   const pendingPositions = getPendingPositions(address)
 
   const utils = api.useUtils()
-  const { data: htrPrice } = api.getPrices.htr.useQuery()
+  const { data: prices } = api.getPrices.all.useQuery()
   const initialPrices = {
-    htr: htrPrice || 0,
+    htr: prices ? prices['00'] : 0,
     btc: 98520,
     eth: 3339,
     usdc: 1,
-    usdt: 1,
+    husdc: 1,
   }
 
   // Bonus rate based on lock period
@@ -505,7 +500,7 @@ const OasisProgram = () => {
 
   // Unlock date calculation
   // const unlockDate = new Date(Date.now() + lockPeriod * 30 * 24 * 60 * 60 * 1000)
-  const currency = token == 'hUSDT' ? 'USDT' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'USDC'
+  const currency = token == 'hUSDC' ? 'hUSDC' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'hUSDC'
   const { data: allOasis } = api.getOasis.all.useQuery()
   const { data: allReserves } = api.getOasis.allReserves.useQuery()
   const { data: allUserOasis } = api.getOasis.allUser.useQuery({ address: address }, { enabled: Boolean(address) })
@@ -890,7 +885,7 @@ const OasisProgram = () => {
                                             <PricePanel
                                               amount={amount}
                                               tokenSymbol={token}
-                                              prices={initialPrices}
+                                              prices={prices || {}}
                                               loading={fetchLoading}
                                             />
                                           </div>
@@ -904,7 +899,7 @@ const OasisProgram = () => {
                                         <Select
                                           value={token}
                                           onChange={(val: string) => {
-                                            if (val == 'hUSDT') setTokenPriceChange(0)
+                                            if (val == 'hUSDC') setTokenPriceChange(0)
 
                                             setToken(val as string)
                                           }}
@@ -935,8 +930,8 @@ const OasisProgram = () => {
                                           }
                                         >
                                           <Select.Options>
-                                            <Select.Option value="hUSDT">
-                                              <TokenOption token="hUSDT" />
+                                            <Select.Option value="hUSDC">
+                                              <TokenOption token="hUSDC" />
                                             </Select.Option>
                                             <Select.Option disabled value="hETH">
                                               <TokenOption disabled token="hETH" />
@@ -955,7 +950,7 @@ const OasisProgram = () => {
                                         onMouseLeave={() => setHover(false)}
                                       >
                                         <Transition
-                                          show={Boolean(hover && token == 'hUSDT')}
+                                          show={Boolean(hover && token == 'hUSDC')}
                                           as={Fragment}
                                           enter="transition duration-300 origin-center ease-out"
                                           enterFrom="transform opacity-0"
@@ -970,7 +965,7 @@ const OasisProgram = () => {
                                               weight={600}
                                               className="bg-white bg-opacity-[0.12] rounded-full p-2 px-3"
                                             >
-                                              USDT has no price change
+                                              hUSDC has no price change
                                             </Typography>
                                           </div>
                                         </Transition>
@@ -986,7 +981,7 @@ const OasisProgram = () => {
                                           <Slider
                                             value={[tokenPriceChange]}
                                             onValueChange={(vals: number[]) => {
-                                              if (token !== 'hUSDT') setTokenPriceChange(vals[0])
+                                              if (token !== 'hUSDC') setTokenPriceChange(vals[0])
                                             }}
                                             min={-100}
                                             max={100}
@@ -1171,7 +1166,7 @@ const OasisProgram = () => {
                                               currentBlockHeight={currentBlockHeight}
                                               key={position.id}
                                               oasis={position}
-                                              prices={initialPrices}
+                                              prices={prices || {}}
                                               isLoading={true}
                                               buttonWithdraw={<div />}
                                               buttonWithdrawBonus={<div />}
@@ -1207,7 +1202,7 @@ const OasisProgram = () => {
                                               currentBlockHeight={currentBlockHeight}
                                               oasis={oasis}
                                               key={oasis.id}
-                                              prices={initialPrices}
+                                              prices={prices || {}}
                                               isLoading={
                                                 pendingPositions.some(
                                                   (pos) => pos.id === oasis.id && pos.txType != 'add'
@@ -1310,7 +1305,7 @@ const OasisProgram = () => {
                           {availableHTR.toLocaleString()} HTR
                         </Typography>
                         <Typography variant="sm" className="text-white drop-shadow-md">
-                          ${(availableHTR * (initialPrices.htr || 0)).toLocaleString()}
+                          ${(availableHTR * (prices ? prices['00'] : 0)).toLocaleString()}
                         </Typography>
                       </div>
                     </div>
