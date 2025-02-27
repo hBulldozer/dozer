@@ -39,7 +39,7 @@ const Remove: NextPage = () => {
   if (!pair) return <></>
   const tokens = pair ? [pair.token0, pair.token1] : []
   if (!tokens) return <></>
-  const { data: prices = {} } = api.getPrices.firstLoadAll.useQuery()
+  const { data: prices = {} } = api.getPrices.all.useQuery()
   if (!prices) return <></>
 
   return (
