@@ -185,11 +185,11 @@ const UserOasisPosition = ({
     if (!timeRemaining) return null
 
     if (timeRemaining.days > 0) {
-      return `${timeRemaining.days}d ${timeRemaining.hours}h remaining`
+      return `${timeRemaining.days}d ${timeRemaining.hours}h left`
     } else if (timeRemaining.hours > 0) {
-      return `${timeRemaining.hours}h ${timeRemaining.minutes}m remaining`
+      return `${timeRemaining.hours}h ${timeRemaining.minutes}m left`
     } else {
-      return `${timeRemaining.minutes}m remaining`
+      return `${timeRemaining.minutes}m left`
     }
   }
 
@@ -229,12 +229,20 @@ const UserOasisPosition = ({
             <Typography variant="lg" weight={600} className="text-stone-200">
               {oasis.token.symbol} Position
             </Typography>
-            <div className="flex items-center gap-1">
-              <div className={`w-2 h-2 rounded-full ${isUnlocked ? 'bg-green-500' : 'bg-yellow-500'}`} />
-              <Typography variant="xs" className="text-stone-400">
-                {isUnlocked ? 'Unlocked' : 'Locked'}
-                {formattedTimeRemaining && <span className="ml-1 text-yellow">{formattedTimeRemaining}</span>}
-              </Typography>
+            <div className="flex items-start flex-wrap gap-1">
+              <div className="flex items-center gap-1">
+                <div className={`w-2 h-2 rounded-full ${isUnlocked ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                <Typography variant="xs" className="text-stone-400">
+                  {isUnlocked ? 'Unlocked' : 'Locked'}
+                </Typography>
+              </div>
+              {formattedTimeRemaining && (
+                <div className="w-full mt-1 sm:w-auto sm:mt-0 sm:ml-1">
+                  <Typography variant="xs" className="text-yellow">
+                    {formattedTimeRemaining}
+                  </Typography>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -384,13 +392,18 @@ const UserOasisPosition = ({
               </Typography>
             </div>
 
-            <div className="flex justify-between">
+            <div className="flex justify-between items-start">
               <Typography variant="xs" className="text-stone-400">
                 Unlock Date
               </Typography>
-              <Typography variant="xs" weight={500} className="text-stone-300">
-                {withdrawalDate?.toLocaleDateString()} {withdrawalDate?.toLocaleTimeString()}
-              </Typography>
+              <div className="text-right">
+                <Typography variant="xs" weight={500} className="text-stone-300 block">
+                  {withdrawalDate?.toLocaleDateString()}
+                </Typography>
+                <Typography variant="xs" weight={500} className="text-stone-300 block">
+                  {withdrawalDate?.toLocaleTimeString()}
+                </Typography>
+              </div>
             </div>
 
             {roiData && (
