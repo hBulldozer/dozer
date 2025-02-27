@@ -32,6 +32,8 @@ import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import Link from 'next/link'
 import { OasisChart } from '../components/OasisChart'
 import PricePanel from '../components/PricePanel'
+import Icon from '@dozer/ui/currency/Icon'
+import { toToken } from '@dozer/api'
 
 interface OasisInterface {
   id: string
@@ -47,24 +49,18 @@ interface OasisInterface {
   token_price_in_htr_in_deposit: number
 }
 
-const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean }) => {
-  const currency = token == 'hUSDC' ? 'hUSDC' : token == 'hETH' ? 'ETH' : token == 'hBTC' ? 'BTC' : 'hUSDC'
+const TokenOption = ({ token, disabled }: { token: { symbol: string; uuid: string }; disabled?: boolean }) => {
+  const currency =
+    token.symbol == 'hUSDC' ? 'hUSDC' : token.symbol == 'hETH' ? 'ETH' : token.symbol == 'hBTC' ? 'BTC' : 'hUSDC'
   return (
     <div className={classNames('flex flex-row items-center w-full gap-4', disabled && 'opacity-50')}>
       <div className="flex flex-row items-center w-full gap-4">
         <div className="flex-shrink-0 w-7 h-7">
-          <Image
-            key={token}
-            src={`/logos/${currency}.svg`}
-            width={28}
-            height={28}
-            alt={token}
-            className="rounded-full"
-          />
+          <Icon key={token.symbol} currency={toToken(token)} width={28} height={28} alt={token} />
         </div>
         <div className="flex flex-col items-start min-w-0">
           <Typography variant="sm" weight={500} className="truncate text-stone-200 group-hover:text-stone-50">
-            {token}
+            {token.symbol}
           </Typography>
         </div>
       </div>
@@ -962,13 +958,11 @@ const OasisProgram = () => {
                                             <Select.Button>
                                               <div className="flex flex-row items-center flex-grow gap-4 mr-8">
                                                 <div className="flex-shrink-0 w-7 h-7">
-                                                  <Image
+                                                  <Icon
                                                     key={currency}
-                                                    src={`/logos/${currency}.svg`}
+                                                    currency={toToken(oasis?.token)}
                                                     width={28}
                                                     height={28}
-                                                    alt={currency}
-                                                    className="rounded-full"
                                                   />
                                                 </div>
                                                 <div className="flex flex-col items-start min-w-0">
@@ -986,13 +980,13 @@ const OasisProgram = () => {
                                         >
                                           <Select.Options>
                                             <Select.Option value="hUSDC">
-                                              <TokenOption token="hUSDC" />
+                                              <TokenOption token={{ symbol: 'hUSDC', uuid: '00' }} />
                                             </Select.Option>
                                             <Select.Option disabled value="hETH">
-                                              <TokenOption disabled token="hETH" />
+                                              <TokenOption disabled token={{ symbol: 'hETH', uuid: '00' }} />
                                             </Select.Option>
                                             <Select.Option value="hBTC">
-                                              <TokenOption token="hBTC" />
+                                              <TokenOption token={{ symbol: 'hBTC', uuid: '00' }} />
                                             </Select.Option>
                                           </Select.Options>
                                         </Select>
