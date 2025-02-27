@@ -1,6 +1,7 @@
 // types.ts
 export interface OasisToken {
   symbol: string
+  uuid: string
 }
 
 export interface OasisPosition {
@@ -13,6 +14,8 @@ export interface OasisPosition {
   token: OasisToken
   user_lp_htr: number
   user_lp_b: number
+  htr_price_in_deposit: number
+  token_price_in_htr_in_deposit: number
 }
 
 export interface OasisRemoveModalProps {

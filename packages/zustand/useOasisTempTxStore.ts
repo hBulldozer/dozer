@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type TransactionType = 'bonus' | 'withdraw' | 'add';
+type TransactionType = 'bonus' | 'withdraw' | 'add'
 
 interface OasisTempTx {
   id: string
@@ -12,18 +12,25 @@ interface OasisTempTx {
   user_withdrawal_time: Date
   max_withdraw_htr: number
   max_withdraw_b: number
-  token: { symbol: string }
+  token: { symbol: string; uuid: string }
   user_lp_htr: number
   user_lp_b: number
+  htr_price_in_deposit: number
+  token_price_in_htr_in_deposit: number
   blockHeight: number
-txType: TransactionType
+  txType: TransactionType
 }
 
 interface OasisTempTxState {
   pendingPositions: {
     [address: string]: OasisTempTx[]
   }
-  addPendingPosition: (address: string, position: Omit<OasisTempTx, 'blockHeight' | 'txType'>, blockHeight: number, txType: TransactionType) => void
+  addPendingPosition: (
+    address: string,
+    position: Omit<OasisTempTx, 'blockHeight' | 'txType'>,
+    blockHeight: number,
+    txType: TransactionType
+  ) => void
   clearOldPendingPositions: (currentBlockHeight: number) => void
   getPendingPositions: (address: string) => OasisTempTx[]
 }

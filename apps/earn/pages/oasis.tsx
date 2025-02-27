@@ -40,9 +40,11 @@ interface OasisInterface {
   user_withdrawal_time: Date
   max_withdraw_htr: number
   max_withdraw_b: number
-  token: { symbol: string }
+  token: { symbol: string; uuid: string }
   user_lp_htr: number
   user_lp_b: number
+  htr_price_in_deposit: number
+  token_price_in_htr_in_deposit: number
 }
 
 const TokenOption = ({ token, disabled }: { token: string; disabled?: boolean }) => {
@@ -94,7 +96,6 @@ const UserOasisPosition = ({
   const { getPendingPositions } = useOasisTempTxStore()
   const pendingTxs = getPendingPositions(address)
   const isPending = pendingTxs.some((tx) => tx.id === oasis.id && tx.blockHeight === currentBlockHeight)
-  const { data: tokens } = api.getTokens.all.useQuery()
 
   const getWithdrawalDate = () => {
     if (!oasis.user_withdrawal_time) return null
@@ -143,25 +144,31 @@ const UserOasisPosition = ({
   // Calculate ROI
   const calculateROI = () => {
     // Only calculate if we have all the necessary data
-    if (!oasis.user_deposit_b || !prices || !tokens) return null
+    if (!oasis.user_deposit_b || !prices) return null
 
-    const currencySymbol = oasis.token.symbol
-    const priceKey = tokens.find((token) => token.symbol === currencySymbol)?.uuid || '00'
+    const currencyUuid = oasis.token.uuid
 
-    // Initial investment value in USD
-    const initialInvestmentUSD = oasis.user_deposit_b * prices[priceKey]
+    // Use initial prices from deposit if available, otherwise fallback to current prices
+    const initialHtrPrice = oasis.htr_price_in_deposit > 0 ? oasis.htr_price_in_deposit : prices['00']
+    const initialTokenPrice =
+      oasis.token_price_in_htr_in_deposit > 0
+        ? oasis.token_price_in_htr_in_deposit / initialHtrPrice
+        : prices[currencyUuid]
 
-    // Current position value in USD
-    const tokenValueUSD = oasis.max_withdraw_b * prices[priceKey]
-    const htrValueUSD = oasis.max_withdraw_htr * prices.htr
+    // Initial investment value in USD using initial prices
+    const initialInvestmentUSD = oasis.user_deposit_b * initialTokenPrice
 
-    // HTR bonus value in USD
-    const bonusValueUSD = oasis.user_balance_a * prices.htr
+    // Current position value in USD using current prices
+    const tokenValueUSD = oasis.max_withdraw_b * prices[currencyUuid]
+    const htrValueUSD = oasis.max_withdraw_htr * prices['00']
+
+    // HTR bonus value in USD using current prices
+    const bonusValueUSD = oasis.user_balance_a * prices['00']
 
     // Total current value including bonus if available
-    const totalCurrentValueUSD = tokenValueUSD + htrValueUSD + bonusValueUSD
+    const totalCurrentValueUSD = tokenValueUSD + htrValueUSD
 
-    // ROI calculation
+    // ROI calculation based on initial investment value
     const roi = (totalCurrentValueUSD / initialInvestmentUSD - 1) * 100
 
     return {
@@ -170,6 +177,9 @@ const UserOasisPosition = ({
       currentPositionUSD: tokenValueUSD + htrValueUSD,
       bonusValueUSD,
       totalCurrentValueUSD,
+      // Include initial prices for debugging or display
+      initialHtrPrice,
+      initialTokenPrice,
     }
   }
 
@@ -261,6 +271,18 @@ const UserOasisPosition = ({
               <Typography variant="xs" className="text-stone-500">
                 ROI
               </Typography>
+              <Tooltip
+                panel={
+                  <div className="max-w-xs">
+                    <Typography variant="xs">
+                      Return on investment calculated using the token price at the time of your deposit.
+                    </Typography>
+                  </div>
+                }
+                button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
+              >
+                <></>
+              </Tooltip>
             </div>
           </div>
         )}
@@ -310,7 +332,7 @@ const UserOasisPosition = ({
                             <p className="mb-2">Your HTR position includes:</p>
                             <li className="ml-4">
                               {oasis.user_balance_a > 0 && (
-                                <ul className="mb-1">• {oasis.user_balance_a.toFixed(2)} HTR bonus</ul>
+                                <ul className="mb-1">{oasis.user_balance_a.toFixed(2)} HTR bonus</ul>
                               )}
                               {ilData.hasIL && (
                                 <ul className="mb-1">
@@ -411,6 +433,36 @@ const UserOasisPosition = ({
                     ${roiData.initialInvestmentUSD.toFixed(2)}
                   </Typography>
                 </div>
+
+                {oasis.htr_price_in_deposit > 0 && (
+                  <div className="flex justify-between">
+                    <Typography variant="xs" className="text-stone-400">
+                      Initial Prices
+                      <Tooltip
+                        panel={
+                          <div className="max-w-xs">
+                            <Typography variant="xs">
+                              Prices at the time of deposit, used to calculate your ROI.
+                            </Typography>
+                          </div>
+                        }
+                        button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
+                      >
+                        <></>
+                      </Tooltip>
+                    </Typography>
+                    <div className="text-right">
+                      <Typography variant="xs" weight={500} className="text-stone-300">
+                        HTR: ${roiData.initialHtrPrice.toFixed(2)}
+                      </Typography>
+                      {roiData.initialTokenPrice > 0 && (
+                        <Typography variant="xs" weight={500} className="text-stone-300">
+                          {oasis.token.symbol}: ${roiData.initialTokenPrice.toFixed(2)}
+                        </Typography>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex justify-between">
                   <Typography variant="xs" className="text-stone-400">
@@ -518,7 +570,7 @@ const OasisProgram = () => {
   const handleAddLiquidity = async (): Promise<void> => {
     setAddingLiquidity(true)
     setTxType('Add liquidity')
-    if (amount && lockPeriod && oasisId) {
+    if (amount && lockPeriod && oasisId && prices && prices['00']) {
       // If user has existing position, mark it as pending
       const existingPosition = allUserOasis?.find((o) => o.token.symbol === currency)
       if (existingPosition) {
@@ -530,7 +582,8 @@ const OasisProgram = () => {
         address,
         lockPeriod,
         oasisId,
-        Math.floor(parseFloat(amount) * 100)
+        Math.floor(parseFloat(amount) * 100),
+        prices['00']
       )
     }
   }
@@ -617,7 +670,7 @@ const OasisProgram = () => {
                 address,
                 {
                   id: `pending-${hash}`,
-                  token: { symbol: currency },
+                  token: { symbol: currency, uuid: oasis?.token.uuid || '' },
                   user_deposit_b: parseFloat(amount),
                   user_balance_a: bonus,
                   user_withdrawal_time: unlockDate,
@@ -625,6 +678,8 @@ const OasisProgram = () => {
                   max_withdraw_b: parseFloat(amount),
                   user_lp_htr: 0,
                   user_lp_b: 0,
+                  htr_price_in_deposit: prices ? prices['00'] : 0,
+                  token_price_in_htr_in_deposit: 0, // Will be updated when data is fetched
                 },
                 currentBlockHeight,
                 'add'
@@ -1120,7 +1175,7 @@ const OasisProgram = () => {
                                         <div className="flex flex-col justify-between gap-2">
                                           <Button
                                             size="md"
-                                            disabled={isRpcRequestPending}
+                                            disabled={isRpcRequestPending || !prices || !prices['00']}
                                             fullWidth
                                             onClick={() => setAddModalOpen(true)}
                                           >

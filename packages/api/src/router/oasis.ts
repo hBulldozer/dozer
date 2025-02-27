@@ -29,6 +29,8 @@ const fetchAndProcessUserOasis = async (
         user_lp_htr: result.user_lp_htr || 0,
         max_withdraw_htr: result.max_withdraw_htr / 100 || 0,
         max_withdraw_b: result.max_withdraw_b / 100 || 0,
+        htr_price_in_deposit: result.htr_price_in_deposit || 0,
+        token_price_in_htr_in_deposit: result.token_price_in_htr_in_deposit || 0,
       }
     : {
         token: oasis.token,
@@ -46,6 +48,8 @@ const fetchAndProcessUserOasis = async (
         user_lp_htr: 0,
         max_withdraw_htr: 0,
         max_withdraw_b: 0,
+        htr_price_in_deposit: 0,
+        token_price_in_htr_in_deposit: 0,
       }
   return parsed_result
 }

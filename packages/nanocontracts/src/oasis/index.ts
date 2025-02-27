@@ -56,7 +56,14 @@ export class Oasis extends NanoContract {
     return rpcResponse
   }
 
-  public async user_deposit(hathorRpc: IHathorRpc, address: string, timelock: number, ncId: string, amount: number) {
+  public async user_deposit(
+    hathorRpc: IHathorRpc,
+    address: string,
+    timelock: number,
+    ncId: string,
+    amount: number,
+    htr_price: number
+  ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_deposit',
       '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
@@ -69,7 +76,7 @@ export class Oasis extends NanoContract {
           changeAddress: address,
         },
       ],
-      [timelock],
+      [timelock, Number(htr_price.toFixed(4))],
       true,
       ncId
     )
