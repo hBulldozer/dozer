@@ -161,7 +161,7 @@ const Pool = () => {
               </AppearOnMount>
 
               <AppearOnMount>
-                <TransactionHistory poolId={pair.id} />
+                <TransactionHistory pair={pair} />
               </AppearOnMount>
 
               {/* uses token0 token1 reserve0 reserve1 */}

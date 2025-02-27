@@ -4,16 +4,18 @@ import { Typography, Chip, TimeAgo, Button, Tooltip, Link } from '@dozer/ui'
 import { TransactionHistory as TxHistoryType } from '@dozer/api/src/router/pool'
 import Copy, { CopyHelper } from '@dozer/ui/copy/Copy'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import dayjs from 'dayjs'
+import { Pair } from '@dozer/api'
 
 interface TransactionHistoryProps {
-  poolId: string
+  pair: Pair
 }
 
-const TransactionHistory: React.FC<TransactionHistoryProps> = ({ poolId }) => {
-  const [limit, setLimit] = useState(10)
+const TransactionHistory: React.FC<TransactionHistoryProps> = ({ pair }) => {
+  const [limit, setLimit] = useState(20)
 
   const { data, isLoading, isError, error } = api.getPools.getPoolTransactionHistory.useQuery(
-    { id: poolId, limit },
+    { id: pair.id, limit },
     { refetchInterval: 30000 } // Refetch every 30 seconds to keep the history updated
   )
 
@@ -37,15 +39,13 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ poolId }) => {
     switch (method) {
       case 'swap_tokens_for_exact_tokens':
       case 'swap_exact_tokens_for_tokens':
-        return 'primary'
+        return 'text-blue-500'
       case 'add_liquidity':
-        return 'success'
+        return 'text-green-500'
       case 'remove_liquidity':
-        return 'warning'
-      case 'initialize':
-        return 'info'
+        return 'text-red-500'
       default:
-        return 'default'
+        return 'text-stone-300'
     }
   }
 
@@ -90,90 +90,158 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ poolId }) => {
   }
 
   return (
-    <div className="p-4 overflow-hidden rounded-xl bg-stone-800/50">
-      <Typography className="mb-4">Transaction History</Typography>
+    <div className="overflow-hidden rounded-xl bg-stone-800/30">
+      <Typography variant="xl" className="p-4 pb-2 font-medium">
+        Transactions
+      </Typography>
 
       <div className="overflow-x-auto">
-        <table className="w-full border-separate border-spacing-0">
-          <thead>
+        <table className="w-full border-collapse">
+          <thead className="border-b border-stone-700/50">
             <tr className="text-left">
-              <th className="pt-2 pb-2 pl-2 pr-2">
-                <Typography color="secondary">Type</Typography>
+              <th className="px-4 py-3">
+                <div className="flex items-center">
+                  <Typography variant="sm" className="font-medium text-stone-400">
+                    Time
+                  </Typography>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="ml-1 text-stone-500"
+                  >
+                    <path
+                      d="M6 9L12 15L18 9"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
               </th>
-              <th className="pt-2 pb-2 pl-2 pr-2">
-                <Typography color="secondary">Value</Typography>
+              <th className="px-4 py-3">
+                <Typography variant="sm" className="font-medium text-stone-400">
+                  Type
+                </Typography>
               </th>
-              <th className="pt-2 pb-2 pl-2 pr-2">
-                <Typography color="secondary">Address</Typography>
+              <th className="px-4 py-3">
+                <Typography variant="sm" className="font-medium text-stone-400">
+                  {pair.token0.symbol}
+                </Typography>
               </th>
-              <th className="pt-2 pb-2 pl-2 pr-2">
-                <Typography color="secondary">Time</Typography>
+              <th className="px-4 py-3">
+                <Typography variant="sm" className="font-medium text-stone-400">
+                  {pair.token1.symbol}
+                </Typography>
               </th>
-              <th className="pt-2 pb-2 pl-2 pr-2">
-                <Typography color="secondary">Tx Hash</Typography>
+              <th className="px-4 py-3">
+                <Typography variant="sm" className="font-medium text-stone-400">
+                  Account
+                </Typography>
               </th>
             </tr>
           </thead>
           <tbody>
-            {data.transactions.map((tx: TxHistoryType, index) => (
-              <tr key={tx.hash} className={index % 2 === 0 ? 'bg-stone-800/20' : ''}>
-                <td className="px-2 py-2">
-                  <Chip
-                    label={getMethodLabel(tx.method)}
-                    color={getMethodColor(tx.method) as any}
-                    className="whitespace-nowrap"
-                  />
-                </td>
-                <td className="px-2 py-2">
-                  <div className="flex flex-col gap-1">
-                    {tx.context?.actions?.map((action, aIndex) => (
-                      <div key={aIndex} className="flex items-center gap-1">
-                        <Typography className="whitespace-nowrap">
-                          {action.type === 'deposit' ? '+' : '-'}
-                          {formatTokenAmount(action.amount, action.token_uid)}{' '}
-                          <span className="text-xs">
-                            {action.token_uid === '00' ? 'HTR' : action.token_uid.substring(0, 6)}
-                          </span>
+            {data.transactions.map((tx: TxHistoryType, index) => {
+              // Process actions to find token values
+              const tokenActions = tx.context?.actions || []
+
+              // Try to categorize by token_uid
+              let token0Action = null
+              let token1Action = null
+
+              if (tokenActions.length > 0) {
+                // Get the first non-HTR token for token0
+                token0Action = tokenActions.find((a) => a.token_uid && a.token_uid !== '00')
+
+                // Get the HTR token for token1
+                token1Action = tokenActions.find((a) => a.token_uid === '00')
+
+                // Fallbacks if specific categorization fails
+                if (!token0Action && !token1Action && tokenActions.length === 1) {
+                  token0Action = tokenActions[0]
+                } else if (!token0Action && tokenActions.length > 0) {
+                  token0Action = tokenActions[0]
+                } else if (!token1Action && tokenActions.length > 1) {
+                  token1Action = tokenActions[1]
+                }
+              }
+
+              const date = new Date(tx.timestamp * 1000)
+              const formattedDate = dayjs(date).format('MM/DD/YY, hh:mma').toLowerCase()
+
+              return (
+                <tr key={tx.hash} className="transition-colors border-b border-stone-700/50 hover:bg-stone-800/50">
+                  <td className="px-4 py-4">
+                    <div className="relative group">
+                      <div className="flex items-center gap-1">
+                        <Typography variant="xs">
+                          <TimeAgo date={date} />
                         </Typography>
+                        <Link.External
+                          href={getExplorerUrl(tx.hash)}
+                          className="transition-opacity opacity-0 group-hover:opacity-100"
+                        >
+                          <ArrowTopRightOnSquareIcon
+                            width={16}
+                            height={16}
+                            className="text-stone-400 hover:text-yellow-400"
+                          />
+                        </Link.External>
                       </div>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-2 py-2">
-                  <div className="flex items-center gap-1">
-                    <Typography className="whitespace-nowrap">{shortenAddress(tx.context?.address || '')}</Typography>
-                    {tx.context?.address && (
-                      <CopyHelper toCopy={tx.context.address} className="opacity-50 hover:opacity-100" />
+                      <div className="absolute left-0 z-10 px-3 py-2 text-xs transition-opacity rounded-md shadow-md opacity-0 -top-9 bg-stone-900 text-stone-300 group-hover:opacity-100 whitespace-nowrap">
+                        {formattedDate}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <Typography variant="xs" className={`font-medium ${getMethodColor(tx.method)}`}>
+                      {getMethodLabel(tx.method)}
+                    </Typography>
+                  </td>
+                  <td className="px-4 py-4">
+                    {token0Action && (
+                      <Typography variant="xs" className="font-medium whitespace-nowrap">
+                        {token0Action.type === 'deposit' ? '+' : '-'}
+                        {formatTokenAmount(token0Action.amount, token0Action.token_uid)}
+                      </Typography>
                     )}
-                  </div>
-                </td>
-                <td className="px-2 py-2">
-                  {/* <Tooltip content={new Date(tx.timestamp * 1000).toLocaleString()}>
-                    <TimeAgo date={new Date(tx.timestamp * 1000)} />
-                  </Tooltip> */}
-                </td>
-                <td className="px-2 py-2">
-                  <div className="flex items-center gap-1">
-                    <Typography className="whitespace-nowrap">{tx.hash.substring(0, 8)}...</Typography>
-                    <CopyHelper toCopy={tx.hash} className="opacity-50 hover:opacity-100" />
-                    <Link.External className="flex flex-col !no-underline group" href={getExplorerUrl(tx.hash)}>
-                      <ArrowTopRightOnSquareIcon
-                        width={20}
-                        height={20}
-                        className="text-stone-400 group-hover:text-yellow-400"
-                      />
-                    </Link.External>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-4 py-4">
+                    {token1Action && (
+                      <Typography variant="xs" className="font-medium whitespace-nowrap">
+                        {token1Action.type === 'deposit' ? '+' : '-'}
+                        {formatTokenAmount(token1Action.amount, token1Action.token_uid)}
+                      </Typography>
+                    )}
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-1">
+                      <Typography variant="xs" className="whitespace-nowrap text-stone-400">
+                        {shortenAddress(tx.context?.address || '')}
+                      </Typography>
+                      {tx.context?.address && (
+                        <CopyHelper toCopy={tx.context.address} className="opacity-50 hover:opacity-100" />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
 
       {data.hasMore && (
-        <div className="flex justify-center mt-4">
-          <Button variant="outlined" onClick={() => setLimit((prev) => prev + 10)} className="w-full">
+        <div className="flex justify-center p-4">
+          <Button
+            variant="outlined"
+            onClick={() => setLimit((prev) => prev + 20)}
+            className="w-full border-none bg-stone-800/30 hover:bg-stone-700/50 text-stone-300"
+          >
             Load More
           </Button>
         </div>
