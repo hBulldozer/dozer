@@ -56,7 +56,7 @@ const TokenOption = ({ token, disabled }: { token: { symbol: string; uuid: strin
     <div className={classNames('flex flex-row items-center w-full gap-4', disabled && 'opacity-50')}>
       <div className="flex flex-row items-center w-full gap-4">
         <div className="flex-shrink-0 w-7 h-7">
-          <Icon key={token.symbol} currency={toToken(token)} width={28} height={28} alt={token} />
+          <Icon key={token.symbol} currency={toToken(token)} width={28} height={28} />
         </div>
         <div className="flex flex-col items-start min-w-0">
           <Typography variant="sm" weight={500} className="truncate text-stone-200 group-hover:text-stone-50">
@@ -960,7 +960,9 @@ const OasisProgram = () => {
                                                 <div className="flex-shrink-0 w-7 h-7">
                                                   <Icon
                                                     key={currency}
-                                                    currency={toToken(oasis?.token)}
+                                                    currency={toToken(
+                                                      oasis ? oasis.token : { symbol: currency, uuid: '00' }
+                                                    )}
                                                     width={28}
                                                     height={28}
                                                   />
