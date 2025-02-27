@@ -41,7 +41,7 @@ export const seedConfig: SeedConfig = {
     },
     {
       name: 'Bitcoin',
-      symbol: 'BTC',
+      symbol: 'hBTC',
       totalSupply: 10000000,
       about:
         'Bitcoin (BTC) is a decentralized digital currency. hBTC is the bridged version of BTC on the Hathor Network.',
