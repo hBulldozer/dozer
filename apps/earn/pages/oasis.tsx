@@ -75,6 +75,8 @@ const UserOasisPosition = ({
   currentBlockHeight,
   oasis,
   isLoading,
+  addingLiquidity,
+  addingToOasisId,
   buttonWithdraw,
   buttonWithdrawBonus,
   prices,
@@ -83,6 +85,8 @@ const UserOasisPosition = ({
   currentBlockHeight: number
   oasis: OasisInterface
   isLoading?: boolean
+  addingLiquidity?: boolean
+  addingToOasisId?: string
   buttonWithdraw: JSX.Element
   buttonWithdrawBonus: JSX.Element
   prices: {
@@ -198,7 +202,11 @@ const UserOasisPosition = ({
         (isLoading || isPending) && 'opacity-70'
       )}
     >
-      {(isLoading || isPending || !oasis.user_deposit_b || !oasis.user_withdrawal_time) && (
+      {(isLoading ||
+        isPending ||
+        !oasis.user_deposit_b ||
+        !oasis.user_withdrawal_time ||
+        (addingLiquidity && oasis.id === addingToOasisId)) && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/80">
           <Dots>Processing Transaction</Dots>
         </div>
@@ -263,7 +271,7 @@ const UserOasisPosition = ({
             Your Assets
           </Typography>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6">
@@ -445,7 +453,9 @@ const OasisProgram = () => {
   const [hasPosition, setHasPosition] = useState<boolean>(false)
   const [depositAmount, setDepositAmount] = useState<number>(0)
   const [bonus, setBonus] = useState<number>(0)
-  const [sentTX, setSentTX] = useState(false)
+  // Track whether add liquidity transaction is pending
+  const [addingLiquidity, setAddingLiquidity] = useState<boolean>(false)
+  const [addingToOasisId, setAddingToOasisId] = useState<string>('')
   const [addModalOpen, setAddModalOpen] = useState<boolean>(false)
   const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
   const [selectedOasisForRemove, setSelectedOasisForRemove] = useState<OasisPosition | null>(null)
@@ -498,9 +508,15 @@ const OasisProgram = () => {
   const tokenUuid = oasis?.token.uuid || ''
   const oasisObj = new Oasis(tokenUuid, poolId)
   const handleAddLiquidity = async (): Promise<void> => {
-    setSentTX(true)
+    setAddingLiquidity(true)
     setTxType('Add liquidity')
     if (amount && lockPeriod && oasisId) {
+      // If user has existing position, mark it as pending
+      const existingPosition = allUserOasis?.find((o) => o.token.symbol === currency)
+      if (existingPosition) {
+        setAddingToOasisId(existingPosition.id)
+      }
+
       const response = await oasisObj.user_deposit(
         hathorRpc,
         address,
@@ -513,7 +529,6 @@ const OasisProgram = () => {
 
   const handleRemoveLiquidity = async (removeAmount: string, removeAmountHtr: string): Promise<void> => {
     if (!selectedOasisForRemove?.id) return
-    setSentTX(true)
     setTxType('Remove liquidity')
 
     const response = await oasisObj.user_withdraw(
@@ -533,7 +548,6 @@ const OasisProgram = () => {
 
   const handleRemoveBonus = async (removeAmount: string): Promise<void> => {
     if (!selectedOasisForRemoveBonus?.id) return
-    setSentTX(true)
     setTxType('Remove bonus')
 
     const response = await oasisObj.user_withdraw_bonus(
@@ -545,7 +559,7 @@ const OasisProgram = () => {
   }
 
   useEffect(() => {
-    if (rpcResult?.valid && rpcResult?.result && sentTX) {
+    if (rpcResult?.valid && rpcResult?.result) {
       if (oasisId || selectedOasisForRemove || selectedOasisForRemoveBonus) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
@@ -574,24 +588,43 @@ const OasisProgram = () => {
           setAddModalOpen(false)
           setRemoveModalOpen(false)
           setRemoveBonusModalOpen(false)
-          setSentTX(false)
-          if (txType == 'Add liquidity')
-            addPendingPosition(
-              address,
-              {
-                id: `pending-${hash}`,
-                token: { symbol: currency },
-                user_deposit_b: parseFloat(amount),
-                user_balance_a: bonus,
-                user_withdrawal_time: unlockDate,
-                max_withdraw_htr: bonus,
-                max_withdraw_b: parseFloat(amount),
-                user_lp_htr: 0,
-                user_lp_b: 0,
-              },
-              currentBlockHeight, // Get this from BlockTracker
-              'add'
-            )
+
+          // For add liquidity transactions
+          if (txType == 'Add liquidity') {
+            // Check if user already has a position with this token
+            const existingPosition = allUserOasis?.find((o) => o.token.symbol === currency)
+
+            if (existingPosition) {
+              // Add pending to existing position rather than creating a new one
+              addPendingPosition(address, existingPosition, currentBlockHeight, 'add')
+
+              // Clear adding liquidity state after a short delay to show loading state longer
+              setTimeout(() => {
+                setAddingLiquidity(false)
+                setAddingToOasisId('')
+              }, 5000) // Keep loading state for 5 seconds to ensure the transaction is processed
+            } else {
+              // Create a new pending position (user doesn't have this token position yet)
+              addPendingPosition(
+                address,
+                {
+                  id: `pending-${hash}`,
+                  token: { symbol: currency },
+                  user_deposit_b: parseFloat(amount),
+                  user_balance_a: bonus,
+                  user_withdrawal_time: unlockDate,
+                  max_withdraw_htr: bonus,
+                  max_withdraw_b: parseFloat(amount),
+                  user_lp_htr: 0,
+                  user_lp_b: 0,
+                },
+                currentBlockHeight,
+                'add'
+              )
+              setAddingLiquidity(false)
+            }
+          }
+
           if (txType == 'Remove bonus' && selectedOasisForRemoveBonus)
             addPendingPosition(address, selectedOasisForRemoveBonus, currentBlockHeight, 'bonus')
           if (txType == 'Remove liquidity' && selectedOasisForRemove)
@@ -599,7 +632,8 @@ const OasisProgram = () => {
         } else {
           createErrorToast(`Error`, true)
           setAddModalOpen(false)
-          setSentTX(false)
+          setAddingLiquidity(false)
+          setAddingToOasisId('')
         }
       }
     }
@@ -784,7 +818,6 @@ const OasisProgram = () => {
 
               {/* Input Form and Chart */}
               <motion.div
-                layout
                 className={`${
                   showChart
                     ? 'grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 items-start'
@@ -1097,13 +1130,28 @@ const OasisProgram = () => {
 
                                 <Tab.Panel>
                                   <div className="flex flex-col gap-4 p-8">
-                                    {pendingPositions.filter((pos) => pos.txType === 'add').length > 0 && (
+                                    {pendingPositions.filter((pos) => {
+                                      // Only show pending positions in the "Your Pending Positions" section if:
+                                      // 1. It's an 'add' transaction type
+                                      // 2. There's no matching active position with the same token (new positions only)
+                                      if (pos.txType !== 'add') return false
+                                      const existingPosition = allUserOasis?.find(
+                                        (o) => o.token.symbol === pos.token.symbol
+                                      )
+                                      return !existingPosition
+                                    }).length > 0 && (
                                       <div className="p-4 bg-stone-800/50 rounded-xl">
                                         <Typography variant="lg" weight={500} className="mb-4 text-yellow">
                                           Your Pending Positions
                                         </Typography>
                                         {pendingPositions
-                                          .filter((pos) => pos.txType === 'add')
+                                          .filter((pos) => {
+                                            if (pos.txType !== 'add') return false
+                                            const existingPosition = allUserOasis?.find(
+                                              (o) => o.token.symbol === pos.token.symbol
+                                            )
+                                            return !existingPosition
+                                          })
                                           .map((position) => (
                                             <UserOasisPosition
                                               address={address}
@@ -1147,9 +1195,14 @@ const OasisProgram = () => {
                                               oasis={oasis}
                                               key={oasis.id}
                                               prices={initialPrices}
-                                              isLoading={pendingPositions.some(
-                                                (pos) => pos.id === oasis.id && pos.txType != 'add'
-                                              )}
+                                              isLoading={
+                                                pendingPositions.some(
+                                                  (pos) => pos.id === oasis.id && pos.txType != 'add'
+                                                ) ||
+                                                (addingLiquidity && oasis.id === addingToOasisId)
+                                              }
+                                              addingLiquidity={addingLiquidity}
+                                              addingToOasisId={addingToOasisId}
                                               buttonWithdraw={
                                                 <div className="flex flex-col justify-between gap-2 p-4">
                                                   <Button

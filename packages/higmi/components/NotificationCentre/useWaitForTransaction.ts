@@ -23,7 +23,6 @@ export default function useWaitForTransaction(notification: NotificationData, cl
         })
         setStatus(data.status || 'pending')
         updateNotificationLastState(txHash, data.status, data.message)
-        utils.getNetwork.getBestBlock.invalidate()
         if (data.status == 'failed') setMessage(data.message)
       } catch (e) {
         console.log(e)
