@@ -3,6 +3,7 @@ import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { Pair } from '@dozer/api'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
+import TransactionHistory from '../../components/TransactionHistory/TransactionHistory'
 
 import {
   Layout,
@@ -71,6 +72,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   await ssg.getPools.firstLoadAllDay.prefetch()
   await ssg.getPools.firstLoadAll.prefetch()
   await ssg.getPrices.firstLoadAll.prefetch()
+  await ssg.getPools.getPoolTransactionHistory.prefetch({ id: pool.id, limit: 10 })
   // await ssg.getPools.allDay.prefetch()
   return {
     props: {
@@ -156,6 +158,10 @@ const Pool = () => {
               <AppearOnMount>
                 <PoolStats pair={pair_day} prices={prices} />
                 {/* liquidityusd, volume1d, swapfee  */}
+              </AppearOnMount>
+
+              <AppearOnMount>
+                <TransactionHistory poolId={pair.id} />
               </AppearOnMount>
 
               {/* uses token0 token1 reserve0 reserve1 */}

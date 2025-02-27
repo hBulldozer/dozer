@@ -161,6 +161,21 @@ const fetchAndProcessPoolData = async (
   }
 }
 
+export type TransactionHistory = {
+  hash: string;
+  timestamp: number;
+  method: string;
+  context: {
+    actions: {
+      type: string;
+      token_uid: string;
+      amount: number;
+    }[];
+    address: string;
+    timestamp: number;
+  };
+}
+
 export const poolRouter = createTRPCRouter({
   all: procedure.query(async ({ ctx }) => {
     // Fetch all pool IDs from the database
@@ -659,4 +674,36 @@ export const poolRouter = createTRPCRouter({
       return false
     }
   }),
+
+  getPoolTransactionHistory: procedure
+    .input(z.object({ id: z.string(), limit: z.number().default(100) }))
+    .query(async ({ input }) => {
+      const endpoint = 'nano_contract/history'
+      const queryParams = [`id=${input.id}`, `count=${input.limit}`]
+      
+      try {
+        const response = await fetchNodeData(endpoint, queryParams)
+        
+        if (!response || !response.success || !response.history) {
+          throw new Error('Failed to fetch transaction history')
+        }
+        
+        // Transform the data into a simplified format for the UI
+        const transactions: TransactionHistory[] = response.history.map((tx: any) => ({
+          hash: tx.hash,
+          timestamp: tx.timestamp,
+          method: tx.nc_method,
+          context: tx.nc_context
+        }))
+        
+        return {
+          transactions,
+          hasMore: response.has_more || false
+        }
+      } catch (error: any) {
+        console.error('Error fetching pool transaction history:', error)
+        throw new Error(`Failed to fetch transaction history: ${error.message}`)
+      }
+    }),
+
 })
