@@ -676,10 +676,19 @@ export const poolRouter = createTRPCRouter({
   }),
 
   getPoolTransactionHistory: procedure
-    .input(z.object({ id: z.string(), limit: z.number().default(100) }))
+    .input(z.object({ 
+      id: z.string(), 
+      limit: z.number().default(20),
+      cursor: z.string().optional() // Transaction hash to use as cursor for pagination
+    }))
     .query(async ({ input }) => {
       const endpoint = 'nano_contract/history'
       const queryParams = [`id=${input.id}`, `count=${input.limit}`]
+      
+      // Add cursor if provided (pagination)
+      if (input.cursor) {
+        queryParams.push(`after=${input.cursor}`)
+      }
       
       try {
         const response = await fetchNodeData(endpoint, queryParams)
@@ -696,8 +705,12 @@ export const poolRouter = createTRPCRouter({
           context: tx.nc_context
         }))
         
+        // Get the last item's hash to use as the next cursor
+        const lastItemHash = transactions.length > 0 ? transactions[transactions.length - 1].hash : null
+        
         return {
           transactions,
+          nextCursor: response.has_more ? lastItemHash : null,
           hasMore: response.has_more || false
         }
       } catch (error: any) {
