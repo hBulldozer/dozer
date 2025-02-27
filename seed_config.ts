@@ -43,7 +43,8 @@ export const seedConfig: SeedConfig = {
       name: 'Bitcoin',
       symbol: 'BTC',
       totalSupply: 10000000,
-      about: 'Bitcoin (BTC) is a decentralized digital currency.',
+      about:
+        'Bitcoin (BTC) is a decentralized digital currency. hBTC is the bridged version of BTC on the Hathor Network.',
     },
   ],
   pools: [
@@ -62,7 +63,7 @@ export const seedConfig: SeedConfig = {
       protocolFee: 0.01,
     },
     {
-      tokenSymbol: 'BTC',
+      tokenSymbol: 'hBTC',
       htrQuantity: 100000000,
       tokenQuantity: 100,
       fee: 0.05,
@@ -75,7 +76,7 @@ export const seedConfig: SeedConfig = {
       htrQuantity: 1_000_000,
     },
     {
-      tokenSymbol: 'BTC',
+      tokenSymbol: 'hBTC',
       htrQuantity: 10_000_000,
     },
   ],
