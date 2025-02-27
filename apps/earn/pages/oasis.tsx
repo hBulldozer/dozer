@@ -77,6 +77,7 @@ const UserOasisPosition = ({
   isLoading,
   buttonWithdraw,
   buttonWithdrawBonus,
+  prices,
 }: {
   address: string
   currentBlockHeight: number
@@ -84,6 +85,13 @@ const UserOasisPosition = ({
   isLoading?: boolean
   buttonWithdraw: JSX.Element
   buttonWithdrawBonus: JSX.Element
+  prices: {
+    htr: number
+    btc: number
+    eth: number
+    usdc: number
+    usdt: number
+  }
 }) => {
   const { getPendingPositions } = useOasisTempTxStore()
   const pendingTxs = getPendingPositions(address)
@@ -97,100 +105,318 @@ const UserOasisPosition = ({
   }
 
   const withdrawalDate = getWithdrawalDate()
-  const formattedDate = withdrawalDate
-    ? `${withdrawalDate.toLocaleDateString()} ${withdrawalDate.toLocaleTimeString()}`
-    : '-'
   const isUnlocked = withdrawalDate ? withdrawalDate.getTime() < Date.now() : false
+
+  // Calculate time remaining until unlock
+  const getTimeRemaining = () => {
+    if (!withdrawalDate || isUnlocked) return null
+
+    const now = Date.now()
+    const unlockTime = withdrawalDate.getTime()
+    const remaining = unlockTime - now
+
+    const days = Math.floor(remaining / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
+
+    return { days, hours, minutes }
+  }
+
+  const timeRemaining = getTimeRemaining()
+
+  // Calculate impermanent loss protection
+  const calculateImpermanentLossProtection = () => {
+    if (!oasis.user_deposit_b || !oasis.max_withdraw_b || !oasis.user_balance_a || !oasis.max_withdraw_htr) {
+      return { ilProtection: 0, hasIL: false }
+    }
+
+    // Check if there's impermanent loss
+    const hasIL = oasis.max_withdraw_b < oasis.user_deposit_b
+
+    // Calculate IL protection amount in HTR
+    const ilProtection = hasIL ? oasis.max_withdraw_htr - oasis.user_balance_a : 0
+
+    return { ilProtection, hasIL }
+  }
+
+  const ilData = calculateImpermanentLossProtection()
+
+  // Calculate ROI
+  const calculateROI = () => {
+    // Only calculate if we have all the necessary data
+    if (!oasis.user_deposit_b || !prices) return null
+
+    const currencySymbol = oasis.token.symbol
+    const priceKey = currencySymbol === 'hUSDT' ? 'usdt' : currencySymbol === 'hBTC' ? 'btc' : 'usdt'
+
+    // Initial investment value in USD
+    const initialInvestmentUSD = oasis.user_deposit_b * prices[priceKey]
+
+    // Current position value in USD
+    const tokenValueUSD = oasis.max_withdraw_b * prices[priceKey]
+    const htrValueUSD = oasis.max_withdraw_htr * prices.htr
+
+    // HTR bonus value in USD
+    const bonusValueUSD = oasis.user_balance_a * prices.htr
+
+    // Total current value including bonus if available
+    const totalCurrentValueUSD = tokenValueUSD + htrValueUSD + bonusValueUSD
+
+    // ROI calculation
+    const roi = (totalCurrentValueUSD / initialInvestmentUSD - 1) * 100
+
+    return {
+      roi,
+      initialInvestmentUSD,
+      currentPositionUSD: tokenValueUSD + htrValueUSD,
+      bonusValueUSD,
+      totalCurrentValueUSD,
+    }
+  }
+
+  const roiData = calculateROI()
+
+  // Format remaining time as string
+  const getFormattedTimeRemaining = () => {
+    if (!timeRemaining) return null
+
+    if (timeRemaining.days > 0) {
+      return `${timeRemaining.days}d ${timeRemaining.hours}h remaining`
+    } else if (timeRemaining.hours > 0) {
+      return `${timeRemaining.hours}h ${timeRemaining.minutes}m remaining`
+    } else {
+      return `${timeRemaining.minutes}m remaining`
+    }
+  }
+
+  const formattedTimeRemaining = getFormattedTimeRemaining()
 
   return (
     <div
       className={classNames(
-        'relative flex flex-col border rounded-lg border-stone-700',
+        'relative flex flex-col border rounded-lg border-stone-700 overflow-hidden',
         (isLoading || isPending) && 'opacity-70'
       )}
     >
-      {(isLoading || isPending) && (
+      {(isLoading || isPending || !oasis.user_deposit_b || !oasis.user_withdrawal_time) && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/80">
           <Dots>Processing Transaction</Dots>
         </div>
       )}
-      <div className="flex flex-col mt-2 ">
-        <div className="flex flex-row items-center justify-center gap-2 p-4 my-auto">
-          <div className="flex-shrink-0 w-7 h-7">
+
+      {/* Position Header */}
+      <div className="flex items-center justify-between p-4 border-b border-stone-700 bg-stone-800/50">
+        <div className="flex items-center gap-2">
+          <div className="flex-shrink-0 w-8 h-8">
             <Image
               key={`position-${oasis.token.symbol}`}
               src={`/logos/${oasis.token.symbol}.svg`}
-              width={28}
-              height={28}
+              width={32}
+              height={32}
               alt={`position-${oasis.token.symbol}`}
               className="rounded-full"
             />
           </div>
-          <div className="flex flex-col items-start min-w-0">
-            <Typography variant="h3" weight={500} className="truncate text-stone-200 group-hover:text-stone-50">
-              {oasis.token.symbol}
+          <div>
+            <Typography variant="lg" weight={600} className="text-stone-200">
+              {oasis.token.symbol} Position
             </Typography>
-          </div>
-        </div>
-
-        <div className="h-[1px] w-4/5 mx-auto bg-stone-600 " />
-        <div className="flex flex-col gap-3 p-4">
-          <div className="flex flex-row gap-1">
-            <Typography variant="sm" className="text-stone-400">
-              Locked Amount:
-            </Typography>
-            {oasis.user_deposit_b && (
-              <Typography variant="sm" className="text-stone-200">
-                {oasis.user_deposit_b} {oasis.token.symbol}
-              </Typography>
-            )}
-          </div>
-
-          <div className="flex flex-row gap-1">
-            <Typography variant="sm" className="text-stone-400">
-              Unlock Date:
-            </Typography>
-            <Typography variant="sm" className="text-stone-200">
-              {formattedDate}
-            </Typography>
-          </div>
-          {isUnlocked && (
-            <>
-              {oasis.max_withdraw_b && (
-                <div className="flex flex-row gap-1">
-                  <Typography variant="sm" className="text-stone-400">
-                    Max withdraw {oasis.token.symbol}:
-                  </Typography>
-                  <Typography variant="sm" className="text-stone-200">
-                    {oasis.max_withdraw_b} {oasis.token.symbol}
-                  </Typography>
-                </div>
-              )}
-              {oasis.max_withdraw_htr && oasis.max_withdraw_htr > 0 && (
-                <div className="flex flex-row gap-1">
-                  <Typography variant="sm" className="text-stone-400">
-                    Max withdraw HTR:
-                  </Typography>
-                  <Typography variant="sm" className="text-stone-200">
-                    {oasis.max_withdraw_htr} HTR
-                  </Typography>
-                </div>
-              )}
-            </>
-          )}
-          {oasis.user_balance_a && oasis.user_balance_a > 0 && (
-            <div className="flex flex-row gap-1">
-              <Typography variant="sm" className="text-stone-400">
-                HTR Bonus available:
-              </Typography>
-              <Typography variant="sm" className="text-stone-200">
-                {oasis.user_balance_a} HTR
+            <div className="flex items-center gap-1">
+              <div className={`w-2 h-2 rounded-full ${isUnlocked ? 'bg-green-500' : 'bg-yellow-500'}`} />
+              <Typography variant="xs" className="text-stone-400">
+                {isUnlocked ? 'Unlocked' : 'Locked'}
+                {formattedTimeRemaining && <span className="ml-1 text-yellow">{formattedTimeRemaining}</span>}
               </Typography>
             </div>
-          )}
+          </div>
+        </div>
+
+        {roiData && (
+          <div className="text-right">
+            <Typography variant="lg" weight={600} className="text-stone-200">
+              ${roiData.totalCurrentValueUSD.toFixed(2)}
+            </Typography>
+            <div className="flex items-center justify-end gap-1">
+              <div className={`${roiData.roi >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <Typography variant="xs" weight={500}>
+                  {roiData.roi >= 0 ? '+' : ''}
+                  {roiData.roi.toFixed(2)}%
+                </Typography>
+              </div>
+              <Typography variant="xs" className="text-stone-500">
+                ROI
+              </Typography>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Position Content */}
+      <div className="flex flex-col p-4">
+        {/* Assets Section */}
+        <div className="mb-4">
+          <Typography variant="sm" weight={600} className="mb-2 text-stone-300">
+            Your Assets
+          </Typography>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6">
+                  <Image
+                    src={`/logos/${oasis.token.symbol}.svg`}
+                    width={24}
+                    height={24}
+                    alt={oasis.token.symbol}
+                    className="rounded-full"
+                  />
+                </div>
+                <Typography variant="sm" className="text-stone-300">
+                  {oasis.token.symbol}
+                </Typography>
+              </div>
+              <Typography variant="sm" weight={600} className="text-stone-200">
+                {oasis.max_withdraw_b}
+              </Typography>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6">
+                  <Image src="/logos/HTR.svg" width={24} height={24} alt="HTR" className="rounded-full" />
+                </div>
+                <div>
+                  <Typography variant="sm" className="text-stone-300">
+                    HTR
+                    {ilData.hasIL && (
+                      <Tooltip
+                        panel={
+                          <div className="max-w-xs">
+                            <Typography variant="xs">
+                              <p className="mb-1">Your HTR includes:</p>
+                              <p className="mb-1">• {oasis.user_balance_a.toFixed(2)} HTR bonus</p>
+                              <p>• {ilData.ilProtection.toFixed(2)} HTR impermanent loss protection</p>
+                            </Typography>
+                          </div>
+                        }
+                        button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
+                      >
+                        <></>
+                      </Tooltip>
+                    )}
+                  </Typography>
+                </div>
+              </div>
+              <Typography variant="sm" weight={600} className="text-stone-200">
+                {oasis.max_withdraw_htr}
+              </Typography>
+            </div>
+          </div>
+        </div>
+
+        {/* Bonus Section - only show if bonus is available */}
+        {oasis.user_balance_a > 0 && (
+          <div className="mb-4">
+            <Typography variant="sm" weight={600} className="mb-2 text-stone-300">
+              Available Bonus
+              <Tooltip
+                panel={
+                  <div className="max-w-xs">
+                    <Typography variant="xs">
+                      This is your HTR bonus that you can withdraw immediately, even while your position is still
+                      locked.
+                    </Typography>
+                  </div>
+                }
+                button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
+              >
+                <></>
+              </Tooltip>
+            </Typography>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6">
+                  <Image src="/logos/HTR.svg" width={24} height={24} alt="HTR" className="rounded-full" />
+                </div>
+                <Typography variant="sm" className="text-stone-300">
+                  HTR Bonus
+                </Typography>
+              </div>
+              <Typography variant="sm" weight={600} className="text-yellow">
+                {oasis.user_balance_a}
+              </Typography>
+            </div>
+          </div>
+        )}
+
+        {/* Details Section */}
+        <div className="mb-4">
+          <Typography variant="sm" weight={600} className="mb-2 text-stone-300">
+            Position Details
+          </Typography>
+
+          <div className="flex flex-col gap-2 p-3 rounded-lg bg-stone-800/50">
+            <div className="flex justify-between">
+              <Typography variant="xs" className="text-stone-400">
+                Initial Deposit
+              </Typography>
+              <Typography variant="xs" weight={500} className="text-stone-300">
+                {oasis.user_deposit_b} {oasis.token.symbol}
+              </Typography>
+            </div>
+
+            <div className="flex justify-between">
+              <Typography variant="xs" className="text-stone-400">
+                Unlock Date
+              </Typography>
+              <Typography variant="xs" weight={500} className="text-stone-300">
+                {withdrawalDate?.toLocaleDateString()} {withdrawalDate?.toLocaleTimeString()}
+              </Typography>
+            </div>
+
+            {roiData && (
+              <>
+                <div className="flex justify-between">
+                  <Typography variant="xs" className="text-stone-400">
+                    Initial Value
+                  </Typography>
+                  <Typography variant="xs" weight={500} className="text-stone-300">
+                    ${roiData.initialInvestmentUSD.toFixed(2)}
+                  </Typography>
+                </div>
+
+                <div className="flex justify-between">
+                  <Typography variant="xs" className="text-stone-400">
+                    Current Value
+                    <Tooltip
+                      panel={
+                        <div className="max-w-xs">
+                          <Typography variant="xs">
+                            This includes the value of your {oasis.token.symbol} and HTR in the position,
+                            {oasis.user_balance_a > 0
+                              ? ' plus your available HTR bonus.'
+                              : ' but does not include any already withdrawn bonus.'}
+                          </Typography>
+                        </div>
+                      }
+                      button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
+                    >
+                      <></>
+                    </Tooltip>
+                  </Typography>
+                  <Typography variant="xs" weight={500} className="text-stone-300">
+                    ${roiData.totalCurrentValueUSD.toFixed(2)}
+                  </Typography>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
-      <div className="flex flex-col gap-1">
+
+      {/* Actions */}
+      <div className="flex justify-center p-4 border-t border-stone-700 bg-stone-800/30">
         {isUnlocked && buttonWithdraw}
         {oasis.user_balance_a > 0 && withdrawalDate && !isUnlocked && buttonWithdrawBonus}
       </div>
@@ -874,6 +1100,7 @@ const OasisProgram = () => {
                                               currentBlockHeight={currentBlockHeight}
                                               key={position.id}
                                               oasis={position}
+                                              prices={initialPrices}
                                               isLoading={true}
                                               buttonWithdraw={<div />}
                                               buttonWithdrawBonus={<div />}
@@ -909,6 +1136,7 @@ const OasisProgram = () => {
                                               currentBlockHeight={currentBlockHeight}
                                               oasis={oasis}
                                               key={oasis.id}
+                                              prices={initialPrices}
                                               isLoading={pendingPositions.some(
                                                 (pos) => pos.id === oasis.id && pos.txType != 'add'
                                               )}
