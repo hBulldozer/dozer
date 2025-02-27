@@ -126,7 +126,7 @@ const UserOasisPosition = ({
 
   // Calculate impermanent loss protection
   const calculateImpermanentLossProtection = () => {
-    if (!oasis.user_deposit_b || !oasis.max_withdraw_b || !oasis.user_balance_a || !oasis.max_withdraw_htr) {
+    if (!oasis.user_deposit_b || !oasis.max_withdraw_b || !oasis.max_withdraw_htr) {
       return { ilProtection: 0, hasIL: false }
     }
 
@@ -237,10 +237,14 @@ const UserOasisPosition = ({
               ${roiData.totalCurrentValueUSD.toFixed(2)}
             </Typography>
             <div className="flex items-center justify-end gap-1">
-              <div className={`${roiData.roi >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <div
+                className={`${
+                  roiData.roi > 0 ? 'text-green-500' : Math.abs(roiData.roi) < 0.01 ? 'text-stone-500' : 'text-red-500'
+                }`}
+              >
                 <Typography variant="xs" weight={500}>
-                  {roiData.roi >= 0 ? '+' : ''}
-                  {roiData.roi.toFixed(2)}%
+                  {roiData.roi > 0 ? '+' : Math.abs(roiData.roi) < 0.01 ? '' : '-'}
+                  {Math.abs(roiData.roi).toFixed(2)}%
                 </Typography>
               </div>
               <Typography variant="xs" className="text-stone-500">
@@ -288,22 +292,28 @@ const UserOasisPosition = ({
                 <div>
                   <Typography variant="sm" className="text-stone-300">
                     HTR
-                    {ilData.hasIL && (
-                      <Tooltip
-                        panel={
-                          <div className="max-w-xs">
-                            <Typography variant="xs">
-                              <p className="mb-1">Your HTR includes:</p>
-                              <p className="mb-1">• {oasis.user_balance_a.toFixed(2)} HTR bonus</p>
-                              <p>• {ilData.ilProtection.toFixed(2)} HTR impermanent loss protection</p>
-                            </Typography>
-                          </div>
-                        }
-                        button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
-                      >
-                        <></>
-                      </Tooltip>
-                    )}
+                    <Tooltip
+                      panel={
+                        <div className="max-w-xs">
+                          <Typography variant="xs">
+                            <p className="mb-2">Your HTR position includes:</p>
+                            <li className="ml-4">
+                              {oasis.user_balance_a > 0 && (
+                                <ul className="mb-1">• {oasis.user_balance_a.toFixed(2)} HTR bonus</ul>
+                              )}
+                              {ilData.hasIL && (
+                                <ul className="mb-1">
+                                  Impermanent loss protection: {ilData.ilProtection.toFixed(2)} HTR
+                                </ul>
+                              )}
+                            </li>
+                          </Typography>
+                        </div>
+                      }
+                      button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
+                    >
+                      <></>
+                    </Tooltip>
                   </Typography>
                 </div>
               </div>
