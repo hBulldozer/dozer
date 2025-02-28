@@ -12,8 +12,8 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
   onReset,
 }) => {
   if (!oasis) return null
-  const user_lp_b = oasis?.user_lp_b ?? 0
-  const user_lp_htr = oasis?.user_lp_htr ?? 0
+  const max_withdraw_b = oasis?.max_withdraw_b ?? 0
+  const position_to_be_closed_htr = (oasis?.max_withdraw_htr ?? 0) - (oasis?.user_balance_a ?? 0)
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>
@@ -35,7 +35,7 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
                   </Typography>
                 </div>
                 <Typography variant="base" weight={500} className="text-yellow">
-                  {user_lp_b.toString()}
+                  {max_withdraw_b.toString()}
                 </Typography>
               </div>
 
@@ -49,17 +49,16 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
                   </Typography>
                 </div>
                 <Typography variant="base" weight={500} className="text-yellow">
-                  {user_lp_htr.toString()}
+                  {position_to_be_closed_htr.toString()}
                 </Typography>
               </div>
             </div>
           </div>
 
-          <div className="p-3 border rounded-lg bg-stone-400 border-stone-200">
-            <Typography variant="xs" weight={400} className="text-yellow-500">
-              Closing your position prepares your funds for withdrawal. This separates your funds from the pool and
-              protects them from price fluctuations. After closing, you can withdraw your funds in a separate
-              transaction.
+          <div className="p-3 border rounded-lg border-stone-400 bg-stone-700">
+            <Typography variant="xs" weight={400} className="text-stone-200">
+              This process ensures you receive any applicable protection against impermanent loss while clearly defining
+              which assets (and their quantities) you can withdraw from the protocol.
             </Typography>
           </div>
 
@@ -95,8 +94,8 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
   onReset,
 }) => {
   if (!oasis) return null
-  const maxAmountB = oasis?.position_closed ? oasis?.closed_balance_b ?? 0 : oasis?.max_withdraw_b ?? 0
-  const maxAmountHTR = oasis?.position_closed ? oasis?.closed_balance_a ?? 0 : oasis?.max_withdraw_htr ?? 0
+  const maxAmountB = oasis?.position_closed ? oasis?.max_withdraw_b ?? 0 : oasis?.max_withdraw_b ?? 0
+  const maxAmountHTR = oasis?.position_closed ? oasis?.max_withdraw_htr ?? 0 : oasis?.max_withdraw_htr ?? 0
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>

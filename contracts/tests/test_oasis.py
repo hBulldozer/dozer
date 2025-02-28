@@ -78,6 +78,7 @@ class OasisTestCase(BlueprintTestCase):
     def check_balances(self, users_addresses: list[bytes]) -> None:
         oasis_balance_htr = self.oasis_storage.get_balance(HTR_UID)
         oasis_balance_b = self.oasis_storage.get_balance(self.token_b)
+
         users_balances_a = sum(
             [self._user_info(address)["user_balance_a"] for address in users_addresses]
         )
@@ -96,7 +97,10 @@ class OasisTestCase(BlueprintTestCase):
                 for address in users_addresses
             ]
         )
+
         oasis_htr_balance = self.oasis_storage.get("oasis_htr_balance")
+
+        # The LP HTR was already accounted for when positions were created
         self.assertEqual(
             oasis_balance_htr,
             oasis_htr_balance + users_balances_a + users_closed_balances_a,
@@ -1538,7 +1542,7 @@ class OasisTestCase(BlueprintTestCase):
         )
 
         # Check that closed_balance_a includes bonus + LP value
-        self.assertGreaterEqual(user_info["closed_balance_a"], bonus)
+        self.assertEqual(user_info["closed_balance_a"], bonus)
 
         # Validate contract balances
         self.check_balances([user_address])
@@ -1841,15 +1845,18 @@ class OasisTestCase(BlueprintTestCase):
         for _ in range(50):
             reserve_a = self.dozer_storage.get("reserve_a")
             reserve_b = self.dozer_storage.get("reserve_b")
-            swap_amount = reserve_b // 20  # Swap 5% each time
+
+            # To drive token_b price DOWN, we need to swap HTR FOR token_b
+            # (not token_b for HTR as the original code does)
+            swap_amount = reserve_a // 20  # Swap 5% of HTR each time
             amount_out = self.runner.call_view_method(
-                self.dozer_id, "get_amount_out", swap_amount, reserve_b, reserve_a
+                self.dozer_id, "get_amount_out", swap_amount, reserve_a, reserve_b
             )
 
             swap_ctx = Context(
                 [
-                    NCAction(NCActionType.DEPOSIT, self.token_b, swap_amount),
-                    NCAction(NCActionType.WITHDRAWAL, HTR_UID, amount_out),
+                    NCAction(NCActionType.DEPOSIT, HTR_UID, swap_amount),
+                    NCAction(NCActionType.WITHDRAWAL, self.token_b, amount_out),
                 ],
                 self.tx,
                 extra_liquidity_address,
@@ -1886,7 +1893,7 @@ class OasisTestCase(BlueprintTestCase):
         # 1. closed_balance_b should be approximately equal to expected_user_lp_b
         # 2. closed_balance_a should include bonus + LP HTR + loss compensation
 
-        self.assertNotEqual(user_info["closed_balance_b"], deposit_amount)
+        self.assertLess(user_info["closed_balance_b"], deposit_amount)
 
         # Verify closed_balance_b matches expected LP tokens
         self.assertAlmostEqual(

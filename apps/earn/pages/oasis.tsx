@@ -493,42 +493,24 @@ const UserOasisPosition = ({
       {/* Actions */}
       <div className="flex flex-row w-full gap-2">
         {/* When position is unlocked but not closed, show Close Position button */}
-        {isUnlocked && !oasis.position_closed && <div className="w-full">{buttonClosePosition}</div>}
+        {isUnlocked && !oasis.position_closed && <div className="w-full ">{buttonClosePosition}</div>}
 
         {/* When position is closed, show Withdraw Position button */}
-        {oasis.position_closed && <div className="w-full">{buttonWithdraw}</div>}
+        {oasis.position_closed && <div className="w-full ">{buttonWithdraw}</div>}
 
         {/* When position is locked and has bonus, show Withdraw Bonus and Deposit buttons side by side */}
-        {!isUnlocked && oasis.user_balance_a > 0 && (
-          <>
-            <div className="w-full">{buttonWithdrawBonus}</div>
-            <Button
-              fullWidth
-              size="md"
-              color="gray"
-              className="w-1/2"
-              onClick={() => {
-                setSelectedTab(0)
-              }}
-            >
-              Deposit
-            </Button>
-          </>
-        )}
-
-        {/* When position is locked and has no bonus, show only Deposit button */}
-        {!isUnlocked && !(oasis.user_balance_a > 0) && (
+        {!isUnlocked && oasis.user_balance_a > 0 && <div className="w-full ">{buttonWithdrawBonus}</div>}
+        <div className="w-full ">
           <Button
-            fullWidth
             size="md"
-            color="gray"
+            fullWidth
             onClick={() => {
               setSelectedTab(0)
             }}
           >
             Deposit
           </Button>
-        )}
+        </div>
       </div>
     </div>
   )
@@ -1316,7 +1298,7 @@ const OasisProgram = () => {
                                                 <Button
                                                   size="md"
                                                   fullWidth
-                                                  color="yellow"
+                                                  color="gray"
                                                   disabled={isRpcRequestPending}
                                                   onClick={() => {
                                                     setSelectedOasisForClose(oasis)
@@ -1329,6 +1311,7 @@ const OasisProgram = () => {
                                               buttonWithdraw={
                                                 <Button
                                                   size="md"
+                                                  color="gray"
                                                   fullWidth
                                                   disabled={isRpcRequestPending}
                                                   onClick={() => {
