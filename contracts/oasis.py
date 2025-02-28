@@ -37,6 +37,10 @@ class Oasis(Blueprint):
     user_withdrawal_time: dict[Address, Timestamp]
     user_balances: dict[Address, dict[TokenUid, Amount]]
     token_b: TokenUid
+    # Track if a user's position has been closed and is ready for withdrawal
+    user_position_closed: dict[Address, bool]
+    # Track withdrawn balances separately from cashback/rewards
+    closed_position_balances: dict[Address, dict[TokenUid, Amount]]
 
     @public
     def initialize(
@@ -203,76 +207,143 @@ class Oasis(Blueprint):
             self.user_balances[ctx.address] = partial
 
     @public
-    def user_withdraw(self, ctx: Context) -> None:
-        action_token_b = self._get_token_action(
-            ctx, NCActionType.WITHDRAWAL, self.token_b
-        )
-        action_htr = None
-        if len(ctx.actions) > 1:
-            action_htr = self._get_token_action(ctx, NCActionType.WITHDRAWAL, HTR_UID)
-        if ctx.timestamp < self.user_withdrawal_time[ctx.address]:
-            raise NCFail("Withdrawal locked")
+    def close_position(self, ctx: Context) -> None:
+        """Close a user's position, removing liquidity from the pool and making funds available for withdrawal.
+
+        Args:
+            ctx: Execution context
+
+        Raises:
+            NCFail: If position is still locked or already closed
+        """
+        # Verify position can be closed
+        if ctx.timestamp < self.user_withdrawal_time.get(ctx.address, 0):
+            raise NCFail("Position is still locked")
+
+        if self.user_position_closed.get(ctx.address, False):
+            raise NCFail("Position already closed")
+
+        if self.user_liquidity.get(ctx.address, 0) == 0:
+            raise NCFail("No position to close")
+
+        # Get quote information
         oasis_quote = self._quote_remove_liquidity_oasis()
         htr_oasis_amount = oasis_quote["max_withdraw_a"]
         token_b_oasis_amount = oasis_quote["user_lp_b"]
         user_liquidity = self.user_liquidity.get(ctx.address, 0)
         user_lp_b = (user_liquidity) * token_b_oasis_amount // (self.total_liquidity)
         user_lp_htr = user_liquidity * htr_oasis_amount // (self.total_liquidity)
+
+        # Create actions to remove liquidity
         actions = [
             NCAction(NCActionType.WITHDRAWAL, HTR_UID, user_lp_htr),
             NCAction(NCActionType.WITHDRAWAL, self.token_b, user_lp_b),
         ]
-        # ctx.call_public_method(self.dozer_pool, "remove_liquidity", actions)
-        max_withdraw_b = user_lp_b + self.user_balances[ctx.address].get(
-            self.token_b, 0
-        )
 
-        ## token_b handling
-        if action_token_b.amount > max_withdraw_b:
-            raise NCFail(
-                f"Not enough balance. max_withdraw_b: {max_withdraw_b}, action_token_b.amount: {action_token_b.amount}"
-            )
-        else:
-            partial = self.user_balances.get(ctx.address, {})
-            partial.update(
-                {
-                    self.token_b: max_withdraw_b - action_token_b.amount,
-                }
-            )
-            self.user_balances[ctx.address] = partial
-
-        ## htr handling
+        # Handle impermanent loss calculation
         loss_htr = 0
-        # impermanent loss
-        if self.user_deposit_b[ctx.address] > max_withdraw_b:
+        # Calculate max withdraw amount including existing balances
+        cashback_token_b = self.user_balances.get(ctx.address, {}).get(self.token_b, 0)
+        max_withdraw_b = user_lp_b + cashback_token_b
+
+        # Check for impermanent loss
+        if self.user_deposit_b.get(ctx.address, 0) > max_withdraw_b:
             loss = self.user_deposit_b[ctx.address] - max_withdraw_b
             loss_htr = self.call_view_method(self.dozer_pool, "quote_token_b", loss)
             if loss_htr > user_lp_htr:
                 loss_htr = user_lp_htr
-            max_withdraw_htr = (
-                self.user_balances[ctx.address].get(HTR_UID, 0) + loss_htr
-            )
-        # without impermanent loss
-        else:
-            max_withdraw_htr = self.user_balances[ctx.address].get(HTR_UID, 0)
 
-        if action_htr and action_htr.amount > max_withdraw_htr:
-            raise NCFail(f"Not enough balance {max_withdraw_htr=} {action_htr.amount=}")
-        partial = self.user_balances.get(ctx.address, {})
-        if action_htr:
-            partial.update(
-                {
-                    HTR_UID: max_withdraw_htr - action_htr.amount,
-                }
-            )
+        # Call dozer pool to remove liquidity
         self.call_public_method(self.dozer_pool, "remove_liquidity", actions)
-        self.oasis_htr_balance = self.oasis_htr_balance + user_lp_htr - loss_htr
-        self.user_balances[ctx.address] = partial
+
+        # Get existing cashback balances
+        user_cashback = self.user_balances.get(ctx.address, {})
+        user_htr_cashback = user_cashback.get(HTR_UID, 0)
+
+        # Move any cashback balances to the closed position balances
+        closed_balances = self.closed_position_balances.get(ctx.address, {})
+        closed_balances.update({
+            self.token_b: closed_balances.get(self.token_b, 0) + cashback_token_b + user_lp_b,
+            HTR_UID: closed_balances.get(HTR_UID, 0) + user_htr_cashback + user_lp_htr + loss_htr
+        })
+        self.closed_position_balances[ctx.address] = closed_balances
+
+        # Clear user cashback balances after moving them
+        if cashback_token_b > 0 or user_htr_cashback > 0:
+            self.user_balances[ctx.address] = {HTR_UID: 0, self.token_b: 0}
+
+        # Update Oasis HTR balance
+        self.oasis_htr_balance = self.oasis_htr_balance - loss_htr
+
+        # Mark position as closed
+        self.user_position_closed[ctx.address] = True
+
+        # Keep the deposit amounts for reference, but reset liquidity
         self.user_liquidity[ctx.address] = 0
-        self.user_deposit_b[ctx.address] = 0
-        self.user_withdrawal_time[ctx.address] = 0
-        self.htr_price_in_deposit[ctx.address] = 0
-        self.token_price_in_htr_in_deposit[ctx.address] = 0
+
+    @public
+    def user_withdraw(self, ctx: Context) -> None:
+        """Withdraw funds after position is closed.
+
+        Args:
+            ctx: Execution context
+
+        Raises:
+            NCFail: If position is not closed or insufficient funds
+        """
+        action_token_b = self._get_token_action(
+            ctx, NCActionType.WITHDRAWAL, self.token_b
+        )
+        action_htr = None
+        if len(ctx.actions) > 1:
+            action_htr = self._get_token_action(ctx, NCActionType.WITHDRAWAL, HTR_UID)
+
+        # Check if the position is unlocked
+        if ctx.timestamp < self.user_withdrawal_time.get(ctx.address, 0):
+            raise NCFail("Withdrawal locked")
+
+        # For positions that haven't been closed yet, automatically close them first
+        if (
+            not self.user_position_closed.get(ctx.address, False)
+            and self.user_liquidity.get(ctx.address, 0) > 0
+        ):
+            raise NCFail("Position must be closed before withdrawal")
+
+        # Check token_b withdrawal amount from closed_position_balances
+        available_token_b = self.closed_position_balances.get(ctx.address, {}).get(self.token_b, 0)
+        if action_token_b.amount > available_token_b:
+            raise NCFail(
+                f"Not enough balance. Available: {available_token_b}, Requested: {action_token_b.amount}"
+            )
+
+        # Update token_b balance in closed_position_balances
+        closed_balances = self.closed_position_balances.get(ctx.address, {})
+        closed_balances.update({
+            self.token_b: available_token_b - action_token_b.amount
+        })
+
+        # Check HTR withdrawal if requested
+        if action_htr:
+            available_htr = self.closed_position_balances.get(ctx.address, {}).get(HTR_UID, 0)
+            if action_htr.amount > available_htr:
+                raise NCFail(
+                    f"Not enough HTR balance. Available: {available_htr}, Requested: {action_htr.amount}"
+                )
+
+            closed_balances.update({
+                HTR_UID: available_htr - action_htr.amount
+            })
+
+        # Update closed position balances
+        self.closed_position_balances[ctx.address] = closed_balances
+
+        # If all funds withdrawn, clean up user data
+        if closed_balances.get(self.token_b, 0) == 0 and closed_balances.get(HTR_UID, 0) == 0:
+            self.user_deposit_b[ctx.address] = 0
+            self.user_withdrawal_time[ctx.address] = 0
+            self.htr_price_in_deposit[ctx.address] = 0
+            self.token_price_in_htr_in_deposit[ctx.address] = 0
+            self.user_position_closed[ctx.address] = False
 
     @public
     def user_withdraw_bonus(self, ctx: Context) -> None:
@@ -445,7 +516,7 @@ class Oasis(Blueprint):
     def user_info(
         self,
         address: Address,
-    ) -> dict[str, float]:
+    ) -> dict[str, float | bool]:
         remove_liquidity_oasis_quote = self.get_remove_liquidity_oasis_quote(address)
         return {
             "user_deposit_b": self.user_deposit_b.get(address, 0),
@@ -459,6 +530,12 @@ class Oasis(Blueprint):
             "user_balance_b": self.user_balances.get(address, {self.token_b: 0}).get(
                 self.token_b, 0
             ),
+            "closed_balance_a": self.closed_position_balances.get(address, {HTR_UID: 0}).get(
+                HTR_UID, 0
+            ),
+            "closed_balance_b": self.closed_position_balances.get(address, {self.token_b: 0}).get(
+                self.token_b, 0
+            ),
             "user_lp_b": remove_liquidity_oasis_quote.get("user_lp_b", 0),
             "user_lp_htr": remove_liquidity_oasis_quote.get("user_lp_htr", 0),
             "max_withdraw_b": remove_liquidity_oasis_quote.get("max_withdraw_b", 0),
@@ -467,6 +544,7 @@ class Oasis(Blueprint):
             "token_price_in_htr_in_deposit": self.token_price_in_htr_in_deposit.get(
                 address, 0
             ),
+            "position_closed": self.user_position_closed.get(address, False)
         }
 
     @view
@@ -520,11 +598,27 @@ class Oasis(Blueprint):
         }
 
     @view
-    def get_remove_liquidity_oasis_quote(self, address: Address) -> dict[str, float]:
+    def get_remove_liquidity_oasis_quote(
+        self, address: Address
+    ) -> dict[str, float | bool]:
+        # If position is already closed, return the available balances from closed_position_balances
+        if self.user_position_closed.get(address, False):
+            return {
+                "user_lp_b": 0,
+                "user_lp_htr": 0,
+                "max_withdraw_b": self.closed_position_balances.get(address, {}).get(
+                    self.token_b, 0
+                ),
+                "max_withdraw_htr": self.closed_position_balances.get(address, {}).get(HTR_UID, 0),
+                "position_closed": True,
+            }
+
+        # Otherwise calculate withdrawal amounts based on current pool state
         oasis_quote = self._quote_remove_liquidity_oasis()
         htr_oasis_amount = oasis_quote["max_withdraw_a"]
         token_b_oasis_amount = oasis_quote["user_lp_b"]
         user_liquidity = self.user_liquidity.get(address, 0)
+
         if self.total_liquidity > 0:
             user_lp_b = (
                 (user_liquidity) * token_b_oasis_amount // (self.total_liquidity)
@@ -533,26 +627,28 @@ class Oasis(Blueprint):
         else:
             user_lp_b = 0
             user_lp_htr = 0
-        max_withdraw_b = user_lp_b + self.user_balances[address].get(self.token_b, 0)
 
-        # impermanent loss
+        # Calculate total available amounts including existing balances
+        user_balance_b = self.user_balances.get(address, {}).get(self.token_b, 0)
+        user_balance_htr = self.user_balances.get(address, {}).get(HTR_UID, 0)
+        max_withdraw_b = user_lp_b + user_balance_b
+
+        # Calculate impermanent loss compensation if needed
+        loss_htr = 0
         if self.user_deposit_b.get(address, 0) > max_withdraw_b:
             loss = self.user_deposit_b.get(address, 0) - max_withdraw_b
             loss_htr = self.call_view_method(self.dozer_pool, "quote_token_b", loss)
             if loss_htr > user_lp_htr:
                 loss_htr = user_lp_htr
-            max_withdraw_htr = (
-                self.user_balances.get(address, {HTR_UID: 0}).get(HTR_UID, 0) + loss_htr
-            )
-        # without impermanent loss
+            max_withdraw_htr = user_balance_htr + loss_htr
         else:
-            max_withdraw_htr = self.user_balances.get(address, {HTR_UID: 0}).get(
-                HTR_UID, 0
-            )
+            max_withdraw_htr = user_balance_htr
 
         return {
             "user_lp_b": user_lp_b,
             "user_lp_htr": user_lp_htr,
             "max_withdraw_b": max_withdraw_b,
             "max_withdraw_htr": max_withdraw_htr,
+            "loss_htr": loss_htr,
+            "position_closed": False,
         }

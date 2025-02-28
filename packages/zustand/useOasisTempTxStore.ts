@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type TransactionType = 'bonus' | 'withdraw' | 'add'
+type TransactionType = 'bonus' | 'withdraw' | 'add' | 'close'
 
 interface OasisTempTx {
   id: string

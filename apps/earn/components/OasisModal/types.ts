@@ -1,9 +1,3 @@
-// types.ts
-export interface OasisToken {
-  symbol: string
-  uuid: string
-}
-
 export interface OasisPosition {
   id: string
   user_deposit_b: number
@@ -11,20 +5,14 @@ export interface OasisPosition {
   user_withdrawal_time: Date
   max_withdraw_htr: number
   max_withdraw_b: number
-  token: OasisToken
+  token: { symbol: string; uuid: string }
   user_lp_htr: number
   user_lp_b: number
   htr_price_in_deposit: number
   token_price_in_htr_in_deposit: number
-}
-
-export interface OasisRemoveModalProps {
-  open: boolean
-  setOpen: (open: boolean) => void
-  oasis: OasisPosition | null
-  onConfirm: (amount: number, htr_amount: number) => Promise<void>
-  isRpcRequestPending: boolean
-  onReset: () => void
+  position_closed?: boolean
+  closed_balance_a?: number
+  closed_balance_b?: number
 }
 
 export interface OasisAddModalProps {
@@ -35,6 +23,24 @@ export interface OasisAddModalProps {
   bonus: number
   htrMatch: number
   unlockDate: Date
+  onConfirm: () => Promise<void>
+  isRpcRequestPending: boolean
+  onReset: () => void
+}
+
+export interface OasisRemoveModalProps {
+  open: boolean
+  setOpen: (open: boolean) => void
+  oasis: OasisPosition | null
+  onConfirm: (amount: number, amount_htr: number) => Promise<void>
+  isRpcRequestPending: boolean
+  onReset: () => void
+}
+
+export interface OasisClosePositionModalProps {
+  open: boolean
+  setOpen: (open: boolean) => void
+  oasis: OasisPosition | null
   onConfirm: () => Promise<void>
   isRpcRequestPending: boolean
   onReset: () => void

@@ -88,6 +88,23 @@ export class Oasis extends NanoContract {
     return rpcResponse
   }
 
+  public async close_position(hathorRpc: IHathorRpc, address: string, ncId: string) {
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'close_position',
+      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
+      [],
+      [],
+      true,
+      ncId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+
+    return rpcResponse
+  }
+
   public async user_withdraw(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number, amount_htr: number) {
     const actions = [
       {

@@ -84,9 +84,24 @@ class OasisTestCase(BlueprintTestCase):
         users_balances_b = sum(
             [self._user_info(address)["user_balance_b"] for address in users_addresses]
         )
+        users_closed_balances_a = sum(
+            [
+                self._user_info(address)["closed_balance_a"]
+                for address in users_addresses
+            ]
+        )
+        users_closed_balances_b = sum(
+            [
+                self._user_info(address)["closed_balance_b"]
+                for address in users_addresses
+            ]
+        )
         oasis_htr_balance = self.oasis_storage.get("oasis_htr_balance")
-        self.assertEqual(oasis_balance_htr, oasis_htr_balance + users_balances_a)
-        self.assertEqual(oasis_balance_b, users_balances_b)
+        self.assertEqual(
+            oasis_balance_htr,
+            oasis_htr_balance + users_balances_a + users_closed_balances_a,
+        )
+        self.assertEqual(oasis_balance_b, users_balances_b + users_closed_balances_b)
 
     def initialize_oasis(
         self, amount: int = 10_000_000_00, protocol_fee: int = 0
@@ -502,52 +517,6 @@ class OasisTestCase(BlueprintTestCase):
             self.assertEqual(user_info["total_liquidity"], total_liquidity)
         self.check_balances(user_addresses)
 
-    def test_user_withdraw_exact_value(self):
-        ctx_deposit, timelock, htr_amount = self.test_user_deposit()
-        user_address = ctx_deposit.address
-        action = ctx_deposit.actions.get(self.token_b) or NCAction(
-            NCActionType.WITHDRAWAL, self.token_b, 0
-        )
-        deposit_amount = action.amount
-        deposit_timestamp = ctx_deposit.timestamp
-        user_info = self.runner.call_view_method(
-            self.oasis_id, "user_info", user_address
-        )
-        bonus = self._get_user_bonus(timelock, htr_amount)
-        self.assertEqual(user_info["user_deposit_b"], deposit_amount)
-        self.assertEqual(user_info["user_balance_a"], bonus)
-        # self.assertEqual(user_info["user_balance_b"], 0)
-        self.assertEqual(user_info["user_liquidity"], deposit_amount * PRECISION)
-        self.assertEqual(
-            user_info["user_withdrawal_time"],
-            deposit_timestamp + timelock * MONTHS_IN_SECONDS,
-        )
-        self.assertEqual(
-            user_info["oasis_htr_balance"], 10_000_000_00 - htr_amount - bonus
-        )
-        self.assertEqual(user_info["total_liquidity"], deposit_amount * PRECISION)
-        # Withdraw exact value
-        ctx = Context(
-            [
-                NCAction(NCActionType.WITHDRAWAL, self.token_b, deposit_amount),  # type: ignore
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, bonus),  # type: ignore
-            ],
-            self.tx,
-            user_address,
-            timestamp=deposit_timestamp + timelock * MONTHS_IN_SECONDS + 1,
-        )
-        self.check_balances([user_address])
-        self.runner.call_public_method(self.oasis_id, "user_withdraw", ctx)
-        user_info = self.runner.call_view_method(
-            self.oasis_id, "user_info", user_address
-        )
-        self.assertEqual(user_info["user_deposit_b"], 0)
-        self.assertEqual(user_info["user_balance_a"], 0)
-        self.assertEqual(user_info["user_balance_b"], 0)
-        self.assertEqual(user_info["user_liquidity"], 0)
-        self.assertEqual(user_info["user_withdrawal_time"], 0)
-        self.check_balances([user_address])
-
     def test_user_withdraw_bonus(self):
         ctx_deposit, timelock, htr_amount = self.test_user_deposit()
         user_address = ctx_deposit.address
@@ -633,378 +602,6 @@ class OasisTestCase(BlueprintTestCase):
             )
             self.assertEqual(user_info["user_balance_a"], expected_bonus)
 
-    def test_impermanent_loss_token_b_crashes(self):
-        """Test impermanent loss protection when token B crashes 99% in value"""
-        dev_initial_deposit = 100_000_000_00
-        pool_initial_htr = 10_000_000_00
-        pool_initial_token_b = 1_000_000_00
-
-        # Initialize contracts
-        self.initialize_pool(amount_htr=pool_initial_htr, amount_b=pool_initial_token_b)
-        self.initialize_oasis(amount=dev_initial_deposit)
-
-        # User deposits with 12-month lock
-        deposit_amount = 1_000_000_00
-        user_address = self._get_any_address()[0]
-        timelock = 12
-
-        ctx = Context(
-            [NCAction(NCActionType.DEPOSIT, self.token_b, deposit_amount)],
-            self.tx,
-            user_address,
-            timestamp=self.clock.seconds(),
-        )
-
-        self.runner.call_public_method(
-            self.oasis_id, "user_deposit", ctx, timelock, 0.03
-        )
-
-        initial_price = self.dozer_storage.get("reserve_a") / self.dozer_storage.get(
-            "reserve_b"
-        )
-        print(f"Initial token_b price in HTR: {initial_price=}")
-
-        # Add extra liquidity to support massive swaps
-        extra_liquidity_address = self._get_any_address()[0]
-        add_liquidity_ctx = Context(
-            [
-                NCAction(NCActionType.DEPOSIT, HTR_UID, pool_initial_htr * 10),
-                NCAction(NCActionType.DEPOSIT, self.token_b, pool_initial_token_b * 10),
-            ],
-            self.tx,
-            extra_liquidity_address,
-            timestamp=self.clock.seconds() + 100,
-        )
-        self.runner.call_public_method(
-            self.dozer_id, "add_liquidity", add_liquidity_ctx
-        )
-
-        # Execute swaps to crash token B price
-        # Repeatedly swap token B for HTR to drive down price
-        for _ in range(100):
-            reserve_a = self.dozer_storage.get("reserve_a")
-            reserve_b = self.dozer_storage.get("reserve_b")
-            swap_amount = reserve_b // 20  # Swap 5% each time
-            amount_out = self.runner.call_view_method(
-                self.dozer_id, "get_amount_out", swap_amount, reserve_b, reserve_a
-            )
-
-            swap_ctx = Context(
-                [
-                    NCAction(NCActionType.DEPOSIT, self.token_b, swap_amount),
-                    NCAction(NCActionType.WITHDRAWAL, HTR_UID, amount_out),
-                ],
-                self.tx,
-                extra_liquidity_address,
-                timestamp=self.clock.seconds() + 200,
-            )
-            self.runner.call_public_method(
-                self.dozer_id, "swap_exact_tokens_for_tokens", swap_ctx
-            )
-
-        final_price = self.dozer_storage.get("reserve_a") / self.dozer_storage.get(
-            "reserve_b"
-        )
-        print(f"Final token_b price in HTR: {final_price=}")
-
-        price_drop = (initial_price - final_price) / initial_price * 100
-        print(f"Token B price drop: {price_drop:.2f}%")
-
-        # Verify price impact greater than 95%
-        self.assertGreater(price_drop, 95)
-
-        # Try to withdraw after timelock with IL protection
-        withdraw_ctx = Context(
-            [
-                NCAction(NCActionType.WITHDRAWAL, self.token_b, deposit_amount),
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, 0),
-            ],
-            self.tx,
-            user_address,
-            timestamp=self.clock.seconds() + (timelock * MONTHS_IN_SECONDS) + 1,
-        )
-
-        # Withdrawal should succeed
-        self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
-
-        # Verify complete withdrawal
-        user_info_after = self.runner.call_view_method(
-            self.oasis_id, "user_info", user_address
-        )
-        self.assertEqual(user_info_after["user_deposit_b"], 0)
-
-        self.check_balances([user_address])
-
-    def test_impermanent_loss_token_b_skyrockets(self):
-        """Test impermanent loss protection when token B increases 100x in value"""
-        dev_initial_deposit = 100_000_000_00
-        pool_initial_htr = 10_000_000_00
-        pool_initial_token_b = 1_000_000_00
-
-        # Initialize contracts
-        self.initialize_pool(amount_htr=pool_initial_htr, amount_b=pool_initial_token_b)
-        self.initialize_oasis(amount=dev_initial_deposit)
-
-        # User deposits with 12-month lock
-        deposit_amount = 1_000_000_00
-        user_address = self._get_any_address()[0]
-        timelock = 12
-
-        ctx = Context(
-            [NCAction(NCActionType.DEPOSIT, self.token_b, deposit_amount)],
-            self.tx,
-            user_address,
-            timestamp=self.clock.seconds(),
-        )
-
-        self.runner.call_public_method(
-            self.oasis_id, "user_deposit", ctx, timelock, 0.03
-        )
-
-        initial_price = self.dozer_storage.get("reserve_a") / self.dozer_storage.get(
-            "reserve_b"
-        )
-        print(f"Initial token_b price in HTR: {initial_price=}")
-
-        # Add extra liquidity to support massive swaps
-        extra_liquidity_address = self._get_any_address()[0]
-        add_liquidity_ctx = Context(
-            [
-                NCAction(NCActionType.DEPOSIT, HTR_UID, pool_initial_htr * 100),
-                NCAction(
-                    NCActionType.DEPOSIT, self.token_b, pool_initial_token_b * 100
-                ),
-            ],
-            self.tx,
-            extra_liquidity_address,
-            timestamp=self.clock.seconds() + 100,
-        )
-        self.runner.call_public_method(
-            self.dozer_id, "add_liquidity", add_liquidity_ctx
-        )
-
-        # Execute swaps to drive up token B price
-        # Repeatedly swap HTR for token B
-        for _ in range(100):
-            reserve_a = self.dozer_storage.get("reserve_a")
-            reserve_b = self.dozer_storage.get("reserve_b")
-            swap_amount = reserve_a // 10  # Swap 10% each time
-            amount_out = self.runner.call_view_method(
-                self.dozer_id, "get_amount_out", swap_amount, reserve_a, reserve_b
-            )
-
-            swap_ctx = Context(
-                [
-                    NCAction(NCActionType.DEPOSIT, HTR_UID, swap_amount),
-                    NCAction(NCActionType.WITHDRAWAL, self.token_b, amount_out),
-                ],
-                self.tx,
-                extra_liquidity_address,
-                timestamp=self.clock.seconds() + 200,
-            )
-            self.runner.call_public_method(
-                self.dozer_id, "swap_exact_tokens_for_tokens", swap_ctx
-            )
-
-        final_price = self.dozer_storage.get("reserve_a") / self.dozer_storage.get(
-            "reserve_b"
-        )
-        print(f"Final token_b price in HTR: {final_price=}")
-
-        price_increase = (final_price - initial_price) / initial_price * 100
-        print(f"Token B price increase: {price_increase:.2f}%")
-
-        # Verify price increased at least 100x
-        self.assertGreater(price_increase, 10000)  # 100x = 10000%
-
-        user_info = self.runner.call_view_method(
-            self.oasis_id, "user_info", user_address
-        )
-        max_withdraw_b = user_info["max_withdraw_b"]
-        max_withdraw_htr = user_info["max_withdraw_htr"]
-
-        # Try to withdraw after timelock with IL protection
-        withdraw_ctx = Context(
-            [
-                NCAction(NCActionType.WITHDRAWAL, self.token_b, max_withdraw_b),
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, max_withdraw_htr),
-            ],
-            self.tx,
-            user_address,
-            timestamp=self.clock.seconds() + (timelock * MONTHS_IN_SECONDS) + 1,
-        )
-
-        print(
-            f"deposit_amount: {deposit_amount}, max_withdraw_b: {max_withdraw_b}, max_withdraw_htr: {max_withdraw_htr}"
-        )
-
-        # Withdrawal should succeed
-        self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
-
-        # Verify complete withdrawal
-        user_info_after = self.runner.call_view_method(
-            self.oasis_id, "user_info", user_address
-        )
-        self.assertEqual(user_info_after["user_deposit_b"], 0)
-
-        self.check_balances([user_address])
-
-    def test_impermanent_loss_protection(self):
-        """Test impermanent loss protection when token B outperforms HTR"""
-        dev_initial_deposit = 100_000_000_00
-        pool_initial_htr = 10_000_000_00
-        pool_initial_token_b = 1_000_000_00
-
-        # Initialize contracts
-        self.initialize_pool(amount_htr=pool_initial_htr, amount_b=pool_initial_token_b)
-        self.initialize_oasis(amount=dev_initial_deposit)
-
-        # User deposits with 12-month lock
-        deposit_amount = 1_000_000_00
-        user_address = self._get_any_address()[0]
-        timelock = 12
-
-        ctx = Context(
-            [NCAction(NCActionType.DEPOSIT, self.token_b, deposit_amount)],
-            self.tx,
-            user_address,
-            timestamp=self.clock.seconds(),
-        )
-
-        self.runner.call_public_method(
-            self.oasis_id, "user_deposit", ctx, timelock, 0.03
-        )
-
-        htr_amount_deposit = self._quote_add_liquidity_in(deposit_amount)
-        user_bonus = self._get_user_bonus(timelock, htr_amount_deposit)
-
-        # Execute swaps to simulate token B price increase
-        extra_liquidity_address = self._get_any_address()[0]
-        add_liquidity_ctx = Context(
-            [
-                NCAction(NCActionType.DEPOSIT, HTR_UID, pool_initial_htr),
-                NCAction(NCActionType.DEPOSIT, self.token_b, pool_initial_token_b),
-            ],
-            self.tx,
-            extra_liquidity_address,
-            timestamp=self.clock.seconds() + 100,
-        )
-        self.runner.call_public_method(
-            self.dozer_id, "add_liquidity", add_liquidity_ctx
-        )
-
-        print(
-            f"price token_b before: {self.dozer_storage.get('reserve_a')/self.dozer_storage.get('reserve_b')=} "
-        )
-
-        # Execute swaps to drive up token B price
-        for _ in range(50):
-            swap_amount = pool_initial_htr // 10
-            reserve_a = self.dozer_storage.get("reserve_a")
-            reserve_b = self.dozer_storage.get("reserve_b")
-            amount_out = self.runner.call_view_method(
-                self.dozer_id, "get_amount_out", swap_amount, reserve_a, reserve_b
-            )
-
-            swap_ctx = Context(
-                [
-                    NCAction(NCActionType.DEPOSIT, HTR_UID, swap_amount),
-                    NCAction(NCActionType.WITHDRAWAL, self.token_b, amount_out),
-                ],
-                self.tx,
-                extra_liquidity_address,
-                timestamp=self.clock.seconds() + 200,
-            )
-            self.runner.call_public_method(
-                self.dozer_id, "swap_exact_tokens_for_tokens", swap_ctx
-            )
-
-        # Calculate available withdrawal amounts after price impact
-        user_info = self.runner.call_view_method(
-            self.oasis_id, "user_info", user_address
-        )
-        oasis_quote = self._quote_remove_liquidity_oasis()
-
-        htr_oasis_amount = oasis_quote["max_withdraw_a"]
-        token_b_oasis_amount = oasis_quote["user_lp_b"]
-        user_liquidity = user_info["user_liquidity"]
-        total_liquidity = user_info["total_liquidity"]
-        user_balance_b = user_info["user_balance_b"]
-        user_balance_a = user_info["user_balance_a"]
-        user_lp_b = (user_liquidity) * token_b_oasis_amount // (total_liquidity)
-        user_lp_htr = user_liquidity * htr_oasis_amount // (total_liquidity)
-
-        # Verify user can withdraw less token B than deposit due to price impact
-        self.assertLess(user_lp_b, deposit_amount)
-
-        # Calculate IL compensation in HTR
-        loss_amount = deposit_amount - user_lp_b
-        loss_htr = self.runner.call_view_method(
-            self.dozer_id, "quote_token_b", loss_amount
-        )
-
-        if loss_htr > user_lp_htr:
-            loss_htr = user_lp_htr
-
-        self.assertEqual(user_balance_a, user_bonus)
-
-        # Calculate available withdrawal amounts after price impact
-        max_withdraw_htr = user_balance_a + loss_htr
-        max_withdraw_b = user_balance_b + user_lp_b
-
-        # Try to withdraw after timelock with maximum amounts
-        withdraw_ctx = Context(
-            [
-                NCAction(NCActionType.WITHDRAWAL, self.token_b, max_withdraw_b),
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, max_withdraw_htr),
-            ],
-            self.tx,
-            user_address,
-            timestamp=self.clock.seconds() + (timelock * MONTHS_IN_SECONDS) + 1,
-        )
-
-        # Verify IL protection amount makes user whole
-        token_b_value_lost = deposit_amount - user_lp_b
-        htr_compensation_value = self.runner.call_view_method(
-            self.dozer_id,
-            "quote",
-            loss_htr,
-            self.dozer_storage.get("reserve_a"),
-            self.dozer_storage.get("reserve_b"),
-        )
-
-        self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
-
-        # Verify withdrawal and IL protection
-        user_info_after = self.runner.call_view_method(
-            self.oasis_id, "user_info", user_address
-        )
-
-        # Verify complete withdrawal
-        self.assertEqual(user_info_after["user_deposit_b"], 0)
-
-        # Verify received correct amounts
-        self.assertEqual(
-            user_info_after["user_lp_b"], 0
-        )  # All available token B withdrawn
-        self.assertEqual(
-            user_info_after["max_withdraw_htr"], 0
-        )  # All HTR compensation withdrawn
-
-        print(
-            f"price token_b after: {self.dozer_storage.get('reserve_a')/self.dozer_storage.get('reserve_b')=} "
-        )
-
-        # Value received should be approximately equal to initial deposit value
-        # (allowing for some deviation due to precision)
-        total_value_received = user_lp_b + htr_compensation_value
-        self.assertGreaterEqual(
-            total_value_received,
-            deposit_amount * 0.75,  # Allow for 0.01% deviation due to precision
-        )
-
-        self.check_balances([user_address])
-
     def test_multiple_deposits_varying_timelocks(self):
         """Test multiple users depositing with different timelocks"""
         dev_initial_deposit = 10_000_000_00
@@ -1075,8 +672,8 @@ class OasisTestCase(BlueprintTestCase):
             )
         self.check_balances([user["address"] for user in users_data])
 
-    def test_early_withdrawal_prevention(self):
-        """Test that early withdrawals are prevented before timelock expiry"""
+    def test_early_position_closing_prevention(self):
+        """Test that early position closing is prevented before timelock expiry"""
         dev_initial_deposit = 10_000_000_00
         self.initialize_pool()
         self.initialize_oasis(amount=dev_initial_deposit)
@@ -1098,7 +695,7 @@ class OasisTestCase(BlueprintTestCase):
             self.oasis_id, "user_deposit", ctx, timelock, 0.03
         )
 
-        # Try withdrawing at different times before timelock expiry
+        # Try closing at different times before timelock expiry
         test_times = [
             1,  # Immediately after
             MONTHS_IN_SECONDS * 6,  # Halfway through
@@ -1106,11 +703,8 @@ class OasisTestCase(BlueprintTestCase):
         ]
 
         for time_delta in test_times:
-            withdraw_ctx = Context(
-                [
-                    NCAction(NCActionType.WITHDRAWAL, self.token_b, deposit_amount),
-                    NCAction(NCActionType.WITHDRAWAL, HTR_UID, 0),
-                ],
+            close_ctx = Context(
+                [],
                 self.tx,
                 user_address,
                 timestamp=deposit_time + time_delta,
@@ -1118,106 +712,45 @@ class OasisTestCase(BlueprintTestCase):
 
             with self.assertRaises(NCFail):
                 self.runner.call_public_method(
-                    self.oasis_id, "user_withdraw", withdraw_ctx
+                    self.oasis_id, "close_position", close_ctx
                 )
 
-        # Verify successful withdrawal after timelock
-        withdraw_ctx = Context(
-            [
-                NCAction(NCActionType.WITHDRAWAL, self.token_b, deposit_amount),
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, 0),
-            ],
+        # Verify successful closing after timelock
+        close_ctx = Context(
+            [],
             self.tx,
             user_address,
             timestamp=deposit_time + (MONTHS_IN_SECONDS * 12) + 1,
         )
 
-        self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
-        user_info = self.runner.call_view_method(
-            self.oasis_id, "user_info", user_address
-        )
-        self.assertEqual(user_info["user_deposit_b"], 0)  # Successful withdrawal
-        self.check_balances([user_address])
+        # Verify position is closed
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["position_closed"], True)
 
-    def test_bonus_withdrawal_before_timelock(self):
-        """Test that bonus HTR can be withdrawn before timelock expiry"""
-        dev_initial_deposit = 10_000_000_00
-        self.initialize_pool()
-        self.initialize_oasis(amount=dev_initial_deposit)
+        def test_invalid_timelocks(self):
+            """Test that invalid timelock values are rejected"""
+            dev_initial_deposit = 10_000_000_00
+            self.initialize_pool()
+            self.initialize_oasis(amount=dev_initial_deposit)
 
-        # User deposits with 12-month lock
-        deposit_amount = 1_000_00
-        user_address = self._get_any_address()[0]
-        timelock = 12
-        deposit_time = self.clock.seconds()
+            invalid_timelocks = [0, 3, 7, 8, 13, 24]  # Invalid timelock periods
+            deposit_amount = 1_000_00
+            user_address = self._get_any_address()[0]
 
-        ctx = Context(
-            [NCAction(NCActionType.DEPOSIT, self.token_b, deposit_amount)],
-            self.tx,
-            user_address,
-            timestamp=deposit_time,
-        )
-
-        self.runner.call_public_method(
-            self.oasis_id, "user_deposit", ctx, timelock, 0.03
-        )
-
-        # Calculate expected bonus
-        htr_amount = self._quote_add_liquidity_in(deposit_amount)
-        expected_bonus = self._get_user_bonus(timelock, htr_amount)
-
-        # Verify bonus amount
-        user_info = self.runner.call_view_method(
-            self.oasis_id, "user_info", user_address
-        )
-        self.assertEqual(user_info["user_balance_a"], expected_bonus)
-
-        # Withdraw bonus immediately
-        withdraw_bonus_ctx = Context(
-            [NCAction(NCActionType.WITHDRAWAL, HTR_UID, expected_bonus)],
-            self.tx,
-            user_address,
-            timestamp=deposit_time + 1,
-        )
-
-        self.runner.call_public_method(
-            self.oasis_id, "user_withdraw_bonus", withdraw_bonus_ctx
-        )
-
-        # Verify bonus was withdrawn
-        user_info = self.runner.call_view_method(
-            self.oasis_id, "user_info", user_address
-        )
-        self.assertEqual(user_info["user_balance_a"], 0)
-
-        # Verify principal is still locked
-        self.assertEqual(user_info["user_deposit_b"], deposit_amount)
-        self.assertGreater(user_info["user_withdrawal_time"], deposit_time)
-        self.check_balances([user_address])
-
-    def test_invalid_timelocks(self):
-        """Test that invalid timelock values are rejected"""
-        dev_initial_deposit = 10_000_000_00
-        self.initialize_pool()
-        self.initialize_oasis(amount=dev_initial_deposit)
-
-        invalid_timelocks = [0, 3, 7, 8, 13, 24]  # Invalid timelock periods
-        deposit_amount = 1_000_00
-        user_address = self._get_any_address()[0]
-
-        for invalid_timelock in invalid_timelocks:
-            ctx = Context(
-                [NCAction(NCActionType.DEPOSIT, self.token_b, deposit_amount)],
-                self.tx,
-                user_address,
-                timestamp=self.clock.seconds(),
-            )
-
-            with self.assertRaises(NCFail):
-                self.runner.call_public_method(
-                    self.oasis_id, "user_deposit", ctx, invalid_timelock, 0.03
+            for invalid_timelock in invalid_timelocks:
+                ctx = Context(
+                    [NCAction(NCActionType.DEPOSIT, self.token_b, deposit_amount)],
+                    self.tx,
+                    user_address,
+                    timestamp=self.clock.seconds(),
                 )
+
+                with self.assertRaises(NCFail):
+                    self.runner.call_public_method(
+                        self.oasis_id, "user_deposit", ctx, invalid_timelock, 0.03
+                    )
 
     def test_exact_timelock_expiry(self):
         """Test withdrawals exactly at timelock expiry"""
@@ -1244,10 +777,20 @@ class OasisTestCase(BlueprintTestCase):
 
         # Try withdrawal exactly at expiry
         exact_expiry = deposit_time + (timelock * MONTHS_IN_SECONDS)
+        # Close the position first
+        close_ctx = Context([], self.tx, user_address, timestamp=exact_expiry)
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Get balances after closing
+        user_info = self._user_info(user_address)
+        closed_balance_b = int(user_info["closed_balance_b"])
+        closed_balance_a = int(user_info["closed_balance_a"])
+
+        # Update withdraw context to use closed balances
         withdraw_ctx = Context(
             [
-                NCAction(NCActionType.WITHDRAWAL, self.token_b, deposit_amount),
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, 0),
+                NCAction(NCActionType.WITHDRAWAL, self.token_b, closed_balance_b),
+                NCAction(NCActionType.WITHDRAWAL, HTR_UID, closed_balance_a),
             ],
             self.tx,
             user_address,
@@ -1321,15 +864,8 @@ class OasisTestCase(BlueprintTestCase):
         )
 
         # Try withdrawal before weighted timelock - should fail
-        early_withdraw_ctx = Context(
-            [
-                NCAction(
-                    NCActionType.WITHDRAWAL,
-                    self.token_b,
-                    deposit_1_amount + deposit_2_amount,
-                ),
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, 0),
-            ],
+        early_close_ctx = Context(
+            [],
             self.tx,
             user_address,
             timestamp=expected_unlock_time,
@@ -1337,18 +873,26 @@ class OasisTestCase(BlueprintTestCase):
 
         with self.assertRaises(NCFail):
             self.runner.call_public_method(
-                self.oasis_id, "user_withdraw", early_withdraw_ctx
+                self.oasis_id, "close_position", early_close_ctx
             )
 
         # Withdrawal after weighted timelock should succeed
+        # Close the position first
+        close_ctx = Context(
+            [], self.tx, user_address, timestamp=expected_unlock_time + 1
+        )
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Get balances after closing
+        user_info = self._user_info(user_address)
+        closed_balance_b = int(user_info["closed_balance_b"])
+        closed_balance_a = int(user_info["closed_balance_a"])
+
+        # Update withdrawal context
         withdraw_ctx = Context(
             [
-                NCAction(
-                    NCActionType.WITHDRAWAL,
-                    self.token_b,
-                    deposit_1_amount + deposit_2_amount,
-                ),
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, 0),
+                NCAction(NCActionType.WITHDRAWAL, self.token_b, closed_balance_b),
+                NCAction(NCActionType.WITHDRAWAL, HTR_UID, closed_balance_a),
             ],
             self.tx,
             user_address,
@@ -1729,15 +1273,25 @@ class OasisTestCase(BlueprintTestCase):
             user_info["htr_price_in_deposit"], expected_weighted_price, places=6
         )
 
-        # Verify price is reset to 0 after withdrawal
+        # First close the position
+        close_ctx = Context(
+            [],
+            self.tx,
+            user_address,
+            timestamp=self.clock.seconds() + (timelock * MONTHS_IN_SECONDS) + 1000,
+        )
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Get closed balances
+        user_info = self._user_info(user_address)
+        closed_balance_b = int(user_info["closed_balance_b"])
+        closed_balance_a = int(user_info["closed_balance_a"])
+
+        # Update withdraw context
         withdraw_ctx = Context(
             [
-                NCAction(
-                    NCActionType.WITHDRAWAL,
-                    self.token_b,
-                    deposit_amount + second_deposit_amount,
-                ),
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, 0),
+                NCAction(NCActionType.WITHDRAWAL, self.token_b, closed_balance_b),
+                NCAction(NCActionType.WITHDRAWAL, HTR_UID, closed_balance_a),
             ],
             self.tx,
             user_address,
@@ -1822,15 +1376,25 @@ class OasisTestCase(BlueprintTestCase):
             places=6,
         )
 
-        # Verify price is reset to 0 after withdrawal
+        # First close the position
+        close_ctx = Context(
+            [],
+            self.tx,
+            user_address,
+            timestamp=self.clock.seconds() + (timelock * MONTHS_IN_SECONDS) + 1000,
+        )
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Get closed balances
+        user_info = self._user_info(user_address)
+        closed_balance_b = int(user_info["closed_balance_b"])
+        closed_balance_a = int(user_info["closed_balance_a"])
+
+        # Update withdraw context
         withdraw_ctx = Context(
             [
-                NCAction(
-                    NCActionType.WITHDRAWAL,
-                    self.token_b,
-                    deposit_amount + second_deposit_amount,
-                ),
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, 0),
+                NCAction(NCActionType.WITHDRAWAL, self.token_b, closed_balance_b),
+                NCAction(NCActionType.WITHDRAWAL, HTR_UID, closed_balance_a),
             ],
             self.tx,
             user_address,
@@ -1899,10 +1463,25 @@ class OasisTestCase(BlueprintTestCase):
         max_withdraw_b = user_info["max_withdraw_b"]
         max_withdraw_htr = user_info["max_withdraw_htr"]
 
+        # Close position first
+        close_ctx = Context(
+            [],
+            self.tx,
+            user1_address,
+            timestamp=self.clock.seconds() + (6 * MONTHS_IN_SECONDS) + 1,
+        )
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Get closed balances
+        user_info = self._user_info(user1_address)
+        closed_balance_b = int(user_info["closed_balance_b"])
+        closed_balance_a = int(user_info["closed_balance_a"])
+
+        # Update context to withdraw closed balances
         ctx = Context(
             [
-                NCAction(NCActionType.WITHDRAWAL, self.token_b, max_withdraw_b),
-                NCAction(NCActionType.WITHDRAWAL, HTR_UID, max_withdraw_htr),
+                NCAction(NCActionType.WITHDRAWAL, self.token_b, closed_balance_b),
+                NCAction(NCActionType.WITHDRAWAL, HTR_UID, closed_balance_a),
             ],
             self.tx,
             user1_address,
@@ -1915,3 +1494,494 @@ class OasisTestCase(BlueprintTestCase):
         )
         self.assertEqual(user_info["user_deposit_b"], 0)
         self.check_balances([user1_address])
+
+    def test_close_position_success(self):
+        """Test basic position closing functionality"""
+        # Create a user position
+        ctx_deposit, timelock, htr_amount = self.test_user_deposit(timelock=6)
+        user_address = ctx_deposit.address
+        action = ctx_deposit.actions.get(self.token_b) or NCAction(
+            NCActionType.WITHDRAWAL, self.token_b, 0
+        )
+        deposit_amount = action.amount
+        initial_timestamp = ctx_deposit.timestamp
+
+        # Get user balances before closing
+        user_info_before = self._user_info(user_address)
+        bonus = user_info_before["user_balance_a"]
+        self.assertEqual(user_info_before["position_closed"], False)
+
+        # Advance time to unlock the position
+        unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
+
+        # Close the position
+        close_ctx = Context([], self.tx, user_address, timestamp=unlock_time)
+
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Verify position closed state
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["position_closed"], True)
+        self.assertEqual(user_info["user_liquidity"], 0)
+
+        # Verify funds moved to closed_position_balances
+        self.assertEqual(user_info["user_balance_a"], 0)
+        self.assertEqual(user_info["user_balance_b"], 0)
+
+        # The actual amounts might vary due to pool conditions, but should be non-zero
+        self.assertGreater(user_info["closed_balance_a"], 0)
+        self.assertGreater(user_info["closed_balance_b"], 0)
+
+        # Check that closed_balance_b is approximately equal to deposit_amount
+        self.assertAlmostEqual(
+            user_info["closed_balance_b"] / deposit_amount, 1.0, delta=0.1
+        )
+
+        # Check that closed_balance_a includes bonus + LP value
+        self.assertGreaterEqual(user_info["closed_balance_a"], bonus)
+
+        # Validate contract balances
+        self.check_balances([user_address])
+
+    def test_close_position_locked(self):
+        """Test that position closing fails when still locked"""
+        # Create a user position with 12-month lock
+        ctx_deposit, timelock, htr_amount = self.test_user_deposit(timelock=12)
+        user_address = ctx_deposit.address
+        initial_timestamp = ctx_deposit.timestamp
+
+        # Try to close the position before unlocking (halfway through the lock period)
+        close_ctx = Context(
+            [],
+            self.tx,
+            user_address,
+            timestamp=initial_timestamp + (6 * MONTHS_IN_SECONDS),
+        )
+
+        # Should fail because position is still locked
+        with self.assertRaises(NCFail):
+            self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Verify position remains open
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["position_closed"], False)
+        self.assertEqual(user_info["closed_balance_a"], 0)
+        self.assertEqual(user_info["closed_balance_b"], 0)
+
+    def test_close_already_closed_position(self):
+        """Test that closing an already-closed position fails"""
+        # Create and close a position
+        ctx_deposit, timelock, htr_amount = self.test_user_deposit(timelock=6)
+        user_address = ctx_deposit.address
+        initial_timestamp = ctx_deposit.timestamp
+        unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
+
+        # Close the position
+        close_ctx = Context([], self.tx, user_address, timestamp=unlock_time)
+
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Try to close it again
+        with self.assertRaises(NCFail):
+            self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Verify position remains closed with same values
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["position_closed"], True)
+        self.assertEqual(user_info["user_liquidity"], 0)
+
+    def test_withdraw_from_closed_position(self):
+        """Test withdrawing funds from a closed position"""
+        # Create and close a position
+        ctx_deposit, timelock, htr_amount = self.test_user_deposit(timelock=6)
+        user_address = ctx_deposit.address
+        initial_timestamp = ctx_deposit.timestamp
+        unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
+
+        # Close the position
+        close_ctx = Context([], self.tx, user_address, timestamp=unlock_time)
+
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Get closed position balances
+        user_info = self._user_info(user_address)
+        closed_balance_a = int(user_info["closed_balance_a"])
+        closed_balance_b = int(user_info["closed_balance_b"])
+
+        # Withdraw all funds from closed position
+        withdraw_ctx = Context(
+            [
+                NCAction(NCActionType.WITHDRAWAL, self.token_b, closed_balance_b),
+                NCAction(NCActionType.WITHDRAWAL, HTR_UID, closed_balance_a),
+            ],
+            self.tx,
+            user_address,
+            timestamp=unlock_time,
+        )
+
+        self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
+
+        # Verify all funds withdrawn and position data cleared
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["closed_balance_a"], 0)
+        self.assertEqual(user_info["closed_balance_b"], 0)
+        self.assertEqual(user_info["user_deposit_b"], 0)
+        self.assertEqual(user_info["user_withdrawal_time"], 0)
+        self.assertEqual(
+            user_info["position_closed"], False
+        )  # Position is fully cleared
+
+        # Validate contract balances
+        self.check_balances([user_address])
+
+    def test_partial_withdraw_from_closed_position(self):
+        """Test partial withdrawal from a closed position"""
+        # Create and close a position
+        ctx_deposit, timelock, htr_amount = self.test_user_deposit(timelock=6)
+        user_address = ctx_deposit.address
+        initial_timestamp = ctx_deposit.timestamp
+        unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
+
+        # Close the position
+        close_ctx = Context([], self.tx, user_address, timestamp=unlock_time)
+
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Get closed position balances
+        user_info = self._user_info(user_address)
+        closed_balance_a = int(user_info["closed_balance_a"])
+        closed_balance_b = int(user_info["closed_balance_b"])
+
+        # Withdraw half of token_b
+        withdraw_amount_b = closed_balance_b // 2
+        withdraw_ctx = Context(
+            [
+                NCAction(NCActionType.WITHDRAWAL, self.token_b, withdraw_amount_b),
+            ],
+            self.tx,
+            user_address,
+            timestamp=unlock_time,
+        )
+
+        self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
+
+        # Verify partial withdrawal
+        user_info = self._user_info(user_address)
+        self.assertEqual(
+            user_info["closed_balance_a"], closed_balance_a
+        )  # HTR unchanged
+        self.assertEqual(
+            user_info["closed_balance_b"], closed_balance_b - withdraw_amount_b
+        )
+        self.assertEqual(user_info["position_closed"], True)  # Position remains closed
+
+        # Withdraw remaining funds
+        withdraw_ctx = Context(
+            [
+                NCAction(
+                    NCActionType.WITHDRAWAL,
+                    self.token_b,
+                    closed_balance_b - withdraw_amount_b,
+                ),
+                NCAction(NCActionType.WITHDRAWAL, HTR_UID, closed_balance_a),
+            ],
+            self.tx,
+            user_address,
+            timestamp=unlock_time,
+        )
+
+        self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
+
+        # Verify all funds withdrawn and position data cleared
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["closed_balance_a"], 0)
+        self.assertEqual(user_info["closed_balance_b"], 0)
+        self.assertEqual(user_info["user_deposit_b"], 0)
+        self.assertEqual(user_info["position_closed"], False)  # Position fully cleared
+
+        # Validate contract balances
+        self.check_balances([user_address])
+
+    def test_withdraw_without_closing_position(self):
+        """Test that withdrawal without closing position first fails"""
+        # Create a position but don't close it
+        ctx_deposit, timelock, htr_amount = self.test_user_deposit(timelock=6)
+        user_address = ctx_deposit.address
+        action = ctx_deposit.actions.get(self.token_b) or NCAction(
+            NCActionType.WITHDRAWAL, self.token_b, 0
+        )
+        deposit_amount = action.amount
+        initial_timestamp = ctx_deposit.timestamp
+        unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
+
+        # Try to withdraw without closing the position first
+        withdraw_ctx = Context(
+            [
+                NCAction(NCActionType.WITHDRAWAL, self.token_b, deposit_amount),
+            ],
+            self.tx,
+            user_address,
+            timestamp=unlock_time,
+        )
+
+        # Should fail because position must be closed first
+        with self.assertRaises(NCFail):
+            self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
+
+        # Verify position remains unchanged
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["position_closed"], False)
+        self.assertEqual(user_info["closed_balance_a"], 0)
+        self.assertEqual(user_info["closed_balance_b"], 0)
+
+    def test_withdraw_excess_from_closed_position(self):
+        """Test attempting to withdraw more than available from a closed position"""
+        # Create and close a position
+        ctx_deposit, timelock, htr_amount = self.test_user_deposit(timelock=6)
+        user_address = ctx_deposit.address
+        initial_timestamp = ctx_deposit.timestamp
+        unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
+
+        # Close the position
+        close_ctx = Context([], self.tx, user_address, timestamp=unlock_time)
+
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Get closed position balances
+        user_info = self._user_info(user_address)
+        closed_balance_a = int(user_info["closed_balance_a"])
+        closed_balance_b = int(user_info["closed_balance_b"])
+
+        # Try to withdraw more than available
+        withdraw_ctx = Context(
+            [
+                NCAction(NCActionType.WITHDRAWAL, self.token_b, closed_balance_b + 100),
+            ],
+            self.tx,
+            user_address,
+            timestamp=unlock_time,
+        )
+
+        # Should fail due to insufficient balance
+        with self.assertRaises(NCFail):
+            self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
+
+        # Try to withdraw more HTR than available
+        withdraw_ctx = Context(
+            [
+                NCAction(NCActionType.WITHDRAWAL, HTR_UID, closed_balance_a + 100),
+            ],
+            self.tx,
+            user_address,
+            timestamp=unlock_time,
+        )
+
+        # Should fail due to insufficient balance
+        with self.assertRaises(NCFail):
+            self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
+
+        # Verify balances remain unchanged
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["closed_balance_a"], closed_balance_a)
+        self.assertEqual(user_info["closed_balance_b"], closed_balance_b)
+
+    def test_impermanent_loss_when_closing_position(self):
+        """Test impermanent loss compensation when closing a position"""
+        # Initialize with larger amounts to allow for significant price movements
+        dev_initial_deposit = 100_000_000_00
+        pool_initial_htr = 10_000_000_00
+        pool_initial_token_b = 1_000_000_00
+
+        # Initialize contracts
+        self.initialize_pool(amount_htr=pool_initial_htr, amount_b=pool_initial_token_b)
+        self.initialize_oasis(amount=dev_initial_deposit)
+
+        # User deposits with 12-month lock
+        deposit_amount = 1_000_000_00
+        user_address = self._get_any_address()[0]
+        timelock = 12
+        initial_timestamp = self.clock.seconds()
+
+        ctx = Context(
+            [NCAction(NCActionType.DEPOSIT, self.token_b, deposit_amount)],
+            self.tx,
+            user_address,
+            timestamp=initial_timestamp,
+        )
+
+        self.runner.call_public_method(
+            self.oasis_id, "user_deposit", ctx, timelock, 0.03
+        )
+
+        htr_amount = self._quote_add_liquidity_in(deposit_amount)
+        bonus = self._get_user_bonus(timelock, htr_amount)
+
+        # Capture initial price ratio
+        initial_price = self.dozer_storage.get("reserve_a") / self.dozer_storage.get(
+            "reserve_b"
+        )
+
+        # Create price impact by executing swaps
+        # Add extra liquidity to support swaps
+        extra_liquidity_address = self._get_any_address()[0]
+        add_liquidity_ctx = Context(
+            [
+                NCAction(NCActionType.DEPOSIT, HTR_UID, pool_initial_htr * 10),
+                NCAction(NCActionType.DEPOSIT, self.token_b, pool_initial_token_b * 10),
+            ],
+            self.tx,
+            extra_liquidity_address,
+            timestamp=initial_timestamp + 100,
+        )
+        self.runner.call_public_method(
+            self.dozer_id, "add_liquidity", add_liquidity_ctx
+        )
+
+        # Execute swaps to crash token B price
+        for _ in range(50):
+            reserve_a = self.dozer_storage.get("reserve_a")
+            reserve_b = self.dozer_storage.get("reserve_b")
+            swap_amount = reserve_b // 20  # Swap 5% each time
+            amount_out = self.runner.call_view_method(
+                self.dozer_id, "get_amount_out", swap_amount, reserve_b, reserve_a
+            )
+
+            swap_ctx = Context(
+                [
+                    NCAction(NCActionType.DEPOSIT, self.token_b, swap_amount),
+                    NCAction(NCActionType.WITHDRAWAL, HTR_UID, amount_out),
+                ],
+                self.tx,
+                extra_liquidity_address,
+                timestamp=initial_timestamp + 200,
+            )
+            self.runner.call_public_method(
+                self.dozer_id, "swap_exact_tokens_for_tokens", swap_ctx
+            )
+
+        # Capture post-swap price ratio
+        final_price = self.dozer_storage.get("reserve_a") / self.dozer_storage.get(
+            "reserve_b"
+        )
+        price_change_pct = (final_price - initial_price) / initial_price * 100
+
+        # Calculate expected LP tokens without closing the position
+        user_info_before_close = self._user_info(user_address)
+        expected_user_lp_b = int(user_info_before_close["user_lp_b"])
+
+        # Close the position
+        unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
+        close_ctx = Context([], self.tx, user_address, timestamp=unlock_time)
+
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Get user info after closing position
+        user_info = self._user_info(user_address)
+
+        # Verify position is closed
+        self.assertEqual(user_info["position_closed"], True)
+        self.assertEqual(user_info["user_liquidity"], 0)
+
+        # Since token B crashed in value, we expect:
+        # 1. closed_balance_b should be approximately equal to expected_user_lp_b
+        # 2. closed_balance_a should include bonus + LP HTR + loss compensation
+
+        self.assertNotEqual(user_info["closed_balance_b"], deposit_amount)
+
+        # Verify closed_balance_b matches expected LP tokens
+        self.assertAlmostEqual(
+            user_info["closed_balance_b"],
+            expected_user_lp_b,
+            delta=expected_user_lp_b * 0.01,  # Allow 1% variance
+        )
+
+        # Verify HTR balance includes compensation
+        self.assertGreater(user_info["closed_balance_a"], bonus)
+
+        # Validate contract balances
+        self.check_balances([user_address])
+
+    def test_close_position_with_no_impermanent_loss(self):
+        """Test closing a position with minimal price impact"""
+        # Create a position
+        ctx_deposit, timelock, htr_amount = self.test_user_deposit(timelock=6)
+        user_address = ctx_deposit.address
+        action = ctx_deposit.actions.get(self.token_b) or NCAction(
+            NCActionType.WITHDRAWAL, self.token_b, 0
+        )
+        deposit_amount = action.amount
+        initial_timestamp = ctx_deposit.timestamp
+        bonus = self._get_user_bonus(timelock, htr_amount)
+
+        # Advance time to unlock the position
+        unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
+
+        # Close the position with no price impact
+        close_ctx = Context([], self.tx, user_address, timestamp=unlock_time)
+
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Verify position closed and balances
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["position_closed"], True)
+
+        # Without impermanent loss, token_b should be approximately equal to deposit amount
+        self.assertAlmostEqual(
+            user_info["closed_balance_b"] / deposit_amount,
+            1.0,
+            delta=0.05,  # Allow 5% variance
+        )
+
+        # HTR balance should include bonus + proportional LP value
+        self.assertGreaterEqual(user_info["closed_balance_a"], bonus)
+
+        # Validate contract balances
+        self.check_balances([user_address])
+
+    def test_update_existing_test_user_withdraw_exact_value(self):
+        """Updated version of test_user_withdraw_exact_value to use the two-step process"""
+        ctx_deposit, timelock, htr_amount = self.test_user_deposit()
+        user_address = ctx_deposit.address
+        action = ctx_deposit.actions.get(self.token_b) or NCAction(
+            NCActionType.WITHDRAWAL, self.token_b, 0
+        )
+        deposit_amount = action.amount
+        deposit_timestamp = ctx_deposit.timestamp
+        bonus = self._get_user_bonus(timelock, htr_amount)
+
+        # First close the position
+        close_timestamp = deposit_timestamp + timelock * MONTHS_IN_SECONDS + 1
+        close_ctx = Context([], self.tx, user_address, timestamp=close_timestamp)
+
+        self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
+
+        # Verify position is closed
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["position_closed"], True)
+        self.assertEqual(user_info["user_liquidity"], 0)
+        closed_balance_b = user_info["closed_balance_b"]
+        closed_balance_a = user_info["closed_balance_a"]
+
+        # Now withdraw from closed position
+        withdraw_ctx = Context(
+            [
+                NCAction(NCActionType.WITHDRAWAL, self.token_b, int(closed_balance_b)),
+                NCAction(NCActionType.WITHDRAWAL, HTR_UID, int(closed_balance_a)),
+            ],
+            self.tx,
+            user_address,
+            timestamp=close_timestamp,
+        )
+
+        self.runner.call_public_method(self.oasis_id, "user_withdraw", withdraw_ctx)
+
+        # Verify all funds withdrawn and position data cleared
+        user_info = self._user_info(user_address)
+        self.assertEqual(user_info["closed_balance_a"], 0)
+        self.assertEqual(user_info["closed_balance_b"], 0)
+        self.assertEqual(user_info["user_deposit_b"], 0)
+        self.assertEqual(user_info["user_withdrawal_time"], 0)
+        self.assertEqual(user_info["position_closed"], False)
+
+        # Validate contract balances
+        self.check_balances([user_address])

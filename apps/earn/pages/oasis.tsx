@@ -26,7 +26,12 @@ import { hathorLib, Oasis } from '@dozer/nanocontracts'
 import { useAccount, useNetwork, useOasisTempTxStore } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
-import { OasisAddModal, OasisRemoveBonusModal, OasisRemoveModal } from '../components/OasisModal'
+import {
+  OasisAddModal,
+  OasisRemoveBonusModal,
+  OasisRemoveModal,
+  OasisClosePositionModal,
+} from '../components/OasisModal'
 import type { OasisPosition } from '../components/OasisModal/types'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import Link from 'next/link'
@@ -47,6 +52,9 @@ interface OasisInterface {
   user_lp_b: number
   htr_price_in_deposit: number
   token_price_in_htr_in_deposit: number
+  position_closed?: boolean
+  closed_balance_a?: number
+  closed_balance_b?: number
 }
 
 const TokenOption = ({ token, disabled }: { token: { symbol: string; uuid: string }; disabled?: boolean }) => {
@@ -77,6 +85,7 @@ const UserOasisPosition = ({
   addingToOasisId,
   buttonWithdraw,
   buttonWithdrawBonus,
+  buttonClosePosition,
   setSelectedTab,
   prices,
 }: {
@@ -88,6 +97,7 @@ const UserOasisPosition = ({
   addingToOasisId?: string
   buttonWithdraw: JSX.Element
   buttonWithdrawBonus: JSX.Element
+  buttonClosePosition?: JSX.Element
   setSelectedTab: (tab: number) => void
   prices: Record<string, number>
 }) => {
@@ -225,9 +235,13 @@ const UserOasisPosition = ({
             </Typography>
             <div className="flex flex-wrap items-start gap-1">
               <div className="flex items-center gap-1">
-                <div className={`w-2 h-2 rounded-full ${isUnlocked ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    oasis.position_closed ? 'bg-blue-500' : isUnlocked ? 'bg-green-500' : 'bg-yellow-500'
+                  }`}
+                />
                 <Typography variant="xs" className="text-stone-400">
-                  {isUnlocked ? 'Unlocked' : 'Locked'}
+                  {oasis.position_closed ? 'Closed' : isUnlocked ? 'Unlocked' : 'Locked'}
                 </Typography>
               </div>
               {formattedTimeRemaining && (
@@ -477,21 +491,44 @@ const UserOasisPosition = ({
       </div>
 
       {/* Actions */}
-
       <div className="flex flex-row w-full gap-2">
-        {isUnlocked && buttonWithdraw}
-        {oasis.user_balance_a > 0 && withdrawalDate && !isUnlocked && buttonWithdrawBonus}
-        <Button
-          fullWidth
-          size="md"
-          color="gray"
-          className="col-span-2"
-          onClick={() => {
-            setSelectedTab(0)
-          }}
-        >
-          Deposit
-        </Button>
+        {/* When position is unlocked but not closed, show Close Position button */}
+        {isUnlocked && !oasis.position_closed && <div className="w-full">{buttonClosePosition}</div>}
+
+        {/* When position is closed, show Withdraw Position button */}
+        {oasis.position_closed && <div className="w-full">{buttonWithdraw}</div>}
+
+        {/* When position is locked and has bonus, show Withdraw Bonus and Deposit buttons side by side */}
+        {!isUnlocked && oasis.user_balance_a > 0 && (
+          <>
+            <div className="w-full">{buttonWithdrawBonus}</div>
+            <Button
+              fullWidth
+              size="md"
+              color="gray"
+              className="w-1/2"
+              onClick={() => {
+                setSelectedTab(0)
+              }}
+            >
+              Deposit
+            </Button>
+          </>
+        )}
+
+        {/* When position is locked and has no bonus, show only Deposit button */}
+        {!isUnlocked && !(oasis.user_balance_a > 0) && (
+          <Button
+            fullWidth
+            size="md"
+            color="gray"
+            onClick={() => {
+              setSelectedTab(0)
+            }}
+          >
+            Deposit
+          </Button>
+        )}
       </div>
     </div>
   )
@@ -516,6 +553,8 @@ const OasisProgram = () => {
   const [selectedOasisForRemove, setSelectedOasisForRemove] = useState<OasisPosition | null>(null)
   const [selectedOasisForRemoveBonus, setSelectedOasisForRemoveBonus] = useState<OasisPosition | null>(null)
   const [removeBonusModalOpen, setRemoveBonusModalOpen] = useState<boolean>(false)
+  const [selectedOasisForClose, setSelectedOasisForClose] = useState<OasisPosition | null>(null)
+  const [closePositionModalOpen, setClosePositionModalOpen] = useState<boolean>(false)
   const [txType, setTxType] = useState<string>('Add liquidity')
   const [showChart, setShowChart] = useState(false)
   const [tokenPriceChange, setTokenPriceChange] = useState<number>(0)
@@ -614,9 +653,16 @@ const OasisProgram = () => {
     )
   }
 
+  const handleClosePosition = async (): Promise<void> => {
+    if (!selectedOasisForClose?.id) return
+    setTxType('Close position')
+
+    const response = await oasisObj.close_position(hathorRpc, address, selectedOasisForClose.id)
+  }
+
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result) {
-      if (oasisId || selectedOasisForRemove || selectedOasisForRemoveBonus) {
+      if (oasisId || selectedOasisForRemove || selectedOasisForRemoveBonus || selectedOasisForClose) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
           const notificationData: NotificationData = {
@@ -644,6 +690,7 @@ const OasisProgram = () => {
           setAddModalOpen(false)
           setRemoveModalOpen(false)
           setRemoveBonusModalOpen(false)
+          setClosePositionModalOpen(false)
 
           // For add liquidity transactions
           if (txType == 'Add liquidity') {
@@ -687,6 +734,8 @@ const OasisProgram = () => {
             addPendingPosition(address, selectedOasisForRemoveBonus, currentBlockHeight, 'bonus')
           if (txType == 'Remove liquidity' && selectedOasisForRemove)
             addPendingPosition(address, selectedOasisForRemove, currentBlockHeight, 'withdraw')
+          if (txType == 'Close position' && selectedOasisForClose)
+            addPendingPosition(address, selectedOasisForClose, currentBlockHeight, 'close')
         } else {
           createErrorToast(`Error`, true)
           setAddModalOpen(false)
@@ -1263,6 +1312,20 @@ const OasisProgram = () => {
                                               addingLiquidity={addingLiquidity}
                                               addingToOasisId={addingToOasisId}
                                               setSelectedTab={setSelectedTab}
+                                              buttonClosePosition={
+                                                <Button
+                                                  size="md"
+                                                  fullWidth
+                                                  color="yellow"
+                                                  disabled={isRpcRequestPending}
+                                                  onClick={() => {
+                                                    setSelectedOasisForClose(oasis)
+                                                    setClosePositionModalOpen(true)
+                                                  }}
+                                                >
+                                                  Close Position
+                                                </Button>
+                                              }
                                               buttonWithdraw={
                                                 <Button
                                                   size="md"
@@ -1279,6 +1342,7 @@ const OasisProgram = () => {
                                               buttonWithdrawBonus={
                                                 <Button
                                                   size="md"
+                                                  fullWidth
                                                   variant="empty"
                                                   disabled={isRpcRequestPending || oasis.user_balance_a <= 0}
                                                   onClick={() => {
@@ -1383,6 +1447,15 @@ const OasisProgram = () => {
         setOpen={setRemoveBonusModalOpen}
         oasis={selectedOasisForRemoveBonus}
         onConfirm={handleRemoveBonus}
+        isRpcRequestPending={isRpcRequestPending}
+        onReset={reset}
+      />
+
+      <OasisClosePositionModal
+        open={closePositionModalOpen}
+        setOpen={setClosePositionModalOpen}
+        oasis={selectedOasisForClose}
+        onConfirm={handleClosePosition}
         isRpcRequestPending={isRpcRequestPending}
         onReset={reset}
       />
