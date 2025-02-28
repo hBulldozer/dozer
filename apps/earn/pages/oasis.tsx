@@ -21,7 +21,7 @@ import { Tab, Transition } from '@headlessui/react'
 import { Connected } from '@dozer/higmi/systems/Checker/Connected'
 import { api } from '@dozer/higmi/utils/api'
 import { Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
-import { get } from 'lodash'
+import { get, remove } from 'lodash'
 import { hathorLib, Oasis } from '@dozer/nanocontracts'
 import { useAccount, useNetwork, useOasisTempTxStore } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
@@ -77,6 +77,7 @@ const UserOasisPosition = ({
   addingToOasisId,
   buttonWithdraw,
   buttonWithdrawBonus,
+  setSelectedTab,
   prices,
 }: {
   address: string
@@ -87,6 +88,7 @@ const UserOasisPosition = ({
   addingToOasisId?: string
   buttonWithdraw: JSX.Element
   buttonWithdrawBonus: JSX.Element
+  setSelectedTab: (tab: number) => void
   prices: Record<string, number>
 }) => {
   const { getPendingPositions } = useOasisTempTxStore()
@@ -140,16 +142,14 @@ const UserOasisPosition = ({
   // Calculate ROI
   const calculateROI = () => {
     // Only calculate if we have all the necessary data
-    if (!oasis.user_deposit_b || !prices) return null
+    if (!oasis.user_deposit_b || !prices || !oasis.htr_price_in_deposit || !oasis.token_price_in_htr_in_deposit)
+      return null
 
     const currencyUuid = oasis.token.uuid
 
     // Use initial prices from deposit if available, otherwise fallback to current prices
-    const initialHtrPrice = oasis.htr_price_in_deposit > 0 ? oasis.htr_price_in_deposit : prices['00']
-    const initialTokenPrice =
-      oasis.token_price_in_htr_in_deposit > 0
-        ? oasis.token_price_in_htr_in_deposit / initialHtrPrice
-        : prices[currencyUuid]
+    const initialHtrPrice = oasis.htr_price_in_deposit
+    const initialTokenPrice = oasis.token_price_in_htr_in_deposit / initialHtrPrice
 
     // Initial investment value in USD using initial prices
     const initialInvestmentUSD = oasis.user_deposit_b * initialTokenPrice
@@ -199,7 +199,7 @@ const UserOasisPosition = ({
   return (
     <div
       className={classNames(
-        'relative flex flex-col border rounded-lg border-stone-700 overflow-hidden',
+        'relative flex flex-col rounded-lg  overflow-hidden',
         (isLoading || isPending) && 'opacity-70'
       )}
     >
@@ -217,14 +217,7 @@ const UserOasisPosition = ({
       <div className="flex items-center justify-between p-4 border-b border-stone-700 bg-stone-800/50">
         <div className="flex items-center gap-2">
           <div className="flex-shrink-0 w-8 h-8">
-            <Image
-              key={`position-${oasis.token.symbol}`}
-              src={`/logos/${oasis.token.symbol}.svg`}
-              width={32}
-              height={32}
-              alt={`position-${oasis.token.symbol}`}
-              className="rounded-full"
-            />
+            <Icon key={`position-${oasis.token.symbol}`} currency={toToken(oasis.token)} width={32} height={32} />
           </div>
           <div>
             <Typography variant="lg" weight={600} className="text-stone-200">
@@ -296,13 +289,7 @@ const UserOasisPosition = ({
             <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6">
-                  <Image
-                    src={`/logos/${oasis.token.symbol}.svg`}
-                    width={24}
-                    height={24}
-                    alt={oasis.token.symbol}
-                    className="rounded-full"
-                  />
+                  <Icon currency={toToken(oasis.token)} width={24} height={24} />
                 </div>
                 <Typography variant="sm" className="text-stone-300">
                   {oasis.token.symbol}
@@ -316,7 +303,7 @@ const UserOasisPosition = ({
             <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6">
-                  <Image src="/logos/HTR.svg" width={24} height={24} alt="HTR" className="rounded-full" />
+                  <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} width={24} height={24} />
                 </div>
                 <div>
                   <Typography variant="sm" className="text-stone-300">
@@ -376,7 +363,7 @@ const UserOasisPosition = ({
             <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6">
-                  <Image src="/logos/HTR.svg" width={24} height={24} alt="HTR" className="rounded-full" />
+                  <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} width={24} height={24} />
                 </div>
                 <Typography variant="sm" className="text-stone-300">
                   HTR Bonus
@@ -490,9 +477,21 @@ const UserOasisPosition = ({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-center p-4 border-t border-stone-700 bg-stone-800/30">
+
+      <div className="flex flex-row w-full gap-2">
         {isUnlocked && buttonWithdraw}
         {oasis.user_balance_a > 0 && withdrawalDate && !isUnlocked && buttonWithdrawBonus}
+        <Button
+          fullWidth
+          size="md"
+          color="gray"
+          className="col-span-2"
+          onClick={() => {
+            setSelectedTab(0)
+          }}
+        >
+          Deposit
+        </Button>
       </div>
     </div>
   )
@@ -584,7 +583,7 @@ const OasisProgram = () => {
     }
   }
 
-  const handleRemoveLiquidity = async (removeAmount: string, removeAmountHtr: string): Promise<void> => {
+  const handleRemoveLiquidity = async (removeAmount: number, removeAmountHtr: number): Promise<void> => {
     if (!selectedOasisForRemove?.id) return
     setTxType('Remove liquidity')
 
@@ -592,8 +591,8 @@ const OasisProgram = () => {
       hathorRpc,
       address,
       selectedOasisForRemove.id,
-      Math.floor(parseFloat(removeAmount) * 100),
-      Math.floor(parseFloat(removeAmountHtr) * 100)
+      removeAmount,
+      removeAmountHtr
     )
 
     // Add transaction to store when sent
@@ -603,7 +602,7 @@ const OasisProgram = () => {
     }
   }
 
-  const handleRemoveBonus = async (removeAmount: string): Promise<void> => {
+  const handleRemoveBonus = async (removeAmount: number): Promise<void> => {
     if (!selectedOasisForRemoveBonus?.id) return
     setTxType('Remove bonus')
 
@@ -611,7 +610,7 @@ const OasisProgram = () => {
       hathorRpc,
       address,
       selectedOasisForRemoveBonus.id,
-      Math.floor(parseFloat(removeAmount) * 100)
+      removeAmount
     )
   }
 
@@ -987,7 +986,7 @@ const OasisProgram = () => {
                                             <Select.Option disabled value="hETH">
                                               <TokenOption disabled token={{ symbol: 'hETH', uuid: '00' }} />
                                             </Select.Option>
-                                            <Select.Option value="hBTC">
+                                            <Select.Option disabled value="hBTC">
                                               <TokenOption token={{ symbol: 'hBTC', uuid: '00' }} />
                                             </Select.Option>
                                           </Select.Options>
@@ -1221,6 +1220,7 @@ const OasisProgram = () => {
                                               isLoading={true}
                                               buttonWithdraw={<div />}
                                               buttonWithdrawBonus={<div />}
+                                              setSelectedTab={setSelectedTab}
                                             />
                                           ))}
                                       </div>
@@ -1262,66 +1262,32 @@ const OasisProgram = () => {
                                               }
                                               addingLiquidity={addingLiquidity}
                                               addingToOasisId={addingToOasisId}
+                                              setSelectedTab={setSelectedTab}
                                               buttonWithdraw={
-                                                <div className="flex flex-col justify-between gap-2 p-4">
-                                                  <Button
-                                                    size="sm"
-                                                    disabled={isRpcRequestPending}
-                                                    onClick={() => {
-                                                      setSelectedOasisForRemove(oasis)
-                                                      setRemoveModalOpen(true)
-                                                    }}
-                                                  >
-                                                    {isRpcRequestPending ? (
-                                                      <Dots>Confirm transaction in your wallet</Dots>
-                                                    ) : (
-                                                      <>Withdraw Position</>
-                                                    )}
-                                                  </Button>
-                                                  {isRpcRequestPending && (
-                                                    <Button
-                                                      size="md"
-                                                      testdata-id="swap-review-reset-button"
-                                                      fullWidth
-                                                      variant="outlined"
-                                                      color="red"
-                                                      onClick={() => reset()}
-                                                    >
-                                                      Cancel Transaction
-                                                    </Button>
-                                                  )}
-                                                </div>
+                                                <Button
+                                                  size="md"
+                                                  fullWidth
+                                                  disabled={isRpcRequestPending}
+                                                  onClick={() => {
+                                                    setSelectedOasisForRemove(oasis)
+                                                    setRemoveModalOpen(true)
+                                                  }}
+                                                >
+                                                  Withdraw Position
+                                                </Button>
                                               }
                                               buttonWithdrawBonus={
-                                                <div className="flex flex-col justify-between gap-2 p-4">
-                                                  <Button
-                                                    size="sm"
-                                                    variant="empty"
-                                                    disabled={isRpcRequestPending || oasis.user_balance_a <= 0}
-                                                    onClick={() => {
-                                                      setSelectedOasisForRemoveBonus(oasis)
-                                                      setRemoveBonusModalOpen(true)
-                                                    }}
-                                                  >
-                                                    {isRpcRequestPending ? (
-                                                      <Dots>Confirm transaction in your wallet</Dots>
-                                                    ) : (
-                                                      <>Withdraw Bonus</>
-                                                    )}
-                                                  </Button>
-                                                  {isRpcRequestPending && (
-                                                    <Button
-                                                      size="md"
-                                                      testdata-id="swap-review-reset-button"
-                                                      fullWidth
-                                                      variant="outlined"
-                                                      color="red"
-                                                      onClick={() => reset()}
-                                                    >
-                                                      Cancel Transaction
-                                                    </Button>
-                                                  )}
-                                                </div>
+                                                <Button
+                                                  size="md"
+                                                  variant="empty"
+                                                  disabled={isRpcRequestPending || oasis.user_balance_a <= 0}
+                                                  onClick={() => {
+                                                    setSelectedOasisForRemoveBonus(oasis)
+                                                    setRemoveBonusModalOpen(true)
+                                                  }}
+                                                >
+                                                  Withdraw Bonus
+                                                </Button>
                                               }
                                             />
                                           )

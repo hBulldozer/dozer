@@ -35,7 +35,7 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
                   </Typography>
                 </div>
                 <Typography variant="base" weight={500} className="text-yellow">
-                  {maxAmountB.toFixed(2)}
+                  {maxAmountB.toString()}
                 </Typography>
               </div>
 
@@ -49,7 +49,7 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
                   </Typography>
                 </div>
                 <Typography variant="base" weight={500} className="text-yellow">
-                  {maxAmountHTR.toFixed(2)}
+                  {maxAmountHTR.toString()}
                 </Typography>
               </div>
             </div>
@@ -61,7 +61,7 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
               disabled={isRpcRequestPending}
               fullWidth
               onClick={async () => {
-                await onConfirm(maxAmountB.toFixed(2), maxAmountHTR.toFixed(2))
+                await onConfirm(maxAmountB, maxAmountHTR)
               }}
             >
               {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Withdraw Position'}
@@ -105,7 +105,7 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
             <div className="flex flex-col gap-2">
               <div className="flex justify-between">
                 <Typography variant="base" weight={500} className="text-yellow">
-                  {maxAmount.toFixed(2)} HTR
+                  {maxAmount.toString()} HTR
                 </Typography>
               </div>
               <Typography variant="xs" className="text-stone-400">
@@ -120,7 +120,7 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
               disabled={isRpcRequestPending || maxAmount <= 0}
               fullWidth
               onClick={async () => {
-                await onConfirm(maxAmount.toFixed(2), '0')
+                await onConfirm(maxAmount, 0)
               }}
             >
               {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Withdraw Bonus'}
@@ -175,13 +175,13 @@ export const OasisAddModal: React.FC<OasisAddModalProps> = ({
                 <Typography variant="sm" className="text-stone-400">
                   HTR matched:
                 </Typography>
-                <Typography variant="sm">{htrMatch.toFixed(2)} HTR</Typography>
+                <Typography variant="sm">{htrMatch.toString()} HTR</Typography>
               </div>
               <div className="flex justify-between">
                 <Typography variant="sm" className="text-stone-400">
                   Bonus:
                 </Typography>
-                <Typography variant="sm">{bonus.toFixed(2)} HTR</Typography>
+                <Typography variant="sm">{bonus.toString()} HTR</Typography>
               </div>
               <div className="flex justify-between">
                 <Typography variant="sm" className="text-stone-400">
