@@ -20,7 +20,7 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
       <Dialog.Content className="max-w-sm !pb-4">
         <Dialog.Header border={false} title="Close Position" onClose={() => setOpen(false)} />
         <div className="flex flex-col gap-4 p-4">
-          <div className="mb-2 bg-stone-800 rounded-xl p-4">
+          <div className="p-4 mb-2 bg-stone-800 rounded-xl">
             <Typography variant="sm" weight={600} className="mb-3 text-stone-300">
               Position details:
             </Typography>
@@ -55,9 +55,11 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
             </div>
           </div>
 
-          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-            <Typography variant="xs" weight={400} className="text-yellow-800">
-              Closing your position prepares your funds for withdrawal. This separates your funds from the pool and protects them from price fluctuations. After closing, you can withdraw your funds in a separate transaction.
+          <div className="p-3 border rounded-lg bg-stone-400 border-stone-200">
+            <Typography variant="xs" weight={400} className="text-yellow-600">
+              Closing your position prepares your funds for withdrawal. This separates your funds from the pool and
+              protects them from price fluctuations. After closing, you can withdraw your funds in a separate
+              transaction.
             </Typography>
           </div>
 
@@ -93,15 +95,15 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
   onReset,
 }) => {
   if (!oasis) return null
-  const maxAmountB = oasis?.position_closed ? (oasis?.closed_balance_b ?? 0) : (oasis?.max_withdraw_b ?? 0)
-  const maxAmountHTR = oasis?.position_closed ? (oasis?.closed_balance_a ?? 0) : (oasis?.max_withdraw_htr ?? 0)
+  const maxAmountB = oasis?.position_closed ? oasis?.closed_balance_b ?? 0 : oasis?.max_withdraw_b ?? 0
+  const maxAmountHTR = oasis?.position_closed ? oasis?.closed_balance_a ?? 0 : oasis?.max_withdraw_htr ?? 0
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>
       <Dialog.Content className="max-w-sm !pb-4">
         <Dialog.Header border={false} title="Withdraw Position" onClose={() => setOpen(false)} />
         <div className="flex flex-col gap-4 p-4">
-          <div className="mb-2 bg-stone-800 rounded-xl p-4">
+          <div className="p-4 mb-2 bg-stone-800 rounded-xl">
             <Typography variant="sm" weight={600} className="mb-3 text-stone-300">
               You will receive:
             </Typography>
