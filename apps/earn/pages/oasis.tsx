@@ -1013,7 +1013,7 @@ const OasisProgram = () => {
                                               <TokenOption disabled token={{ symbol: 'hETH', uuid: '00' }} />
                                             </Select.Option>
                                             <Select.Option disabled value="hBTC">
-                                              <TokenOption token={{ symbol: 'hBTC', uuid: '00' }} />
+                                              <TokenOption disabled token={{ symbol: 'hBTC', uuid: '00' }} />
                                             </Select.Option>
                                           </Select.Options>
                                         </Select>

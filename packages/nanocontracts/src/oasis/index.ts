@@ -35,7 +35,7 @@ export class Oasis extends NanoContract {
   public async wc_initialize(hathorRpc: IHathorRpc, address: string, token: string, pool: string, amount: number) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'initialize',
-      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
+      '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -66,7 +66,7 @@ export class Oasis extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_deposit',
-      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
+      '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
       [
         {
           type: NanoContractActionType.DEPOSIT,
@@ -91,7 +91,7 @@ export class Oasis extends NanoContract {
   public async close_position(hathorRpc: IHathorRpc, address: string, ncId: string) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'close_position',
-      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
+      '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
       [],
       [],
       true,
@@ -126,7 +126,7 @@ export class Oasis extends NanoContract {
     }
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_withdraw',
-      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
+      '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
       actions,
       [],
       true,
@@ -143,7 +143,7 @@ export class Oasis extends NanoContract {
   public async user_withdraw_bonus(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_withdraw_bonus',
-      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a1',
+      '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
       [
         {
           type: NanoContractActionType.WITHDRAWAL,
