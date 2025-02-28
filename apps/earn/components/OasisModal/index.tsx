@@ -1,7 +1,26 @@
 import React, { useState } from 'react'
-import { Dialog, Typography, Button, Input } from '@dozer/ui'
+import { Dialog, Typography, Button, Input, Currency } from '@dozer/ui'
 import { Dots } from '@dozer/ui'
 import { OasisAddModalProps, OasisRemoveModalProps, OasisClosePositionModalProps } from './types'
+import { toToken } from '@dozer/api'
+import Icon from '@dozer/ui/currency/Icon'
+import { Oasis } from '@dozer/nanocontracts'
+
+const OasisIcon: React.FC<{ token: string }> = ({ token }) => {
+  return (
+    <div className="relative flex-shrink-0 w-8 h-8 mr-2 -mt-5">
+      <div className="absolute z-10 mt-7 ">
+        <Currency.IconList iconWidth={18} iconHeight={18}>
+          <Currency.Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} />
+          <Currency.Icon currency={toToken({ symbol: token, uuid: '00' })} />
+        </Currency.IconList>
+      </div>
+      <Typography variant="hero" className="mt-1">
+        🏝️
+      </Typography>
+    </div>
+  )
+}
 
 export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = ({
   open,
@@ -20,7 +39,17 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
       <Dialog.Content className="max-w-sm !pb-4">
         <Dialog.Header border={false} title="Close Position" onClose={() => setOpen(false)} />
         <div className="flex flex-col gap-4 p-4">
-          <div className="p-4 mb-2 bg-stone-800 rounded-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-8 h-8">
+              <OasisIcon token={oasis.token.symbol} />
+            </div>
+            <Typography variant="h3" className="ml-3">
+              HTR-{oasis.token.symbol}
+            </Typography>
+          </div>
+        </div>
+        <div className="flex flex-col gap-4 p-4">
+          <div className="p-4 mb-2 bg-stone-700/20 rounded-xl">
             <Typography variant="sm" weight={600} className="mb-3 text-stone-300">
               Position details:
             </Typography>
@@ -28,10 +57,10 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5">
-                    <img src={`/logos/${oasis.token.symbol}.svg`} alt={oasis.token.symbol} />
+                    <Icon currency={toToken(oasis.token)} />
                   </div>
                   <Typography variant="sm" className="text-stone-300">
-                    {oasis.token.symbol}:
+                    {oasis.token.symbol}
                   </Typography>
                 </div>
                 <Typography variant="base" weight={500} className="text-yellow">
@@ -42,10 +71,10 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5">
-                    <img src="/logos/HTR.svg" alt="HTR" />
+                    <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} />
                   </div>
                   <Typography variant="sm" className="text-stone-300">
-                    HTR:
+                    HTR
                   </Typography>
                 </div>
                 <Typography variant="base" weight={500} className="text-yellow">
@@ -102,7 +131,17 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
       <Dialog.Content className="max-w-sm !pb-4">
         <Dialog.Header border={false} title="Withdraw Position" onClose={() => setOpen(false)} />
         <div className="flex flex-col gap-4 p-4">
-          <div className="p-4 mb-2 bg-stone-800 rounded-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-8 h-8">
+              <OasisIcon token={oasis.token.symbol} />
+            </div>
+            <Typography variant="h3" className="ml-3">
+              HTR-{oasis.token.symbol}
+            </Typography>
+          </div>
+        </div>
+        <div className="flex flex-col gap-4 p-4">
+          <div className="p-4 mb-2 bg-stone-700/20 rounded-xl">
             <Typography variant="sm" weight={600} className="mb-3 text-stone-300">
               You will receive:
             </Typography>
@@ -110,10 +149,10 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5">
-                    <img src={`/logos/${oasis.token.symbol}.svg`} alt={oasis.token.symbol} />
+                    <Icon currency={toToken(oasis.token)} />
                   </div>
                   <Typography variant="sm" className="text-stone-300">
-                    {oasis.token.symbol}:
+                    {oasis.token.symbol}
                   </Typography>
                 </div>
                 <Typography variant="base" weight={500} className="text-yellow">
@@ -124,10 +163,10 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5">
-                    <img src="/logos/HTR.svg" alt="HTR" />
+                    <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} />
                   </div>
                   <Typography variant="sm" className="text-stone-300">
-                    HTR:
+                    HTR
                   </Typography>
                 </div>
                 <Typography variant="base" weight={500} className="text-yellow">
@@ -177,13 +216,10 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
         <Dialog.Header border={false} title="Withdraw Bonus" onClose={() => setOpen(false)} />
         <div className="flex flex-col gap-4 p-4">
           <div className="flex items-center gap-4">
-            <div className="w-8 h-8">
-              <img src="/logos/HTR.svg" alt="HTR" />
-            </div>
-            <Typography variant="h3">HTR Bonus</Typography>
+            <OasisIcon token={oasis.token.symbol} />
+            <Typography variant="h3">HTR-{oasis.token.symbol}</Typography>
           </div>
-
-          <div className="p-4 mt-2 bg-stone-800 rounded-xl">
+          {/* <div className="p-4 mt-2 bg-stone-800 rounded-xl">
             <div className="flex flex-col gap-2">
               <div className="flex justify-between">
                 <Typography variant="base" weight={500} className="text-yellow">
@@ -194,8 +230,24 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
                 From your {oasis.token.symbol} position
               </Typography>
             </div>
-          </div>
-
+          </div> */}
+          {oasis.user_balance_a > 0 && (
+            <div className="p-2 my-4 bg-stone-700/20 rounded-xl">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6">
+                    <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} width={24} height={24} />
+                  </div>
+                  <Typography variant="sm" className="text-stone-300">
+                    HTR Bonus
+                  </Typography>
+                </div>
+                <Typography variant="sm" weight={600} className="text-yellow">
+                  {oasis.user_balance_a}
+                </Typography>
+              </div>
+            </div>
+          )}
           <div className="flex flex-col gap-2">
             <Button
               size="md"
@@ -238,16 +290,18 @@ export const OasisAddModal: React.FC<OasisAddModalProps> = ({
         <div className="flex flex-col gap-4 p-4">
           <div className="flex items-center gap-4">
             <div className="w-8 h-8">
-              <img src={`/logos/${token}.svg`} alt={token} />
+              <OasisIcon token={token} />
             </div>
-            <Typography variant="h3">{token}</Typography>
+            <Typography variant="h3" className="ml-3">
+              HTR-{token}
+            </Typography>
           </div>
 
-          <div className="p-4 bg-stone-800 rounded-xl">
+          <div className="p-4 my-2 bg-stone-700/20 rounded-xl">
             <div className="flex flex-col gap-3">
               <div className="flex justify-between">
                 <Typography variant="sm" className="text-stone-400">
-                  Amount to Lock:
+                  Amount to Lock
                 </Typography>
                 <Typography variant="sm">
                   {amount} {token}
@@ -255,19 +309,19 @@ export const OasisAddModal: React.FC<OasisAddModalProps> = ({
               </div>
               <div className="flex justify-between">
                 <Typography variant="sm" className="text-stone-400">
-                  HTR matched:
+                  HTR matched
                 </Typography>
                 <Typography variant="sm">{htrMatch.toString()} HTR</Typography>
               </div>
               <div className="flex justify-between">
                 <Typography variant="sm" className="text-stone-400">
-                  Bonus:
+                  Bonus
                 </Typography>
                 <Typography variant="sm">{bonus.toString()} HTR</Typography>
               </div>
               <div className="flex justify-between">
                 <Typography variant="sm" className="text-stone-400">
-                  Unlock Date:
+                  Unlock Date
                 </Typography>
                 <Typography variant="sm">{unlockDate.toLocaleDateString()}</Typography>
               </div>

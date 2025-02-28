@@ -12,6 +12,7 @@ import {
   createErrorToast,
   Dots,
   Tooltip,
+  Currency,
 } from '@dozer/ui'
 import Image from 'next/legacy/image'
 import { Token } from '@dozer/currency'
@@ -218,23 +219,31 @@ const UserOasisPosition = ({
         !oasis.user_deposit_b ||
         !oasis.user_withdrawal_time ||
         (addingLiquidity && oasis.id === addingToOasisId)) && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/80">
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-black/80">
           <Dots>Processing Transaction</Dots>
         </div>
       )}
 
       {/* Position Header */}
-      <div className="flex items-center justify-between p-4 border-b border-stone-700 bg-stone-800/50">
+      <div className="flex items-center justify-between p-4 rounded-lg bg-stone-800/50">
         <div className="flex items-center gap-2">
-          <div className="flex-shrink-0 w-8 h-8">
-            <Icon key={`position-${oasis.token.symbol}`} currency={toToken(oasis.token)} width={32} height={32} />
+          <div className="relative flex-shrink-0 w-8 h-8 mr-2 -mt-5">
+            <div className="absolute z-10 mt-7 ">
+              <Currency.IconList iconWidth={18} iconHeight={18}>
+                <Currency.Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} />
+                <Currency.Icon currency={toToken(oasis.token)} />
+              </Currency.IconList>
+            </div>
+            <Typography variant="hero" className="mt-1">
+              🏝️
+            </Typography>
           </div>
-          <div>
+          <div className="ml-4">
             <Typography variant="lg" weight={600} className="text-stone-200">
-              {oasis.token.symbol} Position
+              HTR-{oasis.token.symbol}
             </Typography>
             <div className="flex flex-wrap items-start gap-1">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 ">
                 <div
                   className={`w-2 h-2 rounded-full ${
                     oasis.position_closed ? 'bg-blue-500' : isUnlocked ? 'bg-green-500' : 'bg-yellow-500'
@@ -271,15 +280,19 @@ const UserOasisPosition = ({
                   {Math.abs(roiData.roi).toFixed(2)}%
                 </Typography>
               </div>
-              <Typography variant="xs" className="text-stone-500">
-                ROI
-              </Typography>
+
               <Tooltip
                 panel={
                   <div className="max-w-xs">
-                    <Typography variant="xs">
-                      Return on investment calculated using the token price at the time of your deposit.
-                    </Typography>
+                    {oasis.user_balance_a > 0 ? (
+                      <Typography variant="xs">
+                        Return on investment calculated using the token price at the time of your deposit.
+                      </Typography>
+                    ) : (
+                      <Typography variant="xs">
+                        Your current ROI has decreased by up to 20% following your bonus withdrawal.
+                      </Typography>
+                    )}
                   </div>
                 }
                 button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
@@ -292,7 +305,7 @@ const UserOasisPosition = ({
       </div>
 
       {/* Position Content */}
-      <div className="flex flex-col p-4">
+      <div className="flex flex-col py-4">
         {/* Assets Section */}
         <div className="mb-4">
           <Typography variant="sm" weight={600} className="mb-2 text-stone-300">
@@ -326,17 +339,10 @@ const UserOasisPosition = ({
                       panel={
                         <div className="max-w-xs">
                           <Typography variant="xs">
-                            <p className="mb-2">Your HTR position includes:</p>
-                            <li className="ml-4">
-                              {oasis.user_balance_a > 0 && (
-                                <ul className="mb-1">{oasis.user_balance_a.toFixed(2)} HTR bonus</ul>
-                              )}
-                              {ilData.hasIL && (
-                                <ul className="mb-1">
-                                  Impermanent loss protection: {ilData.ilProtection.toFixed(2)} HTR
-                                </ul>
-                              )}
-                            </li>
+                            {oasis.user_balance_a > 0 && (
+                              <p className="mb-1">Bonus - {oasis.user_balance_a.toFixed(2)}</p>
+                            )}
+                            {ilData.hasIL && <p className="mb-1">IL protection - {ilData.ilProtection.toFixed(2)}</p>}
                           </Typography>
                         </div>
                       }
@@ -354,7 +360,7 @@ const UserOasisPosition = ({
           </div>
         </div>
 
-        {/* Bonus Section - only show if bonus is available */}
+        {/* Bonus Section - only show if bonus is available
         {oasis.user_balance_a > 0 && (
           <div className="mb-4">
             <Typography variant="sm" weight={600} className="mb-2 text-stone-300">
@@ -388,50 +394,39 @@ const UserOasisPosition = ({
               </Typography>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Details Section */}
-        <div className="mb-4">
-          <Typography variant="sm" weight={600} className="mb-2 text-stone-300">
-            Position Details
-          </Typography>
-
-          <div className="flex flex-col gap-2 p-3 rounded-lg bg-stone-800/50">
-            <div className="flex justify-between">
-              <Typography variant="xs" className="text-stone-400">
-                Initial Deposit
+        <Typography variant="sm" weight={600} className="mb-2 text-stone-300">
+          Position Details
+        </Typography>
+        <div className="flex flex-col gap-4 p-4 bg-stone-800 rounded-xl">
+          <div className="flex items-start justify-between">
+            <Typography variant="sm" className="text-stone-400">
+              Unlock Date
+            </Typography>
+            <div className="text-right">
+              <Typography variant="sm" className="text-yellow">
+                {withdrawalDate?.toLocaleDateString()}
               </Typography>
-              <Typography variant="xs" weight={500} className="text-stone-300">
-                {oasis.user_deposit_b} {oasis.token.symbol}
+              <Typography variant="sm" className="text-yellow">
+                {withdrawalDate?.toLocaleTimeString()}
               </Typography>
             </div>
+          </div>
 
-            <div className="flex items-start justify-between">
-              <Typography variant="xs" className="text-stone-400">
-                Unlock Date
-              </Typography>
-              <div className="text-right">
-                <Typography variant="xs" weight={500} className="block text-stone-300">
-                  {withdrawalDate?.toLocaleDateString()}
+          {roiData && (
+            <>
+              <div className="flex justify-between">
+                <Typography variant="sm" className="text-stone-400">
+                  Initial Value
                 </Typography>
-                <Typography variant="xs" weight={500} className="block text-stone-300">
-                  {withdrawalDate?.toLocaleTimeString()}
+                <Typography variant="sm" className="text-yellow">
+                  ${roiData.initialInvestmentUSD.toFixed(2)}
                 </Typography>
               </div>
-            </div>
 
-            {roiData && (
-              <>
-                <div className="flex justify-between">
-                  <Typography variant="xs" className="text-stone-400">
-                    Initial Value
-                  </Typography>
-                  <Typography variant="xs" weight={500} className="text-stone-300">
-                    ${roiData.initialInvestmentUSD.toFixed(2)}
-                  </Typography>
-                </div>
-
-                {oasis.htr_price_in_deposit > 0 && (
+              {/* {oasis.htr_price_in_deposit > 0 && (
                   <div className="flex justify-between">
                     <Typography variant="xs" className="text-stone-400">
                       Initial Prices
@@ -459,39 +454,38 @@ const UserOasisPosition = ({
                       )}
                     </div>
                   </div>
-                )}
+                )} */}
 
-                <div className="flex justify-between">
-                  <Typography variant="xs" className="text-stone-400">
-                    Current Value
-                    <Tooltip
-                      panel={
-                        <div className="max-w-xs">
-                          <Typography variant="xs">
-                            This includes the value of your {oasis.token.symbol} and HTR in the position,
-                            {oasis.user_balance_a > 0
-                              ? ' plus your available HTR bonus.'
-                              : ' but does not include any already withdrawn bonus.'}
-                          </Typography>
-                        </div>
-                      }
-                      button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
-                    >
-                      <></>
-                    </Tooltip>
-                  </Typography>
-                  <Typography variant="xs" weight={500} className="text-stone-300">
-                    ${roiData.totalCurrentValueUSD.toFixed(2)}
-                  </Typography>
-                </div>
-              </>
-            )}
-          </div>
+              <div className="flex justify-between">
+                <Typography variant="sm" className="text-stone-400">
+                  Current Value
+                  <Tooltip
+                    panel={
+                      <div className="max-w-xs">
+                        <Typography variant="xs">
+                          This includes the value of your {oasis.token.symbol} and HTR in the position,
+                          {oasis.user_balance_a > 0
+                            ? ' plus your available HTR bonus.'
+                            : ' but does not include any already withdrawn bonus.'}
+                        </Typography>
+                      </div>
+                    }
+                    button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
+                  >
+                    <></>
+                  </Tooltip>
+                </Typography>
+                <Typography variant="sm" className="text-yellow">
+                  ${roiData.totalCurrentValueUSD.toFixed(2)}
+                </Typography>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex flex-row w-full gap-2">
+      <div className="flex flex-row w-full gap-2 p-1">
         {/* When position is unlocked but not closed, show Close Position button */}
         {isUnlocked && !oasis.position_closed && <div className="w-full ">{buttonClosePosition}</div>}
 
@@ -577,7 +571,7 @@ const OasisProgram = () => {
   const oasisReserve = allReserves?.find((oasis) => oasis.token.symbol == currency)
   const availableHTR = oasisReserve?.oasis_htr_balance || 0
   const depositedHTR = oasisReserve?.dev_deposit_amount || 0
-  const progress = (1 - availableHTR / depositedHTR) * 100
+  const progress = (availableHTR / depositedHTR) * 100
   const oasisId = oasis?.id
   const oasisName = oasis?.name || ''
   const poolId = oasis?.pool.id || ''
@@ -876,7 +870,8 @@ const OasisProgram = () => {
                 </div>
 
                 {/* Desktop Buttons */}
-                <div
+                <motion.div
+                  layout
                   className={`${
                     showChart ? 'flex flex-row justify-center col-span-full gap-4' : 'flex flex-col gap-4'
                   } `}
@@ -902,7 +897,7 @@ const OasisProgram = () => {
                     </Typography>
                     <ChartBarIcon width={16} height={16} className="ml-2 text-yellow" />
                   </Button>
-                </div>
+                </motion.div>
               </motion.div>
 
               {/* Input Form and Chart */}
@@ -914,7 +909,7 @@ const OasisProgram = () => {
                 }`}
               >
                 {/* Input Form */}
-                <motion.div className="w-full">
+                <motion.div layout className="w-full">
                   <Widget id="oasisInput" maxWidth="full" className="py-5 mb-4">
                     <Widget.Content>
                       <div className="grid ">
@@ -1099,34 +1094,34 @@ const OasisProgram = () => {
                                         <div className="hidden gap-4 lg:flex lg:flex-col">
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
-                                              Amount deposited:
+                                              Amount deposited
                                             </Typography>
-                                            <Typography variant="sm" className="text-stone-600">
-                                              Calculating...
-                                            </Typography>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <Typography variant="sm" className="text-stone-400">
-                                              Bonus you'll get now:
-                                            </Typography>
-                                            <Typography variant="sm" className="text-stone-600">
-                                              Calculating...
+                                            <Typography variant="sm" className="text-yellow">
+                                              -
                                             </Typography>
                                           </div>
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
-                                              HTR matched:
+                                              Bonus you'll get now
                                             </Typography>
-                                            <Typography variant="sm" className="text-stone-600">
-                                              Calculating...
+                                            <Typography variant="sm" className="text-yellow">
+                                              -
                                             </Typography>
                                           </div>
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
-                                              Unlock date:
+                                              HTR matched
                                             </Typography>
-                                            <Typography variant="sm" className="text-stone-600">
-                                              Calculating...
+                                            <Typography variant="sm" className="text-yellow">
+                                              -
+                                            </Typography>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <Typography variant="sm" className="text-stone-400">
+                                              Unlock date
+                                            </Typography>
+                                            <Typography variant="sm" className="text-yellow">
+                                              -
                                             </Typography>
                                           </div>
                                         </div>
@@ -1134,7 +1129,7 @@ const OasisProgram = () => {
                                         <div className={`flex flex-col gap-4`}>
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
-                                              Amount deposited:
+                                              Amount deposited
                                             </Typography>
                                             <Typography variant="sm" className="text-yellow">
                                               {amount ? `${depositAmount.toFixed(2)} ${currency}` : '-'}
@@ -1142,7 +1137,7 @@ const OasisProgram = () => {
                                           </div>
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
-                                              Bonus you'll get now:
+                                              Bonus you'll get now
                                             </Typography>
                                             <Typography variant="sm" className="text-yellow">
                                               {amount ? `${bonus.toFixed(2)} HTR` : '-'}
@@ -1150,7 +1145,7 @@ const OasisProgram = () => {
                                           </div>
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
-                                              HTR matched:
+                                              HTR matched
                                             </Typography>
                                             <Typography variant="sm" className="text-yellow">
                                               {amount ? `${htrMatch.toFixed(2)} HTR` : '-'}
@@ -1159,7 +1154,7 @@ const OasisProgram = () => {
                                           <div className="flex justify-between">
                                             <div className="flex flex-row gap-1">
                                               <Typography variant="sm" className="text-stone-400">
-                                                Unlock date:
+                                                Unlock date
                                               </Typography>
                                               {hasPosition && (
                                                 <Tooltip
@@ -1218,7 +1213,7 @@ const OasisProgram = () => {
                                 </Tab.Panel>
 
                                 <Tab.Panel>
-                                  <div className="flex flex-col gap-4 p-8">
+                                  <div className="flex flex-col gap-4 px-8">
                                     {pendingPositions.filter((pos) => {
                                       // Only show pending positions in the "Your Pending Positions" section if:
                                       // 1. It's an 'add' transaction type
@@ -1229,10 +1224,7 @@ const OasisProgram = () => {
                                       )
                                       return !existingPosition
                                     }).length > 0 && (
-                                      <div className="p-4 bg-stone-800/50 rounded-xl">
-                                        <Typography variant="lg" weight={500} className="mb-4 text-yellow">
-                                          Your Pending Positions
-                                        </Typography>
+                                      <div>
                                         {pendingPositions
                                           .filter((pos) => {
                                             if (pos.txType !== 'add') return false
@@ -1257,13 +1249,17 @@ const OasisProgram = () => {
                                       </div>
                                     )}
 
-                                    {allUserOasis?.length == 0 ? (
-                                      <div className="py-8 text-center">
-                                        <Typography variant="sm" className="text-stone-500">
-                                          No active positions found.
-                                          <br />
-                                          Start by making a deposit!
+                                    {allUserOasis?.length == 0 && pendingPositions.length == 0 ? (
+                                      <div className="text-center ">
+                                        <Typography
+                                          variant="xl"
+                                          className="my-8 rounded-xl bg-stone-700/20 py-36 text-stone-300"
+                                        >
+                                          No active positions.
                                         </Typography>
+                                        <Button fullWidth size="md" onClick={() => setSelectedTab(0)}>
+                                          Deposit now
+                                        </Button>
                                       </div>
                                     ) : !address ? (
                                       <div className="py-8 text-center">
@@ -1272,11 +1268,7 @@ const OasisProgram = () => {
                                         </Typography>
                                       </div>
                                     ) : (
-                                      <div className="p-4 bg-stone-800/50 rounded-xl">
-                                        <Typography variant="lg" weight={500} className="mb-4 text-yellow">
-                                          Your Active Positions
-                                        </Typography>
-
+                                      <div>
                                         {allUserOasis?.map((oasis: OasisInterface) => {
                                           return (
                                             <UserOasisPosition
@@ -1326,7 +1318,7 @@ const OasisProgram = () => {
                                                 <Button
                                                   size="md"
                                                   fullWidth
-                                                  variant="empty"
+                                                  variant="outlined"
                                                   disabled={isRpcRequestPending || oasis.user_balance_a <= 0}
                                                   onClick={() => {
                                                     setSelectedOasisForRemoveBonus(oasis)
@@ -1352,17 +1344,15 @@ const OasisProgram = () => {
                   </Widget>
 
                   {/* Reserve Info Box */}
-                  <motion.div layout className="p-4 my-6 rounded-lg bg-[rgba(0,0,0,0.4)] border border-stone-800">
-                    <Typography variant="sm" className="mb-2 text-stone-400">
-                      HTR bonus left:
-                    </Typography>
+                  <motion.div layout className="p-4 my-6 rounded-lg ">
+                    <Typography className="mb-2 text-stone-200">Bonus Reserve</Typography>
                     <div className="relative h-[30px] w-full overflow-hidden rounded-md">
                       <div className="absolute inset-0 bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500" />
                       <div
                         className="absolute inset-y-0 left-0 overflow-hidden rounded-md"
                         style={{ width: `${progress}%` }}
                       >
-                        <div className="h-full bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-500" />
+                        <div className="h-full bg-gradient-to-r from-green-700 via-emerald-500 to-green-800 " />
                       </div>
                       <div className="absolute inset-0 flex items-center justify-between px-3">
                         <Typography variant="base" weight={600} className="text-white drop-shadow-md">
