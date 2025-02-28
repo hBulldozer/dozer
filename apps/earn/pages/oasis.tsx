@@ -1262,10 +1262,16 @@ const OasisProgram = () => {
                                         </Button>
                                       </div>
                                     ) : !address ? (
-                                      <div className="py-8 text-center">
-                                        <Typography variant="sm" className="text-stone-500">
+                                      <div className="text-center ">
+                                        <Typography
+                                          variant="xl"
+                                          className="my-8 rounded-xl bg-stone-700/20 py-36 text-stone-300"
+                                        >
                                           Please connect your wallet to view your positions.
                                         </Typography>
+                                        <Checker.Connected fullWidth size="md">
+                                          <div />
+                                        </Checker.Connected>
                                       </div>
                                     ) : (
                                       <div>
