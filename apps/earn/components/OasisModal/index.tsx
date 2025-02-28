@@ -56,7 +56,7 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
           </div>
 
           <div className="p-3 border rounded-lg bg-stone-400 border-stone-200">
-            <Typography variant="xs" weight={400} className="text-yellow-600">
+            <Typography variant="xs" weight={400} className="text-yellow-500">
               Closing your position prepares your funds for withdrawal. This separates your funds from the pool and
               protects them from price fluctuations. After closing, you can withdraw your funds in a separate
               transaction.
