@@ -335,21 +335,23 @@ const UserOasisPosition = ({
                 <div>
                   <Typography variant="sm" className="text-stone-300">
                     HTR
-                    <Tooltip
-                      panel={
-                        <div className="max-w-xs">
-                          <Typography variant="xs">
-                            {oasis.user_balance_a > 0 && (
-                              <p className="mb-1">Bonus - {oasis.user_balance_a.toFixed(2)}</p>
-                            )}
-                            {ilData.hasIL && <p className="mb-1">IL protection - {ilData.ilProtection.toFixed(2)}</p>}
-                          </Typography>
-                        </div>
-                      }
-                      button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
-                    >
-                      <></>
-                    </Tooltip>
+                    {(oasis.user_balance_a > 0 || ilData.hasIL) && (
+                      <Tooltip
+                        panel={
+                          <div className="max-w-xs">
+                            <Typography variant="xs">
+                              {oasis.user_balance_a > 0 && (
+                                <p className="mb-1">Bonus - {oasis.user_balance_a.toFixed(2)}</p>
+                              )}
+                              {ilData.hasIL && <p className="mb-1">IL protection - {ilData.ilProtection.toFixed(2)}</p>}
+                            </Typography>
+                          </div>
+                        }
+                        button={<InformationCircleIcon width={14} height={14} className="inline ml-1 text-stone-500" />}
+                      >
+                        <></>
+                      </Tooltip>
+                    )}
                   </Typography>
                 </div>
               </div>
@@ -492,19 +494,20 @@ const UserOasisPosition = ({
         {/* When position is closed, show Withdraw Position button */}
         {oasis.position_closed && <div className="w-full ">{buttonWithdraw}</div>}
 
-        {/* When position is locked and has bonus, show Withdraw Bonus and Deposit buttons side by side */}
         {!isUnlocked && oasis.user_balance_a > 0 && <div className="w-full ">{buttonWithdrawBonus}</div>}
-        <div className="w-full ">
-          <Button
-            size="md"
-            fullWidth
-            onClick={() => {
-              setSelectedTab(0)
-            }}
-          >
-            Deposit
-          </Button>
-        </div>
+        {!oasis.position_closed && (
+          <div className="w-full ">
+            <Button
+              size="md"
+              fullWidth
+              onClick={() => {
+                setSelectedTab(0)
+              }}
+            >
+              <div className="flex flex-col">Deposit</div>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -949,7 +952,7 @@ const OasisProgram = () => {
                                     <div className="flex flex-col gap-4 sm:flex-row sm:gap-2 justify-items-end">
                                       <div className="flex flex-col flex-1 gap-2">
                                         <Typography variant="sm" className="text-stone-400">
-                                          Amount to lock up
+                                          Amount to lock
                                         </Typography>
                                         <div className="h-[51px] relative">
                                           <Input.Numeric

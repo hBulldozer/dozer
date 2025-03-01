@@ -232,20 +232,18 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
             </div>
           </div> */}
           {oasis.user_balance_a > 0 && (
-            <div className="p-2 my-4 bg-stone-700/20 rounded-xl">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6">
-                    <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} width={24} height={24} />
-                  </div>
-                  <Typography variant="sm" className="text-stone-300">
-                    HTR Bonus
-                  </Typography>
+            <div className="flex items-center justify-between p-4 my-4 rounded-lg bg-stone-700/20">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6">
+                  <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} width={24} height={24} />
                 </div>
-                <Typography variant="sm" weight={600} className="text-yellow">
-                  {oasis.user_balance_a}
+                <Typography variant="sm" className="text-stone-300">
+                  HTR Bonus
                 </Typography>
               </div>
+              <Typography variant="sm" weight={600} className="text-yellow">
+                {oasis.user_balance_a}
+              </Typography>
             </div>
           )}
           <div className="flex flex-col gap-2">
