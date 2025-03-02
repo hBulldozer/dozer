@@ -1,7 +1,7 @@
 import { Popover } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { useBreakpoint } from '@dozer/hooks'
-import { classNames, DEFAULT_INPUT_UNSTYLED, JazzIcon } from '@dozer/ui'
+import { classNames, DEFAULT_INPUT_UNSTYLED, JazzIcon, Loader } from '@dozer/ui'
 import Image from 'next/legacy/image'
 import React, { FC, useState, useRef, useEffect, useMemo } from 'react'
 import ReactDOM from 'react-dom'
@@ -39,10 +39,23 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   // const { data, isLoading, isError, error } = useBalance(accountAddress)
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
-  const { data, isLoading, isError, error } = client.getProfile.balance.useQuery(
+  const { 
+    data, 
+    isLoading, 
+    isError, 
+    error,
+    refetch 
+  } = client.getProfile.balance.useQuery(
     { address: address },
-    { enabled: Boolean(address), staleTime: 5000 }
+    { 
+      enabled: Boolean(address), 
+      staleTime: 2000,
+      refetchInterval: 10000, // Refetch every 10 seconds to keep data fresh
+      retry: 3, // Retry failed requests up to 3 times
+      retryDelay: 1000 // Wait 1 second between retries
+    }
   )
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const { setBalance } = useAccount()
 
   const filteredNotifications = useMemo<Record<number, string[]>>(() => {
@@ -62,9 +75,48 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   //   address,
   // })
 
-  // useEffect(() => {
-  //   setAddress(accountAddress)
-  // }, [accountAddress])
+  // Manual refresh function for balance
+  const refreshBalance = async () => {
+    if (!address) return
+    
+    setIsRefreshing(true)
+    try {
+      await refetch()
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  // Listen for transaction notifications to trigger a balance refresh
+  useEffect(() => {
+    const newNotifications = Object.values(filteredNotifications).filter(notif => {
+      try {
+        const parsed = JSON.parse(notif[0])
+        return parsed.status === 'confirmed' && !parsed.processed
+      } catch {
+        return false
+      }
+    })
+    
+    if (newNotifications.length > 0) {
+      refreshBalance()
+      
+      // Mark notifications as processed
+      newNotifications.forEach(notif => {
+        try {
+          const parsed = JSON.parse(notif[0])
+          updateNotificationStatus(parsed.txHash, 'confirmed', 'Transaction processed')
+        } catch {}
+      })
+    }
+  }, [filteredNotifications])
+
+  // Perform initial refresh when component mounts or address changes
+  useEffect(() => {
+    if (address) {
+      refreshBalance()
+    }
+  }, [address])
 
   useEffect(() => {
     if (address && data && !isLoading && !isError) {
@@ -88,7 +140,14 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
     const panel = (
       <Popover.Panel className="z-[99] w-full sm:w-[320px] fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-[unset] sm:left-[unset] mt-4 sm:rounded-xl rounded-b-none shadow-md shadow-black/[0.3] bg-stone-900 border border-stone-200/20">
         {view === ProfileView.Default && (
-          <Default api_client={client} chainId={chainId} address={address} setView={setView} />
+          <Default 
+            api_client={client} 
+            chainId={chainId} 
+            address={address} 
+            setView={setView}
+            refreshBalance={refreshBalance}
+            isRefreshing={isRefreshing || isLoading} 
+          />
         )}
         {view === ProfileView.Transactions && (
           <Transactions
@@ -97,15 +156,15 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
             clearNotifications={clearNotifications}
             updateNotificationStatus={updateNotificationStatus}
             client={client}
+            refreshBalance={refreshBalance}
           />
         )}
         {view === ProfileView.Tokens && (
           <Tokens
             setView={setView}
-            // notifications={filteredNotifications}
-            // clearNotifications={clearNotifications}
-            // updateNotificationStatus={updateNotificationStatus}
             client={client}
+            isLoading={isLoading || isRefreshing}
+            refreshBalance={refreshBalance}
           />
         )}
       </Popover.Panel>
@@ -121,9 +180,18 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
                   DEFAULT_INPUT_UNSTYLED,
                   'flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] hover:text-white h-[38px] rounded-xl px-2 pl-3 !font-semibold !text-sm text-stone-200'
                 )}
+                onClick={() => {
+                  // Refresh balance when opening the profile panel
+                  if (!open) {
+                    refreshBalance()
+                  }
+                }}
               >
                 <JazzIcon diameter={20} address={address} />
                 {shortenAddress(address)}{' '}
+                {(isLoading || isRefreshing) && (
+                  <Loader className="w-4 h-4 mr-1 text-stone-400" />
+                )}
                 <ChevronDownIcon
                   width={20}
                   height={20}

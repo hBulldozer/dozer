@@ -1,5 +1,5 @@
-import { ChevronLeftIcon } from '@heroicons/react/24/solid'
-import { Button, IconButton, Typography } from '@dozer/ui'
+import { ChevronLeftIcon, ArrowPathIcon } from '@heroicons/react/24/solid'
+import { Button, IconButton, Typography, Loader } from '@dozer/ui'
 import React, { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
 
 import { NotificationGroup } from '../../NotificationCentre'
@@ -13,6 +13,7 @@ interface TransactionsProps {
   clearNotifications(): void
   updateNotificationStatus: (txHash: string, state: string, message?: string) => void
   client: typeof client
+  refreshBalance: () => Promise<void>
 }
 
 export const Transactions: FC<TransactionsProps> = ({
@@ -21,7 +22,18 @@ export const Transactions: FC<TransactionsProps> = ({
   clearNotifications,
   updateNotificationStatus,
   client,
+  refreshBalance,
 }) => {
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await refreshBalance()
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
   // const [messages, setMessages] = useState<BaseEvent[]>([])
   // const desiredEventTypes = [EventType.NEW_VERTEX_ACCEPTED, EventType.VERTEX_METADATA_CHANGED]
 
@@ -38,11 +50,24 @@ export const Transactions: FC<TransactionsProps> = ({
             <ChevronLeftIcon width={24} height={24} className="text-stone-400" />
           </IconButton>
         </div>
-        <Typography weight={600} className="text-stone-400">
-          Transactions
-        </Typography>
-        <div className="flex items-end justify-end">
-          <Button onClick={clearNotifications} variant="empty" size="sm" className="!p-0">
+        <div className="flex items-center justify-center">
+          <Typography weight={600} className="text-stone-400">
+            Transactions
+          </Typography>
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <IconButton 
+            onClick={handleRefresh} 
+            disabled={isRefreshing}
+            className="text-stone-400 hover:text-stone-200"
+          >
+            <ArrowPathIcon 
+              width={24} 
+              height={24} 
+              className={isRefreshing ? "animate-spin" : ""} 
+            />
+          </IconButton>
+          <Button onClick={clearNotifications} variant="empty" size="sm" className="!p-0 text-amber-500 hover:text-amber-400">
             Clear all
           </Button>
         </div>
