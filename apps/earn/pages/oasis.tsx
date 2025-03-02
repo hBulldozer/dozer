@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState, FC } from 'react'
+import React, { Fragment, useEffect, useState, FC, useRef } from 'react'
 import {
   Widget,
   Select,
@@ -88,12 +88,14 @@ const UserOasisPosition = ({
   buttonWithdrawBonus,
   buttonClosePosition,
   setSelectedTab,
+  isRpcRequestPending,
   prices,
 }: {
   address: string
   currentBlockHeight: number
   oasis: OasisInterface
   isLoading?: boolean
+  isRpcRequestPending?: boolean
   addingLiquidity?: boolean
   addingToOasisId?: string
   buttonWithdraw: JSX.Element
@@ -104,7 +106,11 @@ const UserOasisPosition = ({
 }) => {
   const { getPendingPositions } = useOasisTempTxStore()
   const pendingTxs = getPendingPositions(address)
-  const isPending = pendingTxs.some((tx) => tx.id === oasis.id && tx.blockHeight === currentBlockHeight)
+  // Only use pendingTxs for 'add' and 'close' operations
+  // 'bonus' and 'withdraw' are handled via optimistic UI updates
+  const isPending = pendingTxs.some(
+    (tx) => tx.id === oasis.id && tx.blockHeight === currentBlockHeight && ['add', 'close'].includes(tx.txType)
+  )
 
   const getWithdrawalDate = () => {
     if (!oasis.user_withdrawal_time) return null
@@ -214,11 +220,13 @@ const UserOasisPosition = ({
         (isLoading || isPending) && 'opacity-70'
       )}
     >
+      {/* Only show loading overlay during wallet confirmation and for add liquidity and close position */}
       {(isLoading ||
         isPending ||
         !oasis.user_deposit_b ||
         !oasis.user_withdrawal_time ||
-        (addingLiquidity && oasis.id === addingToOasisId)) && (
+        (addingLiquidity && oasis.id === addingToOasisId) ||
+        isRpcRequestPending) && (
         <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-black/80">
           <Dots>Processing Transaction</Dots>
         </div>
@@ -513,6 +521,35 @@ const UserOasisPosition = ({
   )
 }
 
+// Function to update oasis position optimistically for bonus withdrawal
+const editOasisBonusOnWithdraw = (allUserOasisList: OasisInterface[] | undefined, oasisId: string) => {
+  if (!allUserOasisList) return allUserOasisList
+
+  return allUserOasisList.map((oasis) => {
+    if (oasis.id === oasisId) {
+      // Calculate new max_withdraw_htr by subtracting the bonus
+      const bonusAmount = oasis.user_balance_a || 0
+      const newMaxWithdrawHtr = Math.max(0, oasis.max_withdraw_htr - bonusAmount)
+
+      // Create a new object with bonus zeroed out to avoid reference issues
+      return {
+        ...oasis,
+        user_balance_a: 0,
+        max_withdraw_htr: newMaxWithdrawHtr,
+      }
+    }
+    return oasis
+  })
+}
+
+// Function to update oasis position optimistically for position withdrawal
+const editOasisOnWithdraw = (allUserOasisList: OasisInterface[] | undefined, oasisId: string) => {
+  if (!allUserOasisList) return allUserOasisList
+
+  // Filter out the position entirely instead of just marking it as closed
+  return allUserOasisList.filter((oasis) => oasis.id !== oasisId)
+}
+
 const OasisProgram = () => {
   const [amount, setAmount] = useState<string>('')
   const [token, setToken] = useState<string>('hUSDC')
@@ -538,6 +575,8 @@ const OasisProgram = () => {
   const [showChart, setShowChart] = useState(false)
   const [tokenPriceChange, setTokenPriceChange] = useState<number>(0)
   const [hover, setHover] = useState(false)
+
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const { network } = useNetwork()
   const { addNotification } = useAccount()
@@ -598,6 +637,9 @@ const OasisProgram = () => {
         Math.floor(parseFloat(amount) * 100),
         prices['00']
       )
+
+      // Do not clear the addingLiquidity state here - let it be cleared in the useEffect
+      // This ensures the loading overlay remains visible until confirmation
     }
   }
 
@@ -605,6 +647,7 @@ const OasisProgram = () => {
     if (!selectedOasisForRemove?.id) return
     setTxType('Remove liquidity')
 
+    // Send the transaction first - user will confirm in wallet
     const response = await oasisObj.user_withdraw(
       hathorRpc,
       address,
@@ -612,18 +655,13 @@ const OasisProgram = () => {
       removeAmount,
       removeAmountHtr
     )
-
-    // Add transaction to store when sent
-    const hash = get(rpcResult, 'result.response.hash') as string
-    if (hash) {
-      addPendingPosition(address, selectedOasisForRemove, currentBlockHeight, 'withdraw')
-    }
   }
 
   const handleRemoveBonus = async (removeAmount: number): Promise<void> => {
     if (!selectedOasisForRemoveBonus?.id) return
     setTxType('Remove bonus')
 
+    // Send the transaction first - user will confirm in wallet
     const response = await oasisObj.user_withdraw_bonus(
       hathorRpc,
       address,
@@ -639,33 +677,47 @@ const OasisProgram = () => {
     const response = await oasisObj.close_position(hathorRpc, address, selectedOasisForClose.id)
   }
 
+  // Monitor block changes to clear loading states when transactions are confirmed
+  useEffect(() => {
+    if (currentBlockHeight > 0) {
+      // Clear loading states when the block changes
+      setAddingLiquidity(false)
+      setAddingToOasisId('')
+    }
+  }, [currentBlockHeight])
+
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result) {
       if (oasisId || selectedOasisForRemove || selectedOasisForRemoveBonus || selectedOasisForClose) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
-          const notificationData: NotificationData = {
-            type: 'swap',
-            chainId: network,
-            summary: {
-              pending: `Waiting for next block. ${txType} in ${oasisName} Oasis pool.`,
-              completed: `${txType} in ${oasisName} Oasis pool.`,
-              failed: 'Failed summary',
-              info: `${txType} in ${oasisName} Oasis pool: ${amount} ${token}.`,
-            },
-            status: 'pending',
-            txHash: hash,
-            groupTimestamp: Math.floor(Date.now() / 1000),
-            timestamp: Math.floor(Date.now() / 1000),
-            promise: new Promise((resolve) => {
-              setTimeout(resolve, 500)
-            }),
-            account: address,
+          // For add liquidity and close position, create a standard notification
+          if (txType === 'Add liquidity' || txType === 'Close position') {
+            const notificationData: NotificationData = {
+              type: 'swap',
+              chainId: network,
+              summary: {
+                pending: `Waiting for next block. ${txType} in ${oasisName} Oasis pool.`,
+                completed: `${txType} in ${oasisName} Oasis pool.`,
+                failed: 'Failed summary',
+                info: `${txType} in ${oasisName} Oasis pool: ${amount} ${token}.`,
+              },
+              status: 'pending',
+              txHash: hash,
+              groupTimestamp: Math.floor(Date.now() / 1000),
+              timestamp: Math.floor(Date.now() / 1000),
+              promise: new Promise((resolve) => {
+                setTimeout(resolve, 500)
+              }),
+              account: address,
+            }
+            const notificationGroup: string[] = []
+            notificationGroup.push(JSON.stringify(notificationData))
+            addNotification(notificationGroup)
+            createSuccessToast(notificationData)
           }
-          const notificationGroup: string[] = []
-          notificationGroup.push(JSON.stringify(notificationData))
-          addNotification(notificationGroup)
-          createSuccessToast(notificationData)
+
+          // Close all modals
           setAddModalOpen(false)
           setRemoveModalOpen(false)
           setRemoveBonusModalOpen(false)
@@ -677,14 +729,8 @@ const OasisProgram = () => {
             const existingPosition = allUserOasis?.find((o) => o.token.symbol === currency)
 
             if (existingPosition) {
-              // Add pending to existing position rather than creating a new one
+              // Keep addingLiquidity state active until the transaction completes
               addPendingPosition(address, existingPosition, currentBlockHeight, 'add')
-
-              // Clear adding liquidity state after a short delay to show loading state longer
-              setTimeout(() => {
-                setAddingLiquidity(false)
-                setAddingToOasisId('')
-              }, 5000) // Keep loading state for 5 seconds to ensure the transaction is processed
             } else {
               // Create a new pending position (user doesn't have this token position yet)
               addPendingPosition(
@@ -709,12 +755,103 @@ const OasisProgram = () => {
             }
           }
 
-          if (txType == 'Remove bonus' && selectedOasisForRemoveBonus)
-            addPendingPosition(address, selectedOasisForRemoveBonus, currentBlockHeight, 'bonus')
-          if (txType == 'Remove liquidity' && selectedOasisForRemove)
-            addPendingPosition(address, selectedOasisForRemove, currentBlockHeight, 'withdraw')
-          if (txType == 'Close position' && selectedOasisForClose)
+          // Handle withdraw bonus operation
+          if (txType == 'Remove bonus' && selectedOasisForRemoveBonus) {
+            // Close modal immediately
+            setRemoveBonusModalOpen(false)
+
+            // Create notification for block confirmation
+            const notificationData: NotificationData = {
+              type: 'swap',
+              chainId: network,
+              summary: {
+                pending: `Waiting for next block. Withdrawing bonus from ${oasisName} Oasis pool.`,
+                completed: `Successfully withdrew bonus from ${oasisName} Oasis pool.`,
+                failed: 'Failed to withdraw bonus.',
+                info: `Withdrew bonus from ${oasisName} Oasis pool.`,
+              },
+              status: 'pending',
+              txHash: hash,
+              groupTimestamp: Math.floor(Date.now() / 1000),
+              timestamp: Math.floor(Date.now() / 1000),
+              promise: new Promise((resolve) => {
+                setTimeout(resolve, 500)
+              }),
+              account: address,
+            }
+
+            // Add notification to notification center
+            const notificationGroup: string[] = []
+            notificationGroup.push(JSON.stringify(notificationData))
+            addNotification(notificationGroup)
+
+            // Create success toast with appropriate message
+            createSuccessToast({
+              ...notificationData,
+              status: 'completed',
+              summary: {
+                ...notificationData.summary,
+                completed: 'Successfully withdrew bonus! (Processing on blockchain)',
+              },
+            })
+
+            // Important: Update the data in the local state for immediate UI feedback
+            utils.getOasis.allUser.setData(
+              { address: address },
+              (currentData) =>
+                editOasisBonusOnWithdraw(currentData, selectedOasisForRemoveBonus.id) as typeof currentData
+            )
+          }
+
+          if (txType == 'Remove liquidity' && selectedOasisForRemove) {
+            // Close modal immediately
+            setRemoveModalOpen(false)
+
+            // Create notification for block confirmation
+            const notificationData: NotificationData = {
+              type: 'swap',
+              chainId: network,
+              summary: {
+                pending: `Waiting for next block. Withdrawing position from ${oasisName} Oasis pool.`,
+                completed: `Successfully withdrew position from ${oasisName} Oasis pool.`,
+                failed: 'Failed to withdraw position.',
+                info: `Withdrew position from ${oasisName} Oasis pool.`,
+              },
+              status: 'pending',
+              txHash: hash,
+              groupTimestamp: Math.floor(Date.now() / 1000),
+              timestamp: Math.floor(Date.now() / 1000),
+              promise: new Promise((resolve) => {
+                setTimeout(resolve, 500)
+              }),
+              account: address,
+            }
+
+            // Add notification to notification center
+            const notificationGroup: string[] = []
+            notificationGroup.push(JSON.stringify(notificationData))
+            addNotification(notificationGroup)
+
+            // Create success toast with appropriate message
+            createSuccessToast({
+              ...notificationData,
+              status: 'completed',
+              summary: {
+                ...notificationData.summary,
+                completed: 'Successfully withdrew position! (Processing on blockchain)',
+              },
+            })
+
+            // Important: Update the data in the local state for immediate UI feedback
+            utils.getOasis.allUser.setData(
+              { address: address },
+              (currentData) => editOasisOnWithdraw(currentData, selectedOasisForRemove.id) as typeof currentData
+            )
+          }
+
+          if (txType == 'Close position' && selectedOasisForClose) {
             addPendingPosition(address, selectedOasisForClose, currentBlockHeight, 'close')
+          }
         } else {
           createErrorToast(`Error`, true)
           setAddModalOpen(false)
@@ -957,6 +1094,7 @@ const OasisProgram = () => {
                                         <div className="h-[51px] relative">
                                           <Input.Numeric
                                             value={amount}
+                                            ref={inputRef}
                                             onUserInput={(val) => setAmount(val)}
                                             className="h-full pl-3 text-2xl"
                                           />
@@ -1022,7 +1160,7 @@ const OasisProgram = () => {
                                         </Select>
                                       </div>
                                     </div>
-                                    {showChart && (
+                                    {/* {showChart && (
                                       <div
                                         className="relative"
                                         onMouseEnter={() => setHover(true)}
@@ -1069,7 +1207,7 @@ const OasisProgram = () => {
                                           />
                                         </div>
                                       </div>
-                                    )}
+                                    )} */}
 
                                     <div className="flex flex-col gap-2">
                                       <Typography variant="sm" className="text-stone-400">
@@ -1292,6 +1430,7 @@ const OasisProgram = () => {
                                                 ) ||
                                                 (addingLiquidity && oasis.id === addingToOasisId)
                                               }
+                                              isRpcRequestPending={isRpcRequestPending}
                                               addingLiquidity={addingLiquidity}
                                               addingToOasisId={addingToOasisId}
                                               setSelectedTab={setSelectedTab}
@@ -1386,7 +1525,7 @@ const OasisProgram = () => {
                     className="w-full col-span-full lg:col-span-1 h-[670px] bg-stone-800/50 rounded-lg overflow-hidden relative p-4 mb-4 order-last"
                   >
                     <OasisChart
-                      liquidityValue={Number(amount)}
+                      liquidityValue={Number(amount || 1)}
                       initialPrices={initialPrices}
                       bonusRate={bonusRate}
                       holdPeriod={lockPeriod}
