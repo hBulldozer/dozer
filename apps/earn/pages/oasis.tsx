@@ -850,7 +850,32 @@ const OasisProgram = () => {
           }
 
           if (txType == 'Close position' && selectedOasisForClose) {
+            // Add pending flag to track position in loading state
             addPendingPosition(address, selectedOasisForClose, currentBlockHeight, 'close')
+            
+            // Add notification to notification center
+            const notificationData: NotificationData = {
+              type: 'swap',
+              chainId: network,
+              summary: {
+                pending: `Waiting for next block. Closing position in ${oasisName} Oasis pool.`,
+                completed: `Successfully closed position in ${oasisName} Oasis pool.`,
+                failed: 'Failed to close position.',
+                info: `Closed position in ${oasisName} Oasis pool.`,
+              },
+              status: 'pending',
+              txHash: hash,
+              groupTimestamp: Math.floor(Date.now() / 1000),
+              timestamp: Math.floor(Date.now() / 1000),
+              promise: new Promise((resolve) => {
+                setTimeout(resolve, 500)
+              }),
+              account: address,
+            }
+            
+            const notificationGroup: string[] = []
+            notificationGroup.push(JSON.stringify(notificationData))
+            addNotification(notificationGroup)
           }
         } else {
           createErrorToast(`Error`, true)
@@ -1355,6 +1380,18 @@ const OasisProgram = () => {
 
                                 <Tab.Panel>
                                   <div className="flex flex-col gap-4 px-8">
+                                    {/* Debug info */}
+                                    <div className="hidden">
+                                      <pre>
+                                        allUserOasis: {JSON.stringify(allUserOasis, null, 2)}
+                                        pendingPositions: {JSON.stringify(pendingPositions, null, 2)}
+                                        allUserOasis length: {allUserOasis?.length}
+                                        pendingPositions length: {pendingPositions.length}
+                                        Should show empty state: {String((allUserOasis?.length === 0 || !allUserOasis) && pendingPositions.filter(p => p.txType === 'add').length === 0)}
+                                      </pre>
+                                    </div>
+
+                                    {/* Pending Add Position */}
                                     {pendingPositions.filter((pos) => {
                                       // Only show pending positions in the "Your Pending Positions" section if:
                                       // 1. It's an 'add' transaction type
@@ -1390,20 +1427,9 @@ const OasisProgram = () => {
                                       </div>
                                     )}
 
-                                    {allUserOasis?.length == 0 && pendingPositions.length == 0 ? (
-                                      <div className="text-center ">
-                                        <Typography
-                                          variant="xl"
-                                          className="my-8 rounded-xl bg-stone-700/20 py-36 text-stone-300"
-                                        >
-                                          No active positions.
-                                        </Typography>
-                                        <Button fullWidth size="md" onClick={() => setSelectedTab(0)}>
-                                          Deposit now
-                                        </Button>
-                                      </div>
-                                    ) : !address ? (
-                                      <div className="text-center ">
+                                    {/* No active positions message */}
+                                    {(!address) ? (
+                                      <div className="text-center">
                                         <Typography
                                           variant="xl"
                                           className="my-8 rounded-xl bg-stone-700/20 py-36 text-stone-300"
@@ -1414,71 +1440,81 @@ const OasisProgram = () => {
                                           <div />
                                         </Checker.Connected>
                                       </div>
+                                    ) : (allUserOasis?.length === 0 && pendingPositions.filter(p => p.txType === 'add').length === 0) ? (
+                                      <div className="text-center">
+                                        <Typography
+                                          variant="xl"
+                                          className="my-8 rounded-xl bg-stone-700/20 py-36 text-stone-300"
+                                        >
+                                          No active positions.
+                                        </Typography>
+                                        <Button fullWidth size="md" onClick={() => setSelectedTab(0)}>
+                                          Deposit now
+                                        </Button>
+                                      </div>
                                     ) : (
                                       <div>
-                                        {allUserOasis?.map((oasis: OasisInterface) => {
-                                          return (
-                                            <UserOasisPosition
-                                              address={address}
-                                              currentBlockHeight={currentBlockHeight}
-                                              oasis={oasis}
-                                              key={oasis.id}
-                                              prices={prices || {}}
-                                              isLoading={
-                                                pendingPositions.some(
-                                                  (pos) => pos.id === oasis.id && pos.txType != 'add'
-                                                ) ||
-                                                (addingLiquidity && oasis.id === addingToOasisId)
-                                              }
-                                              isRpcRequestPending={isRpcRequestPending}
-                                              addingLiquidity={addingLiquidity}
-                                              addingToOasisId={addingToOasisId}
-                                              setSelectedTab={setSelectedTab}
-                                              buttonClosePosition={
-                                                <Button
-                                                  size="md"
-                                                  fullWidth
-                                                  color="gray"
-                                                  disabled={isRpcRequestPending}
-                                                  onClick={() => {
-                                                    setSelectedOasisForClose(oasis)
-                                                    setClosePositionModalOpen(true)
-                                                  }}
-                                                >
-                                                  Close Position
-                                                </Button>
-                                              }
-                                              buttonWithdraw={
-                                                <Button
-                                                  size="md"
-                                                  color="gray"
-                                                  fullWidth
-                                                  disabled={isRpcRequestPending}
-                                                  onClick={() => {
-                                                    setSelectedOasisForRemove(oasis)
-                                                    setRemoveModalOpen(true)
-                                                  }}
-                                                >
-                                                  Withdraw Position
-                                                </Button>
-                                              }
-                                              buttonWithdrawBonus={
-                                                <Button
-                                                  size="md"
-                                                  fullWidth
-                                                  variant="outlined"
-                                                  disabled={isRpcRequestPending || oasis.user_balance_a <= 0}
-                                                  onClick={() => {
-                                                    setSelectedOasisForRemoveBonus(oasis)
-                                                    setRemoveBonusModalOpen(true)
-                                                  }}
-                                                >
-                                                  Withdraw Bonus
-                                                </Button>
-                                              }
-                                            />
-                                          )
-                                        })}
+                                        {allUserOasis?.map((oasis: OasisInterface) => (
+                                          <UserOasisPosition
+                                            address={address}
+                                            currentBlockHeight={currentBlockHeight}
+                                            oasis={oasis}
+                                            key={oasis.id}
+                                            prices={prices || {}}
+                                            isLoading={
+                                              pendingPositions.some(
+                                                (pos) => pos.id === oasis.id && pos.txType != 'add'
+                                              ) ||
+                                              (addingLiquidity && oasis.id === addingToOasisId)
+                                            }
+                                            isRpcRequestPending={isRpcRequestPending}
+                                            addingLiquidity={addingLiquidity}
+                                            addingToOasisId={addingToOasisId}
+                                            setSelectedTab={setSelectedTab}
+                                            buttonClosePosition={
+                                              <Button
+                                                size="md"
+                                                fullWidth
+                                                color="gray"
+                                                disabled={isRpcRequestPending}
+                                                onClick={() => {
+                                                  setSelectedOasisForClose(oasis)
+                                                  setClosePositionModalOpen(true)
+                                                }}
+                                              >
+                                                Close Position
+                                              </Button>
+                                            }
+                                            buttonWithdraw={
+                                              <Button
+                                                size="md"
+                                                color="gray"
+                                                fullWidth
+                                                disabled={isRpcRequestPending}
+                                                onClick={() => {
+                                                  setSelectedOasisForRemove(oasis)
+                                                  setRemoveModalOpen(true)
+                                                }}
+                                              >
+                                                Withdraw Position
+                                              </Button>
+                                            }
+                                            buttonWithdrawBonus={
+                                              <Button
+                                                size="md"
+                                                fullWidth
+                                                variant="outlined"
+                                                disabled={isRpcRequestPending || oasis.user_balance_a <= 0}
+                                                onClick={() => {
+                                                  setSelectedOasisForRemoveBonus(oasis)
+                                                  setRemoveBonusModalOpen(true)
+                                                }}
+                                              >
+                                                Withdraw Bonus
+                                              </Button>
+                                            }
+                                          />
+                                        ))}
                                       </div>
                                     )}
                                   </div>
