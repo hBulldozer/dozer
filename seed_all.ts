@@ -28,6 +28,7 @@ async function main() {
         }
       )
     } else {
+      rl.close()
       resolve(true) // Continue if the condition is not met
     }
   })
