@@ -24,7 +24,7 @@ import { api } from '@dozer/higmi/utils/api'
 import { Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { get, remove } from 'lodash'
 import { hathorLib, Oasis } from '@dozer/nanocontracts'
-import { useAccount, useNetwork, useOasisTempTxStore } from '@dozer/zustand'
+import { useAccount, useNetwork } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 import {
@@ -104,11 +104,7 @@ const UserOasisPosition = ({
   setSelectedTab: (tab: number) => void
   prices: Record<string, number>
 }) => {
-  const { getPendingPositions } = useOasisTempTxStore()
-  const pendingTxs = getPendingPositions(address)
-  // All operations are now handled via optimistic UI updates
-  // This is just for tracking pending transactions in the background
-  const isPending = false
+  // All operations are now handled via optimistic UI updates directly in the allUserOasis data
 
   const getWithdrawalDate = () => {
     if (!oasis.user_withdrawal_time) return null
@@ -130,7 +126,7 @@ const UserOasisPosition = ({
 
     const days = Math.floor(remaining / (1000 * 60 * 60 * 24))
     const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
+    const minutes = Math.ceil((remaining % (1000 * 60 * 60)) / (1000 * 60))
 
     return { days, hours, minutes }
   }
@@ -629,10 +625,12 @@ const OasisProgram = () => {
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
-  const { addPendingPosition, getPendingPositions } = useOasisTempTxStore()
-  const { data: currentBlock } = api.getNetwork.getBestBlock.useQuery(undefined, { refetchInterval: 30000 })
+  // We're not using pendingPositions from the store anymore
+  const { data: currentBlock } = api.getNetwork.getBestBlock.useQuery(undefined, { 
+    refetchInterval: 30000,
+    staleTime: 5000 // Consider data fresh for 5 seconds
+  })
   const currentBlockHeight = currentBlock?.number || 0
-  const pendingPositions = getPendingPositions(address)
 
   const utils = api.useUtils()
   const { data: prices } = api.getPrices.all.useQuery()
@@ -655,9 +653,12 @@ const OasisProgram = () => {
   const { data: allUserOasis } = api.getOasis.allUser.useQuery(
     { address: address },
     {
-      enabled: Boolean(address) && !hasOptimisticUpdate, // Only fetch from blockchain when there are no optimistic updates
-      refetchOnWindowFocus: !hasOptimisticUpdate, // Don't refetch on window focus during optimistic updates
-      refetchInterval: hasOptimisticUpdate ? false : 30000, // Only auto-refetch when not showing optimistic updates
+      enabled: Boolean(address) && !hasOptimisticUpdate, // Only fetch when not showing optimistic updates
+      refetchOnWindowFocus: false, // Don't refetch on window focus to avoid disrupting optimistic updates
+      refetchInterval: hasOptimisticUpdate ? false : 60000, // Only auto-refetch when not showing optimistic updates
+      staleTime: 30000, // Consider data fresh for 30 seconds
+      // This is important - don't replace optimistic updates with stale data
+      keepPreviousData: hasOptimisticUpdate,
     }
   )
 
@@ -729,41 +730,59 @@ const OasisProgram = () => {
     const response = await oasisObj.close_position(hathorRpc, address, selectedOasisForClose.id)
   }
 
-  // Add an effect that sets hasOptimisticUpdate whenever we're processing a transaction
+  // Combined effect for setting hasOptimisticUpdate flag
   useEffect(() => {
-    // During RPC request processing, we want to disable blockchain fetches
-    if (isRpcRequestPending) {
-      setHasOptimisticUpdate(true)
-    }
-  }, [isRpcRequestPending])
-
-  // Also prevent fetches when there are pending transactions
-  useEffect(() => {
+    // Set flag based on whether we have pending RPC requests or transactions
     const hasPendingTxs = Object.keys(pendingTransactions).length > 0
-    if (hasPendingTxs) {
-      setHasOptimisticUpdate(true)
+    const shouldDisableFetches = isRpcRequestPending || hasPendingTxs
+    
+    if (shouldDisableFetches !== hasOptimisticUpdate) {
+      setHasOptimisticUpdate(shouldDisableFetches)
     }
-  }, [pendingTransactions])
+  }, [isRpcRequestPending, pendingTransactions, hasOptimisticUpdate])
   // Monitor block changes to clear loading states and update positions when transactions are confirmed
+  // Use a ref to track the previous block height to avoid unnecessary updates
+  const prevBlockHeightRef = useRef<number>(0)
+
   useEffect(() => {
-    if (currentBlockHeight > 0) {
+    // Only proceed if we have a valid block height and it has changed
+    if (currentBlockHeight > 0 && currentBlockHeight !== prevBlockHeightRef.current) {
+      prevBlockHeightRef.current = currentBlockHeight
+      
       // If there was an optimistic update, now we can safely fetch the real data
-      if (hasOptimisticUpdate) {
-        // Reset optimistic update flag first to allow refetching
-        setHasOptimisticUpdate(false)
+      if (hasOptimisticUpdate && Object.keys(pendingTransactions).length > 0) {
+        // We shouldn't reset optimistic updates too quickly - only after a block change
+        // First, identify if we should be clearing any pending transactions
+        const pendingTxs = {...pendingTransactions};
+        let shouldClearUpdates = false;
+        
+        // Logic to determine if we should clear updates - could be based on time since tx creation
+        // For now, we'll use a simple approach - clear after any block change
+        if (Object.keys(pendingTxs).length > 0) {
+          shouldClearUpdates = true;
+        }
+        
+        if (shouldClearUpdates) {
+          // Clear any pending transactions
+          setPendingTransactions({});
+          
+          // Reset optimistic update flag to allow refetching
+          setHasOptimisticUpdate(false);
 
-        // Clear any pending transactions
-        setPendingTransactions({})
-
-        // Re-fetch user's positions to get the updated blockchain data
-        utils.getOasis.allUser.invalidate({ address })
+          // Re-fetch user's positions to get the updated blockchain data
+          if (address) {
+            utils.getOasis.allUser.invalidate({ address })
+          }
+        }
       }
 
       // Clear loading states when the block changes
-      setAddingLiquidity(false)
-      setAddingToOasisId('')
+      if (addingLiquidity || addingToOasisId) {
+        setAddingLiquidity(false)
+        setAddingToOasisId('')
+      }
     }
-  }, [currentBlockHeight, address])
+  }, [currentBlockHeight, address, hasOptimisticUpdate, pendingTransactions])
 
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result) {
@@ -831,27 +850,32 @@ const OasisProgram = () => {
                 ...prev,
                 [hash]: true,
               }))
-              // Keep addingLiquidity state active until the transaction completes
-              addPendingPosition(address, existingPosition, currentBlockHeight, 'add')
+              // We don't need to use pendingPositions anymore - we directly update the UI data
             } else {
               // For creating a new position with optimistic updates
-              const newPosition = {
+              const newPosition: OasisInterface = {
                 id: `pending-${hash}`,
                 token: { symbol: currency, uuid: oasis?.token.uuid || '' },
                 user_deposit_b: depositAmount, // Use depositAmount from the API response
                 user_balance_a: bonus, // Use bonus from the API response
                 user_withdrawal_time: unlockDate, // Use withdrawal_time from the API response
-                max_withdraw_htr: htrMatch + bonus, // HTR matched + bonus
+                max_withdraw_htr: bonus, // HTR matched + bonus
                 max_withdraw_b: depositAmount, // Use depositAmount from the API response
                 user_lp_htr: htrMatch, // htr_amount from the API response
                 user_lp_b: depositAmount, // Use depositAmount for LP tokens
                 htr_price_in_deposit: prices ? prices['00'] : 0, // Current HTR price
-                token_price_in_htr_in_deposit: (htrMatch / depositAmount) * (prices ? prices['00'] : 0), // Calculate token price in HTR
+                token_price_in_htr_in_deposit: prices ? prices['00'] : 0, // Calculate token price in HTR
                 position_closed: false,
               }
 
-              // Add to pending positions
-              addPendingPosition(address, newPosition, currentBlockHeight, 'add')
+              // Add position directly to allUserOasis data via optimistic update
+              utils.getOasis.allUser.setData(
+                { address: address },
+                (currentData) => {
+                  // Make sure we maintain the same data shape by casting
+                  return [...(currentData || []), newPosition] as typeof currentData
+                }
+              )
 
               // Set flag to prevent auto-refetching
               setHasOptimisticUpdate(true)
@@ -993,27 +1017,7 @@ const OasisProgram = () => {
               [hash]: true,
             }))
 
-            // Create success toast with appropriate message
-            createSuccessToast({
-              type: 'swap',
-              chainId: network,
-              summary: {
-                pending: `Waiting for next block. Closing position in ${oasisName} Oasis pool.`,
-                completed: 'Successfully closed position! (Processing on blockchain)',
-                failed: 'Failed to close position.',
-                info: `Closed position in ${oasisName} Oasis pool.`,
-              },
-              status: 'completed',
-              txHash: hash,
-              groupTimestamp: Math.floor(Date.now() / 1000),
-              timestamp: Math.floor(Date.now() / 1000),
-              // promise: new Promise((resolve) => {
-              //   setTimeout(resolve, 500)
-              // }),
-              account: address,
-            })
-
-            // Still add to notification center for tracking
+            // Create only one notification - use standard notification pattern
             const notificationData: NotificationData = {
               type: 'swap',
               chainId: network,
@@ -1036,6 +1040,16 @@ const OasisProgram = () => {
             const notificationGroup: string[] = []
             notificationGroup.push(JSON.stringify(notificationData))
             addNotification(notificationGroup)
+            
+            // Show success toast
+            createSuccessToast({
+              ...notificationData,
+              status: 'completed',
+              summary: {
+                ...notificationData.summary,
+                completed: 'Successfully closed position! (Processing on blockchain)',
+              },
+            })
           }
         } else {
           createErrorToast(`Error`, true)
@@ -1540,55 +1554,7 @@ const OasisProgram = () => {
 
                                 <Tab.Panel>
                                   <div className="flex flex-col gap-4 px-8">
-                                    {/* Debug info */}
-                                    <div className="hidden">
-                                      <pre>
-                                        allUserOasis: {JSON.stringify(allUserOasis, null, 2)}
-                                        pendingPositions: {JSON.stringify(pendingPositions, null, 2)}
-                                        allUserOasis length: {allUserOasis?.length}
-                                        pendingPositions length: {pendingPositions.length}
-                                        Should show empty state:{' '}
-                                        {String(
-                                          (allUserOasis?.length === 0 || !allUserOasis) &&
-                                            pendingPositions.filter((p) => p.txType === 'add').length === 0
-                                        )}
-                                      </pre>
-                                    </div>
-
-                                    {/* Pending Add Position */}
-                                    {pendingPositions.filter((pos) => {
-                                      // Only show pending positions in the "Your Pending Positions" section if:
-                                      // 1. It's an 'add' transaction type
-                                      // 2. There's no matching active position with the same token (new positions only)
-                                      if (pos.txType !== 'add') return false
-                                      const existingPosition = allUserOasis?.find(
-                                        (o) => o.token.symbol === pos.token.symbol
-                                      )
-                                      return !existingPosition
-                                    }).length > 0 && (
-                                      <div>
-                                        {pendingPositions
-                                          .filter((pos) => {
-                                            if (pos.txType !== 'add') return false
-                                            const existingPosition = allUserOasis?.find(
-                                              (o) => o.token.symbol === pos.token.symbol
-                                            )
-                                            return !existingPosition
-                                          })
-                                          .map((position) => (
-                                            <UserOasisPosition
-                                              address={address}
-                                              currentBlockHeight={currentBlockHeight}
-                                              key={position.id}
-                                              oasis={position}
-                                              prices={prices || {}}
-                                              buttonWithdraw={<div />}
-                                              buttonWithdrawBonus={<div />}
-                                              setSelectedTab={setSelectedTab}
-                                            />
-                                          ))}
-                                      </div>
-                                    )}
+                                    {/* No need for debug info or pending positions sections anymore - all handled through allUserOasis */}
 
                                     {/* No active positions message */}
                                     {!address ? (
@@ -1603,8 +1569,7 @@ const OasisProgram = () => {
                                           <div />
                                         </Checker.Connected>
                                       </div>
-                                    ) : allUserOasis?.length === 0 &&
-                                      pendingPositions.filter((p) => p.txType === 'add').length === 0 ? (
+                                    ) : allUserOasis?.length === 0 ? (
                                       <div className="text-center">
                                         <Typography
                                           variant="xl"
