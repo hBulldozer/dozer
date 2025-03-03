@@ -109,7 +109,18 @@ export const Default: FC<DefaultProps> = ({
   const { isLoading, error, data } = api_client.getPrices.htr.useQuery()
   const priceHTR = data ? data : 0.01
 
-  const { data: faucetAvailable } = api_client.getFaucet.checkFaucet.useQuery({ address: address })
+  const { data: faucetAvailable, refetch: refetchFaucetStatus } = api_client.getFaucet.checkFaucet.useQuery(
+    { address: address },
+    {
+      enabled: Boolean(address),
+      staleTime: 0, // Don't cache this data - always fetch fresh status
+      refetchOnMount: true, // Always refetch on component mount
+      refetchOnWindowFocus: true // Refetch when window gains focus
+    }
+  )
+  
+  // Local state to track if the faucet was used in this session
+  const [faucetUsed, setFaucetUsed] = useState(false)
 
   const { addNotification } = useAccount()
   const [isLoadingFaucet, setIsLoadingFaucet] = useState(false)
@@ -139,6 +150,12 @@ export const Default: FC<DefaultProps> = ({
         createSuccessToast(notificationData)
         setIsLoadingFaucet(false)
         
+        // Mark the faucet as used in this session
+        setFaucetUsed(true)
+        
+        // Refetch faucet status to update backend state
+        refetchFaucetStatus()
+        
         // After successful faucet operation, refresh balance
         refreshBalance()
       } else {
@@ -157,6 +174,13 @@ export const Default: FC<DefaultProps> = ({
     mutation.mutate({ address: address })
   }
 
+  // Reset faucet used state when address changes
+  useEffect(() => {
+    if (address) {
+      setFaucetUsed(false);
+    }
+  }, [address]);
+
   useEffect(() => {
     const balance_user: BalanceProps[] = balance
       .filter((b: TokenBalance) => {
@@ -174,7 +198,7 @@ export const Default: FC<DefaultProps> = ({
       .sort((a: BalanceProps, b: BalanceProps) => b.balanceUSD - a.balanceUSD)
 
     setBalanceUSD(balance_user.reduce((acc, cur) => acc + cur.balanceUSD, 0))
-  }, [balance])
+  }, [balance, prices, tokens])
 
   return (
     <>
@@ -245,7 +269,7 @@ export const Default: FC<DefaultProps> = ({
             </Typography>
           </div>
         )}
-          {!isLoading && faucetAvailable && (
+          {!isLoading && faucetAvailable && !faucetUsed && (
           <Button
           variant="outlined"
           className="px-8"

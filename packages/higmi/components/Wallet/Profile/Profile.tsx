@@ -49,10 +49,13 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
     { address: address },
     { 
       enabled: Boolean(address), 
-      staleTime: 2000,
-      refetchInterval: 10000, // Refetch every 10 seconds to keep data fresh
+      staleTime: 5000,
+      refetchInterval: 20000, // Refetch every 20 seconds to keep data fresh
       retry: 3, // Retry failed requests up to 3 times
-      retryDelay: 1000 // Wait 1 second between retries
+      retryDelay: 1000, // Wait 1 second between retries
+      refetchOnMount: true, // Always refetch on component mount
+      cacheTime: 3600000, // Cache for 1 hour
+      keepPreviousData: true // Keep the previous data while loading new data
     }
   )
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -118,8 +121,9 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
     }
   }, [address])
 
+  // Process and set balance data when available
   useEffect(() => {
-    if (address && data && !isLoading && !isError) {
+    if (address && data && !isError) {
       const balance_data = []
       for (const token in data.tokens_data) {
         balance_data.push({
@@ -130,7 +134,14 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
       }
       setBalance(balance_data)
     }
-  }, [data, isError, isLoading, address, error, setBalance])
+  }, [data, isError, address, setBalance])
+  
+  // Make sure to refresh balance when view changes to Default tab
+  useEffect(() => {
+    if (view === ProfileView.Default && address) {
+      refreshBalance()
+    }
+  }, [view, address])
 
   if (!address) {
     return <Wallet.Button size="sm" className="border-none shadow-md whitespace-nowrap" />
@@ -181,9 +192,13 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
                   'flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] hover:text-white h-[38px] rounded-xl px-2 pl-3 !font-semibold !text-sm text-stone-200'
                 )}
                 onClick={() => {
-                  // Refresh balance when opening the profile panel
+                  // Always refresh balance when opening the profile panel
+                  // This ensures data is fresh when the panel is opened
                   if (!open) {
                     refreshBalance()
+                    
+                    // Force the query to refetch even if the data is considered fresh
+                    refetch()
                   }
                 }}
               >

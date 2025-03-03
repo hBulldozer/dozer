@@ -626,9 +626,9 @@ const OasisProgram = () => {
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
   // We're not using pendingPositions from the store anymore
-  const { data: currentBlock } = api.getNetwork.getBestBlock.useQuery(undefined, { 
+  const { data: currentBlock } = api.getNetwork.getBestBlock.useQuery(undefined, {
     refetchInterval: 30000,
-    staleTime: 5000 // Consider data fresh for 5 seconds
+    staleTime: 5000, // Consider data fresh for 5 seconds
   })
   const currentBlockHeight = currentBlock?.number || 0
 
@@ -735,7 +735,7 @@ const OasisProgram = () => {
     // Set flag based on whether we have pending RPC requests or transactions
     const hasPendingTxs = Object.keys(pendingTransactions).length > 0
     const shouldDisableFetches = isRpcRequestPending || hasPendingTxs
-    
+
     if (shouldDisableFetches !== hasOptimisticUpdate) {
       setHasOptimisticUpdate(shouldDisableFetches)
     }
@@ -748,26 +748,26 @@ const OasisProgram = () => {
     // Only proceed if we have a valid block height and it has changed
     if (currentBlockHeight > 0 && currentBlockHeight !== prevBlockHeightRef.current) {
       prevBlockHeightRef.current = currentBlockHeight
-      
+
       // If there was an optimistic update, now we can safely fetch the real data
       if (hasOptimisticUpdate && Object.keys(pendingTransactions).length > 0) {
         // We shouldn't reset optimistic updates too quickly - only after a block change
         // First, identify if we should be clearing any pending transactions
-        const pendingTxs = {...pendingTransactions};
-        let shouldClearUpdates = false;
-        
+        const pendingTxs = { ...pendingTransactions }
+        let shouldClearUpdates = false
+
         // Logic to determine if we should clear updates - could be based on time since tx creation
         // For now, we'll use a simple approach - clear after any block change
         if (Object.keys(pendingTxs).length > 0) {
-          shouldClearUpdates = true;
+          shouldClearUpdates = true
         }
-        
+
         if (shouldClearUpdates) {
           // Clear any pending transactions
-          setPendingTransactions({});
-          
+          setPendingTransactions({})
+
           // Reset optimistic update flag to allow refetching
-          setHasOptimisticUpdate(false);
+          setHasOptimisticUpdate(false)
 
           // Re-fetch user's positions to get the updated blockchain data
           if (address) {
@@ -869,13 +869,10 @@ const OasisProgram = () => {
               }
 
               // Add position directly to allUserOasis data via optimistic update
-              utils.getOasis.allUser.setData(
-                { address: address },
-                (currentData) => {
-                  // Make sure we maintain the same data shape by casting
-                  return [...(currentData || []), newPosition] as typeof currentData
-                }
-              )
+              utils.getOasis.allUser.setData({ address: address }, (currentData) => {
+                // Make sure we maintain the same data shape by casting
+                return [...(currentData || []), newPosition] as typeof currentData
+              })
 
               // Set flag to prevent auto-refetching
               setHasOptimisticUpdate(true)
@@ -1016,40 +1013,6 @@ const OasisProgram = () => {
               ...prev,
               [hash]: true,
             }))
-
-            // Create only one notification - use standard notification pattern
-            const notificationData: NotificationData = {
-              type: 'swap',
-              chainId: network,
-              summary: {
-                pending: `Waiting for next block. Closing position in ${oasisName} Oasis pool.`,
-                completed: `Successfully closed position in ${oasisName} Oasis pool.`,
-                failed: 'Failed to close position.',
-                info: `Closed position in ${oasisName} Oasis pool.`,
-              },
-              status: 'pending',
-              txHash: hash,
-              groupTimestamp: Math.floor(Date.now() / 1000),
-              timestamp: Math.floor(Date.now() / 1000),
-              promise: new Promise((resolve) => {
-                setTimeout(resolve, 500)
-              }),
-              account: address,
-            }
-
-            const notificationGroup: string[] = []
-            notificationGroup.push(JSON.stringify(notificationData))
-            addNotification(notificationGroup)
-            
-            // Show success toast
-            createSuccessToast({
-              ...notificationData,
-              status: 'completed',
-              summary: {
-                ...notificationData.summary,
-                completed: 'Successfully closed position! (Processing on blockchain)',
-              },
-            })
           }
         } else {
           createErrorToast(`Error`, true)
