@@ -165,14 +165,40 @@ const Home = () => {
 
   return (
     <div className="relative bg-black text-white">
-      {/* Simple subtle grid background */}
+      {/* Subtle grid background with floating particles */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.97)),linear-gradient(to_right,#222_1px,transparent_1px),linear-gradient(to_bottom,#222_1px,transparent_1px)] bg-[size:44px_44px]" />
+      
+      {/* Animated particles */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          {mounted && Array(20).fill(0).map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-yellow-400 rounded-full"
+              initial={{ x: `${Math.random() * 100}%`, y: -10, opacity: 0 }}
+              animate={{ 
+                y: `${100 + Math.random() * 20}vh`, 
+                opacity: [0, 1, 0],
+              }}
+              transition={{ 
+                repeat: Infinity, 
+                duration: 8 + Math.random() * 10,
+                delay: Math.random() * 5
+              }}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Content - main container */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-2 flex flex-col">
         {/* Hero Section */}
         <div className="flex flex-col items-center text-center mb-8 mt-10 md:mt-16">
-          <div className="relative">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
             <Typography
               variant="h1"
               weight={900}
@@ -180,7 +206,7 @@ const Home = () => {
             >
               FINAL PRESALE PHASE
             </Typography>
-          </div>
+          </motion.div>
 
           <Typography variant="base" className="max-w-xl text-neutral-300 mb-3 mt-1">
             Join the revolution in DeFi. Don't miss your chance to be part of Dozer's journey from the beginning.
@@ -213,7 +239,14 @@ const Home = () => {
         {/* Main content grid - 3 columns on desktop, 1 column on mobile */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column - Countdown & Token Counter */}
-          <div className="flex flex-col bg-black/30 p-4 rounded-xl border border-yellow-500/20 shadow-lg justify-between">
+          <motion.div
+            whileHover={{ 
+              y: -5, 
+              boxShadow: "0 10px 25px -5px rgba(234, 179, 8, 0.2)",
+              borderColor: "rgba(234, 179, 8, 0.5)" 
+            }}
+            className="flex flex-col bg-black/30 p-4 rounded-xl border border-yellow-500/20 shadow-lg justify-between"
+          >
             {/* Countdown Section */}
             <div>
               <Typography
@@ -226,11 +259,15 @@ const Home = () => {
               <div className="flex items-center justify-center gap-4">
                 {timeUnits.map((unit, index) => (
                   <div key={unit.label} className="flex flex-col items-center">
-                    <div className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-black bg-opacity-80 rounded-lg border border-yellow-500/30 shadow-xl shadow-yellow-500/20">
+                    <motion.div
+                      animate={{ boxShadow: ['0 0 10px rgba(234, 179, 8, 0.3)', '0 0 20px rgba(234, 179, 8, 0.6)', '0 0 10px rgba(234, 179, 8, 0.3)'] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-black bg-opacity-80 rounded-lg border border-yellow-500/30 shadow-xl shadow-yellow-500/20"
+                    >
                       <Typography variant="h2" weight={700} className="text-yellow-500">
                         {String(unit.value).padStart(2, '0')}
                       </Typography>
-                    </div>
+                    </motion.div>
                     <Typography variant="xs" className="mt-1 text-neutral-400">
                       {unit.label}
                     </Typography>
@@ -252,11 +289,13 @@ const Home = () => {
               </Typography>
 
               <div className="relative h-5 w-full overflow-hidden rounded-md bg-stone-950 border border-yellow-500/40">
-                <div
+                <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-amber-500 to-yellow-500"
-                  style={{ width: `${progress}%` }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
                 >
-                </div>
+                </motion.div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Typography variant="sm" weight={600} className="text-white">
                     {`${progress.toFixed(1)}% sold`}
@@ -269,10 +308,17 @@ const Home = () => {
                 <span>{maxSupply.toLocaleString()} DZD</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Middle Column - Price Increase */}
-          <div className="bg-black/30 p-4 rounded-xl border border-yellow-500/20 shadow-lg flex flex-col">
+          <motion.div
+            whileHover={{ 
+              y: -5, 
+              boxShadow: "0 10px 25px -5px rgba(234, 179, 8, 0.2)",
+              borderColor: "rgba(234, 179, 8, 0.5)" 
+            }}
+            className="bg-black/30 p-4 rounded-xl border border-yellow-500/20 shadow-lg flex flex-col"
+          >
             <Typography
               variant="h5"
               weight={600}
@@ -325,10 +371,17 @@ const Home = () => {
                 Learn More
               </Button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Right Column - Payment Section */}
-          <div className="bg-black/30 p-4 rounded-xl border border-yellow-500/20 shadow-lg flex flex-col">
+          <motion.div
+            whileHover={{ 
+              y: -5, 
+              boxShadow: "0 10px 25px -5px rgba(234, 179, 8, 0.2)",
+              borderColor: "rgba(234, 179, 8, 0.5)" 
+            }}
+            className="bg-black/30 p-4 rounded-xl border border-yellow-500/20 shadow-lg flex flex-col"
+          >
             <Typography variant="h5" weight={600} className="mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600">
               PAYMENT DETAILS
             </Typography>
@@ -393,7 +446,7 @@ const Home = () => {
                 </Button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* FAQ Section */}
@@ -406,13 +459,32 @@ const Home = () => {
             FREQUENTLY ASKED QUESTIONS
           </Typography>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <motion.div
+            variants={{
+              container: {
+                hidden: { opacity: 0 },
+                show: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.1 }
+                }
+              }
+            }}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"
+          >
             {faqItems.map((item, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 * index }}
+                variants={{
+                  hidden: { y: 20, opacity: 0 },
+                  show: { y: 0, opacity: 1 }
+                }}
+                whileHover={{ 
+                  scale: 1.02,
+                  boxShadow: "0 10px 25px -5px rgba(234, 179, 8, 0.15)",
+                  borderColor: "rgba(234, 179, 8, 0.4)" 
+                }}
                 className="bg-black/30 p-4 rounded-lg border border-yellow-500/20"
               >
                 <Typography variant="base" weight={600} className="mb-2 text-yellow-400">
@@ -423,9 +495,7 @@ const Home = () => {
                 </Typography>
               </motion.div>
             ))}
-          </div>
-          
-
+          </motion.div>
         </div>
         
         {/* Custom Dialog */}
