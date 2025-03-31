@@ -57,9 +57,9 @@ export const CountdownTimer: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <Typography 
-        variant="h4" 
-        weight={600} 
+      <Typography
+        variant="h3"
+        weight={600}
         className="mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
       >
         FINAL PHASE ENDS IN

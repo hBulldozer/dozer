@@ -19,6 +19,7 @@
     "eslint-plugin-prettier": "*",
     "eslint-plugin-simple-import-sort": "*",
     "eslint-plugin-testing-library": "*",
+    "eslint-plugin-turbo": "^2.4.4",
     "eslint-plugin-unused-imports": "*",
     "husky": "9.0.11",
     "is-ci": "3.0.1",

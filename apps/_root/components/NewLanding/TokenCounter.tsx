@@ -41,11 +41,15 @@ export const TokenCounter: React.FC = () => {
         className="flex flex-col space-y-4"
       >
         <div className="flex flex-col items-center justify-center mb-2">
-          <Typography variant="h4" weight={600} className="mb-1 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600">
+          <Typography
+            variant="h3"
+            weight={600}
+            className="mb-1 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+          >
             DZD TOKEN SALE
           </Typography>
           <Typography variant="lg" className="mb-1 text-center text-neutral-300">
-            {isLoading ? "Loading..." : `${tokensRemaining.toLocaleString()} DZD tokens remaining`}
+            {isLoading ? 'Loading...' : `${tokensRemaining.toLocaleString()} DZD tokens remaining`}
           </Typography>
           <Typography variant="sm" className="text-center text-neutral-400">
             Price: 1 DZD = 1 USDT
@@ -63,7 +67,7 @@ export const TokenCounter: React.FC = () => {
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
             <Typography variant="sm" weight={600} className="text-white drop-shadow-md">
-              {isLoading ? "Loading..." : `${progress.toFixed(1)}% sold`}
+              {isLoading ? 'Loading...' : `${progress.toFixed(1)}% sold`}
             </Typography>
           </div>
         </div>

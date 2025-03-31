@@ -3,40 +3,44 @@
 import React, { useState, useEffect } from 'react'
 import { Button, Link, Typography, Dialog } from '@dozer/ui'
 import { ArrowRightIcon, ClipboardDocumentIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
-import { motion } from 'framer-motion'
+import { motion, Variants } from 'framer-motion'
 
 const Home = () => {
   // FAQ items based on the tokenomics document
   const faqItems = [
     {
-      question: "What are Dozer Donor Tokens (DZD)?",
-      answer: "DZD are unique tokens designed for Dozer's prelaunch phase. They serve as an innovative alternative to traditional SAFE documents, enabling community-driven fundraising while maintaining contributor anonymity."
+      question: 'What are Dozer Donor Tokens (DZD)?',
+      answer:
+        "DZD are unique tokens designed for Dozer's prelaunch phase. They serve as an innovative alternative to traditional SAFE documents, enabling community-driven fundraising while maintaining contributor anonymity.",
     },
     {
-      question: "What is the value of 1 DZD?",
-      answer: "1 DZD represents 1 USD worth of DZR at our token generation event, with most-favored nation terms for Dozer valuation."
+      question: 'What is the value of 1 DZD?',
+      answer:
+        '1 DZD represents 1 USD worth of DZR at our token generation event, with most-favored nation terms for Dozer valuation.',
     },
     {
-      question: "What happens to my DZD tokens after the presale?",
-      answer: "At the DZR (main project token) generation event, DZD holders can exchange their tokens for DZR through a smart contract without vesting or lock-up periods, becoming the first DZR holders."
+      question: 'What happens to my DZD tokens after the presale?',
+      answer:
+        'At the DZR (main project token) generation event, DZD holders can exchange their tokens for DZR through a smart contract without vesting or lock-up periods, becoming the first DZR holders.',
     },
     {
-      question: "Is there a limit to how many DZD I can purchase?",
-      answer: "Yes, there is a maximum cap of 5,000 DZD per backer to ensure fair distribution."
+      question: 'Is there a limit to how many DZD I can purchase?',
+      answer: 'Yes, there is a maximum cap of 5,000 DZD per backer to ensure fair distribution.',
     },
     {
-      question: "What benefits do DZD holders receive?",
-      answer: "Donors holding more than 100 DZD gain DAO membership, access to private Discord channels, real-time development updates, early access to nano contracts, beta testing participation, and voting rights on protocol decisions."
+      question: 'What benefits do DZD holders receive?',
+      answer:
+        'Donors holding more than 100 DZD gain DAO membership, access to private Discord channels, real-time development updates, early access to nano contracts, beta testing participation, and voting rights on protocol decisions.',
     },
     {
-      question: "Which cryptocurrencies can I use to purchase DZD?",
-      answer: "We accept USDT and USDC on the Polygon Network, as well as HTR on the Hathor Network."
-    }
-  ];
+      question: 'Which cryptocurrencies can I use to purchase DZD?',
+      answer: 'We accept USDT and USDC on the Polygon Network, as well as HTR on the Hathor Network.',
+    },
+  ]
 
   // State initialization with proper SSR handling
   const [mounted, setMounted] = useState(false)
-  
+
   // Countdown Timer Implementation
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -48,15 +52,15 @@ const Home = () => {
   // Token Counter Implementation
   const [totalDonations, setTotalDonations] = useState(57294) // Default fallback value
   const [isLoading, setIsLoading] = useState(false)
-  
+
   // Payment Section Implementation
-  const [selectedNetwork, setSelectedNetwork] = useState('solana')
+  const [selectedNetwork, setSelectedNetwork] = useState<'solana' | 'evm'>('solana')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   // Only run client-side code after the component is mounted
   useEffect(() => {
     setMounted(true)
-    
+
     // Countdown Timer
     const endDate = new Date('April 30, 2025 23:59:59').getTime()
 
@@ -124,25 +128,26 @@ const Home = () => {
   // Handle clipboard copy function
   const handleCopyAddress = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(addresses[selectedNetwork])
+      navigator.clipboard
+        .writeText(addresses[selectedNetwork])
         .then(() => {
-          console.log('Address copied to clipboard');
+          console.log('Address copied to clipboard')
         })
         .catch((err) => {
-          console.error('Failed to copy address: ', err);
-        });
+          console.error('Failed to copy address: ', err)
+        })
     }
-  };
+  }
 
   // Return null during SSR or before hydration to prevent mismatches
   if (!mounted) {
-    return null;
+    return null
   }
-  
+
   // Styled Button Component for Dialog
   const StyledDialogButton = ({ children, href }: { children: React.ReactNode; href: string }) => {
-    const [isHovered, setIsHovered] = useState(false);
-    
+    const [isHovered, setIsHovered] = useState(false)
+
     return (
       <Link.External
         href={href}
@@ -160,74 +165,77 @@ const Home = () => {
           <ArrowRightIcon className="w-3 h-3 text-yellow-500" />
         </motion.div>
       </Link.External>
-    );
-  };
+    )
+  }
 
   return (
-    <div className="relative bg-black text-white">
+    <div className="relative text-white bg-black">
       {/* Subtle grid background with floating particles */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.97)),linear-gradient(to_right,#222_1px,transparent_1px),linear-gradient(to_bottom,#222_1px,transparent_1px)] bg-[size:44px_44px]" />
-      
+
       {/* Animated particles */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
-          {mounted && Array(20).fill(0).map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-yellow-400 rounded-full"
-              initial={{ x: `${Math.random() * 100}%`, y: -10, opacity: 0 }}
-              animate={{ 
-                y: `${100 + Math.random() * 20}vh`, 
-                opacity: [0, 1, 0],
-              }}
-              transition={{ 
-                repeat: Infinity, 
-                duration: 8 + Math.random() * 10,
-                delay: Math.random() * 5
-              }}
-            />
-          ))}
+          {mounted &&
+            Array(20)
+              .fill(0)
+              .map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 bg-yellow-400 rounded-full"
+                  initial={{ x: `${Math.random() * 100}%`, y: -10, opacity: 0 }}
+                  animate={{
+                    y: `${100 + Math.random() * 20}vh`,
+                    opacity: [0, 1, 0],
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 8 + Math.random() * 10,
+                    delay: Math.random() * 5,
+                  }}
+                />
+              ))}
         </div>
       </div>
 
       {/* Content - main container */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-2 flex flex-col">
+      <div className="relative z-10 flex flex-col px-4 py-2 mx-auto max-w-7xl">
         {/* Hero Section */}
-        <div className="flex flex-col items-center text-center mb-8 mt-10 md:mt-16">
+        <div className="flex flex-col items-center mt-10 mb-8 text-center md:mt-16">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
           >
             <Typography
               variant="h1"
               weight={900}
-              className="relative text-5xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-br from-yellow-500 to-amber-700"
+              className="relative text-5xl text-transparent md:text-7xl bg-clip-text bg-gradient-to-br from-yellow-500 to-amber-700"
             >
               FINAL PRESALE PHASE
             </Typography>
           </motion.div>
 
-          <Typography variant="base" className="max-w-xl text-neutral-300 mb-3 mt-1">
+          <Typography variant="base" className="max-w-xl mt-1 mb-3 text-neutral-300">
             Join the revolution in DeFi. Don't miss your chance to be part of Dozer's journey from the beginning.
           </Typography>
 
           <div className="flex flex-wrap justify-center gap-4 mb-10">
-            <Link.Internal href="/product" passHref>
+            <Link.Internal href="/product">
               <Button
                 as="a"
                 size="md"
                 variant="outlined"
-                className="whitespace-nowrap border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
+                className="text-yellow-500 whitespace-nowrap border-yellow-500/50 hover:bg-yellow-500/10"
               >
                 Learn About Dozer
               </Button>
             </Link.Internal>
-            <Link.External href="https://forms.gle/8cEKvsaNrTP4c8Ef6" passHref>
+            <Link.External href="https://forms.gle/8cEKvsaNrTP4c8Ef6">
               <Button
                 as="a"
                 size="md"
-                className="whitespace-nowrap bg-gradient-to-r from-yellow-500 to-amber-600 text-black hover:from-yellow-400 hover:to-amber-500"
+                className="text-black whitespace-nowrap bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500"
                 endIcon={<ArrowRightIcon width={16} height={16} />}
               >
                 Buy DZD Tokens
@@ -237,20 +245,20 @@ const Home = () => {
         </div>
 
         {/* Main content grid - 3 columns on desktop, 1 column on mobile */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Left Column - Countdown & Token Counter */}
           <motion.div
-            whileHover={{ 
-              y: -5, 
-              boxShadow: "0 10px 25px -5px rgba(234, 179, 8, 0.2)",
-              borderColor: "rgba(234, 179, 8, 0.5)" 
+            whileHover={{
+              y: -5,
+              boxShadow: '0 10px 25px -5px rgba(234, 179, 8, 0.2)',
+              borderColor: 'rgba(234, 179, 8, 0.5)',
             }}
-            className="flex flex-col bg-black/30 p-4 rounded-xl border border-yellow-500/20 shadow-lg justify-between"
+            className="flex flex-col justify-between p-4 border shadow-lg bg-black/30 rounded-xl border-yellow-500/20"
           >
             {/* Countdown Section */}
             <div>
               <Typography
-                variant="h5"
+                variant="h3"
                 weight={600}
                 className="mb-3 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
               >
@@ -260,9 +268,15 @@ const Home = () => {
                 {timeUnits.map((unit, index) => (
                   <div key={unit.label} className="flex flex-col items-center">
                     <motion.div
-                      animate={{ boxShadow: ['0 0 10px rgba(234, 179, 8, 0.3)', '0 0 20px rgba(234, 179, 8, 0.6)', '0 0 10px rgba(234, 179, 8, 0.3)'] }}
+                      animate={{
+                        boxShadow: [
+                          '0 0 10px rgba(234, 179, 8, 0.3)',
+                          '0 0 20px rgba(234, 179, 8, 0.6)',
+                          '0 0 10px rgba(234, 179, 8, 0.3)',
+                        ],
+                      }}
                       transition={{ duration: 2, repeat: Infinity }}
-                      className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-black bg-opacity-80 rounded-lg border border-yellow-500/30 shadow-xl shadow-yellow-500/20"
+                      className="flex items-center justify-center w-12 h-12 bg-black border rounded-lg shadow-xl md:w-16 md:h-16 bg-opacity-80 border-yellow-500/30 shadow-yellow-500/20"
                     >
                       <Typography variant="h2" weight={700} className="text-yellow-500">
                         {String(unit.value).padStart(2, '0')}
@@ -278,24 +292,27 @@ const Home = () => {
 
             {/* Token Counter Section */}
             <div>
-              <Typography variant="h5" weight={600} className="mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600">
+              <Typography
+                variant="h3"
+                weight={600}
+                className="mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+              >
                 DZD TOKEN SALE
               </Typography>
               <Typography variant="base" className="mb-1 text-center text-neutral-300">
                 {`${tokensRemaining.toLocaleString()} DZD tokens remaining`}
               </Typography>
-              <Typography variant="sm" className="text-center text-neutral-400 mb-3">
+              <Typography variant="sm" className="mb-3 text-center text-neutral-400">
                 Price: 1 DZD = 1 USDT
               </Typography>
 
-              <div className="relative h-5 w-full overflow-hidden rounded-md bg-stone-950 border border-yellow-500/40">
+              <div className="relative w-full h-5 overflow-hidden border rounded-md bg-stone-950 border-yellow-500/40">
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-amber-500 to-yellow-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                >
-                </motion.div>
+                  transition={{ duration: 1.5, ease: 'easeOut' }}
+                ></motion.div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Typography variant="sm" weight={600} className="text-white">
                     {`${progress.toFixed(1)}% sold`}
@@ -303,7 +320,7 @@ const Home = () => {
                 </div>
               </div>
 
-              <div className="flex justify-between text-sm text-neutral-400 mt-1">
+              <div className="flex justify-between mt-1 text-sm text-neutral-400">
                 <span>0 DZD</span>
                 <span>{maxSupply.toLocaleString()} DZD</span>
               </div>
@@ -312,31 +329,31 @@ const Home = () => {
 
           {/* Middle Column - Price Increase */}
           <motion.div
-            whileHover={{ 
-              y: -5, 
-              boxShadow: "0 10px 25px -5px rgba(234, 179, 8, 0.2)",
-              borderColor: "rgba(234, 179, 8, 0.5)" 
+            whileHover={{
+              y: -5,
+              boxShadow: '0 10px 25px -5px rgba(234, 179, 8, 0.2)',
+              borderColor: 'rgba(234, 179, 8, 0.5)',
             }}
-            className="bg-black/30 p-4 rounded-xl border border-yellow-500/20 shadow-lg flex flex-col"
+            className="flex flex-col p-4 border shadow-lg bg-black/30 rounded-xl border-yellow-500/20"
           >
             <Typography
-              variant="h5"
+              variant="h3"
               weight={600}
-              className="mb-3 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+              className="mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
             >
               PRICE INCREASE SCHEDULE
             </Typography>
-            <Typography variant="sm" className="mb-4 text-center text-neutral-300">
-              DZD token price increases as the presale progresses
+            <Typography variant="base" className="mb-4 text-center text-neutral-400">
+              Secure your DZD tokens before the next price increase
             </Typography>
 
-            <div className="space-y-3 flex-grow mt-1">
+            <div className="flex-grow mt-1 space-y-3">
               {priceStages.map((stage, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className={`px-3 py-2 rounded-lg ${
-                    stage.active 
-                      ? 'bg-gradient-to-r from-yellow-500/20 to-yellow-600/10 border border-yellow-500/50' 
+                    stage.active
+                      ? 'bg-gradient-to-r from-yellow-500/20 to-yellow-600/10 border border-yellow-500/50'
                       : 'bg-black/60 border border-stone-700/50'
                   } flex justify-between items-center`}
                 >
@@ -344,7 +361,11 @@ const Home = () => {
                     {stage.date}
                   </Typography>
                   <div className="flex items-center">
-                    <Typography variant="md" weight={700} className={stage.active ? 'text-yellow-400' : 'text-gray-400'}>
+                    <Typography
+                      variant="base"
+                      weight={700}
+                      className={stage.active ? 'text-yellow-400' : 'text-gray-400'}
+                    >
                       {stage.price}
                     </Typography>
                     {stage.active && (
@@ -356,8 +377,8 @@ const Home = () => {
                 </div>
               ))}
             </div>
-            
-            <div className="mt-auto pt-2 flex items-center justify-between">
+
+            <div className="flex items-center justify-between pt-2 mt-auto">
               <Typography variant="xs" className="text-neutral-300 whitespace-nowrap">
                 Early buyers get the best price!
               </Typography>
@@ -375,35 +396,43 @@ const Home = () => {
 
           {/* Right Column - Payment Section */}
           <motion.div
-            whileHover={{ 
-              y: -5, 
-              boxShadow: "0 10px 25px -5px rgba(234, 179, 8, 0.2)",
-              borderColor: "rgba(234, 179, 8, 0.5)" 
+            whileHover={{
+              y: -5,
+              boxShadow: '0 10px 25px -5px rgba(234, 179, 8, 0.2)',
+              borderColor: 'rgba(234, 179, 8, 0.5)',
             }}
-            className="bg-black/30 p-4 rounded-xl border border-yellow-500/20 shadow-lg flex flex-col"
+            className="flex flex-col p-4 border shadow-lg bg-black/30 rounded-xl border-yellow-500/20"
           >
-            <Typography variant="h5" weight={600} className="mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600">
+            <Typography
+              variant="h3"
+              weight={600}
+              className="mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+            >
               PAYMENT DETAILS
             </Typography>
             <Typography variant="sm" className="mb-4 text-center text-neutral-300">
               Send USDT to receive your DZD tokens
             </Typography>
 
-            <div className="flex flex-col space-y-4 flex-grow">
+            <div className="flex flex-col flex-grow space-y-4">
               <div className="flex justify-center gap-4 mb-1">
-                <Button 
+                <Button
                   size="sm"
                   variant={selectedNetwork === 'solana' ? 'filled' : 'outlined'}
                   onClick={() => setSelectedNetwork('solana')}
-                  className={selectedNetwork === 'solana' ? 'bg-yellow-500 text-black' : 'border-yellow-500/50 text-yellow-500'}
+                  className={
+                    selectedNetwork === 'solana' ? 'bg-yellow-500 text-black' : 'border-yellow-500/50 text-yellow-500'
+                  }
                 >
                   Solana
                 </Button>
-                <Button 
+                <Button
                   size="sm"
                   variant={selectedNetwork === 'evm' ? 'filled' : 'outlined'}
                   onClick={() => setSelectedNetwork('evm')}
-                  className={selectedNetwork === 'evm' ? 'bg-yellow-500 text-black' : 'border-yellow-500/50 text-yellow-500'}
+                  className={
+                    selectedNetwork === 'evm' ? 'bg-yellow-500 text-black' : 'border-yellow-500/50 text-yellow-500'
+                  }
                 >
                   EVM (ETH, BSC, etc.)
                 </Button>
@@ -413,21 +442,21 @@ const Home = () => {
                 <Typography variant="sm" className="mb-2 text-neutral-300">
                   Send USDT to this address:
                 </Typography>
-                
-                <div className="flex items-center p-2 bg-stone-900 rounded-lg overflow-hidden border border-stone-700/50">
+
+                <div className="flex items-center p-2 overflow-hidden border rounded-lg bg-stone-900 border-stone-700/50">
                   <Typography variant="xs" className="flex-1 font-mono text-yellow-300 truncate">
                     {addresses[selectedNetwork]}
                   </Typography>
                   <button
                     type="button"
-                    className="flex-shrink-0 ml-2 cursor-pointer bg-transparent border-0 p-0"
+                    className="flex-shrink-0 p-0 ml-2 bg-transparent border-0 cursor-pointer"
                     onClick={handleCopyAddress}
                   >
                     <ClipboardDocumentIcon className="w-5 h-5 text-yellow-500 hover:text-yellow-400" />
                   </button>
                 </div>
-                
-                <Typography variant="xs" className="text-red-400 mt-1">
+
+                <Typography variant="xs" className="mt-1 text-red-400">
                   Only send USDT on the {selectedNetwork === 'solana' ? 'Solana' : 'EVM'} network!
                 </Typography>
               </div>
@@ -436,56 +465,47 @@ const Home = () => {
                 <Typography variant="sm" weight={500} className="mb-2 text-neutral-300">
                   After sending payment:
                 </Typography>
-                <Button
-                  href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
-                  target="_blank"
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-black hover:from-yellow-400 hover:to-amber-500"
-                >
-                  Fill Out Form
-                </Button>
+                <Link.External href="https://forms.gle/8cEKvsaNrTP4c8Ef6">
+                  <Button
+                    as="a"
+                    size="lg"
+                    className="w-full text-black bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500"
+                  >
+                    Buy DZD Tokens
+                  </Button>
+                </Link.External>
               </div>
             </div>
           </motion.div>
         </div>
 
         {/* FAQ Section */}
-        <div className="w-full mt-16 pt-8 border-t border-yellow-500/20">
+        <div className="w-full pt-8 mt-16 border-t border-yellow-500/20">
           <Typography
-            variant="h4"
+            variant="h3"
             weight={600}
-            className="mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+            className="mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
           >
             FREQUENTLY ASKED QUESTIONS
           </Typography>
-          
+
           <motion.div
-            variants={{
-              container: {
-                hidden: { opacity: 0 },
-                show: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.1 }
-                }
-              }
-            }}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ staggerChildren: 0.1 }}
+            className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2"
           >
             {faqItems.map((item, index) => (
               <motion.div
                 key={index}
-                variants={{
-                  hidden: { y: 20, opacity: 0 },
-                  show: { y: 0, opacity: 1 }
-                }}
-                whileHover={{ 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                whileHover={{
                   scale: 1.02,
-                  boxShadow: "0 10px 25px -5px rgba(234, 179, 8, 0.15)",
-                  borderColor: "rgba(234, 179, 8, 0.4)" 
+                  boxShadow: '0 10px 25px -5px rgba(234, 179, 8, 0.15)',
+                  borderColor: 'rgba(234, 179, 8, 0.4)',
                 }}
-                className="bg-black/30 p-4 rounded-lg border border-yellow-500/20"
+                className="p-4 border rounded-lg bg-black/30 border-yellow-500/20"
               >
                 <Typography variant="base" weight={600} className="mb-2 text-yellow-400">
                   {item.question}
@@ -497,7 +517,7 @@ const Home = () => {
             ))}
           </motion.div>
         </div>
-        
+
         {/* Custom Dialog */}
         <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
           <Dialog.Content className="w-screen max-w-md !pb-4 bg-stone-950">
@@ -507,9 +527,11 @@ const Home = () => {
                 Summary
               </Typography>
               <Typography variant="sm" className="mb-6 text-left text-neutral-300">
-                Dozer Donor Token (DZD) is a unique solution designed for the Dozer project's prelaunch phase. They serve as an innovative alternative to traditional SAFE documents, enabling a community-driven fundraising approach while maintaining contributor anonymity.
+                Dozer Donor Token (DZD) is a unique solution designed for the Dozer project's prelaunch phase. They
+                serve as an innovative alternative to traditional SAFE documents, enabling a community-driven
+                fundraising approach while maintaining contributor anonymity.
               </Typography>
-              
+
               <Typography variant="lg" className="mb-2 text-left text-neutral-300">
                 Token Overview
               </Typography>
@@ -522,7 +544,7 @@ const Home = () => {
                 <br />
                 <b>Holder Cap</b>: Maximum 5,000 DZD per backer
               </Typography>
-              
+
               <Typography variant="lg" className="mb-2 text-left text-neutral-300">
                 Benefits
               </Typography>

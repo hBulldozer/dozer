@@ -19,7 +19,7 @@ export const PriceIncrease: React.FC = () => {
     >
       <div className="flex flex-col items-center">
         <Typography
-          variant="h4"
+          variant="h3"
           weight={600}
           className="mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
         >
@@ -39,21 +39,25 @@ export const PriceIncrease: React.FC = () => {
               <div key={index} className="relative flex items-center">
                 {/* Timeline dot */}
                 <div className="absolute left-1/2 transform -translate-x-1/2 w-5 h-5 rounded-full border-2 border-yellow-500 bg-black" />
-                
+
                 {/* Content boxes - alternate sides */}
                 <div className={`flex w-full ${index % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
                   <div className={`w-5/12 ${index % 2 === 0 ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
-                    <div 
+                    <div
                       className={`p-4 rounded-lg border ${
-                        stage.active 
-                          ? 'bg-gradient-to-br from-yellow-500/20 to-amber-600/10 border-yellow-500/50' 
+                        stage.active
+                          ? 'bg-gradient-to-br from-yellow-500/20 to-amber-600/10 border-yellow-500/50'
                           : 'bg-black/60 border-gray-700/30'
                       } shadow-md`}
                     >
                       <Typography variant="sm" weight={600} className="text-white">
                         {stage.date}
                       </Typography>
-                      <Typography variant="lg" weight={700} className={stage.active ? 'text-yellow-400' : 'text-gray-400'}>
+                      <Typography
+                        variant="lg"
+                        weight={700}
+                        className={stage.active ? 'text-yellow-400' : 'text-gray-400'}
+                      >
                         {stage.price}
                       </Typography>
                       {stage.active && (
