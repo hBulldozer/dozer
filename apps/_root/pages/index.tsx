@@ -6,6 +6,34 @@ import { ArrowRightIcon, ClipboardDocumentIcon, ChevronRightIcon } from '@heroic
 import { motion } from 'framer-motion'
 
 const Home = () => {
+  // FAQ items based on the tokenomics document
+  const faqItems = [
+    {
+      question: "What are Dozer Donor Tokens (DZD)?",
+      answer: "DZD are unique tokens designed for Dozer's prelaunch phase. They serve as an innovative alternative to traditional SAFE documents, enabling community-driven fundraising while maintaining contributor anonymity."
+    },
+    {
+      question: "What is the value of 1 DZD?",
+      answer: "1 DZD represents 1 USD worth of DZR at our token generation event, with most-favored nation terms for Dozer valuation."
+    },
+    {
+      question: "What happens to my DZD tokens after the presale?",
+      answer: "At the DZR (main project token) generation event, DZD holders can exchange their tokens for DZR through a smart contract without vesting or lock-up periods, becoming the first DZR holders."
+    },
+    {
+      question: "Is there a limit to how many DZD I can purchase?",
+      answer: "Yes, there is a maximum cap of 5,000 DZD per backer to ensure fair distribution."
+    },
+    {
+      question: "What benefits do DZD holders receive?",
+      answer: "Donors holding more than 100 DZD gain DAO membership, access to private Discord channels, real-time development updates, early access to nano contracts, beta testing participation, and voting rights on protocol decisions."
+    },
+    {
+      question: "Which cryptocurrencies can I use to purchase DZD?",
+      answer: "We accept USDT and USDC on the Polygon Network, as well as HTR on the Hathor Network."
+    }
+  ];
+
   // State initialization with proper SSR handling
   const [mounted, setMounted] = useState(false)
   
@@ -143,7 +171,7 @@ const Home = () => {
       {/* Content - main container */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-2 flex flex-col">
         {/* Hero Section */}
-        <div className="flex flex-col items-center text-center mb-8">
+        <div className="flex flex-col items-center text-center mb-8 mt-10 md:mt-16">
           <div className="relative">
             <Typography
               variant="h1"
@@ -368,7 +396,37 @@ const Home = () => {
           </div>
         </div>
 
-        {/* No footer - using the app's default footer */}
+        {/* FAQ Section */}
+        <div className="w-full mt-16 pt-8 border-t border-yellow-500/20">
+          <Typography
+            variant="h4"
+            weight={600}
+            className="mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+          >
+            FREQUENTLY ASKED QUESTIONS
+          </Typography>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {faqItems.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * index }}
+                className="bg-black/30 p-4 rounded-lg border border-yellow-500/20"
+              >
+                <Typography variant="base" weight={600} className="mb-2 text-yellow-400">
+                  {item.question}
+                </Typography>
+                <Typography variant="sm" className="text-neutral-300">
+                  {item.answer}
+                </Typography>
+              </motion.div>
+            ))}
+          </div>
+          
+
+        </div>
         
         {/* Custom Dialog */}
         <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
@@ -379,17 +437,32 @@ const Home = () => {
                 Summary
               </Typography>
               <Typography variant="sm" className="mb-6 text-left text-neutral-300">
-                Dozer Donor Token (DZD) is a unique solution designed for the Dozer's prelaunch phase. They enable a
-                community-driven funding approach before DZR TGE.
+                Dozer Donor Token (DZD) is a unique solution designed for the Dozer project's prelaunch phase. They serve as an innovative alternative to traditional SAFE documents, enabling a community-driven fundraising approach while maintaining contributor anonymity.
               </Typography>
+              
               <Typography variant="lg" className="mb-2 text-left text-neutral-300">
                 Token Overview
               </Typography>
-              <Typography variant="sm" className="text-left text-neutral-300">
+              <Typography variant="sm" className="mb-4 text-left text-neutral-300">
                 <b>Name</b>: Dozer Donor Tokens (DZD)
                 <br />
-                <b>Representation</b>: 1 DZD represents 1 USD worth donated
+                <b>Representation</b>: 1 DZD represents 1 USD worth of DZR at our token generation event
                 <br />
+                <b>Maximum Supply</b>: 100,000 DZD
+                <br />
+                <b>Holder Cap</b>: Maximum 5,000 DZD per backer
+              </Typography>
+              
+              <Typography variant="lg" className="mb-2 text-left text-neutral-300">
+                Benefits
+              </Typography>
+              <Typography variant="sm" className="text-left text-neutral-300">
+                Donors holding more than 100 DZD gain exclusive privileges:
+                <br />• Membership in our DAO and Private Discord Channel
+                <br />• Real-time updates on development progress
+                <br />• Access to nano contracts releases
+                <br />• Participation in Protocol beta testing
+                <br />• Voting rights on the future of the protocol
               </Typography>
             </div>
             <div className="flex flex-col gap-2 pt-2 border-t lg:flex-row border-stone-700">

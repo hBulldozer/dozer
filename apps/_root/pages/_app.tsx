@@ -60,7 +60,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
           <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
             <Component {...pageProps} />
           </MotionConfig>
-          <App.Footer />
+          {router.pathname !== '/' && <App.Footer />}
           <ToastContainer className="mt-[50px]" />
         </App.Shell>
       </ThemeProvider>
