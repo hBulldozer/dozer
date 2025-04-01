@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Button, Link, Typography, Dialog } from '@dozer/ui'
 import { ArrowRightIcon, ClipboardDocumentIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { motion, Variants } from 'framer-motion'
+import { AuroraBackground } from '@dozer/ui/aceternity/aurora-background'
 
 const Home = () => {
   // FAQ items based on the tokenomics document
@@ -61,12 +62,13 @@ const Home = () => {
   useEffect(() => {
     setMounted(true)
 
-    // Countdown Timer
+    // Countdown Timers
     const endDate = new Date('April 30, 2025 23:59:59').getTime()
 
     const calculateTimeLeft = () => {
       const now = new Date().getTime()
       const difference = endDate - now
+      const priceChangeDifference = nextPriceChangeDate.getTime() - now
 
       if (difference > 0) {
         setTimeLeft({
@@ -74,6 +76,15 @@ const Home = () => {
           hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
           minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        })
+      }
+
+      if (priceChangeDifference > 0) {
+        setPriceChangeTimeLeft({
+          days: Math.floor(priceChangeDifference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((priceChangeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((priceChangeDifference % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((priceChangeDifference % (1000 * 60)) / 1000),
         })
       }
     }
@@ -118,6 +129,18 @@ const Home = () => {
     { label: 'MINUTES', value: timeLeft.minutes },
     { label: 'SECONDS', value: timeLeft.seconds },
   ]
+
+  // Next price change date (constant for easy updates)
+  const nextPriceChangeDate = new Date()
+  nextPriceChangeDate.setDate(nextPriceChangeDate.getDate() + 7) // 7 days from now
+
+  // Countdown for price change
+  const [priceChangeTimeLeft, setPriceChangeTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  })
 
   const priceStages = [
     { date: 'Apr 1-10', price: '$1.00', active: true },
@@ -170,7 +193,7 @@ const Home = () => {
 
   return (
     <div className="relative text-white bg-black">
-      {/* Subtle grid background with floating particles */}
+      {/* Subtle grid background */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.97)),linear-gradient(to_right,#222_1px,transparent_1px),linear-gradient(to_bottom,#222_1px,transparent_1px)] bg-[size:44px_44px]" />
 
       {/* Animated particles */}
@@ -201,11 +224,12 @@ const Home = () => {
       {/* Content - main container */}
       <div className="relative z-10 flex flex-col px-4 py-2 mx-auto max-w-7xl">
         {/* Hero Section */}
-        <div className="flex flex-col items-center mt-10 mb-8 text-center md:mt-16">
+        <div className="flex flex-col items-center mt-10 mb-12 text-center md:mt-16">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="mb-8"
           >
             <Typography
               variant="h1"
@@ -216,118 +240,96 @@ const Home = () => {
             </Typography>
           </motion.div>
 
-          <Typography variant="base" className="max-w-xl mt-1 mb-3 text-neutral-300">
-            Join the revolution in DeFi. Don't miss your chance to be part of Dozer's journey from the beginning.
-          </Typography>
-
-          <div className="flex flex-wrap justify-center gap-4 mb-10">
-            <Link.Internal href="/product">
-              <Button
-                as="a"
-                size="md"
-                variant="outlined"
-                className="text-yellow-500 whitespace-nowrap border-yellow-500/50 hover:bg-yellow-500/10"
-              >
-                Learn About Dozer
-              </Button>
-            </Link.Internal>
-            <Link.External href="https://forms.gle/8cEKvsaNrTP4c8Ef6">
-              <Button
-                as="a"
-                size="md"
-                className="text-black whitespace-nowrap bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500"
-                endIcon={<ArrowRightIcon width={16} height={16} />}
-              >
-                Buy DZD Tokens
-              </Button>
-            </Link.External>
-          </div>
-        </div>
-
-        {/* Main content grid - 3 columns on desktop, 1 column on mobile */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {/* Left Column - Countdown & Token Counter */}
+          {/* Large Countdown Timer */}
           <motion.div
-            whileHover={{
-              y: -5,
-              boxShadow: '0 10px 25px -5px rgba(234, 179, 8, 0.2)',
-              borderColor: 'rgba(234, 179, 8, 0.5)',
-            }}
-            className="flex flex-col justify-between p-4 border shadow-lg bg-black/30 rounded-xl border-yellow-500/20"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="w-full max-w-3xl mx-auto mb-10"
           >
-            {/* Countdown Section */}
-            <div>
-              <Typography
-                variant="h3"
-                weight={600}
-                className="mb-3 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-              >
-                FINAL PHASE ENDS IN
-              </Typography>
-              <div className="flex items-center justify-center gap-4">
-                {timeUnits.map((unit, index) => (
-                  <div key={unit.label} className="flex flex-col items-center">
-                    <motion.div
-                      animate={{
-                        boxShadow: [
-                          '0 0 10px rgba(234, 179, 8, 0.3)',
-                          '0 0 20px rgba(234, 179, 8, 0.6)',
-                          '0 0 10px rgba(234, 179, 8, 0.3)',
-                        ],
-                      }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="flex items-center justify-center w-12 h-12 bg-black border rounded-lg shadow-xl md:w-16 md:h-16 bg-opacity-80 border-yellow-500/30 shadow-yellow-500/20"
-                    >
-                      <Typography variant="h2" weight={700} className="text-yellow-500">
-                        {String(unit.value).padStart(2, '0')}
-                      </Typography>
-                    </motion.div>
-                    <Typography variant="xs" className="mt-1 text-neutral-400">
-                      {unit.label}
-                    </Typography>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Token Counter Section */}
-            <div>
-              <Typography
-                variant="h3"
-                weight={600}
-                className="mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-              >
-                DZD TOKEN SALE
-              </Typography>
-              <Typography variant="base" className="mb-1 text-center text-neutral-300">
-                {`${tokensRemaining.toLocaleString()} DZD tokens remaining`}
-              </Typography>
-              <Typography variant="sm" className="mb-3 text-center text-neutral-400">
-                Price: 1 DZD = 1 USDT
-              </Typography>
-
-              <div className="relative w-full h-5 overflow-hidden border rounded-md bg-stone-950 border-yellow-500/40">
+            <Typography
+              variant="h2"
+              weight={700}
+              className="mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+            >
+              PRESALE ENDS IN
+            </Typography>
+            <div className="flex items-center justify-center gap-4 md:gap-8">
+              {timeUnits.map((unit, index) => (
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-amber-500 to-yellow-500"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1.5, ease: 'easeOut' }}
-                ></motion.div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Typography variant="sm" weight={600} className="text-white">
-                    {`${progress.toFixed(1)}% sold`}
+                  key={unit.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                  className="flex flex-col items-center justify-center"
+                >
+                  <motion.div
+                    animate={{
+                      boxShadow: [
+                        '0 0 10px rgba(234, 179, 8, 0.3)',
+                        '0 0 20px rgba(234, 179, 8, 0.6)',
+                        '0 0 10px rgba(234, 179, 8, 0.3)',
+                      ],
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="flex items-center justify-center w-20 h-20 bg-black border rounded-lg shadow-xl md:w-28 md:h-28 bg-opacity-80 border-yellow-500/30 shadow-yellow-500/20"
+                  >
+                    <Typography variant="h1" weight={700} className="text-yellow-500">
+                      {String(unit.value).padStart(2, '0')}
+                    </Typography>
+                  </motion.div>
+                  <Typography variant="md" className="mt-2 text-neutral-400">
+                    {unit.label}
                   </Typography>
-                </div>
-              </div>
-
-              <div className="flex justify-between mt-1 text-sm text-neutral-400">
-                <span>0 DZD</span>
-                <span>{maxSupply.toLocaleString()} DZD</span>
-              </div>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
 
-          {/* Middle Column - Price Increase */}
+          {/* Large Progress Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="w-full max-w-3xl mx-auto mb-10"
+          >
+            <Typography
+              variant="h2"
+              weight={700}
+              className="mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+            >
+              TOKEN SALE PROGRESS
+            </Typography>
+            <Typography variant="lg" className="mb-4 text-center text-neutral-300">
+              {`${tokensRemaining.toLocaleString()} of ${maxSupply.toLocaleString()} DZD tokens remaining`}
+            </Typography>
+
+            <div className="relative w-full h-8 overflow-hidden border rounded-lg md:h-10 bg-stone-950 border-yellow-500/40">
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-amber-500 to-yellow-500"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 1.5, ease: 'easeOut' }}
+              ></motion.div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Typography variant="lg" weight={700} className="text-white drop-shadow-md">
+                  {`${progress.toFixed(1)}% sold`}
+                </Typography>
+              </div>
+            </div>
+
+            <div className="flex justify-between mt-2 text-sm text-neutral-400">
+              <span>0 DZD</span>
+              <span>{maxSupply.toLocaleString()} DZD</span>
+            </div>
+          </motion.div>
+
+          {/* Buttons removed as requested */}
+        </div>
+
+        {/* Main content grid - 3 columns on desktop, 1 column on mobile */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {/* Left Column - Price Increase */}
           <motion.div
             whileHover={{
               y: -5,
@@ -341,44 +343,35 @@ const Home = () => {
               weight={600}
               className="mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
             >
-              PRICE INCREASE SCHEDULE
-            </Typography>
-            <Typography variant="base" className="mb-4 text-center text-neutral-400">
-              Secure your DZD tokens before the next price increase
+              PRICE INCREASE COUNTDOWN
             </Typography>
 
-            <div className="flex-grow mt-1 space-y-3">
-              {priceStages.map((stage, index) => (
-                <div
-                  key={index}
-                  className={`px-3 py-2 rounded-lg ${
-                    stage.active
-                      ? 'bg-gradient-to-r from-yellow-500/20 to-yellow-600/10 border border-yellow-500/50'
-                      : 'bg-black/60 border border-stone-700/50'
-                  } flex justify-between items-center`}
-                >
-                  <Typography variant="sm" weight={500} className="text-white">
-                    {stage.date}
-                  </Typography>
-                  <div className="flex items-center">
-                    <Typography
-                      variant="base"
-                      weight={700}
-                      className={stage.active ? 'text-yellow-400' : 'text-gray-400'}
-                    >
-                      {stage.price}
-                    </Typography>
-                    {stage.active && (
-                      <Typography variant="xs" className="text-green-400 ml-2 px-2 py-0.5 bg-green-900/30 rounded">
-                        Active
+            <div className="mb-1">
+              <Typography variant="base" className="mb-4 text-center text-white">
+                Price: <span className="font-bold text-yellow-400">{priceStages[0].price}</span> per DZD
+              </Typography>
+
+              <Typography variant="sm" className="mb-3 text-center text-neutral-400">
+                Price increase in:
+              </Typography>
+
+              <div className="flex items-center justify-center gap-3 mb-3">
+                {Object.entries(priceChangeTimeLeft).map(([key, value]) => (
+                  <div key={key} className="flex flex-col items-center">
+                    <div className="flex items-center justify-center w-12 h-12 bg-black border rounded-lg shadow-lg bg-opacity-70 border-yellow-500/30">
+                      <Typography variant="lg" weight={700} className="text-yellow-500">
+                        {String(value).padStart(2, '0')}
                       </Typography>
-                    )}
+                    </div>
+                    <Typography variant="xs" className="mt-1 text-neutral-400">
+                      {key.toUpperCase()}
+                    </Typography>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2 mt-auto">
+            <div className="flex items-center justify-between pt-4 mt-auto">
               <Typography variant="xs" className="text-neutral-300 whitespace-nowrap">
                 Early buyers get the best price!
               </Typography>
@@ -394,7 +387,7 @@ const Home = () => {
             </div>
           </motion.div>
 
-          {/* Right Column - Payment Section */}
+          {/* Payment Section */}
           <motion.div
             whileHover={{
               y: -5,
