@@ -278,7 +278,7 @@ const Home = () => {
                       {String(unit.value).padStart(2, '0')}
                     </Typography>
                   </motion.div>
-                  <Typography variant="md" className="mt-2 text-neutral-400">
+                  <Typography variant="h3" className="mt-2 text-neutral-400">
                     {unit.label}
                   </Typography>
                 </motion.div>
@@ -458,15 +458,14 @@ const Home = () => {
                 <Typography variant="sm" weight={500} className="mb-2 text-neutral-300">
                   After sending payment:
                 </Typography>
-                <Link.External href="https://forms.gle/8cEKvsaNrTP4c8Ef6">
-                  <Button
-                    as="a"
-                    size="lg"
-                    className="w-full text-black bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500"
-                  >
-                    Buy DZD Tokens
-                  </Button>
-                </Link.External>
+                <Button
+                  href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
+                  as="a"
+                  size="lg"
+                  className="w-full text-black bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500"
+                >
+                  Fill out this form
+                </Button>
               </div>
             </div>
           </motion.div>
