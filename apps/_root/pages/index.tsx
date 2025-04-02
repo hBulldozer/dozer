@@ -1,12 +1,11 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { Dialog, Typography } from '@dozer/ui'
+import { Dialog, Typography, Link } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
-import { Link } from '@dozer/ui'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
-import { PresaleSidebar, TabContentWithAssets, TabNavigation, Footer, FAQSection } from '../components/LandingPage'
+import { PresaleSidebar, TabContentWithAssets, TabNavigation, FAQSection } from '../components/LandingPage'
 import { Meteors, ShootingStars } from '@dozer/ui/aceternity'
 
 const Home = () => {
@@ -305,9 +304,6 @@ const Home = () => {
 
         {/* FAQ section */}
         <FAQSection faqItems={faqItems} onViewMoreClick={() => setIsDialogOpen(true)} />
-
-        {/* Footer */}
-        <Footer />
 
         {/* Custom Dialog */}
         <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>

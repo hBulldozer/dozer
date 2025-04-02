@@ -18,6 +18,15 @@ declare global {
   }
 }
 
+// Separate component to handle conditional Footer rendering
+const ConditionalFooter: FC = () => {
+  const router = useRouter()
+  if (router.pathname !== '/') {
+    return <App.Footer />
+  }
+  return null
+}
+
 const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   const isSmallScreen = useIsSmScreen()
   const router = useRouter()
@@ -60,7 +69,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
           <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
             <Component {...pageProps} />
           </MotionConfig>
-          {router.pathname !== '/' && <App.Footer />}
+          <ConditionalFooter />
           <ToastContainer className="mt-[50px]" />
         </App.Shell>
       </ThemeProvider>
