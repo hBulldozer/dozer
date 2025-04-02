@@ -5,6 +5,7 @@ import { Button, Link, Typography, Dialog } from '@dozer/ui'
 import { ArrowRightIcon, ClipboardDocumentIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { motion, Variants } from 'framer-motion'
 import { AuroraBackground } from '@dozer/ui/aceternity/aurora-background'
+import PresaleModal from '../components/PresaleModal/PresaleModal'
 
 const Home = () => {
   // FAQ items based on the tokenomics document
@@ -42,42 +43,33 @@ const Home = () => {
   // State initialization with proper SSR handling
   const [mounted, setMounted] = useState(false)
 
-  // Countdown Timer Implementation
-  const [timeLeft, setTimeLeft] = useState({
+  // Token Counter Implementation
+  const [totalDonations, setTotalDonations] = useState(57294) // Default fallback value
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Price Change Countdown
+  const [priceChangeTimeLeft, setPriceChangeTimeLeft] = useState({
     days: 0,
     hours: 0,
     minutes: 0,
     seconds: 0,
   })
 
-  // Token Counter Implementation
-  const [totalDonations, setTotalDonations] = useState(57294) // Default fallback value
-  const [isLoading, setIsLoading] = useState(false)
-
-  // Payment Section Implementation
-  const [selectedNetwork, setSelectedNetwork] = useState<'solana' | 'evm'>('solana')
+  // Dialog states
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isPresaleModalOpen, setIsPresaleModalOpen] = useState(false)
 
   // Only run client-side code after the component is mounted
   useEffect(() => {
     setMounted(true)
 
-    // Countdown Timers
-    const endDate = new Date('April 30, 2025 23:59:59').getTime()
+    // Next price change date
+    const nextPriceChangeDate = new Date()
+    nextPriceChangeDate.setDate(nextPriceChangeDate.getDate() + 7) // 7 days from now
 
     const calculateTimeLeft = () => {
       const now = new Date().getTime()
-      const difference = endDate - now
       const priceChangeDifference = nextPriceChangeDate.getTime() - now
-
-      if (difference > 0) {
-        setTimeLeft({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((difference % (1000 * 60)) / 1000),
-        })
-      }
 
       if (priceChangeDifference > 0) {
         setPriceChangeTimeLeft({
@@ -117,30 +109,13 @@ const Home = () => {
   const maxSupply = 100000
   const tokensRemaining = maxSupply - totalDonations
   const progress = Math.min(Math.max((totalDonations / maxSupply) * 100, 0), 100)
-
-  const addresses = {
-    solana: 'BK6Yh1aQnX3fPNTbXmzvAFB12fwGYkEqLXq4JYbNrRjG',
-    evm: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
-  }
-
-  const timeUnits = [
-    { label: 'DAYS', value: timeLeft.days },
-    { label: 'HOURS', value: timeLeft.hours },
-    { label: 'MINUTES', value: timeLeft.minutes },
-    { label: 'SECONDS', value: timeLeft.seconds },
+  
+  const priceChangeTimeUnits = [
+    { label: 'DAYS', value: priceChangeTimeLeft.days },
+    { label: 'HOURS', value: priceChangeTimeLeft.hours },
+    { label: 'MINUTES', value: priceChangeTimeLeft.minutes },
+    { label: 'SECONDS', value: priceChangeTimeLeft.seconds },
   ]
-
-  // Next price change date (constant for easy updates)
-  const nextPriceChangeDate = new Date()
-  nextPriceChangeDate.setDate(nextPriceChangeDate.getDate() + 7) // 7 days from now
-
-  // Countdown for price change
-  const [priceChangeTimeLeft, setPriceChangeTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  })
 
   const priceStages = [
     { date: 'Apr 1-10', price: '$1.00', active: true },
@@ -148,19 +123,7 @@ const Home = () => {
     { date: 'Apr 21-30', price: '$1.25', active: false },
   ]
 
-  // Handle clipboard copy function
-  const handleCopyAddress = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard
-        .writeText(addresses[selectedNetwork])
-        .then(() => {
-          console.log('Address copied to clipboard')
-        })
-        .catch((err) => {
-          console.error('Failed to copy address: ', err)
-        })
-    }
-  }
+  // No longer needed since we replaced the payment section
 
   // Return null during SSR or before hydration to prevent mismatches
   if (!mounted) {
@@ -245,17 +208,17 @@ const Home = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-full max-w-3xl mx-auto mb-10"
+            className="w-full max-w-3xl mx-auto mb-4"
           >
             <Typography
               variant="h2"
               weight={700}
-              className="mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+              className="mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
             >
-              PRESALE ENDS IN
+              NEXT PRICE INCREASE IN
             </Typography>
             <div className="flex items-center justify-center gap-4 md:gap-8">
-              {timeUnits.map((unit, index) => (
+              {priceChangeTimeUnits.map((unit, index) => (
                 <motion.div
                   key={unit.label}
                   initial={{ opacity: 0, y: 20 }}
@@ -272,18 +235,21 @@ const Home = () => {
                       ],
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
-                    className="flex items-center justify-center w-20 h-20 bg-black border rounded-lg shadow-xl md:w-28 md:h-28 bg-opacity-80 border-yellow-500/30 shadow-yellow-500/20"
+                    className="flex items-center justify-center w-16 h-16 bg-black border rounded-lg shadow-xl md:w-24 md:h-24 bg-opacity-80 border-yellow-500/30 shadow-yellow-500/20"
                   >
-                    <Typography variant="h1" weight={700} className="text-yellow-500">
+                    <Typography variant="h1" weight={700} className="text-yellow-500 text-3xl md:text-4xl">
                       {String(unit.value).padStart(2, '0')}
                     </Typography>
                   </motion.div>
-                  <Typography variant="h3" className="mt-2 text-neutral-400">
+                  <Typography variant="sm" className="mt-2 text-neutral-400">
                     {unit.label}
                   </Typography>
                 </motion.div>
               ))}
             </div>
+            <Typography variant="base" className="mt-4 text-center text-neutral-300">
+              Entire presale ends April 30, 2025 - Act now for the best price!
+            </Typography>
           </motion.div>
 
           {/* Large Progress Bar */}
@@ -298,10 +264,10 @@ const Home = () => {
               weight={700}
               className="mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
             >
-              TOKEN SALE PROGRESS
+              USDT RAISED
             </Typography>
             <Typography variant="lg" className="mb-4 text-center text-neutral-300">
-              {`${tokensRemaining.toLocaleString()} of ${maxSupply.toLocaleString()} DZD tokens remaining`}
+              {`${tokensRemaining.toLocaleString()} of ${maxSupply.toLocaleString()} USDT target remaining`}
             </Typography>
 
             <div className="relative w-full h-8 overflow-hidden border rounded-lg md:h-10 bg-stone-950 border-yellow-500/40">
@@ -313,162 +279,73 @@ const Home = () => {
               ></motion.div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <Typography variant="lg" weight={700} className="text-white drop-shadow-md">
-                  {`${progress.toFixed(1)}% sold`}
+                  {`${progress.toFixed(1)}% raised`}
                 </Typography>
               </div>
             </div>
 
             <div className="flex justify-between mt-2 text-sm text-neutral-400">
-              <span>0 DZD</span>
-              <span>{maxSupply.toLocaleString()} DZD</span>
+              <span>0 USDT</span>
+              <span>{maxSupply.toLocaleString()} USDT</span>
             </div>
           </motion.div>
 
-          {/* Buttons removed as requested */}
+          {/* Join Presale Button */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="w-full max-w-md mx-auto mb-12"
+          >
+            <Button
+              size="lg"
+              onClick={() => setIsPresaleModalOpen(true)}
+              className="w-full py-6 text-xl font-bold text-black bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 shadow-lg shadow-yellow-500/20 hover:shadow-yellow-500/30 transition-all duration-300"
+            >
+              JOIN THE PRE-SALE
+            </Button>
+          </motion.div>
         </div>
 
-        {/* Main content grid - 3 columns on desktop, 1 column on mobile */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {/* Left Column - Price Increase */}
-          <motion.div
-            whileHover={{
-              y: -5,
-              boxShadow: '0 10px 25px -5px rgba(234, 179, 8, 0.2)',
-              borderColor: 'rgba(234, 179, 8, 0.5)',
-            }}
-            className="flex flex-col p-4 border shadow-lg bg-black/30 rounded-xl border-yellow-500/20"
+        {/* Price Stages */}
+        <div className="w-full max-w-3xl mx-auto my-8">
+          <Typography
+            variant="h3"
+            weight={600}
+            className="mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
           >
-            <Typography
-              variant="h3"
-              weight={600}
-              className="mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-            >
-              PRICE INCREASE COUNTDOWN
-            </Typography>
-
-            <div className="mb-1">
-              <Typography variant="base" className="mb-4 text-center text-white">
-                Price: <span className="font-bold text-yellow-400">{priceStages[0].price}</span> per DZD
-              </Typography>
-
-              <Typography variant="sm" className="mb-3 text-center text-neutral-400">
-                Price increase in:
-              </Typography>
-
-              <div className="flex items-center justify-center gap-3 mb-3">
-                {Object.entries(priceChangeTimeLeft).map(([key, value]) => (
-                  <div key={key} className="flex flex-col items-center">
-                    <div className="flex items-center justify-center w-12 h-12 bg-black border rounded-lg shadow-lg bg-opacity-70 border-yellow-500/30">
-                      <Typography variant="lg" weight={700} className="text-yellow-500">
-                        {String(value).padStart(2, '0')}
-                      </Typography>
-                    </div>
-                    <Typography variant="xs" className="mt-1 text-neutral-400">
-                      {key.toUpperCase()}
-                    </Typography>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 mt-auto">
-              <Typography variant="xs" className="text-neutral-300 whitespace-nowrap">
-                Early buyers get the best price!
-              </Typography>
-              <Button
-                onClick={() => setIsDialogOpen(true)}
-                variant="empty"
-                size="sm"
-                className="text-yellow-500 hover:text-yellow-400"
-                endIcon={<ChevronRightIcon width={16} height={16} />}
+            PRICE SCHEDULE
+          </Typography>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {priceStages.map((stage, index) => (
+              <motion.div
+                key={index}
+                whileHover={{ y: -5 }}
+                className={`p-4 rounded-lg border ${
+                  stage.active
+                    ? 'bg-gradient-to-br from-yellow-500/20 to-amber-600/10 border-yellow-500/50'
+                    : 'bg-black/60 border-gray-700/30'
+                } shadow-md`}
               >
-                Learn More
-              </Button>
-            </div>
-          </motion.div>
-
-          {/* Payment Section */}
-          <motion.div
-            whileHover={{
-              y: -5,
-              boxShadow: '0 10px 25px -5px rgba(234, 179, 8, 0.2)',
-              borderColor: 'rgba(234, 179, 8, 0.5)',
-            }}
-            className="flex flex-col p-4 border shadow-lg bg-black/30 rounded-xl border-yellow-500/20"
-          >
-            <Typography
-              variant="h3"
-              weight={600}
-              className="mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-            >
-              PAYMENT DETAILS
-            </Typography>
-            <Typography variant="sm" className="mb-4 text-center text-neutral-300">
-              Send USDT to receive your DZD tokens
-            </Typography>
-
-            <div className="flex flex-col flex-grow space-y-4">
-              <div className="flex justify-center gap-4 mb-1">
-                <Button
-                  size="sm"
-                  variant={selectedNetwork === 'solana' ? 'filled' : 'outlined'}
-                  onClick={() => setSelectedNetwork('solana')}
-                  className={
-                    selectedNetwork === 'solana' ? 'bg-yellow-500 text-black' : 'border-yellow-500/50 text-yellow-500'
-                  }
-                >
-                  Solana
-                </Button>
-                <Button
-                  size="sm"
-                  variant={selectedNetwork === 'evm' ? 'filled' : 'outlined'}
-                  onClick={() => setSelectedNetwork('evm')}
-                  className={
-                    selectedNetwork === 'evm' ? 'bg-yellow-500 text-black' : 'border-yellow-500/50 text-yellow-500'
-                  }
-                >
-                  EVM (ETH, BSC, etc.)
-                </Button>
-              </div>
-
-              <div className="mt-1">
-                <Typography variant="sm" className="mb-2 text-neutral-300">
-                  Send USDT to this address:
+                <Typography variant="base" weight={600} className="text-white text-center">
+                  {stage.date}
                 </Typography>
-
-                <div className="flex items-center p-2 overflow-hidden border rounded-lg bg-stone-900 border-stone-700/50">
-                  <Typography variant="xs" className="flex-1 font-mono text-yellow-300 truncate">
-                    {addresses[selectedNetwork]}
+                <Typography
+                  variant="h3"
+                  weight={700}
+                  className={`text-center ${stage.active ? 'text-yellow-400' : 'text-gray-400'}`}
+                >
+                  {stage.price}
+                </Typography>
+                {stage.active && (
+                  <Typography variant="xs" className="text-green-400 mt-1 text-center">
+                    Current Phase
                   </Typography>
-                  <button
-                    type="button"
-                    className="flex-shrink-0 p-0 ml-2 bg-transparent border-0 cursor-pointer"
-                    onClick={handleCopyAddress}
-                  >
-                    <ClipboardDocumentIcon className="w-5 h-5 text-yellow-500 hover:text-yellow-400" />
-                  </button>
-                </div>
-
-                <Typography variant="xs" className="mt-1 text-red-400">
-                  Only send USDT on the {selectedNetwork === 'solana' ? 'Solana' : 'EVM'} network!
-                </Typography>
-              </div>
-
-              <div className="flex flex-col mt-auto">
-                <Typography variant="sm" weight={500} className="mb-2 text-neutral-300">
-                  After sending payment:
-                </Typography>
-                <Button
-                  href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
-                  as="a"
-                  size="lg"
-                  className="w-full text-black bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500"
-                >
-                  Fill out this form
-                </Button>
-              </div>
-            </div>
-          </motion.div>
+                )}
+              </motion.div>
+            ))}
+          </div>
         </div>
 
         {/* FAQ Section */}
@@ -563,6 +440,9 @@ const Home = () => {
           </Dialog.Content>
         </Dialog>
       </div>
+
+      {/* Presale Modal */}
+      <PresaleModal isOpen={isPresaleModalOpen} onClose={() => setIsPresaleModalOpen(false)} />
     </div>
   )
 }
