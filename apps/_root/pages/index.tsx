@@ -1,18 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Dialog, Typography } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { Link } from '@dozer/ui'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
-import {
-  PresaleSidebar,
-  TabContentWithAssets,
-  TabNavigation,
-  Footer,
-  FAQSection
-} from '../components/LandingPage'
+import { PresaleSidebar, TabContentWithAssets, TabNavigation, Footer, FAQSection } from '../components/LandingPage'
+import { Meteors, ShootingStars } from '@dozer/ui/aceternity'
 
 const Home = () => {
   // FAQ items based on the tokenomics document
@@ -67,9 +62,34 @@ const Home = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isPresaleModalOpen, setIsPresaleModalOpen] = useState(false)
 
+  // Window width
+  const [windowWidth, setWindowWidth] = useState(0)
+
+  // Generate meteor positions once when component mounts to avoid re-renders
+  const meteorPositions = useMemo(() => {
+    return Array(25)
+      .fill(null)
+      .map(() => ({
+        size: Math.random() * 1 + 0.2, // Between 0.2 and 1.2
+        trailLength: Math.floor(Math.random() * 150) + 80, // Between 80 and 230px
+        topOffset: Math.random() * -100 - 50, // Start above the viewport
+        leftOffset: Math.random(), // Store as 0-1 value to calculate with window width
+        animDelay: Math.random() * 16,
+        animDuration: Math.random() * 5 + 6,
+        opacity: Math.random() * 0.8 + 0.2,
+      }))
+  }, [])
+
   // Only run client-side code after the component is mounted
   useEffect(() => {
     setMounted(true)
+    setWindowWidth(window.innerWidth)
+
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth)
+    }
+
+    window.addEventListener('resize', handleResize)
 
     // Next price change date
     const nextPriceChangeDate = new Date()
@@ -110,14 +130,17 @@ const Home = () => {
 
     fetchDonationData()
 
-    return () => clearInterval(timer)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   // Constants
   const maxSupply = 100000
   const tokensRemaining = maxSupply - totalDonations
   const progress = Math.min(Math.max((totalDonations / maxSupply) * 100, 0), 100)
-  
+
   const priceChangeTimeUnits = [
     { label: 'DAYS', value: priceChangeTimeLeft.days },
     { label: 'HOURS', value: priceChangeTimeLeft.hours },
@@ -155,15 +178,55 @@ const Home = () => {
   }
 
   return (
-    <div className="relative text-white bg-black min-h-screen">
+    <div className="relative min-h-screen text-white bg-black">
       {/* Space background with subtle stars */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.95)),url('/background.jpg')] bg-cover" />
 
-      {/* Animated stars */}
+      {/* Animated background effects */}
       <div className="absolute inset-0 overflow-hidden">
+        {/* Meteors effect */}
+        <div className="relative w-full h-full">
+          {mounted &&
+            meteorPositions.map((meteor, idx) => {
+              return (
+                <span
+                  key={`meteor-${idx}`}
+                  className="animate-meteor-effect absolute rounded-[9999px] bg-yellow-500 shadow-[0_0_0_1px_#ffffff10] rotate-[215deg]"
+                  style={{
+                    height: `${meteor.size}px`,
+                    width: `${meteor.size}px`,
+                    top: `${meteor.topOffset}px`,
+                    // Distribute throughout the entire width
+                    left: `${Math.floor(meteor.leftOffset * (windowWidth + 800) - 100)}px`,
+                    animationDelay: `${meteor.animDelay}s`,
+                    animationDuration: `${meteor.animDuration}s`,
+                    opacity: meteor.opacity,
+                    ...({ '--trail-length': `${meteor.trailLength}px` } as React.CSSProperties),
+                    ...({ '--trail-height': `${Math.max(meteor.size * 0.8, 1)}px` } as React.CSSProperties),
+                  }}
+                >
+                  <div className="absolute top-1/2 transform -translate-y-1/2 w-[var(--trail-length)] h-[var(--trail-height)] bg-gradient-to-r from-yellow-400 to-transparent" />
+                </span>
+              )
+            })}
+        </div>
+
+        {/* Shooting stars effect */}
+        {mounted && (
+          <ShootingStars
+            starColor="#FFB700"
+            trailColor="#FFDA80"
+            minSpeed={15}
+            maxSpeed={30}
+            minDelay={800}
+            maxDelay={2500}
+          />
+        )}
+
+        {/* Animated stars - keep these too for additional effects */}
         <div className="absolute inset-0 opacity-30">
           {mounted &&
-            Array(30)
+            Array(20)
               .fill(0)
               .map((_, i) => (
                 <motion.div
@@ -186,14 +249,20 @@ const Home = () => {
 
       {/* Main layout container */}
       <div className="relative z-10 flex flex-col mx-auto max-w-7xl">
-
-
         {/* Title section */}
-        <div className="p-4 md:p-6 border-b border-yellow-500/30">
-          <Typography variant="h1" weight={800} className="text-3xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600">
+        <div className="p-4 border-b md:p-6 border-yellow-500/30">
+          <Typography
+            variant="h1"
+            weight={800}
+            className="text-3xl text-transparent md:text-5xl bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+          >
             DOZER CRYPTO PRESALE
           </Typography>
-          <Typography variant="h3" weight={700} className="text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-400">
+          <Typography
+            variant="h3"
+            weight={700}
+            className="text-lg text-transparent md:text-2xl bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-400"
+          >
             FINAL PHASE - ENDS APRIL 30, 2025
           </Typography>
         </div>
@@ -201,7 +270,7 @@ const Home = () => {
         {/* Main content area with two columns */}
         <div className="flex flex-col lg:flex-row">
           {/* Mobile-first: Presale info appears first on mobile */}
-          <div className="w-full lg:hidden px-4 py-6">
+          <div className="w-full px-4 py-6 lg:hidden">
             <PresaleSidebar
               totalDonations={totalDonations}
               maxSupply={maxSupply}
@@ -210,20 +279,20 @@ const Home = () => {
               onBuyClick={() => setIsPresaleModalOpen(true)}
             />
           </div>
-          
+
           {/* Left column - Tab content (2/3 width) */}
-          <div className="w-full lg:w-2/3 p-4 md:p-6">
+          <div className="w-full p-4 lg:w-2/3 md:p-6">
             {/* Tab navigation */}
             <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-            
+
             {/* Tab content */}
             <div className="min-h-[600px]">
               <TabContentWithAssets activeTab={activeTab} />
             </div>
           </div>
-          
+
           {/* Right column - Presale info (1/3 width) - hidden on mobile */}
-          <div className="hidden lg:block lg:w-1/3 p-4 md:p-6 lg:self-start lg:sticky lg:top-6">
+          <div className="hidden p-4 lg:block lg:w-1/3 md:p-6 lg:self-start lg:sticky lg:top-6">
             <PresaleSidebar
               totalDonations={totalDonations}
               maxSupply={maxSupply}
@@ -235,11 +304,8 @@ const Home = () => {
         </div>
 
         {/* FAQ section */}
-        <FAQSection 
-          faqItems={faqItems} 
-          onViewMoreClick={() => setIsDialogOpen(true)} 
-        />
-        
+        <FAQSection faqItems={faqItems} onViewMoreClick={() => setIsDialogOpen(true)} />
+
         {/* Footer */}
         <Footer />
 

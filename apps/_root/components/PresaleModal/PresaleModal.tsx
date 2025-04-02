@@ -7,6 +7,7 @@ import { CheckIcon, CurrencyDollarIcon } from '@heroicons/react/24/solid'
 import { ChevronRightIcon, ArrowPathIcon, ArrowLeftIcon, LinkIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 import { api } from '../../utils/api'
 import { toast } from 'react-toastify'
+import Image from 'next/image'
 
 interface PresaleModalProps {
   isOpen: boolean
@@ -49,7 +50,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
       id: 'solana',
       name: 'Solana',
       description: 'Fast and cost-effective transactions',
-      icon: <div className="text-yellow-500">SOL</div>,
+      icon: <Image src="/logos/SOL.svg" alt="Solana" width={20} height={20} className="max-w-full" />,
       address: 'BXoPwnP5AASwV9cM1mDkMh5GL7iearqabEx1r8Wp1M4t',
       qrValue: 'solana:BXoPwnP5AASwV9cM1mDkMh5GL7iearqabEx1r8Wp1M4t',
       tokenSymbol: 'USDT',
@@ -58,7 +59,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
       id: 'evm',
       name: 'EVM Networks',
       description: 'Compatible with Ethereum, BSC, Polygon, etc.',
-      icon: <CurrencyDollarIcon className="w-6 h-6 text-yellow-500" />,
+      icon: <Image src="/logos/ETH.svg" alt="Ethereum" width={18} height={18} className="max-w-full" />,
       address: '0xd4252011f8197FaD96f11Ca04D13b70806f05060',
       qrValue: 'ethereum:0xd4252011f8197FaD96f11Ca04D13b70806f05060',
       tokenSymbol: 'USDT/USDC',
@@ -141,7 +142,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onClose={onClose}>
-      <Dialog.Content className="w-screen max-w-md bg-stone-950 !mt-16">
+      <Dialog.Content className="w-screen max-w-md bg-stone-950 !mt-24 pt-16 !pb-2 flex flex-col min-h-[560px]">
         <Dialog.Header title="Join the Dozer Presale" onClose={onClose} className="pb-2" />
 
         {/* Price information */}
@@ -196,7 +197,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Step content */}
-        <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+        <div className="flex-1 overflow-y-auto">
           {/* Step 1: Network Selection */}
           {currentStep === 1 && (
             <div className="flex flex-col p-4">
@@ -387,7 +388,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
           {/* Success Screen */}
           {submissionSuccess && (
             <div className="flex flex-col items-center justify-center p-8 text-center">
-              <div className="w-16 h-16 mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+              <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-green-500/20">
                 <CheckIcon className="w-8 h-8 text-green-500" />
               </div>
               <Typography variant="lg" weight={600} className="mb-2 text-green-500">
@@ -404,7 +405,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Action buttons - fixed at the bottom */}
-        <div className="flex justify-between border-t border-stone-800 p-4">
+        <div className="flex justify-between p-4 mt-auto border-t border-stone-800">
           {currentStep > 1 && !submissionSuccess ? (
             <Button
               size="lg"
@@ -423,7 +424,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
             <Button
               size="lg"
               onClick={handleDone}
-              className="px-6 bg-gradient-to-r from-green-500 to-green-600 text-black"
+              className="px-6 text-black bg-gradient-to-r from-green-500 to-green-600"
             >
               Done
             </Button>
