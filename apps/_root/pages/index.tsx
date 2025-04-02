@@ -63,34 +63,9 @@ const Home = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isPresaleModalOpen, setIsPresaleModalOpen] = useState(false)
 
-  // Window width
-  const [windowWidth, setWindowWidth] = useState(0)
-
-  // Generate meteor positions once when component mounts to avoid re-renders
-  const meteorPositions = useMemo(() => {
-    return Array(25)
-      .fill(null)
-      .map(() => ({
-        size: Math.random() * 1 + 0.2, // Between 0.2 and 1.2
-        trailLength: Math.floor(Math.random() * 150) + 80, // Between 80 and 230px
-        topOffset: Math.random() * -100 - 50, // Start above the viewport
-        leftOffset: Math.random(), // Store as 0-1 value to calculate with window width
-        animDelay: Math.random() * 16,
-        animDuration: Math.random() * 5 + 6,
-        opacity: Math.random() * 0.8 + 0.2,
-      }))
-  }, [])
-
   // Only run client-side code after the component is mounted
   useEffect(() => {
     setMounted(true)
-    setWindowWidth(window.innerWidth)
-
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth)
-    }
-
-    window.addEventListener('resize', handleResize)
 
     // Next price change date
     const nextPriceChangeDate = new Date()
@@ -133,7 +108,6 @@ const Home = () => {
 
     return () => {
       clearInterval(timer)
-      window.removeEventListener('resize', handleResize)
     }
   }, [])
 
@@ -182,71 +156,6 @@ const Home = () => {
     <div className="relative min-h-screen text-white bg-black">
       {/* Space background with subtle stars */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.95)),url('/background.jpg')] bg-cover" />
-
-      {/* Animated background effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Meteors effect */}
-        <div className="relative w-full h-full">
-          {mounted &&
-            meteorPositions.map((meteor, idx) => {
-              return (
-                <span
-                  key={`meteor-${idx}`}
-                  className="animate-meteor-effect absolute rounded-[9999px] bg-yellow-500 shadow-[0_0_0_1px_#ffffff10] rotate-[215deg]"
-                  style={{
-                    height: `${meteor.size}px`,
-                    width: `${meteor.size}px`,
-                    top: `${meteor.topOffset}px`,
-                    // Distribute throughout the entire width
-                    left: `${Math.floor(meteor.leftOffset * (windowWidth + 800) - 100)}px`,
-                    animationDelay: `${meteor.animDelay}s`,
-                    animationDuration: `${meteor.animDuration}s`,
-                    opacity: meteor.opacity,
-                    ...({ '--trail-length': `${meteor.trailLength}px` } as React.CSSProperties),
-                    ...({ '--trail-height': `${Math.max(meteor.size * 0.8, 1)}px` } as React.CSSProperties),
-                  }}
-                >
-                  <div className="absolute top-1/2 transform -translate-y-1/2 w-[var(--trail-length)] h-[var(--trail-height)] bg-gradient-to-r from-yellow-400 to-transparent" />
-                </span>
-              )
-            })}
-        </div>
-
-        {/* Shooting stars effect */}
-        {mounted && (
-          <ShootingStars
-            starColor="#FFB700"
-            trailColor="#FFDA80"
-            minSpeed={15}
-            maxSpeed={30}
-            minDelay={800}
-            maxDelay={2500}
-          />
-        )}
-
-        {/* Animated stars - keep these too for additional effects */}
-        <div className="absolute inset-0 opacity-30">
-          {mounted &&
-            Array(20)
-              .fill(0)
-              .map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-1 h-1 bg-yellow-400 rounded-full"
-                  initial={{ x: `${Math.random() * 100}%`, y: -10, opacity: 0 }}
-                  animate={{
-                    y: `${100 + Math.random() * 20}vh`,
-                    opacity: [0, 1, 0],
-                  }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 8 + Math.random() * 10,
-                    delay: Math.random() * 5,
-                  }}
-                />
-              ))}
-        </div>
-      </div>
 
       {/* Main layout container */}
       <div className="relative z-10 flex flex-col mx-auto max-w-7xl">
