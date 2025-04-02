@@ -2,8 +2,8 @@
 import React, { useState } from 'react'
 import { Dialog, Typography, Button } from '@dozer/ui'
 import { motion } from 'framer-motion'
-import { CheckIcon } from '@heroicons/react/24/solid'
-import { ChevronRightIcon } from '@heroicons/react/24/outline'
+import { CheckIcon, CurrencyDollarIcon } from '@heroicons/react/24/solid'
+import { ChevronRightIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 
 interface PresaleModalProps {
   isOpen: boolean
@@ -21,13 +21,13 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
       id: 'solana',
       name: 'Solana',
       description: 'Fast and cost-effective transactions',
-      icon: '🌙', // Placeholder for Solana icon
+      icon: <div className="text-yellow-500">SOL</div>,
     },
     {
       id: 'evm',
       name: 'EVM Networks',
       description: 'Compatible with Ethereum, BSC, Polygon, etc.',
-      icon: '⚡', // Placeholder for EVM icon
+      icon: <CurrencyDollarIcon className="w-6 h-6 text-yellow-500" />,
     },
   ]
 
@@ -47,6 +47,17 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
     <Dialog open={isOpen} onClose={onClose}>
       <Dialog.Content className="w-screen max-w-md bg-stone-950">
         <Dialog.Header title="Join the Dozer Presale" onClose={onClose} />
+        
+        {/* Price information */}
+        <div className="mx-6 -mt-2 mb-3 p-2 bg-black/30 border border-yellow-500/20 rounded-md">
+          <Typography variant="sm" className="flex justify-between text-neutral-300">
+            <span>Current Price:</span>
+            <span className="text-yellow-400">$1.00 USD</span>
+          </Typography>
+          <Typography variant="xs" className="text-neutral-400 mt-1">
+            1 DZD represents 1 USD worth of DZR at token generation event
+          </Typography>
+        </div>
         
         {/* Step indicator */}
         <div className="flex items-center justify-between px-6 py-3 border-b border-yellow-500/20">

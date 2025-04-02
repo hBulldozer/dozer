@@ -1,11 +1,18 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Button, Link, Typography, Dialog } from '@dozer/ui'
-import { ArrowRightIcon, ClipboardDocumentIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
-import { motion, Variants } from 'framer-motion'
-import { AuroraBackground } from '@dozer/ui/aceternity/aurora-background'
+import { Dialog, Typography } from '@dozer/ui'
+import { motion } from 'framer-motion'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { Link } from '@dozer/ui'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
+import {
+  PresaleSidebar,
+  TabContentWithAssets,
+  TabNavigation,
+  Footer,
+  FAQSection
+} from '../components/LandingPage'
 
 const Home = () => {
   // FAQ items based on the tokenomics document
@@ -42,6 +49,7 @@ const Home = () => {
 
   // State initialization with proper SSR handling
   const [mounted, setMounted] = useState(false)
+  const [activeTab, setActiveTab] = useState<'home' | 'ecosystem' | 'trading' | 'blueprints' | null>('home')
 
   // Token Counter Implementation
   const [totalDonations, setTotalDonations] = useState(57294) // Default fallback value
@@ -117,14 +125,6 @@ const Home = () => {
     { label: 'SECONDS', value: priceChangeTimeLeft.seconds },
   ]
 
-  const priceStages = [
-    { date: 'Apr 1-10', price: '$1.00', active: true },
-    { date: 'Apr 11-20', price: '$1.10', active: false },
-    { date: 'Apr 21-30', price: '$1.25', active: false },
-  ]
-
-  // No longer needed since we replaced the payment section
-
   // Return null during SSR or before hydration to prevent mismatches
   if (!mounted) {
     return null
@@ -155,15 +155,15 @@ const Home = () => {
   }
 
   return (
-    <div className="relative text-white bg-black">
-      {/* Subtle grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.97)),linear-gradient(to_right,#222_1px,transparent_1px),linear-gradient(to_bottom,#222_1px,transparent_1px)] bg-[size:44px_44px]" />
+    <div className="relative text-white bg-black min-h-screen">
+      {/* Space background with subtle stars */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.95)),url('/background.jpg')] bg-cover" />
 
-      {/* Animated particles */}
+      {/* Animated stars */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 opacity-30">
           {mounted &&
-            Array(20)
+            Array(30)
               .fill(0)
               .map((_, i) => (
                 <motion.div
@@ -184,208 +184,64 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Content - main container */}
-      <div className="relative z-10 flex flex-col px-4 py-2 mx-auto max-w-7xl">
-        {/* Hero Section */}
-        <div className="flex flex-col items-center mt-10 mb-12 text-center md:mt-16">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="mb-8"
-          >
-            <Typography
-              variant="h1"
-              weight={900}
-              className="relative text-5xl text-transparent md:text-7xl bg-clip-text bg-gradient-to-br from-yellow-500 to-amber-700"
-            >
-              FINAL PRESALE PHASE
-            </Typography>
-          </motion.div>
+      {/* Main layout container */}
+      <div className="relative z-10 flex flex-col mx-auto max-w-7xl">
 
-          {/* Large Countdown Timer */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-full max-w-3xl mx-auto mb-4"
-          >
-            <Typography
-              variant="h2"
-              weight={700}
-              className="mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-            >
-              NEXT PRICE INCREASE IN
-            </Typography>
-            <div className="flex items-center justify-center gap-4 md:gap-8">
-              {priceChangeTimeUnits.map((unit, index) => (
-                <motion.div
-                  key={unit.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                  className="flex flex-col items-center justify-center"
-                >
-                  <motion.div
-                    animate={{
-                      boxShadow: [
-                        '0 0 10px rgba(234, 179, 8, 0.3)',
-                        '0 0 20px rgba(234, 179, 8, 0.6)',
-                        '0 0 10px rgba(234, 179, 8, 0.3)',
-                      ],
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="flex items-center justify-center w-16 h-16 bg-black border rounded-lg shadow-xl md:w-24 md:h-24 bg-opacity-80 border-yellow-500/30 shadow-yellow-500/20"
-                  >
-                    <Typography variant="h1" weight={700} className="text-yellow-500 text-3xl md:text-4xl">
-                      {String(unit.value).padStart(2, '0')}
-                    </Typography>
-                  </motion.div>
-                  <Typography variant="sm" className="mt-2 text-neutral-400">
-                    {unit.label}
-                  </Typography>
-                </motion.div>
-              ))}
-            </div>
-            <Typography variant="base" className="mt-4 text-center text-neutral-300">
-              Entire presale ends April 30, 2025 - Act now for the best price!
-            </Typography>
-          </motion.div>
 
-          {/* Large Progress Bar */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="w-full max-w-3xl mx-auto mb-10"
-          >
-            <Typography
-              variant="h2"
-              weight={700}
-              className="mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-            >
-              USDT RAISED
-            </Typography>
-            <Typography variant="lg" className="mb-4 text-center text-neutral-300">
-              {`${tokensRemaining.toLocaleString()} of ${maxSupply.toLocaleString()} USDT target remaining`}
-            </Typography>
-
-            <div className="relative w-full h-8 overflow-hidden border rounded-lg md:h-10 bg-stone-950 border-yellow-500/40">
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-amber-500 to-yellow-500"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 1.5, ease: 'easeOut' }}
-              ></motion.div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Typography variant="lg" weight={700} className="text-white drop-shadow-md">
-                  {`${progress.toFixed(1)}% raised`}
-                </Typography>
-              </div>
-            </div>
-
-            <div className="flex justify-between mt-2 text-sm text-neutral-400">
-              <span>0 USDT</span>
-              <span>{maxSupply.toLocaleString()} USDT</span>
-            </div>
-          </motion.div>
-
-          {/* Join Presale Button */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="w-full max-w-md mx-auto mb-12"
-          >
-            <Button
-              size="lg"
-              onClick={() => setIsPresaleModalOpen(true)}
-              className="w-full py-6 text-xl font-bold text-black bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 shadow-lg shadow-yellow-500/20 hover:shadow-yellow-500/30 transition-all duration-300"
-            >
-              JOIN THE PRE-SALE
-            </Button>
-          </motion.div>
+        {/* Title section */}
+        <div className="p-4 md:p-6 border-b border-yellow-500/30">
+          <Typography variant="h1" weight={800} className="text-3xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600">
+            DOZER CRYPTO PRESALE
+          </Typography>
+          <Typography variant="h3" weight={700} className="text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-400">
+            FINAL PHASE - ENDS APRIL 30, 2025
+          </Typography>
         </div>
 
-        {/* Price Stages */}
-        <div className="w-full max-w-3xl mx-auto my-8">
-          <Typography
-            variant="h3"
-            weight={600}
-            className="mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-          >
-            PRICE SCHEDULE
-          </Typography>
+        {/* Main content area with two columns */}
+        <div className="flex flex-col lg:flex-row">
+          {/* Mobile-first: Presale info appears first on mobile */}
+          <div className="w-full lg:hidden px-4 py-6">
+            <PresaleSidebar
+              totalDonations={totalDonations}
+              maxSupply={maxSupply}
+              progress={progress}
+              priceChangeTimeUnits={priceChangeTimeUnits}
+              onBuyClick={() => setIsPresaleModalOpen(true)}
+            />
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {priceStages.map((stage, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ y: -5 }}
-                className={`p-4 rounded-lg border ${
-                  stage.active
-                    ? 'bg-gradient-to-br from-yellow-500/20 to-amber-600/10 border-yellow-500/50'
-                    : 'bg-black/60 border-gray-700/30'
-                } shadow-md`}
-              >
-                <Typography variant="base" weight={600} className="text-white text-center">
-                  {stage.date}
-                </Typography>
-                <Typography
-                  variant="h3"
-                  weight={700}
-                  className={`text-center ${stage.active ? 'text-yellow-400' : 'text-gray-400'}`}
-                >
-                  {stage.price}
-                </Typography>
-                {stage.active && (
-                  <Typography variant="xs" className="text-green-400 mt-1 text-center">
-                    Current Phase
-                  </Typography>
-                )}
-              </motion.div>
-            ))}
+          {/* Left column - Tab content (2/3 width) */}
+          <div className="w-full lg:w-2/3 p-4 md:p-6">
+            {/* Tab navigation */}
+            <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+            
+            {/* Tab content */}
+            <div className="min-h-[600px]">
+              <TabContentWithAssets activeTab={activeTab} />
+            </div>
+          </div>
+          
+          {/* Right column - Presale info (1/3 width) - hidden on mobile */}
+          <div className="hidden lg:block lg:w-1/3 p-4 md:p-6 lg:self-start lg:sticky lg:top-6">
+            <PresaleSidebar
+              totalDonations={totalDonations}
+              maxSupply={maxSupply}
+              progress={progress}
+              priceChangeTimeUnits={priceChangeTimeUnits}
+              onBuyClick={() => setIsPresaleModalOpen(true)}
+            />
           </div>
         </div>
 
-        {/* FAQ Section */}
-        <div className="w-full pt-8 mt-16 border-t border-yellow-500/20">
-          <Typography
-            variant="h3"
-            weight={600}
-            className="mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-          >
-            FREQUENTLY ASKED QUESTIONS
-          </Typography>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ staggerChildren: 0.1 }}
-            className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2"
-          >
-            {faqItems.map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                whileHover={{
-                  scale: 1.02,
-                  boxShadow: '0 10px 25px -5px rgba(234, 179, 8, 0.15)',
-                  borderColor: 'rgba(234, 179, 8, 0.4)',
-                }}
-                className="p-4 border rounded-lg bg-black/30 border-yellow-500/20"
-              >
-                <Typography variant="base" weight={600} className="mb-2 text-yellow-400">
-                  {item.question}
-                </Typography>
-                <Typography variant="sm" className="text-neutral-300">
-                  {item.answer}
-                </Typography>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+        {/* FAQ section */}
+        <FAQSection 
+          faqItems={faqItems} 
+          onViewMoreClick={() => setIsDialogOpen(true)} 
+        />
+        
+        {/* Footer */}
+        <Footer />
 
         {/* Custom Dialog */}
         <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
@@ -439,10 +295,10 @@ const Home = () => {
             </div>
           </Dialog.Content>
         </Dialog>
-      </div>
 
-      {/* Presale Modal */}
-      <PresaleModal isOpen={isPresaleModalOpen} onClose={() => setIsPresaleModalOpen(false)} />
+        {/* Presale Modal */}
+        <PresaleModal isOpen={isPresaleModalOpen} onClose={() => setIsPresaleModalOpen(false)} />
+      </div>
     </div>
   )
 }
