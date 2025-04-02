@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Dialog, Typography } from '@dozer/ui'
-import { motion } from 'framer-motion'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { Link } from '@dozer/ui'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
@@ -46,11 +45,6 @@ const Home = () => {
   const [mounted, setMounted] = useState(false)
   const [activeTab, setActiveTab] = useState<'home' | 'ecosystem' | 'trading' | 'blueprints' | null>('home')
 
-  // Memoize the activeTab change function to prevent excessive renders
-  const handleTabChange = useCallback((tab: 'home' | 'ecosystem' | 'trading' | 'blueprints') => {
-    setActiveTab(tab)
-  }, [])
-
   // Token Counter Implementation
   const [totalDonations, setTotalDonations] = useState(57294) // Default fallback value
   const [isLoading, setIsLoading] = useState(false)
@@ -70,9 +64,31 @@ const Home = () => {
   // Window width
   const [windowWidth, setWindowWidth] = useState(0)
 
+  // Ensure all useCallback hooks are defined in the same place to maintain hook order
+  // Memoize handler functions to prevent excessive renders
+  const handleTabChange = useCallback((tab: 'home' | 'ecosystem' | 'trading' | 'blueprints'): void => {
+    setActiveTab(tab)
+  }, [])
+
+  const handlePresaleClick = useCallback((): void => {
+    setIsPresaleModalOpen(true)
+  }, [])
+
+  const handleFAQClick = useCallback((): void => {
+    setIsDialogOpen(true)
+  }, [])
+
+  const handleDialogClose = useCallback((): void => {
+    setIsDialogOpen(false)
+  }, [])
+
+  const handlePresaleModalClose = useCallback((): void => {
+    setIsPresaleModalOpen(false)
+  }, [])
+
   // Generate meteor positions once when component mounts to avoid re-renders
   const meteorPositions = useMemo(() => {
-    return Array(25)
+    return Array(15) // Reduced from 25 to 15 to lower render complexity
       .fill(null)
       .map(() => ({
         size: Math.random() * 1 + 0.2, // Between 0.2 and 1.2
@@ -84,6 +100,17 @@ const Home = () => {
         opacity: Math.random() * 0.8 + 0.2,
       }))
   }, [])
+
+  // Constants calculated from state - memoize to prevent recalculation
+  const priceChangeTimeUnits = useMemo(
+    () => [
+      { label: 'DAYS', value: priceChangeTimeLeft.days },
+      { label: 'HOURS', value: priceChangeTimeLeft.hours },
+      { label: 'MINUTES', value: priceChangeTimeLeft.minutes },
+      { label: 'SECONDS', value: priceChangeTimeLeft.seconds },
+    ],
+    [priceChangeTimeLeft]
+  )
 
   // Only run client-side code after the component is mounted
   useEffect(() => {
@@ -146,74 +173,53 @@ const Home = () => {
   const tokensRemaining = maxSupply - totalDonations
   const progress = Math.min(Math.max((totalDonations / maxSupply) * 100, 0), 100)
 
-  const priceChangeTimeUnits = [
-    { label: 'DAYS', value: priceChangeTimeLeft.days },
-    { label: 'HOURS', value: priceChangeTimeLeft.hours },
-    { label: 'MINUTES', value: priceChangeTimeLeft.minutes },
-    { label: 'SECONDS', value: priceChangeTimeLeft.seconds },
-  ]
-
   // Return null during SSR or before hydration to prevent mismatches
   if (!mounted) {
     return null
   }
 
-  // Styled Button Component for Dialog
-  const StyledDialogButton = ({ children, href }: { children: React.ReactNode; href: string }) => {
-    const [isHovered, setIsHovered] = useState(false)
-
-    return (
-      <Link.External
-        href={href}
-        className="relative w-full px-4 py-2 text-sm font-medium text-left text-neutral-300 hover:text-white bg-stone-800 hover:bg-white hover:bg-opacity-[0.06] rounded-xl cursor-pointer select-none"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {children}
-        <motion.div
-          className="absolute top-0 right-0 flex items-center justify-center h-full pr-2"
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}
-          transition={{ duration: 0.2 }}
-        >
-          <ArrowRightIcon className="w-3 h-3 text-yellow-500" />
-        </motion.div>
-      </Link.External>
-    )
-  }
+  // Styled Button Component for Dialog - Simplified to avoid motion animations
+  const StyledDialogButton = ({ children, href }: { children: React.ReactNode; href: string }) => (
+    <Link.External
+      href={href}
+      className="relative w-full px-4 py-2 text-sm font-medium text-left text-neutral-300 hover:text-white bg-stone-800 hover:bg-white hover:bg-opacity-[0.06] rounded-xl cursor-pointer select-none group"
+    >
+      {children}
+      <div className="absolute top-0 right-0 flex items-center justify-center h-full pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <ArrowRightIcon className="w-3 h-3 text-yellow-500" />
+      </div>
+    </Link.External>
+  )
 
   return (
     <div className="relative min-h-screen text-white bg-black">
       {/* Space background with subtle stars */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.95)),url('/background.jpg')] bg-cover" />
 
-      {/* Animated background effects */}
+      {/* Animated background effects - simplified */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Meteors effect */}
         <div className="relative w-full h-full">
           {mounted &&
-            meteorPositions.map((meteor, idx) => {
-              return (
-                <span
-                  key={`meteor-${idx}`}
-                  className="animate-meteor-effect absolute rounded-[9999px] bg-yellow-500 shadow-[0_0_0_1px_#ffffff10] rotate-[215deg]"
-                  style={{
-                    height: `${meteor.size}px`,
-                    width: `${meteor.size}px`,
-                    top: `${meteor.topOffset}px`,
-                    // Distribute throughout the entire width
-                    left: `${Math.floor(meteor.leftOffset * (windowWidth + 800) - 100)}px`,
-                    animationDelay: `${meteor.animDelay}s`,
-                    animationDuration: `${meteor.animDuration}s`,
-                    opacity: meteor.opacity,
-                    ...({ '--trail-length': `${meteor.trailLength}px` } as React.CSSProperties),
-                    ...({ '--trail-height': `${Math.max(meteor.size * 0.8, 1)}px` } as React.CSSProperties),
-                  }}
-                >
-                  <div className="absolute top-1/2 transform -translate-y-1/2 w-[var(--trail-length)] h-[var(--trail-height)] bg-gradient-to-r from-yellow-400 to-transparent" />
-                </span>
-              )
-            })}
+            meteorPositions.map((meteor, idx) => (
+              <span
+                key={`meteor-${idx}`}
+                className="animate-meteor-effect absolute rounded-[9999px] bg-yellow-500 shadow-[0_0_0_1px_#ffffff10] rotate-[215deg]"
+                style={{
+                  height: `${meteor.size}px`,
+                  width: `${meteor.size}px`,
+                  top: `${meteor.topOffset}px`,
+                  left: `${Math.floor(meteor.leftOffset * (windowWidth + 800) - 100)}px`,
+                  animationDelay: `${meteor.animDelay}s`,
+                  animationDuration: `${meteor.animDuration}s`,
+                  opacity: meteor.opacity,
+                  ...({ '--trail-length': `${meteor.trailLength}px` } as React.CSSProperties),
+                  ...({ '--trail-height': `${Math.max(meteor.size * 0.8, 1)}px` } as React.CSSProperties),
+                }}
+              >
+                <div className="absolute top-1/2 transform -translate-y-1/2 w-[var(--trail-length)] h-[var(--trail-height)] bg-gradient-to-r from-yellow-400 to-transparent" />
+              </span>
+            ))}
         </div>
 
         {/* Shooting stars effect */}
@@ -227,29 +233,6 @@ const Home = () => {
             maxDelay={2500}
           />
         )}
-
-        {/* Animated stars - keep these too for additional effects */}
-        <div className="absolute inset-0 opacity-30">
-          {mounted &&
-            Array(20)
-              .fill(0)
-              .map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-1 h-1 bg-yellow-400 rounded-full"
-                  initial={{ x: `${Math.random() * 100}%`, y: -10, opacity: 0 }}
-                  animate={{
-                    y: `${100 + Math.random() * 20}vh`,
-                    opacity: [0, 1, 0],
-                  }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 8 + Math.random() * 10,
-                    delay: Math.random() * 5,
-                  }}
-                />
-              ))}
-        </div>
       </div>
 
       {/* Main layout container */}
@@ -281,7 +264,7 @@ const Home = () => {
               maxSupply={maxSupply}
               progress={progress}
               priceChangeTimeUnits={priceChangeTimeUnits}
-              onBuyClick={() => setIsPresaleModalOpen(true)}
+              onBuyClick={handlePresaleClick}
             />
           </div>
 
@@ -303,21 +286,21 @@ const Home = () => {
               maxSupply={maxSupply}
               progress={progress}
               priceChangeTimeUnits={priceChangeTimeUnits}
-              onBuyClick={() => setIsPresaleModalOpen(true)}
+              onBuyClick={handlePresaleClick}
             />
           </div>
         </div>
 
         {/* FAQ section */}
-        <FAQSection faqItems={faqItems} onViewMoreClick={() => setIsDialogOpen(true)} />
+        <FAQSection faqItems={faqItems} onViewMoreClick={handleFAQClick} />
 
         {/* Footer */}
         <Footer />
 
         {/* Custom Dialog */}
-        <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
+        <Dialog open={isDialogOpen} onClose={handleDialogClose}>
           <Dialog.Content className="w-screen max-w-md !pb-4 bg-stone-950">
-            <Dialog.Header title="Become a Dozer Backer!  🚀" onClose={() => setIsDialogOpen(false)} />
+            <Dialog.Header title="Become a Dozer Backer!  🚀" onClose={handleDialogClose} />
             <div className="flex flex-col p-6">
               <Typography variant="lg" className="mb-2 text-left text-neutral-300">
                 Summary
@@ -368,10 +351,10 @@ const Home = () => {
         </Dialog>
 
         {/* Presale Modal */}
-        <PresaleModal isOpen={isPresaleModalOpen} onClose={() => setIsPresaleModalOpen(false)} />
+        <PresaleModal isOpen={isPresaleModalOpen} onClose={handlePresaleModalClose} />
       </div>
     </div>
   )
 }
 
-export default Home
+export default React.memo(Home)
