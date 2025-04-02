@@ -16,6 +16,21 @@ model Faucet {
   hash        String
 }
 
+model PresaleSubmission {
+  id                Int       @id @default(autoincrement())
+  network           String    // Payment network (solana/evm)
+  transactionProof  String    // Transaction ID or explorer URL
+  contactInfo       String    // User's contact information (Discord, Telegram, etc.)
+  hathorAddress     String    // Hathor wallet address to receive DZD
+  price             Float     @default(1.0) // Price of DZD at submission time
+  submittedAt       DateTime  @default(now())
+  processed         Boolean   @default(false) // Whether this submission has been processed
+  
+  @@index([hathorAddress])
+  @@index([processed])
+  @@index([submittedAt])
+}
+
 model Token {
   id               String      @id
   uuid             String

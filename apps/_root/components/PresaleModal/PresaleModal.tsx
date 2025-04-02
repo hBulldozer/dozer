@@ -5,6 +5,8 @@ import { motion } from 'framer-motion'
 import { QRCodeSVG } from 'qrcode.react'
 import { CheckIcon, CurrencyDollarIcon } from '@heroicons/react/24/solid'
 import { ChevronRightIcon, ArrowPathIcon, ArrowLeftIcon, LinkIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { api } from '../../utils/api'
+import { toast } from 'react-toastify'
 
 interface PresaleModalProps {
   isOpen: boolean
@@ -37,6 +39,10 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
     hathorAddress: false,
   })
 
+  // State for success message
+  const [submissionSuccess, setSubmissionSuccess] = useState(false)
+  const [submissionMessage, setSubmissionMessage] = useState('')
+
   // Networks available for selection with payment information
   const networks: NetworkInfo[] = [
     {
@@ -58,6 +64,19 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
       tokenSymbol: 'USDT/USDC',
     },
   ]
+
+  // tRPC mutation for submitting presale proof
+  const submitPresaleMutation = api.getPresale.submitPresaleProof.useMutation({
+    onSuccess: (data) => {
+      setSubmissionSuccess(true)
+      setSubmissionMessage(data.message)
+      // Keep modal open to show success message
+      // Will reset and close when user clicks "Done"
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to submit your presale information. Please try again.')
+    },
+  })
 
   // Handle network selection
   const handleNetworkSelect = (network: 'solana' | 'evm') => {
@@ -98,17 +117,26 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
   // Handle form submission
   const handleSubmit = () => {
     if (validateForm()) {
-      // Here you will handle the form data submission
-      console.log('Form submitted', {
-        network: selectedNetwork,
+      // Submit to the API
+      submitPresaleMutation.mutate({
+        network: selectedNetwork as 'solana' | 'evm',
         transactionProof,
         contactInfo,
         hathorAddress,
+        price: 1.0, // Current fixed price
       })
-
-      // Close the modal or show success message
-      onClose()
     }
+  }
+
+  // Handle done after successful submission
+  const handleDone = () => {
+    // Reset form
+    setTransactionProof('')
+    setContactInfo('')
+    setHathorAddress('')
+    setCurrentStep(1)
+    setSubmissionSuccess(false)
+    onClose()
   }
 
   return (
@@ -272,7 +300,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
           )}
 
           {/* Step 3: Transaction Proof and Contact Information */}
-          {currentStep === 3 && (
+          {currentStep === 3 && !submissionSuccess && (
             <div className="flex flex-col p-4">
               <Typography variant="lg" weight={600} className="mb-2 text-neutral-300">
                 Submit Transaction Proof
@@ -355,35 +383,65 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
           )}
+
+          {/* Success Screen */}
+          {submissionSuccess && (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+              <div className="w-16 h-16 mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                <CheckIcon className="w-8 h-8 text-green-500" />
+              </div>
+              <Typography variant="lg" weight={600} className="mb-2 text-green-500">
+                Submission Successful!
+              </Typography>
+              <Typography variant="base" className="mb-6 text-neutral-300">
+                {submissionMessage}
+              </Typography>
+              <Typography variant="sm" className="mb-6 text-neutral-400">
+                Your DZD tokens will be sent to your wallet after our team verifies your transaction.
+              </Typography>
+            </div>
+          )}
         </div>
 
         {/* Action buttons - fixed at the bottom */}
-        <div className="flex justify-between p-4 border-t border-stone-800">
-          {currentStep > 1 ? (
+        <div className="flex justify-between border-t border-stone-800 p-4">
+          {currentStep > 1 && !submissionSuccess ? (
             <Button
               size="lg"
               onClick={handleBack}
               className="px-6 bg-stone-800 text-neutral-300 hover:bg-stone-700"
               startIcon={<ArrowLeftIcon width={20} height={20} />}
+              disabled={submitPresaleMutation.isLoading}
             >
               Back
             </Button>
           ) : (
             <div></div> // Empty div for spacing when there's no back button
           )}
-          <Button
-            size="lg"
-            onClick={handleContinue}
-            disabled={currentStep === 1 && !selectedNetwork}
-            className={`px-6 ${
-              currentStep === 1 && !selectedNetwork
-                ? 'bg-stone-800 text-stone-500'
-                : 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black'
-            }`}
-            endIcon={currentStep < 3 ? <ChevronRightIcon width={20} height={20} /> : undefined}
-          >
-            {currentStep < 3 ? 'Continue' : 'Submit'}
-          </Button>
+
+          {submissionSuccess ? (
+            <Button
+              size="lg"
+              onClick={handleDone}
+              className="px-6 bg-gradient-to-r from-green-500 to-green-600 text-black"
+            >
+              Done
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              onClick={currentStep < 3 ? handleContinue : handleSubmit}
+              disabled={(currentStep === 1 && !selectedNetwork) || submitPresaleMutation.isLoading}
+              className={`px-6 ${
+                (currentStep === 1 && !selectedNetwork) || submitPresaleMutation.isLoading
+                  ? 'bg-stone-800 text-stone-500'
+                  : 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black'
+              }`}
+              endIcon={currentStep < 3 ? <ChevronRightIcon width={20} height={20} /> : undefined}
+            >
+              {submitPresaleMutation.isLoading ? 'Submitting...' : currentStep < 3 ? 'Continue' : 'Submit'}
+            </Button>
+          )}
         </div>
       </Dialog.Content>
     </Dialog>
