@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, memo } from 'react'
+import React, { useState } from 'react'
 import { Dialog, Typography, Button, CopyHelper, Input } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { QRCodeSVG } from 'qrcode.react'
@@ -8,9 +8,6 @@ import { ChevronRightIcon, ArrowPathIcon, ArrowLeftIcon, LinkIcon, ArrowRightIco
 import { api } from '../../utils/api'
 import { toast } from 'react-toastify'
 import Image from 'next/image'
-
-// Check if we're in production
-const isProduction = process.env.NODE_ENV === 'production'
 
 interface PresaleModalProps {
   isOpen: boolean
@@ -28,34 +25,7 @@ interface NetworkInfo {
   tokenSymbol: string
 }
 
-// Use memo to prevent unnecessary renders
-const PresaleModal: React.FC<PresaleModalProps> = memo(({ isOpen, onClose }) => {
-  // If we're in production, provide a simplified version
-  if (isProduction) {
-    return (
-      <Dialog open={isOpen} onClose={onClose}>
-        <Dialog.Content className="w-screen max-w-md bg-stone-950 pt-6 pb-4">
-          <Dialog.Header title="Join the Dozer Presale" onClose={onClose} />
-          <div className="p-6">
-            <Typography variant="lg" className="mb-4">
-              Current Price: $1.00 USD
-            </Typography>
-            <Typography variant="base" className="mb-6">
-              Please visit our Discord server to get instructions on how to participate in the Dozer presale. Our team
-              will assist you through the process.
-            </Typography>
-            <div className="flex justify-center">
-              <Button onClick={onClose} className="bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold">
-                Close
-              </Button>
-            </div>
-          </div>
-        </Dialog.Content>
-      </Dialog>
-    )
-  }
-
-  // Continue with the full interactive version for development
+const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
   // Track the current step in the process
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedNetwork, setSelectedNetwork] = useState<'solana' | 'evm' | null>(null)
@@ -477,6 +447,6 @@ const PresaleModal: React.FC<PresaleModalProps> = memo(({ isOpen, onClose }) => 
       </Dialog.Content>
     </Dialog>
   )
-})
+}
 
 export default PresaleModal

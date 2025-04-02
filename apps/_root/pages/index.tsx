@@ -1,89 +1,15 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Dialog, Typography, Button } from '@dozer/ui'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
+import { Dialog, Typography } from '@dozer/ui'
+import { motion } from 'framer-motion'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { Link } from '@dozer/ui'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
 import { PresaleSidebar, TabContentWithAssets, TabNavigation, Footer, FAQSection } from '../components/LandingPage'
 import { Meteors, ShootingStars } from '@dozer/ui/aceternity'
 
-// Check if we're in production to provide a simpler version in production
-const isProduction = process.env.NODE_ENV === 'production'
-
-// Simple fallback component for production to prevent recursion
-const ProductionHome = () => {
-  const [isPresaleModalOpen, setIsPresaleModalOpen] = useState(false)
-
-  return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto py-10 px-4">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-yellow-400 mb-4">DOZER CRYPTO PRESALE</h1>
-          <p className="text-xl text-yellow-200">FINAL PHASE - ENDS APRIL 30, 2025</p>
-        </div>
-
-        <div className="max-w-md mx-auto bg-black/40 border border-yellow-500/30 rounded-lg p-6 mb-10">
-          <h2 className="text-2xl font-bold text-center text-yellow-400 mb-4">BUY $DZR PRESALE NOW!</h2>
-          <div className="mb-6">
-            <p className="text-sm text-center text-neutral-400 mb-2">TOKENS REMAINING</p>
-            <div className="h-4 bg-black/60 rounded-full overflow-hidden border border-yellow-500/30">
-              <div className="h-full bg-gradient-to-r from-yellow-500 to-amber-600 w-[57%]"></div>
-            </div>
-            <div className="flex justify-between mt-1 text-sm text-neutral-400">
-              <span>USDT RAISED: $57,294</span>
-              <span>/100,000</span>
-            </div>
-          </div>
-
-          <Button
-            onClick={() => setIsPresaleModalOpen(true)}
-            className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold hover:from-yellow-400 hover:to-amber-500"
-          >
-            BUY WITH CRYPTO
-          </Button>
-        </div>
-
-        <div className="max-w-2xl mx-auto mb-10">
-          <h2 className="text-2xl font-bold text-yellow-400 mb-4">ABOUT DOZER</h2>
-          <p className="mb-4 text-neutral-300">
-            Dozer Finance is bringing innovation to DeFi with lightning-fast transactions and minimal fees. Our platform
-            eliminates transaction fees while providing instant settlement, creating a more accessible trading
-            environment.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            <div className="p-4 border rounded-lg border-yellow-500/30 bg-black/50 text-center">
-              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Zero-Fee Transactions</h3>
-              <p className="text-sm text-neutral-300">Trade and transact without any gas fees</p>
-            </div>
-            <div className="p-4 border rounded-lg border-yellow-500/30 bg-black/50 text-center">
-              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Instant Finality</h3>
-              <p className="text-sm text-neutral-300">Real-time settlement without waiting for confirmations</p>
-            </div>
-            <div className="p-4 border rounded-lg border-yellow-500/30 bg-black/50 text-center">
-              <h3 className="text-lg font-semibold text-yellow-400 mb-2">MEV Protection</h3>
-              <p className="text-sm text-neutral-300">Trade securely without value extraction</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-yellow-500/30 pt-4 text-center">
-          <p className="text-sm text-neutral-400">© 2025 Dozer Finance. All rights reserved.</p>
-        </div>
-      </div>
-
-      {isPresaleModalOpen && <PresaleModal isOpen={isPresaleModalOpen} onClose={() => setIsPresaleModalOpen(false)} />}
-    </div>
-  )
-}
-
 const Home = () => {
-  // Use simplified version in production
-  if (isProduction) {
-    return <ProductionHome />
-  }
-
   // FAQ items based on the tokenomics document
   const faqItems = [
     {
@@ -139,31 +65,9 @@ const Home = () => {
   // Window width
   const [windowWidth, setWindowWidth] = useState(0)
 
-  // Ensure all useCallback hooks are defined in the same place to maintain hook order
-  // Memoize handler functions to prevent excessive renders
-  const handleTabChange = useCallback((tab: 'home' | 'ecosystem' | 'trading' | 'blueprints'): void => {
-    setActiveTab(tab)
-  }, [])
-
-  const handlePresaleClick = useCallback((): void => {
-    setIsPresaleModalOpen(true)
-  }, [])
-
-  const handleFAQClick = useCallback((): void => {
-    setIsDialogOpen(true)
-  }, [])
-
-  const handleDialogClose = useCallback((): void => {
-    setIsDialogOpen(false)
-  }, [])
-
-  const handlePresaleModalClose = useCallback((): void => {
-    setIsPresaleModalOpen(false)
-  }, [])
-
   // Generate meteor positions once when component mounts to avoid re-renders
   const meteorPositions = useMemo(() => {
-    return Array(15) // Reduced from 25 to 15 to lower render complexity
+    return Array(25)
       .fill(null)
       .map(() => ({
         size: Math.random() * 1 + 0.2, // Between 0.2 and 1.2
@@ -175,17 +79,6 @@ const Home = () => {
         opacity: Math.random() * 0.8 + 0.2,
       }))
   }, [])
-
-  // Constants calculated from state - memoize to prevent recalculation
-  const priceChangeTimeUnits = useMemo(
-    () => [
-      { label: 'DAYS', value: priceChangeTimeLeft.days },
-      { label: 'HOURS', value: priceChangeTimeLeft.hours },
-      { label: 'MINUTES', value: priceChangeTimeLeft.minutes },
-      { label: 'SECONDS', value: priceChangeTimeLeft.seconds },
-    ],
-    [priceChangeTimeLeft]
-  )
 
   // Only run client-side code after the component is mounted
   useEffect(() => {
@@ -248,53 +141,74 @@ const Home = () => {
   const tokensRemaining = maxSupply - totalDonations
   const progress = Math.min(Math.max((totalDonations / maxSupply) * 100, 0), 100)
 
+  const priceChangeTimeUnits = [
+    { label: 'DAYS', value: priceChangeTimeLeft.days },
+    { label: 'HOURS', value: priceChangeTimeLeft.hours },
+    { label: 'MINUTES', value: priceChangeTimeLeft.minutes },
+    { label: 'SECONDS', value: priceChangeTimeLeft.seconds },
+  ]
+
   // Return null during SSR or before hydration to prevent mismatches
   if (!mounted) {
     return null
   }
 
-  // Styled Button Component for Dialog - Simplified to avoid motion animations
-  const StyledDialogButton = ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <Link.External
-      href={href}
-      className="relative w-full px-4 py-2 text-sm font-medium text-left text-neutral-300 hover:text-white bg-stone-800 hover:bg-white hover:bg-opacity-[0.06] rounded-xl cursor-pointer select-none group"
-    >
-      {children}
-      <div className="absolute top-0 right-0 flex items-center justify-center h-full pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <ArrowRightIcon className="w-3 h-3 text-yellow-500" />
-      </div>
-    </Link.External>
-  )
+  // Styled Button Component for Dialog
+  const StyledDialogButton = ({ children, href }: { children: React.ReactNode; href: string }) => {
+    const [isHovered, setIsHovered] = useState(false)
+
+    return (
+      <Link.External
+        href={href}
+        className="relative w-full px-4 py-2 text-sm font-medium text-left text-neutral-300 hover:text-white bg-stone-800 hover:bg-white hover:bg-opacity-[0.06] rounded-xl cursor-pointer select-none"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {children}
+        <motion.div
+          className="absolute top-0 right-0 flex items-center justify-center h-full pr-2"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ArrowRightIcon className="w-3 h-3 text-yellow-500" />
+        </motion.div>
+      </Link.External>
+    )
+  }
 
   return (
     <div className="relative min-h-screen text-white bg-black">
       {/* Space background with subtle stars */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.95)),url('/background.jpg')] bg-cover" />
 
-      {/* Animated background effects - simplified */}
+      {/* Animated background effects */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Meteors effect */}
         <div className="relative w-full h-full">
           {mounted &&
-            meteorPositions.map((meteor, idx) => (
-              <span
-                key={`meteor-${idx}`}
-                className="animate-meteor-effect absolute rounded-[9999px] bg-yellow-500 shadow-[0_0_0_1px_#ffffff10] rotate-[215deg]"
-                style={{
-                  height: `${meteor.size}px`,
-                  width: `${meteor.size}px`,
-                  top: `${meteor.topOffset}px`,
-                  left: `${Math.floor(meteor.leftOffset * (windowWidth + 800) - 100)}px`,
-                  animationDelay: `${meteor.animDelay}s`,
-                  animationDuration: `${meteor.animDuration}s`,
-                  opacity: meteor.opacity,
-                  ...({ '--trail-length': `${meteor.trailLength}px` } as React.CSSProperties),
-                  ...({ '--trail-height': `${Math.max(meteor.size * 0.8, 1)}px` } as React.CSSProperties),
-                }}
-              >
-                <div className="absolute top-1/2 transform -translate-y-1/2 w-[var(--trail-length)] h-[var(--trail-height)] bg-gradient-to-r from-yellow-400 to-transparent" />
-              </span>
-            ))}
+            meteorPositions.map((meteor, idx) => {
+              return (
+                <span
+                  key={`meteor-${idx}`}
+                  className="animate-meteor-effect absolute rounded-[9999px] bg-yellow-500 shadow-[0_0_0_1px_#ffffff10] rotate-[215deg]"
+                  style={{
+                    height: `${meteor.size}px`,
+                    width: `${meteor.size}px`,
+                    top: `${meteor.topOffset}px`,
+                    // Distribute throughout the entire width
+                    left: `${Math.floor(meteor.leftOffset * (windowWidth + 800) - 100)}px`,
+                    animationDelay: `${meteor.animDelay}s`,
+                    animationDuration: `${meteor.animDuration}s`,
+                    opacity: meteor.opacity,
+                    ...({ '--trail-length': `${meteor.trailLength}px` } as React.CSSProperties),
+                    ...({ '--trail-height': `${Math.max(meteor.size * 0.8, 1)}px` } as React.CSSProperties),
+                  }}
+                >
+                  <div className="absolute top-1/2 transform -translate-y-1/2 w-[var(--trail-length)] h-[var(--trail-height)] bg-gradient-to-r from-yellow-400 to-transparent" />
+                </span>
+              )
+            })}
         </div>
 
         {/* Shooting stars effect */}
@@ -308,6 +222,29 @@ const Home = () => {
             maxDelay={2500}
           />
         )}
+
+        {/* Animated stars - keep these too for additional effects */}
+        <div className="absolute inset-0 opacity-30">
+          {mounted &&
+            Array(20)
+              .fill(0)
+              .map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 bg-yellow-400 rounded-full"
+                  initial={{ x: `${Math.random() * 100}%`, y: -10, opacity: 0 }}
+                  animate={{
+                    y: `${100 + Math.random() * 20}vh`,
+                    opacity: [0, 1, 0],
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 8 + Math.random() * 10,
+                    delay: Math.random() * 5,
+                  }}
+                />
+              ))}
+        </div>
       </div>
 
       {/* Main layout container */}
@@ -339,14 +276,14 @@ const Home = () => {
               maxSupply={maxSupply}
               progress={progress}
               priceChangeTimeUnits={priceChangeTimeUnits}
-              onBuyClick={handlePresaleClick}
+              onBuyClick={() => setIsPresaleModalOpen(true)}
             />
           </div>
 
           {/* Left column - Tab content (2/3 width) */}
           <div className="w-full p-4 lg:w-2/3 md:p-6">
             {/* Tab navigation */}
-            <TabNavigation activeTab={activeTab} setActiveTab={handleTabChange} />
+            <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
             {/* Tab content */}
             <div className="min-h-[600px]">
@@ -361,21 +298,21 @@ const Home = () => {
               maxSupply={maxSupply}
               progress={progress}
               priceChangeTimeUnits={priceChangeTimeUnits}
-              onBuyClick={handlePresaleClick}
+              onBuyClick={() => setIsPresaleModalOpen(true)}
             />
           </div>
         </div>
 
         {/* FAQ section */}
-        <FAQSection faqItems={faqItems} onViewMoreClick={handleFAQClick} />
+        <FAQSection faqItems={faqItems} onViewMoreClick={() => setIsDialogOpen(true)} />
 
         {/* Footer */}
         <Footer />
 
         {/* Custom Dialog */}
-        <Dialog open={isDialogOpen} onClose={handleDialogClose}>
+        <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
           <Dialog.Content className="w-screen max-w-md !pb-4 bg-stone-950">
-            <Dialog.Header title="Become a Dozer Backer!  🚀" onClose={handleDialogClose} />
+            <Dialog.Header title="Become a Dozer Backer!  🚀" onClose={() => setIsDialogOpen(false)} />
             <div className="flex flex-col p-6">
               <Typography variant="lg" className="mb-2 text-left text-neutral-300">
                 Summary
@@ -426,10 +363,10 @@ const Home = () => {
         </Dialog>
 
         {/* Presale Modal */}
-        <PresaleModal isOpen={isPresaleModalOpen} onClose={handlePresaleModalClose} />
+        <PresaleModal isOpen={isPresaleModalOpen} onClose={() => setIsPresaleModalOpen(false)} />
       </div>
     </div>
   )
 }
 
-export default React.memo(Home)
+export default Home
