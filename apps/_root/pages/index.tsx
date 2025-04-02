@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Dialog, Typography } from '@dozer/ui'
 import { motion } from 'framer-motion'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
@@ -45,6 +45,11 @@ const Home = () => {
   // State initialization with proper SSR handling
   const [mounted, setMounted] = useState(false)
   const [activeTab, setActiveTab] = useState<'home' | 'ecosystem' | 'trading' | 'blueprints' | null>('home')
+
+  // Memoize the activeTab change function to prevent excessive renders
+  const handleTabChange = useCallback((tab: 'home' | 'ecosystem' | 'trading' | 'blueprints') => {
+    setActiveTab(tab)
+  }, [])
 
   // Token Counter Implementation
   const [totalDonations, setTotalDonations] = useState(57294) // Default fallback value
@@ -283,7 +288,7 @@ const Home = () => {
           {/* Left column - Tab content (2/3 width) */}
           <div className="w-full p-4 lg:w-2/3 md:p-6">
             {/* Tab navigation */}
-            <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+            <TabNavigation activeTab={activeTab} setActiveTab={handleTabChange} />
 
             {/* Tab content */}
             <div className="min-h-[600px]">

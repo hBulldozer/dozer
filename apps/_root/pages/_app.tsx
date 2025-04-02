@@ -25,24 +25,24 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.dataLayer = window.dataLayer || []
-      
+
       const handler = (page: any) => {
         window.dataLayer.push({
           event: 'pageview',
           page,
         })
       }
-      
+
       router.events.on('routeChangeComplete', handler)
       router.events.on('hashChangeComplete', handler)
-      
+
       return () => {
         router.events.off('routeChangeComplete', handler)
         router.events.off('hashChangeComplete', handler)
       }
     }
   }, [router.events])
-  
+
   return (
     <>
       <Head>
@@ -57,7 +57,10 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
       <ThemeProvider>
         <App.Shell>
           <Header />
-          <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
+          <MotionConfig
+            reducedMotion={isSmallScreen ? 'always' : 'user'}
+            transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+          >
             <Component {...pageProps} />
           </MotionConfig>
           {router.pathname !== '/' && <App.Footer />}

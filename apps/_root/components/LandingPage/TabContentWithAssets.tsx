@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import React, { memo } from 'react'
 import { Typography } from '@dozer/ui'
 import {
   CubeTransparentIcon,
@@ -20,7 +20,8 @@ interface TabContentWithAssetsProps {
   activeTab: 'home' | 'ecosystem' | 'trading' | 'blueprints' | null
 }
 
-const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }) => {
+// Memoize the component to prevent unnecessary re-renders
+const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = memo(({ activeTab }) => {
   const renderIcon = (icon: JSX.Element) => (
     <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 border rounded-full bg-yellow-500/20 border-yellow-500/40">
       <div className="w-10 h-10 text-yellow-500">{icon}</div>
@@ -311,6 +312,6 @@ const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }
   }
 
   return null
-}
+})
 
 export default TabContentWithAssets

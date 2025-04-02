@@ -1,20 +1,16 @@
 'use client'
-import React from 'react'
+import React, { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Typography } from '@dozer/ui'
-import {
-  HomeIcon,
-  CubeTransparentIcon,
-  BanknotesIcon,
-  RocketLaunchIcon
-} from '@heroicons/react/24/outline'
+import { HomeIcon, CubeTransparentIcon, BanknotesIcon, RocketLaunchIcon } from '@heroicons/react/24/outline'
 
 interface TabNavigationProps {
   activeTab: 'home' | 'ecosystem' | 'trading' | 'blueprints' | null
   setActiveTab: (tab: 'home' | 'ecosystem' | 'trading' | 'blueprints') => void
 }
 
-const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }) => {
+// Memoize the component to prevent unnecessary re-renders
+const TabNavigation: React.FC<TabNavigationProps> = memo(({ activeTab, setActiveTab }) => {
   const tabs = [
     {
       id: 'home',
@@ -51,9 +47,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
           }`}
           onClick={() => setActiveTab(tab.id as any)}
         >
-          <div className={`${activeTab === tab.id ? 'text-yellow-500' : 'text-neutral-400'}`}>
-            {tab.icon}
-          </div>
+          <div className={`${activeTab === tab.id ? 'text-yellow-500' : 'text-neutral-400'}`}>{tab.icon}</div>
           <Typography
             variant="xs"
             weight={600}
@@ -65,6 +59,6 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
       ))}
     </div>
   )
-}
+})
 
 export default TabNavigation
