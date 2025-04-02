@@ -1,14 +1,89 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Dialog, Typography } from '@dozer/ui'
+import { Dialog, Typography, Button } from '@dozer/ui'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { Link } from '@dozer/ui'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
 import { PresaleSidebar, TabContentWithAssets, TabNavigation, Footer, FAQSection } from '../components/LandingPage'
 import { Meteors, ShootingStars } from '@dozer/ui/aceternity'
 
+// Check if we're in production to provide a simpler version in production
+const isProduction = process.env.NODE_ENV === 'production'
+
+// Simple fallback component for production to prevent recursion
+const ProductionHome = () => {
+  const [isPresaleModalOpen, setIsPresaleModalOpen] = useState(false)
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <div className="container mx-auto py-10 px-4">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold text-yellow-400 mb-4">DOZER CRYPTO PRESALE</h1>
+          <p className="text-xl text-yellow-200">FINAL PHASE - ENDS APRIL 30, 2025</p>
+        </div>
+
+        <div className="max-w-md mx-auto bg-black/40 border border-yellow-500/30 rounded-lg p-6 mb-10">
+          <h2 className="text-2xl font-bold text-center text-yellow-400 mb-4">BUY $DZR PRESALE NOW!</h2>
+          <div className="mb-6">
+            <p className="text-sm text-center text-neutral-400 mb-2">TOKENS REMAINING</p>
+            <div className="h-4 bg-black/60 rounded-full overflow-hidden border border-yellow-500/30">
+              <div className="h-full bg-gradient-to-r from-yellow-500 to-amber-600 w-[57%]"></div>
+            </div>
+            <div className="flex justify-between mt-1 text-sm text-neutral-400">
+              <span>USDT RAISED: $57,294</span>
+              <span>/100,000</span>
+            </div>
+          </div>
+
+          <Button
+            onClick={() => setIsPresaleModalOpen(true)}
+            className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold hover:from-yellow-400 hover:to-amber-500"
+          >
+            BUY WITH CRYPTO
+          </Button>
+        </div>
+
+        <div className="max-w-2xl mx-auto mb-10">
+          <h2 className="text-2xl font-bold text-yellow-400 mb-4">ABOUT DOZER</h2>
+          <p className="mb-4 text-neutral-300">
+            Dozer Finance is bringing innovation to DeFi with lightning-fast transactions and minimal fees. Our platform
+            eliminates transaction fees while providing instant settlement, creating a more accessible trading
+            environment.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="p-4 border rounded-lg border-yellow-500/30 bg-black/50 text-center">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Zero-Fee Transactions</h3>
+              <p className="text-sm text-neutral-300">Trade and transact without any gas fees</p>
+            </div>
+            <div className="p-4 border rounded-lg border-yellow-500/30 bg-black/50 text-center">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Instant Finality</h3>
+              <p className="text-sm text-neutral-300">Real-time settlement without waiting for confirmations</p>
+            </div>
+            <div className="p-4 border rounded-lg border-yellow-500/30 bg-black/50 text-center">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-2">MEV Protection</h3>
+              <p className="text-sm text-neutral-300">Trade securely without value extraction</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-yellow-500/30 pt-4 text-center">
+          <p className="text-sm text-neutral-400">© 2025 Dozer Finance. All rights reserved.</p>
+        </div>
+      </div>
+
+      {isPresaleModalOpen && <PresaleModal isOpen={isPresaleModalOpen} onClose={() => setIsPresaleModalOpen(false)} />}
+    </div>
+  )
+}
+
 const Home = () => {
+  // Use simplified version in production
+  if (isProduction) {
+    return <ProductionHome />
+  }
+
   // FAQ items based on the tokenomics document
   const faqItems = [
     {
