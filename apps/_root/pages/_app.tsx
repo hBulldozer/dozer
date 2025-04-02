@@ -2,7 +2,9 @@ import '@dozer/ui/index.css'
 import 'styles/index.css'
 
 import { useIsSmScreen } from '@dozer/hooks'
-import { App, ThemeProvider, ToastContainer } from '@dozer/ui'
+import { ThemeProvider } from '@dozer/ui/theme'
+import { ToastContainer } from '@dozer/ui/toast'
+import { App } from '@dozer/ui/app'
 import { MotionConfig } from 'framer-motion'
 import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
@@ -10,21 +12,13 @@ import React, { FC, useEffect } from 'react'
 
 import { api } from 'utils/api'
 import { Header } from '../components'
+import { CustomFooter } from '../components/CustomFooter'
 import Head from 'next/head'
 
 declare global {
   interface Window {
     dataLayer: Record<string, any>[]
   }
-}
-
-// Separate component to handle conditional Footer rendering
-const ConditionalFooter: FC = () => {
-  const router = useRouter()
-  if (router.pathname !== '/') {
-    return <App.Footer />
-  }
-  return null
 }
 
 const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
@@ -52,6 +46,9 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
     }
   }, [router.events])
 
+  // Only show footer on non-root pages
+  const showFooter = router.pathname !== '/'
+
   return (
     <>
       <Head>
@@ -69,7 +66,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
           <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
             <Component {...pageProps} />
           </MotionConfig>
-          <ConditionalFooter />
+          {showFooter && <CustomFooter />}
           <ToastContainer className="mt-[50px]" />
         </App.Shell>
       </ThemeProvider>

@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { Dialog, Typography, Link } from '@dozer/ui'
+import { Dialog } from '@dozer/ui/dialog'
+import { Typography } from '@dozer/ui/typography'
+import { Link } from '@dozer/ui/link'
 import { motion } from 'framer-motion'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
