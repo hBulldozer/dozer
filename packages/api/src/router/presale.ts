@@ -2,6 +2,43 @@ import { z } from 'zod'
 import { createTRPCRouter, procedure } from '../trpc'
 
 export const presaleRouter = createTRPCRouter({
+  // Update contact information for an existing submission
+  updateContactInfo: procedure
+    .input(
+      z.object({
+        transactionProof: z.string().min(1, 'Transaction proof is required to identify your submission'),
+        contactInfo: z.string().min(1, 'Contact information is required'),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Update the contact info for only the most recent submission with matching transaction proof
+        const result = await ctx.prisma.$executeRaw`
+          UPDATE "PresaleSubmission"
+          SET "contactInfo" = ${input.contactInfo}
+          WHERE "id" = (
+            SELECT "id" FROM "PresaleSubmission"
+            WHERE "transactionProof" = ${input.transactionProof}
+            ORDER BY "submittedAt" DESC
+            LIMIT 1
+          )
+          RETURNING "id"
+        `
+
+        // Check if any records were updated
+        if (!result || result < 1) {
+          throw new Error('No submission found with the provided transaction proof')
+        }
+
+        return {
+          success: true,
+          message: 'Contact information updated successfully!',
+        }
+      } catch (error) {
+        console.error('Error updating contact information:', error)
+        throw new Error('Failed to update contact information. Please try again.')
+      }
+    }),
   // Submit a presale transaction proof
   submitPresaleProof: procedure
     .input(

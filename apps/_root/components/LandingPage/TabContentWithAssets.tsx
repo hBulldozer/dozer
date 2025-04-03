@@ -34,7 +34,7 @@ const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }
           <div className="flex w-full justify-center items-center md:max-w-[360px]">
             <div className="relative flex items-center justify-center">
               {/* Glow effect behind the mascot */}
-              <div className="absolute w-64 h-64 rounded-full bg-primary-500 opacity-30 blur-xl animate-pulse"></div>
+              <div className="absolute w-64 h-64 rounded-full bg-primary-500 opacity-30 blur-xl"></div>
 
               {/* Rotating border effect */}
               <div className="absolute border-2 border-dashed rounded-full w-72 h-72 border-primary-500 animate-spin-slow"></div>

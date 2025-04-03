@@ -6,7 +6,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { CheckIcon, CurrencyDollarIcon } from '@heroicons/react/24/solid'
 import { ChevronRightIcon, ArrowPathIcon, ArrowLeftIcon, LinkIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 import { api } from '../../utils/api'
-import { toast } from 'react-toastify'
+import { createSuccessToast, createErrorToast, createFailedToast } from '@dozer/ui/toast'
 import Image from 'next/image'
 
 interface PresaleModalProps {
@@ -36,7 +36,6 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
   const [hathorAddress, setHathorAddress] = useState('')
   const [formErrors, setFormErrors] = useState({
     transactionProof: false,
-    contactInfo: false,
     hathorAddress: false,
   })
 
@@ -75,7 +74,34 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
       // Will reset and close when user clicks "Done"
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to submit your presale information. Please try again.')
+      console.error('Submission error:', error)
+      // Use the appropriate toast structure
+      const txHash = `submission-error-${Date.now()}`
+
+      createSuccessToast({
+        type: 'send',
+        summary: {
+          pending: 'Processing submission...',
+          completed: 'Submission successful!',
+          failed: error.message || 'Failed to submit your presale information. Please try again.',
+        },
+        txHash,
+        groupTimestamp: Date.now(),
+        timestamp: Date.now(),
+      })
+
+      // Force it to show as error
+      createFailedToast({
+        type: 'send',
+        summary: {
+          pending: 'Processing submission...',
+          completed: 'Submission successful!',
+          failed: error.message || 'Failed to submit your presale information. Please try again.',
+        },
+        txHash: `error-${txHash}`,
+        groupTimestamp: Date.now(),
+        timestamp: Date.now(),
+      })
     },
   })
 
@@ -107,7 +133,6 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
   const validateForm = () => {
     const errors = {
       transactionProof: !transactionProof.trim(),
-      contactInfo: !contactInfo.trim(),
       hathorAddress: !hathorAddress.trim(),
     }
 
@@ -118,14 +143,19 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
   // Handle form submission
   const handleSubmit = () => {
     if (validateForm()) {
-      // Submit to the API
-      submitPresaleMutation.mutate({
-        network: selectedNetwork as 'solana' | 'evm',
-        transactionProof,
-        contactInfo,
-        hathorAddress,
-        price: 1.0, // Current fixed price
-      })
+      try {
+        // Submit to the API with all required fields
+        submitPresaleMutation.mutate({
+          network: selectedNetwork as 'solana' | 'evm',
+          transactionProof,
+          contactInfo: contactInfo || 'Will provide later', // Default value to satisfy validation
+          hathorAddress,
+          price: 1.0, // Current fixed price
+        })
+      } catch (error) {
+        console.error('Submission error:', error)
+        createErrorToast('Failed to submit. Please try again.', false)
+      }
     }
   }
 
@@ -139,6 +169,39 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
     setSubmissionSuccess(false)
     onClose()
   }
+
+  // API endpoint for updating contact info
+  const updateContactInfoMutation = api.getPresale.updateContactInfo.useMutation({
+    onSuccess: (data) => {
+      createSuccessToast({
+        type: 'send',
+        summary: {
+          pending: 'Updating contact information...',
+          completed: 'Contact information updated successfully!',
+          failed: 'Failed to update contact information.',
+        },
+        txHash: `contact-${Date.now()}`,
+        groupTimestamp: Date.now(),
+        timestamp: Date.now(),
+      })
+    },
+    onError: (error) => {
+      console.error('Update contact info error:', error)
+
+      const txHash = `contact-error-${Date.now()}`
+      createFailedToast({
+        type: 'send',
+        summary: {
+          pending: 'Updating contact information...',
+          completed: 'Contact information updated!',
+          failed: error.message || 'Failed to update contact information.',
+        },
+        txHash,
+        groupTimestamp: Date.now(),
+        timestamp: Date.now(),
+      })
+    },
+  })
 
   return (
     <Dialog open={isOpen} onClose={onClose}>
@@ -254,9 +317,10 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
                 Scan the QR code or copy the address below to send your payment.
               </Typography>
 
-              <div className="grid grid-cols-2 gap-4 mb-3">
-                {/* QR Code - centered */}
-                <div className="flex items-center justify-center">
+              {/* Desktop: 2-column layout with QR, Mobile: 1-column layout without QR */}
+              <div className="grid grid-cols-1 gap-4 mb-3 md:grid-cols-2">
+                {/* QR Code - centered - hidden on mobile */}
+                <div className="items-center justify-center hidden md:flex">
                   <div className="p-2 bg-white rounded-lg">
                     {getSelectedNetworkInfo() && (
                       <QRCodeSVG
@@ -270,7 +334,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Address and Important Notes */}
-                <div className="flex flex-col justify-center space-y-2">
+                <div className="flex flex-col justify-center col-span-1 space-y-2 md:col-span-1">
                   <div className="p-2 border rounded-lg bg-black/40 border-yellow-500/20">
                     <Typography variant="xs" className="text-neutral-400">
                       {selectedNetwork.toUpperCase()} ADDRESS:
@@ -335,26 +399,6 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
                   )}
                 </div>
 
-                {/* Contact Information Input */}
-                <div>
-                  <label className="block mb-1 text-xs text-neutral-400">
-                    Contact Info (Discord, Telegram, X, or Email)*
-                  </label>
-                  <Input.TextGeneric
-                    id="contactInfo"
-                    pattern=".*"
-                    value={contactInfo}
-                    onChange={setContactInfo}
-                    placeholder="Enter your contact information"
-                    className={`w-full py-2 bg-transparent border ${
-                      formErrors.contactInfo ? 'border-red-500' : 'border-stone-700'
-                    } rounded-lg text-white text-sm focus:border-yellow-500 focus:outline-none`}
-                  />
-                  {formErrors.contactInfo && (
-                    <p className="mt-1 text-xs text-red-500">Please enter your contact information</p>
-                  )}
-                </div>
-
                 {/* Hathor Address Input */}
                 <div>
                   <label className="block mb-1 text-xs text-neutral-400">Hathor Wallet Address (to receive DZD)*</label>
@@ -387,19 +431,56 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
 
           {/* Success Screen */}
           {submissionSuccess && (
-            <div className="flex flex-col items-center justify-center p-8 text-center">
-              <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-green-500/20">
-                <CheckIcon className="w-8 h-8 text-green-500" />
+            <div className="flex flex-col p-6">
+              <div className="flex flex-col items-center justify-center mb-6 text-center">
+                <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-green-500/20">
+                  <CheckIcon className="w-8 h-8 text-green-500" />
+                </div>
+                <Typography variant="lg" weight={600} className="mb-2 text-green-500">
+                  Submission Successful!
+                </Typography>
+                <Typography variant="base" className="mb-2 text-neutral-300">
+                  {submissionMessage}
+                </Typography>
               </div>
-              <Typography variant="lg" weight={600} className="mb-2 text-green-500">
-                Submission Successful!
-              </Typography>
-              <Typography variant="base" className="mb-6 text-neutral-300">
-                {submissionMessage}
-              </Typography>
-              <Typography variant="sm" className="mb-6 text-neutral-400">
-                Your DZD tokens will be sent to your wallet after our team verifies your transaction.
-              </Typography>
+
+              {/* Optional Contact Info */}
+              <div className="pt-4 mb-6 border-t border-stone-700">
+                <Typography variant="base" weight={600} className="mb-3 text-neutral-300">
+                  Would you like to add contact information? (Optional)
+                </Typography>
+                <label className="block mb-1 text-xs text-neutral-400">
+                  Contact Info (Discord, Telegram, X, or Email)
+                </label>
+                <Input.TextGeneric
+                  id="contactInfo"
+                  pattern=".*"
+                  value={contactInfo}
+                  onChange={setContactInfo}
+                  placeholder="Enter your contact information (optional)"
+                  className="w-full py-2 text-sm text-white bg-transparent border rounded-lg border-stone-700 focus:border-yellow-500 focus:outline-none"
+                />
+                <Typography variant="xs" className="mt-2 text-neutral-400">
+                  This helps us contact you if there are any issues with your transaction.
+                </Typography>
+
+                {/* Add button to save contact info */}
+                {contactInfo.trim() && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      updateContactInfoMutation.mutate({
+                        transactionProof,
+                        contactInfo,
+                      })
+                    }}
+                    disabled={updateContactInfoMutation.isLoading}
+                    className="px-4 mt-3 text-yellow-500 bg-stone-800 hover:bg-stone-700"
+                  >
+                    {updateContactInfoMutation.isLoading ? 'Saving...' : 'Save Contact Info'}
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>
