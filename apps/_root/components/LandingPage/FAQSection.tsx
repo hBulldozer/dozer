@@ -53,7 +53,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({ faqItems, onViewMoreClick }) =>
             className="border-yellow-500/50 text-yellow-500"
             onClick={onViewMoreClick}
           >
-            View More Questions
+            View More Information
           </Button>
         </div>
       )}

@@ -355,7 +355,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
                     <Typography variant="xs" className="text-neutral-300">
                       • Min: 100 USDT (100 DZD)
                       <br />
-                      • Max: 5,000 USDT (5,000 DZD)
+                      • Max: 10,000 USDT (10,000 DZD)
                       <br />• DZD sent after confirmation
                     </Typography>
                   </div>

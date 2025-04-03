@@ -32,7 +32,7 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
       <Typography variant="sm" className="text-center text-neutral-400 mb-2">
         UNTIL NEXT PRICE INCREASE
       </Typography>
-      <div className="flex justify-between mb-5 p-2 bg-black/60 rounded-lg border border-yellow-500/20">
+      <div className="flex justify-between mb-5 p-2 bg-black/60 rounded-lg">
         {priceChangeTimeUnits.map((unit, index) => (
           <div key={unit.label} className="flex flex-col items-center">
             <div className="w-12 h-12 flex items-center justify-center bg-black border rounded-md border-yellow-500/30">

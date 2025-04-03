@@ -28,7 +28,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
     },
     {
       id: 'blueprints',
-      label: 'BLUEPRINTS',
+      label: 'TOOLS',
       icon: <RocketLaunchIcon className="w-6 h-6" />,
     },
   ]

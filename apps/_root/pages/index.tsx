@@ -30,7 +30,7 @@ const Home = () => {
     },
     {
       question: 'Is there a limit to how many DZD I can purchase?',
-      answer: 'Yes, there is a maximum cap of 5,000 DZD per backer to ensure fair distribution.',
+      answer: 'Yes, there is a maximum cap of 10,000 DZD per backer to ensure fair distribution.',
     },
     {
       question: 'What benefits do DZD holders receive?',
@@ -67,9 +67,8 @@ const Home = () => {
   useEffect(() => {
     setMounted(true)
 
-    // Next price change date
-    const nextPriceChangeDate = new Date()
-    nextPriceChangeDate.setDate(nextPriceChangeDate.getDate() + 7) // 7 days from now
+    // Next price change date - April 10, 2025
+    const nextPriceChangeDate = new Date('2025-04-10T23:59:59')
 
     const calculateTimeLeft = () => {
       const now = new Date().getTime()
@@ -154,8 +153,11 @@ const Home = () => {
 
   return (
     <div className="relative min-h-screen text-white bg-black">
-      {/* Space background with subtle stars */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.95)),url('/background.jpg')] bg-cover" />
+      {/* Space background with animations */}
+      {/* <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.95)),url('/background.jpg')] bg-cover overflow-hidden">
+        <ShootingStars className="w-full h-full" />
+        <Meteors number={10} className="!absolute" />
+      </div> */}
 
       {/* Main layout container */}
       <div className="relative z-10 flex flex-col mx-auto max-w-7xl">
@@ -166,7 +168,7 @@ const Home = () => {
             weight={800}
             className="text-3xl text-transparent md:text-5xl bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
           >
-            DOZER CRYPTO PRESALE
+            THE FUTURE OF DEFI IS HERE
           </Typography>
           <Typography
             variant="h3"
@@ -196,7 +198,7 @@ const Home = () => {
             <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
             {/* Tab content */}
-            <div className="min-h-[600px]">
+            <div className="mb-8">
               <TabContentWithAssets activeTab={activeTab} />
             </div>
           </div>
@@ -213,13 +215,15 @@ const Home = () => {
           </div>
         </div>
 
-        {/* FAQ section */}
-        <FAQSection faqItems={faqItems} onViewMoreClick={() => setIsDialogOpen(true)} />
+        {/* FAQ section - full width */}
+        <div className="px-4 py-6 md:px-6">
+          <FAQSection faqItems={faqItems} onViewMoreClick={() => setIsDialogOpen(true)} />
+        </div>
 
         {/* Custom Dialog */}
         <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
           <Dialog.Content className="w-screen max-w-md !pb-4 bg-stone-950">
-            <Dialog.Header title="Become a Dozer Backer!  🚀" onClose={() => setIsDialogOpen(false)} />
+            <Dialog.Header title="Join the Dozer Presale!  🚀" onClose={() => setIsDialogOpen(false)} />
             <div className="flex flex-col p-6">
               <Typography variant="lg" className="mb-2 text-left text-neutral-300">
                 Summary
@@ -240,7 +244,7 @@ const Home = () => {
                 <br />
                 <b>Maximum Supply</b>: 100,000 DZD
                 <br />
-                <b>Holder Cap</b>: Maximum 5,000 DZD per backer
+                <b>Holder Cap</b>: Maximum 10,000 DZD per backer
               </Typography>
 
               <Typography variant="lg" className="mb-2 text-left text-neutral-300">
