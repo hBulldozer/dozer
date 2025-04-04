@@ -12,6 +12,7 @@ import Image from 'next/image'
 interface PresaleModalProps {
   isOpen: boolean
   onClose: () => void
+  className?: string
 }
 
 // Network payment information
@@ -25,7 +26,7 @@ interface NetworkInfo {
   tokenSymbol: string
 }
 
-const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
+const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose, className }) => {
   // Track the current step in the process
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedNetwork, setSelectedNetwork] = useState<'solana' | 'evm' | null>(null)
@@ -205,7 +206,9 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onClose={onClose}>
-      <Dialog.Content className="w-screen max-w-md bg-stone-950 !mt-24 pt-16 !pb-2 flex flex-col min-h-[560px]">
+      <Dialog.Content
+        className={`w-screen max-w-md bg-stone-950 !mt-24 pt-16 !pb-2 flex flex-col min-h-[560px] ${className || ''}`}
+      >
         <Dialog.Header title="Join the Dozer Presale" onClose={onClose} className="pb-2" />
 
         {/* Price information */}

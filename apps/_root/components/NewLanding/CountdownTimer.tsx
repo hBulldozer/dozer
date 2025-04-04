@@ -19,7 +19,7 @@ export const CountdownTimer: React.FC = () => {
   })
 
   useEffect(() => {
-    const endDate = new Date('April 30, 2025 23:59:59').getTime()
+    const endDate = new Date('May 5, 2025 23:59:59').getTime()
 
     const calculateTimeLeft = () => {
       const now = new Date().getTime()

@@ -97,7 +97,7 @@ export const PresaleLanding: React.FC = () => {
         <div className="w-full mt-20 pt-10 border-t border-yellow-500/20">
           <div className="flex flex-col items-center gap-4">
             <Typography variant="sm" className="text-neutral-400 text-center">
-              DZD Token Sale | Final Phase Ending April 30, 2025
+              DZD Token Sale | Final Phase Ending May 5, 2025
             </Typography>
             <div className="flex gap-4">
               <Link.External href="https://twitter.com/dozerfinance" className="text-neutral-400 hover:text-yellow-500">

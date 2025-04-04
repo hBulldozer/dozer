@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Typography } from '@dozer/ui'
 import {
   CubeTransparentIcon,
@@ -15,346 +15,311 @@ import {
   WrenchScrewdriverIcon,
   RocketLaunchIcon,
 } from '@heroicons/react/24/outline'
+import { motion, useAnimate, stagger } from 'framer-motion'
 
 interface TabContentWithAssetsProps {
   activeTab: 'home' | 'ecosystem' | 'trading' | 'blueprints' | null
 }
 
-const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }) => {
-  const renderIcon = (icon: JSX.Element) => (
-    <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 border rounded-full bg-yellow-500/20 border-yellow-500/40">
-      <div className="w-10 h-10 text-yellow-500">{icon}</div>
+// Text generate effect component
+const TextGenerateEffect = ({
+  words,
+  className = '',
+  filter = true,
+  duration = 0.5,
+}: {
+  words: string
+  className?: string
+  filter?: boolean
+  duration?: number
+}) => {
+  const [scope, animate] = useAnimate()
+  const wordsArray = words.split(' ')
+  const wordsRef = useRef(words)
+
+  // This effect handles animation initialization and reset when words change
+  useEffect(() => {
+    // Check if words have changed and reset animation
+    if (wordsRef.current !== words) {
+      wordsRef.current = words
+
+      // Reset all spans to initial state first
+      animate(
+        'span',
+        {
+          opacity: 0,
+          filter: filter ? 'blur(8px)' : 'none',
+        },
+        { duration: 0 } // Immediate reset
+      )
+    }
+
+    // Start/restart the animation
+    const animationControls = animate(
+      'span',
+      {
+        opacity: 1,
+        filter: filter ? 'blur(0px)' : 'none',
+      },
+      {
+        duration: duration || 1,
+        delay: stagger(0.2),
+      }
+    )
+
+    return () => animationControls.stop()
+  }, [words, animate, duration, filter])
+
+  return (
+    <div className={className}>
+      <motion.div ref={scope} className="text-neutral-200 leading-relaxed tracking-wide">
+        {wordsArray.map((word, idx) => {
+          return (
+            <motion.span
+              key={`${word}-${idx}`}
+              className="opacity-0"
+              style={{
+                filter: filter ? 'blur(8px)' : 'none',
+                textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                fontWeight: 600,
+              }}
+            >
+              {word}{' '}
+            </motion.span>
+          )
+        })}
+      </motion.div>
     </div>
   )
+}
 
-  if (activeTab === 'home' || activeTab === null) {
-    return (
-      <div className="max-w-4xl">
-        <Typography
-          variant="h3"
-          weight={700}
-          className="mb-6 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-        >
-          REVOLUTIONIZING DEFI
-        </Typography>
-        
-        <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2">
-          <div>
-            <div className="flex items-center justify-center w-full p-2 mb-4 border rounded-lg aspect-square bg-gradient-to-br from-yellow-500/5 to-amber-600/5 border-yellow-500/20">
-              <div className="relative flex items-center justify-center">
-                {/* Glow effect behind the mascot */}
-                <div className="absolute w-48 h-48 rounded-full bg-primary-500 opacity-30 blur-xl"></div>
+// Animated text component with the new effect
+const AnimatedText = ({ content }: { content: string }) => {
+  // Adding a key based on content ensures component remounts
+  // when content changes, forcing animation to reset
+  return (
+    <div style={{ fontSize: '1.125rem', lineHeight: '1.75' }} key={`text-animation-${content.substring(0, 20)}`}>
+      <TextGenerateEffect words={content} filter={true} duration={0.3} />
+    </div>
+  )
+}
 
-                {/* Rotating border effect */}
-                <div className="absolute border-2 border-dashed rounded-full w-56 h-56 border-primary-500 animate-spin-slow"></div>
+const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }) => {
+  // Content for each tab
+  const tabContent = {
+    home: {
+      title: 'JOIN THE FUTURE OF DEFI',
+      story: [
+        'Secure your spot in the future of DeFi.',
+        'Join our final pre-sale round before May 5, 2025.',
+        'No VCs, no corporate backers—just community-driven innovation.',
+      ].join(' '),
+      mascotImage: '/maskot1.png', // Specific mascot for home tab
+      features: [
+        {
+          icon: <CurrencyDollarIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Pre-Sale Benefits',
+          description: 'Early access to governance rights and platform rewards',
+        },
+        {
+          icon: <ShieldCheckIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Bitcoin-Level Security',
+          description: 'Protected by merged mining with Bitcoin network',
+        },
+        {
+          icon: <RocketLaunchIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Zero-Gas Innovation',
+          description: 'Trade and build without blockchain fees',
+        },
+        {
+          icon: <UserGroupIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Fair Launch Guarantee',
+          description: '100% community-owned, no VC allocations',
+        },
+      ],
+    },
+    ecosystem: {
+      title: 'REVOLUTIONARY ARCHITECTURE',
+      story: [
+        "Built on Hathor's groundbreaking DAG-blockchain hybrid architecture.",
+        'Unlimited scalability with Bitcoin-level security.',
+        // 'Run full nodes on standard hardware and participate in true decentralization.',
+      ].join(' '),
+      mascotImage: '/maskot2.png', // Specific mascot for ecosystem tab
+      features: [
+        {
+          icon: <CubeTransparentIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Hybrid DAG Architecture',
+          description: 'Unlimited TPS with O(1) validation',
+        },
+        {
+          icon: <ShieldCheckIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Accessible Node Operation',
+          description: 'Run full nodes on consumer-grade hardware',
+        },
+        {
+          icon: <BanknotesIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Built-in Spam Protection',
+          description: 'Secure, fee-less transactions at scale',
+        },
+        {
+          icon: <ClockIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Real-Time Processing',
+          description: 'Instant finality with fast propagation',
+        },
+      ],
+    },
+    trading: {
+      title: 'ZERO-GAS TRADING',
+      story: [
+        'Trade securely and instantly without blockchain gas fees.',
+        'Our built-in MEV protection ensures every trade is fair and transparent.',
+        // 'Experience a trading platform that puts users first with zero-gas innovation.',
+      ].join(' '),
+      mascotImage: '/maskot3.png', // Specific mascot for trading tab
+      features: [
+        {
+          icon: <CurrencyDollarIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Zero Gas Fees for All Trades',
+          description: 'Trade without any blockchain gas costs',
+        },
+        {
+          icon: <ClockIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Instant Trade Finality',
+          description: 'No waiting for confirmations',
+        },
+        {
+          icon: <ShieldCheckIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'MEV & Front-Running Protection',
+          description: 'Trade with confidence and security',
+        },
+        {
+          icon: <UserGroupIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'User-Friendly Trading Experience',
+          description: 'Intuitive interface for all skill levels',
+        },
+      ],
+    },
+    blueprints: {
+      title: 'NO-CODE TOKEN UTILITIES',
+      story: [
+        // 'Launch your DeFi applications rapidly with secure, audited, no-code smart contracts.',
+        'Deploy custom tokens, staking pools, and DAOs without writing a single line of code.',
+        'Lower entry barriers and empower yourself in the new Web3 economy.',
+      ].join(' '),
+      mascotImage: '/maskot4.png', // Specific mascot for blueprints tab
+      features: [
+        {
+          icon: <CodeBracketIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Create Fast No-Code Contracts',
+          description: 'Deploy smart contracts without coding',
+        },
+        {
+          icon: <CheckCircleIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Security Audited Templates',
+          description: 'Pre-audited and secure building blocks',
+        },
+        {
+          icon: <RocketLaunchIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Rapid Token & dApp Creation',
+          description: 'Launch your project in minutes',
+        },
+        {
+          icon: <LightBulbIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
+          title: 'Easy Web3 Development',
+          description: 'Build dpps without technical barriers',
+        },
+      ],
+    },
+  }
 
-                {/* Mascot image with container */}
-                <div className="relative z-10 w-48 h-48 p-2 overflow-hidden transition-all duration-300 rounded-full backdrop-blur-sm bg-black/30 hover:scale-105">
-                  <img src="/dozer_backer_mascot.png" alt="Dozer Mascot" className="object-contain w-full h-full" />
+  // Default to home if no tab or home selected
+  const currentTab = activeTab || 'home'
+  const content = tabContent[currentTab] || tabContent.home
+
+  // Render the content for the active tab
+  return (
+    <div className="max-w-4xl">
+      <Typography
+        variant="h3"
+        weight={700}
+        className="mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+      >
+        {content.title}
+      </Typography>
+
+      <div className="grid grid-cols-1 gap-12 md:grid-cols-[1fr,1.2fr] h-full">
+        {/* Left column with mascot and text */}
+        <div className="flex flex-col h-full">
+          {/* Mascot container */}
+          <div className="flex items-center justify-center w-full aspect-[16/9] mb-2">
+            <div className="relative flex items-center justify-center w-4/5">
+              <img
+                src={content.mascotImage}
+                alt={`Dozer Mascot - ${currentTab}`}
+                className="object-contain w-full h-full drop-shadow-[0_4px_8px_rgba(234,179,8,0.2)]"
+              />
+            </div>
+          </div>
+
+          {/* Animated text */}
+          <div className="mt-0 flex-grow" key={`tab-${currentTab}`}>
+            <AnimatedText content={content.story} />
+          </div>
+        </div>
+
+        {/* Right column with feature cards */}
+        <div className="flex flex-col justify-between h-full">
+          <div className="space-y-3.5">
+            {content.features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.4,
+                  ease: [0.25, 0.1, 0.25, 1.0],
+                  delay: index * 0.1,
+                }}
+                whileHover={{
+                  scale: 1.02,
+                  transition: { duration: 0.2 },
+                }}
+                className="group relative overflow-hidden p-4 rounded-xl bg-black/30 backdrop-blur-sm border border-yellow-500/20 hover:border-yellow-500/40 transition-colors duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+              >
+                {/* Subtle highlight effect */}
+                <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                {/* Content */}
+                <div className="relative flex z-10">
+                  <div className="w-12 h-12 rounded-lg bg-yellow-500/10 flex items-center justify-center mr-4 transition-colors duration-300 group-hover:bg-yellow-500/15">
+                    {React.cloneElement(feature.icon as React.ReactElement, {
+                      className: 'w-6 h-6 text-yellow-500 transition-transform duration-300 group-hover:scale-110',
+                    })}
+                  </div>
+                  <div>
+                    <Typography
+                      variant="base"
+                      weight={600}
+                      className="text-yellow-400 mb-1 group-hover:text-yellow-300 transition-colors duration-300"
+                    >
+                      {feature.title}
+                    </Typography>
+                    <Typography
+                      variant="sm"
+                      className="text-neutral-300 group-hover:text-neutral-200 transition-colors duration-300"
+                    >
+                      {feature.description}
+                    </Typography>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <Typography variant="base" className="text-neutral-300">
-              Dozer Finance is bringing innovation to DeFi with lightning-fast transactions and minimal fees. Join us
-              in shaping the future of decentralized finance.
-            </Typography>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <CurrencyDollarIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Zero-Fee Transactions
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Trade and transact without any gas fees
-                </Typography>
-              </div>
-            </div>
-
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <ClockIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Instant Finality
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Real-time settlement without waiting for confirmations
-                </Typography>
-              </div>
-            </div>
-
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <ShieldCheckIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  MEV Protection
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Trade securely without value extraction
-                </Typography>
-              </div>
-            </div>
-            
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <UserGroupIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  User-Friendly Interface
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Simple design for all experience levels
-                </Typography>
-              </div>
-            </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </div>
-    )
-  }
-
-  if (activeTab === 'ecosystem') {
-    return (
-      <div className="max-w-4xl">
-        <Typography
-          variant="h3"
-          weight={700}
-          className="mb-6 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-        >
-          THE DOZER FINANCE ECOSYSTEM
-        </Typography>
-
-        <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2">
-          <div>
-            {/* Image description: System architecture illustration */}
-            <div className="flex items-center justify-center w-full p-4 mb-4 border rounded-lg aspect-video bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-yellow-500/40">
-              <Typography variant="base" className="text-center text-neutral-400">
-                [ECOSYSTEM DIAGRAM: Interconnected nodes showing Dozer's DeFi components]
-              </Typography>
-            </div>
-
-            <Typography variant="base" className="text-neutral-300">
-              A comprehensive DeFi ecosystem optimized for efficient markets, with revolutionary core innovations.
-            </Typography>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <BanknotesIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Zero-Gas Trading Platform
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Trade and lend without fees
-                </Typography>
-              </div>
-            </div>
-
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <DocumentTextIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Dozer Tools
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  No-code Web3 development framework
-                </Typography>
-              </div>
-            </div>
-            
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <ShieldCheckIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Enhanced Security
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Built on Hathor's hybrid architecture
-                </Typography>
-              </div>
-            </div>
-            
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <UserGroupIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Decentralized Governance
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Democratic and inclusive ecosystem
-                </Typography>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTab === 'trading') {
-    return (
-      <div className="max-w-4xl">
-        <Typography
-          variant="h3"
-          weight={700}
-          className="mb-6 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-        >
-          ZERO-GAS TRADING PLATFORM
-        </Typography>
-
-        <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2">
-          <div>
-            {/* Image description: Trading interface */}
-            <div className="flex items-center justify-center w-full p-4 mb-4 border rounded-lg aspect-video bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-yellow-500/40">
-              <Typography variant="base" className="text-center text-neutral-400">
-                [TRADING INTERFACE: Screenshot of the Dozer trading dashboard]
-              </Typography>
-            </div>
-
-            <Typography variant="base" className="text-neutral-300">
-              Our platform eliminates transaction fees while providing instant settlement, creating a more accessible
-              trading environment.
-            </Typography>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <CurrencyDollarIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Zero-Fee Transactions
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  No gas costs for any operation
-                </Typography>
-              </div>
-            </div>
-
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <ClockIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Instant Finality
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Real-time settlement without delays
-                </Typography>
-              </div>
-            </div>
-
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <ShieldCheckIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  MEV Protection
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Built-in safeguards against value extraction
-                </Typography>
-              </div>
-            </div>
-
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <UserGroupIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  User-Friendly Interface
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Simple design for all experience levels
-                </Typography>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTab === 'blueprints') {
-    return (
-      <div className="max-w-4xl">
-        <Typography
-          variant="h3"
-          weight={700}
-          className="mb-6 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
-        >
-          DOZER TOOLS: NO-CODE WEB3 FRAMEWORK
-        </Typography>
-
-        <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2">
-          <div>
-            {/* Image description: Blueprint interface */}
-            <div className="flex items-center justify-center w-full p-4 mb-4 border rounded-lg aspect-video bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-yellow-500/40">
-              <Typography variant="base" className="text-center text-neutral-400">
-                [BLUEPRINT INTERFACE: Visual builder for Web3 applications]
-              </Typography>
-            </div>
-
-            <Typography variant="base" className="text-neutral-300">
-              Dozer Tools empowers builders with a no-code framework to rapidly develop secure Web3 applications
-              without specialized knowledge.
-            </Typography>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <CodeBracketIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  No-Code Development
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Build without programming knowledge
-                </Typography>
-              </div>
-            </div>
-
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <CheckCircleIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Pre-audited Components
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Security-vetted building blocks
-                </Typography>
-              </div>
-            </div>
-
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <WrenchScrewdriverIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Customizable Templates
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Ready-made designs for quick deployment
-                </Typography>
-              </div>
-            </div>
-
-            <div className="flex p-3 border rounded-lg bg-black/40 border-yellow-500/20">
-              <LightBulbIcon className="flex-shrink-0 w-8 h-8 mr-3 text-yellow-500" />
-              <div>
-                <Typography variant="base" weight={600} className="text-yellow-400">
-                  Democratizing Development
-                </Typography>
-                <Typography variant="xs" className="text-neutral-300">
-                  Lower barriers to Web3 innovation
-                </Typography>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return null
+    </div>
+  )
 }
 
 export default TabContentWithAssets
