@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { api } from 'utils/api'
 import { Header } from '../components'
 import Head from 'next/head'
-import { ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
+import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 import { config } from '@hathor/wallet-lib'
 
 config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
@@ -36,10 +36,12 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
         <App.Shell>
           <ClientContextProvider>
             <JsonRpcContextProvider>
-              <Header />
-              <Component {...pageProps} />
-              <App.Footer />
-              <ToastContainer className="mt-[50px]" />
+              <BridgeProvider>
+                <Header />
+                <Component {...pageProps} />
+                <App.Footer />
+                <ToastContainer className="mt-[50px]" />
+              </BridgeProvider>
             </JsonRpcContextProvider>
           </ClientContextProvider>
         </App.Shell>

@@ -2,6 +2,7 @@ import React, { FC, useState, useEffect } from 'react'
 import { useBreakpoint, useIsMounted } from '@dozer/hooks'
 import { useAccount } from '@dozer/zustand'
 import { useWalletConnectClient } from '../contexts'
+import { useBridge } from '../contexts/BridgeContext'
 
 interface PercentageButtonsProps {
   onSelect: (percentage: number) => void
@@ -61,7 +62,11 @@ const BalancePanel: FC<BalancePanelProps> = ({
   const { accounts } = useWalletConnectClient()
   const address = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { isSm } = useBreakpoint('sm')
-
+  
+  // Bridge context for Arbitrum balances
+  const { connection } = useBridge()
+  const [arbitrumBalance, setArbitrumBalance] = useState(0)
+  
   useEffect(() => {
     if (currency && balance) {
       const token = balance.find((obj) => {
@@ -69,7 +74,15 @@ const BalancePanel: FC<BalancePanelProps> = ({
       })
       setTokenBalance(token && address ? token.token_balance / 100 : 0)
     }
-  }, [currency, balance, address])
+    
+    // Check for Arbitrum balance if it's a bridged token
+    if (currency && (currency as any).bridged && (currency as any).originalAddress) {
+      const originalAddress = (currency as any).originalAddress
+      if (connection.arbitrumConnected && connection.arbitrumBalance[originalAddress]) {
+        setArbitrumBalance(connection.arbitrumBalance[originalAddress])
+      }
+    }
+  }, [currency, balance, address, connection.arbitrumBalance])
 
   const handlePercentageClick = (percentage: number) => {
     const amount = (tokenBalance * percentage) / 100
@@ -82,15 +95,28 @@ const BalancePanel: FC<BalancePanelProps> = ({
       {!hidePercentageButtons && showPercentageButtons && (
         <PercentageButtons onSelect={handlePercentageClick} disabled={disableMaxButton} />
       )}
-      <button
-        data-testid={`${id}-balance-button`}
-        type="button"
-        onClick={() => onChange(tokenBalance.toFixed(2))}
-        className="px-2 py-2 text-xs transition-colors rounded-lg text-stone-400 hover:text-stone-300 hover:bg-stone-800"
-        disabled={disableMaxButton}
-      >
-        {isMounted && balance ? `Balance: ${tokenBalance.toFixed(2)}` : 'Balance: 0'}
-      </button>
+      <div className="flex flex-col items-end">
+        <button
+          data-testid={`${id}-balance-button`}
+          type="button"
+          onClick={() => onChange(tokenBalance.toFixed(2))}
+          className="px-2 py-2 text-xs transition-colors rounded-lg text-stone-400 hover:text-stone-300 hover:bg-stone-800"
+          disabled={disableMaxButton}
+        >
+          {isMounted && balance ? `Balance: ${tokenBalance.toFixed(2)}` : 'Balance: 0'}
+        </button>
+        
+        {/* Show Arbitrum balance for bridged tokens */}
+        {(currency as any)?.bridged && connection.arbitrumConnected && (
+          <span className="px-2 py-1 text-xs text-blue-400">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline mr-1">
+              <path d="M8 0C3.58 0 0 3.58 0 8C0 12.42 3.58 16 8 16C12.42 16 16 12.42 16 8C16 3.58 12.42 0 8 0ZM8 14C4.69 14 2 11.31 2 8C2 4.69 4.69 2 8 2C11.31 2 14 4.69 14 8C14 11.31 11.31 14 8 14Z" fill="#60A5FA"/>
+              <path d="M8 3L4 8.5H7V13L11 7.5H8V3Z" fill="#60A5FA"/>
+            </svg>
+            {arbitrumBalance.toFixed(2)}
+          </span>
+        )}
+      </div>
     </div>
   )
 }

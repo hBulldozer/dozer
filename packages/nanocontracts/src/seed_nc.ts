@@ -132,6 +132,10 @@ export interface TokenConfig {
   symbol: string
   totalSupply: number
   about: string
+  bridged?: boolean
+  sourceChain?: string
+  targetChain?: string
+  originalAddress?: string
 }
 
 export interface PoolConfig {

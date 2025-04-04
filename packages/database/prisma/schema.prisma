@@ -49,6 +49,10 @@ model Token {
   twitter          String      @default("")
   website          String      @default("")
   custom           Boolean     @default(false)
+  bridged          Boolean     @default(false)
+  sourceChain      String?     
+  targetChain      String?
+  originalAddress  String?     
   oasis            Oasis[]     @relation("token")
 
   @@unique([chainId, uuid])

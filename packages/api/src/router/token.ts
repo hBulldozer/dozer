@@ -16,6 +16,10 @@ export const tokenRouter = createTRPCRouter({
         chainId: true,
         decimals: true,
         createdBy: true,
+        bridged: true,
+        sourceChain: true,
+        targetChain: true,
+        originalAddress: true,
         pools0: {
           select: {
             id: true,
@@ -103,21 +107,25 @@ export const tokenRouter = createTRPCRouter({
   }),
   createCustom: procedure
     .input(
-      z.object({
-        name: z.string(),
-        symbol: z.string(),
-        chainId: z.number(),
-        decimals: z.number(),
-        description: z.string(),
-        imageUrl: z.string(),
-        telegram: z.string().optional(),
-        twitter: z.string().optional(),
-        website: z.string().optional(),
-        createdBy: z.string(),
-        totalSupply: z.number(),
-        hash: z.string(),
-      })
-    )
+    z.object({
+    name: z.string(),
+    symbol: z.string(),
+    chainId: z.number(),
+    decimals: z.number(),
+    description: z.string(),
+    imageUrl: z.string(),
+    telegram: z.string().optional(),
+    twitter: z.string().optional(),
+    website: z.string().optional(),
+    createdBy: z.string(),
+    totalSupply: z.number(),
+    hash: z.string(),
+      bridged: z.boolean().optional(),
+        sourceChain: z.string().optional(),
+            targetChain: z.string().optional(),
+            originalAddress: z.string().optional(),
+          })
+        )
     .mutation(async ({ ctx, input }) => {
       // Create token on blockchain
       // const start = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/start`, {
@@ -165,6 +173,10 @@ export const tokenRouter = createTRPCRouter({
           twitter: input.twitter,
           website: input.website,
           createdBy: input.createdBy,
+          bridged: input.bridged || false,
+          sourceChain: input.sourceChain,
+          targetChain: input.targetChain,
+          originalAddress: input.originalAddress,
         },
       })
 
@@ -173,6 +185,21 @@ export const tokenRouter = createTRPCRouter({
   byUuid: procedure.input(z.object({ uuid: z.string() })).query(({ ctx, input }) => {
     return ctx.prisma.token.findFirst({
       where: { uuid: input.uuid },
+      select: {
+        id: true,
+        name: true,
+        uuid: true,
+        symbol: true,
+        chainId: true,
+        decimals: true,
+        createdBy: true,
+        imageUrl: true,
+        custom: true,
+        bridged: true,
+        sourceChain: true,
+        targetChain: true,
+        originalAddress: true,
+      },
     })
   }),
   socialURLs: procedure.input(z.object({ uuid: z.string() })).query(({ ctx, input }) => {

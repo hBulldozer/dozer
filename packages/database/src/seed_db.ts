@@ -12,6 +12,10 @@ export interface TokenConfig {
   symbol: string
   totalSupply: number
   about: string
+  bridged?: boolean
+  sourceChain?: string
+  targetChain?: string
+  originalAddress?: string
 }
 
 export interface PoolConfig {
@@ -90,7 +94,11 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
           decimals: 2,
           isLiquidityToken: false,
           miniChartSVG: '',
-          about: token.about, // You might want to add this to your config file
+          about: token.about,
+          bridged: token.bridged || false,
+          sourceChain: token.sourceChain || null,
+          targetChain: token.targetChain || null,
+          originalAddress: token.originalAddress || null
         }
       }),
     ],

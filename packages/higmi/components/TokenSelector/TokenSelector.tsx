@@ -31,10 +31,30 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
 
     const { balance: balances } = useAccount()
     const _tokens = useMemo(() => {
-      let filteredTokens = tokens || []
-      if (customTokensOnly) {
-        filteredTokens = filteredTokens.filter((token) => token.imageUrl != undefined)
+    let filteredTokens = tokens || []
+    if (customTokensOnly) {
+    filteredTokens = filteredTokens.filter((token) => token.imageUrl != undefined)
+    }
+    
+    // Convert token data so that the bridged property is preserved
+    filteredTokens = filteredTokens.map(token => {
+      if (token instanceof Token) {
+        // If already a Token instance, just return it
+        return token
+      } else {
+        // Convert from database representation to Token instance
+        return new Token({
+          chainId: token.chainId,
+          uuid: token.uuid,
+          decimals: token.decimals,
+          name: token.name,
+          symbol: token.symbol,
+          imageUrl: token.imageUrl,
+          bridged: (token as any).bridged || false,
+          originalAddress: (token as any).originalAddress
+        })
       }
+    })
 
       const sortedTokens = filteredTokens.sort((a: Token, b: Token) => {
         const balanceA = balances.find((balance) => balance.token_uuid === a.uuid)?.token_balance || 0

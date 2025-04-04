@@ -5,9 +5,9 @@ import { CurrencyInput } from '../components/CurrencyInput'
 import { Token } from '@dozer/currency'
 import { useState, useCallback, useMemo, useEffect, FC, ReactNode } from 'react'
 import { TradeType } from '../components/utils/TradeType'
-import { useNetwork, useSettings, useTrade } from '@dozer/zustand'
-import { SwapStatsDisclosure, SettingsOverlay } from '../components'
-import { Checker, EventType, useWebSocketGeneric } from '@dozer/higmi'
+import { useAccount, useNetwork, useSettings, useTrade } from '@dozer/zustand'
+import { SwapStatsDisclosure, SettingsOverlay, SwapLowBalanceBridge, SwapSideBridgeSuggestion } from '../components'
+import { BridgeProvider, Checker, EventType, useWebSocketGeneric } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
 import { warningSeverity } from '../components/utils/functions'
 import { useRouter } from 'next/router'
@@ -62,28 +62,39 @@ const Home = () => {
   //     // utils.getTokens.all.invalidate()
   //   }
   // }, true)
+  const trade = useTrade()
+  const balances = useAccount((state) => state.balance)
+  
   return (
-    <Layout>
-      <div className="flex flex-col gap-4 max-w-[400px] mx-auto">
-        <SwapWidget token0_idx={'2'} token1_idx={'0'} />
-        <div
-          className="flex items-center justify-between gap-3 p-4 transition-colors border rounded-lg cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800"
-          onClick={() => window.open('https://t.me/hathor_solana_bot', '_blank')}
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-900/20">
-              <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
+    <BridgeProvider>
+      <Layout>
+        <div className="flex flex-col md:flex-row justify-center gap-4 max-w-[800px] mx-auto">
+          <div className="flex flex-col gap-4" style={{ maxWidth: '400px' }}>
+            <SwapWidget token0_idx={'2'} token1_idx={'0'} />
+            <div
+              className="flex items-center justify-between gap-3 p-4 transition-colors border rounded-lg cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800"
+              onClick={() => window.location.href = '/bridge'}
+            >
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-900/20">
+                <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-white">Hathor-Arbitrum Bridge</span>
+                <span className="text-xs text-gray-400">Transfer tokens between networks</span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-white">HTR token bridge</span>
-              <span className="text-xs text-gray-400">Deposit tokens to the Hathor network.</span>
-            </div>
+            <ArrowTopRightOnSquareIcon width={20} height={20} className="text-gray-400" />
           </div>
-          <ArrowTopRightOnSquareIcon width={20} height={20} className="text-gray-400" />
         </div>
+        <SwapSideBridgeSuggestion 
+          token={trade.mainCurrency as Token}
+          hasLowBalance={trade.mainCurrency && ((trade.amountSpecified > 0 && balances.find((bal) => bal.token_uuid === trade.mainCurrency?.uuid)?.token_balance || 0) < trade.amountSpecified * 100)}
+        />
       </div>
       <BlockTracker client={api} />
-    </Layout>
+      </Layout>
+    </BridgeProvider>
   )
 }
 
@@ -93,6 +104,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const { data: pools } = api.getPools.all.useQuery()
   const { data: tokens } = api.getTokens.all.useQuery()
   const { data: prices } = api.getPrices.all.useQuery()
+  const balances = useAccount((state) => state.balance)
   const router = useRouter()
 
   useEffect(() => {
@@ -357,6 +369,14 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             // isWrap={isWrap}
           />
           <SwapStatsDisclosure prices={prices || {}} />
+          
+          {/* Low balance bridge suggestion - now using side version */}
+          {/* <SwapLowBalanceBridge 
+            token={token0}
+            hasLowBalance={token0 && ((Number(input0) > 0 && (balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) < Number(input0) * 100) || 
+                          ((balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) === 0))}
+          /> */}
+          
           <div className="p-3 pt-0">
             <Checker.Connected fullWidth size="md">
               <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
