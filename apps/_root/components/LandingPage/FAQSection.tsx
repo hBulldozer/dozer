@@ -12,9 +12,10 @@ interface FAQItem {
 interface FAQSectionProps {
   faqItems: FAQItem[]
   onViewMoreClick: () => void
+  displayCount?: number
 }
 
-const FAQSection: React.FC<FAQSectionProps> = ({ faqItems, onViewMoreClick }) => {
+const FAQSection: React.FC<FAQSectionProps> = ({ faqItems, onViewMoreClick, displayCount = 4 }) => {
   return (
     <div className="w-full p-6 md:p-8 border-t border-yellow-500/30 mt-8 relative">
       {/* Subtle background effect */}
@@ -29,7 +30,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({ faqItems, onViewMoreClick }) =>
       </Typography>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-7xl mx-auto relative z-10">
-        {faqItems.slice(0, 4).map((item, index) => (
+        {faqItems.slice(0, displayCount).map((item, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, y: 20 }}
@@ -61,7 +62,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({ faqItems, onViewMoreClick }) =>
         ))}
       </div>
 
-      {faqItems.length > 4 && (
+      {faqItems.length > displayCount && (
         <div className="flex justify-center mt-8 relative z-10">
           <Button
             variant="outlined"

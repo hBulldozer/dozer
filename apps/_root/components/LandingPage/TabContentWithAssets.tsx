@@ -119,12 +119,12 @@ const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }
         {
           icon: <CurrencyDollarIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
           title: 'Pre-Sale Benefits',
-          description: 'Early access to governance rights and platform rewards',
+          description: 'Early access to governance and rewards',
         },
         {
           icon: <ShieldCheckIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
           title: 'Bitcoin-Level Security',
-          description: 'Protected by merged mining with Bitcoin network',
+          description: 'Merged mining with Bitcoin',
         },
         {
           icon: <RocketLaunchIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
@@ -134,7 +134,7 @@ const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }
         {
           icon: <UserGroupIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
           title: 'Fair Launch Guarantee',
-          description: '100% community-owned, no VC allocations',
+          description: '100% community-owned, no VC',
         },
       ],
     },

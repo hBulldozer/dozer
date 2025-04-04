@@ -101,7 +101,7 @@ export const CustomFooter: React.FC = () => {
       <Container maxWidth="5xl" className="mx-auto mt-8 mb-2">
         <div className="flex justify-between py-2 mx-4 border-t border-stone-800">
           <Typography variant="xs" className="text-stone-300">
-            Copyright © 2024 Dozer. All rights reserved.
+            Copyright © 2025 Dozer. All rights reserved.
           </Typography>
           <div className="flex divide-x divide-stone-100/20">
             <Link.Internal href="https://mvp.dozer.finance" passHref={true}>

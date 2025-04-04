@@ -9,6 +9,8 @@ import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
 import { PresaleSidebar, TabContentWithAssets, TabNavigation, FAQSection } from '../components/LandingPage'
 import { Meteors, ShootingStars } from '@dozer/ui/aceternity'
+import { Container } from '@dozer/ui/container'
+import { DozerWithTextIcon, TwitterIcon, TelegramIcon, DiscordIcon, GithubIcon } from '@dozer/ui/icons'
 
 interface StyledDialogButtonProps {
   children: React.ReactNode
@@ -32,33 +34,49 @@ const Home: React.FC = () => {
   // FAQ items based on the tokenomics document
   const faqItems = [
     {
-      question: 'What are Dozer Donor Tokens (DZD)?',
+      question: 'What is the DZR token?',
       answer:
-        'DZD tokens represent early contributions to Dozer Finance. At the DZR token generation event, each DZD converts 1:1 into $1 worth of DZR tokens, ensuring fair, equal terms for all early supporters without any VC involvement.',
+        'DZR is the native token of the Dozer Finance protocol. It powers governance, liquidity incentives, and utility across the Dozer ecosystem. There are no VCs or corporate backers—only the community.',
     },
     {
       question: 'How do I participate in the pre-sale?',
       answer:
-        'Contribute using USDT or USDC on Polygon, or HTR on Hathor. After donating, contact our team via Telegram to receive your DZD tokens. Pre-sale ends May 5, 2025.',
+        "To join the final pre-sale, send USDT or USDC on any EVM network, or use Solana. Follow the payment instructions provided on the website. After payment, you'll be prompted to enter your Hathor address to receive your allocation.",
     },
     {
-      question: 'Is there any vesting or lock-up for DZR tokens from DZD?',
-      answer: 'No. All DZR tokens converted from DZD at launch will be fully unlocked and immediately usable.',
-    },
-    {
-      question: 'What benefits do DZD holders receive?',
+      question: 'Is there any vesting or lock-up on pre-sale DZR tokens?',
       answer:
-        'Holders of 100+ DZD gain DAO membership, private Discord access, early platform features, beta-testing opportunities, and voting rights in protocol decisions.',
+        'No. All DZR tokens allocated during the pre-sale are fully unlocked at launch—no lock-ups, no vesting, no cliffs.',
     },
     {
-      question: 'Are there transaction fees on Dozer Finance?',
+      question: 'Is there a maximum allocation per wallet?',
       answer:
-        'Transactions on Dozer incur zero blockchain gas fees. Trades include only a minimal liquidity provider fee (0.3%), significantly lower than typical Ethereum-based DEX costs.',
+        "Yes. There's a cap of $10,000 per backer to promote decentralization and fair community ownership. Our backers are not just investors—they are co-founders of the project.",
     },
     {
-      question: 'Is Dozer Finance secure and audited?',
+      question: 'Are there gas fees on Dozer Finance?',
       answer:
-        "Yes. Dozer's smart contracts undergo external audits, and the platform leverages Hathor's security via Bitcoin merged mining. Users always retain full custody of their tokens.",
+        'No gas fees at the blockchain level. Dozer uses a zero-gas model powered by Hathor. The only fee is a minimal 0.3% LP trading fee—far lower than typical DEX platforms.',
+    },
+    // {
+    //   question: 'Is Dozer Finance secure?',
+    //   answer:
+    //     "Yes. Dozer's smart contracts are externally audited and the protocol is secured through Hathor's Bitcoin merged-mining network. Users always retain full custody of their funds.",
+    // },
+    {
+      question: 'Where can I get support or ask questions?',
+      answer:
+        'You can join our official Telegram group for help, updates, and direct communication with the core team and community.',
+    },
+    {
+      question: 'When is the DZR listing and TGE?',
+      answer:
+        'The token generation event (TGE) and exchange listings will be officially announced. Stay tuned on our Telegram and website for updates.',
+    },
+    {
+      question: 'When is Dozer Finance launching on mainnet?',
+      answer:
+        "Dozer DEX will be deployed on Hathor mainnet as soon as Nano Contracts (Hathor's smart contract infrastructure) are live on mainnet.",
     },
   ]
 
@@ -234,7 +252,7 @@ const Home: React.FC = () => {
 
         {/* FAQ section - Updated styling */}
         <div className="px-6 py-8 md:px-8 bg-gradient-to-b from-transparent via-yellow-900/5 to-yellow-900/10">
-          <FAQSection faqItems={faqItems} onViewMoreClick={() => setIsDialogOpen(true)} />
+          <FAQSection faqItems={faqItems} onViewMoreClick={() => setIsDialogOpen(true)} displayCount={7} />
         </div>
 
         {/* Custom Dialog - Enhanced styling */}
@@ -246,45 +264,22 @@ const Home: React.FC = () => {
                   variant="h2"
                   className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-amber-600"
                 >
-                  Join the Dozer Presale! 🚀
+                  Frequently Asked Questions
                 </Typography>
               }
               onClose={() => setIsDialogOpen(false)}
             />
-            <div className="flex flex-col p-8">
-              <Typography variant="xl" weight={600} className="mb-3 text-left text-yellow-400">
-                Summary
-              </Typography>
-              <Typography variant="base" className="mb-6 text-left text-neutral-200">
-                Dozer Donor Token (DZD) is a unique solution designed for the Dozer project's prelaunch phase. They
-                serve as an innovative alternative to traditional SAFE documents, enabling a community-driven
-                fundraising approach while maintaining contributor anonymity.
-              </Typography>
-
-              <Typography variant="xl" weight={600} className="mb-3 text-left text-yellow-400">
-                Token Overview
-              </Typography>
-              <Typography variant="base" className="mb-6 text-left text-neutral-200">
-                <b>Name</b>: Dozer Donor Tokens (DZD)
-                <br />
-                <b>Representation</b>: 1 DZD represents 1 USD worth of DZR at our token generation event
-                <br />
-                <b>Maximum Supply</b>: 100,000 DZD
-                <br />
-                <b>Holder Cap</b>: Maximum 10,000 DZD per backer
-              </Typography>
-
-              <Typography variant="xl" weight={600} className="mb-3 text-left text-yellow-400">
-                Benefits
-              </Typography>
-              <Typography variant="base" className="text-left text-neutral-200">
-                Donors holding more than 100 DZD gain exclusive privileges:
-                <br />• Membership in our DAO and Private Discord Channel
-                <br />• Real-time updates on development progress
-                <br />• Access to nano contracts releases
-                <br />• Participation in Protocol beta testing
-                <br />• Voting rights on the future of the protocol
-              </Typography>
+            <div className="flex flex-col p-4 max-h-[70vh] overflow-y-auto">
+              {faqItems.map((item, index) => (
+                <div key={index} className="mb-6 border-b border-yellow-500/20 pb-4 last:border-0">
+                  <Typography variant="lg" weight={600} className="mb-2 text-left text-yellow-400">
+                    {item.question}
+                  </Typography>
+                  <Typography variant="base" className="text-left text-neutral-200">
+                    {item.answer}
+                  </Typography>
+                </div>
+              ))}
             </div>
             <div className="flex flex-col gap-3 p-6 pt-4 border-t lg:flex-row border-stone-700 bg-stone-900/50">
               <StyledDialogButton href="https://explorer.hathor.network/token_balances?sortBy=total&order=desc&token=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d">
@@ -307,6 +302,166 @@ const Home: React.FC = () => {
           className="max-w-2xl" // Increased size
         />
       </div>
+
+      {/* Footer Section */}
+      <footer className="relative z-10 border-t border-yellow-500/30 bg-black/80 backdrop-blur-md mt-16">
+        {/* Disclaimer Banner */}
+        <div className="w-full py-2 bg-black/40 backdrop-blur-sm">
+          <Typography variant="xs" className="text-center text-stone-400">
+            ALWAYS DO YOUR OWN RESEARCH. NOTHING HERE IS FINANCIAL ADVICE. © 2024 DOZER ALL RIGHTS RESERVED.
+          </Typography>
+        </div>
+
+        <Container maxWidth="5xl" className="grid grid-cols-1 md:grid-cols-[176px_auto] mx-auto px-4 gap-4 py-10">
+          <div className="flex flex-col gap-3">
+            <div className="items-center justify-start w-32">
+              <DozerWithTextIcon />
+            </div>
+            <div className="text-sm sm:text-[0.8rem] leading-5 sm:leading-4 text-stone-300 pl-2">
+              Easy, Fast and Safe.
+            </div>
+            <div className="flex items-center gap-4 pl-2">
+              <a href="https://twitter.com/DozerProtocol" target="_blank" rel="noopener noreferrer">
+                <TwitterIcon width={16} className="text-yellow-400 hover:text-yellow-300" />
+              </a>
+              <a href="https://t.me/DozerFinance" target="_blank" rel="noopener noreferrer">
+                <TelegramIcon width={16} className="text-yellow-400 hover:text-yellow-300" />
+              </a>
+              <a href="https://forms.gle/8cEKvsaNrTP4c8Ef6" target="_blank" rel="noopener noreferrer">
+                <DiscordIcon width={16} className="text-yellow-400 hover:text-yellow-300" />
+              </a>
+              <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">
+                <GithubIcon width={16} className="text-yellow-400 hover:text-yellow-300" />
+              </a>
+            </div>
+            {/* Newsletter Section - Mobile */}
+            <div className="md:hidden mt-6">
+              <Typography variant="sm" weight={600} className="text-yellow-400 mb-2">
+                JOIN OUR NEWSLETTER
+              </Typography>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="py-2 px-3 bg-stone-900 border border-yellow-500/30 rounded-lg focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-white text-sm"
+                />
+                <button
+                  type="button"
+                  className="py-2 px-4 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-lg font-semibold text-black hover:opacity-90 transition-opacity text-sm"
+                >
+                  Subscribe
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="md:px-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-[40px] sm:mt-[10px]">
+            {/* Features Column */}
+            <div className="flex flex-col gap-[10px]">
+              <Typography variant="xs" weight={500} className="text-sm sm:text-xs text-yellow-400">
+                Features
+              </Typography>
+              <a
+                href="https://testnet.dozer.finance/swap"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm cursor-pointer sm:text-xs text-stone-400 hover:text-yellow-400 hover:underline"
+              >
+                Swap
+              </a>
+              <a
+                href="https://testnet.dozer.finance/pool"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm cursor-pointer sm:text-xs text-stone-400 hover:text-yellow-400 hover:underline"
+              >
+                Earn
+              </a>
+              <a
+                href="https://testnet.dozer.finance/pool/create_token"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm cursor-pointer sm:text-xs text-stone-400 hover:text-yellow-400 hover:underline"
+              >
+                Launch
+              </a>
+            </div>
+
+            {/* Help Column */}
+            <div className="flex flex-col gap-[10px]">
+              <Typography variant="xs" weight={500} className="text-sm sm:text-xs text-yellow-400">
+                Help
+              </Typography>
+              <a
+                href="https://docs.dozer.finance"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm cursor-pointer sm:text-xs text-stone-400 hover:text-yellow-400 hover:underline"
+              >
+                Docs
+              </a>
+              <a
+                href="https://t.me/dozerfinance"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm cursor-pointer sm:text-xs text-stone-400 hover:text-yellow-400 hover:underline"
+              >
+                Support
+              </a>
+            </div>
+
+            {/* Partners Column */}
+            <div className="flex flex-col gap-[10px]">
+              <Typography variant="xs" weight={500} className="text-sm sm:text-xs text-yellow-400">
+                Partners
+              </Typography>
+              <a
+                href="https://hathor.network"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm cursor-pointer sm:text-xs text-stone-400 hover:text-yellow-400 hover:underline"
+              >
+                Hathor Network
+              </a>
+            </div>
+
+            {/* Newsletter - Desktop */}
+            <div className="hidden md:flex flex-col gap-[10px]">
+              <Typography variant="xs" weight={500} className="text-sm sm:text-xs text-yellow-400">
+                Newsletter
+              </Typography>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="py-2 px-3 bg-stone-900 border border-yellow-500/30 rounded-lg focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-white text-sm"
+                />
+                <button
+                  type="button"
+                  className="py-2 px-4 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-lg font-semibold text-black hover:opacity-90 transition-opacity text-sm"
+                >
+                  Subscribe
+                </button>
+              </div>
+            </div>
+          </div>
+        </Container>
+
+        <Container maxWidth="5xl" className="mx-auto mb-2">
+          <div className="flex flex-col md:flex-row md:justify-between py-4 mx-4 border-t border-yellow-500/20 items-center gap-2">
+            <Typography variant="xs" className="text-stone-400">
+              Copyright © {new Date().getFullYear()} Dozer. All rights reserved.
+            </Typography>
+            <div className="flex">
+              <Link.Internal href="/terms" passHref={true}>
+                <Typography as="a" variant="xs" weight={500} className="px-3 text-stone-300 hover:text-yellow-400">
+                  Terms of Use
+                </Typography>
+              </Link.Internal>
+            </div>
+          </div>
+        </Container>
+      </footer>
     </div>
   )
 }
