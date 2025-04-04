@@ -5,6 +5,7 @@ import { useBridge, useWalletConnectClient } from '@dozer/higmi'
 import { Token } from '@dozer/currency'
 import Image from 'next/legacy/image'
 import { ExclamationCircleIcon } from '@heroicons/react/24/solid'
+import { WalletIcon } from '@heroicons/react/24/outline'
 import { api } from 'utils/api'
 import bridgeIcon from '../../public/bridge-icon.jpeg'
 import { CurrencyInput } from '../CurrencyInput'
@@ -389,18 +390,54 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   return (
     <Widget id="bridge" maxWidth={400}>
       <Widget.Content>
-        <div className="p-3 pb-4 font-medium">
+        <div className="px-4 py-4 font-medium border-b border-stone-700">
           <div className="flex items-center justify-between">
-            <span className="text-xl font-semibold">Arbitrum → Hathor Bridge</span>
+            <span className="text-xl font-semibold">Arbitrum → Hathor</span>
             <div className="flex items-center">
-              <Image src={bridgeIcon} width={24} height={24} alt="Bridge" className="object-cover rounded-full" />
+              {connection.arbitrumConnected && connection.arbitrumAddress && (
+                <div
+                  className="flex items-center mr-3 text-xs bg-stone-800 px-3 py-1.5 rounded-md border border-stone-700 hover:bg-stone-700 cursor-pointer transition-colors"
+                  onClick={() => {
+                    if (window.confirm('Disconnect from MetaMask?')) {
+                      disconnectArbitrum()
+                      createInfoToast({
+                        type: 'approval',
+                        summary: {
+                          pending: '',
+                          completed: '',
+                          failed: '',
+                          info: 'Disconnected from MetaMask',
+                        },
+                        txHash: nanoid(),
+                        groupTimestamp: Date.now(),
+                        timestamp: Date.now(),
+                      })
+                    }
+                  }}
+                  title="Click to disconnect"
+                >
+                  <div className="flex flex-col items-start">
+                    <div className="flex items-center">
+                      <WalletIcon className="w-3 h-3 mr-1 text-green-500" />
+                      <span className="font-medium text-green-400">Connected</span>
+                    </div>
+                    <div className="flex items-center mt-0.5">
+                      <span className="text-stone-400">
+                        {connection.arbitrumAddress.substring(0, 6)}...
+                        {connection.arbitrumAddress.substring(connection.arbitrumAddress.length - 4)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <Image src={bridgeIcon} width={28} height={28} alt="Bridge" className="object-cover rounded-full" />
             </div>
           </div>
         </div>
 
-        <div className="p-3 bg-stone-800">
+        <div className="p-4 bg-stone-800">
           {errorMessage && (
-            <div className="p-3 mb-4 border border-red-600 rounded-lg bg-red-900/20">
+            <div className="p-3 mb-5 border border-red-600 rounded-lg bg-red-900/20">
               <div className="flex items-start">
                 <ExclamationCircleIcon className="w-5 h-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
                 <span className="text-sm text-red-300">{errorMessage}</span>
@@ -409,7 +446,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           )}
 
           {successMessage && transactionHash && (
-            <div className="p-3 mb-4 border border-green-600 rounded-lg bg-green-900/20">
+            <div className="p-3 mb-5 border border-green-600 rounded-lg bg-green-900/20">
               <p className="mb-2 text-sm text-green-300">{successMessage}</p>
               <p className="text-xs text-green-400">
                 Transaction: {transactionHash.substring(0, 10)}...
@@ -433,8 +470,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           />
 
           {/* Inform user about using WalletConnect's Hathor address */}
-          <div className="mt-4 mb-4">
-            <div className="p-2 border border-blue-600 rounded-lg bg-blue-800/20">
+          <div className="mt-5 mb-5">
+            <div className="p-3 border border-blue-600 rounded-lg bg-blue-800/20">
               <p className="text-xs text-blue-300">
                 {hathorAddress
                   ? `Your tokens will be sent to your connected Hathor wallet: ${hathorAddress.substring(
@@ -446,15 +483,15 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-5">
             {!connection.arbitrumConnected ? (
-              <Button fullWidth size="md" color="blue" onClick={handleMetaMaskConnect}>
+              <Button fullWidth size="lg" color="blue" onClick={handleMetaMaskConnect}>
                 Connect MetaMask
               </Button>
             ) : (
               <Button
                 fullWidth
-                size="md"
+                size="lg"
                 color="blue"
                 onClick={handleBridge}
                 disabled={!selectedToken || !amount || isProcessing || !hathorAddress}
@@ -465,36 +502,38 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
             {/* Add a cancel button when processing */}
             {isProcessing && (
-              <Button fullWidth size="sm" color="red" className="mt-2" onClick={handleCancel}>
+              <Button fullWidth size="md" color="red" className="mt-3" onClick={handleCancel}>
                 Cancel
               </Button>
             )}
           </div>
 
           {pendingClaims.length > 0 && (
-            <div className="p-3 mt-4 border border-yellow-600 rounded-lg bg-yellow-900/20">
+            <div className="p-3 mt-6 border border-yellow-600 rounded-lg bg-yellow-900/20">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-bold text-yellow-500">Pending Claims</h3>
                 <button onClick={handleRefreshClaims} className="text-xs text-yellow-400 hover:text-yellow-300">
                   Refresh
                 </button>
               </div>
-              <p className="text-xs text-yellow-300">You have {pendingClaims.length} pending claim(s) available.</p>
-              <Button fullWidth size="sm" color="yellow" className="mt-2" onClick={navigateToClaims}>
+              <p className="mb-3 text-xs text-yellow-300">
+                You have {pendingClaims.length} pending claim(s) available.
+              </p>
+              <Button fullWidth size="md" color="yellow" onClick={navigateToClaims}>
                 View Claims
               </Button>
             </div>
           )}
 
           {pendingClaims.length === 0 && connection.arbitrumConnected && (
-            <div className="p-3 mt-4 border border-stone-600 rounded-lg bg-stone-800/50">
+            <div className="p-4 mt-6 border rounded-lg border-stone-600 bg-stone-800/50">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-stone-400">No Pending Claims</h3>
                 <button onClick={handleRefreshClaims} className="text-xs text-blue-400 hover:text-blue-300">
                   Check for Claims
                 </button>
               </div>
-              <p className="text-xs text-stone-500">You don't have any pending claims right now.</p>
+              <p className="mb-0 text-xs text-stone-500">You don't have any pending claims right now.</p>
             </div>
           )}
         </div>
