@@ -165,7 +165,7 @@ const Home: React.FC = () => {
     return (
       <Link.External
         href={href}
-        className="relative w-full px-6 py-3 text-base font-medium text-left text-yellow-400 transition-all duration-200 bg-yellow-500/10 hover:bg-yellow-500/20 rounded-xl cursor-pointer select-none border border-yellow-500/30 hover:border-yellow-500/50"
+        className="relative w-full px-6 py-3 text-base font-medium text-left text-yellow-400 transition-all duration-200 border cursor-pointer select-none bg-yellow-500/10 hover:bg-yellow-500/20 rounded-xl border-yellow-500/30 hover:border-yellow-500/50"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -185,26 +185,26 @@ const Home: React.FC = () => {
   return (
     <div className="relative min-h-screen text-white bg-black">
       {/* Space background with animations */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.95)),url('/background.jpg')] bg-cover overflow-hidden">
+      {/* <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.95)),url('/background.jpg')] bg-cover overflow-hidden">
         <ShootingStars className="w-full h-full" />
         <Meteors number={10} className="!absolute" />
-      </div>
+      </div> */}
 
       {/* Main layout container */}
       <div className="relative z-10 flex flex-col mx-auto max-w-7xl">
         {/* Title section - Updated styling */}
-        <div className="p-6 md:p-8 border-b border-yellow-500/30">
+        <div className="p-6 border-b md:p-8 border-yellow-500/30">
           <Typography
             variant="h1"
             weight={800}
-            className="text-4xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-amber-600 mb-2"
+            className="mb-2 text-4xl text-transparent md:text-6xl lg:text-7xl bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-amber-600"
           >
             THE FUTURE OF DEFI IS HERE
           </Typography>
           <Typography
             variant="h3"
             weight={700}
-            className="text-xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-br from-red-500 to-amber-400 animate-pulse"
+            className="text-xl text-transparent md:text-3xl bg-clip-text bg-gradient-to-br from-red-500 to-amber-400 animate-pulse"
           >
             FINAL PHASE - ENDS MAY 5, 2025
           </Typography>
@@ -214,7 +214,7 @@ const Home: React.FC = () => {
         <div className="flex flex-col lg:flex-row">
           {/* Mobile-first: Presale info appears first on mobile with enhanced styling */}
           <div className="w-full px-4 py-6 lg:hidden">
-            <div className="transform hover:scale-102 transition-transform duration-300">
+            <div className="transition-transform duration-300 transform hover:scale-102">
               <PresaleSidebar
                 totalDonations={totalDonations}
                 maxSupply={maxSupply}
@@ -262,7 +262,7 @@ const Home: React.FC = () => {
               title={
                 <Typography
                   variant="h2"
-                  className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-amber-600"
+                  className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
                 >
                   Frequently Asked Questions
                 </Typography>
@@ -271,7 +271,7 @@ const Home: React.FC = () => {
             />
             <div className="flex flex-col p-4 max-h-[70vh] overflow-y-auto">
               {faqItems.map((item, index) => (
-                <div key={index} className="mb-6 border-b border-yellow-500/20 pb-4 last:border-0">
+                <div key={index} className="pb-4 mb-6 border-b border-yellow-500/20 last:border-0">
                   <Typography variant="lg" weight={600} className="mb-2 text-left text-yellow-400">
                     {item.question}
                   </Typography>
@@ -304,7 +304,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* Footer Section */}
-      <footer className="relative z-10 border-t border-yellow-500/30 bg-black/80 backdrop-blur-md mt-16">
+      <footer className="relative z-10 mt-16 border-t border-yellow-500/30 bg-black/80 backdrop-blur-md">
         {/* Disclaimer Banner */}
         <div className="w-full py-2 bg-black/40 backdrop-blur-sm">
           <Typography variant="xs" className="text-center text-stone-400">
@@ -335,19 +335,19 @@ const Home: React.FC = () => {
               </a>
             </div>
             {/* Newsletter Section - Mobile */}
-            <div className="md:hidden mt-6">
-              <Typography variant="sm" weight={600} className="text-yellow-400 mb-2">
+            <div className="mt-6 md:hidden">
+              <Typography variant="sm" weight={600} className="mb-2 text-yellow-400">
                 JOIN OUR NEWSLETTER
               </Typography>
               <div className="flex flex-col gap-2">
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="py-2 px-3 bg-stone-900 border border-yellow-500/30 rounded-lg focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-white text-sm"
+                  className="px-3 py-2 text-sm text-white border rounded-lg bg-stone-900 border-yellow-500/30 focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
                 />
                 <button
                   type="button"
-                  className="py-2 px-4 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-lg font-semibold text-black hover:opacity-90 transition-opacity text-sm"
+                  className="px-4 py-2 text-sm font-semibold text-black transition-opacity rounded-lg bg-gradient-to-r from-yellow-500 to-amber-600 hover:opacity-90"
                 >
                   Subscribe
                 </button>
@@ -358,7 +358,7 @@ const Home: React.FC = () => {
           <div className="md:px-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-[40px] sm:mt-[10px]">
             {/* Features Column */}
             <div className="flex flex-col gap-[10px]">
-              <Typography variant="xs" weight={500} className="text-sm sm:text-xs text-yellow-400">
+              <Typography variant="xs" weight={500} className="text-sm text-yellow-400 sm:text-xs">
                 Features
               </Typography>
               <a
@@ -389,7 +389,7 @@ const Home: React.FC = () => {
 
             {/* Help Column */}
             <div className="flex flex-col gap-[10px]">
-              <Typography variant="xs" weight={500} className="text-sm sm:text-xs text-yellow-400">
+              <Typography variant="xs" weight={500} className="text-sm text-yellow-400 sm:text-xs">
                 Help
               </Typography>
               <a
@@ -412,7 +412,7 @@ const Home: React.FC = () => {
 
             {/* Partners Column */}
             <div className="flex flex-col gap-[10px]">
-              <Typography variant="xs" weight={500} className="text-sm sm:text-xs text-yellow-400">
+              <Typography variant="xs" weight={500} className="text-sm text-yellow-400 sm:text-xs">
                 Partners
               </Typography>
               <a
@@ -427,18 +427,18 @@ const Home: React.FC = () => {
 
             {/* Newsletter - Desktop */}
             <div className="hidden md:flex flex-col gap-[10px]">
-              <Typography variant="xs" weight={500} className="text-sm sm:text-xs text-yellow-400">
+              <Typography variant="xs" weight={500} className="text-sm text-yellow-400 sm:text-xs">
                 Newsletter
               </Typography>
               <div className="flex flex-col gap-2">
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="py-2 px-3 bg-stone-900 border border-yellow-500/30 rounded-lg focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-white text-sm"
+                  className="px-3 py-2 text-sm text-white border rounded-lg bg-stone-900 border-yellow-500/30 focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
                 />
                 <button
                   type="button"
-                  className="py-2 px-4 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-lg font-semibold text-black hover:opacity-90 transition-opacity text-sm"
+                  className="px-4 py-2 text-sm font-semibold text-black transition-opacity rounded-lg bg-gradient-to-r from-yellow-500 to-amber-600 hover:opacity-90"
                 >
                   Subscribe
                 </button>
@@ -448,7 +448,7 @@ const Home: React.FC = () => {
         </Container>
 
         <Container maxWidth="5xl" className="mx-auto mb-2">
-          <div className="flex flex-col md:flex-row md:justify-between py-4 mx-4 border-t border-yellow-500/20 items-center gap-2">
+          <div className="flex flex-col items-center gap-2 py-4 mx-4 border-t md:flex-row md:justify-between border-yellow-500/20">
             <Typography variant="xs" className="text-stone-400">
               Copyright © {new Date().getFullYear()} Dozer. All rights reserved.
             </Typography>
