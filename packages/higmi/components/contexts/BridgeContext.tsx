@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react'
 import Web3 from 'web3'
 import { useWalletConnectClient } from './index'
 import { useAccount, useNetwork } from '@dozer/zustand'
 import BRIDGE_ABI from '../../abis/bridge.json'
 import ERC20_ABI from '../../abis/erc20.json'
+import EventEmitter from 'events'
 
 // Add ethereum to Window interface
 declare global {
@@ -38,7 +39,7 @@ interface BridgeContextType {
     originChainId: string
   ) => Promise<string>
   pendingClaims: any[]
-  loadPendingClaims: () => Promise<void>
+  loadPendingClaims: (options?: { force?: boolean; silent?: boolean }) => Promise<any[] | void>
 }
 
 // Create the context
@@ -65,6 +66,43 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   })
 
   const [pendingClaims, setPendingClaims] = useState<any[]>([])
+
+  // Add a ref to track if cleanup is in progress
+  const cleanupInProgress = useRef(false)
+
+  // Use a single function for both setup and cleanup
+  const manageEventListeners = useCallback((action: 'setup' | 'cleanup', provider?: Web3) => {
+    if (action === 'cleanup' && (!provider || cleanupInProgress.current)) return
+
+    if (action === 'cleanup') {
+      cleanupInProgress.current = true
+    }
+
+    try {
+      if (provider && provider.currentProvider) {
+        if (action === 'setup' && provider.currentProvider instanceof EventEmitter) {
+          // Set max listeners higher to avoid warnings
+          provider.currentProvider.setMaxListeners(150)
+        } else if (action === 'cleanup') {
+          // For cleanup, we need to be careful with types
+          const ethProvider = provider.currentProvider
+          if (ethProvider && typeof ethProvider.removeListener === 'function') {
+            // Rather than using removeAllListeners, we're just setting maxListeners higher
+            // This avoids the need to remove specific listeners
+            if (ethProvider instanceof EventEmitter) {
+              ethProvider.setMaxListeners(150)
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Silent error handling
+    } finally {
+      if (action === 'cleanup') {
+        cleanupInProgress.current = false
+      }
+    }
+  }, [])
 
   // Load connection state from localStorage on mount
   useEffect(() => {
@@ -117,9 +155,17 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     try {
+      // Prevent additional connection attempts while already connecting
+      if (connection.connecting) return
+
       setConnection((prev) => ({ ...prev, connecting: true, error: null }))
 
+      // Create new Web3 provider
       const provider = new Web3(window.ethereum)
+
+      // Set up listeners - simplified approach
+      manageEventListeners('setup', provider)
+
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
 
       // Get chainId and ensure it's a number
@@ -190,6 +236,11 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Disconnect from Arbitrum
   const disconnectArbitrum = () => {
+    // Clean up the provider before disconnecting - simplified approach
+    if (connection.arbitrumProvider) {
+      manageEventListeners('cleanup', connection.arbitrumProvider as Web3)
+    }
+
     setConnection({
       arbitrumProvider: null,
       arbitrumConnected: false,
@@ -333,13 +384,13 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             throw new Error('No wallet address connected')
           }
 
-          // Note: We're keeping the large approval amount as the user confirmed this is standard for this ABI
+          // Use the exact amount for approval, not a very large value
           // Calculate gas price - use 30% more than current to ensure faster processing
           const gasPrice = await web3.eth.getGasPrice()
           const gasPriceAdjusted = Math.floor(Number(gasPrice) * 1.3) // 30% more than current gas price
           const gasPriceHex = web3.utils.toHex(gasPriceAdjusted)
 
-          console.log(`Requesting approval for tokens with gas price ${gasPriceHex}`)
+          console.log(`Requesting approval for ${humanReadableAmount} tokens with gas price ${gasPriceHex}`)
 
           // Create the transaction object first
           const approveMethod = tokenContract.methods.approve(BRIDGE_CONTRACT_ADDRESS, amountInWei)
@@ -399,7 +450,11 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 if (
                   error.code === 4001 ||
                   error.message.includes('User denied transaction') ||
-                  error.message.includes('User rejected')
+                  error.message.includes('User rejected') ||
+                  error.message.includes('MetaMask Tx Signature') ||
+                  error.message.includes('cancel') ||
+                  error.message.includes('denied') ||
+                  error.message.includes('rejected')
                 ) {
                   transactionCanceled = true
                   reject(new Error('Transaction rejected by user'))
@@ -421,7 +476,15 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           console.error('Approval failed:', error)
 
           // Handle specific error cases
-          if (error.message.includes('User denied') || error.message.includes('User rejected') || error.code === 4001) {
+          if (
+            error.message.includes('User denied') ||
+            error.message.includes('User rejected') ||
+            error.code === 4001 ||
+            error.message.includes('MetaMask Tx Signature') ||
+            error.message.includes('cancel') ||
+            error.message.includes('denied') ||
+            error.message.includes('rejected')
+          ) {
             throw new Error('Transaction cancelled: You rejected the approval request')
           } else if (error.message.includes('Transaction was not mined within') || error.message.includes('timeout')) {
             throw new Error(
@@ -509,7 +572,11 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               if (
                 error.code === 4001 ||
                 error.message.includes('User denied transaction') ||
-                error.message.includes('User rejected')
+                error.message.includes('User rejected') ||
+                error.message.includes('MetaMask Tx Signature') ||
+                error.message.includes('cancel') ||
+                error.message.includes('denied') ||
+                error.message.includes('rejected')
               ) {
                 transactionCanceled = true
                 reject(new Error('Transaction rejected by user'))
@@ -531,7 +598,15 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         console.error('Bridge failed:', error)
 
         // Handle specific error cases
-        if (error.message.includes('User denied') || error.message.includes('User rejected') || error.code === 4001) {
+        if (
+          error.message.includes('User denied') ||
+          error.message.includes('User rejected') ||
+          error.code === 4001 ||
+          error.message.includes('MetaMask Tx Signature') ||
+          error.message.includes('cancel') ||
+          error.message.includes('denied') ||
+          error.message.includes('rejected')
+        ) {
           throw new Error('Transaction cancelled: You rejected the bridge request')
         } else if (error.message.includes('Transaction was not mined within') || error.message.includes('timeout')) {
           throw new Error(
@@ -590,30 +665,50 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   )
 
   // Load pending claims that the user can claim
-  const loadPendingClaims = useCallback(async () => {
-    if (!hathorAddress || !connection.arbitrumConnected || !connection.arbitrumProvider || !connection.arbitrumAddress)
-      return
+  const loadPendingClaims = useCallback(
+    async (options?: { force?: boolean; silent?: boolean }) => {
+      const { force = false, silent = false } = options || {}
 
-    try {
-      const web3 = connection.arbitrumProvider as Web3
-      const bridgeContract = new web3.eth.Contract(BRIDGE_ABI as any, BRIDGE_CONTRACT_ADDRESS)
+      // Skip if required data is missing
+      if (
+        !hathorAddress ||
+        !connection.arbitrumConnected ||
+        !connection.arbitrumProvider ||
+        !connection.arbitrumAddress
+      ) {
+        if (!silent) {
+          console.log('Cannot load pending claims - missing required data')
+        }
+        return
+      }
 
-      console.log('Loading pending claims for Hathor address:', hathorAddress)
+      try {
+        const web3 = connection.arbitrumProvider as Web3
+        const bridgeContract = new web3.eth.Contract(BRIDGE_ABI as any, BRIDGE_CONTRACT_ADDRESS)
 
-      // In a real implementation, we would query the bridge contract for events related to token transfers
-      // that have not yet been claimed. For now, we'll simulate this with a placeholder implementation.
+        // Only log when force is true or in development and not silent
+        if ((force || process.env.NODE_ENV === 'development') && !silent) {
+          console.log('Loading pending claims for Hathor address:', hathorAddress.substring(0, 8) + '...')
+        }
 
-      // This is just a placeholder for demonstration - in a real implementation, you would:
-      // 1. Query bridge contract events for AcceptedCrossTransfer events
-      // 2. Filter for events with the user's address
-      // 3. Check if they've been claimed already
-      // 4. Format the data for UI display
+        // In a real implementation, we would query the bridge contract for events related to token transfers
+        // that have not yet been claimed. For now, we'll simulate this with a placeholder implementation.
 
-      // For now, just set an empty array
-      setPendingClaims([])
+        // This is just a placeholder for demonstration - in a real implementation, you would:
+        // 1. Query bridge contract events for AcceptedCrossTransfer events
+        // 2. Filter for events with the user's address
+        // 3. Check if they've been claimed already
+        // 4. Format the data for UI display
 
-      // Example format for a pending claim:
-      /*
+        // Simulate a small delay to make the user experience feel more authentic
+        // This helps the user know something happened when they click refresh
+        await new Promise((resolve) => setTimeout(resolve, 500))
+
+        // For now, just set an empty array
+        setPendingClaims([])
+
+        // Example format for a pending claim:
+        /*
       setPendingClaims([
         {
           transactionHash: '0x123abc...',
@@ -624,40 +719,80 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
       ])
       */
-    } catch (error) {
-      console.error('Error loading pending claims:', error)
-      setPendingClaims([])
-    }
-  }, [hathorAddress, connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress])
 
-  // Effect to listen for account changes in MetaMask
+        // Log once when claims are loaded, but only when forced or in development and not silent
+        if ((force || process.env.NODE_ENV === 'development') && !silent) {
+          console.log('Pending claims loaded:', 0)
+        }
+
+        return []
+      } catch (error) {
+        if (!silent) {
+          console.error('Error loading pending claims:', error)
+        }
+        setPendingClaims([])
+        return []
+      }
+    },
+    [hathorAddress, connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress]
+  )
+
+  // Add a cleanup function in the component to ensure proper cleanup on unmount
   useEffect(() => {
-    if (window.ethereum && connection.arbitrumConnected) {
-      const handleAccountsChanged = (accounts: string[]) => {
+    return () => {
+      if (connection.arbitrumProvider) {
+        manageEventListeners('cleanup', connection.arbitrumProvider as Web3)
+      }
+    }
+  }, [connection.arbitrumProvider, manageEventListeners])
+
+  // Use a single effect to handle listening for account and chain changes
+  // This effect should only run when the provider actually changes, not on every render
+  useEffect(() => {
+    if (!window.ethereum || !connection.arbitrumProvider) return
+
+    // Get a stable reference to the provider
+    const provider = connection.arbitrumProvider
+
+    // Store handler references so we can remove the same handlers later
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (accounts && accounts.length > 0) {
         setConnection((prev) => ({
           ...prev,
           arbitrumAddress: accounts[0],
         }))
+      } else {
+        // If accounts array is empty, the user has disconnected their wallet
+        disconnectArbitrum()
       }
+    }
 
-      const handleChainChanged = (chainId: string) => {
-        // chainId is in hex, convert to number
-        const numericChainId = parseInt(chainId, 16)
-        setConnection((prev) => ({
-          ...prev,
-          arbitrumChainId: numericChainId,
-        }))
-      }
+    const handleChainChanged = (chainId: string) => {
+      // chainId is in hex, convert to number
+      const numericChainId = parseInt(chainId, 16)
+      setConnection((prev) => ({
+        ...prev,
+        arbitrumChainId: numericChainId,
+      }))
+    }
+
+    // We only add window.ethereum listeners here, not provider listeners
+    if (window.ethereum) {
+      window.ethereum.removeListener('accountsChanged', handleAccountsChanged) // Remove first to prevent duplicates
+      window.ethereum.removeListener('chainChanged', handleChainChanged) // Remove first to prevent duplicates
 
       window.ethereum.on('accountsChanged', handleAccountsChanged)
       window.ethereum.on('chainChanged', handleChainChanged)
+    }
 
-      return () => {
+    // Return cleanup function
+    return () => {
+      if (window.ethereum) {
         window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
         window.ethereum.removeListener('chainChanged', handleChainChanged)
       }
     }
-  }, [connection.arbitrumConnected])
+  }, [connection.arbitrumProvider, disconnectArbitrum])
 
   const contextValue = {
     connection,

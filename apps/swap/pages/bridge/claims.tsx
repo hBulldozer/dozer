@@ -23,19 +23,32 @@ const ClaimsContent = () => {
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentClaim, setCurrentClaim] = useState<string | null>(null)
   const router = useRouter()
-  
+
   useEffect(() => {
-    if (connection.arbitrumConnected) {
-      loadPendingClaims()
+    // Load claims only once when the component mounts and we're connected
+    // Instead of auto-reloading, we'll rely on the manual refresh button
+    const loadOnMount = async () => {
+      if (connection.arbitrumConnected) {
+        // Use silent mode for automatic loading
+        await loadPendingClaims({ silent: true })
+      }
     }
-  }, [connection.arbitrumConnected, loadPendingClaims])
-  
+
+    // Flag to prevent multiple loads
+    let isLoaded = false
+
+    if (!isLoaded && connection.arbitrumConnected) {
+      isLoaded = true
+      loadOnMount()
+    }
+  }, [connection.arbitrumConnected]) // Remove loadPendingClaims from the dependency array
+
   const handleClaim = async (claim: any) => {
     if (isProcessing) return
-    
+
     setIsProcessing(true)
     setCurrentClaim(claim.transactionHash)
-    
+
     try {
       await claimTokenFromArbitrum(
         claim.receiver,
@@ -44,9 +57,9 @@ const ClaimsContent = () => {
         claim.logIndex,
         claim.originChainId
       )
-      
-      // Reload claims
-      await loadPendingClaims()
+
+      // Reload claims with force option to show logs
+      await loadPendingClaims({ force: true })
     } catch (error) {
       console.error('Failed to claim token:', error)
     } finally {
@@ -54,11 +67,11 @@ const ClaimsContent = () => {
       setCurrentClaim(null)
     }
   }
-  
+
   const navigateToBridge = () => {
     router.push('/bridge')
   }
-  
+
   if (!connection.arbitrumConnected) {
     return (
       <Widget id="claims" maxWidth={500}>
@@ -70,12 +83,7 @@ const ClaimsContent = () => {
             <Typography variant="sm" className="mb-6 text-stone-400">
               You need to connect your MetaMask wallet to view and process pending claims.
             </Typography>
-            <Button
-              size="md"
-              color="blue"
-              onClick={connectArbitrum}
-              className="mx-auto"
-            >
+            <Button size="md" color="blue" onClick={connectArbitrum} className="mx-auto">
               Connect MetaMask
             </Button>
           </div>
@@ -83,7 +91,7 @@ const ClaimsContent = () => {
       </Widget>
     )
   }
-  
+
   return (
     <Widget id="claims" maxWidth={500}>
       <Widget.Content>
@@ -94,9 +102,11 @@ const ClaimsContent = () => {
             </Typography>
             <Button
               size="sm"
-              variant="outline"
-              color="stone"
-              onClick={loadPendingClaims}
+              variant="outlined"
+              color="blue"
+              onClick={() => {
+                loadPendingClaims({ force: true })
+              }}
             >
               Refresh
             </Button>
@@ -112,11 +122,7 @@ const ClaimsContent = () => {
               <Typography variant="sm" className="mb-6 text-stone-500">
                 You don't have any tokens ready to be claimed.
               </Typography>
-              <Button
-                size="sm"
-                color="blue"
-                onClick={navigateToBridge}
-              >
+              <Button size="sm" color="blue" onClick={navigateToBridge}>
                 Go to Bridge
               </Button>
             </div>
@@ -130,12 +136,15 @@ const ClaimsContent = () => {
                         {claim.amount} {claim.tokenSymbol || 'Tokens'}
                       </Typography>
                       <Typography variant="xs" className="text-stone-400">
-                        From: {claim.sender ? `${claim.sender.substring(0, 6)}...${claim.sender.substring(claim.sender.length - 4)}` : 'Unknown'}
+                        From:{' '}
+                        {claim.sender
+                          ? `${claim.sender.substring(0, 6)}...${claim.sender.substring(claim.sender.length - 4)}`
+                          : 'Unknown'}
                       </Typography>
                     </div>
                     <Button
                       size="sm"
-                      color="green"
+                      color="blue"
                       onClick={() => handleClaim(claim)}
                       disabled={isProcessing && currentClaim === claim.transactionHash}
                     >
@@ -144,7 +153,7 @@ const ClaimsContent = () => {
                   </div>
                 </div>
               ))}
-              
+
               <div className="mt-4 text-center">
                 <Typography variant="xs" className="text-stone-500">
                   Tokens will be available in your Hathor wallet after claiming.

@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react'
+import { FC, useState, useEffect, useRef } from 'react'
 import { useAccount, useNetwork } from '@dozer/zustand'
 import { Button, Widget, classNames, createSuccessToast, createErrorToast, createInfoToast } from '@dozer/ui'
 import { useBridge, useWalletConnectClient } from '@dozer/higmi'
@@ -28,6 +28,9 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   const [successMessage, setSuccessMessage] = useState<string>('')
   const [transactionHash, setTransactionHash] = useState<string>('')
 
+  // Use a ref to track mounted state to avoid state updates after unmount
+  const isMounted = useRef(true)
+
   const { connection, connectArbitrum, disconnectArbitrum, bridgeTokenToHathor, pendingClaims, loadPendingClaims } =
     useBridge()
 
@@ -53,17 +56,76 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   }
 
   useEffect(() => {
+    // Set the mounted ref to true
+    isMounted.current = true
+
+    // Add global error event listener to catch unhandled promise rejections
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.log('Unhandled promise rejection:', event)
+
+      // Check if this is a MetaMask transaction rejection
+      if (
+        event.reason &&
+        (event.reason.message?.includes('MetaMask Tx Signature: User denied') ||
+          event.reason.message?.includes('User denied transaction signature') ||
+          event.reason.code === 4001)
+      ) {
+        console.log('Detected MetaMask transaction rejection via global handler')
+
+        // Reset the processing state if component is still mounted
+        if (isMounted.current) {
+          setIsProcessing(false)
+          setErrorMessage('Transaction cancelled: You rejected the request in MetaMask')
+
+          // Show info toast for cancellation
+          createInfoToast({
+            type: 'send',
+            summary: {
+              pending: '',
+              completed: '',
+              failed: '',
+              info: 'Transaction cancelled by user',
+            },
+            txHash: nanoid(),
+            groupTimestamp: Date.now(),
+            timestamp: Date.now(),
+          })
+        }
+      }
+    }
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    // Clean up function - remove event listener and set mounted ref to false
+    return () => {
+      isMounted.current = false
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [])
+
+  useEffect(() => {
     if (initialToken) {
       setSelectedToken(initialToken)
     }
   }, [initialToken])
 
-  // Load pending claims when component mounts or when Arbitrum connection status changes
+  // Remove the automatic loading of pending claims
+  // Instead, we'll load them once on mount if connected and provide a refresh button
   useEffect(() => {
-    if (connection.arbitrumConnected) {
-      loadPendingClaims()
+    // We'll use a ref to ensure we only load once on mount
+    const hasLoaded = { current: false }
+
+    if (connection.arbitrumConnected && !hasLoaded.current) {
+      hasLoaded.current = true
+      console.log('Loading claims once on mount')
+      // Use silent mode to prevent console logs on initial load
+      loadPendingClaims({ silent: true })
     }
-  }, [connection.arbitrumConnected, loadPendingClaims])
+
+    return () => {
+      // Clean up function
+    }
+  }, []) // Empty dependency array means this runs once on mount
 
   // Check if MetaMask is already connected when the component mounts
   useEffect(() => {
@@ -152,59 +214,133 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     }
 
     setIsProcessing(true)
+
+    // Set a safety timeout to reset the processing state if nothing happens
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted.current && isProcessing) {
+        console.log('Safety timeout triggered, resetting processing state')
+        setIsProcessing(false)
+      }
+    }, 60000) // 1 minute
+
     try {
       // Bridge from Arbitrum to Hathor - using hathorAddress from WalletConnect
-      const hash = await bridgeTokenToHathor(selectedToken.originalAddress || '', amount, hathorAddress)
+      const hash = await bridgeTokenToHathor(selectedToken.originalAddress || '', amount, hathorAddress).catch(
+        (error) => {
+          clearTimeout(safetyTimeout)
+
+          // Direct inspection of the error
+          console.log('Caught error in bridgeTokenToHathor:', error)
+
+          // Detailed logging of the error properties
+          if (error) {
+            console.log('Error code:', error.code)
+            console.log('Error message:', error.message)
+            console.log('Error name:', error.name)
+            console.log('Error has code 4001:', error.code === 4001)
+
+            // Log all error properties
+            Object.keys(error).forEach((key) => {
+              console.log(`Error[${key}]:`, error[key])
+            })
+          }
+
+          // Specifically check for MetaMask rejection pattern
+          if (
+            error &&
+            (error.code === 4001 ||
+              (typeof error.message === 'string' &&
+                (error.message.includes('MetaMask Tx Signature') ||
+                  error.message.includes('User denied') ||
+                  error.message.includes('User rejected') ||
+                  error.message.includes('cancelled') ||
+                  error.message.includes('canceled') ||
+                  error.message.toLowerCase().includes('denied') ||
+                  error.message.toLowerCase().includes('reject') ||
+                  error.message.toLowerCase().includes('cancel'))))
+          ) {
+            console.log('Identified as a MetaMask rejection')
+            throw new Error('Transaction cancelled: You rejected the request in MetaMask')
+          }
+
+          // Re-throw other errors
+          throw error
+        }
+      )
+
+      clearTimeout(safetyTimeout)
 
       // If we get here, the transaction was submitted successfully
-      setTransactionHash(hash)
-      const msg = 'Transaction submitted! Your tokens will be available in Hathor soon.'
-      setSuccessMessage(msg)
+      if (isMounted.current) {
+        setTransactionHash(hash)
+        const msg = 'Transaction submitted! Your tokens will be available in Hathor soon.'
+        setSuccessMessage(msg)
+        setIsProcessing(false)
 
-      // Show success toast
-      createSuccessToast({
-        type: 'send',
-        summary: {
-          pending: 'Bridging tokens',
-          completed: 'Transaction submitted! Your tokens will be available in Hathor soon.',
-          failed: 'Failed to bridge tokens',
-        },
-        txHash: hash || nanoid(),
-        groupTimestamp: Date.now(),
-        timestamp: Date.now(),
-        href: hash ? `https://arbiscan.io/tx/${hash}` : undefined,
-      })
-
-      // Don't clear the form to allow the user to see what they submitted
+        // Show success toast
+        createSuccessToast({
+          type: 'send',
+          summary: {
+            pending: 'Bridging tokens',
+            completed: 'Transaction submitted! Your tokens will be available in Hathor soon.',
+            failed: 'Failed to bridge tokens',
+          },
+          txHash: hash || nanoid(),
+          groupTimestamp: Date.now(),
+          timestamp: Date.now(),
+          href: hash ? `https://arbiscan.io/tx/${hash}` : undefined,
+        })
+      }
     } catch (error: any) {
+      clearTimeout(safetyTimeout)
       console.error('Bridge operation failed:', error)
 
-      // Reset the processing state
-      setIsProcessing(false)
+      // Only update state if the component is still mounted
+      if (isMounted.current) {
+        // Reset the processing state
+        setIsProcessing(false)
 
-      // Set appropriate error message
-      let errorMsg = error.message || 'Bridge operation failed'
+        // Set appropriate error message
+        let errorMsg = error.message || 'Bridge operation failed'
+        let isCancelled = false
 
-      if (
-        error.message.includes('Transaction cancelled') ||
-        error.message.includes('User rejected') ||
-        error.message.includes('User denied') ||
-        error.code === 4001
-      ) {
-        errorMsg = 'Transaction cancelled: You rejected the request in MetaMask'
-      } else if (error.message.includes('Transaction timed out') || error.message.includes('timeout')) {
-        errorMsg = 'Transaction timed out: The transaction is taking too long. Please try again.'
-      } else if (error.message.includes('Transaction pending')) {
-        errorMsg = 'Your transaction is still processing. Please check MetaMask for status.'
+        // Check for various cancellation patterns
+        if (
+          error.code === 4001 ||
+          errorMsg.includes('Transaction cancelled') ||
+          errorMsg.includes('User denied') ||
+          errorMsg.includes('User rejected') ||
+          errorMsg.includes('MetaMask Tx Signature')
+        ) {
+          errorMsg = 'Transaction cancelled: You rejected the request in MetaMask'
+          isCancelled = true
+        } else if (errorMsg.includes('Transaction timed out') || errorMsg.includes('timeout')) {
+          errorMsg = 'Transaction timed out: The transaction is taking too long. Please try again.'
+        } else if (errorMsg.includes('Transaction pending')) {
+          errorMsg = 'Your transaction is still processing. Please check MetaMask for status.'
+        }
+
+        setErrorMessage(errorMsg)
+
+        // Show the appropriate toast notification
+        if (isCancelled) {
+          createInfoToast({
+            type: 'send',
+            summary: {
+              pending: '',
+              completed: '',
+              failed: '',
+              info: 'Transaction cancelled by user',
+            },
+            txHash: nanoid(),
+            groupTimestamp: Date.now(),
+            timestamp: Date.now(),
+          })
+        } else {
+          createErrorToast(errorMsg, false)
+        }
       }
-
-      setErrorMessage(errorMsg)
-      createErrorToast(errorMsg, false)
-      return
     }
-
-    // Set processing to false only if we didn't hit an error
-    setIsProcessing(false)
   }
 
   // Function to handle user cancellation in the UI
@@ -226,6 +362,28 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       groupTimestamp: Date.now(),
       timestamp: Date.now(),
     })
+  }
+
+  // New function to manually refresh pending claims
+  const handleRefreshClaims = () => {
+    if (connection.arbitrumConnected) {
+      // When manually refreshing, we want to see logs
+      loadPendingClaims({ force: true })
+
+      // Optional: show a toast notification
+      createInfoToast({
+        type: 'approval',
+        summary: {
+          pending: '',
+          completed: '',
+          failed: '',
+          info: 'Refreshed pending claims',
+        },
+        txHash: nanoid(),
+        groupTimestamp: Date.now(),
+        timestamp: Date.now(),
+      })
+    }
   }
 
   return (
@@ -315,11 +473,28 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
           {pendingClaims.length > 0 && (
             <div className="p-3 mt-4 border border-yellow-600 rounded-lg bg-yellow-900/20">
-              <h3 className="mb-2 text-sm font-bold text-yellow-500">Pending Claims</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-yellow-500">Pending Claims</h3>
+                <button onClick={handleRefreshClaims} className="text-xs text-yellow-400 hover:text-yellow-300">
+                  Refresh
+                </button>
+              </div>
               <p className="text-xs text-yellow-300">You have {pendingClaims.length} pending claim(s) available.</p>
               <Button fullWidth size="sm" color="yellow" className="mt-2" onClick={navigateToClaims}>
                 View Claims
               </Button>
+            </div>
+          )}
+
+          {pendingClaims.length === 0 && connection.arbitrumConnected && (
+            <div className="p-3 mt-4 border border-stone-600 rounded-lg bg-stone-800/50">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-stone-400">No Pending Claims</h3>
+                <button onClick={handleRefreshClaims} className="text-xs text-blue-400 hover:text-blue-300">
+                  Check for Claims
+                </button>
+              </div>
+              <p className="text-xs text-stone-500">You don't have any pending claims right now.</p>
             </div>
           )}
         </div>
