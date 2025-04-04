@@ -64,7 +64,7 @@ const Home = () => {
   // }, true)
   const trade = useTrade()
   const balances = useAccount((state) => state.balance)
-  
+
   return (
     <BridgeProvider>
       <Layout>
@@ -73,26 +73,32 @@ const Home = () => {
             <SwapWidget token0_idx={'2'} token1_idx={'0'} />
             <div
               className="flex items-center justify-between gap-3 p-4 transition-colors border rounded-lg cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800"
-              onClick={() => window.location.href = '/bridge'}
+              onClick={() => (window.location.href = '/bridge')}
             >
-            <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-900/20">
-                <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-900/20">
+                  <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-white">Hathor-Arbitrum Bridge</span>
+                  <span className="text-xs text-gray-400">Transfer tokens between networks</span>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-white">Hathor-Arbitrum Bridge</span>
-                <span className="text-xs text-gray-400">Transfer tokens between networks</span>
-              </div>
+              <ArrowTopRightOnSquareIcon width={20} height={20} className="text-gray-400" />
             </div>
-            <ArrowTopRightOnSquareIcon width={20} height={20} className="text-gray-400" />
           </div>
+          <SwapSideBridgeSuggestion
+            token={trade.mainCurrency as Token}
+            hasLowBalance={
+              trade.mainCurrency !== undefined &&
+              trade.amountSpecified !== undefined &&
+              trade.amountSpecified > 0 &&
+              (balances.find((bal) => bal.token_uuid === trade.mainCurrency?.uuid)?.token_balance || 0) <
+                trade.amountSpecified * 100
+            }
+          />
         </div>
-        <SwapSideBridgeSuggestion 
-          token={trade.mainCurrency as Token}
-          hasLowBalance={trade.mainCurrency && ((trade.amountSpecified > 0 && balances.find((bal) => bal.token_uuid === trade.mainCurrency?.uuid)?.token_balance || 0) < trade.amountSpecified * 100)}
-        />
-      </div>
-      <BlockTracker client={api} />
+        <BlockTracker client={api} />
       </Layout>
     </BridgeProvider>
   )
@@ -322,7 +328,11 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
               ? tokens
                   .filter((token) => !token.custom)
                   .map((token) => {
-                    return new Token(token)
+                    const { originalAddress, ...rest } = token
+                    return new Token({
+                      ...rest,
+                      originalAddress: originalAddress || undefined,
+                    })
                   })
               : []
           }
@@ -362,21 +372,25 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
                 ? tokens
                     .filter((token) => !token.custom)
                     .map((token) => {
-                      return new Token(token)
+                      const { originalAddress, ...rest } = token
+                      return new Token({
+                        ...rest,
+                        originalAddress: originalAddress || undefined,
+                      })
                     })
                 : []
             }
             // isWrap={isWrap}
           />
           <SwapStatsDisclosure prices={prices || {}} />
-          
+
           {/* Low balance bridge suggestion - now using side version */}
           {/* <SwapLowBalanceBridge 
             token={token0}
             hasLowBalance={token0 && ((Number(input0) > 0 && (balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) < Number(input0) * 100) || 
                           ((balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) === 0))}
           /> */}
-          
+
           <div className="p-3 pt-0">
             <Checker.Connected fullWidth size="md">
               <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>

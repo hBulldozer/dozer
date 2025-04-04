@@ -2,6 +2,15 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import Web3 from 'web3'
 import { useWalletConnectClient } from './index'
 import { useAccount, useNetwork } from '@dozer/zustand'
+import BRIDGE_ABI from '../../abis/bridge.json'
+import ERC20_ABI from '../../abis/erc20.json'
+
+// Add ethereum to Window interface
+declare global {
+  interface Window {
+    ethereum: any
+  }
+}
 
 // Define interface for bridge connection state
 interface BridgeConnectionState {
@@ -44,7 +53,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const { accounts } = useWalletConnectClient()
   const hathorAddress = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const network = useNetwork((state) => state.network)
-  
+
   const [connection, setConnection] = useState<BridgeConnectionState>({
     arbitrumProvider: null,
     arbitrumConnected: false,
@@ -54,8 +63,48 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     connecting: false,
     error: null,
   })
-  
+
   const [pendingClaims, setPendingClaims] = useState<any[]>([])
+
+  // Load connection state from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedConnection = localStorage.getItem('arbitrumConnection')
+      if (savedConnection) {
+        try {
+          const parsedConnection = JSON.parse(savedConnection)
+          // We don't restore the provider since it's not serializable
+          // Just try to auto-connect if we were previously connected
+          if (parsedConnection.arbitrumConnected && window.ethereum) {
+            // Try to silently reconnect
+            connectArbitrum().catch((error) => {
+              console.error('Failed to reconnect to Arbitrum:', error)
+              // Clear stored connection on failure
+              localStorage.removeItem('arbitrumConnection')
+            })
+          }
+        } catch (error) {
+          console.error('Error parsing saved connection state:', error)
+          localStorage.removeItem('arbitrumConnection')
+        }
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps - we want this to run only once on mount
+
+  // Save connection state to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && connection.arbitrumConnected) {
+      const connectionToSave = {
+        arbitrumConnected: connection.arbitrumConnected,
+        arbitrumAddress: connection.arbitrumAddress,
+        arbitrumChainId: connection.arbitrumChainId,
+      }
+      localStorage.setItem('arbitrumConnection', JSON.stringify(connectionToSave))
+    } else if (typeof window !== 'undefined' && !connection.arbitrumConnected) {
+      // Clear saved connection when disconnected
+      localStorage.removeItem('arbitrumConnection')
+    }
+  }, [connection.arbitrumConnected, connection.arbitrumAddress, connection.arbitrumChainId])
 
   // Connect to Arbitrum via MetaMask
   const connectArbitrum = async () => {
@@ -66,14 +115,22 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }))
       return
     }
-    
+
     try {
       setConnection((prev) => ({ ...prev, connecting: true, error: null }))
-      
+
       const provider = new Web3(window.ethereum)
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const chainId = await provider.eth.getChainId()
-      
+
+      // Get chainId and ensure it's a number
+      const rawChainId = await provider.eth.getChainId()
+      const chainId =
+        typeof rawChainId === 'string'
+          ? parseInt(rawChainId, 10)
+          : typeof rawChainId === 'bigint'
+          ? Number(rawChainId)
+          : (rawChainId as number)
+
       // Check if connected to Arbitrum (chainId 42161)
       if (chainId !== 42161) {
         try {
@@ -110,7 +167,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           }
         }
       }
-      
+
       setConnection({
         arbitrumProvider: provider,
         arbitrumConnected: true,
@@ -120,7 +177,6 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         connecting: false,
         error: null,
       })
-      
     } catch (error: any) {
       console.error('Error connecting to Arbitrum:', error)
       setConnection((prev) => ({
@@ -128,6 +184,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         connecting: false,
         error: error.message || 'Failed to connect to Arbitrum',
       }))
+      throw error // Re-throw to allow caller to handle
     }
   }
 
@@ -142,73 +199,436 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       connecting: false,
       error: null,
     })
+
+    // Clear stored connection
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('arbitrumConnection')
+    }
   }
 
   // Load token balances from Arbitrum
-  const loadBalances = useCallback(async (tokenAddresses: string[]) => {
-    if (!connection.arbitrumConnected || !connection.arbitrumProvider) return
-    
-    // TODO: Implement ERC20 balance loading for each token
-    // This is a placeholder for now
-    const balances: Record<string, number> = {}
-    
-    for (const address of tokenAddresses) {
-      // Fetch balance using Web3
-      // This will need to be implemented with actual ERC20 contract calls
-      balances[address] = 0
-    }
-    
-    setConnection((prev) => ({
-      ...prev,
-      arbitrumBalance: balances,
-    }))
-  }, [connection.arbitrumConnected, connection.arbitrumProvider])
+  const loadBalances = useCallback(
+    async (tokenAddresses: string[]) => {
+      if (!connection.arbitrumConnected || !connection.arbitrumProvider || !connection.arbitrumAddress) return
+
+      const balances: Record<string, number> = {}
+      const web3 = connection.arbitrumProvider as Web3
+
+      for (const address of tokenAddresses) {
+        try {
+          // Create token contract instance
+          const tokenContract = new web3.eth.Contract(ERC20_ABI as any, address)
+
+          // Get token decimals
+          const decimalsResult = await tokenContract.methods.decimals().call()
+          const decimals = decimalsResult ? parseInt(String(decimalsResult)) : 18
+
+          // Get token balance
+          const rawBalance = await tokenContract.methods.balanceOf(connection.arbitrumAddress).call()
+
+          // Convert raw balance to human-readable format based on decimals
+          if (decimals === 18) {
+            balances[address] = parseFloat(web3.utils.fromWei(String(rawBalance), 'ether'))
+          } else {
+            // Manual conversion for non-standard decimals
+            const divisor = Math.pow(10, decimals)
+            balances[address] = parseFloat(String(rawBalance)) / divisor
+          }
+        } catch (error) {
+          console.error(`Error loading balance for token ${address}:`, error)
+          balances[address] = 0
+        }
+      }
+
+      setConnection((prev) => ({
+        ...prev,
+        arbitrumBalance: balances,
+      }))
+    },
+    [connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress]
+  )
 
   // Bridge a token from Arbitrum to Hathor
-  const bridgeTokenToHathor = useCallback(async (tokenAddress: string, amount: string, hathorAddress: string) => {
-    if (!connection.arbitrumConnected || !connection.arbitrumProvider) {
-      throw new Error('Not connected to Arbitrum')
-    }
-    
-    // This is a placeholder - actual implementation will need:
-    // 1. Load Bridge & ERC20 ABIs
-    // 2. Create contract instances
-    // 3. Approve token spending if needed
-    // 4. Call bridge contract's receiveTokensTo method
-    
-    return 'transaction-hash-placeholder'
-  }, [connection.arbitrumConnected, connection.arbitrumProvider])
+  const bridgeTokenToHathor = useCallback(
+    async (tokenAddress: string, amount: string, hathorAddress: string) => {
+      if (!connection.arbitrumConnected || !connection.arbitrumProvider || !connection.arbitrumAddress) {
+        throw new Error('Not connected to Arbitrum')
+      }
+
+      const web3 = connection.arbitrumProvider as Web3
+
+      // Create contract instances
+      const bridgeContract = new web3.eth.Contract(BRIDGE_ABI as any, BRIDGE_CONTRACT_ADDRESS)
+      const tokenContract = new web3.eth.Contract(ERC20_ABI as any, tokenAddress)
+
+      // Get token decimals (fallback to 18 if call fails)
+      let decimals: number = 18
+      try {
+        // First check if the decimals method exists on the contract
+        if (!tokenContract.methods.decimals) {
+          console.warn('Token contract does not have decimals method, using default 18')
+        } else {
+          const decimalResult = await tokenContract.methods.decimals().call()
+          if (decimalResult) {
+            decimals = parseInt(String(decimalResult))
+          }
+        }
+      } catch (error) {
+        console.warn('Could not get token decimals, using default 18', error)
+      }
+
+      // Convert amount to wei format based on decimals
+      let amountInWei: string
+      let humanReadableAmount: string
+      try {
+        // Parse amount to a number and handle potential errors
+        const amountNumber = parseFloat(amount)
+        if (isNaN(amountNumber) || amountNumber <= 0) {
+          throw new Error('Invalid amount: must be a positive number')
+        }
+
+        // For 18 decimals tokens, use Web3's toWei
+        if (decimals === 18) {
+          amountInWei = web3.utils.toWei(amount, 'ether')
+          humanReadableAmount = amount
+        } else {
+          // For other decimals, do manual conversion
+          // Convert to smallest unit by multiplying by 10^decimals
+          const factor = Math.pow(10, decimals)
+          const rawAmount = Math.floor(amountNumber * factor)
+          amountInWei = rawAmount.toString()
+          humanReadableAmount = amountNumber.toString()
+        }
+
+        console.log('Converting amount:', humanReadableAmount, 'to wei:', amountInWei, 'with decimals:', decimals)
+      } catch (error) {
+        console.error('Error converting amount to wei:', error)
+        throw new Error(`Failed to convert amount: ${error}`)
+      }
+
+      // Check token allowance
+      let allowance: string = '0'
+      try {
+        // Make sure tokenAddress is not null
+        if (!tokenAddress) {
+          throw new Error('Token address is required')
+        }
+
+        const allowanceResult = await tokenContract.methods
+          .allowance(connection.arbitrumAddress, BRIDGE_CONTRACT_ADDRESS)
+          .call()
+        if (allowanceResult) {
+          allowance = String(allowanceResult)
+        }
+      } catch (error) {
+        console.error('Error getting allowance:', error)
+        throw new Error(`Failed to check token allowance: ${error}`)
+      }
+
+      // If allowance is not enough, approve the token spending
+      if (BigInt(allowance) < BigInt(amountInWei)) {
+        try {
+          // Ensure we have an address
+          if (!connection.arbitrumAddress) {
+            throw new Error('No wallet address connected')
+          }
+
+          // Note: We're keeping the large approval amount as the user confirmed this is standard for this ABI
+          // Calculate gas price - use 30% more than current to ensure faster processing
+          const gasPrice = await web3.eth.getGasPrice()
+          const gasPriceAdjusted = Math.floor(Number(gasPrice) * 1.3) // 30% more than current gas price
+          const gasPriceHex = web3.utils.toHex(gasPriceAdjusted)
+
+          console.log(`Requesting approval for tokens with gas price ${gasPriceHex}`)
+
+          // Create the transaction object first
+          const approveMethod = tokenContract.methods.approve(BRIDGE_CONTRACT_ADDRESS, amountInWei)
+          const approveGasEstimate = await approveMethod
+            .estimateGas({
+              from: connection.arbitrumAddress as string,
+            })
+            .catch((err) => {
+              console.warn('Gas estimation failed for approval, using fallback:', err)
+              return 100000 // Fallback gas estimate if estimation fails
+            })
+
+          // Create a variable to track if the transaction was canceled by user
+          let transactionCanceled = false
+
+          // Request user to confirm the transaction in MetaMask
+          // Use send with a promise to get the transaction hash immediately
+          const approvalTx = await new Promise((resolve, reject) => {
+            let hasTimedOut = false
+            let hasResolved = false
+
+            // Set a timeout for the transaction (2 minutes)
+            const timeoutId = setTimeout(() => {
+              hasTimedOut = true
+              if (!hasResolved) {
+                reject(new Error('Transaction timeout: The approval request timed out. Please try again.'))
+              }
+            }, 120000) // 2 minutes timeout
+
+            approveMethod
+              .send({
+                from: connection.arbitrumAddress as string,
+                gasPrice: gasPriceHex,
+                gas: String(approveGasEstimate), // Convert to string for Web3
+              })
+              .on('transactionHash', (hash: string) => {
+                console.log('Approval transaction hash:', hash)
+                // Clear the timeout once we have a hash
+                clearTimeout(timeoutId)
+
+                // Return the hash immediately instead of waiting for confirmation
+                hasResolved = true
+                resolve({ transactionHash: hash, status: true })
+              })
+              .on('receipt', (receipt: any) => {
+                console.log('Approval transaction receipt:', receipt)
+                hasResolved = true
+                resolve({ ...receipt, status: receipt.status })
+              })
+              .on('error', (error: any) => {
+                console.error('Approval transaction error:', error)
+                // Clear the timeout
+                clearTimeout(timeoutId)
+                hasResolved = true
+
+                // Check if user rejected the transaction
+                if (
+                  error.code === 4001 ||
+                  error.message.includes('User denied transaction') ||
+                  error.message.includes('User rejected')
+                ) {
+                  transactionCanceled = true
+                  reject(new Error('Transaction rejected by user'))
+                } else if (hasTimedOut) {
+                  reject(new Error('Transaction timeout: The approval request timed out. Please try again.'))
+                } else {
+                  reject(error)
+                }
+              })
+          })
+
+          // Check if transaction was canceled by user
+          if (transactionCanceled) {
+            throw new Error('Transaction cancelled: You rejected the approval request')
+          }
+
+          console.log('Approval transaction completed:', approvalTx)
+        } catch (error: any) {
+          console.error('Approval failed:', error)
+
+          // Handle specific error cases
+          if (error.message.includes('User denied') || error.message.includes('User rejected') || error.code === 4001) {
+            throw new Error('Transaction cancelled: You rejected the approval request')
+          } else if (error.message.includes('Transaction was not mined within') || error.message.includes('timeout')) {
+            throw new Error(
+              'Transaction timed out: The approval transaction is taking longer than expected. Please check your MetaMask and try again.'
+            )
+          } else {
+            throw new Error(`Failed to approve token: ${error.message}`)
+          }
+        }
+      }
+
+      try {
+        // Calculate gas price - use higher gas price for faster processing
+        const gasPrice = await web3.eth.getGasPrice()
+        const gasPriceAdjusted = Math.floor(Number(gasPrice) * 1.3) // 30% more than current gas price
+        const gasPriceHex = web3.utils.toHex(gasPriceAdjusted)
+
+        console.log(`Sending bridge transaction with amount ${humanReadableAmount} to address ${hathorAddress}`)
+
+        // Validate the tokenAddress and connection.arbitrumAddress
+        if (!tokenAddress) {
+          throw new Error('Token address is required')
+        }
+
+        if (!connection.arbitrumAddress) {
+          throw new Error('No wallet address connected')
+        }
+
+        // Create the bridge method first
+        const bridgeMethod = bridgeContract.methods.receiveTokensTo(31, tokenAddress, hathorAddress, amountInWei)
+
+        // Estimate gas for the bridge transaction
+        const bridgeGasEstimate = await bridgeMethod
+          .estimateGas({
+            from: connection.arbitrumAddress as string,
+          })
+          .catch((err) => {
+            console.warn('Gas estimation failed for bridge, using fallback:', err)
+            return 600000 // Fallback gas estimate if estimation fails
+          })
+
+        // Create a variable to track if the transaction was canceled by user
+        let transactionCanceled = false
+
+        // Send the bridge transaction and return the hash immediately
+        const receipt = await new Promise((resolve, reject) => {
+          let hasTimedOut = false
+          let hasResolved = false
+
+          // Set a timeout for the transaction (3 minutes)
+          const timeoutId = setTimeout(() => {
+            hasTimedOut = true
+            if (!hasResolved) {
+              reject(new Error('Transaction timeout: The bridge request timed out. Please try again.'))
+            }
+          }, 180000) // 3 minutes timeout
+
+          bridgeMethod
+            .send({
+              from: connection.arbitrumAddress as string,
+              gasPrice: gasPriceHex,
+              gas: String(bridgeGasEstimate), // Convert to string for Web3
+            })
+            .on('transactionHash', (hash: string) => {
+              console.log('Bridge transaction hash:', hash)
+              // Clear the timeout once we have a hash
+              clearTimeout(timeoutId)
+
+              // Return the hash immediately instead of waiting for confirmation
+              hasResolved = true
+              resolve({ transactionHash: hash, status: true })
+            })
+            .on('receipt', (receipt: any) => {
+              console.log('Bridge transaction receipt:', receipt)
+              hasResolved = true
+              resolve({ ...receipt, status: receipt.status })
+            })
+            .on('error', (error: any) => {
+              console.error('Bridge transaction error:', error)
+              // Clear the timeout
+              clearTimeout(timeoutId)
+              hasResolved = true
+
+              // Check if user rejected the transaction
+              if (
+                error.code === 4001 ||
+                error.message.includes('User denied transaction') ||
+                error.message.includes('User rejected')
+              ) {
+                transactionCanceled = true
+                reject(new Error('Transaction rejected by user'))
+              } else if (hasTimedOut) {
+                reject(new Error('Transaction timeout: The bridge request timed out. Please try again.'))
+              } else {
+                reject(error)
+              }
+            })
+        })
+
+        // Check if transaction was canceled by user
+        if (transactionCanceled) {
+          throw new Error('Transaction cancelled: You rejected the bridge request')
+        }
+
+        return (receipt as any).transactionHash
+      } catch (error: any) {
+        console.error('Bridge failed:', error)
+
+        // Handle specific error cases
+        if (error.message.includes('User denied') || error.message.includes('User rejected') || error.code === 4001) {
+          throw new Error('Transaction cancelled: You rejected the bridge request')
+        } else if (error.message.includes('Transaction was not mined within') || error.message.includes('timeout')) {
+          throw new Error(
+            'Transaction timed out: The bridge transaction is taking longer than expected. Please try again.'
+          )
+        } else {
+          throw new Error(`Failed to bridge token: ${error.message}`)
+        }
+      }
+    },
+    [connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress]
+  )
 
   // Claim tokens that were sent from Arbitrum
-  const claimTokenFromArbitrum = useCallback(async (
-    to: string,
-    amount: string,
-    blockHash: string,
-    logIndex: string,
-    originChainId: string
-  ) => {
-    if (!connection.arbitrumConnected || !connection.arbitrumProvider) {
-      throw new Error('Not connected to Arbitrum')
-    }
-    
-    // This is a placeholder - actual implementation will need:
-    // 1. Load Bridge ABI
-    // 2. Create contract instance
-    // 3. Call claim method with appropriate parameters
-    
-    return 'transaction-hash-placeholder'
-  }, [connection.arbitrumConnected, connection.arbitrumProvider])
+  const claimTokenFromArbitrum = useCallback(
+    async (to: string, amount: string, blockHash: string, logIndex: string, originChainId: string) => {
+      if (!connection.arbitrumConnected || !connection.arbitrumProvider || !connection.arbitrumAddress) {
+        throw new Error('Not connected to Arbitrum')
+      }
+
+      const web3 = connection.arbitrumProvider as Web3
+      const bridgeContract = new web3.eth.Contract(BRIDGE_ABI as any, BRIDGE_CONTRACT_ADDRESS)
+
+      try {
+        // Calculate gas price
+        const gasPrice = await web3.eth.getGasPrice()
+        const gasPriceHex = web3.utils.toHex(Math.floor(Number(gasPrice) * 1.1)) // 10% more than current gas price
+
+        // Claim the token
+        const receipt = await bridgeContract.methods
+          .claim({
+            to: to,
+            amount: amount,
+            blockHash: blockHash,
+            transactionHash: blockHash, // Using blockHash as transactionHash as per reference implementation
+            logIndex: parseInt(logIndex),
+            originChainId: parseInt(originChainId),
+          })
+          .send({
+            from: connection.arbitrumAddress,
+            gasPrice: gasPriceHex,
+            gas: '400000', // Gas limit as string
+          })
+
+        if (!receipt.status) {
+          throw new Error('Claim transaction failed')
+        }
+
+        return receipt.transactionHash
+      } catch (error: any) {
+        console.error('Claim failed:', error)
+        throw new Error(`Failed to claim token: ${error.message}`)
+      }
+    },
+    [connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress]
+  )
 
   // Load pending claims that the user can claim
   const loadPendingClaims = useCallback(async () => {
-    if (!hathorAddress || !connection.arbitrumConnected) return
-    
-    // This is a placeholder - actual implementation will need:
-    // 1. Query bridge events to find unclaimed tokens for the user
-    // 2. Format the data for UI display
-    
-    setPendingClaims([])
-  }, [hathorAddress, connection.arbitrumConnected])
+    if (!hathorAddress || !connection.arbitrumConnected || !connection.arbitrumProvider || !connection.arbitrumAddress)
+      return
+
+    try {
+      const web3 = connection.arbitrumProvider as Web3
+      const bridgeContract = new web3.eth.Contract(BRIDGE_ABI as any, BRIDGE_CONTRACT_ADDRESS)
+
+      console.log('Loading pending claims for Hathor address:', hathorAddress)
+
+      // In a real implementation, we would query the bridge contract for events related to token transfers
+      // that have not yet been claimed. For now, we'll simulate this with a placeholder implementation.
+
+      // This is just a placeholder for demonstration - in a real implementation, you would:
+      // 1. Query bridge contract events for AcceptedCrossTransfer events
+      // 2. Filter for events with the user's address
+      // 3. Check if they've been claimed already
+      // 4. Format the data for UI display
+
+      // For now, just set an empty array
+      setPendingClaims([])
+
+      // Example format for a pending claim:
+      /*
+      setPendingClaims([
+        {
+          transactionHash: '0x123abc...',
+          tokenSymbol: 'USDC',
+          amount: '100.00',
+          sender: '0xabc123...',
+          status: 'pending'
+        }
+      ])
+      */
+    } catch (error) {
+      console.error('Error loading pending claims:', error)
+      setPendingClaims([])
+    }
+  }, [hathorAddress, connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress])
 
   // Effect to listen for account changes in MetaMask
   useEffect(() => {
