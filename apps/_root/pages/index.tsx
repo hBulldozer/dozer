@@ -9,7 +9,7 @@ import { motion } from 'framer-motion'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
 import { PresaleSidebar, TabContentWithAssets, TabNavigation, FaqAccordion } from '../components/LandingPage'
-import { Meteors, ShootingStars } from '@dozer/ui/aceternity'
+import { SpaceBackground, ShootingStars } from '../components/SpaceBackground'
 import { Container } from '@dozer/ui/container'
 import { DozerWithTextIcon, TwitterIcon, TelegramIcon, DiscordIcon, GithubIcon } from '@dozer/ui/icons'
 
@@ -191,10 +191,12 @@ const Home: React.FC = () => {
   return (
     <div className="relative min-h-screen text-white bg-black">
       {/* Space background with animations */}
-      {/* <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.97),rgba(0,0,0,0.95)),url('/background.jpg')] bg-cover overflow-hidden">
-        <ShootingStars className="w-full h-full" />
-        <Meteors number={10} className="!absolute" />
-      </div> */}
+      <div className="absolute inset-0 overflow-hidden">
+        <SpaceBackground starCount={250} color="#FFFFFF" animate={true} />
+        <ShootingStars count={30} color="#FFEB3B" frequency={500} className="z-0" />
+        {/* Dark overlay to make space animation more subtle */}
+        <div className="absolute inset-0 bg-black opacity-75 z-[1]"></div>
+      </div>
 
       {/* Main layout container */}
       <div className="relative z-10 flex flex-col mx-auto max-w-7xl">
@@ -286,7 +288,7 @@ const Home: React.FC = () => {
 
         {/* Custom Dialog - Enhanced styling */}
         <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
-          <Dialog.Content className="w-screen max-w-xl !pb-4 bg-stone-950 border border-yellow-500/30">
+          <Dialog.Content className="w-screen max-w-xl !pb-4 bg-stone-950/80 backdrop-blur-md border border-yellow-500/30">
             <Dialog.Header
               title={
                 <Typography
@@ -301,7 +303,7 @@ const Home: React.FC = () => {
             <div className="flex flex-col p-4 max-h-[70vh] overflow-y-auto">
               <FaqAccordion data={faqItems} className="mt-2" />
             </div>
-            <div className="flex flex-col gap-3 p-6 pt-4 border-t lg:flex-row border-stone-700 bg-stone-900/50">
+            <div className="flex flex-col gap-3 p-6 pt-4 border-t lg:flex-row border-stone-700/50 bg-stone-900/30">
               <StyledDialogButton href="https://explorer.hathor.network/token_balances?sortBy=total&order=desc&token=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d">
                 Token Holders
               </StyledDialogButton>
