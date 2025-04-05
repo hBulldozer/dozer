@@ -41,33 +41,28 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
           return (
             <motion.button
               key={tab.id}
-              whileHover={{ y: -2, transition: { duration: 0.2 } }}
+              whileHover={{ y: -2 }}
+              transition={{ type: 'tween', duration: 0.15 }}
               whileTap={{ scale: 0.98 }}
-              className={`relative overflow-hidden group rounded-lg transition-all duration-300`}
+              className={`relative overflow-hidden group rounded-lg ${
+                isActive ? 'bg-gradient-to-b from-yellow-500/20 to-yellow-600/10 border border-yellow-500/40' : ''
+              }`}
               onClick={() => setActiveTab(tab.id as any)}
             >
-              {isActive && (
-                <motion.div
-                  layoutId="activeTabBackground"
-                  className="absolute inset-0 bg-gradient-to-b from-yellow-500/20 to-yellow-600/10 border border-yellow-500/40"
-                  initial={false}
-                  transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                />
-              )}
               <div className="relative z-10 flex flex-col items-center justify-center p-3">
                 <div
-                  className={`transition-all duration-300 ${
-                    isActive ? 'text-yellow-500' : 'text-neutral-400 group-hover:text-neutral-300'
-                  }`}
+                  className={`${isActive ? 'text-yellow-500' : 'text-neutral-400 group-hover:text-neutral-300'}`}
+                  style={{ transition: 'color 0.15s ease' }}
                 >
                   {tab.icon}
                 </div>
                 <Typography
                   variant="xs"
                   weight={600}
-                  className={`mt-1.5 transition-all duration-300 tracking-wider ${
+                  className={`mt-1.5 tracking-wider ${
                     isActive ? 'text-yellow-400' : 'text-neutral-400 group-hover:text-neutral-300'
                   }`}
+                  style={{ transition: 'color 0.15s ease' }}
                 >
                   {tab.label}
                 </Typography>

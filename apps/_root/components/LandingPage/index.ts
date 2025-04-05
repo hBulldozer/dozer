@@ -5,13 +5,6 @@ import TabContentWithAssets from './TabContentWithAssets'
 import TabNavigation from './TabNavigation'
 import Footer from './Footer'
 import FAQSection from './FAQSection'
+import FaqAccordion from './FaqAccordion'
 
-export {
-  NewsTicker,
-  PresaleSidebar,
-  TabContent,
-  TabContentWithAssets,
-  TabNavigation,
-  Footer,
-  FAQSection
-}
+export { NewsTicker, PresaleSidebar, TabContent, TabContentWithAssets, TabNavigation, Footer, FAQSection, FaqAccordion }

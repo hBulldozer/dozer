@@ -23,12 +23,12 @@ const useBackersCount = () => {
     const fetchBackersCount = async () => {
       try {
         const response = await fetch(
-          'explorer-service/node_api/token?id=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d'
+          'https://explorer-service.mainnet.hathor.network/token_balances/information?token_id=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d'
         )
         const data = await response.json()
         if (data.success) {
           // The API returns total addresses that hold the token
-          setBackersCount(data.addresses_count || 250)
+          setBackersCount(data.addresses || 250)
         }
       } catch (error) {
         console.error('Error fetching backers count:', error)
@@ -61,7 +61,7 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-transparent">
+    <div className="flex flex-col w-full h-full bg-transparent">
       {/* Header section with enhanced typography */}
       <div className="p-5 mb-4">
         <Typography
@@ -72,11 +72,11 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
           BUY DZR PRESALE NOW!
         </Typography>
         <div className="flex items-center justify-center">
-          <div className="h-px w-16 bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent mr-3"></div>
-          <Typography variant="sm" className="text-center text-neutral-400 uppercase tracking-widest text-xs">
+          <div className="w-16 h-px mr-3 bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent"></div>
+          <Typography variant="sm" className="text-xs tracking-widest text-center uppercase text-neutral-400">
             Before price increases
           </Typography>
-          <div className="h-px w-16 bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent ml-3"></div>
+          <div className="w-16 h-px ml-3 bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent"></div>
         </div>
       </div>
 
@@ -87,8 +87,8 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
           {priceChangeTimeUnits.map((unit, index) => (
             <div key={unit.label} className="group">
               <div className="relative w-full aspect-square flex items-center justify-center bg-black/40 rounded-lg border border-yellow-500/20 overflow-hidden hover:border-yellow-500/50 transition-all duration-300 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.2)]">
-                <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/5 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
-                <div className="flex flex-col items-center relative z-10">
+                <div className="absolute inset-0 transition-opacity bg-gradient-to-b from-yellow-500/5 via-transparent to-transparent opacity-60 group-hover:opacity-80"></div>
+                <div className="relative z-10 flex flex-col items-center">
                   <Typography
                     variant="xl"
                     weight={700}
@@ -109,7 +109,7 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
         </div>
 
         {/* Subtle divider */}
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent"></div>
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent"></div>
 
         {/* Backers count section with improved design */}
         <div
@@ -117,22 +117,22 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
           className="flex items-center justify-between p-4 bg-black/30 rounded-lg hover:bg-black/40 transition-all duration-300 cursor-pointer group shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
         >
           <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center mr-3">
-              <UserGroupIcon className="w-5 h-5 text-yellow-500 group-hover:text-yellow-400 transition-colors" />
+            <div className="flex items-center justify-center w-10 h-10 mr-3 rounded-full bg-yellow-500/10">
+              <UserGroupIcon className="w-5 h-5 text-yellow-500 transition-colors group-hover:text-yellow-400" />
             </div>
             <Typography
               variant="sm"
               weight={600}
-              className="text-neutral-300 group-hover:text-neutral-200 transition-colors"
+              className="transition-colors text-neutral-300 group-hover:text-neutral-200"
             >
               Total Backers
             </Typography>
           </div>
-          <div className="bg-black/40 px-3 py-1 rounded-full">
+          <div className="px-3 py-1 rounded-full bg-black/40">
             <Typography
               variant="sm"
               weight={700}
-              className="text-yellow-400 group-hover:text-yellow-300 transition-colors"
+              className="text-yellow-400 transition-colors group-hover:text-yellow-300"
             >
               {isLoading ? '...' : backersCount.toLocaleString()}
             </Typography>
@@ -141,12 +141,12 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
 
         {/* Progress section with enhanced visuals */}
         <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <Typography variant="sm" weight={600} className="text-neutral-400 uppercase tracking-wider text-xs">
+          <div className="flex items-center justify-between">
+            <Typography variant="sm" weight={600} className="text-xs tracking-wider uppercase text-neutral-400">
               {/* USDT  */}
               Raised
             </Typography>
-            <Typography variant="base" weight={700} className="text-yellow-400 text-lg">
+            <Typography variant="base" weight={700} className="text-lg text-yellow-400">
               ${totalDonations.toLocaleString()}
             </Typography>
           </div>
@@ -160,7 +160,7 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
             />
           </div>
 
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <Typography variant="xs" className="text-neutral-500">
               Progress
             </Typography>

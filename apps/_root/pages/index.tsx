@@ -4,10 +4,11 @@ import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Dialog } from '@dozer/ui/dialog'
 import { Typography } from '@dozer/ui/typography'
 import { Link } from '@dozer/ui/link'
+import { Button } from '@dozer/ui/button'
 import { motion } from 'framer-motion'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
-import { PresaleSidebar, TabContentWithAssets, TabNavigation, FAQSection } from '../components/LandingPage'
+import { PresaleSidebar, TabContentWithAssets, TabNavigation, FaqAccordion } from '../components/LandingPage'
 import { Meteors, ShootingStars } from '@dozer/ui/aceternity'
 import { Container } from '@dozer/ui/container'
 import { DozerWithTextIcon, TwitterIcon, TelegramIcon, DiscordIcon, GithubIcon } from '@dozer/ui/icons'
@@ -72,6 +73,11 @@ const Home: React.FC = () => {
       question: 'When is the DZR listing and TGE?',
       answer:
         'The token generation event (TGE) and exchange listings will be officially announced. Stay tuned on our Telegram and website for updates.',
+    },
+    {
+      question: 'What happens if Nano Contracts on Hathor are delayed?',
+      answer:
+        'Dozer Finance is tightly coupled to the Hathor Network, and the launch of our DEX depends on Nano Contracts going live on mainnet. If there are delays, we will continue to build and keep the community informed. Our focus remains on delivering a secure, no-gas DeFi platform with full transparency.',
     },
     {
       question: 'When is Dozer Finance launching on mainnet?',
@@ -252,7 +258,30 @@ const Home: React.FC = () => {
 
         {/* FAQ section - Updated styling */}
         <div className="px-6 py-8 md:px-8 bg-gradient-to-b from-transparent via-yellow-900/5 to-yellow-900/10">
-          <FAQSection faqItems={faqItems} onViewMoreClick={() => setIsDialogOpen(true)} displayCount={7} />
+          <Typography
+            variant="h3"
+            weight={800}
+            className="relative z-10 mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+          >
+            FREQUENTLY ASKED QUESTIONS
+          </Typography>
+
+          <div className="max-w-5xl mx-auto">
+            <FaqAccordion data={faqItems.slice(0, 8)} />
+
+            {faqItems.length > 8 && (
+              <div className="relative z-10 flex justify-center mt-8">
+                <Button
+                  variant="outlined"
+                  size="sm"
+                  onClick={() => setIsDialogOpen(true)}
+                  className="border-yellow-500/30 text-yellow-400 hover:border-yellow-500/60 hover:bg-yellow-500/10 transition-all duration-300 px-6 py-2 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+                >
+                  View More Information
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Custom Dialog - Enhanced styling */}
@@ -270,16 +299,7 @@ const Home: React.FC = () => {
               onClose={() => setIsDialogOpen(false)}
             />
             <div className="flex flex-col p-4 max-h-[70vh] overflow-y-auto">
-              {faqItems.map((item, index) => (
-                <div key={index} className="pb-4 mb-6 border-b border-yellow-500/20 last:border-0">
-                  <Typography variant="lg" weight={600} className="mb-2 text-left text-yellow-400">
-                    {item.question}
-                  </Typography>
-                  <Typography variant="base" className="text-left text-neutral-200">
-                    {item.answer}
-                  </Typography>
-                </div>
-              ))}
+              <FaqAccordion data={faqItems} className="mt-2" />
             </div>
             <div className="flex flex-col gap-3 p-6 pt-4 border-t lg:flex-row border-stone-700 bg-stone-900/50">
               <StyledDialogButton href="https://explorer.hathor.network/token_balances?sortBy=total&order=desc&token=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d">
@@ -308,7 +328,7 @@ const Home: React.FC = () => {
         {/* Disclaimer Banner */}
         <div className="w-full py-2 bg-black/40 backdrop-blur-sm">
           <Typography variant="xs" className="text-center text-stone-400">
-            ALWAYS DO YOUR OWN RESEARCH. NOTHING HERE IS FINANCIAL ADVICE. © 2024 DOZER ALL RIGHTS RESERVED.
+            ALWAYS DO YOUR OWN RESEARCH. NOTHING HERE IS FINANCIAL ADVICE.
           </Typography>
         </div>
 
