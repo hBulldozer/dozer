@@ -8,7 +8,7 @@ import { Button } from '@dozer/ui/button'
 import { motion } from 'framer-motion'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import PresaleModal from '../components/PresaleModal/PresaleModal'
-import { PresaleSidebar, TabContentWithAssets, TabNavigation, FaqAccordion } from '../components/LandingPage'
+import { PresaleSidebar, TabContentWithAssets, TabNavigation, FaqChatAccordion } from '../components/LandingPage'
 import { SpaceBackground, ShootingStars } from '../components/SpaceBackground'
 import { Container } from '@dozer/ui/container'
 import { DozerWithTextIcon, TwitterIcon, TelegramIcon, DiscordIcon, GithubIcon } from '@dozer/ui/icons'
@@ -35,51 +35,55 @@ const Home: React.FC = () => {
   // FAQ items based on the tokenomics document
   const faqItems = [
     {
+      id: 1,
       question: 'What is the DZR token?',
       answer:
         'DZR is the native token of the Dozer Finance protocol. It powers governance, liquidity incentives, and utility across the Dozer ecosystem. There are no VCs or corporate backers—only the community.',
     },
     {
+      id: 2,
       question: 'How do I participate in the pre-sale?',
       answer:
         "To join the final pre-sale, send USDT or USDC on any EVM network, or use Solana. Follow the payment instructions provided on the website. After payment, you'll be prompted to enter your Hathor address to receive your allocation.",
     },
     {
+      id: 3,
       question: 'Is there any vesting or lock-up on pre-sale DZR tokens?',
       answer:
         'No. All DZR tokens allocated during the pre-sale are fully unlocked at launch—no lock-ups, no vesting, no cliffs.',
     },
     {
+      id: 4,
       question: 'Is there a maximum allocation per wallet?',
       answer:
         "Yes. There's a cap of $10,000 per backer to promote decentralization and fair community ownership. Our backers are not just investors—they are co-founders of the project.",
     },
     {
+      id: 5,
       question: 'Are there gas fees on Dozer Finance?',
       answer:
         'No gas fees at the blockchain level. Dozer uses a zero-gas model powered by Hathor. The only fee is a minimal 0.3% LP trading fee—far lower than typical DEX platforms.',
     },
-    // {
-    //   question: 'Is Dozer Finance secure?',
-    //   answer:
-    //     "Yes. Dozer's smart contracts are externally audited and the protocol is secured through Hathor's Bitcoin merged-mining network. Users always retain full custody of their funds.",
-    // },
     {
+      id: 6,
       question: 'Where can I get support or ask questions?',
       answer:
         'You can join our official Telegram group for help, updates, and direct communication with the core team and community.',
     },
     {
+      id: 7,
       question: 'When is the DZR listing and TGE?',
       answer:
         'The token generation event (TGE) and exchange listings will be officially announced. Stay tuned on our Telegram and website for updates.',
     },
     {
+      id: 8,
       question: 'What happens if Nano Contracts on Hathor are delayed?',
       answer:
         'Dozer Finance is tightly coupled to the Hathor Network, and the launch of our DEX depends on Nano Contracts going live on mainnet. If there are delays, we will continue to build and keep the community informed. Our focus remains on delivering a secure, no-gas DeFi platform with full transparency.',
     },
     {
+      id: 9,
       question: 'When is Dozer Finance launching on mainnet?',
       answer:
         "Dozer DEX will be deployed on Hathor mainnet as soon as Nano Contracts (Hathor's smart contract infrastructure) are live on mainnet.",
@@ -269,7 +273,10 @@ const Home: React.FC = () => {
           </Typography>
 
           <div className="max-w-5xl mx-auto">
-            <FaqAccordion data={faqItems.slice(0, 8)} />
+            <FaqChatAccordion
+              data={faqItems.slice(0, 8)}
+              className="bg-black/20 backdrop-blur-sm rounded-xl border border-yellow-500/30 p-4"
+            />
 
             {faqItems.length > 8 && (
               <div className="relative z-10 flex justify-center mt-8">
@@ -301,7 +308,7 @@ const Home: React.FC = () => {
               onClose={() => setIsDialogOpen(false)}
             />
             <div className="flex flex-col p-4 max-h-[70vh] overflow-y-auto">
-              <FaqAccordion data={faqItems} className="mt-2" />
+              <FaqChatAccordion data={faqItems} className="mt-2" />
             </div>
             <div className="flex flex-col gap-3 p-6 pt-4 border-t lg:flex-row border-stone-700/50 bg-stone-900/30">
               <StyledDialogButton href="https://explorer.hathor.network/token_balances?sortBy=total&order=desc&token=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d">
