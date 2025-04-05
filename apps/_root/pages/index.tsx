@@ -308,7 +308,7 @@ const Home: React.FC = () => {
               onClose={() => setIsDialogOpen(false)}
             />
             <div className="flex flex-col p-4 max-h-[70vh] overflow-y-auto">
-              <FaqChatAccordion data={faqItems} className="mt-2" />
+              <FaqChatAccordion data={faqItems} className="mt-2 text-left" />
             </div>
             <div className="flex flex-col gap-3 p-6 pt-4 border-t lg:flex-row border-stone-700/50 bg-stone-900/30">
               <StyledDialogButton href="https://explorer.hathor.network/token_balances?sortBy=total&order=desc&token=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d">

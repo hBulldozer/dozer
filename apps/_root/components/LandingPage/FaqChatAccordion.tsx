@@ -50,7 +50,7 @@ export function FaqChatAccordion({ data, className, questionClassName, answerCla
                       questionClassName
                     )}
                   >
-                    <Typography variant="base" weight={600} className="font-medium">
+                    <Typography variant="base" weight={600} className="font-medium text-left">
                       {item.question}
                     </Typography>
                   </div>
@@ -76,11 +76,13 @@ export function FaqChatAccordion({ data, className, questionClassName, answerCla
                   <div className="mt-1 ml-7 md:ml-16">
                     <div
                       className={classNames(
-                        'relative rounded-2xl bg-yellow-500/10 px-4 py-2 text-stone-200 max-w-full md:max-w-2xl lg:max-w-3xl',
+                        'relative rounded-2xl bg-yellow-500/10 px-4 py-2 text-stone-200 max-w-full md:max-w-2xl lg:max-w-3xl text-left',
                         answerClassName
                       )}
                     >
-                      <Typography variant="base">{item.answer}</Typography>
+                      <Typography variant="base" className="text-left">
+                        {item.answer}
+                      </Typography>
                     </div>
                   </div>
                 </motion.div>
