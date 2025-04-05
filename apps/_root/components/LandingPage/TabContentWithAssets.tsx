@@ -72,7 +72,7 @@ const TextGenerateEffect = ({
 
   return (
     <div className={className}>
-      <motion.div ref={scope} className="text-neutral-200 leading-relaxed tracking-wide">
+      <motion.div ref={scope} className="leading-relaxed tracking-wide text-neutral-200">
         {wordsArray.map((word, idx) => {
           return (
             <motion.span
@@ -155,7 +155,7 @@ const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }
         {
           icon: <ShieldCheckIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
           title: 'Accessible Node Operation',
-          description: 'Run full nodes on consumer-grade hardware',
+          description: 'Run nodes on consumer grade hardware',
         },
         {
           icon: <BanknotesIcon className="flex-shrink-0 w-8 h-8 mr-4 text-yellow-500" />,
@@ -263,7 +263,7 @@ const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }
           </div>
 
           {/* Animated text */}
-          <div className="mt-0 flex-grow" key={`tab-${currentTab}`}>
+          <div className="flex-grow mt-0" key={`tab-${currentTab}`}>
             <AnimatedText content={content.story} />
           </div>
         </div>
@@ -288,11 +288,11 @@ const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }
                 className="group relative overflow-hidden p-4 rounded-xl bg-black/30 backdrop-blur-sm border border-yellow-500/20 hover:border-yellow-500/40 transition-colors duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
               >
                 {/* Subtle highlight effect */}
-                <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-b from-yellow-500/5 via-transparent to-transparent group-hover:opacity-100" />
 
                 {/* Content */}
-                <div className="relative flex z-10">
-                  <div className="w-12 h-12 rounded-lg bg-yellow-500/10 flex items-center justify-center mr-4 transition-colors duration-300 group-hover:bg-yellow-500/15">
+                <div className="relative z-10 flex">
+                  <div className="flex items-center justify-center w-12 h-12 mr-4 transition-colors duration-300 rounded-lg bg-yellow-500/10 group-hover:bg-yellow-500/15">
                     {React.cloneElement(feature.icon as React.ReactElement, {
                       className: 'w-6 h-6 text-yellow-500 transition-transform duration-300 group-hover:scale-110',
                     })}
@@ -301,13 +301,13 @@ const TabContentWithAssets: React.FC<TabContentWithAssetsProps> = ({ activeTab }
                     <Typography
                       variant="base"
                       weight={600}
-                      className="text-yellow-400 mb-1 group-hover:text-yellow-300 transition-colors duration-300"
+                      className="mb-1 text-yellow-400 transition-colors duration-300 group-hover:text-yellow-300"
                     >
                       {feature.title}
                     </Typography>
                     <Typography
                       variant="sm"
-                      className="text-neutral-300 group-hover:text-neutral-200 transition-colors duration-300"
+                      className="transition-colors duration-300 text-neutral-300 group-hover:text-neutral-200"
                     >
                       {feature.description}
                     </Typography>

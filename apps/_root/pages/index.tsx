@@ -222,15 +222,13 @@ const Home: React.FC = () => {
         <div className="flex flex-col lg:flex-row">
           {/* Mobile-first: Presale info appears first on mobile with enhanced styling */}
           <div className="w-full px-4 py-6 lg:hidden">
-            <div className="transition-transform duration-300 transform hover:scale-102">
-              <PresaleSidebar
-                totalDonations={totalDonations}
-                maxSupply={maxSupply}
-                progress={progress}
-                priceChangeTimeUnits={priceChangeTimeUnits}
-                onBuyClick={() => setIsPresaleModalOpen(true)}
-              />
-            </div>
+            <PresaleSidebar
+              totalDonations={totalDonations}
+              maxSupply={maxSupply}
+              progress={progress}
+              priceChangeTimeUnits={priceChangeTimeUnits}
+              onBuyClick={() => setIsPresaleModalOpen(true)}
+            />
           </div>
 
           {/* Left column - Tab content (reduced to 3/5 width) */}
@@ -245,15 +243,17 @@ const Home: React.FC = () => {
           </div>
 
           {/* Right column - Presale info (increased to 2/5 width) - Enhanced for desktop */}
-          <div className="hidden lg:block lg:w-[40%] lg:sticky lg:top-6 py-6 pr-6 mt-24">
-            <div className="transform hover:scale-[1.01] transition-all duration-300 bg-black/10 backdrop-blur-md rounded-xl border border-yellow-500/30 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.1)]">
-              <PresaleSidebar
-                totalDonations={totalDonations}
-                maxSupply={maxSupply}
-                progress={progress}
-                priceChangeTimeUnits={priceChangeTimeUnits}
-                onBuyClick={() => setIsPresaleModalOpen(true)}
-              />
+          <div className="hidden lg:block lg:w-[40%] pr-6 mt-[24px]">
+            <div className=" bg-black/10 backdrop-blur-sm rounded-xl border border-yellow-500/30 shadow-[0_8px_30px_rgb(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.1)]">
+              <div className="p-6 pb-[28px]">
+                <PresaleSidebar
+                  totalDonations={totalDonations}
+                  maxSupply={maxSupply}
+                  progress={progress}
+                  priceChangeTimeUnits={priceChangeTimeUnits}
+                  onBuyClick={() => setIsPresaleModalOpen(true)}
+                />
+              </div>
             </div>
           </div>
         </div>

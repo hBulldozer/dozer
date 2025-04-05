@@ -14,21 +14,25 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
     {
       id: 'home',
       label: 'HOME',
+      mobileLabel: 'HOME',
       icon: <HomeIcon className="w-6 h-6" />,
     },
     {
       id: 'ecosystem',
       label: 'ECOSYSTEM',
+      mobileLabel: 'ECO-\nSYSTEM',
       icon: <CubeTransparentIcon className="w-6 h-6" />,
     },
     {
       id: 'trading',
       label: 'TRADING PLATFORM',
+      mobileLabel: 'TRADING',
       icon: <BanknotesIcon className="w-6 h-6" />,
     },
     {
       id: 'blueprints',
       label: 'TOOLS',
+      mobileLabel: 'TOOLS',
       icon: <RocketLaunchIcon className="w-6 h-6" />,
     },
   ]
@@ -49,7 +53,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
               }`}
               onClick={() => setActiveTab(tab.id as any)}
             >
-              <div className="relative z-10 flex flex-col items-center justify-center p-3">
+              <div className="relative z-10 flex flex-col items-center justify-center p-2 md:p-3">
                 <div
                   className={`${isActive ? 'text-yellow-500' : 'text-neutral-400 group-hover:text-neutral-300'}`}
                   style={{ transition: 'color 0.15s ease' }}
@@ -59,12 +63,13 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
                 <Typography
                   variant="xs"
                   weight={600}
-                  className={`mt-1.5 tracking-wider ${
+                  className={`mt-1.5 tracking-wider text-center ${
                     isActive ? 'text-yellow-400' : 'text-neutral-400 group-hover:text-neutral-300'
                   }`}
                   style={{ transition: 'color 0.15s ease' }}
                 >
-                  {tab.label}
+                  <span className="hidden md:inline">{tab.label}</span>
+                  <span className="md:hidden whitespace-pre-line text-[0.6rem] leading-tight">{tab.mobileLabel}</span>
                 </Typography>
               </div>
             </motion.button>
