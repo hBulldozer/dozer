@@ -12,6 +12,7 @@ import { PresaleSidebar, TabContentWithAssets, TabNavigation, FaqChatAccordion }
 import { SpaceBackground, ShootingStars } from '../components/SpaceBackground'
 import { Container } from '@dozer/ui/container'
 import { DozerWithTextIcon, TwitterIcon, TelegramIcon, DiscordIcon, GithubIcon } from '@dozer/ui/icons'
+import { calculatePresalePrice, TimeLeft, PRESALE_CONFIG, calculateNextPriceStep } from '../utils/presalePrice'
 
 interface StyledDialogButtonProps {
   children: React.ReactNode
@@ -22,13 +23,7 @@ interface PresaleModalProps {
   isOpen: boolean
   onClose: () => void
   className?: string
-}
-
-interface PriceChangeTimeLeft {
-  days: number
-  hours: number
-  minutes: number
-  seconds: number
+  currentPrice: number
 }
 
 const Home: React.FC = () => {
@@ -95,12 +90,14 @@ const Home: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'home' | 'ecosystem' | 'trading' | 'blueprints' | null>('home')
   const [totalDonations, setTotalDonations] = useState<number>(60000)
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [priceChangeTimeLeft, setPriceChangeTimeLeft] = useState<PriceChangeTimeLeft>({
+  const [priceChangeTimeLeft, setPriceChangeTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
     minutes: 0,
     seconds: 0,
   })
+  const [currentPrice, setCurrentPrice] = useState<number>(1.0)
+  const [nextPriceStep, setNextPriceStep] = useState<number | undefined>(undefined)
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false)
   const [isPresaleModalOpen, setIsPresaleModalOpen] = useState<boolean>(false)
 
@@ -108,25 +105,30 @@ const Home: React.FC = () => {
   useEffect(() => {
     setMounted(true)
 
-    // Next price change date - April 10, 2025
-    const nextPriceChangeDate = new Date('2025-04-10T23:59:59')
+    // Function to calculate and update price and countdown
+    const updatePriceAndCountdown = () => {
+      // Calculate current price and countdown in one function call
+      const { currentPrice: newPrice, timeUntilNextStep } = calculatePresalePrice()
 
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime()
-      const priceChangeDifference = nextPriceChangeDate.getTime() - now
+      // Update state
+      setPriceChangeTimeLeft(timeUntilNextStep)
+      setCurrentPrice(newPrice)
 
-      if (priceChangeDifference > 0) {
-        setPriceChangeTimeLeft({
-          days: Math.floor(priceChangeDifference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((priceChangeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((priceChangeDifference % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((priceChangeDifference % (1000 * 60)) / 1000),
-        })
+      // Calculate next price step only if price changed
+      try {
+        // Only calculate next price step when needed
+        const nextPrice = calculateNextPriceStep(newPrice)
+        setNextPriceStep(nextPrice)
+      } catch (error) {
+        console.error('Error calculating next price step:', error)
       }
     }
 
-    calculateTimeLeft()
-    const timer = setInterval(calculateTimeLeft, 1000)
+    // Initial calculation
+    updatePriceAndCountdown()
+
+    // Update once per second
+    const timer = setInterval(updatePriceAndCountdown, 1000)
 
     // Fetch donation data
     async function fetchDonationData() {
@@ -232,6 +234,8 @@ const Home: React.FC = () => {
               progress={progress}
               priceChangeTimeUnits={priceChangeTimeUnits}
               onBuyClick={() => setIsPresaleModalOpen(true)}
+              currentPrice={currentPrice}
+              nextPriceStep={nextPriceStep}
             />
           </div>
 
@@ -256,6 +260,8 @@ const Home: React.FC = () => {
                   progress={progress}
                   priceChangeTimeUnits={priceChangeTimeUnits}
                   onBuyClick={() => setIsPresaleModalOpen(true)}
+                  currentPrice={currentPrice}
+                  nextPriceStep={nextPriceStep}
                 />
               </div>
             </div>
@@ -274,11 +280,11 @@ const Home: React.FC = () => {
 
           <div className="max-w-5xl mx-auto">
             <FaqChatAccordion
-              data={faqItems.slice(0, 8)}
-              className="bg-black/20 backdrop-blur-sm rounded-xl border border-yellow-500/30 p-4"
+              data={faqItems}
+              className="p-4 border bg-black/20 backdrop-blur-sm rounded-xl border-yellow-500/30"
             />
 
-            {faqItems.length > 8 && (
+            {/* {faqItems.length > 8 && (
               <div className="relative z-10 flex justify-center mt-8">
                 <Button
                   variant="outlined"
@@ -289,12 +295,12 @@ const Home: React.FC = () => {
                   View More Information
                 </Button>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 
         {/* Custom Dialog - Enhanced styling */}
-        <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
+        {/* <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
           <Dialog.Content className="w-screen max-w-xl !pb-4 bg-stone-950/80 backdrop-blur-md border border-yellow-500/30">
             <Dialog.Header
               title={
@@ -322,13 +328,14 @@ const Home: React.FC = () => {
               </StyledDialogButton>
             </div>
           </Dialog.Content>
-        </Dialog>
+        </Dialog> */}
 
         {/* Presale Modal - Make it larger */}
         <PresaleModal
           isOpen={isPresaleModalOpen}
           onClose={() => setIsPresaleModalOpen(false)}
           className="max-w-2xl" // Increased size
+          currentPrice={currentPrice}
         />
       </div>
 

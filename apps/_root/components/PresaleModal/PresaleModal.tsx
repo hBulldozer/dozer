@@ -13,6 +13,7 @@ interface PresaleModalProps {
   isOpen: boolean
   onClose: () => void
   className?: string
+  currentPrice?: number
 }
 
 // Network payment information
@@ -26,7 +27,7 @@ interface NetworkInfo {
   tokenSymbol: string
 }
 
-const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose, className }) => {
+const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose, className, currentPrice = 1.0 }) => {
   // Track the current step in the process
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedNetwork, setSelectedNetwork] = useState<'solana' | 'evm' | null>(null)
@@ -71,7 +72,6 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose, className 
     onSuccess: (data) => {
       setSubmissionSuccess(true)
       setSubmissionMessage(data.message)
-      // Keep modal open to show success message
       // Will reset and close when user clicks "Done"
     },
     onError: (error) => {
@@ -151,7 +151,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose, className 
           transactionProof,
           contactInfo: contactInfo || 'Will provide later', // Default value to satisfy validation
           hathorAddress,
-          price: 1.0, // Current fixed price
+          price: currentPrice || 1.0, // Use safe value
         })
       } catch (error) {
         console.error('Submission error:', error)
@@ -204,6 +204,9 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose, className 
     },
   })
 
+  // Add default in the error handler to avoid exceptions
+  const priceToDisplay = typeof currentPrice === 'number' ? currentPrice : 1.0
+
   return (
     <Dialog open={isOpen} onClose={onClose}>
       <Dialog.Content
@@ -215,7 +218,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose, className 
         <div className="mx-4 mb-2 p-1.5 bg-black/30 border border-yellow-500/20 rounded-md">
           <Typography variant="sm" className="flex justify-between text-neutral-300">
             <span>Current Price:</span>
-            <span className="text-yellow-400">$1.00 USD</span>
+            <span className="text-yellow-400">${priceToDisplay.toFixed(2)} USD</span>
           </Typography>
           <Typography variant="xs" className="text-neutral-400">
             1 DZD = 1 USD worth of DZR at TGE
@@ -356,9 +359,8 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose, className 
 
                   <div className="p-2 border rounded-lg bg-yellow-500/10 border-yellow-500/30">
                     <Typography variant="xs" className="text-neutral-300">
-                      • Min: 100 USDT (100 DZD)
-                      <br />
-                      • Max: 10,000 USDT (10,000 DZD)
+                      • Min: 100 USDT ({Math.floor(100 / priceToDisplay)} DZD)
+                      <br />• Max: 10,000 USDT ({Math.floor(10000 / priceToDisplay)} DZD)
                       <br />• DZD sent after confirmation
                     </Typography>
                   </div>

@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react'
 import { Button, Typography } from '@dozer/ui'
 import { motion } from 'framer-motion'
-import { UserGroupIcon } from '@heroicons/react/24/outline'
+import { UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline'
+import { TimeLeft, formatCountdown } from '../../utils/presalePrice'
 
 interface PresaleSidebarProps {
   totalDonations: number
@@ -10,6 +11,8 @@ interface PresaleSidebarProps {
   progress: number
   priceChangeTimeUnits: Array<{ label: string; value: number }>
   onBuyClick: () => void
+  currentPrice: number
+  nextPriceStep?: number
 }
 
 const EXPLORER_URL =
@@ -53,12 +56,17 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
   progress,
   priceChangeTimeUnits,
   onBuyClick,
+  currentPrice,
+  nextPriceStep,
 }) => {
   const { backersCount, isLoading } = useBackersCount()
 
   const handleBackersClick = () => {
     window.open(EXPLORER_URL, '_blank', 'noopener,noreferrer')
   }
+
+  // Check if all time units are zero
+  const isSaleEnded = priceChangeTimeUnits.every((unit) => unit.value === 0)
 
   return (
     <div className="flex flex-col w-full h-full bg-transparent">
