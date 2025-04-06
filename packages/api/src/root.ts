@@ -2,6 +2,7 @@ import { faucetRouter } from './router/faucet'
 import { headlessRouter } from './router/headless'
 import { NanoStateRouter } from './router/nanostates'
 import { networkRouter } from './router/network'
+import { newsletterRouter } from './router/newsletter'
 import { poolRouter } from './router/pool'
 import { presaleRouter } from './router/presale'
 import { pricesRouter } from './router/prices'
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   getNetwork: networkRouter,
   getFaucet: faucetRouter,
   getPresale: presaleRouter,
+  getNewsletter: newsletterRouter,
 })
 
 // export type definition of API

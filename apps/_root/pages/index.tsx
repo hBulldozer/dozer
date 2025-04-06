@@ -13,6 +13,7 @@ import { SpaceBackground, ShootingStars } from '../components/SpaceBackground'
 import { Container } from '@dozer/ui/container'
 import { DozerWithTextIcon, TwitterIcon, TelegramIcon, DiscordIcon, GithubIcon } from '@dozer/ui/icons'
 import { calculatePresalePrice, TimeLeft, PRESALE_CONFIG, calculateNextPriceStep } from '../utils/presalePrice'
+import { NewsletterForm } from '../components/NewsletterForm'
 
 interface StyledDialogButtonProps {
   children: React.ReactNode
@@ -372,22 +373,7 @@ const Home: React.FC = () => {
             </div>
             {/* Newsletter Section - Mobile */}
             <div className="mt-6 md:hidden">
-              <Typography variant="sm" weight={600} className="mb-2 text-yellow-400">
-                JOIN OUR NEWSLETTER
-              </Typography>
-              <div className="flex flex-col gap-2">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="px-3 py-2 text-sm text-white border rounded-lg bg-stone-900 border-yellow-500/30 focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
-                />
-                <button
-                  type="button"
-                  className="px-4 py-2 text-sm font-semibold text-black transition-opacity rounded-lg bg-gradient-to-r from-yellow-500 to-amber-600 hover:opacity-90"
-                >
-                  Subscribe
-                </button>
-              </div>
+              <NewsletterForm isMobile={true} />
             </div>
           </div>
 
@@ -463,22 +449,7 @@ const Home: React.FC = () => {
 
             {/* Newsletter - Desktop */}
             <div className="hidden md:flex flex-col gap-[10px]">
-              <Typography variant="xs" weight={500} className="text-sm text-yellow-400 sm:text-xs">
-                Newsletter
-              </Typography>
-              <div className="flex flex-col gap-2">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="px-3 py-2 text-sm text-white border rounded-lg bg-stone-900 border-yellow-500/30 focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
-                />
-                <button
-                  type="button"
-                  className="px-4 py-2 text-sm font-semibold text-black transition-opacity rounded-lg bg-gradient-to-r from-yellow-500 to-amber-600 hover:opacity-90"
-                >
-                  Subscribe
-                </button>
-              </div>
+              <NewsletterForm />
             </div>
           </div>
         </Container>

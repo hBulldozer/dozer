@@ -159,3 +159,13 @@ model Incentive {//
   @@index([rewardTokenId])
   @@index([chainId, rewardTokenId])
 }
+
+model Newsletter {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  submittedAt DateTime @default(now())
+  registered  Boolean  @default(false)
+
+  @@index([email])
+  @@index([registered])
+}
