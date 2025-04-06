@@ -6,6 +6,7 @@ import { api } from 'utils/api'
 import { Button, Typography, Widget } from '@dozer/ui'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
+import { useSDK } from '@metamask/sdk-react'
 
 export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
@@ -19,7 +20,8 @@ export const getStaticProps: GetStaticProps = async () => {
 }
 
 const ClaimsContent = () => {
-  const { connection, connectArbitrum, pendingClaims, loadPendingClaims, claimTokenFromArbitrum } = useBridge()
+  const { pendingClaims, loadPendingClaims, claimTokenFromArbitrum } = useBridge()
+  const { connected: metaMaskConnected, sdk } = useSDK()
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentClaim, setCurrentClaim] = useState<string | null>(null)
   const router = useRouter()
@@ -28,7 +30,7 @@ const ClaimsContent = () => {
     // Load claims only once when the component mounts and we're connected
     // Instead of auto-reloading, we'll rely on the manual refresh button
     const loadOnMount = async () => {
-      if (connection.arbitrumConnected) {
+      if (metaMaskConnected) {
         // Use silent mode for automatic loading
         await loadPendingClaims({ silent: true })
       }
@@ -37,11 +39,11 @@ const ClaimsContent = () => {
     // Flag to prevent multiple loads
     let isLoaded = false
 
-    if (!isLoaded && connection.arbitrumConnected) {
+    if (!isLoaded && metaMaskConnected) {
       isLoaded = true
       loadOnMount()
     }
-  }, [connection.arbitrumConnected]) // Remove loadPendingClaims from the dependency array
+  }, [metaMaskConnected, loadPendingClaims])
 
   const handleClaim = async (claim: any) => {
     if (isProcessing) return
@@ -72,7 +74,15 @@ const ClaimsContent = () => {
     router.push('/bridge')
   }
 
-  if (!connection.arbitrumConnected) {
+  const connectMetaMask = async () => {
+    try {
+      await sdk?.connect()
+    } catch (err) {
+      console.warn(`Failed to connect to MetaMask: `, err)
+    }
+  }
+
+  if (!metaMaskConnected) {
     return (
       <Widget id="claims" maxWidth={500}>
         <Widget.Content>
@@ -83,7 +93,7 @@ const ClaimsContent = () => {
             <Typography variant="sm" className="mb-6 text-stone-400">
               You need to connect your MetaMask wallet to view and process pending claims.
             </Typography>
-            <Button size="md" color="blue" onClick={connectArbitrum} className="mx-auto">
+            <Button size="md" color="blue" onClick={connectMetaMask} className="mx-auto">
               Connect MetaMask
             </Button>
           </div>

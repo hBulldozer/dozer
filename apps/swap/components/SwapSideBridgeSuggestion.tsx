@@ -4,6 +4,7 @@ import { useBridge } from '@dozer/higmi'
 import { Button } from '@dozer/ui'
 import { useRouter } from 'next/router'
 import { ArrowRightIcon } from '@heroicons/react/24/solid'
+import { useSDK } from '@metamask/sdk-react'
 
 interface SwapSideBridgeSuggestionProps {
   token: Token | undefined
@@ -12,7 +13,7 @@ interface SwapSideBridgeSuggestionProps {
 
 export const SwapSideBridgeSuggestion: FC<SwapSideBridgeSuggestionProps> = ({ token, hasLowBalance }) => {
   const router = useRouter()
-  const { connection } = useBridge()
+  const { connected: metaMaskConnected } = useSDK()
 
   // Only show for bridged tokens
   if (!token?.bridged) {
@@ -52,7 +53,7 @@ export const SwapSideBridgeSuggestion: FC<SwapSideBridgeSuggestionProps> = ({ to
             </div>
           </Button>
 
-          {!connection.arbitrumConnected && (
+          {!metaMaskConnected && (
             <p className="text-xs text-stone-400 text-center mt-1">Connect MetaMask on bridge page</p>
           )}
         </div>

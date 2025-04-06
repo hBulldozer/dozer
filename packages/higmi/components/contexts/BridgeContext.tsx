@@ -1,10 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react'
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 import Web3 from 'web3'
 import { useWalletConnectClient } from './index'
-import { useAccount, useNetwork } from '@dozer/zustand'
+import { useNetwork } from '@dozer/zustand'
 import BRIDGE_ABI from '../../abis/bridge.json'
 import ERC20_ABI from '../../abis/erc20.json'
-import EventEmitter from 'events'
 import config from '../../config/bridge'
 
 // Add ethereum to Window interface
@@ -48,34 +47,30 @@ function simplifyErrorMessage(message: string | undefined): string {
   return message
 }
 
-// Define interface for bridge connection state
-interface BridgeConnectionState {
-  arbitrumProvider: any | null
-  arbitrumConnected: boolean
-  arbitrumAddress: string | null
-  arbitrumChainId: number | null
-  arbitrumBalance: Record<string, number>
-  connecting: boolean
-  error: string | null
-}
-
 // Define interface for bridge context
 interface BridgeContextType {
-  connection: BridgeConnectionState
-  connectArbitrum: () => Promise<void>
-  disconnectArbitrum: () => void
-  loadBalances: (tokenAddresses: string[]) => Promise<void>
   bridgeTokenToHathor: (
     tokenAddress: string,
     amount: string,
-    hathorAddress: string
+    hathorAddress: string,
+    skipApproval?: boolean
   ) => Promise<
     | {
         status: 'approval_needed' | 'confirming' | 'confirmed'
         transactionHash?: string
       }
     | any
-  > // 'any' to maintain backward compatibility
+  >
+  loadBalances: (tokenAddresses: string[]) => Promise<Record<string, number> | undefined>
+  pendingClaims: any[]
+  loadPendingClaims: (options?: { silent?: boolean; force?: boolean }) => Promise<void>
+  claimTokenFromArbitrum: (
+    receiver: string,
+    amount: string,
+    transactionHash: string,
+    logIndex: number,
+    originChainId: number
+  ) => Promise<any>
 }
 
 // Create the context
@@ -91,226 +86,19 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const { accounts } = useWalletConnectClient()
   const hathorAddress = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const network = useNetwork((state) => state.network)
-
-  const [connection, setConnection] = useState<BridgeConnectionState>({
-    arbitrumProvider: null,
-    arbitrumConnected: false,
-    arbitrumAddress: null,
-    arbitrumChainId: null,
-    arbitrumBalance: {},
-    connecting: false,
-    error: null,
-  })
-
-  // Add a ref to track if cleanup is in progress
-  const cleanupInProgress = useRef(false)
-
-  // Use a single function for both setup and cleanup
-  const manageEventListeners = useCallback((action: 'setup' | 'cleanup', provider?: Web3) => {
-    if (action === 'cleanup' && (!provider || cleanupInProgress.current)) return
-
-    if (action === 'cleanup') {
-      cleanupInProgress.current = true
-    }
-
-    try {
-      if (provider && provider.currentProvider) {
-        if (action === 'setup' && provider.currentProvider instanceof EventEmitter) {
-          // Set max listeners higher to avoid warnings
-          provider.currentProvider.setMaxListeners(150)
-        } else if (action === 'cleanup') {
-          // For cleanup, we need to be careful with types
-          const ethProvider = provider.currentProvider
-          if (ethProvider && typeof ethProvider.removeListener === 'function') {
-            // Rather than using removeAllListeners, we're just setting maxListeners higher
-            // This avoids the need to remove specific listeners
-            if (ethProvider instanceof EventEmitter) {
-              ethProvider.setMaxListeners(150)
-            }
-          }
-        }
-      }
-    } catch (error) {
-      // Silent error handling
-    } finally {
-      if (action === 'cleanup') {
-        cleanupInProgress.current = false
-      }
-    }
-  }, [])
-
-  // Load connection state from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedConnection = localStorage.getItem('arbitrumConnection')
-      if (savedConnection) {
-        try {
-          const parsedConnection = JSON.parse(savedConnection)
-          // We don't restore the provider since it's not serializable
-          // Just try to auto-connect if we were previously connected
-          if (parsedConnection.arbitrumConnected && window.ethereum) {
-            // Try to silently reconnect
-            connectArbitrum().catch((error) => {
-              console.error('Failed to reconnect to Arbitrum:', error)
-              // Clear stored connection on failure
-              localStorage.removeItem('arbitrumConnection')
-            })
-          }
-        } catch (error) {
-          console.error('Error parsing saved connection state:', error)
-          localStorage.removeItem('arbitrumConnection')
-        }
-      }
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps - we want this to run only once on mount
-
-  // Save connection state to localStorage when it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined' && connection.arbitrumConnected) {
-      const connectionToSave = {
-        arbitrumConnected: connection.arbitrumConnected,
-        arbitrumAddress: connection.arbitrumAddress,
-        arbitrumChainId: connection.arbitrumChainId,
-      }
-      localStorage.setItem('arbitrumConnection', JSON.stringify(connectionToSave))
-    } else if (typeof window !== 'undefined' && !connection.arbitrumConnected) {
-      // Clear saved connection when disconnected
-      localStorage.removeItem('arbitrumConnection')
-    }
-  }, [connection.arbitrumConnected, connection.arbitrumAddress, connection.arbitrumChainId])
-
-  // Connect to Arbitrum via MetaMask
-  const connectArbitrum = async () => {
-    if (!window.ethereum) {
-      setConnection((prev) => ({
-        ...prev,
-        error: 'MetaMask not installed',
-      }))
-      return
-    }
-
-    try {
-      // Prevent additional connection attempts while already connecting
-      if (connection.connecting) return
-
-      setConnection((prev) => ({ ...prev, connecting: true, error: null }))
-
-      // Create new Web3 provider
-      const provider = new Web3(window.ethereum)
-
-      // Set up listeners - simplified approach
-      manageEventListeners('setup', provider)
-
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-
-      // Get chainId and ensure it's a number
-      const rawChainId = await provider.eth.getChainId()
-      const chainId =
-        typeof rawChainId === 'string'
-          ? parseInt(rawChainId, 10)
-          : typeof rawChainId === 'bigint'
-          ? Number(rawChainId)
-          : (rawChainId as number)
-
-      // Get target chain config based on testnet/mainnet mode
-      const targetChainId = config.ethereumConfig.networkId
-      const targetChainIdHex = config.ethereumConfig.chainIdHex
-      const chainName = config.ethereumConfig.name
-
-      // Check if connected to the correct network
-      if (chainId !== targetChainId) {
-        try {
-          // Try to switch to the correct network
-          await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: targetChainIdHex }],
-          })
-        } catch (switchError: any) {
-          // If the network is not added yet, prompt user to add it
-          if (switchError.code === 4902) {
-            try {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [
-                  {
-                    chainId: targetChainIdHex,
-                    chainName: chainName,
-                    nativeCurrency: {
-                      name: 'Ether',
-                      symbol: 'ETH',
-                      decimals: 18,
-                    },
-                    rpcUrls: [config.ethereumConfig.rpcUrl],
-                    blockExplorerUrls: [config.ethereumConfig.explorer],
-                  },
-                ],
-              })
-            } catch (addError) {
-              throw addError
-            }
-          } else {
-            throw switchError
-          }
-        }
-      }
-
-      setConnection({
-        arbitrumProvider: provider,
-        arbitrumConnected: true,
-        arbitrumAddress: accounts[0],
-        arbitrumChainId: chainId,
-        arbitrumBalance: {},
-        connecting: false,
-        error: null,
-      })
-    } catch (error: any) {
-      console.error('Error connecting to Arbitrum:', error)
-      setConnection((prev) => ({
-        ...prev,
-        connecting: false,
-        error: error.message || 'Failed to connect to Arbitrum',
-      }))
-      throw error // Re-throw to allow caller to handle
-    }
-  }
-
-  // Disconnect from Arbitrum
-  const disconnectArbitrum = () => {
-    console.log('Disconnect Arbitrum called')
-
-    // Clean up the provider before disconnecting - simplified approach
-    if (connection.arbitrumProvider) {
-      console.log('Cleaning up provider')
-      manageEventListeners('cleanup', connection.arbitrumProvider as Web3)
-    }
-
-    console.log('Setting connection state to disconnected')
-    setConnection({
-      arbitrumProvider: null,
-      arbitrumConnected: false,
-      arbitrumAddress: null,
-      arbitrumChainId: null,
-      arbitrumBalance: {},
-      connecting: false,
-      error: null,
-    })
-
-    // Clear stored connection
-    if (typeof window !== 'undefined') {
-      console.log('Removing from localStorage')
-      localStorage.removeItem('arbitrumConnection')
-    }
-
-    console.log('Disconnect complete')
-  }
+  const [pendingClaims, setPendingClaims] = useState<any[]>([])
 
   // Load token balances from Arbitrum
-  const loadBalances = useCallback(
-    async (tokenAddresses: string[]) => {
-      if (!connection.arbitrumConnected || !connection.arbitrumProvider || !connection.arbitrumAddress) return
+  const loadBalances = useCallback(async (tokenAddresses: string[]) => {
+    if (!window.ethereum) return {}
 
+    try {
+      const web3 = new Web3(window.ethereum)
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+      if (!accounts || accounts.length === 0) return {}
+
+      const arbitrumAddress = accounts[0]
       const balances: Record<string, number> = {}
-      const web3 = connection.arbitrumProvider as Web3
 
       for (const address of tokenAddresses) {
         try {
@@ -322,7 +110,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           const decimals = decimalsResult ? parseInt(String(decimalsResult)) : 18
 
           // Get token balance
-          const rawBalance = await tokenContract.methods.balanceOf(connection.arbitrumAddress).call()
+          const rawBalance = await tokenContract.methods.balanceOf(arbitrumAddress).call()
 
           // Convert raw balance to human-readable format based on decimals
           if (decimals === 18) {
@@ -338,22 +126,123 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
       }
 
-      setConnection((prev) => ({
-        ...prev,
-        arbitrumBalance: balances,
-      }))
+      return balances
+    } catch (error) {
+      console.error('Error loading balances:', error)
+      return {}
+    }
+  }, [])
+
+  // Load pending claims from the bridge
+  const loadPendingClaims = useCallback(async (options?: { silent?: boolean; force?: boolean }) => {
+    const silent = options?.silent || false
+    const force = options?.force || false
+
+    try {
+      if (!window.ethereum) return
+
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+      if (!accounts || accounts.length === 0) return
+
+      // Create a simple endpoint URL to get claims
+      const arbitrumAddress = accounts[0]
+      const federationUrl = `${ARBITRUM_FEDERATION_HOST}/claims/${arbitrumAddress}`
+
+      // Fetch claims from the federation server
+      const response = await fetch(federationUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch claims: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      setPendingClaims(data.claims || [])
+
+      if (!silent && data.claims && data.claims.length > 0) {
+        console.log(`Found ${data.claims.length} pending claims for ${arbitrumAddress}`)
+      } else if (!silent && force) {
+        console.log(`No pending claims found for ${arbitrumAddress}`)
+      }
+    } catch (error) {
+      console.error('Error loading pending claims:', error)
+      if (!silent) {
+        throw error
+      }
+    }
+  }, [])
+
+  // Claim tokens from Arbitrum bridge
+  const claimTokenFromArbitrum = useCallback(
+    async (receiver: string, amount: string, transactionHash: string, logIndex: number, originChainId: number) => {
+      if (!window.ethereum) {
+        throw new Error('MetaMask not installed')
+      }
+
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No wallet connected')
+        }
+
+        // Create federation claim endpoint URL
+        const federationUrl = `${ARBITRUM_FEDERATION_HOST}/claim`
+
+        // Create POST request to claim tokens
+        const response = await fetch(federationUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            receiver,
+            amount,
+            transactionHash,
+            logIndex,
+            originChainId,
+            arbitrumAddress: accounts[0],
+          }),
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(`Failed to claim tokens: ${errorText}`)
+        }
+
+        const result = await response.json()
+        console.log('Claim result:', result)
+
+        return result
+      } catch (error) {
+        console.error('Error claiming tokens:', error)
+        throw error
+      }
     },
-    [connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress]
+    []
   )
 
   // Bridge a token from Arbitrum to Hathor
   const bridgeTokenToHathor = useCallback(
-    async (tokenAddress: string, amount: string, hathorAddress: string) => {
-      if (!connection.arbitrumConnected || !connection.arbitrumProvider || !connection.arbitrumAddress) {
-        throw new Error('Not connected to Arbitrum')
+    async (tokenAddress: string, amount: string, hathorAddress: string, skipApproval = false) => {
+      if (!window.ethereum) {
+        throw new Error('MetaMask not installed')
       }
 
-      const web3 = connection.arbitrumProvider as Web3
+      // Verify we have an account connected
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No wallet connected')
+      }
+
+      const arbitrumAddress = accounts[0]
+      const web3 = new Web3(window.ethereum)
+
+      console.log(
+        'Starting bridge process with token:',
+        tokenAddress,
+        'amount:',
+        amount,
+        'hathor address:',
+        hathorAddress
+      )
 
       // In testnet mode, always use the SLT7 token address for bridging
       // This ensures we use a token that actually exists on Sepolia
@@ -368,6 +257,9 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const bridgeContract = new web3.eth.Contract(BRIDGE_ABI as any, BRIDGE_CONTRACT_ADDRESS)
       const tokenContract = new web3.eth.Contract(ERC20_ABI as any, actualTokenAddress)
 
+      console.log('Using bridge contract at address:', BRIDGE_CONTRACT_ADDRESS)
+      console.log('Using token contract at address:', actualTokenAddress)
+
       // Get token decimals (fallback to 18 if call fails)
       let decimals: number = 18
       try {
@@ -380,6 +272,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             decimals = parseInt(String(decimalResult))
           }
         }
+        console.log('Token decimals retrieved:', decimals)
       } catch (error) {
         console.warn('Could not get token decimals, using default 18', error)
       }
@@ -413,473 +306,200 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         throw new Error(`Failed to convert amount: ${error}`)
       }
 
-      // Check token allowance
-      let allowance: string = '0'
+      // First check token balance to ensure user has enough tokens
       try {
-        // Make sure tokenAddress is not null
-        if (!actualTokenAddress) {
-          throw new Error('Token address is required')
-        }
+        const balanceWei = await tokenContract.methods.balanceOf(arbitrumAddress).call()
+        console.log('Current token balance:', balanceWei)
 
-        const allowanceResult = await tokenContract.methods
-          .allowance(connection.arbitrumAddress, BRIDGE_CONTRACT_ADDRESS)
-          .call()
-        if (allowanceResult) {
-          allowance = String(allowanceResult)
+        const balanceWeiString = String(balanceWei || '0')
+        if (BigInt(balanceWeiString) < BigInt(amountInWei)) {
+          throw new Error('Insufficient token balance. Please check your balance and try again.')
         }
-      } catch (error) {
-        console.error('Error getting allowance:', error)
-        throw new Error(`Failed to check token allowance: ${error}`)
+      } catch (error: any) {
+        console.error('Error checking token balance:', error)
+        if (error.message && error.message.includes('Insufficient')) {
+          throw error
+        }
+        // For other errors, continue with the transaction
       }
 
-      // If allowance is not enough, approve the token spending
-      if (BigInt(allowance) < BigInt(amountInWei)) {
+      // Check token allowance only if not skipping approval
+      if (!skipApproval) {
+        let allowance: string = '0'
         try {
-          // Ensure we have an address
-          if (!connection.arbitrumAddress) {
-            throw new Error('No wallet address connected')
+          // Make sure tokenAddress is not null
+          if (!actualTokenAddress) {
+            throw new Error('Token address is required')
           }
 
-          // Return approval status to update UI button
-          return { status: 'approval_needed' }
-
-          // Use the exact amount for approval, not a very large value
-          // Calculate gas price - use 30% more than current to ensure faster processing
-          const gasPrice = await web3.eth.getGasPrice()
-          const gasPriceAdjusted = Math.floor(Number(gasPrice) * 1.3) // 30% more than current gas price
-          const gasPriceHex = web3.utils.toHex(gasPriceAdjusted)
-
-          console.log(`Requesting approval for ${humanReadableAmount} tokens with gas price ${gasPriceHex}`)
-
-          // Create the transaction object first
-          const approveMethod = tokenContract.methods.approve(BRIDGE_CONTRACT_ADDRESS, amountInWei)
-          const approveGasEstimate = await approveMethod
-            .estimateGas({
-              from: connection.arbitrumAddress as string,
-            })
-            .catch((err) => {
-              console.warn('Gas estimation failed for approval, using fallback:', err)
-              return 100000 // Fallback gas estimate if estimation fails
-            })
-
-          // Create a variable to track if the transaction was canceled by user
-          let transactionCanceled = false
-
-          // Request user to confirm the transaction in MetaMask
-          // Use send with a promise to get the transaction hash immediately
-          const approvalTx = await new Promise((resolve, reject) => {
-            let hasTimedOut = false
-            let hasResolved = false
-
-            // Set a timeout for the transaction (2 minutes)
-            const timeoutId = setTimeout(() => {
-              hasTimedOut = true
-              if (!hasResolved) {
-                reject(new Error('Transaction timeout: The approval request timed out. Please try again.'))
-              }
-            }, 120000) // 2 minutes timeout
-
-            approveMethod
-              .send({
-                from: connection.arbitrumAddress as string,
-                gasPrice: gasPriceHex,
-                gas: String(approveGasEstimate), // Convert to string for Web3
-              })
-              .on('transactionHash', (hash: string) => {
-                console.log('Approval transaction hash:', hash)
-                // Clear the timeout once we have a hash
-                clearTimeout(timeoutId)
-
-                // Return the hash immediately instead of waiting for confirmation
-                hasResolved = true
-                resolve({ transactionHash: hash, status: true })
-              })
-              .on('receipt', (receipt: any) => {
-                console.log('Approval transaction receipt:', receipt)
-                hasResolved = true
-                resolve({ ...receipt, status: receipt.status })
-              })
-              .on('error', (error: any) => {
-                console.error('Approval transaction error:', error)
-                // Clear the timeout
-                clearTimeout(timeoutId)
-                hasResolved = true
-
-                // Check if user rejected the transaction
-                if (
-                  error.code === 4001 ||
-                  error.message.includes('User denied transaction') ||
-                  error.message.includes('User rejected') ||
-                  error.message.includes('MetaMask Tx Signature') ||
-                  error.message.includes('cancel') ||
-                  error.message.includes('denied') ||
-                  error.message.includes('rejected')
-                ) {
-                  transactionCanceled = true
-                  reject(new Error('Transaction rejected by user'))
-                } else if (hasTimedOut) {
-                  reject(new Error('Transaction timeout: The approval request timed out. Please try again.'))
-                } else {
-                  reject(error)
-                }
-              })
-          })
-
-          // Check if transaction was canceled by user
-          if (transactionCanceled) {
-            throw new Error('Transaction cancelled: You rejected the approval request')
+          const allowanceResult = await tokenContract.methods.allowance(arbitrumAddress, BRIDGE_CONTRACT_ADDRESS).call()
+          if (allowanceResult) {
+            allowance = String(allowanceResult)
           }
+          console.log('Current allowance:', allowance, 'Required amount:', amountInWei)
+        } catch (error) {
+          console.error('Error getting allowance:', error)
+          throw new Error(`Failed to check token allowance: ${error}`)
+        }
 
-          console.log('Approval transaction completed:', approvalTx)
-        } catch (error: any) {
-          console.error('Approval failed:', error)
+        // If allowance is not enough, execute approval
+        if (BigInt(allowance) < BigInt(amountInWei)) {
+          try {
+            console.log(`Executing approval for ${humanReadableAmount} tokens`)
 
-          // Handle specific error cases
-          if (
-            error.message.includes('User denied') ||
-            error.message.includes('User rejected') ||
-            error.code === 4001 ||
-            error.message.includes('MetaMask Tx Signature') ||
-            error.message.includes('cancel') ||
-            error.message.includes('denied') ||
-            error.message.includes('rejected')
-          ) {
-            throw new Error('Transaction cancelled: You rejected the approval request')
-          } else if (error.message.includes('Transaction was not mined within') || error.message.includes('timeout')) {
-            throw new Error(
-              'Transaction timed out: The approval transaction is taking longer than expected. Please check your MetaMask and try again.'
-            )
-          } else {
-            throw new Error(`Failed to approve token: ${error.message}`)
+            // Use a higher amount for approval to avoid needing to approve again - use the exact token's decimal system
+            let approvalAmount: string
+            if (decimals === 18) {
+              approvalAmount = web3.utils.toWei('1000000000', 'ether') // Very large amount for 18 decimals
+            } else {
+              // For non-standard decimals, create a suitable large approval
+              const factor = Math.pow(10, decimals)
+              approvalAmount = (1000000000 * factor).toString()
+            }
+
+            console.log('Approval amount:', approvalAmount)
+
+            // Create approve method
+            const approveMethod = tokenContract.methods.approve(BRIDGE_CONTRACT_ADDRESS, approvalAmount)
+
+            // Estimate gas for approval
+            const approveGasEstimate = await approveMethod
+              .estimateGas({
+                from: arbitrumAddress,
+              })
+              .catch((err) => {
+                console.warn('Gas estimation failed for approval, using fallback:', err)
+                return 100000 // Fallback gas estimate
+              })
+
+            console.log('Estimated gas for approval:', approveGasEstimate)
+
+            // Calculate gas price
+            const gasPrice = await web3.eth.getGasPrice()
+            const gasPriceAdjusted = Math.floor(Number(gasPrice) * 1.1) // 10% more than current
+            console.log('Gas price for approval:', gasPriceAdjusted)
+
+            // Execute the approval transaction
+            console.log('Sending approval transaction...')
+            const approveTx = await approveMethod.send({
+              from: arbitrumAddress,
+              gas: String(Math.floor(Number(approveGasEstimate) * 1.2)),
+              gasPrice: String(gasPriceAdjusted),
+            })
+
+            console.log('Approval transaction completed:', approveTx.transactionHash)
+
+            // Verify the approval succeeded by checking allowance again
+            const newAllowance = await tokenContract.methods.allowance(arbitrumAddress, BRIDGE_CONTRACT_ADDRESS).call()
+            console.log('New allowance after approval:', newAllowance)
+
+            if (BigInt(String(newAllowance)) < BigInt(amountInWei)) {
+              throw new Error('Approval transaction completed but allowance is still insufficient')
+            }
+
+            // After successful approval, try bridging
+            return bridgeTokenToHathor(tokenAddress, amount, hathorAddress, true)
+          } catch (error) {
+            console.error('Error during token approval:', error)
+            throw error
           }
         }
       }
 
+      // If we reach here, either the allowance was already sufficient or approval succeeded
       try {
-        // Calculate gas price - use higher gas price for faster processing
-        const gasPrice = await web3.eth.getGasPrice()
-        const gasPriceAdjusted = Math.floor(Number(gasPrice) * 1.3) // 30% more than current gas price
-        const gasPriceHex = web3.utils.toHex(gasPriceAdjusted)
-
-        console.log(`Sending bridge transaction with amount ${humanReadableAmount} to address ${hathorAddress}`)
-
-        // Validate the tokenAddress and connection.arbitrumAddress
-        if (!actualTokenAddress) {
-          throw new Error('Token address is required')
+        // Bridge the token
+        // Use the exact amount and hathor address
+        const bridgeParams = {
+          token: actualTokenAddress,
+          amountWei: amountInWei,
+          hathorAddress: hathorAddress,
         }
 
-        if (!connection.arbitrumAddress) {
-          throw new Error('No wallet address connected')
+        console.log('Executing bridge transaction with params:', bridgeParams)
+
+        // Verify the token contract exists and has proper balance to transfer
+        try {
+          const balance = await tokenContract.methods.balanceOf(arbitrumAddress).call()
+          console.log('Current balance before bridge:', balance)
+          if (BigInt(String(balance)) < BigInt(bridgeParams.amountWei)) {
+            throw new Error(
+              `Insufficient token balance. You have ${balance} but trying to send ${bridgeParams.amountWei}`
+            )
+          }
+
+          // Check allowance one more time to be sure
+          const currentAllowance = await tokenContract.methods
+            .allowance(arbitrumAddress, BRIDGE_CONTRACT_ADDRESS)
+            .call()
+          console.log('Current allowance before bridge:', currentAllowance)
+          if (BigInt(String(currentAllowance)) < BigInt(bridgeParams.amountWei)) {
+            throw new Error('Insufficient allowance. Please try again or increase token approval.')
+          }
+        } catch (error) {
+          console.error('Error in pre-bridge verification:', error)
+          throw error
         }
 
-        // Create the bridge method first with updated parameter names
+        // Create method call parameters with correct order and types
         const bridgeMethod = bridgeContract.methods.receiveTokensTo(
           config.hathorConfig.networkId,
-          actualTokenAddress, // tokenToUse parameter (previously tokenAddress)
-          hathorAddress, // hathorTo parameter (previously to)
-          amountInWei
+          bridgeParams.token,
+          bridgeParams.hathorAddress,
+          bridgeParams.amountWei
         )
 
-        // Estimate gas for the bridge transaction
-        const bridgeGasEstimate = await bridgeMethod
+        // Log the method being called for debugging
+        console.log('Bridge method:', bridgeMethod)
+        console.log('Using networkId:', config.hathorConfig.networkId)
+
+        // Estimate gas
+        console.log('Estimating gas for bridge operation...')
+        const gasEstimate = await bridgeMethod
           .estimateGas({
-            from: connection.arbitrumAddress as string,
+            from: arbitrumAddress,
           })
           .catch((err) => {
-            console.warn('Gas estimation failed for bridge, using fallback:', err)
-            return 600000 // Fallback gas estimate if estimation fails
+            console.error('Gas estimation failed:', err)
+            throw new Error(`Gas estimation failed: ${err.message}`)
           })
 
-        // Create a variable to track if the transaction was canceled by user
-        let transactionCanceled = false
-        let txHash = ''
+        console.log('Estimated gas for bridge:', gasEstimate)
 
-        // Send the bridge transaction and return the hash immediately
-        const receipt = await new Promise((resolve, reject) => {
-          let hasTimedOut = false
-          let hasResolved = false
-          let receiptReceived = false
+        // Calculate gas price
+        const gasPrice = await web3.eth.getGasPrice()
+        const gasPriceAdjusted = Math.floor(Number(gasPrice) * 1.1) // 10% more than current
+        console.log('Gas price for bridge:', gasPriceAdjusted)
 
-          // Set a timeout for the transaction (3 minutes)
-          const timeoutId = setTimeout(() => {
-            hasTimedOut = true
-            if (!hasResolved) {
-              reject(new Error('Transaction timeout: The bridge request timed out. Please try again.'))
-            }
-          }, 180000) // 3 minutes timeout
-
-          bridgeMethod
-            .send({
-              from: connection.arbitrumAddress as string,
-              gasPrice: gasPriceHex,
-              gas: String(bridgeGasEstimate), // Convert to string for Web3
-            })
-            .on('transactionHash', (hash: string) => {
-              console.log('Bridge transaction hash:', hash)
-              txHash = hash
-
-              // Store the hash but don't resolve yet - we'll track progress in the UI
-              // Just return a status update with confirming status
-              resolve({ transactionHash: hash, status: 'confirming' })
-
-              // Clear the timeout since we've started tracking the transaction
-              clearTimeout(timeoutId)
-            })
-            .on('receipt', (receipt: any) => {
-              console.log('Bridge transaction receipt:', receipt)
-              receiptReceived = true
-
-              // Check if the transaction was successful using type-safe comparison
-              let isSuccess = false
-
-              // Handle all possible status types safely
-              const status = receipt.status
-              if (typeof status === 'boolean') {
-                isSuccess = status === true
-              } else if (typeof status === 'string') {
-                isSuccess = status === '0x1'
-              } else if (typeof status === 'number') {
-                isSuccess = status === 1
-              } else if (typeof status === 'bigint') {
-                // Handle bigint case by converting to string first
-                isSuccess = status.toString() === '1'
-              }
-
-              if (isSuccess) {
-                // Log success for debugging
-                console.log('Transaction confirmed successful')
-
-                // Create a new event to notify frontend
-                if (window && window.dispatchEvent) {
-                  const event = new CustomEvent('bridgeTransactionUpdate', {
-                    detail: {
-                      status: 'confirmed',
-                      transactionHash: txHash || receipt.transactionHash,
-                      success: true,
-                    },
-                  })
-                  window.dispatchEvent(event)
-                }
-
-                // Don't need to resolve again - already resolved with 'confirming'
-              } else {
-                // Transaction reverted
-                console.error('Transaction reverted. Receipt:', receipt)
-
-                // Create a new event to notify frontend
-                if (window && window.dispatchEvent) {
-                  const event = new CustomEvent('bridgeTransactionUpdate', {
-                    detail: {
-                      status: 'failed',
-                      transactionHash: txHash || receipt.transactionHash,
-                      error: simplifyErrorMessage('Transaction reverted on blockchain'),
-                      receipt: receipt,
-                    },
-                  })
-                  window.dispatchEvent(event)
-                }
-              }
-            })
-            .on('error', (error: any) => {
-              console.error('Bridge transaction error:', error)
-
-              // Clear the timeout
-              clearTimeout(timeoutId)
-
-              // Don't set hasResolved if we already received a receipt
-              // This handles the case where we get both an error and a receipt
-              if (!receiptReceived) {
-                hasResolved = true
-              }
-
-              // Check if we have a transaction hash but still got an error
-              // This usually means the transaction was mined but reverted
-              if (txHash && !receiptReceived) {
-                // Try to manually get the receipt
-                web3.eth.getTransactionReceipt(txHash).then((manualReceipt) => {
-                  if (manualReceipt) {
-                    console.log('Manually retrieved receipt for reverted transaction:', manualReceipt)
-
-                    // Fix type comparison - handle status type safely
-                    let isFailed = false
-
-                    // Handle all possible status types safely
-                    const status = manualReceipt.status
-                    if (typeof status === 'boolean') {
-                      isFailed = status === false
-                    } else if (typeof status === 'string') {
-                      isFailed = status === '0x0'
-                    } else if (typeof status === 'number') {
-                      isFailed = status === 0
-                    } else if (typeof status === 'bigint') {
-                      // Handle bigint case by converting to string first
-                      isFailed = status.toString() === '0'
-                    }
-
-                    if (isFailed) {
-                      // Create error event to notify frontend
-                      if (window && window.dispatchEvent) {
-                        const event = new CustomEvent('bridgeTransactionUpdate', {
-                          detail: {
-                            status: 'failed',
-                            transactionHash: txHash,
-                            error: simplifyErrorMessage('Transaction failed on blockchain'),
-                            receipt: manualReceipt,
-                          },
-                        })
-                        window.dispatchEvent(event)
-                      }
-                    } else {
-                      // Create success event to notify frontend
-                      if (window && window.dispatchEvent) {
-                        const event = new CustomEvent('bridgeTransactionUpdate', {
-                          detail: {
-                            status: 'confirmed',
-                            transactionHash: txHash,
-                            success: true,
-                          },
-                        })
-                        window.dispatchEvent(event)
-                      }
-                    }
-                  } else {
-                    // Dispatch generic error event if we couldn't get a receipt
-                    if (window && window.dispatchEvent) {
-                      const event = new CustomEvent('bridgeTransactionUpdate', {
-                        detail: {
-                          status: 'failed',
-                          transactionHash: txHash,
-                          error: simplifyErrorMessage('Transaction failed on blockchain'),
-                        },
-                      })
-                      window.dispatchEvent(event)
-                    }
-                  }
-                })
-              } else {
-                // User rejection or other error before getting a transaction hash
-                // Create a new event to notify frontend
-                if (window && window.dispatchEvent) {
-                  const event = new CustomEvent('bridgeTransactionUpdate', {
-                    detail: {
-                      status: 'failed',
-                      error: simplifyErrorMessage(error.message),
-                      code: error.code,
-                    },
-                  })
-                  window.dispatchEvent(event)
-                }
-              }
-            })
+        // Execute the transaction
+        console.log('Sending bridge transaction...')
+        const bridgeTx = await bridgeMethod.send({
+          from: arbitrumAddress,
+          gas: String(Math.floor(Number(gasEstimate) * 1.2)), // Convert to string
+          gasPrice: String(gasPriceAdjusted), // Convert to string
         })
 
-        // Check if transaction was canceled by user
-        if (transactionCanceled) {
-          throw new Error('Transaction cancelled: You rejected the bridge request')
-        }
+        console.log('Bridge transaction completed:', bridgeTx.transactionHash)
 
-        // Return the more detailed receipt information
-        return receipt
-      } catch (error: any) {
-        console.error('Bridge failed:', error)
-
-        // Handle specific error cases
-        if (
-          error.message.includes('User denied') ||
-          error.message.includes('User rejected') ||
-          error.code === 4001 ||
-          error.message.includes('MetaMask Tx Signature') ||
-          error.message.includes('cancel') ||
-          error.message.includes('denied') ||
-          error.message.includes('rejected')
-        ) {
-          throw new Error('Transaction cancelled: You rejected the bridge request')
-        } else if (error.message.includes('Transaction was not mined within') || error.message.includes('timeout')) {
-          throw new Error(
-            'Transaction timed out: The bridge transaction is taking longer than expected. Please try again.'
-          )
-        } else if (
-          error.message.includes('Transaction reverted') ||
-          error.message.includes('Transaction failed on blockchain') ||
-          error.message.includes('execution reverted') ||
-          error.message.includes('contract rejected')
-        ) {
-          // Get any additional details from the error object
-          const receiptDetails = error.receipt ? `\nTransaction Hash: ${error.receipt.transactionHash}` : ''
-          throw new Error(
-            `Transaction reverted: The bridge operation failed on the blockchain. This may be due to incomplete bridge configuration or contract restrictions.${receiptDetails}`
-          )
-        } else {
-          throw new Error(`Failed to bridge token: ${error.message}`)
+        // Return transaction hash for tracking
+        return {
+          status: 'confirming' as const,
+          transactionHash: bridgeTx.transactionHash,
         }
+      } catch (error) {
+        console.error('Error during bridge operation:', error)
+        throw error
       }
     },
-    [connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress]
+    []
   )
 
-  // Add a cleanup function in the component to ensure proper cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (connection.arbitrumProvider) {
-        manageEventListeners('cleanup', connection.arbitrumProvider as Web3)
-      }
-    }
-  }, [connection.arbitrumProvider, manageEventListeners])
-
-  // Use a single effect to handle listening for account and chain changes
-  // This effect should only run when the provider actually changes, not on every render
-  useEffect(() => {
-    if (!window.ethereum || !connection.arbitrumProvider) return
-
-    // Get a stable reference to the provider
-    const provider = connection.arbitrumProvider
-
-    // Store handler references so we can remove the same handlers later
-    const handleAccountsChanged = (accounts: string[]) => {
-      if (accounts && accounts.length > 0) {
-        setConnection((prev) => ({
-          ...prev,
-          arbitrumAddress: accounts[0],
-        }))
-      } else {
-        // If accounts array is empty, the user has disconnected their wallet
-        disconnectArbitrum()
-      }
-    }
-
-    const handleChainChanged = (chainId: string) => {
-      // chainId is in hex, convert to number
-      const numericChainId = parseInt(chainId, 16)
-      setConnection((prev) => ({
-        ...prev,
-        arbitrumChainId: numericChainId,
-      }))
-    }
-
-    // We only add window.ethereum listeners here, not provider listeners
-    if (window.ethereum) {
-      window.ethereum.removeListener('accountsChanged', handleAccountsChanged) // Remove first to prevent duplicates
-      window.ethereum.removeListener('chainChanged', handleChainChanged) // Remove first to prevent duplicates
-
-      window.ethereum.on('accountsChanged', handleAccountsChanged)
-      window.ethereum.on('chainChanged', handleChainChanged)
-    }
-
-    // Return cleanup function
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
-        window.ethereum.removeListener('chainChanged', handleChainChanged)
-      }
-    }
-  }, [connection.arbitrumProvider, disconnectArbitrum])
-
   const contextValue = {
-    connection,
-    connectArbitrum,
-    disconnectArbitrum,
-    loadBalances,
     bridgeTokenToHathor,
+    loadBalances,
+    pendingClaims,
+    loadPendingClaims,
+    claimTokenFromArbitrum,
   }
 
   return <BridgeContext.Provider value={contextValue}>{children}</BridgeContext.Provider>

@@ -12,6 +12,8 @@ import { CurrencyInput } from '../CurrencyInput'
 import { TradeType } from '../utils/TradeType'
 import { nanoid } from 'nanoid'
 import bridgeConfig from '@dozer/higmi/config/bridge'
+import { MetaMaskConnect } from '../MetaMaskConnect'
+import { useSDK } from '@metamask/sdk-react'
 
 interface BridgeProps {
   initialToken?: Token
@@ -22,6 +24,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   const { data: tokens } = api.getTokens.all.useQuery()
   const { data: prices } = api.getPrices.all.useQuery()
   const { accounts } = useWalletConnectClient() // Get accounts from WalletConnect
+  const { connected: metaMaskConnected, account: metaMaskAccount } = useSDK()
 
   const [selectedToken, setSelectedToken] = useState<Token | undefined>(initialToken)
   const [amount, setAmount] = useState<string>('')
@@ -34,7 +37,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   // Use a ref to track mounted state to avoid state updates after unmount
   const isMounted = useRef(true)
 
-  const { connection, connectArbitrum, disconnectArbitrum, bridgeTokenToHathor } = useBridge()
+  const { bridgeTokenToHathor } = useBridge()
 
   // Get hathorAddress from WalletConnect accounts
   const hathorAddress = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
@@ -166,54 +169,6 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     }
   }, [initialToken])
 
-  // Check if MetaMask is already connected when the component mounts
-  useEffect(() => {
-    const checkMetaMaskConnection = async () => {
-      if (window.ethereum) {
-        try {
-          // Check if MetaMask is already connected - will fail if not authorized
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' })
-          if (accounts && accounts.length > 0) {
-            // User has already authorized the app, connect silently
-            await connectArbitrum()
-          }
-        } catch (error) {
-          console.error('Error checking MetaMask connection:', error)
-          // No need to show error - just means we need explicit connect
-        }
-      }
-    }
-
-    checkMetaMaskConnection()
-  }, [connectArbitrum])
-
-  const handleMetaMaskConnect = async () => {
-    setErrorMessage('')
-    try {
-      await connectArbitrum()
-
-      // Show success toast
-      createSuccessToast({
-        type: 'approval',
-        summary: {
-          pending: 'Connecting to MetaMask',
-          completed: 'Connected to MetaMask',
-          failed: 'Failed to connect to MetaMask',
-        },
-        txHash: nanoid(),
-        groupTimestamp: Date.now(),
-        timestamp: Date.now(),
-      })
-    } catch (error: any) {
-      console.error('Failed to connect MetaMask:', error)
-      const errorMsg = error.message || 'Failed to connect to MetaMask'
-      setErrorMessage(errorMsg)
-
-      // Show error toast
-      createErrorToast(errorMsg, false)
-    }
-  }
-
   const handleBridge = async () => {
     // Reset state
     setErrorMessage('')
@@ -221,7 +176,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     setTransactionHash('')
     setTxStatus('processing')
 
-    if (!selectedToken || !amount || !connection.arbitrumAddress) {
+    if (!selectedToken || !amount || !metaMaskAccount) {
       const msg = 'Please connect your wallet, select a token, and enter an amount'
       setErrorMessage(msg)
       createErrorToast(msg, false)
@@ -319,6 +274,20 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         if (isMounted.current) {
           // Don't clear processing state, but update status message
           setTxStatus('approval')
+
+          // Show a toast to let the user know we're asking for approval
+          createInfoToast({
+            type: 'send',
+            summary: {
+              pending: '',
+              completed: '',
+              failed: '',
+              info: 'Please approve token access in MetaMask to continue with the bridge operation.',
+            },
+            txHash: nanoid(),
+            groupTimestamp: Date.now(),
+            timestamp: Date.now(),
+          })
         }
         return // Exit early without clearing processing flag
       } else if (result.status === 'confirming') {
@@ -367,94 +336,55 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         })
       }
     } catch (error: any) {
-      clearTimeout(safetyTimeout)
       console.error('Bridge operation failed:', error)
+      clearTimeout(safetyTimeout)
 
-      // Only update state if the component is still mounted
       if (isMounted.current) {
-        // Reset the processing state
         setIsProcessing(false)
-        setTxStatus('idle')
+        let errorMsg = error.message || 'Failed to bridge tokens'
 
-        // Set appropriate error message
-        let errorMsg = error.message || 'Bridge operation failed'
-        let isCancelled = false
-
-        // Check for various cancellation patterns
-        if (
-          error.code === 4001 ||
-          errorMsg.includes('Transaction cancelled') ||
-          errorMsg.includes('User denied') ||
-          errorMsg.includes('User rejected') ||
-          errorMsg.includes('MetaMask Tx Signature')
-        ) {
-          errorMsg = 'Transaction cancelled by user.'
-          isCancelled = true
-        } else if (errorMsg.includes('Transaction timed out') || errorMsg.includes('timeout')) {
-          errorMsg = 'Transaction timed out. Please try again.'
-        } else if (errorMsg.includes('Transaction pending')) {
-          errorMsg = 'Transaction still processing. Check MetaMask.'
-        } else if (errorMsg.includes('Transaction reverted') || errorMsg.includes('has been reverted by the EVM')) {
-          // Format error message to avoid line wrap problems
-          errorMsg = 'Transaction failed on blockchain.'
-        } else if (errorMsg.length > 100) {
-          // Truncate very long messages
+        // Keep message short and readable for the UI
+        if (errorMsg.length > 100) {
           errorMsg = errorMsg.substring(0, 100) + '...'
         }
 
         setErrorMessage(errorMsg)
 
-        // Show the appropriate toast notification
-        if (isCancelled) {
-          createInfoToast({
-            type: 'send',
-            summary: {
-              pending: '',
-              completed: '',
-              failed: '',
-              info: 'Transaction cancelled by user',
-            },
-            txHash: nanoid(),
-            groupTimestamp: Date.now(),
-            timestamp: Date.now(),
-          })
-        } else {
-          createErrorToast(errorMsg, false)
-        }
+        // Show error toast
+        createErrorToast(errorMsg, false)
       }
     }
   }
 
-  // Function to handle user cancellation in the UI
   const handleCancel = () => {
     setIsProcessing(false)
     setTxStatus('idle')
-    const msg = 'Transaction cancelled by user'
-    setErrorMessage(msg)
 
-    // Show info toast
-    createInfoToast({
-      type: 'send',
-      summary: {
-        pending: '',
-        completed: '',
-        failed: '',
-        info: 'Transaction cancelled by user',
-      },
-      txHash: nanoid(),
-      groupTimestamp: Date.now(),
-      timestamp: Date.now(),
-    })
+    if (txStatus === 'confirming') {
+      // If we're in a confirming state, show a warning
+      createInfoToast({
+        type: 'send',
+        summary: {
+          pending: '',
+          completed: '',
+          failed: '',
+          info: 'Closed transaction status view. Your transaction may still be processing.',
+        },
+        txHash: nanoid(),
+        groupTimestamp: Date.now(),
+        timestamp: Date.now(),
+      })
+    }
   }
 
-  // Specific handler for disconnect to prevent event propagation issues
-  const handleDisconnect = (e: React.MouseEvent) => {
-    // Stop event propagation to prevent any parent handlers from firing
-    e.stopPropagation()
-    e.preventDefault()
+  const handleMetaMaskConnect = (accounts: string[]) => {
+    console.log('MetaMask connected:', accounts[0])
+    // We don't need to do anything here as the SDK handles connection state
+  }
 
-    console.log('Disconnect handler called')
-    disconnectArbitrum()
+  const handleMetaMaskDisconnect = () => {
+    console.log('MetaMask disconnected')
+    // We don't need to do anything here as the SDK handles connection state
   }
 
   return (
@@ -467,21 +397,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
               <p className="text-gray-400 text-xs mt-1">Transfer tokens from Arbitrum to Hathor Network</p>
             </div>
             <div className="flex items-center">
-              {connection.arbitrumConnected && connection.arbitrumAddress && (
-                <div className="flex flex-col items-end">
-                  <button
-                    className="flex items-center bg-green-800/30 px-3 py-1.5 rounded-md border border-green-700 hover:bg-green-700/30 cursor-pointer transition-colors w-full"
-                    onClick={handleDisconnect}
-                    title="Click to disconnect"
-                    type="button"
-                  >
-                    <div className="w-2 h-2 rounded-full bg-green-400 mr-2"></div>
-                    <span className="text-xs text-green-300 font-medium truncate max-w-[100px]">
-                      {connection.arbitrumAddress}
-                    </span>
-                  </button>
-                  <span className="text-xs text-gray-500 mt-1">Connected to Arbitrum</span>
-                </div>
+              {metaMaskConnected && (
+                <MetaMaskConnect onConnect={handleMetaMaskConnect} onDisconnect={handleMetaMaskDisconnect} />
               )}
             </div>
           </div>
@@ -536,81 +453,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           </div>
 
           <div className="mt-5">
-            {!connection.arbitrumConnected ? (
-              <div className="flex flex-col space-y-3">
-                <Button
-                  fullWidth
-                  size="lg"
-                  color="blue"
-                  onClick={handleMetaMaskConnect}
-                  className="flex items-center justify-center"
-                >
-                  <div className="w-5 h-5 mr-2 flex-shrink-0">
-                    <svg viewBox="0 0 35 33" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M32.9582 1L19.8241 10.7183L22.2667 5.09968L32.9582 1Z"
-                        fill="#E2761B"
-                        stroke="#E2761B"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M2.03311 1L15.052 10.8031L12.7335 5.09968L2.03311 1Z"
-                        fill="#E4761B"
-                        stroke="#E4761B"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M28.2369 23.5334L24.7456 28.8961L32.2456 30.9307L34.4064 23.6607L28.2369 23.5334Z"
-                        fill="#E4761B"
-                        stroke="#E4761B"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M0.603516 23.6607L2.75325 30.9307L10.2532 28.8961L6.76198 23.5334L0.603516 23.6607Z"
-                        fill="#E4761B"
-                        stroke="#E4761B"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M9.84198 14.5149L7.73853 17.6837L15.179 18.0229L14.9244 10.0149L9.84198 14.5149Z"
-                        fill="#E4761B"
-                        stroke="#E4761B"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M25.1493 14.5149L20.0034 9.93065L19.8213 18.0229L27.2513 17.6837L25.1493 14.5149Z"
-                        fill="#E4761B"
-                        stroke="#E4761B"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M10.2534 28.8961L14.7578 26.7192L10.8598 23.7137L10.2534 28.8961Z"
-                        fill="#E4761B"
-                        stroke="#E4761B"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M20.2334 26.7192L24.7471 28.8961L24.1303 23.7137L20.2334 26.7192Z"
-                        fill="#E4761B"
-                        stroke="#E4761B"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <span>Connect MetaMask</span>
-                </Button>
-                <p className="text-center text-xs text-gray-400">
-                  Connect your Arbitrum wallet to start bridging tokens
-                </p>
-              </div>
+            {!metaMaskConnected ? (
+              <MetaMaskConnect onConnect={handleMetaMaskConnect} onDisconnect={handleMetaMaskDisconnect} />
             ) : (
               <Button
                 fullWidth

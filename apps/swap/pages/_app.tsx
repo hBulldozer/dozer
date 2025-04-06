@@ -10,6 +10,7 @@ import { Header } from '../components'
 import Head from 'next/head'
 import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 import { config } from '@hathor/wallet-lib'
+import MetaMaskProvider from '../components/MetaMaskProvider'
 
 config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
 config.setNetwork('testnet')
@@ -37,10 +38,12 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
           <ClientContextProvider>
             <JsonRpcContextProvider>
               <BridgeProvider>
-                <Header />
-                <Component {...pageProps} />
-                <App.Footer />
-                <ToastContainer className="mt-[50px]" />
+                <MetaMaskProvider>
+                  <Header />
+                  <Component {...pageProps} />
+                  <App.Footer />
+                  <ToastContainer className="mt-[50px]" />
+                </MetaMaskProvider>
               </BridgeProvider>
             </JsonRpcContextProvider>
           </ClientContextProvider>
