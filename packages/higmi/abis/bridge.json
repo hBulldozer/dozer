@@ -114,12 +114,12 @@
       },
       {
         "internalType": "address",
-        "name": "tokenAddress",
+        "name": "tokenToUse",
         "type": "address"
       },
       {
         "internalType": "string",
-        "name": "to",
+        "name": "hathorTo",
         "type": "string"
       },
       {

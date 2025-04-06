@@ -11,6 +11,7 @@ import bridgeIcon from '../../public/bridge-icon.jpeg'
 import { CurrencyInput } from '../CurrencyInput'
 import { TradeType } from '../utils/TradeType'
 import { nanoid } from 'nanoid'
+import bridgeConfig from '@dozer/higmi/config/bridge'
 
 interface BridgeProps {
   initialToken?: Token
@@ -28,12 +29,12 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [successMessage, setSuccessMessage] = useState<string>('')
   const [transactionHash, setTransactionHash] = useState<string>('')
+  const [txStatus, setTxStatus] = useState<string>('idle')
 
   // Use a ref to track mounted state to avoid state updates after unmount
   const isMounted = useRef(true)
 
-  const { connection, connectArbitrum, disconnectArbitrum, bridgeTokenToHathor, pendingClaims, loadPendingClaims } =
-    useBridge()
+  const { connection, connectArbitrum, disconnectArbitrum, bridgeTokenToHathor } = useBridge()
 
   // Get hathorAddress from WalletConnect accounts
   const hathorAddress = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
@@ -52,13 +53,67 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         })
     : []
 
-  const navigateToClaims = () => {
-    window.location.href = '/bridge/claims'
-  }
-
   useEffect(() => {
     // Set the mounted ref to true
     isMounted.current = true
+
+    // Add event listener for bridge transaction updates
+    const handleBridgeTransactionUpdate = (event: CustomEvent) => {
+      if (!isMounted.current) return
+
+      const detail = event.detail
+      console.log('Bridge transaction update received:', detail)
+
+      if (detail.status === 'confirmed' && detail.success) {
+        // Handle successful transaction confirmation
+        setTransactionHash(detail.transactionHash || '')
+        const msg = 'Transaction confirmed! Your tokens will be available in Hathor soon.'
+        setSuccessMessage(msg)
+        setIsProcessing(false)
+        setTxStatus('idle')
+
+        // Show success toast
+        createSuccessToast({
+          type: 'send',
+          summary: {
+            pending: 'Bridging tokens',
+            completed: 'Transaction confirmed! Your tokens will be available in Hathor soon.',
+            failed: 'Failed to bridge tokens',
+          },
+          txHash: detail.transactionHash || nanoid(),
+          groupTimestamp: Date.now(),
+          timestamp: Date.now(),
+          href: detail.transactionHash ? `https://arbiscan.io/tx/${detail.transactionHash}` : undefined,
+        })
+      } else if (detail.status === 'failed') {
+        // Handle failed transaction
+        setIsProcessing(false)
+        setTxStatus('idle')
+
+        // Format error message to prevent line wrapping issues
+        let errorMsg = detail.error || 'Transaction failed'
+        if (errorMsg.includes('Transaction reverted')) {
+          errorMsg = 'Transaction failed on blockchain.'
+        } else if (errorMsg.includes('Transaction has been reverted by the EVM')) {
+          errorMsg = 'Transaction failed on blockchain.'
+        } else if (errorMsg.length > 100) {
+          // Truncate long messages
+          errorMsg = errorMsg.substring(0, 100) + '...'
+        }
+
+        setErrorMessage(errorMsg)
+
+        // Show error toast
+        createErrorToast(errorMsg, false)
+
+        // If we have a transaction hash, also store it
+        if (detail.transactionHash) {
+          setTransactionHash(detail.transactionHash)
+        }
+      }
+    }
+
+    window.addEventListener('bridgeTransactionUpdate', handleBridgeTransactionUpdate as EventListener)
 
     // Add global error event listener to catch unhandled promise rejections
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
@@ -97,10 +152,11 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
 
-    // Clean up function - remove event listener and set mounted ref to false
+    // Clean up function - remove event listeners and set mounted ref to false
     return () => {
       isMounted.current = false
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+      window.removeEventListener('bridgeTransactionUpdate', handleBridgeTransactionUpdate as EventListener)
     }
   }, [])
 
@@ -109,24 +165,6 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       setSelectedToken(initialToken)
     }
   }, [initialToken])
-
-  // Remove the automatic loading of pending claims
-  // Instead, we'll load them once on mount if connected and provide a refresh button
-  useEffect(() => {
-    // We'll use a ref to ensure we only load once on mount
-    const hasLoaded = { current: false }
-
-    if (connection.arbitrumConnected && !hasLoaded.current) {
-      hasLoaded.current = true
-      console.log('Loading claims once on mount')
-      // Use silent mode to prevent console logs on initial load
-      loadPendingClaims({ silent: true })
-    }
-
-    return () => {
-      // Clean up function
-    }
-  }, []) // Empty dependency array means this runs once on mount
 
   // Check if MetaMask is already connected when the component mounts
   useEffect(() => {
@@ -181,6 +219,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     setErrorMessage('')
     setSuccessMessage('')
     setTransactionHash('')
+    setTxStatus('processing')
 
     if (!selectedToken || !amount || !connection.arbitrumAddress) {
       const msg = 'Please connect your wallet, select a token, and enter an amount'
@@ -226,7 +265,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
     try {
       // Bridge from Arbitrum to Hathor - using hathorAddress from WalletConnect
-      const hash = await bridgeTokenToHathor(selectedToken.originalAddress || '', amount, hathorAddress).catch(
+      const result = await bridgeTokenToHathor(selectedToken.originalAddress || '', amount, hathorAddress).catch(
         (error) => {
           clearTimeout(safetyTimeout)
 
@@ -271,10 +310,45 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
       clearTimeout(safetyTimeout)
 
-      // If we get here, the transaction was submitted successfully
+      // Check the transaction status and hash from the result
+      const txHash = result.transactionHash || ''
+
+      // Handle different transaction statuses
+      if (result.status === 'approval_needed') {
+        // Handle approval needed case - let the UI continue
+        if (isMounted.current) {
+          // Don't clear processing state, but update status message
+          setTxStatus('approval')
+        }
+        return // Exit early without clearing processing flag
+      } else if (result.status === 'confirming') {
+        // Transaction submitted, waiting for confirmation
+        if (isMounted.current) {
+          setTransactionHash(txHash)
+          setTxStatus('confirming')
+
+          // Show a waiting toast
+          createInfoToast({
+            type: 'send',
+            summary: {
+              pending: 'Transaction submitted',
+              completed: '',
+              failed: '',
+              info: 'Waiting for network confirmation...',
+            },
+            txHash: txHash || nanoid(),
+            groupTimestamp: Date.now(),
+            timestamp: Date.now(),
+            href: txHash ? `https://arbiscan.io/tx/${txHash}` : undefined,
+          })
+        }
+        return // Exit without clearing processing state
+      }
+
+      // If we get here, the transaction was confirmed successfully
       if (isMounted.current) {
-        setTransactionHash(hash)
-        const msg = 'Transaction submitted! Your tokens will be available in Hathor soon.'
+        setTransactionHash(txHash)
+        const msg = 'Transaction confirmed! Your tokens will be available in Hathor soon.'
         setSuccessMessage(msg)
         setIsProcessing(false)
 
@@ -283,13 +357,13 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           type: 'send',
           summary: {
             pending: 'Bridging tokens',
-            completed: 'Transaction submitted! Your tokens will be available in Hathor soon.',
+            completed: 'Transaction confirmed! Your tokens will be available in Hathor soon.',
             failed: 'Failed to bridge tokens',
           },
-          txHash: hash || nanoid(),
+          txHash: txHash || nanoid(),
           groupTimestamp: Date.now(),
           timestamp: Date.now(),
-          href: hash ? `https://arbiscan.io/tx/${hash}` : undefined,
+          href: txHash ? `https://arbiscan.io/tx/${txHash}` : undefined,
         })
       }
     } catch (error: any) {
@@ -300,6 +374,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       if (isMounted.current) {
         // Reset the processing state
         setIsProcessing(false)
+        setTxStatus('idle')
 
         // Set appropriate error message
         let errorMsg = error.message || 'Bridge operation failed'
@@ -313,12 +388,18 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           errorMsg.includes('User rejected') ||
           errorMsg.includes('MetaMask Tx Signature')
         ) {
-          errorMsg = 'Transaction cancelled: You rejected the request in MetaMask'
+          errorMsg = 'Transaction cancelled by user.'
           isCancelled = true
         } else if (errorMsg.includes('Transaction timed out') || errorMsg.includes('timeout')) {
-          errorMsg = 'Transaction timed out: The transaction is taking too long. Please try again.'
+          errorMsg = 'Transaction timed out. Please try again.'
         } else if (errorMsg.includes('Transaction pending')) {
-          errorMsg = 'Your transaction is still processing. Please check MetaMask for status.'
+          errorMsg = 'Transaction still processing. Check MetaMask.'
+        } else if (errorMsg.includes('Transaction reverted') || errorMsg.includes('has been reverted by the EVM')) {
+          // Format error message to avoid line wrap problems
+          errorMsg = 'Transaction failed on blockchain.'
+        } else if (errorMsg.length > 100) {
+          // Truncate very long messages
+          errorMsg = errorMsg.substring(0, 100) + '...'
         }
 
         setErrorMessage(errorMsg)
@@ -347,6 +428,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   // Function to handle user cancellation in the UI
   const handleCancel = () => {
     setIsProcessing(false)
+    setTxStatus('idle')
     const msg = 'Transaction cancelled by user'
     setErrorMessage(msg)
 
@@ -365,72 +447,42 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     })
   }
 
-  // New function to manually refresh pending claims
-  const handleRefreshClaims = () => {
-    if (connection.arbitrumConnected) {
-      // When manually refreshing, we want to see logs
-      loadPendingClaims({ force: true })
+  // Specific handler for disconnect to prevent event propagation issues
+  const handleDisconnect = (e: React.MouseEvent) => {
+    // Stop event propagation to prevent any parent handlers from firing
+    e.stopPropagation()
+    e.preventDefault()
 
-      // Optional: show a toast notification
-      createInfoToast({
-        type: 'approval',
-        summary: {
-          pending: '',
-          completed: '',
-          failed: '',
-          info: 'Refreshed pending claims',
-        },
-        txHash: nanoid(),
-        groupTimestamp: Date.now(),
-        timestamp: Date.now(),
-      })
-    }
+    console.log('Disconnect handler called')
+    disconnectArbitrum()
   }
 
   return (
-    <Widget id="bridge" maxWidth={400}>
+    <Widget id="bridge" maxWidth={400} className="shadow-2xl shadow-blue-900/20">
       <Widget.Content>
         <div className="px-4 py-4 font-medium border-b border-stone-700">
           <div className="flex items-center justify-between">
-            <span className="text-xl font-semibold">Arbitrum → Hathor</span>
+            <div>
+              <h2 className="text-xl font-semibold">Arbitrum to Hathor Bridge</h2>
+              <p className="text-gray-400 text-xs mt-1">Transfer tokens from Arbitrum to Hathor Network</p>
+            </div>
             <div className="flex items-center">
               {connection.arbitrumConnected && connection.arbitrumAddress && (
-                <div
-                  className="flex items-center mr-3 text-xs bg-stone-800 px-3 py-1.5 rounded-md border border-stone-700 hover:bg-stone-700 cursor-pointer transition-colors"
-                  onClick={() => {
-                    if (window.confirm('Disconnect from MetaMask?')) {
-                      disconnectArbitrum()
-                      createInfoToast({
-                        type: 'approval',
-                        summary: {
-                          pending: '',
-                          completed: '',
-                          failed: '',
-                          info: 'Disconnected from MetaMask',
-                        },
-                        txHash: nanoid(),
-                        groupTimestamp: Date.now(),
-                        timestamp: Date.now(),
-                      })
-                    }
-                  }}
-                  title="Click to disconnect"
-                >
-                  <div className="flex flex-col items-start">
-                    <div className="flex items-center">
-                      <WalletIcon className="w-3 h-3 mr-1 text-green-500" />
-                      <span className="font-medium text-green-400">Connected</span>
-                    </div>
-                    <div className="flex items-center mt-0.5">
-                      <span className="text-stone-400">
-                        {connection.arbitrumAddress.substring(0, 6)}...
-                        {connection.arbitrumAddress.substring(connection.arbitrumAddress.length - 4)}
-                      </span>
-                    </div>
-                  </div>
+                <div className="flex flex-col items-end">
+                  <button
+                    className="flex items-center bg-green-800/30 px-3 py-1.5 rounded-md border border-green-700 hover:bg-green-700/30 cursor-pointer transition-colors w-full"
+                    onClick={handleDisconnect}
+                    title="Click to disconnect"
+                    type="button"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-green-400 mr-2"></div>
+                    <span className="text-xs text-green-300 font-medium truncate max-w-[100px]">
+                      {connection.arbitrumAddress}
+                    </span>
+                  </button>
+                  <span className="text-xs text-gray-500 mt-1">Connected to Arbitrum</span>
                 </div>
               )}
-              <Image src={bridgeIcon} width={28} height={28} alt="Bridge" className="object-cover rounded-full" />
             </div>
           </div>
         </div>
@@ -485,9 +537,80 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
           <div className="mt-5">
             {!connection.arbitrumConnected ? (
-              <Button fullWidth size="lg" color="blue" onClick={handleMetaMaskConnect}>
-                Connect MetaMask
-              </Button>
+              <div className="flex flex-col space-y-3">
+                <Button
+                  fullWidth
+                  size="lg"
+                  color="blue"
+                  onClick={handleMetaMaskConnect}
+                  className="flex items-center justify-center"
+                >
+                  <div className="w-5 h-5 mr-2 flex-shrink-0">
+                    <svg viewBox="0 0 35 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M32.9582 1L19.8241 10.7183L22.2667 5.09968L32.9582 1Z"
+                        fill="#E2761B"
+                        stroke="#E2761B"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M2.03311 1L15.052 10.8031L12.7335 5.09968L2.03311 1Z"
+                        fill="#E4761B"
+                        stroke="#E4761B"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M28.2369 23.5334L24.7456 28.8961L32.2456 30.9307L34.4064 23.6607L28.2369 23.5334Z"
+                        fill="#E4761B"
+                        stroke="#E4761B"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M0.603516 23.6607L2.75325 30.9307L10.2532 28.8961L6.76198 23.5334L0.603516 23.6607Z"
+                        fill="#E4761B"
+                        stroke="#E4761B"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M9.84198 14.5149L7.73853 17.6837L15.179 18.0229L14.9244 10.0149L9.84198 14.5149Z"
+                        fill="#E4761B"
+                        stroke="#E4761B"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M25.1493 14.5149L20.0034 9.93065L19.8213 18.0229L27.2513 17.6837L25.1493 14.5149Z"
+                        fill="#E4761B"
+                        stroke="#E4761B"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M10.2534 28.8961L14.7578 26.7192L10.8598 23.7137L10.2534 28.8961Z"
+                        fill="#E4761B"
+                        stroke="#E4761B"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M20.2334 26.7192L24.7471 28.8961L24.1303 23.7137L20.2334 26.7192Z"
+                        fill="#E4761B"
+                        stroke="#E4761B"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <span>Connect MetaMask</span>
+                </Button>
+                <p className="text-center text-xs text-gray-400">
+                  Connect your Arbitrum wallet to start bridging tokens
+                </p>
+              </div>
             ) : (
               <Button
                 fullWidth
@@ -496,46 +619,25 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                 onClick={handleBridge}
                 disabled={!selectedToken || !amount || isProcessing || !hathorAddress}
               >
-                {isProcessing ? 'Processing...' : 'Bridge Token'}
+                {isProcessing
+                  ? txStatus === 'processing'
+                    ? 'Processing...'
+                    : txStatus === 'approval'
+                    ? 'Waiting for Approval...'
+                    : txStatus === 'confirming'
+                    ? 'Confirming Transaction...'
+                    : 'Processing...'
+                  : 'Bridge Token'}
               </Button>
             )}
 
             {/* Add a cancel button when processing */}
             {isProcessing && (
               <Button fullWidth size="md" color="red" className="mt-3" onClick={handleCancel}>
-                Cancel
+                {txStatus === 'confirming' ? 'Close' : 'Cancel'}
               </Button>
             )}
           </div>
-
-          {pendingClaims.length > 0 && (
-            <div className="p-3 mt-6 border border-yellow-600 rounded-lg bg-yellow-900/20">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-bold text-yellow-500">Pending Claims</h3>
-                <button onClick={handleRefreshClaims} className="text-xs text-yellow-400 hover:text-yellow-300">
-                  Refresh
-                </button>
-              </div>
-              <p className="mb-3 text-xs text-yellow-300">
-                You have {pendingClaims.length} pending claim(s) available.
-              </p>
-              <Button fullWidth size="md" color="yellow" onClick={navigateToClaims}>
-                View Claims
-              </Button>
-            </div>
-          )}
-
-          {pendingClaims.length === 0 && connection.arbitrumConnected && (
-            <div className="p-4 mt-6 border rounded-lg border-stone-600 bg-stone-800/50">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-stone-400">No Pending Claims</h3>
-                <button onClick={handleRefreshClaims} className="text-xs text-blue-400 hover:text-blue-300">
-                  Check for Claims
-                </button>
-              </div>
-              <p className="mb-0 text-xs text-stone-500">You don't have any pending claims right now.</p>
-            </div>
-          )}
         </div>
       </Widget.Content>
     </Widget>

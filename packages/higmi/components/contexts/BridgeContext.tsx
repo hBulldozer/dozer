@@ -5,12 +5,47 @@ import { useAccount, useNetwork } from '@dozer/zustand'
 import BRIDGE_ABI from '../../abis/bridge.json'
 import ERC20_ABI from '../../abis/erc20.json'
 import EventEmitter from 'events'
+import config from '../../config/bridge'
 
 // Add ethereum to Window interface
 declare global {
   interface Window {
     ethereum: any
   }
+}
+
+// Helper function to simplify error messages for UI display
+function simplifyErrorMessage(message: string | undefined): string {
+  if (!message) return 'Transaction failed'
+
+  // Common error patterns and their simplified versions
+  if (
+    message.includes('User denied') ||
+    message.includes('User rejected') ||
+    message.includes('cancelled') ||
+    message.includes('canceled')
+  ) {
+    return 'Transaction cancelled by user'
+  }
+
+  if (
+    message.includes('Transaction reverted') ||
+    message.includes('execution reverted') ||
+    message.includes('has been reverted by the EVM')
+  ) {
+    return 'Transaction failed on blockchain'
+  }
+
+  if (message.includes('timeout') || message.includes('timed out')) {
+    return 'Transaction timed out'
+  }
+
+  // Keep message short
+  if (message.length > 100) {
+    return message.substring(0, 100) + '...'
+  }
+
+  return message
 }
 
 // Define interface for bridge connection state
@@ -30,24 +65,26 @@ interface BridgeContextType {
   connectArbitrum: () => Promise<void>
   disconnectArbitrum: () => void
   loadBalances: (tokenAddresses: string[]) => Promise<void>
-  bridgeTokenToHathor: (tokenAddress: string, amount: string, hathorAddress: string) => Promise<string>
-  claimTokenFromArbitrum: (
-    to: string,
+  bridgeTokenToHathor: (
+    tokenAddress: string,
     amount: string,
-    blockHash: string,
-    logIndex: string,
-    originChainId: string
-  ) => Promise<string>
-  pendingClaims: any[]
-  loadPendingClaims: (options?: { force?: boolean; silent?: boolean }) => Promise<any[] | void>
+    hathorAddress: string
+  ) => Promise<
+    | {
+        status: 'approval_needed' | 'confirming' | 'confirmed'
+        transactionHash?: string
+      }
+    | any
+  > // 'any' to maintain backward compatibility
 }
 
 // Create the context
 const BridgeContext = createContext<BridgeContextType | undefined>(undefined)
 
-// Bridge contract addresses - these should come from a config
-const BRIDGE_CONTRACT_ADDRESS = '0xB85573bb0D1403Ed56dDF12540cc57662dfB3351'
-const HATHOR_FEDERATION_ADDRESS = '0xC2d2318dEa546D995189f14a0F9d39fB1f56D966'
+// Bridge contract addresses from centralized config
+const BRIDGE_CONTRACT_ADDRESS = config.ethereumConfig.bridge
+const HATHOR_FEDERATION_ADDRESS = config.hathorConfig.federation
+const ARBITRUM_FEDERATION_HOST = config.arbitrumFederationHost
 
 // Create a provider component
 export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -64,8 +101,6 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     connecting: false,
     error: null,
   })
-
-  const [pendingClaims, setPendingClaims] = useState<any[]>([])
 
   // Add a ref to track if cleanup is in progress
   const cleanupInProgress = useRef(false)
@@ -177,31 +212,36 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           ? Number(rawChainId)
           : (rawChainId as number)
 
-      // Check if connected to Arbitrum (chainId 42161)
-      if (chainId !== 42161) {
+      // Get target chain config based on testnet/mainnet mode
+      const targetChainId = config.ethereumConfig.networkId
+      const targetChainIdHex = config.ethereumConfig.chainIdHex
+      const chainName = config.ethereumConfig.name
+
+      // Check if connected to the correct network
+      if (chainId !== targetChainId) {
         try {
-          // Try to switch to Arbitrum
+          // Try to switch to the correct network
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '0xa4b1' }], // 42161 in hex
+            params: [{ chainId: targetChainIdHex }],
           })
         } catch (switchError: any) {
-          // If Arbitrum network is not added yet, prompt user to add it
+          // If the network is not added yet, prompt user to add it
           if (switchError.code === 4902) {
             try {
               await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
                 params: [
                   {
-                    chainId: '0xa4b1',
-                    chainName: 'Arbitrum One',
+                    chainId: targetChainIdHex,
+                    chainName: chainName,
                     nativeCurrency: {
                       name: 'Ether',
                       symbol: 'ETH',
                       decimals: 18,
                     },
-                    rpcUrls: ['https://arb1.arbitrum.io/rpc'],
-                    blockExplorerUrls: ['https://arbiscan.io/'],
+                    rpcUrls: [config.ethereumConfig.rpcUrl],
+                    blockExplorerUrls: [config.ethereumConfig.explorer],
                   },
                 ],
               })
@@ -236,11 +276,15 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Disconnect from Arbitrum
   const disconnectArbitrum = () => {
+    console.log('Disconnect Arbitrum called')
+
     // Clean up the provider before disconnecting - simplified approach
     if (connection.arbitrumProvider) {
+      console.log('Cleaning up provider')
       manageEventListeners('cleanup', connection.arbitrumProvider as Web3)
     }
 
+    console.log('Setting connection state to disconnected')
     setConnection({
       arbitrumProvider: null,
       arbitrumConnected: false,
@@ -253,8 +297,11 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     // Clear stored connection
     if (typeof window !== 'undefined') {
+      console.log('Removing from localStorage')
       localStorage.removeItem('arbitrumConnection')
     }
+
+    console.log('Disconnect complete')
   }
 
   // Load token balances from Arbitrum
@@ -308,9 +355,18 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       const web3 = connection.arbitrumProvider as Web3
 
+      // In testnet mode, always use the SLT7 token address for bridging
+      // This ensures we use a token that actually exists on Sepolia
+      let actualTokenAddress = tokenAddress
+      if (config.isTestnet) {
+        // Use the SLT7 token address for Sepolia
+        actualTokenAddress = '0x97118caaE1F773a84462490Dd01FE7a3e7C4cdCd' // SLT7 Sepolia address
+        console.log('Using SLT7 token for testnet bridge operation instead of:', tokenAddress)
+      }
+
       // Create contract instances
       const bridgeContract = new web3.eth.Contract(BRIDGE_ABI as any, BRIDGE_CONTRACT_ADDRESS)
-      const tokenContract = new web3.eth.Contract(ERC20_ABI as any, tokenAddress)
+      const tokenContract = new web3.eth.Contract(ERC20_ABI as any, actualTokenAddress)
 
       // Get token decimals (fallback to 18 if call fails)
       let decimals: number = 18
@@ -361,7 +417,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       let allowance: string = '0'
       try {
         // Make sure tokenAddress is not null
-        if (!tokenAddress) {
+        if (!actualTokenAddress) {
           throw new Error('Token address is required')
         }
 
@@ -383,6 +439,9 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           if (!connection.arbitrumAddress) {
             throw new Error('No wallet address connected')
           }
+
+          // Return approval status to update UI button
+          return { status: 'approval_needed' }
 
           // Use the exact amount for approval, not a very large value
           // Calculate gas price - use 30% more than current to ensure faster processing
@@ -505,7 +564,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         console.log(`Sending bridge transaction with amount ${humanReadableAmount} to address ${hathorAddress}`)
 
         // Validate the tokenAddress and connection.arbitrumAddress
-        if (!tokenAddress) {
+        if (!actualTokenAddress) {
           throw new Error('Token address is required')
         }
 
@@ -513,8 +572,13 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           throw new Error('No wallet address connected')
         }
 
-        // Create the bridge method first
-        const bridgeMethod = bridgeContract.methods.receiveTokensTo(31, tokenAddress, hathorAddress, amountInWei)
+        // Create the bridge method first with updated parameter names
+        const bridgeMethod = bridgeContract.methods.receiveTokensTo(
+          config.hathorConfig.networkId,
+          actualTokenAddress, // tokenToUse parameter (previously tokenAddress)
+          hathorAddress, // hathorTo parameter (previously to)
+          amountInWei
+        )
 
         // Estimate gas for the bridge transaction
         const bridgeGasEstimate = await bridgeMethod
@@ -528,11 +592,13 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         // Create a variable to track if the transaction was canceled by user
         let transactionCanceled = false
+        let txHash = ''
 
         // Send the bridge transaction and return the hash immediately
         const receipt = await new Promise((resolve, reject) => {
           let hasTimedOut = false
           let hasResolved = false
+          let receiptReceived = false
 
           // Set a timeout for the transaction (3 minutes)
           const timeoutId = setTimeout(() => {
@@ -550,40 +616,159 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             })
             .on('transactionHash', (hash: string) => {
               console.log('Bridge transaction hash:', hash)
-              // Clear the timeout once we have a hash
-              clearTimeout(timeoutId)
+              txHash = hash
 
-              // Return the hash immediately instead of waiting for confirmation
-              hasResolved = true
-              resolve({ transactionHash: hash, status: true })
+              // Store the hash but don't resolve yet - we'll track progress in the UI
+              // Just return a status update with confirming status
+              resolve({ transactionHash: hash, status: 'confirming' })
+
+              // Clear the timeout since we've started tracking the transaction
+              clearTimeout(timeoutId)
             })
             .on('receipt', (receipt: any) => {
               console.log('Bridge transaction receipt:', receipt)
-              hasResolved = true
-              resolve({ ...receipt, status: receipt.status })
+              receiptReceived = true
+
+              // Check if the transaction was successful using type-safe comparison
+              let isSuccess = false
+
+              // Handle all possible status types safely
+              const status = receipt.status
+              if (typeof status === 'boolean') {
+                isSuccess = status === true
+              } else if (typeof status === 'string') {
+                isSuccess = status === '0x1'
+              } else if (typeof status === 'number') {
+                isSuccess = status === 1
+              } else if (typeof status === 'bigint') {
+                // Handle bigint case by converting to string first
+                isSuccess = status.toString() === '1'
+              }
+
+              if (isSuccess) {
+                // Log success for debugging
+                console.log('Transaction confirmed successful')
+
+                // Create a new event to notify frontend
+                if (window && window.dispatchEvent) {
+                  const event = new CustomEvent('bridgeTransactionUpdate', {
+                    detail: {
+                      status: 'confirmed',
+                      transactionHash: txHash || receipt.transactionHash,
+                      success: true,
+                    },
+                  })
+                  window.dispatchEvent(event)
+                }
+
+                // Don't need to resolve again - already resolved with 'confirming'
+              } else {
+                // Transaction reverted
+                console.error('Transaction reverted. Receipt:', receipt)
+
+                // Create a new event to notify frontend
+                if (window && window.dispatchEvent) {
+                  const event = new CustomEvent('bridgeTransactionUpdate', {
+                    detail: {
+                      status: 'failed',
+                      transactionHash: txHash || receipt.transactionHash,
+                      error: simplifyErrorMessage('Transaction reverted on blockchain'),
+                      receipt: receipt,
+                    },
+                  })
+                  window.dispatchEvent(event)
+                }
+              }
             })
             .on('error', (error: any) => {
               console.error('Bridge transaction error:', error)
+
               // Clear the timeout
               clearTimeout(timeoutId)
-              hasResolved = true
 
-              // Check if user rejected the transaction
-              if (
-                error.code === 4001 ||
-                error.message.includes('User denied transaction') ||
-                error.message.includes('User rejected') ||
-                error.message.includes('MetaMask Tx Signature') ||
-                error.message.includes('cancel') ||
-                error.message.includes('denied') ||
-                error.message.includes('rejected')
-              ) {
-                transactionCanceled = true
-                reject(new Error('Transaction rejected by user'))
-              } else if (hasTimedOut) {
-                reject(new Error('Transaction timeout: The bridge request timed out. Please try again.'))
+              // Don't set hasResolved if we already received a receipt
+              // This handles the case where we get both an error and a receipt
+              if (!receiptReceived) {
+                hasResolved = true
+              }
+
+              // Check if we have a transaction hash but still got an error
+              // This usually means the transaction was mined but reverted
+              if (txHash && !receiptReceived) {
+                // Try to manually get the receipt
+                web3.eth.getTransactionReceipt(txHash).then((manualReceipt) => {
+                  if (manualReceipt) {
+                    console.log('Manually retrieved receipt for reverted transaction:', manualReceipt)
+
+                    // Fix type comparison - handle status type safely
+                    let isFailed = false
+
+                    // Handle all possible status types safely
+                    const status = manualReceipt.status
+                    if (typeof status === 'boolean') {
+                      isFailed = status === false
+                    } else if (typeof status === 'string') {
+                      isFailed = status === '0x0'
+                    } else if (typeof status === 'number') {
+                      isFailed = status === 0
+                    } else if (typeof status === 'bigint') {
+                      // Handle bigint case by converting to string first
+                      isFailed = status.toString() === '0'
+                    }
+
+                    if (isFailed) {
+                      // Create error event to notify frontend
+                      if (window && window.dispatchEvent) {
+                        const event = new CustomEvent('bridgeTransactionUpdate', {
+                          detail: {
+                            status: 'failed',
+                            transactionHash: txHash,
+                            error: simplifyErrorMessage('Transaction failed on blockchain'),
+                            receipt: manualReceipt,
+                          },
+                        })
+                        window.dispatchEvent(event)
+                      }
+                    } else {
+                      // Create success event to notify frontend
+                      if (window && window.dispatchEvent) {
+                        const event = new CustomEvent('bridgeTransactionUpdate', {
+                          detail: {
+                            status: 'confirmed',
+                            transactionHash: txHash,
+                            success: true,
+                          },
+                        })
+                        window.dispatchEvent(event)
+                      }
+                    }
+                  } else {
+                    // Dispatch generic error event if we couldn't get a receipt
+                    if (window && window.dispatchEvent) {
+                      const event = new CustomEvent('bridgeTransactionUpdate', {
+                        detail: {
+                          status: 'failed',
+                          transactionHash: txHash,
+                          error: simplifyErrorMessage('Transaction failed on blockchain'),
+                        },
+                      })
+                      window.dispatchEvent(event)
+                    }
+                  }
+                })
               } else {
-                reject(error)
+                // User rejection or other error before getting a transaction hash
+                // Create a new event to notify frontend
+                if (window && window.dispatchEvent) {
+                  const event = new CustomEvent('bridgeTransactionUpdate', {
+                    detail: {
+                      status: 'failed',
+                      error: simplifyErrorMessage(error.message),
+                      code: error.code,
+                    },
+                  })
+                  window.dispatchEvent(event)
+                }
               }
             })
         })
@@ -593,7 +778,8 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           throw new Error('Transaction cancelled: You rejected the bridge request')
         }
 
-        return (receipt as any).transactionHash
+        // Return the more detailed receipt information
+        return receipt
       } catch (error: any) {
         console.error('Bridge failed:', error)
 
@@ -612,129 +798,23 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           throw new Error(
             'Transaction timed out: The bridge transaction is taking longer than expected. Please try again.'
           )
+        } else if (
+          error.message.includes('Transaction reverted') ||
+          error.message.includes('Transaction failed on blockchain') ||
+          error.message.includes('execution reverted') ||
+          error.message.includes('contract rejected')
+        ) {
+          // Get any additional details from the error object
+          const receiptDetails = error.receipt ? `\nTransaction Hash: ${error.receipt.transactionHash}` : ''
+          throw new Error(
+            `Transaction reverted: The bridge operation failed on the blockchain. This may be due to incomplete bridge configuration or contract restrictions.${receiptDetails}`
+          )
         } else {
           throw new Error(`Failed to bridge token: ${error.message}`)
         }
       }
     },
     [connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress]
-  )
-
-  // Claim tokens that were sent from Arbitrum
-  const claimTokenFromArbitrum = useCallback(
-    async (to: string, amount: string, blockHash: string, logIndex: string, originChainId: string) => {
-      if (!connection.arbitrumConnected || !connection.arbitrumProvider || !connection.arbitrumAddress) {
-        throw new Error('Not connected to Arbitrum')
-      }
-
-      const web3 = connection.arbitrumProvider as Web3
-      const bridgeContract = new web3.eth.Contract(BRIDGE_ABI as any, BRIDGE_CONTRACT_ADDRESS)
-
-      try {
-        // Calculate gas price
-        const gasPrice = await web3.eth.getGasPrice()
-        const gasPriceHex = web3.utils.toHex(Math.floor(Number(gasPrice) * 1.1)) // 10% more than current gas price
-
-        // Claim the token
-        const receipt = await bridgeContract.methods
-          .claim({
-            to: to,
-            amount: amount,
-            blockHash: blockHash,
-            transactionHash: blockHash, // Using blockHash as transactionHash as per reference implementation
-            logIndex: parseInt(logIndex),
-            originChainId: parseInt(originChainId),
-          })
-          .send({
-            from: connection.arbitrumAddress,
-            gasPrice: gasPriceHex,
-            gas: '400000', // Gas limit as string
-          })
-
-        if (!receipt.status) {
-          throw new Error('Claim transaction failed')
-        }
-
-        return receipt.transactionHash
-      } catch (error: any) {
-        console.error('Claim failed:', error)
-        throw new Error(`Failed to claim token: ${error.message}`)
-      }
-    },
-    [connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress]
-  )
-
-  // Load pending claims that the user can claim
-  const loadPendingClaims = useCallback(
-    async (options?: { force?: boolean; silent?: boolean }) => {
-      const { force = false, silent = false } = options || {}
-
-      // Skip if required data is missing
-      if (
-        !hathorAddress ||
-        !connection.arbitrumConnected ||
-        !connection.arbitrumProvider ||
-        !connection.arbitrumAddress
-      ) {
-        if (!silent) {
-          console.log('Cannot load pending claims - missing required data')
-        }
-        return
-      }
-
-      try {
-        const web3 = connection.arbitrumProvider as Web3
-        const bridgeContract = new web3.eth.Contract(BRIDGE_ABI as any, BRIDGE_CONTRACT_ADDRESS)
-
-        // Only log when force is true or in development and not silent
-        if ((force || process.env.NODE_ENV === 'development') && !silent) {
-          console.log('Loading pending claims for Hathor address:', hathorAddress.substring(0, 8) + '...')
-        }
-
-        // In a real implementation, we would query the bridge contract for events related to token transfers
-        // that have not yet been claimed. For now, we'll simulate this with a placeholder implementation.
-
-        // This is just a placeholder for demonstration - in a real implementation, you would:
-        // 1. Query bridge contract events for AcceptedCrossTransfer events
-        // 2. Filter for events with the user's address
-        // 3. Check if they've been claimed already
-        // 4. Format the data for UI display
-
-        // Simulate a small delay to make the user experience feel more authentic
-        // This helps the user know something happened when they click refresh
-        await new Promise((resolve) => setTimeout(resolve, 500))
-
-        // For now, just set an empty array
-        setPendingClaims([])
-
-        // Example format for a pending claim:
-        /*
-      setPendingClaims([
-        {
-          transactionHash: '0x123abc...',
-          tokenSymbol: 'USDC',
-          amount: '100.00',
-          sender: '0xabc123...',
-          status: 'pending'
-        }
-      ])
-      */
-
-        // Log once when claims are loaded, but only when forced or in development and not silent
-        if ((force || process.env.NODE_ENV === 'development') && !silent) {
-          console.log('Pending claims loaded:', 0)
-        }
-
-        return []
-      } catch (error) {
-        if (!silent) {
-          console.error('Error loading pending claims:', error)
-        }
-        setPendingClaims([])
-        return []
-      }
-    },
-    [hathorAddress, connection.arbitrumConnected, connection.arbitrumProvider, connection.arbitrumAddress]
   )
 
   // Add a cleanup function in the component to ensure proper cleanup on unmount
@@ -800,9 +880,6 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     disconnectArbitrum,
     loadBalances,
     bridgeTokenToHathor,
-    claimTokenFromArbitrum,
-    pendingClaims,
-    loadPendingClaims,
   }
 
   return <BridgeContext.Provider value={contextValue}>{children}</BridgeContext.Provider>

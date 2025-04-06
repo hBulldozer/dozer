@@ -11,8 +11,10 @@ import {
 } from 'hathor-rpc-handler-test'
 import { create } from 'domain'
 import { IHathorRpc } from '@dozer/nanocontracts/src/types'
+import config from '../../config/bridge'
 
-const HATHOR_TESTNET_CHAIN = 'hathor:testnet'
+// Use the centralized configuration for Hathor chain
+const HATHOR_CHAIN = config.hathorConfig.rpcChain
 
 /**
  * Types
@@ -49,14 +51,16 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
   const [result, setResult] = useState<IFormattedRpcResponse<
     SignOracleDataResponse | SendNanoContractTxResponse | CreateTokenResponse | string | null | undefined
   > | null>()
-  const [isTestnet, setIsTestnet] = useState(true)
+  // Initialize isTestnet from the centralized configuration
+  const [isTestnet, setIsTestnet] = useState(config.isTestnet)
 
   const { client, session } = useWalletConnectClient()
 
   const reset = useCallback(() => {
     setPending(false)
     setResult(null)
-    setIsTestnet(true)
+    // Reset to the configured testnet setting
+    setIsTestnet(config.isTestnet)
   }, [])
 
   const ping = async () => {
@@ -110,7 +114,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
         setPending(true)
 
         const result: SendNanoContractTxResponse = await client!.request<SendNanoContractTxResponse>({
-          chainId: HATHOR_TESTNET_CHAIN,
+          chainId: HATHOR_CHAIN,
           topic: session!.topic,
           request: ncTxRpcReq,
         })
@@ -141,7 +145,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
         setPending(true)
 
         const result: SignOracleDataResponse = await client!.request<SignOracleDataResponse>({
-          chainId: HATHOR_TESTNET_CHAIN,
+          chainId: HATHOR_CHAIN,
           topic: session!.topic,
           request: signOracleDataReq,
         })
@@ -172,7 +176,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
         setPending(true)
 
         const result: CreateTokenResponse = await client!.request<CreateTokenResponse>({
-          chainId: HATHOR_TESTNET_CHAIN,
+          chainId: HATHOR_CHAIN,
           topic: session!.topic,
           request: createTokenTxRpcReq,
         })
@@ -217,7 +221,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
 
 export function useJsonRpc() {
   const context = useContext(JsonRpcContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useJsonRpc must be used within a JsonRpcContextProvider')
   }
   return context

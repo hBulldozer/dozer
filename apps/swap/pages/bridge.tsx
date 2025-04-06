@@ -20,28 +20,33 @@ export const getStaticProps: GetStaticProps = async () => {
 }
 
 const BridgePage = () => {
-  const router = useRouter();
-  const { data: tokens } = api.getTokens.all.useQuery();
-  const [preselectedToken, setPreselectedToken] = useState<Token | undefined>();
-  
+  const router = useRouter()
+  const { data: tokens } = api.getTokens.all.useQuery()
+  const [preselectedToken, setPreselectedToken] = useState<Token | undefined>()
+
   useEffect(() => {
     // Check for token in URL
     if (router.query.token && typeof router.query.token === 'string' && tokens) {
-      const selectedToken = tokens.find(token => token.uuid === router.query.token);
+      const selectedToken = tokens.find((token) => token.uuid === router.query.token)
       if (selectedToken) {
-        setPreselectedToken(new Token(selectedToken));
+        // Convert null to undefined for originalAddress before creating Token
+        const { originalAddress, ...rest } = selectedToken
+        setPreselectedToken(
+          new Token({
+            ...rest,
+            originalAddress: originalAddress || undefined,
+          })
+        )
       }
     }
-  }, [router.query, tokens]);
-  
+  }, [router.query, tokens])
+
   return (
     <Layout>
-      <div className="flex flex-col gap-6 max-w-[400px] mx-auto">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold text-white mb-2">Token Bridge</h1>
-          <p className="text-gray-400">Bridge tokens between Hathor and Arbitrum networks</p>
+      <div className="flex flex-col justify-center items-center min-h-[80vh]">
+        <div className="w-full max-w-[400px]">
+          <Bridge initialToken={preselectedToken} />
         </div>
-        <Bridge initialToken={preselectedToken} />
       </div>
     </Layout>
   )
