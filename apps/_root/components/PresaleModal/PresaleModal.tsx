@@ -36,6 +36,9 @@ interface NetworkInfo {
   tokenSymbol: string
 }
 
+// Add URL validation regex
+const urlRegex = /^(https?):\/\/[^\s$.?#].[^\s]*$/i
+
 // Support button component for reuse
 const SupportButton = () => (
   <a
@@ -77,6 +80,12 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
   const [isValidatingAddress, setIsValidatingAddress] = useState<boolean>(false)
   const [isAddressValid, setIsAddressValid] = useState<boolean | null>(null)
 
+  // New state for handling duplicate transaction and processed transaction
+  const [duplicateTransactionError, setDuplicateTransactionError] = useState<string | null>(null)
+  const [processedTransactionUrl, setProcessedTransactionUrl] = useState<string | null>(null)
+  const [isValidatingTransactionUrl, setIsValidatingTransactionUrl] = useState<boolean>(false)
+  const [isTransactionUrlValid, setIsTransactionUrlValid] = useState<boolean | null>(null)
+
   // Networks available for selection with payment information
   const networks: NetworkInfo[] = [
     {
@@ -108,10 +117,43 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
     },
     onError: (error) => {
       console.error('Submission error:', error)
-      // Use the appropriate toast structure
+      // Debug log to inspect the error structure
+      console.log('Error data structure:', JSON.stringify(error, null, 2))
+
+      // Handle special errors for duplicate transactions
+      if (error.data?.code === 'CONFLICT') {
+        setDuplicateTransactionError(error.message)
+
+        // Fix: Properly extract the hathorExplorerUrl from the error
+        try {
+          // Safely cast the error data to access potential properties
+          const errorData = error.data as any
+
+          if (errorData?.cause?.hathorExplorerUrl) {
+            setProcessedTransactionUrl(errorData.cause.hathorExplorerUrl)
+            console.log('Found URL in error.data.cause:', errorData.cause.hathorExplorerUrl)
+          } else {
+            // Try to parse message if it contains the URL
+            // In presale.ts, we append the URL to the error message
+            const urlMatch = error.message.match(/(https?:\/\/[^\s]+)$/)
+            if (urlMatch && urlMatch[1]) {
+              setProcessedTransactionUrl(urlMatch[1])
+              console.log('Extracted URL from message:', urlMatch[1])
+            } else {
+              console.warn('Could not find hathorExplorerUrl in error response')
+            }
+          }
+        } catch (extractError) {
+          console.error('Error extracting hathorExplorerUrl:', extractError)
+        }
+
+        return
+      }
+
+      // Use the appropriate toast structure for other errors
       const txHash = `submission-error-${Date.now()}`
 
-      createSuccessToast({
+      createFailedToast({
         type: 'send',
         summary: {
           pending: 'Processing submission...',
@@ -122,25 +164,29 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
         groupTimestamp: Date.now(),
         timestamp: Date.now(),
       })
-
-      // Force it to show as error
-      createFailedToast({
-        type: 'send',
-        summary: {
-          pending: 'Processing submission...',
-          completed: 'Submission successful!',
-          failed: error.message || 'Failed to submit your presale information. Please try again.',
-        },
-        txHash: `error-${txHash}`,
-        groupTimestamp: Date.now(),
-        timestamp: Date.now(),
-      })
     },
   })
 
   // Handle network selection
   const handleNetworkSelect = (network: 'solana' | 'evm') => {
     setSelectedNetwork(network)
+  }
+
+  // Handle transaction proof input change with real-time validation
+  const handleTransactionProofChange = (value: string) => {
+    setTransactionProof(value)
+    setDuplicateTransactionError(null)
+    setProcessedTransactionUrl(null)
+
+    // Only show validation after user has entered something
+    if (value.trim().length > 0) {
+      setIsValidatingTransactionUrl(true)
+      const isValid = urlRegex.test(value.trim())
+      setIsTransactionUrlValid(isValid)
+    } else {
+      setIsValidatingTransactionUrl(false)
+      setIsTransactionUrlValid(null)
+    }
   }
 
   // Handle continue to next step
@@ -162,10 +208,10 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
     return networks.find((network) => network.id === selectedNetwork)
   }
 
-  // Validate form fields
+  // Validate form fields - update to include URL validation
   const validateForm = () => {
     const errors = {
-      transactionProof: !transactionProof.trim(),
+      transactionProof: !transactionProof.trim() || !urlRegex.test(transactionProof.trim()),
       hathorAddress: !hathorAddress.trim() || !validateHathorAddress(hathorAddress.trim()),
     }
 
@@ -471,9 +517,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
               <div className="flex flex-col mb-3 space-y-5">
                 {/* Transaction ID/URL Input */}
                 <div>
-                  <label className="block mb-1.5 text-xs font-medium text-neutral-400">
-                    Transaction ID or Explorer URL*
-                  </label>
+                  <label className="block mb-1.5 text-xs font-medium text-neutral-400">Transaction Explorer URL*</label>
                   <div className="flex items-center">
                     <div className="absolute pl-3">
                       <LinkIcon className="w-4 h-4 text-neutral-500" />
@@ -482,15 +526,51 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
                       id="transactionProof"
                       pattern=".*"
                       value={transactionProof}
-                      onChange={setTransactionProof}
-                      placeholder="Enter transaction ID or explorer URL"
+                      onChange={handleTransactionProofChange}
+                      placeholder="Enter transaction explorer URL (must be a valid URL)"
                       className={`w-full pl-9 py-2.5 bg-transparent border ${
-                        formErrors.transactionProof ? 'border-red-500' : 'border-stone-700'
+                        formErrors.transactionProof
+                          ? 'border-red-500'
+                          : isValidatingTransactionUrl
+                          ? isTransactionUrlValid
+                            ? 'border-green-500'
+                            : 'border-yellow-500'
+                          : 'border-stone-700'
                       } rounded-lg text-white text-sm focus:border-yellow-500 focus:outline-none`}
                     />
+                    {isValidatingTransactionUrl && isTransactionUrlValid && (
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <CheckIcon className="w-4 h-4 text-green-500" />
+                      </div>
+                    )}
                   </div>
                   {formErrors.transactionProof && (
-                    <p className="mt-1.5 text-xs text-red-500">Please enter a transaction ID or URL</p>
+                    <p className="mt-1.5 text-xs text-red-500">
+                      {!transactionProof.trim()
+                        ? 'Please enter a transaction URL'
+                        : 'Please enter a valid URL (e.g. https://explorer.example.com/tx/...)'}
+                    </p>
+                  )}
+                  {isValidatingTransactionUrl && !isTransactionUrlValid && !formErrors.transactionProof && (
+                    <p className="mt-1.5 text-xs text-yellow-500">
+                      Please enter a valid URL (e.g. https://explorer.example.com/tx/...)
+                    </p>
+                  )}
+                  {duplicateTransactionError && (
+                    <div className="p-2 mt-2 border rounded-md bg-amber-900/30 border-amber-500/30">
+                      <p className="text-xs text-amber-400">{duplicateTransactionError}</p>
+                      {processedTransactionUrl && (
+                        <a
+                          href={processedTransactionUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center mt-1 text-xs text-blue-400 hover:text-blue-300"
+                        >
+                          <span>View transaction</span>
+                          <ArrowRightIcon className="w-3 h-3 ml-1" />
+                        </a>
+                      )}
+                    </div>
                   )}
                 </div>
 

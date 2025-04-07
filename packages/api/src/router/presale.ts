@@ -1,6 +1,9 @@
 import { z } from 'zod'
-
+import { TRPCError } from '@trpc/server'
 import { createTRPCRouter, procedure } from '../trpc'
+
+// URL validation regex
+const urlRegex = /^(https?):\/\/[^\s$.?#].[^\s]*$/i
 
 export const presaleRouter = createTRPCRouter({
   // Get backers count from Hathor explorer
@@ -73,7 +76,12 @@ export const presaleRouter = createTRPCRouter({
     .input(
       z.object({
         network: z.enum(['solana', 'evm']),
-        transactionProof: z.string().min(1, 'Transaction proof is required'),
+        transactionProof: z
+          .string()
+          .min(1, 'Transaction proof is required')
+          .refine((val) => urlRegex.test(val), {
+            message: 'Transaction proof must be a valid URL',
+          }),
         contactInfo: z.string().min(1, 'Contact information is required'),
         hathorAddress: z
           .string()
@@ -89,17 +97,44 @@ export const presaleRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // First check if this transaction URL already exists in the database
+        const existingSubmission = await ctx.prisma.$queryRaw`
+          SELECT "id", "hathorExplorerUrl" FROM "PresaleSubmission"
+          WHERE "transactionProof" = ${input.transactionProof}
+          LIMIT 1
+        `
+
+        // If the transaction already exists, inform the user
+        if (existingSubmission && Array.isArray(existingSubmission) && existingSubmission.length > 0) {
+          const submission = existingSubmission[0]
+
+          // Check if it has been processed
+          if (submission.hathorExplorerUrl) {
+            throw new TRPCError({
+              code: 'CONFLICT',
+              message: `This transaction has already been processed.`,
+              // Custom field for explorer URL
+              cause: { type: 'PROCESSED', hathorExplorerUrl: submission.hathorExplorerUrl },
+            })
+          } else {
+            throw new TRPCError({
+              code: 'CONFLICT',
+              message: 'This transaction is already being processed. Please be patient.',
+              cause: { type: 'PROCESSING' },
+            })
+          }
+        }
+
         // Create a new presale submission in the database
         const submission = await ctx.prisma.$transaction(async (prisma) => {
-          // Use $executeRaw for a custom SQL insert if needed for new models
-          // that might not be in the Prisma client yet
+          // Use $executeRaw for a custom SQL insert
           const result = await prisma.$executeRaw`
             INSERT INTO "PresaleSubmission" 
-            ("network", "transactionProof", "contactInfo", "hathorAddress", "price", "submittedAt", "processed") 
+            ("network", "transactionProof", "contactInfo", "hathorAddress", "price", "submittedAt", "hathorExplorerUrl") 
             VALUES 
             (${input.network}, ${input.transactionProof}, ${input.contactInfo}, ${input.hathorAddress}, ${
             input.price
-          }, ${new Date()}, false)
+          }, ${new Date()}, NULL)
             RETURNING "id"
           `
 
@@ -112,6 +147,11 @@ export const presaleRouter = createTRPCRouter({
           submissionId: submission.id,
         }
       } catch (error) {
+        // Handle custom TRPCError type
+        if (error instanceof TRPCError) {
+          throw error
+        }
+
         console.error('Error submitting presale proof:', error)
         throw new Error('Failed to submit your presale information. Please try again.')
       }
@@ -126,17 +166,23 @@ export const presaleRouter = createTRPCRouter({
     `
   }),
 
-  // Mark a submission as processed (for admin purposes)
+  // Mark a submission as processed (for admin purposes) by setting the hathorExplorerUrl
   markAsProcessed: procedure
     .input(
       z.object({
         id: z.number(),
+        hathorExplorerUrl: z
+          .string()
+          .min(1, 'Hathor Explorer URL is required')
+          .refine((val) => urlRegex.test(val), {
+            message: 'Must be a valid URL',
+          }),
       })
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.$executeRaw`
         UPDATE "PresaleSubmission"
-        SET "processed" = true
+        SET "hathorExplorerUrl" = ${input.hathorExplorerUrl}
         WHERE "id" = ${input.id}
       `
     }),

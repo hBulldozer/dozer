@@ -24,10 +24,10 @@ model PresaleSubmission {
   hathorAddress     String    // Hathor wallet address to receive DZD
   price             Float     @default(1.0) // Price of DZD at submission time
   submittedAt       DateTime  @default(now())
-  processed         Boolean   @default(false) // Whether this submission has been processed
+  hathorExplorerUrl String?   // URL of the Hathor explorer transaction when DZD is sent
   
   @@index([hathorAddress])
-  @@index([processed])
+  @@index([transactionProof])
   @@index([submittedAt])
 }
 

@@ -60,6 +60,14 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
     window.open(EXPLORER_URL, '_blank', 'noopener,noreferrer')
   }
 
+  const handleProgressClick = () => {
+    window.open(
+      'https://explorer.hathor.network/token_detail/0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d',
+      '_blank',
+      'noopener,noreferrer'
+    )
+  }
+
   // Check if all time units are zero
   const isSaleEnded = priceChangeTimeUnits.every((unit) => unit.value === 0)
 
@@ -163,7 +171,7 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
         </div>
 
         {/* Progress section with enhanced visuals */}
-        <div className="space-y-3">
+        <div className="space-y-3 cursor-pointer" onClick={handleProgressClick}>
           <div className="flex items-center justify-between">
             <Typography variant="sm" weight={600} className="text-xs tracking-wider uppercase text-neutral-400">
               {/* USDT  */}
