@@ -59,7 +59,7 @@ const Home: React.FC = () => {
       id: 5,
       question: 'Are there gas fees on Dozer Finance?',
       answer:
-        'No gas fees at the blockchain level. Dozer uses a zero-gas model powered by Hathor. The only fee is a minimal 0.3% LP trading fee—far lower than typical DEX platforms.',
+        'No gas fees at the blockchain level. Dozer uses a zero-gas model powered by Hathor. The only fee is a minimal LP trading fee—far lower than typical DEX platforms.',
     },
     {
       id: 6,
@@ -404,14 +404,6 @@ const Home: React.FC = () => {
                 className="text-sm cursor-pointer sm:text-xs text-stone-400 hover:text-yellow-400 hover:underline"
               >
                 Earn
-              </a>
-              <a
-                href="https://testnet.dozer.finance/pool/create_token"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm cursor-pointer sm:text-xs text-stone-400 hover:text-yellow-400 hover:underline"
-              >
-                Launch
               </a>
             </div>
 
