@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 import Web3 from 'web3'
 import { useWalletConnectClient } from './index'
-import { useNetwork } from '@dozer/zustand'
+import { useNetwork, useAccount } from '@dozer/zustand'
 import BRIDGE_ABI from '../../abis/bridge.json'
 import ERC20_ABI from '../../abis/erc20.json'
 import config from '../../config/bridge'
+import { NotificationData } from '@dozer/ui'
+import chains, { ChainId } from '@dozer/chain'
 
 // Add ethereum to Window interface
 declare global {
@@ -71,6 +73,13 @@ interface BridgeContextType {
     logIndex: number,
     originChainId: number
   ) => Promise<any>
+  createBridgeNotification: (
+    txHash: string,
+    tokenSymbol: string,
+    amount: string,
+    tokenDecimals: number,
+    hathorAddress: string
+  ) => void
 }
 
 // Create the context
@@ -86,6 +95,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const { accounts } = useWalletConnectClient()
   const hathorAddress = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const network = useNetwork((state) => state.network)
+  const { addNotification } = useAccount()
   const [pendingClaims, setPendingClaims] = useState<any[]>([])
 
   // Load token balances from Arbitrum
@@ -219,6 +229,81 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     []
   )
 
+  // Helper function to create a notification for a bridge transaction
+  const createBridgeNotification = useCallback(
+    (txHash: string, tokenSymbol: string, amount: string, tokenDecimals: number, hathorAddress: string) => {
+      // Create notification data
+      const notificationData: NotificationData = {
+        type: 'send',
+        chainId: config.ethereumConfig.networkId, // Use network ID from config
+        summary: {
+          pending: `Bridging ${amount} ${tokenSymbol} to Hathor network...`,
+          completed: `Successfully bridged ${amount} ${tokenSymbol} to Hathor address ${hathorAddress}`,
+          failed: `Failed to bridge ${amount} ${tokenSymbol} to Hathor`,
+          info: `Bridge transaction for ${amount} ${tokenSymbol} to Hathor address ${hathorAddress}`,
+        },
+        status: 'pending',
+        txHash: txHash,
+        groupTimestamp: Math.floor(Date.now() / 1000),
+        timestamp: Math.floor(Date.now() / 1000),
+        href: `${config.ethereumConfig.explorer}/tx/${txHash}`,
+        promise: new Promise((resolve, reject) => {
+          // Use Web3.js to subscribe to transaction receipt
+          if (window.ethereum) {
+            const web3 = new Web3(window.ethereum)
+
+            // Check transaction receipt every 5 seconds
+            const checkReceipt = async () => {
+              try {
+                const receipt = await web3.eth.getTransactionReceipt(txHash)
+
+                if (receipt) {
+                  if (receipt.status) {
+                    console.log('Bridge transaction confirmed:', receipt)
+                    setTimeout(resolve, 1000) // Resolve after a delay for UI
+                  } else {
+                    console.error('Bridge transaction failed:', receipt)
+                    reject(new Error('Transaction failed on blockchain'))
+                  }
+                  return true
+                }
+                return false
+              } catch (error) {
+                console.error('Error checking transaction receipt:', error)
+                return false
+              }
+            }
+
+            // Start polling
+            const intervalId = setInterval(async () => {
+              const done = await checkReceipt()
+              if (done) clearInterval(intervalId)
+            }, 5000)
+
+            // Backup timeout after 10 minutes
+            setTimeout(() => {
+              clearInterval(intervalId)
+              // Don't reject, let the user check manually
+              // since blockchain transactions can take longer
+            }, 10 * 60 * 1000)
+          } else {
+            // If no web3, resolve after a delay
+            setTimeout(resolve, 5000)
+          }
+        }),
+        account: hathorAddress,
+      }
+
+      // Add to notifications
+      const notificationGroup: string[] = []
+      notificationGroup.push(JSON.stringify(notificationData))
+      addNotification(notificationGroup)
+
+      console.log('Added bridge transaction to notifications:', txHash)
+    },
+    [addNotification, hathorAddress]
+  )
+
   // Bridge a token from Arbitrum to Hathor
   const bridgeTokenToHathor = useCallback(
     async (tokenAddress: string, amount: string, hathorAddress: string, skipApproval = false) => {
@@ -262,6 +347,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       // Get token decimals (fallback to 18 if call fails)
       let decimals: number = 18
+      let tokenSymbol: string = ''
       try {
         // Check for known tokens first - USDC is always 6 decimals
         if (actualTokenAddress.toLowerCase() === '0x3e1adb4e24a48b90ca10c28388ce733a6267bac4'.toLowerCase()) {
@@ -291,6 +377,15 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               console.warn('Could not determine token symbol')
             }
           }
+        }
+
+        // Try to get token symbol
+        try {
+          const symbol = await tokenContract.methods.symbol().call()
+          tokenSymbol = String(symbol || '')
+        } catch (error) {
+          console.warn('Could not determine token symbol, using generic "TOKEN"')
+          tokenSymbol = 'TOKEN'
         }
       } catch (error) {
         console.warn('Error determining token decimals, using default 18:', error)
@@ -507,6 +602,9 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         console.log('Bridge transaction completed:', bridgeTx.transactionHash)
 
+        // Create notification for the bridge transaction
+        createBridgeNotification(bridgeTx.transactionHash, tokenSymbol, amount, decimals, hathorAddress)
+
         // Return transaction hash for tracking
         return {
           status: 'confirming' as const,
@@ -517,7 +615,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         throw error
       }
     },
-    []
+    [createBridgeNotification]
   )
 
   const contextValue = {
@@ -526,6 +624,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     pendingClaims,
     loadPendingClaims,
     claimTokenFromArbitrum,
+    createBridgeNotification,
   }
 
   return <BridgeContext.Provider value={contextValue}>{children}</BridgeContext.Provider>
