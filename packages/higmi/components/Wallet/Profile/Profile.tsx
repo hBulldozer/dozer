@@ -16,6 +16,7 @@ import { shortenAddress } from './Utils'
 import { client } from '@dozer/api'
 import { useWalletConnectClient } from '../../contexts'
 import { Tokens } from './Tokens'
+import { TokensEVM } from './TokensEVM'
 
 interface ProfileProps {
   client: typeof client
@@ -24,6 +25,7 @@ export enum ProfileView {
   Default,
   Transactions,
   Tokens,
+  TokensEVM,
 }
 export const Profile: FC<ProfileProps> = ({ client }) => {
   const { notifications, clearNotifications, updateNotificationStatus } = useAccount()
@@ -39,23 +41,17 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   // const { data, isLoading, isError, error } = useBalance(accountAddress)
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
-  const { 
-    data, 
-    isLoading, 
-    isError, 
-    error,
-    refetch 
-  } = client.getProfile.balance.useQuery(
+  const { data, isLoading, isError, error, refetch } = client.getProfile.balance.useQuery(
     { address: address },
-    { 
-      enabled: Boolean(address), 
+    {
+      enabled: Boolean(address),
       staleTime: 5000,
       refetchInterval: 20000, // Refetch every 20 seconds to keep data fresh
       retry: 3, // Retry failed requests up to 3 times
       retryDelay: 1000, // Wait 1 second between retries
       refetchOnMount: true, // Always refetch on component mount
       cacheTime: 3600000, // Cache for 1 hour
-      keepPreviousData: true // Keep the previous data while loading new data
+      keepPreviousData: true, // Keep the previous data while loading new data
     }
   )
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -81,7 +77,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   // Manual refresh function for balance
   const refreshBalance = async () => {
     if (!address) return
-    
+
     setIsRefreshing(true)
     try {
       await refetch()
@@ -92,7 +88,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
 
   // Listen for transaction notifications to trigger a balance refresh
   useEffect(() => {
-    const newNotifications = Object.values(filteredNotifications).filter(notif => {
+    const newNotifications = Object.values(filteredNotifications).filter((notif) => {
       try {
         const parsed = JSON.parse(notif[0])
         return parsed.status === 'confirmed' && !parsed.processed
@@ -100,12 +96,12 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
         return false
       }
     })
-    
+
     if (newNotifications.length > 0) {
       refreshBalance()
-      
+
       // Mark notifications as processed
-      newNotifications.forEach(notif => {
+      newNotifications.forEach((notif) => {
         try {
           const parsed = JSON.parse(notif[0])
           updateNotificationStatus(parsed.txHash, 'confirmed', 'Transaction processed')
@@ -135,7 +131,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
       setBalance(balance_data)
     }
   }, [data, isError, address, setBalance])
-  
+
   // Make sure to refresh balance when view changes to Default tab
   useEffect(() => {
     if (view === ProfileView.Default && address) {
@@ -151,13 +147,13 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
     const panel = (
       <Popover.Panel className="z-[99] w-full sm:w-[320px] fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-[unset] sm:left-[unset] mt-4 sm:rounded-xl rounded-b-none shadow-md shadow-black/[0.3] bg-stone-900 border border-stone-200/20">
         {view === ProfileView.Default && (
-          <Default 
-            api_client={client} 
-            chainId={chainId} 
-            address={address} 
+          <Default
+            api_client={client}
+            chainId={chainId}
+            address={address}
             setView={setView}
             refreshBalance={refreshBalance}
-            isRefreshing={isRefreshing || isLoading} 
+            isRefreshing={isRefreshing || isLoading}
           />
         )}
         {view === ProfileView.Transactions && (
@@ -178,6 +174,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
             refreshBalance={refreshBalance}
           />
         )}
+        {view === ProfileView.TokensEVM && <TokensEVM setView={setView} client={client} />}
       </Popover.Panel>
     )
 
@@ -196,7 +193,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
                   // This ensures data is fresh when the panel is opened
                   if (!open) {
                     refreshBalance()
-                    
+
                     // Force the query to refetch even if the data is considered fresh
                     refetch()
                   }
@@ -204,9 +201,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
               >
                 <JazzIcon diameter={20} address={address} />
                 {shortenAddress(address)}{' '}
-                {(isLoading || isRefreshing) && (
-                  <Loader className="w-4 h-4 mr-1 text-stone-400" />
-                )}
+                {(isLoading || isRefreshing) && <Loader className="w-4 h-4 mr-1 text-stone-400" />}
                 <ChevronDownIcon
                   width={20}
                   height={20}

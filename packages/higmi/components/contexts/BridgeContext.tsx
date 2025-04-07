@@ -110,32 +110,118 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const arbitrumAddress = accounts[0]
       const balances: Record<string, number> = {}
 
+      console.log('Loading balances for tokens:', tokenAddresses)
+      console.log('From account:', arbitrumAddress)
+
+      // Pre-configured decimals for known tokens
+      const knownTokenDecimals: Record<string, { decimals: number; symbol: string }> = {
+        // USDC on Sepolia
+        '0x3e1adb4e24a48b90ca10c28388ce733a6267bac4': { decimals: 6, symbol: 'USDC' },
+        // SLT7 on Sepolia
+        '0x97118caae1f773a84462490dd01fe7a3e7c4cdcd': { decimals: 18, symbol: 'SLT7' },
+        // WBTC on Sepolia (example)
+        '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f': { decimals: 8, symbol: 'WBTC' },
+      }
+
       for (const address of tokenAddresses) {
         try {
-          // Create token contract instance
-          const tokenContract = new web3.eth.Contract(ERC20_ABI as any, address)
+          const normalizedAddress = address.toLowerCase()
+          let decimals = 18
+          let symbol = 'UNKNOWN'
+          let rawBalance = '0'
 
-          // Get token decimals
-          const decimalsResult = await tokenContract.methods.decimals().call()
-          const decimals = decimalsResult ? parseInt(String(decimalsResult)) : 18
+          try {
+            // Create token contract instance with error handling
+            const tokenContract = new web3.eth.Contract(ERC20_ABI as any, address)
+            console.log(`Created contract instance for ${address}`)
 
-          // Get token balance
-          const rawBalance = await tokenContract.methods.balanceOf(arbitrumAddress).call()
+            // Check that required methods exist before calling them
+            // Get token balance first - this should work even if other methods fail
+            try {
+              if (typeof tokenContract.methods.balanceOf === 'function') {
+                rawBalance = await tokenContract.methods.balanceOf(arbitrumAddress).call()
+                console.log(`Raw balance for token ${address}: ${rawBalance}`)
+              } else {
+                console.warn(`Token ${address} does not have balanceOf method`)
+                // Try direct RPC call as fallback
+                const data = web3.eth.abi.encodeFunctionCall(
+                  {
+                    name: 'balanceOf',
+                    type: 'function',
+                    inputs: [{ type: 'address', name: 'account' }],
+                  },
+                  [arbitrumAddress]
+                )
+
+                const balance = await web3.eth.call({
+                  to: address,
+                  data,
+                })
+
+                rawBalance = balance ? web3.utils.hexToNumberString(balance) : '0'
+                console.log(`Raw balance using RPC call: ${rawBalance}`)
+              }
+            } catch (balanceError) {
+              console.error(`Error getting balance for token ${address}:`, balanceError)
+              rawBalance = '0'
+            }
+
+            // Try to get token symbol and decimals using the contract methods
+            try {
+              if (typeof tokenContract.methods.symbol === 'function') {
+                const symbolResult = await tokenContract.methods.symbol().call()
+                if (symbolResult) {
+                  symbol = symbolResult
+                  console.log(`Symbol for token ${address}: ${symbol}`)
+                }
+              } else {
+                console.warn(`Token ${address} does not have symbol method`)
+              }
+            } catch (err) {
+              console.warn(`Could not get symbol for token ${address}:`, err)
+            }
+
+            try {
+              if (typeof tokenContract.methods.decimals === 'function') {
+                const decimalResult = await tokenContract.methods.decimals().call()
+                if (decimalResult) {
+                  decimals = parseInt(String(decimalResult))
+                  console.log(`Decimals for token ${address}: ${decimals}`)
+                }
+              } else {
+                console.warn(`Token ${address} does not have decimals method`)
+              }
+            } catch (err) {
+              console.warn(`Could not get decimals for token ${address}:`, err)
+            }
+          } catch (contractError) {
+            console.error(`Error creating contract for token ${address}:`, contractError)
+          }
+
+          // Use known token info if contract methods failed
+          if (knownTokenDecimals[normalizedAddress]) {
+            if (symbol === 'UNKNOWN') {
+              symbol = knownTokenDecimals[normalizedAddress].symbol
+            }
+            if (decimals === 18) {
+              decimals = knownTokenDecimals[normalizedAddress].decimals
+            }
+          }
+
+          console.log(`Using token info for ${address} (${symbol}): decimals=${decimals}`)
 
           // Convert raw balance to human-readable format based on decimals
-          if (decimals === 18) {
-            balances[address] = parseFloat(web3.utils.fromWei(String(rawBalance), 'ether'))
-          } else {
-            // Manual conversion for non-standard decimals
-            const divisor = Math.pow(10, decimals)
-            balances[address] = parseFloat(String(rawBalance)) / divisor
-          }
+          const divisor = Math.pow(10, decimals)
+          balances[address] = parseFloat(String(rawBalance)) / divisor
+
+          console.log(`Converted balance for ${symbol}: ${balances[address]} (divided by 10^${decimals})`)
         } catch (error) {
           console.error(`Error loading balance for token ${address}:`, error)
           balances[address] = 0
         }
       }
 
+      console.log('Final balances:', balances)
       return balances
     } catch (error) {
       console.error('Error loading balances:', error)

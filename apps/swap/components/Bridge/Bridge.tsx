@@ -1,11 +1,18 @@
 import { FC, useState, useEffect, useRef } from 'react'
 import { useAccount, useNetwork } from '@dozer/zustand'
-import { Button, Widget, classNames, createSuccessToast, createErrorToast, createInfoToast } from '@dozer/ui'
+import {
+  Button,
+  Widget,
+  classNames,
+  createSuccessToast,
+  createErrorToast,
+  createInfoToast,
+  Typography,
+} from '@dozer/ui'
 import { useBridge, useWalletConnectClient } from '@dozer/higmi'
 import { Token } from '@dozer/currency'
 import Image from 'next/legacy/image'
 import { ExclamationCircleIcon } from '@heroicons/react/24/solid'
-import { WalletIcon } from '@heroicons/react/24/outline'
 import { api } from 'utils/api'
 import bridgeIcon from '../../public/bridge-icon.jpeg'
 import { CurrencyInput } from '../CurrencyInput'
@@ -398,11 +405,6 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
               <h2 className="text-xl font-semibold">Arbitrum to Hathor Bridge</h2>
               <p className="text-gray-400 text-xs mt-1">Transfer tokens from Arbitrum to Hathor Network</p>
             </div>
-            <div className="flex items-center">
-              {metaMaskConnected && (
-                <MetaMaskConnect onConnect={handleMetaMaskConnect} onDisconnect={handleMetaMaskDisconnect} />
-              )}
-            </div>
           </div>
         </div>
 
@@ -455,9 +457,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           </div>
 
           <div className="mt-5">
-            {!metaMaskConnected ? (
-              <MetaMaskConnect onConnect={handleMetaMaskConnect} onDisconnect={handleMetaMaskDisconnect} />
-            ) : (
+            {metaMaskConnected ? (
+              // Show Bridge Button when connected
               <Button
                 fullWidth
                 size="lg"
@@ -475,6 +476,18 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                     : 'Processing...'
                   : 'Bridge Token'}
               </Button>
+            ) : (
+              // Show MetaMask Connect button when not connected
+              <MetaMaskConnect
+                onConnect={handleMetaMaskConnect}
+                onDisconnect={handleMetaMaskDisconnect}
+                buttonProps={{
+                  fullWidth: true,
+                  size: 'lg',
+                  // removed custom color to use default blue from MetaMaskConnect
+                }}
+                hideText={false}
+              />
             )}
 
             {/* Add a cancel button when processing */}
@@ -482,6 +495,18 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
               <Button fullWidth size="md" color="red" className="mt-3" onClick={handleCancel}>
                 {txStatus === 'confirming' ? 'Close' : 'Cancel'}
               </Button>
+            )}
+
+            {/* Add a small status indicator for MetaMask when connected */}
+            {metaMaskConnected && (
+              <div className="flex items-center justify-center gap-1 mt-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-xs text-green-400">
+                  MetaMask Connected:{' '}
+                  {metaMaskAccount &&
+                    `${metaMaskAccount.substring(0, 6)}...${metaMaskAccount.substring(metaMaskAccount.length - 4)}`}
+                </span>
+              </div>
             )}
           </div>
         </div>

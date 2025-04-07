@@ -7,6 +7,7 @@ import { Button, Typography, Widget } from '@dozer/ui'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { useSDK } from '@metamask/sdk-react'
+import Image from 'next/image'
 
 export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
@@ -94,7 +95,10 @@ const ClaimsContent = () => {
               You need to connect your MetaMask wallet to view and process pending claims.
             </Typography>
             <Button size="md" color="blue" onClick={connectMetaMask} className="mx-auto">
-              Connect MetaMask
+              <div className="flex items-center justify-center gap-2">
+                <Image src="/images/MetaMask-icon-fox.svg" width={20} height={20} alt="MetaMask" />
+                Connect MetaMask
+              </div>
             </Button>
           </div>
         </Widget.Content>

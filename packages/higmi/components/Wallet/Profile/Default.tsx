@@ -9,14 +9,14 @@ import {
   JazzIcon,
   NotificationData,
   Typography,
-  Loader
+  Loader,
 } from '@dozer/ui'
 import {
   CreditCardIcon,
   Square2StackIcon,
   ArrowTopRightOnSquareIcon,
   ArrowRightOnRectangleIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronRightIcon } from '@heroicons/react/24/solid'
 import { Dispatch, FC, SetStateAction, useCallback, useEffect, useRef, useState } from 'react'
@@ -46,14 +46,7 @@ interface BalanceProps {
   token: Token | undefined
 }
 
-export const Default: FC<DefaultProps> = ({ 
-  chainId, 
-  address, 
-  setView, 
-  api_client,
-  refreshBalance,
-  isRefreshing
-}) => {
+export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_client, refreshBalance, isRefreshing }) => {
   // const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
   const { data: prices } = api_client.getPrices.all.useQuery()
@@ -115,10 +108,10 @@ export const Default: FC<DefaultProps> = ({
       enabled: Boolean(address),
       staleTime: 0, // Don't cache this data - always fetch fresh status
       refetchOnMount: true, // Always refetch on component mount
-      refetchOnWindowFocus: true // Refetch when window gains focus
+      refetchOnWindowFocus: true, // Refetch when window gains focus
     }
   )
-  
+
   // Local state to track if the faucet was used in this session
   const [faucetUsed, setFaucetUsed] = useState(false)
 
@@ -149,13 +142,13 @@ export const Default: FC<DefaultProps> = ({
         addNotification(notificationGroup)
         createSuccessToast(notificationData)
         setIsLoadingFaucet(false)
-        
+
         // Mark the faucet as used in this session
         setFaucetUsed(true)
-        
+
         // Refetch faucet status to update backend state
         refetchFaucetStatus()
-        
+
         // After successful faucet operation, refresh balance
         refreshBalance()
       } else {
@@ -177,9 +170,9 @@ export const Default: FC<DefaultProps> = ({
   // Reset faucet used state when address changes
   useEffect(() => {
     if (address) {
-      setFaucetUsed(false);
+      setFaucetUsed(false)
     }
-  }, [address]);
+  }, [address])
 
   useEffect(() => {
     const balance_user: BalanceProps[] = balance
@@ -204,81 +197,81 @@ export const Default: FC<DefaultProps> = ({
     <>
       <div className="flex flex-col gap-8 p-4">
         <div className="flex justify-between gap-3">
-        <Typography variant="sm" weight={600} className="flex items-center gap-1.5 text-stone-50">
-        <JazzIcon diameter={16} address={address} />
-        {shortenAddress(address)}
-        </Typography>
-        <div className="flex gap-3">
-        <BuyCrypto address={address}>
-        {(buyUrl) => (
-        <IconButton as="a" target="_blank" href={buyUrl} className="p-0.5" description="Buy Crypto">
-        <CreditCardIcon width={18} height={18} />
-        </IconButton>
-        )}
-        </BuyCrypto>
-        <CopyHelper toCopy={address} hideIcon>
-        {(isCopied) => (
-        <IconButton className="p-0.5" description={isCopied ? 'Copied!' : 'Copy'}>
-        <Square2StackIcon width={18} height={18} />
-        </IconButton>
-        )}
-        </CopyHelper>
-        <IconButton
-        as="a"
-        target="_blank"
-        href={chains[chainId].getAccountUrl(address)}
-        className="p-0.5"
-        description="Explore"
-        >
-        <ArrowTopRightOnSquareIcon width={18} height={18} />
-        </IconButton>
-        <IconButton 
-        as="button" 
-          onClick={() => refreshBalance()} 
-            disabled={isRefreshing}
-              className="p-0.5" 
-            description="Refresh Balance"
-          >
-            <ArrowPathIcon width={18} height={18} className={isRefreshing ? "animate-spin" : ""} />
-          </IconButton>
-          <IconButton as="button" onClick={() => logout()} className="p-0.5" description="Disconnect">
-            <ArrowRightOnRectangleIcon width={18} height={18} />
-          </IconButton>
-        </div>
-      </div>
-        <div className="flex flex-col items-center justify-center gap-8">
-        {isRefreshing ? (
-        <div className="flex flex-col items-center justify-center gap-2">
-        <Loader className="w-8 h-8 text-stone-400" />
-          <Typography variant="sm" className="text-stone-500">
-              Loading balance...
+          <Typography variant="sm" weight={600} className="flex items-center gap-1.5 text-stone-50">
+            <JazzIcon diameter={16} address={address} />
+            {shortenAddress(address)}
           </Typography>
-        </div>
-        ) : !isLoading && balanceUSD == 0 ? (
-        <Typography variant="sm" className="text-center text-stone-500">
-        No balance in this address
-        </Typography>
-        ) : (
-        <div className="flex flex-col items-center justify-center gap-2">
-          <Typography variant="sm" className="text-stone-500">
-              Total Balance
-            </Typography>
-            <Typography variant="h3" className="whitespace-nowrap">
-              {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
-              {balanceUSD ? `$ ${balanceUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : ''}
-            </Typography>
+          <div className="flex gap-3">
+            <BuyCrypto address={address}>
+              {(buyUrl) => (
+                <IconButton as="a" target="_blank" href={buyUrl} className="p-0.5" description="Buy Crypto">
+                  <CreditCardIcon width={18} height={18} />
+                </IconButton>
+              )}
+            </BuyCrypto>
+            <CopyHelper toCopy={address} hideIcon>
+              {(isCopied) => (
+                <IconButton className="p-0.5" description={isCopied ? 'Copied!' : 'Copy'}>
+                  <Square2StackIcon width={18} height={18} />
+                </IconButton>
+              )}
+            </CopyHelper>
+            <IconButton
+              as="a"
+              target="_blank"
+              href={chains[chainId].getAccountUrl(address)}
+              className="p-0.5"
+              description="Explore"
+            >
+              <ArrowTopRightOnSquareIcon width={18} height={18} />
+            </IconButton>
+            <IconButton
+              as="button"
+              onClick={() => refreshBalance()}
+              disabled={isRefreshing}
+              className="p-0.5"
+              description="Refresh Balance"
+            >
+              <ArrowPathIcon width={18} height={18} className={isRefreshing ? 'animate-spin' : ''} />
+            </IconButton>
+            <IconButton as="button" onClick={() => logout()} className="p-0.5" description="Disconnect">
+              <ArrowRightOnRectangleIcon width={18} height={18} />
+            </IconButton>
           </div>
-        )}
+        </div>
+        <div className="flex flex-col items-center justify-center gap-8">
+          {isRefreshing ? (
+            <div className="flex flex-col items-center justify-center gap-2">
+              <Loader className="w-8 h-8 text-stone-400" />
+              <Typography variant="sm" className="text-stone-500">
+                Loading balance...
+              </Typography>
+            </div>
+          ) : !isLoading && balanceUSD == 0 ? (
+            <Typography variant="sm" className="text-center text-stone-500">
+              No balance in this address
+            </Typography>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2">
+              <Typography variant="sm" className="text-stone-500">
+                Total Balance
+              </Typography>
+              <Typography variant="h3" className="whitespace-nowrap">
+                {/* {balance.toSignificant(3)} {Native.onChain(chainId).symbol} */}
+                {balanceUSD ? `$ ${balanceUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : ''}
+              </Typography>
+            </div>
+          )}
           {!isLoading && faucetAvailable && !faucetUsed && (
-          <Button
-          variant="outlined"
-          className="px-8"
-          onClick={() => handleGetTokens()}
-          disabled={isLoadingFaucet || isRefreshing}
-          size="xs"
-          >
-          {isLoadingFaucet ? 'Processing...' : 'Faucet'}
-          </Button>
+            <Button
+              variant="outlined"
+              className="px-8"
+              onClick={() => handleGetTokens()}
+              disabled={isLoadingFaucet || isRefreshing}
+              size="xs"
+            >
+              {isLoadingFaucet ? 'Processing...' : 'Faucet'}
+            </Button>
           )}
         </div>
       </div>
@@ -302,6 +295,17 @@ export const Default: FC<DefaultProps> = ({
           className="flex text-sm font-semibold hover:text-stone-50 w-full text-stone-400 justify-between items-center hover:bg-white/[0.04] rounded-xl p-2 pr-1 py-2.5"
         >
           Transactions <ChevronRightIcon width={20} height={20} />
+        </button>
+      </div>
+      <div className="px-2">
+        <div className="w-full h-px bg-stone-200/10" />
+      </div>
+      <div className="p-2">
+        <button
+          onClick={() => setView(ProfileView.TokensEVM)}
+          className="flex text-sm font-semibold hover:text-stone-50 w-full text-stone-400 justify-between items-center hover:bg-white/[0.04] rounded-xl p-2 pr-1 py-2.5"
+        >
+          Tokens (EVM) <ChevronRightIcon width={20} height={20} />
         </button>
       </div>
     </>
