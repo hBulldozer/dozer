@@ -290,42 +290,47 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
           </Typography>
         ) : (
           <div>
-            {bridgedTokens.map((token) => {
-              const balance = token.originalAddress ? tokenBalances[token.originalAddress] : 0
-              const price = prices?.[token.uuid]
-              const balanceUSD = price ? balance * price : undefined
+            {bridgedTokens
+              .filter((token) => {
+                const balance = token.originalAddress ? tokenBalances[token.originalAddress] : 0
+                return balance > 0
+              })
+              .map((token) => {
+                const balance = token.originalAddress ? tokenBalances[token.originalAddress] : 0
+                const price = prices?.[token.uuid]
+                const balanceUSD = price ? balance * price : undefined
 
-              return (
-                <div
-                  className="flex items-center justify-between px-1 mx-3 border-b border-stone-600/20"
-                  key={token.uuid}
-                >
-                  <div className="flex flex-row items-center gap-3 py-2.5">
-                    <div className="w-7 h-7">
-                      <Currency.Icon currency={token} width={28} height={28} />
+                return (
+                  <div
+                    className="flex items-center justify-between px-1 mx-3 border-b border-stone-600/20"
+                    key={token.uuid}
+                  >
+                    <div className="flex flex-row items-center gap-3 py-2.5">
+                      <div className="w-7 h-7">
+                        <Currency.Icon currency={token} width={28} height={28} />
+                      </div>
+                      <div className="flex flex-col">
+                        <Typography variant="xs" weight={500} className="text-stone-300">
+                          {token.symbol}
+                        </Typography>
+                        <Typography variant="xxs" className="text-stone-400">
+                          {token.name}
+                        </Typography>
+                      </div>
                     </div>
-                    <div className="flex flex-col">
-                      <Typography variant="xs" weight={500} className="text-stone-300">
-                        {token.symbol}
-                      </Typography>
-                      <Typography variant="xxs" className="text-stone-400">
-                        {token.name}
-                      </Typography>
+                    <div className="flex justify-end">
+                      <div className="flex flex-col">
+                        <Typography variant="xs" weight={500} className="text-right text-stone-200">
+                          {balance !== undefined ? balance.toFixed(4) : '0.0000'}
+                        </Typography>
+                        <Typography variant="xxs" className="text-right text-stone-400">
+                          {balanceUSD ? `$${balanceUSD.toFixed(2)}` : '-'}
+                        </Typography>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex justify-end">
-                    <div className="flex flex-col">
-                      <Typography variant="xs" weight={500} className="text-right text-stone-200">
-                        {balance !== undefined ? balance.toFixed(4) : '0.0000'}
-                      </Typography>
-                      <Typography variant="xxs" className="text-right text-stone-400">
-                        {balanceUSD ? `$${balanceUSD.toFixed(2)}` : '-'}
-                      </Typography>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
 
             {/* Bridge link at the bottom */}
             <div className="p-3 mx-3 mt-2">

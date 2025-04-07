@@ -17,6 +17,8 @@ import { client } from '@dozer/api'
 import { useWalletConnectClient } from '../../contexts'
 import { Tokens } from './Tokens'
 import { TokensEVM } from './TokensEVM'
+import { useBridge } from '../../contexts/BridgeContext'
+import bridgeConfig, { IS_TESTNET } from '../../../config/bridge'
 
 interface ProfileProps {
   client: typeof client
@@ -57,6 +59,63 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { setBalance } = useAccount()
 
+  // Add state for EVM token balances
+  const [evmTokenBalances, setEvmTokenBalances] = useState<Record<string, number>>({})
+  const [evmTokensUsdValue, setEvmTokensUsdValue] = useState(0)
+  const { loadBalances } = useBridge()
+  const { data: tokensData } = client.getTokens.all.useQuery()
+  const { data: prices } = client.getPrices.all.useQuery()
+
+  // Fetch EVM token balances for the Default view
+  const fetchEvmBalances = async () => {
+    if (!window.ethereum || !address) return
+
+    try {
+      // Only attempt to fetch if MetaMask is connected
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+      if (!accounts || accounts.length === 0) return
+
+      // Filter tokens that are bridged and have original addresses
+      const bridgedTokens = (tokensData || []).filter((token: any) => {
+        return (
+          token.bridged &&
+          token.originalAddress &&
+          ((IS_TESTNET && token.sourceChain?.toLowerCase() === 'sepolia') ||
+            (!IS_TESTNET && token.sourceChain?.toLowerCase() === 'arbitrum'))
+        )
+      })
+
+      // Extract token addresses
+      const tokenAddresses = bridgedTokens
+        .filter((token: any) => token.originalAddress)
+        .map((token: any) => token.originalAddress)
+
+      if (tokenAddresses.length > 0) {
+        // Attempt to load balances
+        const balances = await loadBalances(tokenAddresses)
+        if (balances) {
+          setEvmTokenBalances(balances)
+
+          // Calculate USD value of EVM tokens
+          let totalUsdValue = 0
+          bridgedTokens.forEach((token: any) => {
+            if (token.originalAddress && balances[token.originalAddress] > 0) {
+              const balance = balances[token.originalAddress]
+              const price = prices?.[token.uuid]
+              if (price) {
+                totalUsdValue += balance * price
+              }
+            }
+          })
+
+          setEvmTokensUsdValue(totalUsdValue)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching EVM balances in Profile:', error)
+    }
+  }
+
   const filteredNotifications = useMemo<Record<number, string[]>>(() => {
     const filteredEntries = Object.entries(notifications)
       .reverse()
@@ -81,6 +140,8 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
     setIsRefreshing(true)
     try {
       await refetch()
+      // Also refresh EVM balances
+      await fetchEvmBalances()
     } finally {
       setIsRefreshing(false)
     }
@@ -154,6 +215,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
             setView={setView}
             refreshBalance={refreshBalance}
             isRefreshing={isRefreshing || isLoading}
+            evmTokensUsdValue={evmTokensUsdValue}
           />
         )}
         {view === ProfileView.Transactions && (

@@ -38,6 +38,7 @@ interface DefaultProps {
   api_client: typeof client
   refreshBalance: () => Promise<void>
   isRefreshing: boolean
+  evmTokensUsdValue?: number
 }
 
 interface BalanceProps {
@@ -46,7 +47,15 @@ interface BalanceProps {
   token: Token | undefined
 }
 
-export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_client, refreshBalance, isRefreshing }) => {
+export const Default: FC<DefaultProps> = ({
+  chainId,
+  address,
+  setView,
+  api_client,
+  refreshBalance,
+  isRefreshing,
+  evmTokensUsdValue = 0,
+}) => {
   // const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
   const { data: prices } = api_client.getPrices.all.useQuery()
@@ -190,8 +199,9 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
       })
       .sort((a: BalanceProps, b: BalanceProps) => b.balanceUSD - a.balanceUSD)
 
-    setBalanceUSD(balance_user.reduce((acc, cur) => acc + cur.balanceUSD, 0))
-  }, [balance, prices, tokens])
+    // Add EVM tokens USD value to the total balance
+    setBalanceUSD(balance_user.reduce((acc, cur) => acc + cur.balanceUSD, 0) + evmTokensUsdValue)
+  }, [balance, prices, tokens, evmTokensUsdValue])
 
   return (
     <>
