@@ -43,6 +43,16 @@ export class Token extends Currency {
   public readonly originalAddress?: string
 
   /**
+   * The source chain for bridged tokens
+   */
+  public readonly sourceChain?: string
+
+  /**
+   * The target chain for bridged tokens
+   */
+  public readonly targetChain?: string
+
+  /**
    * The rebase
    */
   readonly rebase: {
@@ -58,6 +68,8 @@ export class Token extends Currency {
     imageUrl,
     bridged = false,
     originalAddress,
+    sourceChain,
+    targetChain,
     rebase = { base: JSBI.BigInt(1), elastic: JSBI.BigInt(1) },
   }: {
     chainId: number | string
@@ -68,6 +80,8 @@ export class Token extends Currency {
     name?: string
     bridged?: boolean
     originalAddress?: string
+    sourceChain?: string
+    targetChain?: string
     rebase?: { base: JSBI; elastic: JSBI }
   }) {
     super({
@@ -84,6 +98,8 @@ export class Token extends Currency {
     }
     this.bridged = bridged
     this.originalAddress = originalAddress
+    this.sourceChain = sourceChain
+    this.targetChain = targetChain
     try {
       // TODO: No rebase?
       this.rebase = rebase

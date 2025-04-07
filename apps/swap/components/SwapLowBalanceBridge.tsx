@@ -15,7 +15,8 @@ export const SwapLowBalanceBridge: FC<SwapLowBalanceBridgeProps> = ({ token, has
   const router = useRouter()
   const { connected: metaMaskConnected } = useSDK()
 
-  // Only show for bridged tokens with low balance
+  // Only show for bridged tokens
+  // Bridged = true means this is a Hathor token that has an EVM counterpart
   if (!token?.bridged) {
     return null
   }
@@ -33,13 +34,19 @@ export const SwapLowBalanceBridge: FC<SwapLowBalanceBridgeProps> = ({ token, has
       <div className="flex flex-col gap-2 p-4">
         <div className="flex items-center justify-between">
           <div className="text-base font-medium text-yellow-500">
-            {hasLowBalance ? `Not enough ${token.symbol}` : `Get ${token.symbol} from Arbitrum`}
+            {hasLowBalance
+              ? `Not enough ${token.symbol}`
+              : `Get ${token.symbol} from ${token.sourceChain || 'Arbitrum'}`}
           </div>
         </div>
         <p className="text-sm text-yellow-300">
           {hasLowBalance
-            ? `You don't have enough ${token.symbol} to complete this swap. You can bridge more from Arbitrum.`
-            : `This token is available through the Arbitrum bridge. Click below to get started.`}
+            ? `You don't have enough ${token.symbol} to complete this swap. You can bridge more from ${
+                token.sourceChain || 'Arbitrum'
+              }.`
+            : `This token is available through the ${
+                token.sourceChain || 'Arbitrum'
+              } bridge. Click below to get started.`}
         </p>
 
         <div className="flex flex-col gap-2 mt-1">

@@ -25,15 +25,22 @@ type TokenOutputArray = RouterOutputs['getTokens']['all']
 type ElementType<T> = T extends (infer U)[] ? U : never
 type TokenOutput = ElementType<TokenOutputArray>
 
-function toToken(dbToken: TokenOutput): Token {
-  if (!dbToken) return new Token({ chainId: 1, uuid: '', decimals: 18, name: '', symbol: 'HTR' })
+// Convert database token to Token model
+const toToken = (token: any): Token | undefined => {
+  if (!token) return undefined
+
+  // Convert database fields to Token model and handle null/undefined
   return new Token({
-    chainId: dbToken.chainId,
-    uuid: dbToken.uuid,
-    decimals: dbToken.decimals,
-    name: dbToken.name,
-    symbol: dbToken.symbol,
-    imageUrl: dbToken.imageUrl || undefined,
+    chainId: token.chainId,
+    uuid: token.uuid,
+    decimals: token.decimals,
+    name: token.name,
+    symbol: token.symbol,
+    imageUrl: token.imageUrl || undefined,
+    bridged: !!token.bridged,
+    originalAddress: token.originalAddress || undefined,
+    sourceChain: token.sourceChain || undefined,
+    targetChain: token.targetChain || undefined,
   })
 }
 
@@ -318,10 +325,18 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
               ? tokens
                   .filter((token) => !token.custom)
                   .map((token) => {
-                    const { originalAddress, ...rest } = token
+                    // Handle all possible null values by converting to undefined
                     return new Token({
-                      ...rest,
-                      originalAddress: originalAddress || undefined,
+                      chainId: token.chainId,
+                      uuid: token.uuid,
+                      decimals: token.decimals,
+                      name: token.name,
+                      symbol: token.symbol,
+                      imageUrl: token.imageUrl || undefined,
+                      bridged: !!token.bridged,
+                      originalAddress: token.originalAddress || undefined,
+                      sourceChain: token.sourceChain || undefined,
+                      targetChain: token.targetChain || undefined,
                     })
                   })
               : []
@@ -362,10 +377,18 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
                 ? tokens
                     .filter((token) => !token.custom)
                     .map((token) => {
-                      const { originalAddress, ...rest } = token
+                      // Handle all possible null values by converting to undefined
                       return new Token({
-                        ...rest,
-                        originalAddress: originalAddress || undefined,
+                        chainId: token.chainId,
+                        uuid: token.uuid,
+                        decimals: token.decimals,
+                        name: token.name,
+                        symbol: token.symbol,
+                        imageUrl: token.imageUrl || undefined,
+                        bridged: !!token.bridged,
+                        originalAddress: token.originalAddress || undefined,
+                        sourceChain: token.sourceChain || undefined,
+                        targetChain: token.targetChain || undefined,
                       })
                     })
                 : []

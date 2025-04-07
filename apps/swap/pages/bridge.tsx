@@ -30,11 +30,13 @@ const BridgePage = () => {
       const selectedToken = tokens.find((token) => token.uuid === router.query.token)
       if (selectedToken) {
         // Convert null to undefined for originalAddress before creating Token
-        const { originalAddress, ...rest } = selectedToken
+        const { originalAddress, sourceChain, targetChain, ...rest } = selectedToken
         setPreselectedToken(
           new Token({
             ...rest,
             originalAddress: originalAddress || undefined,
+            sourceChain: sourceChain || undefined,
+            targetChain: targetChain || undefined,
           })
         )
       }

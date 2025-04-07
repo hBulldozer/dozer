@@ -43,9 +43,9 @@ export const seedConfig: SeedConfig = {
       totalSupply: 280000000,
       about: 'hUSDC is the bridged version of USDC on the Hathor Network.',
       bridged: true,
-      sourceChain: 'Arbitrum',
+      sourceChain: 'Sepolia',
       targetChain: 'Hathor',
-      originalAddress: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
+      originalAddress: '0x3E1Adb4e24a48B90ca10c28388cE733a6267BAc4',
     },
     {
       name: 'Bitcoin',
@@ -54,9 +54,19 @@ export const seedConfig: SeedConfig = {
       about:
         'Bitcoin (BTC) is a decentralized digital currency. hBTC is the bridged version of BTC on the Hathor Network.',
       bridged: true,
-      sourceChain: 'Arbitrum',
+      sourceChain: 'Sepolia',
       targetChain: 'Hathor',
       originalAddress: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
+    },
+    {
+      name: 'Storm Labs Token 7',
+      symbol: 'hSLT7',
+      totalSupply: 5000000,
+      about: 'SLT7 is a test token used for bridging between Sepolia and Hathor.',
+      bridged: true,
+      sourceChain: 'Sepolia',
+      targetChain: 'Hathor',
+      originalAddress: '0x97118caaE1F773a84462490Dd01FE7a3e7C4cdCd',
     },
   ],
   pools: [
@@ -81,6 +91,13 @@ export const seedConfig: SeedConfig = {
       fee: 0.05,
       protocolFee: 0.01,
     },
+    {
+      tokenSymbol: 'hSLT7',
+      htrQuantity: 50000,
+      tokenQuantity: 5000,
+      fee: 0.05,
+      protocolFee: 0.01,
+    },
   ],
   oasis: [
     {
@@ -90,6 +107,10 @@ export const seedConfig: SeedConfig = {
     {
       tokenSymbol: 'hBTC',
       htrQuantity: 10_000_000,
+    },
+    {
+      tokenSymbol: 'hSLT7',
+      htrQuantity: 500_000,
     },
   ],
 }

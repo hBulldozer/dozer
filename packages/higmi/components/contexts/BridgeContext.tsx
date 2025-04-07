@@ -244,14 +244,14 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         hathorAddress
       )
 
-      // In testnet mode, always use the SLT7 token address for bridging
-      // This ensures we use a token that actually exists on Sepolia
-      let actualTokenAddress = tokenAddress
-      if (config.isTestnet) {
-        // Use the SLT7 token address for Sepolia
-        actualTokenAddress = '0x97118caaE1F773a84462490Dd01FE7a3e7C4cdCd' // SLT7 Sepolia address
-        console.log('Using SLT7 token for testnet bridge operation instead of:', tokenAddress)
+      // Validate Hathor address format
+      if (!hathorAddress || !hathorAddress.match(/^[a-zA-Z0-9]{34,42}$/)) {
+        console.error('Invalid Hathor address format:', hathorAddress)
+        throw new Error('Invalid Hathor address format. Please ensure you are connected with a valid Hathor wallet.')
       }
+
+      // Use the token address provided - this should be the EVM token address (originalAddress)
+      const actualTokenAddress = tokenAddress
 
       // Create contract instances
       const bridgeContract = new web3.eth.Contract(BRIDGE_ABI as any, BRIDGE_CONTRACT_ADDRESS)
@@ -263,19 +263,40 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // Get token decimals (fallback to 18 if call fails)
       let decimals: number = 18
       try {
-        // First check if the decimals method exists on the contract
-        if (!tokenContract.methods.decimals) {
-          console.warn('Token contract does not have decimals method, using default 18')
+        // Check for known tokens first - USDC is always 6 decimals
+        if (actualTokenAddress.toLowerCase() === '0x3e1adb4e24a48b90ca10c28388ce733a6267bac4'.toLowerCase()) {
+          // This is USDC on Sepolia - always 6 decimals
+          decimals = 6
+          console.log('Detected USDC token, using 6 decimals')
         } else {
-          const decimalResult = await tokenContract.methods.decimals().call()
-          if (decimalResult) {
-            decimals = parseInt(String(decimalResult))
+          // Try to get decimals from the contract
+          try {
+            const decimalResult = await tokenContract.methods.decimals().call()
+            if (decimalResult) {
+              decimals = parseInt(String(decimalResult))
+              console.log('Token decimals retrieved from contract:', decimals)
+            }
+          } catch (error) {
+            console.warn('Could not get decimals from contract method, using default or known values')
+
+            // Last resort - check token symbol
+            try {
+              const symbol = await tokenContract.methods.symbol().call()
+              const symbolStr = String(symbol || '')
+              if (symbolStr && (symbolStr.toUpperCase() === 'USDC' || symbolStr.toUpperCase() === 'HUSDC')) {
+                decimals = 6
+                console.log('Detected USDC token by symbol, using 6 decimals')
+              }
+            } catch (symbolError) {
+              console.warn('Could not determine token symbol')
+            }
           }
         }
-        console.log('Token decimals retrieved:', decimals)
       } catch (error) {
-        console.warn('Could not get token decimals, using default 18', error)
+        console.warn('Error determining token decimals, using default 18:', error)
       }
+
+      console.log('Final token decimals being used:', decimals)
 
       // Convert amount to wei format based on decimals
       let amountInWei: string
@@ -287,20 +308,17 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           throw new Error('Invalid amount: must be a positive number')
         }
 
-        // For 18 decimals tokens, use Web3's toWei
-        if (decimals === 18) {
-          amountInWei = web3.utils.toWei(amount, 'ether')
-          humanReadableAmount = amount
-        } else {
-          // For other decimals, do manual conversion
-          // Convert to smallest unit by multiplying by 10^decimals
-          const factor = Math.pow(10, decimals)
-          const rawAmount = Math.floor(amountNumber * factor)
-          amountInWei = rawAmount.toString()
-          humanReadableAmount = amountNumber.toString()
-        }
+        humanReadableAmount = amount
 
-        console.log('Converting amount:', humanReadableAmount, 'to wei:', amountInWei, 'with decimals:', decimals)
+        // Convert based on token decimals
+        const factor = Math.pow(10, decimals)
+        const rawAmount = Math.floor(amountNumber * factor)
+        amountInWei = rawAmount.toString()
+
+        console.log(
+          `Converting amount: ${humanReadableAmount} to smallest unit: ${amountInWei} ` +
+            `(${amountNumber} × 10^${decimals})`
+        )
       } catch (error) {
         console.error('Error converting amount to wei:', error)
         throw new Error(`Failed to convert amount: ${error}`)
@@ -309,11 +327,18 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // First check token balance to ensure user has enough tokens
       try {
         const balanceWei = await tokenContract.methods.balanceOf(arbitrumAddress).call()
-        console.log('Current token balance:', balanceWei)
-
         const balanceWeiString = String(balanceWei || '0')
+
+        // Convert balance to a human-readable format for error messages
+        const balanceInTokens = (Number(balanceWei) / Math.pow(10, decimals)).toFixed(decimals)
+        console.log(
+          `Current token balance: ${balanceWeiString} (${balanceInTokens} ${humanReadableAmount.replace(/[\d.]/g, '')})`
+        )
+
         if (BigInt(balanceWeiString) < BigInt(amountInWei)) {
-          throw new Error('Insufficient token balance. Please check your balance and try again.')
+          throw new Error(
+            `Insufficient token balance. You have ${balanceInTokens} tokens but are trying to send ${humanReadableAmount}.`
+          )
         }
       } catch (error: any) {
         console.error('Error checking token balance:', error)
@@ -336,7 +361,13 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           if (allowanceResult) {
             allowance = String(allowanceResult)
           }
-          console.log('Current allowance:', allowance, 'Required amount:', amountInWei)
+
+          // Display allowance in human-readable format
+          const allowanceInTokens = (Number(allowance) / Math.pow(10, decimals)).toFixed(decimals)
+          console.log(
+            `Current allowance: ${allowance} (${allowanceInTokens} tokens), ` +
+              `Required amount: ${amountInWei} (${humanReadableAmount} tokens)`
+          )
         } catch (error) {
           console.error('Error getting allowance:', error)
           throw new Error(`Failed to check token allowance: ${error}`)
@@ -347,17 +378,12 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           try {
             console.log(`Executing approval for ${humanReadableAmount} tokens`)
 
-            // Use a higher amount for approval to avoid needing to approve again - use the exact token's decimal system
-            let approvalAmount: string
-            if (decimals === 18) {
-              approvalAmount = web3.utils.toWei('1000000000', 'ether') // Very large amount for 18 decimals
-            } else {
-              // For non-standard decimals, create a suitable large approval
-              const factor = Math.pow(10, decimals)
-              approvalAmount = (1000000000 * factor).toString()
-            }
+            // Use a higher amount for approval to avoid needing to approve again
+            const factor = Math.pow(10, decimals)
+            const largeAmount = 1000000000 // 1 billion tokens
+            const approvalAmount = (largeAmount * factor).toString()
 
-            console.log('Approval amount:', approvalAmount)
+            console.log(`Setting approval to ${largeAmount} tokens (${approvalAmount} in smallest units)`)
 
             // Create approve method
             const approveMethod = tokenContract.methods.approve(BRIDGE_CONTRACT_ADDRESS, approvalAmount)
