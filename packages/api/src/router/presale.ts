@@ -75,7 +75,15 @@ export const presaleRouter = createTRPCRouter({
         network: z.enum(['solana', 'evm']),
         transactionProof: z.string().min(1, 'Transaction proof is required'),
         contactInfo: z.string().min(1, 'Contact information is required'),
-        hathorAddress: z.string().min(1, 'Hathor address is required'),
+        hathorAddress: z
+          .string()
+          .min(1, 'Hathor address is required')
+          .refine((val) => val.length === 34, {
+            message: 'Hathor address must be exactly 34 characters long',
+          })
+          .refine((val) => val.startsWith('H'), {
+            message: "Hathor address must start with 'H'",
+          }),
         price: z.number().default(1.0),
       })
     )

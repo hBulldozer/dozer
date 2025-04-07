@@ -53,6 +53,10 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
   const [submissionSuccess, setSubmissionSuccess] = useState(false)
   const [submissionMessage, setSubmissionMessage] = useState('')
 
+  // Track Hathor address validation state
+  const [isValidatingAddress, setIsValidatingAddress] = useState<boolean>(false)
+  const [isAddressValid, setIsAddressValid] = useState<boolean | null>(null)
+
   // Networks available for selection with payment information
   const networks: NetworkInfo[] = [
     {
@@ -142,11 +146,31 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
   const validateForm = () => {
     const errors = {
       transactionProof: !transactionProof.trim(),
-      hathorAddress: !hathorAddress.trim(),
+      hathorAddress: !hathorAddress.trim() || !validateHathorAddress(hathorAddress.trim()),
     }
 
     setFormErrors(errors)
     return !Object.values(errors).some((error) => error)
+  }
+
+  // Validate Hathor address format
+  const validateHathorAddress = (address: string): boolean => {
+    return address.length === 34 && address.startsWith('H')
+  }
+
+  // Handle Hathor address input change with real-time validation
+  const handleAddressChange = (value: string) => {
+    setHathorAddress(value)
+
+    // Only show validation after user has entered something
+    if (value.trim().length > 0) {
+      setIsValidatingAddress(true)
+      const isValid = validateHathorAddress(value.trim())
+      setIsAddressValid(isValid)
+    } else {
+      setIsValidatingAddress(false)
+      setIsAddressValid(null)
+    }
   }
 
   // Handle form submission
@@ -239,7 +263,7 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
 
             <Button
               onClick={onClose}
-              className="px-10 py-3 text-sm font-bold tracking-wider bg-yellow-800/50 text-yellow-200 rounded-xl hover:bg-yellow-700/50"
+              className="px-10 py-3 text-sm font-bold tracking-wider text-yellow-200 bg-yellow-800/50 rounded-xl hover:bg-yellow-700/50"
             >
               Close
             </Button>
@@ -450,18 +474,40 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
                 {/* Hathor Address Input */}
                 <div>
                   <label className="block mb-1 text-xs text-neutral-400">Hathor Wallet Address (to receive DZD)*</label>
-                  <Input.TextGeneric
-                    id="hathorAddress"
-                    pattern=".*"
-                    value={hathorAddress}
-                    onChange={setHathorAddress}
-                    placeholder="Enter your Hathor wallet address"
-                    className={`w-full py-2 bg-transparent border ${
-                      formErrors.hathorAddress ? 'border-red-500' : 'border-stone-700'
-                    } rounded-lg text-white text-sm focus:border-yellow-500 focus:outline-none`}
-                  />
+                  <div className="relative">
+                    <Input.TextGeneric
+                      id="hathorAddress"
+                      pattern=".*"
+                      value={hathorAddress}
+                      onChange={handleAddressChange}
+                      placeholder="Enter your Hathor wallet address"
+                      className={`w-full py-2 bg-transparent border ${
+                        formErrors.hathorAddress
+                          ? 'border-red-500'
+                          : isValidatingAddress
+                          ? isAddressValid
+                            ? 'border-green-500'
+                            : 'border-yellow-500'
+                          : 'border-stone-700'
+                      } rounded-lg text-white text-sm focus:border-yellow-500 focus:outline-none`}
+                    />
+                    {isValidatingAddress && isAddressValid && (
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <CheckIcon className="w-4 h-4 text-green-500" />
+                      </div>
+                    )}
+                  </div>
                   {formErrors.hathorAddress && (
-                    <p className="mt-1 text-xs text-red-500">Please enter your Hathor wallet address</p>
+                    <p className="mt-1 text-xs text-red-500">
+                      {!hathorAddress.trim()
+                        ? 'Please enter your Hathor wallet address'
+                        : "Hathor address must be 34 characters long and start with 'H'"}
+                    </p>
+                  )}
+                  {isValidatingAddress && !isAddressValid && !formErrors.hathorAddress && (
+                    <p className="mt-1 text-xs text-yellow-500">
+                      Hathor address must be 34 characters long and start with 'H'
+                    </p>
                   )}
                   <a
                     href="https://hathor.network/developers/"
