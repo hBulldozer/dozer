@@ -64,13 +64,11 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
   const isSaleEnded = priceChangeTimeUnits.every((unit) => unit.value === 0)
 
   // Check which phase we're in
-  const isBeforeStart = now < PRESALE_CONFIG.START_DATE
   const isAfterEnd = now >= PRESALE_CONFIG.END_DATE
   const isInFinalPhase = isPresaleActive && now >= PRESALE_CONFIG.FINAL_INCREASE_DATE
 
   // Get appropriate countdown label based on current phase
   const getCountdownLabel = () => {
-    if (isBeforeStart) return 'PRESALE STARTS IN'
     if (isAfterEnd) return 'PRESALE ENDED'
     if (isInFinalPhase) return 'PRESALE ENDS IN'
     return 'NEXT PRICE INCREASE IN'
@@ -85,7 +83,7 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
           weight={800}
           className="text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600 mb-1.5 tracking-tight"
         >
-          {isPresaleActive ? 'BUY DZR PRESALE NOW!' : isSaleEnded ? 'PRESALE ENDED' : 'PRESALE COMING SOON'}
+          {isPresaleActive ? 'BUY DZR PRESALE NOW!' : 'PRESALE ENDED'}
         </Typography>
         <div className="flex items-center justify-center">
           <div className="w-16 h-px mr-3 bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent"></div>
@@ -94,9 +92,7 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
               ? isInFinalPhase
                 ? 'Final price - Ends soon!'
                 : 'Before price increases'
-              : isAfterEnd
-              ? 'Thank you for participating'
-              : 'Get ready'}
+              : 'Thank you for participating'}
           </Typography>
           <div className="w-16 h-px ml-3 bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent"></div>
         </div>
@@ -206,10 +202,10 @@ const PresaleSidebar: React.FC<PresaleSidebarProps> = ({
           className={`w-full py-4 font-extrabold tracking-wide rounded-lg transition-all duration-300 text-sm uppercase ${
             isPresaleActive
               ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black hover:from-yellow-400 hover:to-amber-500 shadow-[0_4px_14px_rgba(234,179,8,0.25)] hover:shadow-[0_6px_20px_rgba(234,179,8,0.35)]'
-              : 'bg-yellow-800 text-gray-400 border border-gray-700 shadow-inner hover:bg-gray-700'
+              : 'bg-gray-800 text-gray-400 border border-gray-700 shadow-inner hover:bg-gray-700'
           }`}
         >
-          {isPresaleActive ? 'BUY WITH CRYPTO' : isAfterEnd ? 'PRESALE ENDED' : 'COMING SOON'}
+          {isPresaleActive ? 'BUY WITH CRYPTO' : 'PRESALE ENDED'}
         </Button>
       </div>
     </div>

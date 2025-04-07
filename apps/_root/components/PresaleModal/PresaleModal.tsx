@@ -230,17 +230,11 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
               weight={700}
               className="mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
             >
-              {new Date() < PRESALE_CONFIG.START_DATE ? 'Presale Not Started Yet' : 'Presale Has Ended'}
+              Presale Has Ended
             </Typography>
 
             <Typography variant="lg" className="mb-8 text-neutral-300">
-              {new Date() < PRESALE_CONFIG.START_DATE
-                ? `The presale starts on ${PRESALE_CONFIG.START_DATE.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}.`
-                : 'Thank you for your interest in the Dozer presale. The presale period has ended.'}
+              Thank you for your interest in the Dozer presale. The presale period has ended.
             </Typography>
 
             <Button

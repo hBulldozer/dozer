@@ -34,7 +34,7 @@ export interface TimeLeft {
 
 /**
  * Calculate the current presale price based on the tiered pricing structure
- * @returns {Object} The current price, time until next price increase, and if presale is active
+ * @returns {Object} The current price and time until next price increase
  */
 export function calculatePresalePrice(): {
   currentPrice: number
@@ -58,18 +58,8 @@ export function calculatePresalePrice(): {
     seconds: 0,
   }
 
-  // Before presale starts
-  if (currentTime < PRESALE_CONFIG.START_DATE.getTime()) {
-    currentPrice = PRESALE_CONFIG.PRICES.INITIAL
-    nextStepDate = new Date(PRESALE_CONFIG.START_DATE)
-    isPresaleActive = false
-
-    // Calculate time until start date (not first price increase)
-    const timeToStart = PRESALE_CONFIG.START_DATE.getTime() - currentTime
-    timeUntilNextStep = calculateTimeLeft(timeToStart)
-  }
-  // After presale ends
-  else if (currentTime >= PRESALE_CONFIG.END_DATE.getTime()) {
+  // If after presale ends
+  if (currentTime >= PRESALE_CONFIG.END_DATE.getTime()) {
     currentPrice = PRESALE_CONFIG.PRICES.TIER_3
     nextStepDate = new Date(PRESALE_CONFIG.END_DATE)
     isPresaleActive = false

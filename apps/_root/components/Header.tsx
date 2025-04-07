@@ -5,7 +5,7 @@ import { calculatePresalePrice } from '../utils/presalePrice'
 
 export const Header: FC = () => {
   const [isPresaleModalOpen, setIsPresaleModalOpen] = useState<boolean>(false)
-  const [isPresaleActive, setIsPresaleActive] = useState<boolean>(false)
+  const [isPresaleActive, setIsPresaleActive] = useState<boolean>(true)
 
   // Check if presale is active on mount and when modal is opened/closed
   useEffect(() => {
@@ -31,10 +31,10 @@ export const Header: FC = () => {
           className={`ml-2 whitespace-nowrap ${
             isPresaleActive
               ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black'
-              : 'bg-yellow-800 text-gray-400 border border-gray-700 shadow-inner hover:bg-gray-700'
+              : 'bg-gray-800 text-gray-400 border border-gray-700 shadow-inner hover:bg-gray-700'
           }`}
         >
-          {isPresaleActive ? 'Join Now' : 'Coming Soon'}
+          {isPresaleActive ? 'Join Now' : 'Presale Ended'}
         </Button>
       </div>
 
