@@ -87,16 +87,6 @@ const Home = () => {
               <ArrowTopRightOnSquareIcon width={20} height={20} className="text-gray-400" />
             </div>
           </div>
-          <SwapSideBridgeSuggestion
-            token={trade.mainCurrency as Token}
-            hasLowBalance={
-              trade.mainCurrency !== undefined &&
-              trade.amountSpecified !== undefined &&
-              trade.amountSpecified > 0 &&
-              (balances.find((bal) => bal.token_uuid === trade.mainCurrency?.uuid)?.token_balance || 0) <
-                trade.amountSpecified * 100
-            }
-          />
         </div>
         <BlockTracker client={api} />
       </Layout>
@@ -384,12 +374,19 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
           />
           <SwapStatsDisclosure prices={prices || {}} />
 
-          {/* Low balance bridge suggestion - now using side version */}
-          {/* <SwapLowBalanceBridge 
+          {/* Show bridge suggestion when balance is low */}
+          <SwapLowBalanceBridge
             token={token0}
-            hasLowBalance={token0 && ((Number(input0) > 0 && (balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) < Number(input0) * 100) || 
-                          ((balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) === 0))}
-          /> */}
+            hasLowBalance={
+              !!(
+                token0?.bridged &&
+                ((Number(input0) > 0 &&
+                  (balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) <
+                    Number(input0) * 100) ||
+                  (balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) === 0)
+              )
+            }
+          />
 
           <div className="p-3 pt-0">
             <Checker.Connected fullWidth size="md">

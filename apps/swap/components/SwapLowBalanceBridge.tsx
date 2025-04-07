@@ -3,6 +3,7 @@ import { Token } from '@dozer/currency'
 import { useBridge } from '@dozer/higmi'
 import { Button } from '@dozer/ui'
 import { useRouter } from 'next/router'
+import { ArrowRightIcon } from '@heroicons/react/24/solid'
 import { useSDK } from '@metamask/sdk-react'
 
 interface SwapLowBalanceBridgeProps {
@@ -28,25 +29,28 @@ export const SwapLowBalanceBridge: FC<SwapLowBalanceBridgeProps> = ({ token, has
   }
 
   return (
-    <div className="p-3 mt-2 border rounded-lg border-yellow-600 bg-yellow-900/20">
-      <div className="flex flex-col gap-2">
+    <div className="mx-3 mb-3 border rounded-lg border-yellow-600 bg-yellow-900/20">
+      <div className="flex flex-col gap-2 p-4">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-medium text-yellow-500">
+          <div className="text-base font-medium text-yellow-500">
             {hasLowBalance ? `Not enough ${token.symbol}` : `Get ${token.symbol} from Arbitrum`}
           </div>
         </div>
-        <p className="text-xs text-yellow-300">
+        <p className="text-sm text-yellow-300">
           {hasLowBalance
             ? `You don't have enough ${token.symbol} to complete this swap. You can bridge more from Arbitrum.`
             : `This token is available through the Arbitrum bridge. Click below to get started.`}
         </p>
 
-        <div className="flex items-center gap-2 mt-1">
-          <Button size="xs" color="yellow" onClick={navigateToBridge} className="py-1">
-            Bridge {token.symbol}
+        <div className="flex flex-col gap-2 mt-1">
+          <Button size="sm" color="yellow" onClick={navigateToBridge} className="w-full">
+            <div className="flex items-center justify-center gap-2">
+              <span>Bridge {token.symbol}</span>
+              <ArrowRightIcon width={16} height={16} />
+            </div>
           </Button>
 
-          {!metaMaskConnected && <span className="text-xs text-yellow-200">Connect MetaMask on bridge page</span>}
+          {!metaMaskConnected && <p className="text-xs text-yellow-200 text-center">Connect MetaMask on bridge page</p>}
         </div>
       </div>
     </div>
