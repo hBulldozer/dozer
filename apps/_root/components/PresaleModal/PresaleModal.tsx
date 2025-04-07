@@ -8,12 +8,14 @@ import { ChevronRightIcon, ArrowPathIcon, ArrowLeftIcon, LinkIcon, ArrowRightIco
 import { api } from '../../utils/api'
 import { createSuccessToast, createErrorToast, createFailedToast } from '@dozer/ui/toast'
 import Image from 'next/image'
+import { PRESALE_CONFIG } from '../../utils/presalePrice'
 
 interface PresaleModalProps {
   isOpen: boolean
   onClose: () => void
   className?: string
   currentPrice?: number
+  isPresaleActive?: boolean
 }
 
 // Network payment information
@@ -27,7 +29,13 @@ interface NetworkInfo {
   tokenSymbol: string
 }
 
-const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose, className, currentPrice = 1.0 }) => {
+const PresaleModal: React.FC<PresaleModalProps> = ({
+  isOpen,
+  onClose,
+  className,
+  currentPrice = 1.0,
+  isPresaleActive = true,
+}) => {
   // Track the current step in the process
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedNetwork, setSelectedNetwork] = useState<'solana' | 'evm' | null>(null)
@@ -207,6 +215,47 @@ const PresaleModal: React.FC<PresaleModalProps> = ({ isOpen, onClose, className,
   // Add default in the error handler to avoid exceptions
   const priceToDisplay = typeof currentPrice === 'number' ? currentPrice : 1.0
 
+  // Update the content based on presale status
+  if (!isPresaleActive) {
+    return (
+      <Dialog open={isOpen} onClose={onClose}>
+        <Dialog.Content
+          className={`w-screen max-w-md bg-stone-950 !mt-24 pt-16 !pb-2 flex flex-col min-h-[560px] ${className || ''}`}
+        >
+          <Dialog.Header title="Dozer Presale" onClose={onClose} className="pb-2" />
+
+          <div className="flex flex-col items-center justify-center flex-grow p-8 text-center">
+            <Typography
+              variant="h3"
+              weight={700}
+              className="mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+            >
+              {new Date() < PRESALE_CONFIG.START_DATE ? 'Presale Not Started Yet' : 'Presale Has Ended'}
+            </Typography>
+
+            <Typography variant="lg" className="mb-8 text-neutral-300">
+              {new Date() < PRESALE_CONFIG.START_DATE
+                ? `The presale starts on ${PRESALE_CONFIG.START_DATE.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}.`
+                : 'Thank you for your interest in the Dozer presale. The presale period has ended.'}
+            </Typography>
+
+            <Button
+              onClick={onClose}
+              className="px-10 py-3 text-sm font-bold tracking-wider bg-yellow-800/50 text-yellow-200 rounded-xl hover:bg-yellow-700/50"
+            >
+              Close
+            </Button>
+          </div>
+        </Dialog.Content>
+      </Dialog>
+    )
+  }
+
+  // Rest of the component for active presale
   return (
     <Dialog open={isOpen} onClose={onClose}>
       <Dialog.Content

@@ -25,6 +25,7 @@ interface PresaleModalProps {
   onClose: () => void
   className?: string
   currentPrice: number
+  isPresaleActive: boolean
 }
 
 const Home: React.FC = () => {
@@ -101,6 +102,7 @@ const Home: React.FC = () => {
   const [nextPriceStep, setNextPriceStep] = useState<number | undefined>(undefined)
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false)
   const [isPresaleModalOpen, setIsPresaleModalOpen] = useState<boolean>(false)
+  const [isPresaleActive, setIsPresaleActive] = useState<boolean>(false)
 
   // Only run client-side code after the component is mounted
   useEffect(() => {
@@ -109,11 +111,12 @@ const Home: React.FC = () => {
     // Function to calculate and update price and countdown
     const updatePriceAndCountdown = () => {
       // Calculate current price and countdown in one function call
-      const { currentPrice: newPrice, timeUntilNextStep } = calculatePresalePrice()
+      const { currentPrice: newPrice, timeUntilNextStep, isPresaleActive } = calculatePresalePrice()
 
       // Update state
       setPriceChangeTimeLeft(timeUntilNextStep)
       setCurrentPrice(newPrice)
+      setIsPresaleActive(isPresaleActive)
 
       // Calculate next price step only if price changed
       try {
@@ -237,6 +240,7 @@ const Home: React.FC = () => {
               onBuyClick={() => setIsPresaleModalOpen(true)}
               currentPrice={currentPrice}
               nextPriceStep={nextPriceStep}
+              isPresaleActive={isPresaleActive}
             />
           </div>
 
@@ -263,6 +267,7 @@ const Home: React.FC = () => {
                   onBuyClick={() => setIsPresaleModalOpen(true)}
                   currentPrice={currentPrice}
                   nextPriceStep={nextPriceStep}
+                  isPresaleActive={isPresaleActive}
                 />
               </div>
             </div>
@@ -337,6 +342,7 @@ const Home: React.FC = () => {
           onClose={() => setIsPresaleModalOpen(false)}
           className="max-w-2xl" // Increased size
           currentPrice={currentPrice}
+          isPresaleActive={isPresaleActive}
         />
       </div>
 

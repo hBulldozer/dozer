@@ -42,7 +42,7 @@ export const NewsletterForm: React.FC<NewsletterFormProps> = ({ className, isMob
       <Typography
         variant={isMobile ? 'sm' : 'xs'}
         weight={isMobile ? 600 : 500}
-        className={`${isMobile ? 'mb-2 text-yellow-400' : 'text-sm text-yellow-400 sm:text-xs'}`}
+        className={`${isMobile ? 'mb-2 text-yellow-400' : 'mb-2 text-sm text-yellow-400 sm:text-xs'}`}
       >
         {isMobile ? 'JOIN OUR NEWSLETTER' : 'Newsletter'}
       </Typography>

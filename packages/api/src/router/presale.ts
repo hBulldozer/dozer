@@ -1,7 +1,36 @@
 import { z } from 'zod'
+
 import { createTRPCRouter, procedure } from '../trpc'
 
 export const presaleRouter = createTRPCRouter({
+  // Get backers count from Hathor explorer
+  getBackersCount: procedure.query(async () => {
+    try {
+      // Fetch backers count from Hathor explorer
+      const response = await fetch(
+        'https://explorer-service.mainnet.hathor.network/token_balances/information?token_id=0000018dc292fddc2ff6232c5802eaf8f1d2d89e357c512fcf1aaeddce4ed96d'
+      )
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch backers count: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      return {
+        success: true,
+        backersCount: data.addresses || 250, // Default fallback value
+      }
+    } catch (error) {
+      console.error('Error fetching backers count:', error)
+      // Return a default value with an error flag if the request fails
+      return {
+        success: false,
+        backersCount: 250, // Default fallback value
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }
+    }
+  }),
   // Update contact information for an existing submission
   updateContactInfo: procedure
     .input(
