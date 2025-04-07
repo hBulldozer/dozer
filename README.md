@@ -1,4 +1,4 @@
-# Dozer Finance Monorepo
+# Dozer Finance Monorepo.
 
 ## Important Dependencies
 
