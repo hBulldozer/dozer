@@ -2,6 +2,7 @@ import { faucetRouter } from './router/faucet'
 import { headlessRouter } from './router/headless'
 import { NanoStateRouter } from './router/nanostates'
 import { networkRouter } from './router/network'
+import { newPricesRouter } from './router/newPrices'
 import { oasisRouter } from './router/oasis'
 import { poolRouter } from './router/pool'
 import { pricesRouter } from './router/prices'
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   getTokens: tokenRouter,
   getProfile: profileRouter,
   getPrices: pricesRouter,
+  getNewPrices: newPricesRouter,
   getNanoState: NanoStateRouter,
   getHeadless: headlessRouter,
   getNetwork: networkRouter,
