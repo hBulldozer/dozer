@@ -102,8 +102,8 @@ const PresaleModal: React.FC<PresaleModalProps> = ({
       name: 'EVM Networks',
       description: 'Compatible with Ethereum, BSC, Polygon, etc.',
       icon: <Image src="/logos/ETH.svg" alt="Ethereum" width={18} height={18} className="max-w-full" />,
-      address: '0xd4252011f8197FaD96f11Ca04D13b70806f05060',
-      qrValue: '0xd4252011f8197FaD96f11Ca04D13b70806f05060',
+      address: '0x15Cc975D19F1F7b26BA28C8950eCb3a2061AD278',
+      qrValue: '0x15Cc975D19F1F7b26BA28C8950eCb3a2061AD278',
       tokenSymbol: 'USDT/USDC',
     },
   ]

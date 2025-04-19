@@ -12,7 +12,7 @@ export interface DonateModalInterface {
 }
 export const DonateModal: FC<DonateModalInterface> = ({ open, setOpen }) => {
   const address = 'HFAbxweRfZDCJy56KULwBUWttoWgGuhXeT'
-  const address_eth = '0xd4252011f8197FaD96f11Ca04D13b70806f05060'
+  const address_eth = '0x15Cc975D19F1F7b26BA28C8950eCb3a2061AD278'
   const [network, setNetwork] = useState<number>(0)
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>
