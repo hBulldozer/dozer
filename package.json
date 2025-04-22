@@ -83,6 +83,7 @@
     "version-packages": "dotenv -- turbo run build --filter=./packages/* && changeset version"
   },
   "dependencies": {
-    "@metamask/sdk-react": "^0.32.1"
+    "@metamask/sdk-react": "^0.32.1",
+    "lightweight-charts": "^5.0.6"
   }
 }

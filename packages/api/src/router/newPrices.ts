@@ -31,6 +31,29 @@ interface HistoricalPriceResponse {
   to: number
 }
 
+// TradingView chart data types
+interface TVLinePoint {
+  time: number
+  value: number
+}
+
+interface TVCandlestick {
+  time: number
+  open: number
+  high: number
+  low: number
+  close: number
+}
+
+interface TVChartResponse<T> {
+  token: string
+  symbol: string
+  name: string
+  currency: string
+  interval: string
+  data: T[]
+}
+
 /**
  * Router to interact with the new price service
  */
@@ -365,4 +388,144 @@ export const newPricesRouter = createTRPCRouter({
       return false
     }
   }),
+
+  // Get line chart data for TradingView
+  lineChart: procedure
+    .input(z.object({
+      token: z.string(),
+      from: z.number().optional(),
+      to: z.number().optional(),
+      interval: z.string().optional(),
+      currency: z.string().optional(),
+    }))
+    .output(z.object({
+      token: z.string(),
+      symbol: z.string(),
+      name: z.string(),
+      currency: z.string(),
+      interval: z.string(),
+      data: z.array(z.object({
+        time: z.number(),
+        value: z.number(),
+      })),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/chart/line/${input.token}`, {
+          params: {
+            from: input.from,
+            to: input.to,
+            interval: input.interval,
+            currency: input.currency,
+          },
+          timeout: 5000,
+        })
+
+        if (!response.data) {
+          throw new Error('Invalid response format')
+        }
+
+        return response.data
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch line chart data from price service',
+        })
+      }
+    }),
+
+  // Get candlestick chart data for TradingView
+  candlestickChart: procedure
+    .input(z.object({
+      token: z.string(),
+      from: z.number().optional(),
+      to: z.number().optional(),
+      interval: z.string().optional(),
+      currency: z.string().optional(),
+    }))
+    .output(z.object({
+      token: z.string(),
+      symbol: z.string(),
+      name: z.string(),
+      currency: z.string(),
+      interval: z.string(),
+      data: z.array(z.object({
+        time: z.number(),
+        open: z.number(),
+        high: z.number(),
+        low: z.number(),
+        close: z.number(),
+      })),
+    }))
+    .query(async ({ input, ctx }) => {
+      try {
+        // Get token info for symbol and name
+        const token = await ctx.prisma.token.findFirst({
+          where: { uuid: input.token },
+          select: { symbol: true, name: true },
+        })
+
+        if (!token) {
+          throw new Error(`Token ${input.token} not found`)
+        }
+
+        // Get historical price data from price service
+        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/historical/${input.token}`, {
+          params: {
+            from: input.from,
+            to: input.to,
+            interval: input.interval || '1h',
+            currency: input.currency || 'USD',
+          },
+          timeout: 10000, // Longer timeout for historical data
+        })
+
+        if (!response.data || !response.data.prices || !Array.isArray(response.data.prices)) {
+          throw new Error('Invalid response format from price service')
+        }
+
+        // Group price points by interval to create OHLC data
+        const pricePoints = response.data.prices as PricePoint[]
+        const ohlcMap = new Map<number, TVCandlestick>()
+
+        pricePoints.forEach(point => {
+          const timestamp = point.timestamp
+          const price = point.price
+
+          if (!ohlcMap.has(timestamp)) {
+            ohlcMap.set(timestamp, {
+              time: timestamp,
+              open: price,
+              high: price,
+              low: price,
+              close: price,
+            })
+          } else {
+            const candle = ohlcMap.get(timestamp)!
+            candle.high = Math.max(candle.high, price)
+            candle.low = Math.min(candle.low, price)
+            candle.close = price // Last price in the interval becomes close
+          }
+        })
+
+        // Convert to array and sort by timestamp
+        const chartData = Array.from(ohlcMap.values())
+          .sort((a, b) => a.time - b.time)
+
+        return {
+          token: input.token,
+          symbol: token.symbol || input.token,
+          name: token.name || `Token ${input.token}`,
+          currency: input.currency || 'USD',
+          interval: input.interval || '1h',
+          data: chartData,
+        }
+      } catch (error) {
+        console.error('Error fetching candlestick data:', error)
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch candlestick data from price service',
+        })
+      }
+    }),
 })
