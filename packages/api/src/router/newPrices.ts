@@ -469,8 +469,15 @@ export const newPricesRouter = createTRPCRouter({
           throw new Error(`Token ${input.token} not found`)
         }
 
-        // Get historical price data from price service
-        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/historical/${input.token}`, {
+        console.log('Fetching candlestick data from', `${PRICE_SERVICE_URL}/api/v1/chart/candlestick/${input.token}`, {
+          from: input.from,
+          to: input.to,
+          interval: input.interval || '1h',
+          currency: input.currency || 'USD',
+        })
+
+        // Get candlestick data directly from the dedicated endpoint
+        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/chart/candlestick/${input.token}`, {
           params: {
             from: input.from,
             to: input.to,
@@ -480,37 +487,10 @@ export const newPricesRouter = createTRPCRouter({
           timeout: 10000, // Longer timeout for historical data
         })
 
-        if (!response.data || !response.data.prices || !Array.isArray(response.data.prices)) {
+        if (!response.data || !response.data.data || !Array.isArray(response.data.data)) {
+          console.error('Invalid candlestick response format:', response.data)
           throw new Error('Invalid response format from price service')
         }
-
-        // Group price points by interval to create OHLC data
-        const pricePoints = response.data.prices as PricePoint[]
-        const ohlcMap = new Map<number, TVCandlestick>()
-
-        pricePoints.forEach(point => {
-          const timestamp = point.timestamp
-          const price = point.price
-
-          if (!ohlcMap.has(timestamp)) {
-            ohlcMap.set(timestamp, {
-              time: timestamp,
-              open: price,
-              high: price,
-              low: price,
-              close: price,
-            })
-          } else {
-            const candle = ohlcMap.get(timestamp)!
-            candle.high = Math.max(candle.high, price)
-            candle.low = Math.min(candle.low, price)
-            candle.close = price // Last price in the interval becomes close
-          }
-        })
-
-        // Convert to array and sort by timestamp
-        const chartData = Array.from(ohlcMap.values())
-          .sort((a, b) => a.time - b.time)
 
         return {
           token: input.token,
@@ -518,7 +498,7 @@ export const newPricesRouter = createTRPCRouter({
           name: token.name || `Token ${input.token}`,
           currency: input.currency || 'USD',
           interval: input.interval || '1h',
-          data: chartData,
+          data: response.data.data
         }
       } catch (error) {
         console.error('Error fetching candlestick data:', error)
