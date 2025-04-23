@@ -3,7 +3,16 @@ import { Container, Typography, Badge, classNames, Skeleton, Link, Button } from
 import { api } from '../utils/api'
 import { formatUSD, formatPercent, formatHTR } from '@dozer/format'
 import { Layout } from '../components/Layout'
-import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, LineData, Time, UTCTimestamp } from 'lightweight-charts'
+import {
+  createChart,
+  ColorType,
+  IChartApi,
+  ISeriesApi,
+  CandlestickData,
+  LineData,
+  Time,
+  UTCTimestamp,
+} from 'lightweight-charts'
 
 // Time range options in seconds
 const TIME_RANGES = {
@@ -12,17 +21,17 @@ const TIME_RANGES = {
   '7D': 7 * 24 * 60 * 60,
   '30D': 30 * 24 * 60 * 60,
   '90D': 90 * 24 * 60 * 60,
-  'ALL': 365 * 24 * 60 * 60, // 1 year
+  ALL: 365 * 24 * 60 * 60, // 1 year
 } as const
 
 // Calculate appropriate interval based on time range
 const getIntervalForTimeRange = (rangeSecs: number): string => {
-  if (rangeSecs <= 1 * 60 * 60) return '1m'        // <= 1 hour: 1 minute intervals
-  if (rangeSecs <= 24 * 60 * 60) return '5m'       // <= 24 hours: 5 minute intervals
-  if (rangeSecs <= 7 * 24 * 60 * 60) return '1h'    // <= 7 days: 1 hour intervals
-  if (rangeSecs <= 30 * 24 * 60 * 60) return '4h'   // <= 30 days: 4 hour intervals
-  if (rangeSecs <= 90 * 24 * 60 * 60) return '1d'   // <= 90 days: 1 day intervals
-  return '1d'                                        // > 90 days: 1 day intervals
+  if (rangeSecs <= 1 * 60 * 60) return '1m' // <= 1 hour: 1 minute intervals
+  if (rangeSecs <= 24 * 60 * 60) return '5m' // <= 24 hours: 5 minute intervals
+  if (rangeSecs <= 7 * 24 * 60 * 60) return '1h' // <= 7 days: 1 hour intervals
+  if (rangeSecs <= 30 * 24 * 60 * 60) return '4h' // <= 30 days: 4 hour intervals
+  if (rangeSecs <= 90 * 24 * 60 * 60) return '1d' // <= 90 days: 1 day intervals
+  return '1d' // > 90 days: 1 day intervals
 }
 
 const PriceTestPage: React.FC = () => {
@@ -33,18 +42,15 @@ const PriceTestPage: React.FC = () => {
   const [selectedRange, setSelectedRange] = useState<keyof typeof TIME_RANGES>('24H')
 
   // Calculate dynamic time range directly on each render
-  const now = Math.floor(Date.now() / 1000);
-  const rangeSecs = TIME_RANGES[selectedRange];
+  const now = Math.floor(Date.now() / 1000)
+  const rangeSecs = TIME_RANGES[selectedRange]
   const timeRange = {
     from: now - rangeSecs,
-    to: now
-  };
+    to: now,
+  }
 
   // Calculate appropriate interval based on selected range
-  const interval = useMemo(() =>
-    getIntervalForTimeRange(TIME_RANGES[selectedRange]),
-    [selectedRange]
-  )
+  const interval = useMemo(() => getIntervalForTimeRange(TIME_RANGES[selectedRange]), [selectedRange])
 
   // Check if the new price service is available
   const { data: isServiceAvailable, isLoading: checkingService } = api.getNewPrices.isAvailable.useQuery(undefined, {
@@ -83,7 +89,7 @@ const PriceTestPage: React.FC = () => {
     {
       token: '00', // HTR token
       from: timeRange.from, // Use dynamically calculated range
-      to: timeRange.to,     // Use dynamically calculated range
+      to: timeRange.to, // Use dynamically calculated range
       interval,
       currency: 'USD',
     },
@@ -99,7 +105,7 @@ const PriceTestPage: React.FC = () => {
     {
       token: '00', // HTR token
       from: timeRange.from, // Use dynamically calculated range
-      to: timeRange.to,     // Use dynamically calculated range
+      to: timeRange.to, // Use dynamically calculated range
       interval,
       currency: 'USD',
     },
@@ -112,17 +118,20 @@ const PriceTestPage: React.FC = () => {
   )
 
   // Memoize chart options to prevent unnecessary re-renders
-  const chartOptions = useMemo(() => ({
-    layout: {
-      background: { type: ColorType.Solid, color: '#1c1917' },
-      textColor: '#e7e5e4',
-    },
-    grid: {
-      vertLines: { color: '#292524' },
-      horzLines: { color: '#292524' },
-    },
-    height: 400,
-  }), [])
+  const chartOptions = useMemo(
+    () => ({
+      layout: {
+        background: { type: ColorType.Solid, color: '#1c1917' },
+        textColor: '#e7e5e4',
+      },
+      grid: {
+        vertLines: { color: '#292524' },
+        horzLines: { color: '#292524' },
+      },
+      height: 400,
+    }),
+    []
+  )
 
   // Initialize chart
   useEffect(() => {
@@ -131,6 +140,8 @@ const PriceTestPage: React.FC = () => {
     const chartInstance = createChart(chartContainerRef.current, {
       ...chartOptions,
       width: chartContainerRef.current.clientWidth,
+      handleScroll: false,
+      handleScale: false,
     })
 
     // Add price scale formatting
@@ -163,20 +174,20 @@ const PriceTestPage: React.FC = () => {
 
   // Memoize chart data to prevent unnecessary updates
   const chartData = useMemo(() => {
-    let sortedData: (LineData<UTCTimestamp> | CandlestickData<UTCTimestamp>)[] | null = null;
+    let sortedData: (LineData<UTCTimestamp> | CandlestickData<UTCTimestamp>)[] | null = null
 
     if (chartType === 'line' && lineChartData?.data?.length) {
       const uniquePoints = new Map<number, number>()
-      lineChartData.data.forEach(point => {
+      lineChartData.data.forEach((point) => {
         const timestamp = point.time
         uniquePoints.set(timestamp, Number(point.value))
       })
       sortedData = Array.from(uniquePoints.entries())
         .sort(([timeA], [timeB]) => timeA - timeB)
-        .map(([time, value]) => ({ time: time as UTCTimestamp, value: value }));
+        .map(([time, value]) => ({ time: time as UTCTimestamp, value: value }))
     } else if (chartType === 'candlestick' && candlestickData?.data?.length) {
       const uniquePoints = new Map<number, CandlestickData<UTCTimestamp>>()
-      candlestickData.data.forEach(point => {
+      candlestickData.data.forEach((point) => {
         const timestamp = point.time
         uniquePoints.set(timestamp, {
           time: timestamp as UTCTimestamp,
@@ -186,39 +197,39 @@ const PriceTestPage: React.FC = () => {
           close: Number(point.close),
         })
       })
-      sortedData = Array.from(uniquePoints.values())
-        .sort((a, b) => (a.time as number) - (b.time as number));
+      sortedData = Array.from(uniquePoints.values()).sort((a, b) => (a.time as number) - (b.time as number))
     }
-    return sortedData;
-  }, [chartType, lineChartData?.data, candlestickData?.data]);
+    return sortedData
+  }, [chartType, lineChartData?.data, candlestickData?.data])
 
   // Effect for creating/removing the chart series when chart instance or type changes
   useEffect(() => {
-    if (!chart) return;
+    if (!chart) return
 
     // Remove previous series if it exists (use state variable 'series')
     if (series && chart.removeSeries) {
       try {
-        chart.removeSeries(series);
-        console.log("Removed previous series.");
+        chart.removeSeries(series)
+        console.log('Removed previous series.')
       } catch (e) {
-        console.error("Error removing previous series:", e);
+        console.error('Error removing previous series:', e)
       }
     }
 
-    let newSeries: ISeriesApi<'Line'> | ISeriesApi<'Candlestick'> | null = null;
+    let newSeries: ISeriesApi<'Line'> | ISeriesApi<'Candlestick'> | null = null
     // Create new series based on chartType
     if (chartType === 'line') {
       newSeries = chart.addLineSeries({
-         color: '#eab308',
-         lineWidth: 2,
-         crosshairMarkerVisible: true,
-         lastValueVisible: true,
-         priceLineVisible: true,
-         priceFormat: { type: 'custom', formatter: (price: number) => formatUSD(price) },
-       });
-       console.log("Created new Line series.");
-    } else { // Candlestick
+        color: '#eab308',
+        lineWidth: 2,
+        crosshairMarkerVisible: true,
+        lastValueVisible: true,
+        priceLineVisible: true,
+        priceFormat: { type: 'custom', formatter: (price: number) => formatUSD(price) },
+      })
+      console.log('Created new Line series.')
+    } else {
+      // Candlestick
       newSeries = chart.addCandlestickSeries({
         upColor: '#22c55e',
         downColor: '#ef4444',
@@ -226,65 +237,66 @@ const PriceTestPage: React.FC = () => {
         wickUpColor: '#22c55e',
         wickDownColor: '#ef4444',
         priceFormat: { type: 'custom', formatter: (price: number) => formatUSD(price) },
-      });
-      console.log("Created new Candlestick series.");
+      })
+      console.log('Created new Candlestick series.')
     }
-    setSeries(newSeries); // Update state
+    setSeries(newSeries) // Update state
 
     // Cleanup function for *this specific effect instance*
     return () => {
       // Remove the 'newSeries' instance when effect re-runs or component unmounts
       if (chart && newSeries && chart.removeSeries) {
         try {
-          chart.removeSeries(newSeries);
-          console.log("Cleaned up series instance from effect.");
+          chart.removeSeries(newSeries)
+          console.log('Cleaned up series instance from effect.')
         } catch (e) {
-          console.error("Error removing series during cleanup:", e);
+          console.error('Error removing series during cleanup:', e)
         }
       }
-    };
-  }, [chart, chartType]); // Dependencies: chart instance and chart type
+    }
+  }, [chart, chartType]) // Dependencies: chart instance and chart type
 
   // Effect for updating the series data when the series instance or chartData changes
   useEffect(() => {
     if (!series || !chartData) {
-      console.log(`Data update skipped: series=${!!series}, chartData=${!!chartData}`);
+      console.log(`Data update skipped: series=${!!series}, chartData=${!!chartData}`)
       // Optionally clear data if chartData is null/empty
       if (series && !chartData) {
-         console.log("Clearing series data as chartData is empty.");
-         if (series.seriesType() === 'Line') {
-            (series as ISeriesApi<'Line'>).setData([]);
-         } else {
-            (series as ISeriesApi<'Candlestick'>).setData([]);
-         }
+        console.log('Clearing series data as chartData is empty.')
+        if (series.seriesType() === 'Line') {
+          ;(series as ISeriesApi<'Line'>).setData([])
+        } else {
+          ;(series as ISeriesApi<'Candlestick'>).setData([])
+        }
       }
-      return;
+      return
     }
 
     try {
-      console.log(`Attempting to set chart data (${series.seriesType()}) with ${chartData.length} points...`);
+      console.log(`Attempting to set chart data (${series.seriesType()}) with ${chartData.length} points...`)
       if (chartData.length > 0) {
-        console.log('First point time:', chartData[0].time);
-        console.log('Last point time:', chartData[chartData.length - 1].time);
-        const lastValue = (chartData[chartData.length - 1] as any).value ?? (chartData[chartData.length - 1] as any).close;
-        console.log('Last point value/close:', lastValue);
+        console.log('First point time:', chartData[0].time)
+        console.log('Last point time:', chartData[chartData.length - 1].time)
+        const lastValue =
+          (chartData[chartData.length - 1] as any).value ?? (chartData[chartData.length - 1] as any).close
+        console.log('Last point value/close:', lastValue)
       }
 
       // Use setData with the full dataset
       if (series.seriesType() === 'Line') {
-        (series as ISeriesApi<'Line'>).setData(chartData as LineData<UTCTimestamp>[]);
-      } else { // Candlestick
-        (series as ISeriesApi<'Candlestick'>).setData(chartData as CandlestickData<UTCTimestamp>[]);
+        ;(series as ISeriesApi<'Line'>).setData(chartData as LineData<UTCTimestamp>[])
+      } else {
+        // Candlestick
+        ;(series as ISeriesApi<'Candlestick'>).setData(chartData as CandlestickData<UTCTimestamp>[])
       }
 
       // Fit content after setting data
-      chart?.timeScale().fitContent(); // Use optional chaining for safety
-      console.log("Applied setData and fitContent.");
-
+      chart?.timeScale().fitContent() // Use optional chaining for safety
+      console.log('Applied setData and fitContent.')
     } catch (error) {
-      console.error('Error setting chart data:', error);
+      console.error('Error setting chart data:', error)
     }
-  }, [series, chartData]); // Dependencies: series instance and processed chart data
+  }, [series, chartData]) // Dependencies: series instance and processed chart data
 
   return (
     <Layout>
@@ -306,11 +318,8 @@ const PriceTestPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 mb-4">
-            <Button
-              variant={chartType === 'line' ? 'filled' : 'outlined'}
-              onClick={() => setChartType('line')}
-            >
+          <div className="flex items-center mb-4 space-x-2">
+            <Button variant={chartType === 'line' ? 'filled' : 'outlined'} onClick={() => setChartType('line')}>
               Line
             </Button>
             <Button
@@ -321,7 +330,7 @@ const PriceTestPage: React.FC = () => {
             </Button>
           </div>
 
-          <div className="bg-stone-900 p-4 rounded-lg">
+          <div className="p-4 rounded-lg bg-stone-900">
             <div ref={chartContainerRef} />
             {/* Show loading only if hooks are loading AND we don't have any chart data yet */}
             {(loadingLineData || loadingCandlestickData) && !chartData && (
@@ -464,8 +473,8 @@ const PriceTestPage: React.FC = () => {
               <li>Providing standardized APIs for both current and historical price data</li>
             </ul>
             <Typography>
-              This test page helps validate that the new service is functioning correctly and providing comparable data to
-              the existing price system.
+              This test page helps validate that the new service is functioning correctly and providing comparable data
+              to the existing price system.
             </Typography>
           </div>
         </div>
