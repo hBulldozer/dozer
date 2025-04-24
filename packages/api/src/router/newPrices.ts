@@ -58,6 +58,54 @@ interface TVChartResponse<T> {
  * Router to interact with the new price service
  */
 export const newPricesRouter = createTRPCRouter({
+  // Get price for a specific token with specified currency
+  tokenPrice: procedure
+    .input(z.object({ token: z.string(), currency: z.string().optional() }))
+    .output(z.number().nullable())
+    .query(async ({ input, ctx }) => {
+      try {
+        const { token, currency = 'USD' } = input;
+        
+        // Check if token exists in DB to validate it
+        const tokenCheck = await ctx.prisma.token.findFirst({
+          where: { uuid: token },
+          select: { uuid: true }
+        });
+
+        if (!tokenCheck && token !== '00') { // Allow HTR token (00) always
+          console.warn(`Token ${token} not found in database`);
+          return null;
+        }
+
+        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/current/${token}`, {
+          params: {
+            currency: currency,
+          },
+          timeout: 5000,
+        })
+
+        console.log('Token price response:', response.data);
+
+        // Return the price in the requested currency
+        if (response.data) {
+          if (currency.toUpperCase() === 'USD') {
+            return typeof response.data.priceInUSD === 'number' ? response.data.priceInUSD : 0;
+          } else if (currency.toUpperCase() === 'HTR') {
+            return typeof response.data.priceInHTR === 'number' ? response.data.priceInHTR : 0;
+          } else {
+            return 0;
+          }
+        }
+
+        console.warn('Invalid response format for token price:', response.data);
+        return 0;
+      } catch (error) {
+        console.error(`Error fetching ${input.token} price from price service:`, error);
+
+        // Return null instead of throwing error
+        return null;
+      }
+    }),
   // Get token information map (uuid to symbol)
   tokenInfo: procedure.query(async ({ ctx }) => {
     try {
@@ -376,6 +424,45 @@ export const newPricesRouter = createTRPCRouter({
       }
     }),
 
+  // Check if a specific token is available in the price service
+  isTokenAvailable: procedure
+    .input(z.object({ token: z.string() }))
+    .output(z.boolean())
+    .query(async ({ input, ctx }) => {
+      try {
+        // HTR token is always available
+        if (input.token === '00') {
+          return true;
+        }
+
+        // First check if the token exists in our database
+        const tokenInDb = await ctx.prisma.token.findFirst({
+          where: { uuid: input.token },
+          select: { uuid: true }
+        });
+
+        if (!tokenInDb) {
+          console.warn(`Token ${input.token} not found in database`)
+          return false;
+        }
+
+        // Then check if it's available in the price service
+        try {
+          const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/current/${input.token}`, {
+            timeout: 2000
+          });
+
+          return response.status === 200 && !!response.data;
+        } catch (error) {
+          console.warn(`Token ${input.token} not available in price service`);
+          return false;
+        }
+      } catch (error) {
+        console.error(`Error checking token availability: ${error}`);
+        return false;
+      }
+    }),
+
   // Service health check
   isAvailable: procedure.query(async () => {
     try {
@@ -409,28 +496,89 @@ export const newPricesRouter = createTRPCRouter({
         value: z.number(),
       })),
     }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       try {
+        // Special handling for HTR token
+        if (input.token === '00') {
+          console.log('Fetching line chart data for HTR token');
+        } else {
+          // For all other tokens, check if they exist in DB first
+          const token = await ctx.prisma.token.findFirst({
+            where: { uuid: input.token },
+            select: { symbol: true, name: true },
+          });
+
+          if (!token) {
+            throw new TRPCError({
+              code: 'NOT_FOUND',
+              message: `Token ${input.token} not found`,
+            });
+          }
+
+          console.log(`Fetching line chart data for token ${token.symbol || input.token}`);
+        }
+
+        // Log the request for debugging
+        console.log('Fetching line chart data from', `${PRICE_SERVICE_URL}/api/v1/chart/line/${input.token}`, {
+          from: input.from,
+          to: input.to,
+          interval: input.interval || '1h',
+          currency: input.currency || 'USD',
+        });
+
         const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/chart/line/${input.token}`, {
           params: {
             from: input.from,
             to: input.to,
-            interval: input.interval,
-            currency: input.currency,
+            interval: input.interval || '1h',
+            currency: input.currency || 'USD',
           },
-          timeout: 5000,
-        })
+          timeout: 10000, // Longer timeout for historical data
+        });
 
+        // Check if response is as expected
         if (!response.data) {
-          throw new Error('Invalid response format')
+          console.error('Empty response from price service');
+          throw new Error('Invalid response format');
         }
 
-        return response.data
+        // Validate that data property exists and is an array
+        if (!response.data.data || !Array.isArray(response.data.data)) {
+          console.error('Invalid line chart response format:', response.data);
+          throw new Error('Invalid response format from price service');
+        }
+
+        // Ensure each data point has time and value
+        const validData = response.data.data.every((point: any) => 
+          typeof point.time === 'number' && typeof point.value === 'number'
+        );
+
+        if (!validData) {
+          console.error('Data points have incorrect format:', response.data.data);
+          throw new Error('Invalid data point format from price service');
+        }
+
+        // Return the validated data
+        return {
+          token: response.data.token || input.token,
+          symbol: response.data.symbol || input.token,
+          name: response.data.name || `Token ${input.token}`,
+          currency: response.data.currency || input.currency || 'USD',
+          interval: response.data.interval || input.interval || '1h',
+          data: response.data.data
+        };
       } catch (error) {
+        console.error('Error fetching line chart data:', error);
+        
+        // Return more specific error if it's a TRPC error
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch line chart data from price service',
-        })
+        });
       }
     }),
 

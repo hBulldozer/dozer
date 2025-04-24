@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { Container, Typography, Badge, classNames, Skeleton, Link, Button } from '@dozer/ui'
+import { Container, Typography, Badge, classNames, Skeleton, Link, Button, Select } from '@dozer/ui'
 import { api } from '../utils/api'
 import { formatUSD, formatPercent, formatHTR } from '@dozer/format'
 import { Layout } from '../components/Layout'
@@ -40,6 +40,8 @@ const PriceTestPage: React.FC = () => {
   const [chart, setChart] = useState<IChartApi | null>(null)
   const [series, setSeries] = useState<ISeriesApi<'Line'> | ISeriesApi<'Candlestick'> | null>(null)
   const [selectedRange, setSelectedRange] = useState<keyof typeof TIME_RANGES>('24H')
+  const [selectedToken, setSelectedToken] = useState<string>('00')
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD')
 
   // Calculate dynamic time range directly on each render
   const now = Math.floor(Date.now() / 1000)
@@ -78,6 +80,26 @@ const PriceTestPage: React.FC = () => {
   const { data: oldHtrPrice, isLoading: loadingOldHtr } = api.getPrices.htr.useQuery(undefined, {
     refetchInterval: 15000,
   })
+  // Check if the selected token is available in the price service
+  const { data: isTokenAvailable, isLoading: checkingTokenAvailability } = api.getNewPrices.isTokenAvailable.useQuery(
+    { token: selectedToken },
+    {
+      enabled: !!isServiceAvailable && !!selectedToken,
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
+  )
+
+  // Get current price for selected token
+  const { data: selectedTokenPrice, isLoading: loadingSelectedToken, error: tokenPriceError } = api.getNewPrices.tokenPrice.useQuery(
+    { token: selectedToken, currency: selectedCurrency },
+    {
+      enabled: !!isServiceAvailable && !!selectedToken && (isTokenAvailable === true || selectedToken === '00'),
+      refetchInterval: 15000,
+      retry: false,
+    }
+  )
+
   const { data: newHtrPrice, isLoading: loadingNewHtr } = api.getNewPrices.htr.useQuery(undefined, {
     enabled: !!isServiceAvailable,
     refetchInterval: 15000,
@@ -87,14 +109,14 @@ const PriceTestPage: React.FC = () => {
   // Get chart data based on selected type
   const { data: lineChartData, isLoading: loadingLineData } = api.getNewPrices.lineChart.useQuery(
     {
-      token: '00', // HTR token
+      token: selectedToken,
       from: timeRange.from, // Use dynamically calculated range
       to: timeRange.to, // Use dynamically calculated range
       interval,
-      currency: 'USD',
+      currency: selectedCurrency,
     },
     {
-      enabled: !!isServiceAvailable && chartType === 'line',
+      enabled: !!isServiceAvailable && chartType === 'line' && (isTokenAvailable === true || selectedToken === '00'),
       refetchInterval: 15000,
       staleTime: 0, // Treat data as stale immediately
       retry: false,
@@ -103,14 +125,14 @@ const PriceTestPage: React.FC = () => {
 
   const { data: candlestickData, isLoading: loadingCandlestickData } = api.getNewPrices.candlestickChart.useQuery(
     {
-      token: '00', // HTR token
+      token: selectedToken,
       from: timeRange.from, // Use dynamically calculated range
       to: timeRange.to, // Use dynamically calculated range
       interval,
-      currency: 'USD',
+      currency: selectedCurrency,
     },
     {
-      enabled: !!isServiceAvailable && chartType === 'candlestick',
+      enabled: !!isServiceAvailable && chartType === 'candlestick' && (isTokenAvailable === true || selectedToken === '00'),
       refetchInterval: 15000,
       staleTime: 0, // Treat data as stale immediately
       retry: false,
@@ -202,7 +224,7 @@ const PriceTestPage: React.FC = () => {
     return sortedData
   }, [chartType, lineChartData?.data, candlestickData?.data])
 
-  // Effect for creating/removing the chart series when chart instance or type changes
+  // Effect for creating/removing the chart series when chart instance, type, currency or token changes
   useEffect(() => {
     if (!chart) return
 
@@ -225,7 +247,10 @@ const PriceTestPage: React.FC = () => {
         crosshairMarkerVisible: true,
         lastValueVisible: true,
         priceLineVisible: true,
-        priceFormat: { type: 'custom', formatter: (price: number) => formatUSD(price) },
+        priceFormat: {
+          type: 'custom',
+          formatter: (price: number) => (selectedCurrency === 'USD' ? formatUSD(price) : formatHTR(price)),
+        },
       })
       console.log('Created new Line series.')
     } else {
@@ -236,7 +261,10 @@ const PriceTestPage: React.FC = () => {
         borderVisible: false,
         wickUpColor: '#22c55e',
         wickDownColor: '#ef4444',
-        priceFormat: { type: 'custom', formatter: (price: number) => formatUSD(price) },
+        priceFormat: {
+          type: 'custom',
+          formatter: (price: number) => (selectedCurrency === 'USD' ? formatUSD(price) : formatHTR(price)),
+        },
       })
       console.log('Created new Candlestick series.')
     }
@@ -254,9 +282,43 @@ const PriceTestPage: React.FC = () => {
         }
       }
     }
-  }, [chart, chartType]) // Dependencies: chart instance and chart type
+  }, [chart, chartType, selectedCurrency, selectedToken]) // Dependencies: chart instance and chart type
 
   // Effect for updating the series data when the series instance or chartData changes
+  // Effect for debugging API responses
+  useEffect(() => {
+    if (tokenPriceError) {
+      console.error('Token price error:', tokenPriceError);
+    }
+    
+    if (lineChartData) {
+      console.log('Line chart data received:', {
+        token: lineChartData.token,
+        symbol: lineChartData.symbol,
+        data: lineChartData.data ? 
+          `${lineChartData.data.length} points (first: ${JSON.stringify(lineChartData.data[0])}, last: ${JSON.stringify(lineChartData.data[lineChartData.data.length-1])})` : 
+          'No data'
+      });
+    }
+
+    if (candlestickData) {
+      console.log('Candlestick data received:', {
+        token: candlestickData.token,
+        symbol: candlestickData.symbol,
+        data: candlestickData.data ? 
+          `${candlestickData.data.length} points (first: ${JSON.stringify(candlestickData.data[0])}, last: ${JSON.stringify(candlestickData.data[candlestickData.data.length-1])})` : 
+          'No data'
+      });
+    }
+  }, [tokenPriceError, lineChartData, candlestickData]);
+
+  // Log errors for debugging
+  useEffect(() => {
+    if (tokenPriceError) {
+      console.error('Token price error:', tokenPriceError);
+    }
+  }, [tokenPriceError]);
+
   useEffect(() => {
     if (!series || !chartData) {
       console.log(`Data update skipped: series=${!!series}, chartData=${!!chartData}`)
@@ -318,6 +380,55 @@ const PriceTestPage: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex items-center mb-4 space-x-4">
+            <div className="w-1/2">
+              <Typography variant="sm" className="mb-1">
+                Select Token
+              </Typography>
+              <Select
+                value={selectedToken}
+                onChange={(value) => setSelectedToken(value)}
+                className="w-full"
+                button={
+                  <Select.Button>
+                    {!loadingTokenInfo && tokenInfo && tokenInfo[selectedToken]
+                      ? `${tokenInfo[selectedToken].symbol || selectedToken}`
+                      : selectedToken === '00'
+                      ? 'HTR'
+                      : selectedToken}
+                  </Select.Button>
+                }
+              >
+                <Select.Options>
+                  {!loadingTokenInfo &&
+                    tokenInfo &&
+                    Object.entries(tokenInfo).map(([uuid, data]) => (
+                      <Select.Option key={uuid} value={uuid}>
+                        {data.symbol || uuid} {data.name ? `(${data.name})` : ''}
+                      </Select.Option>
+                    ))}
+                  {(loadingTokenInfo || !tokenInfo) && <Select.Option value="00">HTR</Select.Option>}
+                </Select.Options>
+              </Select>
+            </div>
+            <div className="w-1/2">
+              <Typography variant="sm" className="mb-1">
+                Select Currency
+              </Typography>
+              <Select
+                value={selectedCurrency}
+                onChange={(value) => setSelectedCurrency(value)}
+                className="w-full"
+                button={<Select.Button>{selectedCurrency}</Select.Button>}
+              >
+                <Select.Options>
+                  <Select.Option value="USD">USD</Select.Option>
+                  <Select.Option value="HTR">HTR</Select.Option>
+                </Select.Options>
+              </Select>
+            </div>
+          </div>
+
           <div className="flex items-center mb-4 space-x-2">
             <Button variant={chartType === 'line' ? 'filled' : 'outlined'} onClick={() => setChartType('line')}>
               Line
@@ -338,23 +449,45 @@ const PriceTestPage: React.FC = () => {
                 <Typography>Loading chart data...</Typography>
               </div>
             )}
+            {/* Show error message if there's data loading error */}
+            {((selectedToken !== '00' && (lineChartData?.data?.length === 0 || candlestickData?.data?.length === 0))) && (
+              <div className="flex justify-center items-center h-[400px] absolute inset-0 bg-stone-900/80">
+                <div className="text-center">
+                  <Typography variant="lg" weight={600} className="text-amber-500 mb-2">
+                    No Chart Data Available
+                  </Typography>
+                  <Typography className="max-w-md">
+                    Historical chart data for {tokenInfo?.[selectedToken]?.symbol || selectedToken} in {selectedCurrency} 
+                    is not currently available. This feature is fully implemented for HTR token and in development for other tokens.
+                  </Typography>
+                  <Button 
+                    variant="filled" 
+                    className="mt-4"
+                    onClick={() => setSelectedToken('00')}
+                  >
+                    Switch to HTR
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2">
             <div className="p-6 rounded-lg bg-stone-900">
               <Typography variant="h3" className="mb-4">
-                HTR Price Comparison
+                {selectedToken === '00' ? 'HTR' : tokenInfo?.[selectedToken]?.symbol || selectedToken} Price in{' '}
+                {selectedCurrency}
               </Typography>
               <div className="flex justify-between mb-4">
                 <div>
                   <Typography variant="sm" className="text-stone-400">
-                    Current System
+                    {selectedToken === '00' ? 'Current System' : 'From Old Service'}
                   </Typography>
-                  {loadingOldHtr ? (
+                  {loadingOldHtr || selectedToken !== '00' ? (
                     <Skeleton.Box className="w-24 h-8 mt-1" />
                   ) : (
                     <Typography variant="lg" weight={600}>
-                      {formatUSD(oldHtrPrice || 0)}
+                      {selectedCurrency === 'USD' ? formatUSD(oldHtrPrice || 0) : formatHTR(oldHtrPrice || 0)}
                     </Typography>
                   )}
                 </div>
@@ -362,44 +495,54 @@ const PriceTestPage: React.FC = () => {
                   <Typography variant="sm" className="text-stone-400">
                     New Price Service
                   </Typography>
-                  {loadingNewHtr || !isServiceAvailable ? (
+                  {loadingSelectedToken || !isServiceAvailable ? (
                     <Skeleton.Box className="w-24 h-8 mt-1" />
                   ) : (
                     <Typography
                       variant="lg"
                       weight={600}
-                      className={classNames(
-                        (newHtrPrice || 0) === (oldHtrPrice || 0)
-                          ? 'text-stone-100'
-                          : (newHtrPrice || 0) > (oldHtrPrice || 0)
-                          ? 'text-green-400'
-                          : 'text-red-400'
-                      )}
+                      className={
+                        selectedToken === '00'
+                          ? classNames(
+                              (newHtrPrice || 0) === (oldHtrPrice || 0)
+                                ? 'text-stone-100'
+                                : (newHtrPrice || 0) > (oldHtrPrice || 0)
+                                ? 'text-green-400'
+                                : 'text-red-400'
+                            )
+                          : 'text-stone-100'
+                      }
                     >
-                      {formatUSD(newHtrPrice || 0)}
+                      {selectedCurrency === 'USD'
+                        ? formatUSD(selectedToken === '00' ? newHtrPrice ?? 0 : selectedTokenPrice ?? 0)
+                        : formatHTR(selectedToken === '00' ? newHtrPrice ?? 0 : selectedTokenPrice ?? 0)}
                     </Typography>
                   )}
                 </div>
               </div>
 
-              <Typography variant="base" className="mt-4 mb-2 font-semibold">
-                Price Difference
-              </Typography>
-              {loadingOldHtr || loadingNewHtr || !isServiceAvailable ? (
-                <Skeleton.Box className="w-40 h-6" />
-              ) : oldHtrPrice === newHtrPrice ? (
-                <Typography variant="sm">No difference</Typography>
-              ) : (
-                <Typography variant="sm">
-                  {Math.abs((((newHtrPrice || 0) - (oldHtrPrice || 0)) / (oldHtrPrice || 1)) * 100).toFixed(2)}%
-                  {(newHtrPrice || 0) > (oldHtrPrice || 0) ? ' higher' : ' lower'}
-                </Typography>
+              {selectedToken === '00' && (
+                <>
+                  <Typography variant="base" className="mt-4 mb-2 font-semibold">
+                    Price Difference
+                  </Typography>
+                  {loadingOldHtr || loadingNewHtr || !isServiceAvailable ? (
+                    <Skeleton.Box className="w-40 h-6" />
+                  ) : oldHtrPrice === newHtrPrice ? (
+                    <Typography variant="sm">No difference</Typography>
+                  ) : (
+                    <Typography variant="sm">
+                      {Math.abs((((newHtrPrice || 0) - (oldHtrPrice || 0)) / (oldHtrPrice || 1)) * 100).toFixed(2)}%
+                      {(newHtrPrice || 0) > (oldHtrPrice || 0) ? ' higher' : ' lower'}
+                    </Typography>
+                  )}
+                </>
               )}
             </div>
 
             <div className="p-6 rounded-lg bg-stone-900">
               <Typography variant="h3" className="mb-4">
-                Token Prices
+                Token Prices in {selectedCurrency}
               </Typography>
               <div className="overflow-hidden overflow-x-auto">
                 <table className="min-w-full">
@@ -436,7 +579,9 @@ const PriceTestPage: React.FC = () => {
                               <td className="py-2">
                                 {tokenSymbol} {tokenData?.name ? `(${tokenData.name})` : ''}
                               </td>
-                              <td className="py-2 text-right">{formatUSD(oldPrice)}</td>
+                              <td className="py-2 text-right">
+                                {selectedCurrency === 'USD' ? formatUSD(oldPrice) : formatHTR(oldPrice)}
+                              </td>
                               <td className="py-2 text-right">
                                 <span
                                   className={classNames(
@@ -447,7 +592,11 @@ const PriceTestPage: React.FC = () => {
                                       : 'text-red-400'
                                   )}
                                 >
-                                  {!isServiceAvailable ? 'N/A' : formatUSD(newPrice)}
+                                  {!isServiceAvailable
+                                    ? 'N/A'
+                                    : selectedCurrency === 'USD'
+                                    ? formatUSD(newPrice)
+                                    : formatHTR(newPrice)}
                                 </span>
                               </td>
                             </tr>
@@ -471,11 +620,18 @@ const PriceTestPage: React.FC = () => {
               <li>Integrating with Hathor Event Queue for real-time updates</li>
               <li>Leveraging block_height parameter for historical data retrieval</li>
               <li>Providing standardized APIs for both current and historical price data</li>
+              <li>Supporting multiple currencies (USD and HTR) for price representation</li>
+              <li>Offering consistent historical data for all tokens</li>
             </ul>
-            <Typography>
-              This test page helps validate that the new service is functioning correctly and providing comparable data
-              to the existing price system.
+            <Typography className="mb-2">
+              This test page helps validate that the new service is functioning correctly by allowing you to:
             </Typography>
+            <ul className="pl-6 mb-4 space-y-1 list-disc">
+              <li>Select any token in the Dozer ecosystem to view its price chart</li>
+              <li>Switch between USD and HTR as the display currency</li>
+              <li>Compare line and candlestick chart representations</li>
+              <li>View prices across different time ranges from 1 hour to 1 year</li>
+            </ul>
           </div>
         </div>
       </Container>
