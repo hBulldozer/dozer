@@ -66,16 +66,6 @@ const PriceTestPage: React.FC = () => {
     refetchInterval: 300000, // Refetch token info every 5 minutes
   })
 
-  // Get current prices from both services for comparison
-  const { data: oldPrices, isLoading: loadingOldPrices } = api.getPrices.all.useQuery(undefined, {
-    refetchInterval: 15000, // Refetch every 15 seconds
-  })
-  const { data: newPrices, isLoading: loadingNewPrices } = api.getNewPrices.all.useQuery(undefined, {
-    enabled: !!isServiceAvailable,
-    refetchInterval: 15000, // Refetch every 15 seconds
-    retry: false,
-  })
-
   // Get HTR price from both services
   const { data: oldHtrPrice, isLoading: loadingOldHtr } = api.getPrices.htr.useQuery(undefined, {
     refetchInterval: 15000,
@@ -91,7 +81,11 @@ const PriceTestPage: React.FC = () => {
   )
 
   // Get current price for selected token
-  const { data: selectedTokenPrice, isLoading: loadingSelectedToken, error: tokenPriceError } = api.getNewPrices.tokenPrice.useQuery(
+  const {
+    data: selectedTokenPrice,
+    isLoading: loadingSelectedToken,
+    error: tokenPriceError,
+  } = api.getNewPrices.tokenPrice.useQuery(
     { token: selectedToken, currency: selectedCurrency },
     {
       enabled: !!isServiceAvailable && !!selectedToken && (isTokenAvailable === true || selectedToken === '00'),
@@ -132,7 +126,8 @@ const PriceTestPage: React.FC = () => {
       currency: selectedCurrency,
     },
     {
-      enabled: !!isServiceAvailable && chartType === 'candlestick' && (isTokenAvailable === true || selectedToken === '00'),
+      enabled:
+        !!isServiceAvailable && chartType === 'candlestick' && (isTokenAvailable === true || selectedToken === '00'),
       refetchInterval: 15000,
       staleTime: 0, // Treat data as stale immediately
       retry: false,
@@ -239,6 +234,7 @@ const PriceTestPage: React.FC = () => {
     }
 
     let newSeries: ISeriesApi<'Line'> | ISeriesApi<'Candlestick'> | null = null
+
     // Create new series based on chartType
     if (chartType === 'line') {
       newSeries = chart.addLineSeries({
@@ -288,36 +284,40 @@ const PriceTestPage: React.FC = () => {
   // Effect for debugging API responses
   useEffect(() => {
     if (tokenPriceError) {
-      console.error('Token price error:', tokenPriceError);
+      console.error('Token price error:', tokenPriceError)
     }
-    
+
     if (lineChartData) {
       console.log('Line chart data received:', {
         token: lineChartData.token,
         symbol: lineChartData.symbol,
-        data: lineChartData.data ? 
-          `${lineChartData.data.length} points (first: ${JSON.stringify(lineChartData.data[0])}, last: ${JSON.stringify(lineChartData.data[lineChartData.data.length-1])})` : 
-          'No data'
-      });
+        data: lineChartData.data
+          ? `${lineChartData.data.length} points (first: ${JSON.stringify(
+              lineChartData.data[0]
+            )}, last: ${JSON.stringify(lineChartData.data[lineChartData.data.length - 1])})`
+          : 'No data',
+      })
     }
 
     if (candlestickData) {
       console.log('Candlestick data received:', {
         token: candlestickData.token,
         symbol: candlestickData.symbol,
-        data: candlestickData.data ? 
-          `${candlestickData.data.length} points (first: ${JSON.stringify(candlestickData.data[0])}, last: ${JSON.stringify(candlestickData.data[candlestickData.data.length-1])})` : 
-          'No data'
-      });
+        data: candlestickData.data
+          ? `${candlestickData.data.length} points (first: ${JSON.stringify(
+              candlestickData.data[0]
+            )}, last: ${JSON.stringify(candlestickData.data[candlestickData.data.length - 1])})`
+          : 'No data',
+      })
     }
-  }, [tokenPriceError, lineChartData, candlestickData]);
+  }, [tokenPriceError, lineChartData, candlestickData])
 
   // Log errors for debugging
   useEffect(() => {
     if (tokenPriceError) {
-      console.error('Token price error:', tokenPriceError);
+      console.error('Token price error:', tokenPriceError)
     }
-  }, [tokenPriceError]);
+  }, [tokenPriceError])
 
   useEffect(() => {
     if (!series || !chartData) {
@@ -442,196 +442,33 @@ const PriceTestPage: React.FC = () => {
           </div>
 
           <div className="p-4 rounded-lg bg-stone-900">
-            <div ref={chartContainerRef} />
-            {/* Show loading only if hooks are loading AND we don't have any chart data yet */}
-            {(loadingLineData || loadingCandlestickData) && !chartData && (
-              <div className="flex justify-center items-center h-[400px]">
-                <Typography>Loading chart data...</Typography>
-              </div>
-            )}
-            {/* Show error message if there's data loading error */}
-            {((selectedToken !== '00' && (lineChartData?.data?.length === 0 || candlestickData?.data?.length === 0))) && (
-              <div className="flex justify-center items-center h-[400px] absolute inset-0 bg-stone-900/80">
-                <div className="text-center">
-                  <Typography variant="lg" weight={600} className="text-amber-500 mb-2">
-                    No Chart Data Available
-                  </Typography>
-                  <Typography className="max-w-md">
-                    Historical chart data for {tokenInfo?.[selectedToken]?.symbol || selectedToken} in {selectedCurrency} 
-                    is not currently available. This feature is fully implemented for HTR token and in development for other tokens.
-                  </Typography>
-                  <Button 
-                    variant="filled" 
-                    className="mt-4"
-                    onClick={() => setSelectedToken('00')}
-                  >
-                    Switch to HTR
-                  </Button>
+            <div ref={chartContainerRef} className="relative">
+              {/* Show loading only if hooks are loading AND we don't have any chart data yet */}
+              {(loadingLineData || loadingCandlestickData) && !chartData && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/90">
+                  <Typography>Loading chart data...</Typography>
                 </div>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2">
-            <div className="p-6 rounded-lg bg-stone-900">
-              <Typography variant="h3" className="mb-4">
-                {selectedToken === '00' ? 'HTR' : tokenInfo?.[selectedToken]?.symbol || selectedToken} Price in{' '}
-                {selectedCurrency}
-              </Typography>
-              <div className="flex justify-between mb-4">
-                <div>
-                  <Typography variant="sm" className="text-stone-400">
-                    {selectedToken === '00' ? 'Current System' : 'From Old Service'}
-                  </Typography>
-                  {loadingOldHtr || selectedToken !== '00' ? (
-                    <Skeleton.Box className="w-24 h-8 mt-1" />
-                  ) : (
-                    <Typography variant="lg" weight={600}>
-                      {selectedCurrency === 'USD' ? formatUSD(oldHtrPrice || 0) : formatHTR(oldHtrPrice || 0)}
+              )}
+              {/* Show error message if there's data loading error */}
+              {selectedToken !== '00' && (lineChartData?.data?.length === 0 || candlestickData?.data?.length === 0) && (
+                <div className="absolute inset-0 z-10 flex justify-center items-center h-[400px] bg-stone-900/80">
+                  <div className="text-center">
+                    <Typography variant="lg" weight={600} className="mb-2 text-amber-500">
+                      No Chart Data Available
                     </Typography>
-                  )}
+                    <Typography className="max-w-md">
+                      Historical chart data for {tokenInfo?.[selectedToken]?.symbol || selectedToken} in{' '}
+                      {selectedCurrency}
+                      is not currently available. This feature is fully implemented for HTR token and in development for
+                      other tokens.
+                    </Typography>
+                    <Button variant="filled" className="mt-4" onClick={() => setSelectedToken('00')}>
+                      Switch to HTR
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <Typography variant="sm" className="text-stone-400">
-                    New Price Service
-                  </Typography>
-                  {loadingSelectedToken || !isServiceAvailable ? (
-                    <Skeleton.Box className="w-24 h-8 mt-1" />
-                  ) : (
-                    <Typography
-                      variant="lg"
-                      weight={600}
-                      className={
-                        selectedToken === '00'
-                          ? classNames(
-                              (newHtrPrice || 0) === (oldHtrPrice || 0)
-                                ? 'text-stone-100'
-                                : (newHtrPrice || 0) > (oldHtrPrice || 0)
-                                ? 'text-green-400'
-                                : 'text-red-400'
-                            )
-                          : 'text-stone-100'
-                      }
-                    >
-                      {selectedCurrency === 'USD'
-                        ? formatUSD(selectedToken === '00' ? newHtrPrice ?? 0 : selectedTokenPrice ?? 0)
-                        : formatHTR(selectedToken === '00' ? newHtrPrice ?? 0 : selectedTokenPrice ?? 0)}
-                    </Typography>
-                  )}
-                </div>
-              </div>
-
-              {selectedToken === '00' && (
-                <>
-                  <Typography variant="base" className="mt-4 mb-2 font-semibold">
-                    Price Difference
-                  </Typography>
-                  {loadingOldHtr || loadingNewHtr || !isServiceAvailable ? (
-                    <Skeleton.Box className="w-40 h-6" />
-                  ) : oldHtrPrice === newHtrPrice ? (
-                    <Typography variant="sm">No difference</Typography>
-                  ) : (
-                    <Typography variant="sm">
-                      {Math.abs((((newHtrPrice || 0) - (oldHtrPrice || 0)) / (oldHtrPrice || 1)) * 100).toFixed(2)}%
-                      {(newHtrPrice || 0) > (oldHtrPrice || 0) ? ' higher' : ' lower'}
-                    </Typography>
-                  )}
-                </>
               )}
             </div>
-
-            <div className="p-6 rounded-lg bg-stone-900">
-              <Typography variant="h3" className="mb-4">
-                Token Prices in {selectedCurrency}
-              </Typography>
-              <div className="overflow-hidden overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr>
-                      <th className="py-2 text-left">Token</th>
-                      <th className="py-2 text-right">Current System</th>
-                      <th className="py-2 text-right">New Service</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loadingOldPrices || loadingNewPrices || loadingTokenInfo
-                      ? [...Array(3)].map((_, i) => (
-                          <tr key={i}>
-                            <td className="py-2">
-                              <Skeleton.Box className="w-20 h-6" />
-                            </td>
-                            <td className="py-2 text-right">
-                              <Skeleton.Box className="w-24 h-6 ml-auto" />
-                            </td>
-                            <td className="py-2 text-right">
-                              <Skeleton.Box className="w-24 h-6 ml-auto" />
-                            </td>
-                          </tr>
-                        ))
-                      : Object.keys(oldPrices || {}).map((token) => {
-                          const oldPrice = oldPrices?.[token] || 0
-                          const newPrice = newPrices?.[token] || 0
-                          const tokenData = tokenInfo?.[token]
-                          const tokenSymbol = tokenData?.symbol || token
-
-                          return (
-                            <tr key={token}>
-                              <td className="py-2">
-                                {tokenSymbol} {tokenData?.name ? `(${tokenData.name})` : ''}
-                              </td>
-                              <td className="py-2 text-right">
-                                {selectedCurrency === 'USD' ? formatUSD(oldPrice) : formatHTR(oldPrice)}
-                              </td>
-                              <td className="py-2 text-right">
-                                <span
-                                  className={classNames(
-                                    oldPrice === newPrice
-                                      ? 'text-stone-100'
-                                      : newPrice > oldPrice
-                                      ? 'text-green-400'
-                                      : 'text-red-400'
-                                  )}
-                                >
-                                  {!isServiceAvailable
-                                    ? 'N/A'
-                                    : selectedCurrency === 'USD'
-                                    ? formatUSD(newPrice)
-                                    : formatHTR(newPrice)}
-                                </span>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-lg bg-stone-900">
-            <Typography variant="h3" className="mb-4">
-              About the New Price Service
-            </Typography>
-            <Typography className="mb-2">
-              The new price service is designed to improve performance and reduce load on Hathor nodes by:
-            </Typography>
-            <ul className="pl-6 mb-4 space-y-1 list-disc">
-              <li>Using a memory-first approach for price calculation and storage</li>
-              <li>Integrating with Hathor Event Queue for real-time updates</li>
-              <li>Leveraging block_height parameter for historical data retrieval</li>
-              <li>Providing standardized APIs for both current and historical price data</li>
-              <li>Supporting multiple currencies (USD and HTR) for price representation</li>
-              <li>Offering consistent historical data for all tokens</li>
-            </ul>
-            <Typography className="mb-2">
-              This test page helps validate that the new service is functioning correctly by allowing you to:
-            </Typography>
-            <ul className="pl-6 mb-4 space-y-1 list-disc">
-              <li>Select any token in the Dozer ecosystem to view its price chart</li>
-              <li>Switch between USD and HTR as the display currency</li>
-              <li>Compare line and candlestick chart representations</li>
-              <li>View prices across different time ranges from 1 hour to 1 year</li>
-            </ul>
           </div>
         </div>
       </Container>

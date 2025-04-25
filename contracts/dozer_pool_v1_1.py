@@ -706,7 +706,7 @@ class Dozer_Pool_v1_1(Blueprint):
     @view
     def pool_data(
         self,
-    ) -> dict[str, float | Amount]:
+    ) -> dict[str, str | float | Amount]:
 
         return {
             "total_liquidity": self.total_liquidity,
@@ -717,6 +717,8 @@ class Dozer_Pool_v1_1(Blueprint):
             "volume1": self.volume_b,
             "fee0": self.accumulated_fee[self.token_a],
             "fee1": self.accumulated_fee[self.token_b],
+            "token0": self.token_a.hex(),
+            "token1": self.token_b.hex(),
             # "slippage0": self.balance_a,
             # "slippage1": self.balance_b,
             "dzr_rewards": 1000,
