@@ -280,6 +280,9 @@ importers:
       framer-motion:
         specifier: ^12.4.1
         version: 12.4.1(@emotion/is-prop-valid@1.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      lightweight-charts:
+        specifier: ^5.0.6
+        version: 5.0.6
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -410,6 +413,9 @@ importers:
       echarts-for-react:
         specifier: 3.0.2
         version: 3.0.2(echarts@5.4.3)(react@18.3.1)
+      lightweight-charts:
+        specifier: ^5.0.6
+        version: 5.0.6
       lodash:
         specifier: ^4.17.21
         version: 4.17.21

@@ -25,6 +25,7 @@
     "echarts-for-react": "3.0.2",
     "fast-json-stable-stringify": "2.1.0",
     "framer-motion": "^12.4.1",
+    "lightweight-charts": "^5.0.6",
     "lodash": "^4.17.21",
     "next": "14.2.5",
     "next-superjson-plugin": "0.6.3",

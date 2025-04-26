@@ -107,25 +107,25 @@ export const tokenRouter = createTRPCRouter({
   }),
   createCustom: procedure
     .input(
-    z.object({
-    name: z.string(),
-    symbol: z.string(),
-    chainId: z.number(),
-    decimals: z.number(),
-    description: z.string(),
-    imageUrl: z.string(),
-    telegram: z.string().optional(),
-    twitter: z.string().optional(),
-    website: z.string().optional(),
-    createdBy: z.string(),
-    totalSupply: z.number(),
-    hash: z.string(),
-      bridged: z.boolean().optional(),
+      z.object({
+        name: z.string(),
+        symbol: z.string(),
+        chainId: z.number(),
+        decimals: z.number(),
+        description: z.string(),
+        imageUrl: z.string(),
+        telegram: z.string().optional(),
+        twitter: z.string().optional(),
+        website: z.string().optional(),
+        createdBy: z.string(),
+        totalSupply: z.number(),
+        hash: z.string(),
+        bridged: z.boolean().optional(),
         sourceChain: z.string().optional(),
-            targetChain: z.string().optional(),
-            originalAddress: z.string().optional(),
-          })
-        )
+        targetChain: z.string().optional(),
+        originalAddress: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Create token on blockchain
       // const start = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/start`, {
@@ -199,6 +199,7 @@ export const tokenRouter = createTRPCRouter({
         sourceChain: true,
         targetChain: true,
         originalAddress: true,
+        about: true,
       },
     })
   }),
