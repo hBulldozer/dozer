@@ -1,322 +1,259 @@
-import { AppearOnMount, BreadcrumbLink, Button, Dialog, LoadingOverlay, Typography } from '@dozer/ui'
+import { AppearOnMount, BreadcrumbLink, Button, Dialog, Container, Typography, LoadingOverlay } from '@dozer/ui'
+import { formatUSD, formatHTR } from '@dozer/format'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { AllTokensDBOutput, Pair } from '@dozer/api'
-
+import { AllTokensDBOutput, toToken } from '@dozer/api'
 import { Layout } from 'components/Layout'
-
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../../utils/api'
-import { TokenChart } from '../../../../components/TokenPage/TokenChart'
+import PriceChart from '../../../../components/TokenPage/PriceChart'
 import { SwapWidget } from 'pages'
 import { Fragment, useState } from 'react'
-import { TokenStats } from 'components/TokenPage/TokenStats'
-import ReadMore from '@dozer/ui/readmore/ReadMore'
-import { dbToken } from 'interfaces'
-import { daySnapshot, hourSnapshot } from '@dozer/database'
 import { ChainId } from '@dozer/chain'
-import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
+import { Currency, CopyHelper, IconButton, Link } from '@dozer/ui'
+import { ArrowTopRightOnSquareIcon, Square2StackIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
+import { TwitterIcon, TelegramIcon } from '@dozer/ui'
+import chains from '@dozer/chain'
+import { hathorLib } from '@dozer/nanocontracts'
+import ReadMore from '@dozer/ui/readmore/ReadMore'
 
 export const config = {
   maxDuration: 60,
 }
+
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
   const tokens = await ssg.getTokens.all.fetch()
 
   if (!tokens) {
-    throw new Error(`Failed to fetch pool, received ${tokens}`)
+    throw new Error(`Failed to fetch tokens`)
   }
-  // Get the paths we want to pre-render based on pairs
+
+  // Get the paths we want to pre-render based on tokens
   const paths = tokens
     ?.filter((token) => !token.custom)
     .map((token: AllTokensDBOutput) => ({
       params: { chainId: `${token.chainId}`, uuid: `${token.uuid}` },
     }))
 
-  // We'll pre-render only these paths at build time.
-  // { fallback: blocking } will server-render pages
-  // on-demand if the path doesn't exist.
   return { paths, fallback: 'blocking' }
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const uuid = params?.uuid as string
+  const chainId = Number(params?.chainId as string)
 
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.firstLoadAll.fetch()
 
-  const hUSDC_token = await ssg.getTokens.bySymbol.fetch({ symbol: 'hUSDC' })
-  if (!hUSDC_token) {
-    throw new Error(`Failed to fetch hUSDC Token`)
-  }
-  const UUID_hUSDC = hUSDC_token.uuid
-  const HTR_hUSDC_pool = pools.find(
-    (pool) =>
-      (pool.token0.uuid == '00' && pool.token1.uuid == UUID_hUSDC) ||
-      (pool.token1.uuid == '00' && pool.token0.uuid == UUID_hUSDC)
-  )
+  // Fetch token info
+  const token = await ssg.getTokens.byUuid.fetch({ uuid: uuid })
 
-  if (!HTR_hUSDC_pool) {
-    throw new Error(`Failed to fetch HTR/hUSDC pool.`)
+  if (!token) {
+    return {
+      notFound: true,
+    }
   }
 
-  const pool =
-    uuid == '00' || uuid == UUID_hUSDC
-      ? HTR_hUSDC_pool
-      : pools.find(
-          (pool) =>
-            (pool.token0.uuid == '00' && pool.token1.uuid == uuid) ||
-            (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
-        )
-  if (pool) {
-    // throw new Error(`Failed to fetch pool, received ${pool}`)
+  // Prefetch data for the new price service
+  await ssg.getNewPrices.isAvailable.prefetch()
+  await ssg.getNewPrices.tokenInfo.prefetch()
+  await ssg.getNewPrices.isTokenAvailable.prefetch({ token: uuid })
 
-    await ssg.getTokens.bySymbol.prefetch({ symbol: 'hUSDC' })
+  // Prefetch token data
+  await ssg.getTokens.socialURLs.prefetch({ uuid })
 
-    await ssg.getPools.snapsById.prefetch({ id: pool.id })
-    await ssg.getPools.snapsById.prefetch({ id: HTR_hUSDC_pool.id })
-
-    await ssg.getPools.firstLoadAllDay.prefetch()
-    await ssg.getPools.firstLoadAllDay.prefetch()
-    await ssg.getTokens.all.prefetch()
-    await ssg.getPrices.firstLoadAll.prefetch()
-    await ssg.getNetwork.getBestBlock.prefetch()
-  }
   return {
     props: {
       trpcState: ssg.dehydrate(),
+      tokenInfo: token,
     },
-    revalidate: 3600,
+    revalidate: 3600, // Revalidate every hour
   }
 }
 
-const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
+const LINKS = ({ tokenName, chainId }: { tokenName: string; chainId: number }): BreadcrumbLink[] => [
   {
     href: `/tokens`,
     label: 'Tokens',
   },
   {
-    href: `/${pair.id}`,
-    label: `${pair.id.includes('native') ? 'Hathor' : pair.token0.uuid == '00' ? pair.token1.name : pair.token0.name}`,
+    href: `/tokens/${chainId}/${tokenName}`,
+    label: tokenName,
   },
 ]
 
-const Token = () => {
+// Clean token page component using only the new price chart
+const TokenPage = ({ tokenInfo }: { tokenInfo: AllTokensDBOutput }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const router = useRouter()
   const uuid = router.query.uuid as string
   const chainId = Number(router.query.chainId)
-  const { data: hUSDC_uuid } = api.getTokens.bySymbol.useQuery({ symbol: 'hUSDC' })
-  if (!hUSDC_uuid) return <></>
 
-  const { data: prices = {} } = api.getPrices.firstLoadAll.useQuery()
-  if (!prices) return <></>
+  // Get social URLs
+  const { data: socialURLs } = api.getTokens.socialURLs.useQuery({ uuid })
 
-  const { data: pools } = api.getPools.firstLoadAll.useQuery()
-  let pair: Pair | undefined
-  let pair_day: Pair | undefined
-  if (!pools) return <></>
-  const { data: poolsDay } = api.getPools.firstLoadAllDay.useQuery()
-  if (!poolsDay) return <></>
-  const pair_husdc_htr = pools.find((pool) => {
-    return (
-      (pool.token0.uuid == '00' && pool.token1.symbol == 'hUSDC') ||
-      (pool.token1.uuid == '00' && pool.token0.symbol == 'hUSDC')
-    )
-  })
-  if (!pair_husdc_htr) return <Typography>Did not found the hUSDC/HTR pool</Typography>
+  // Get token details
+  const { data: token } = api.getTokens.byUuid.useQuery({ uuid: uuid })
 
-  const pair_husdc_htr_day = poolsDay.find((pool) => {
-    return (
-      (pool.token0.uuid == '00' && pool.token1.symbol == 'hUSDC') ||
-      (pool.token1.uuid == '00' && pool.token0.symbol == 'hUSDC')
-    )
-  })
-  if (!pair_husdc_htr_day) return <Typography>Did not found the hUSDC/HTR pool</Typography>
+  // Check if token is Hathor
+  const isHtr = uuid === '00'
+  const isHusdc = token?.symbol === 'hUSDC'
 
-  if (uuid == hUSDC_uuid?.uuid) {
-    const pairs_husdc: Pair[] = pools
-      .filter((pool) => pool.chainId == chainId)
-      .filter((pool) => pool.token0.symbol == 'hUSDC' || pool.token1.symbol == 'hUSDC')
-      .map((pool) => {
-        const pair = pool ? pool : ({} as Pair)
-        return pair
-      })
-    const { data: snaps_husdc_htr } = api.getPools.snapsById.useQuery({ id: pair_husdc_htr.id })
-    if (!snaps_husdc_htr) return <></>
+  // Set initial currency based on token type
+  const initialCurrency = !isHusdc ? 'USD' : 'HTR'
 
-    const pairs_husdc_day: Pair[] = poolsDay
-      .filter((pool) => pool.chainId == chainId)
-      .filter((pool) => pool.token0.symbol == 'hUSDC' || pool.token1.symbol == 'hUSDC')
-      .map((pool) => {
-        const pair = pool ? pool : ({} as Pair)
-        return pair
-      })
-
-    pair = {
-      id: chainId == ChainId.HATHOR ? 'husdc' : 'husdc-testnet',
-      name: chainId == ChainId.HATHOR ? 'hUSDC' : 'hUSDC testnet',
-      liquidityUSD: pairs_husdc ? pairs_husdc.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
-      volumeUSD: pairs_husdc ? pairs_husdc.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-      feeUSD: pairs_husdc ? pairs_husdc.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
-      swapFee: pairs_husdc[0].swapFee,
-      apr: 0,
-      token0: pair_husdc_htr.token0.uuid == '00' ? pair_husdc_htr.token0 : pair_husdc_htr.token1,
-      token1: pair_husdc_htr.token0.uuid == '00' ? pair_husdc_htr.token1 : pair_husdc_htr.token0,
-      chainId: chainId,
-      reserve0: pair_husdc_htr.reserve0,
-      reserve1: pair_husdc_htr.reserve1,
-      liquidity: pairs_husdc ? pairs_husdc.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
-      volume1d: pairs_husdc ? pairs_husdc.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
-      fees1d: pairs_husdc ? pairs_husdc.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
-      hourSnapshots: snaps_husdc_htr ? snaps_husdc_htr.hourSnapshots : ([] as Array<hourSnapshot>),
-      daySnapshots: snaps_husdc_htr ? snaps_husdc_htr.daySnapshots : ([] as Array<daySnapshot>),
-    }
-
-    pair_day = {
-      id: chainId == ChainId.HATHOR ? 'husdc' : 'husdc-testnet',
-      name: chainId == ChainId.HATHOR ? 'hUSDC' : 'hUSDC testnet',
-      liquidityUSD: pairs_husdc_day ? pairs_husdc_day.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
-      volumeUSD: pairs_husdc_day ? pairs_husdc_day.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-      feeUSD: pairs_husdc_day ? pairs_husdc_day.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
-      swapFee: pairs_husdc_day[0].swapFee,
-      apr: 0,
-      token0: pairs_husdc_day[0].token0.symbol == 'hUSDC' ? pairs_husdc_day[0].token0 : pairs_husdc_day[0].token1,
-      token1: pairs_husdc_day[0].token0.symbol == 'hUSDC' ? pairs_husdc_day[0].token1 : pairs_husdc_day[0].token0,
-      chainId: chainId,
-      reserve0: 0,
-      reserve1: 0,
-      liquidity: pairs_husdc_day ? pairs_husdc_day.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
-      volume1d: pairs_husdc_day ? pairs_husdc_day.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
-      fees1d: pairs_husdc_day ? pairs_husdc_day.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
-      hourSnapshots: snaps_husdc_htr ? snaps_husdc_htr.hourSnapshots : ([] as Array<hourSnapshot>),
-      daySnapshots: snaps_husdc_htr ? snaps_husdc_htr.daySnapshots : ([] as Array<daySnapshot>),
-    }
-  } else if (uuid == '00') {
-    const pairs_htr: Pair[] = pools
-      .filter((pool) => pool.chainId == chainId)
-      .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
-      .map((pool) => {
-        const pair = pool ? pool : ({} as Pair)
-        return pair
-      })
-    const { data: snaps_husdc_htr } = api.getPools.snapsById.useQuery({ id: pair_husdc_htr.id })
-    if (!snaps_husdc_htr) return <></>
-
-    const pairs_htr_day: Pair[] = poolsDay
-      .filter((pool) => pool.chainId == chainId)
-      .filter((pool) => pool.token0.uuid == '00' || pool.token1.uuid == '00')
-      .map((pool) => {
-        const pair = pool ? pool : ({} as Pair)
-        return pair
-      })
-
-    pair = {
-      id: chainId == ChainId.HATHOR ? 'native' : 'native-testnet',
-      name: chainId == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
-      liquidityUSD: pairs_htr ? pairs_htr.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
-      volumeUSD: pairs_htr ? pairs_htr.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-      feeUSD: pairs_htr ? pairs_htr.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
-      swapFee: pairs_htr[0].swapFee,
-      apr: 0,
-      token0: pair_husdc_htr.token0.uuid == '00' ? pair_husdc_htr.token0 : pair_husdc_htr.token1,
-      token1: pair_husdc_htr.token0.uuid == '00' ? pair_husdc_htr.token1 : pair_husdc_htr.token0,
-      chainId: chainId,
-      reserve0: pair_husdc_htr.reserve0,
-      reserve1: pair_husdc_htr.reserve1,
-      liquidity: pairs_htr ? pairs_htr.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
-      volume1d: pairs_htr ? pairs_htr.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
-      fees1d: pairs_htr ? pairs_htr.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
-      hourSnapshots: snaps_husdc_htr ? snaps_husdc_htr.hourSnapshots : ([] as Array<hourSnapshot>),
-      daySnapshots: snaps_husdc_htr ? snaps_husdc_htr.daySnapshots : ([] as Array<daySnapshot>),
-    }
-
-    pair_day = {
-      id: chainId == ChainId.HATHOR ? 'native' : 'native-testnet',
-      name: chainId == ChainId.HATHOR ? 'HTR' : 'HTR testnet',
-      liquidityUSD: pairs_htr_day ? pairs_htr_day.map((pair) => pair.liquidityUSD).reduce((a, b) => a + b) / 2 : 0,
-      volumeUSD: pairs_htr_day ? pairs_htr_day.map((pair) => pair.volumeUSD).reduce((a, b) => a + b) : 0,
-      feeUSD: pairs_htr_day ? pairs_htr_day.map((pair) => pair.feeUSD).reduce((a, b) => a + b) : 0,
-      swapFee: pairs_htr_day[0].swapFee,
-      apr: 0,
-      token0: pairs_htr_day[0].token0.uuid == '00' ? pairs_htr_day[0].token0 : pairs_htr_day[0].token1,
-      token1: pairs_htr_day[0].token0.uuid == '00' ? pairs_htr_day[0].token1 : pairs_htr_day[0].token0,
-      chainId: chainId,
-      reserve0: 0,
-      reserve1: 0,
-      liquidity: pairs_htr_day ? pairs_htr_day.map((pair) => pair.liquidity).reduce((a, b) => a + b) / 2 : 0,
-      volume1d: pairs_htr_day ? pairs_htr_day.map((pair) => pair.volume1d).reduce((a, b) => a + b) : 0,
-      fees1d: pairs_htr_day ? pairs_htr_day.map((pair) => pair.fees1d).reduce((a, b) => a + b) : 0,
-      hourSnapshots: snaps_husdc_htr ? snaps_husdc_htr.hourSnapshots : ([] as Array<hourSnapshot>),
-      daySnapshots: snaps_husdc_htr ? snaps_husdc_htr.daySnapshots : ([] as Array<daySnapshot>),
-    }
-  } else {
-    pair = pools.find(
-      (pool) =>
-        (pool.token0.uuid == '00' && pool.token1.uuid == uuid) || (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
-    )
-    if (!pair) return <></>
-
-    pair_day = poolsDay.find(
-      (pool) =>
-        (pool.token0.uuid == '00' && pool.token1.uuid == uuid) || (pool.token1.uuid == '00' && pool.token0.uuid == uuid)
-    )
-    if (!pair_day) return <></>
-    const { data: snaps } = api.getPools.snapsById.useQuery({ id: pair.id })
-    if (!snaps) return <></>
-
-    pair.daySnapshots = snaps ? snaps.daySnapshots : ([] as Array<daySnapshot>)
-    pair.hourSnapshots = snaps ? snaps.hourSnapshots : ([] as Array<hourSnapshot>)
-  }
-  if (!pair) return <></>
-
-  const tokens = pair ? ([pair.token0, pair.token1] as dbToken[]) : []
-  if (!tokens) return <></>
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   return (
     <>
-      <Layout breadcrumbs={LINKS({ pair })}>
-        <LoadingOverlay show={!prices || !pools || !poolsDay || !tokens || !pair || !pair_day} />
-        <BlockTracker client={api} />
+      <Layout breadcrumbs={LINKS({ tokenName: token?.name || uuid, chainId })}>
+        <LoadingOverlay show={false} />
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-6">
-            <TokenChart pair={pair} setIsDialogOpen={setIsDialogOpen} />
-            {/* About */}
+            {/* Token Icon and Info */}
+            <div className="flex justify-between gap-5 mr-3">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <div className={token?.imageUrl ? 'cursor-pointer' : ''}>
+                    <Currency.Icon
+                      currency={toToken(token)}
+                      width={32}
+                      height={32}
+                      onClick={() => token?.imageUrl && setIsDialogOpen(true)}
+                    />
+                  </div>
+
+                  <Typography variant="lg" weight={600}>
+                    {token?.name || uuid}
+                  </Typography>
+                  <Typography variant="lg" weight={600} className="text-stone-400">
+                    {token?.symbol || ''}
+                  </Typography>
+
+                  {/* Token actions and social links */}
+                  <div className="flex flex-row items-center gap-2 ml-2">
+                    {token && (
+                      <CopyHelper
+                        toCopy={hathorLib.tokensUtils.getConfigurationString(
+                          token.uuid,
+                          token.name || '',
+                          token.symbol || ''
+                        )}
+                        hideIcon={true}
+                      >
+                        {(isCopied) => (
+                          <IconButton
+                            className="p-1 text-stone-400"
+                            description={isCopied ? 'Copied!' : 'Configuration String'}
+                          >
+                            <Square2StackIcon width={20} height={20} color="stone-500" />
+                          </IconButton>
+                        )}
+                      </CopyHelper>
+                    )}
+
+                    <Link.External href={chains[chainId].getTokenUrl(uuid)}>
+                      <IconButton className="p-1 text-stone-400" description={'View on explorer'}>
+                        <ArrowTopRightOnSquareIcon width={20} height={20} color="stone-500" />
+                      </IconButton>
+                    </Link.External>
+
+                    {socialURLs && socialURLs.twitter && (
+                      <Link.External href={`https://twitter.com/${socialURLs.twitter}`}>
+                        <IconButton className="p-1 text-stone-400" description={'Twitter'}>
+                          <TwitterIcon width={20} height={20} className="text-stone-500" />
+                        </IconButton>
+                      </Link.External>
+                    )}
+
+                    {socialURLs && socialURLs.telegram && (
+                      <Link.External href={`https://t.me/${socialURLs.telegram}`}>
+                        <IconButton className="p-1 text-stone-400" description={'Telegram'}>
+                          <TelegramIcon width={20} height={20} className="text-stone-500" />
+                        </IconButton>
+                      </Link.External>
+                    )}
+
+                    {socialURLs && socialURLs.website && (
+                      <Link.External href={`https://${socialURLs.website}`}>
+                        <IconButton className="p-1 text-stone-400" description={'Website'}>
+                          <GlobeAltIcon width={20} height={20} className="text-stone-500" />
+                        </IconButton>
+                      </Link.External>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Price Chart component */}
+            <PriceChart
+              tokenId={uuid}
+              initialCurrency={initialCurrency as 'USD' | 'HTR'}
+              symbol={token?.symbol}
+              name={token?.name}
+              height={400}
+              showControls={true}
+              showCurrencyToggle={true}
+            />
+
+            {/* Stats section */}
             <div className="flex flex-col gap-4">
               <Typography weight={500} variant="h1">
                 Stats
               </Typography>
-              <TokenStats pair={pair_day} prices={prices} />
-              <Typography weight={500} className="flex flex-col " variant="h2">
-                About
-              </Typography>
-              <ReadMore
-                text={
-                  uuid == '00' && tokens[0].uuid == '00'
-                    ? tokens[0].about
-                    : tokens[0].uuid == '00'
-                    ? tokens[1].about
-                    : tokens[0].about
-                }
-              />
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-lg md:grid-cols-3 bg-stone-900">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="sm" className="text-stone-400">
+                    Price
+                  </Typography>
+                  <Typography variant="lg" weight={600}>
+                    {isHtr ? formatUSD(token?.price || 0) : formatHTR(token?.price || 0)}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Typography variant="sm" className="text-stone-400">
+                    24h Volume
+                  </Typography>
+                  <Typography variant="lg" weight={600}>
+                    {formatUSD(token?.volume24h || 0)}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Typography variant="sm" className="text-stone-400">
+                    Market Cap
+                  </Typography>
+                  <Typography variant="lg" weight={600}>
+                    {formatUSD(token?.marketCap || 0)}
+                  </Typography>
+                </div>
+              </div>
             </div>
+
+            {/* About section */}
+            {token?.about && (
+              <div className="flex flex-col gap-4">
+                <Typography weight={500} className="flex flex-col " variant="h2">
+                  About
+                </Typography>
+                <ReadMore text={token.about} />
+              </div>
+            )}
           </div>
+
+          {/* Swap Widget */}
           <div className="flex-col order-2 hidden gap-4 lg:flex">
             <AppearOnMount>
-              <SwapWidget token0_idx={tokens[0].id} token1_idx={tokens[1].id} />
+              <SwapWidget token0_idx={'0'} token1_idx={token?.id || '1'} />
             </AppearOnMount>
           </div>
         </div>
         <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
           <Dialog.Content>
-            <Dialog.Header title="Community Token Image" onClose={() => setIsDialogOpen(false)} />
-            {pair.token1.imageUrl && (
+            <Dialog.Header title="Token Image" onClose={() => setIsDialogOpen(false)} />
+            {token?.imageUrl && (
               <div className="w-full max-h-[80vh] flex items-center justify-center overflow-hidden">
                 <img
-                  src={pair.token1.imageUrl}
-                  alt="Community Token Image"
+                  src={token.imageUrl}
+                  alt={`${token.name} Token Image`}
                   className="object-contain max-w-full max-h-full"
                 />
               </div>
@@ -324,15 +261,13 @@ const Token = () => {
           </Dialog.Content>
         </Dialog>
       </Layout>
+
+      {/* Mobile swap button */}
       <AppearOnMount as={Fragment}>
         <div className="fixed left-0 right-0 flex justify-center lg:hidden bottom-6">
           <div>
             <div className="divide-x rounded-xl min-w-[95vw] shadow-md shadow-black/50 bg-yellow divide-stone-800">
-              <Button
-                size="md"
-                as="a"
-                href={`../../?token0=${pair.token0.uuid}&token1=${pair.token1.uuid}&chainId=${pair.chainId}`}
-              >
+              <Button size="md" as="a" href={`../../?token0=00&token1=${uuid}&chainId=${chainId}`}>
                 Swap
               </Button>
             </div>
@@ -343,4 +278,4 @@ const Token = () => {
   )
 }
 
-export default Token
+export default TokenPage

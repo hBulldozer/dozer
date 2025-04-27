@@ -59,7 +59,7 @@ export interface PriceChartProps {
 const PriceChart: React.FC<PriceChartProps> = ({
   tokenId,
   initialChartType = 'line',
-  initialTimeRange = '24H',
+  initialTimeRange = '1H',
   initialCurrency = 'USD',
   onPriceChange,
   height = 400,
@@ -434,15 +434,6 @@ const PriceChart: React.FC<PriceChartProps> = ({
   return (
     <div className={classNames('flex flex-col gap-6', className)}>
       <div className="flex flex-col gap-1">
-        {/* Display current price and change */}
-        <div className="flex items-center gap-2">
-          <Typography variant="lg" weight={600}>
-            {displayName}
-          </Typography>
-          <Typography variant="lg" weight={600} className="text-stone-400">
-            {displaySymbol}
-          </Typography>
-        </div>
         <Typography variant="h2" weight={600} className="text-stone-50">
           {selectedCurrency === 'USD' ? formatUSD(currentPrice) : formatHTR(currentPrice)}
         </Typography>
@@ -460,106 +451,151 @@ const PriceChart: React.FC<PriceChartProps> = ({
         </Typography>
       </div>
 
-      {/* Currency toggle */}
-      {showCurrencyToggle && (
-        <div className="flex justify-end gap-4 text-right">
-          {canShowUSD && (
-            <button
-              onClick={() => setSelectedCurrency('USD')}
-              className={classNames(
-                'font-semibold text-xl',
-                selectedCurrency === 'USD' ? 'text-yellow-500' : 'text-stone-500'
-              )}
-            >
-              USD
-            </button>
-          )}
-          {canShowHTR && (
-            <button
-              onClick={() => setSelectedCurrency('HTR')}
-              className={classNames(
-                'font-semibold text-xl',
-                selectedCurrency === 'HTR' ? 'text-yellow-500' : 'text-stone-500'
-              )}
-            >
-              HTR
-            </button>
-          )}
-        </div>
-      )}
+      {/* Chart controls will be moved above the chart */}
 
-      {/* Chart display */}
-      <div className="p-4 rounded-lg bg-stone-900">
-        <div ref={chartContainerRef} style={{ height: `${height}px` }}>
-          {/* Chart will be rendered here */}
-        </div>
+      {/* Chart display with controls */}
+      <div className="overflow-hidden rounded-lg bg-stone-900">
+        {/* Chart controls */}
+        {showControls && (
+          <div className="flex items-center justify-between p-3 border-b border-stone-800">
+            {/* Chart type toggle */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setChartType('line')}
+                className={`p-2 rounded-md transition-colors ${
+                  chartType === 'line' ? 'bg-stone-800 text-yellow-500' : 'text-stone-400 hover:text-stone-200'
+                }`}
+                title="Line Chart"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 3v18h18" />
+                  <path d="m19 9-5 5-4-4-3 3" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setChartType('candlestick')}
+                className={`p-2 rounded-md transition-colors ${
+                  chartType === 'candlestick' ? 'bg-stone-800 text-yellow-500' : 'text-stone-400 hover:text-stone-200'
+                }`}
+                title="Candlestick Chart"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M8 3v3.5m0 11V21" />
+                  <path d="M16 3v3.5m0 11V21" />
+                  <path d="M8 7v10h8V7H8z" />
+                </svg>
+              </button>
+            </div>
 
-        {/* Loading state */}
-        {(loadingLineData || loadingCandlestickData || !isServiceAvailable || !chart) && (
-          <div className="mt-4 text-center">
-            <Typography>Loading chart data...</Typography>
+            {/* Time range selector */}
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-stone-800">
+              {Object.keys(TIME_RANGES).map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setSelectedRange(range as TimeRangeOption)}
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                    selectedRange === range ? 'bg-yellow-500 text-stone-900' : 'text-stone-300 hover:text-stone-100'
+                  }`}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
+
+            {/* Currency toggle */}
+            {showCurrencyToggle && (
+              <div className="flex items-center gap-1 p-1 rounded-lg bg-stone-800">
+                {canShowUSD && (
+                  <button
+                    onClick={() => setSelectedCurrency('USD')}
+                    className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                      selectedCurrency === 'USD'
+                        ? 'bg-yellow-500 text-stone-900'
+                        : 'text-stone-300 hover:text-stone-100'
+                    }`}
+                  >
+                    USD
+                  </button>
+                )}
+                {canShowHTR && (
+                  <button
+                    onClick={() => setSelectedCurrency('HTR')}
+                    className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                      selectedCurrency === 'HTR'
+                        ? 'bg-yellow-500 text-stone-900'
+                        : 'text-stone-300 hover:text-stone-100'
+                    }`}
+                  >
+                    HTR
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Error states */}
-        {isServiceAvailable && isTokenAvailable === false && tokenId !== '00' && (
-          <div className="mt-4 text-center">
-            <Typography variant="lg" weight={600} className="mb-2 text-amber-500">
-              No Chart Data Available
-            </Typography>
-            <Typography className="max-w-md mx-auto">
-              Historical chart data for {displaySymbol} in {selectedCurrency}
-              is not currently available.
-            </Typography>
+        <div className="p-4">
+          <div ref={chartContainerRef} style={{ height: `${height}px` }}>
+            {/* Chart will be rendered here */}
           </div>
-        )}
 
-        {isServiceAvailable &&
-          isTokenAvailable === true &&
-          ((chartType === 'line' && lineChartData?.data?.length === 0) ||
-            (chartType === 'candlestick' && candlestickData?.data?.length === 0)) && (
+          {/* Loading state */}
+          {(loadingLineData || loadingCandlestickData || !isServiceAvailable || !chart) &&
+            chartData &&
+            chartData.length === 0 && (
+              <div className="mt-4 text-center">
+                <Typography>Loading chart data...</Typography>
+              </div>
+            )}
+
+          {/* Error states */}
+          {isServiceAvailable && isTokenAvailable === false && tokenId !== '00' && (
             <div className="mt-4 text-center">
               <Typography variant="lg" weight={600} className="mb-2 text-amber-500">
-                No Data For Selected Period
+                No Chart Data Available
               </Typography>
-              <Typography className="max-w-md mx-auto">Try selecting a different time period.</Typography>
+              <Typography className="max-w-md mx-auto">
+                Historical chart data for {displaySymbol} in {selectedCurrency}
+                is not currently available.
+              </Typography>
             </div>
           )}
+
+          {isServiceAvailable &&
+            isTokenAvailable === true &&
+            ((chartType === 'line' && lineChartData?.data?.length === 0) ||
+              (chartType === 'candlestick' && candlestickData?.data?.length === 0)) && (
+              <div className="mt-4 text-center">
+                <Typography variant="lg" weight={600} className="mb-2 text-amber-500">
+                  No Data For Selected Period
+                </Typography>
+                <Typography className="max-w-md mx-auto">Try selecting a different time period.</Typography>
+              </div>
+            )}
+        </div>
       </div>
 
-      {/* Chart controls */}
-      {showControls && (
-        <div className="flex flex-col gap-4">
-          {/* Chart type toggle */}
-          <div className="flex items-center mb-4 space-x-2">
-            <Button variant={chartType === 'line' ? 'filled' : 'outlined'} onClick={() => setChartType('line')}>
-              Line
-            </Button>
-            <Button
-              variant={chartType === 'candlestick' ? 'filled' : 'outlined'}
-              onClick={() => setChartType('candlestick')}
-            >
-              Candlestick
-            </Button>
-          </div>
-
-          {/* Time range selector */}
-          <div className="flex justify-between px-8 md:px-0 md:gap-4 md:justify-end">
-            {Object.keys(TIME_RANGES).map((range) => (
-              <button
-                key={range}
-                onClick={() => setSelectedRange(range as TimeRangeOption)}
-                className={classNames(
-                  'font-semibold text-xl',
-                  selectedRange === range ? 'text-yellow-500' : 'text-stone-500'
-                )}
-              >
-                {range}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Controls moved above */}
     </div>
   )
 }

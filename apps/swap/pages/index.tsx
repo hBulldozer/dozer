@@ -133,9 +133,9 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const [initialToken0, setInitialToken0] = useState(
     tokens
       ? toToken(
-          tokens.filter((token) => {
+          tokens.find((token) => {
             return token.id == token0_idx
-          })[0]
+          })
         )
       : undefined
   )
@@ -143,9 +143,9 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const [initialToken1, setInitialToken1] = useState(
     tokens
       ? toToken(
-          tokens.filter((token) => {
+          tokens.find((token) => {
             return token.id == token1_idx
-          })[0]
+          })
         )
       : undefined
   )
@@ -153,6 +153,14 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   useEffect(() => {
     setTokens([initialToken0, initialToken1])
   }, [network, initialToken0, initialToken1])
+
+  useEffect(() => {
+    if (!router.query.token0 && !router.query.token1) {
+      const token0 = toToken(tokens?.find((token) => token.id == token0_idx))
+      const token1 = toToken(tokens?.find((token) => token.id == token1_idx))
+      setTokens([token0, token1])
+    }
+  }, [tokens, token0_idx, token1_idx])
 
   const [input0, setInput0] = useState<string>('')
   const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([initialToken0, initialToken1])
