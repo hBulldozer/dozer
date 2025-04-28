@@ -137,7 +137,9 @@
         "LPBLUEPRINT",
         "OASISBLUEPRINT",
         "BETBLUEPRINT",
-        "SUPABASE_ANON_KEY"
+        "SUPABASE_ANON_KEY",
+        "PRICE_SERVICE_URL",
+        "NEXT_PUBLIC_PRICE_SERVICE_URL"
       ],
       "cache": false,
       "persistent": true

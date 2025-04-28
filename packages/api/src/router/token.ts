@@ -246,4 +246,22 @@ export const tokenRouter = createTRPCRouter({
         } else return createTokenTx[0]?.tx_id
       }
     }),
+  stats: procedure
+    .input(z.object({ uuid: z.string() }))
+    .output(
+      z.object({
+        token: z.string(),
+        tvl: z.number(),
+        volume24h: z.number(),
+        priceMin52w: z.number(),
+        priceMax52w: z.number(),
+        timestamp: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      const response = await fetch(`${process.env.PRICE_SERVICE_URL}/api/v1/statistics/${input.uuid}`)
+      const data = await response.json()
+      console.log('response stats', data)
+      return data
+    }),
 })

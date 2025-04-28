@@ -1,19 +1,17 @@
 import { formatUSD } from '@dozer/format'
 // EDIT
-import { Pair } from '@dozer/api'
+import { client, Pair } from '@dozer/api'
 import { Typography } from '@dozer/ui'
 import { FC } from 'react'
+import { Token } from '@dozer/database'
 
 interface TokenStats {
-  pair: Pair
-  prices: { [key: string]: number }
+  uuid: string
+  client: typeof client
 }
 
-export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
-  const priceArray = pair.hourSnapshots.map((snap) =>
-    pair.id.includes('native') ? snap.reserve1 / snap.reserve0 : (snap.priceHTR * snap.reserve1) / snap.reserve0
-  )
-  priceArray.push(pair.id.includes('native') ? prices['00'] : prices[pair.token1.uuid])
+export const TokenStats: FC<TokenStats> = ({ uuid, client }) => {
+  const { data: tokenStats } = client.getTokens.stats.useQuery({ uuid: uuid })
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -22,7 +20,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
           TVL
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {formatUSD(pair.liquidityUSD)}
+          {tokenStats?.tvl ? formatUSD(tokenStats.tvl) : '-'}
           {/* {123} */}
         </Typography>
         {/* {pair.liquidity1dChange ? (
@@ -37,7 +35,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
           Volume (24h)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {formatUSD(pair.volumeUSD)}
+          {tokenStats?.volume24h ? formatUSD(tokenStats.volume24h) : '-'}
         </Typography>
         {/* {pair.volume1dChange ? (
           <Typography variant="xs" weight={500} className={pair.volume1dChange > 0 ? 'text-green' : 'text-red'}>
@@ -51,7 +49,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
           Min (52W)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {pair.id.includes('husdc') ? formatUSD(1) : formatUSD(Math.min(...priceArray))}
+          {tokenStats?.priceMin52w ? formatUSD(tokenStats.priceMin52w) : '-'}
         </Typography>
         {/* {pair.volume1dChange ? (
           <Typography variant="xs" weight={500} className={pair.volume1dChange > 0 ? 'text-green' : 'text-red'}>
@@ -65,11 +63,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
           Max (52W)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {pair.id.includes('husdc')
-            ? formatUSD(1)
-            : Math.max(...priceArray) > 1
-            ? formatUSD(Math.max(...priceArray))
-            : formatUSD(Math.max(...priceArray))}
+          {tokenStats?.priceMax52w ? formatUSD(tokenStats.priceMax52w) : '-'}
         </Typography>
         {/* {pair.txCount1dChange ? (
           <Typography variant="xs" weight={500} className={pair.txCount1dChange > 0 ? 'text-green' : 'text-red'}>

@@ -16,6 +16,7 @@ import { TwitterIcon, TelegramIcon } from '@dozer/ui'
 import chains from '@dozer/chain'
 import { hathorLib } from '@dozer/nanocontracts'
 import ReadMore from '@dozer/ui/readmore/ReadMore'
+import { TokenStats } from 'components/TokenPage/TokenStats'
 
 export const config = {
   maxDuration: 60,
@@ -200,32 +201,7 @@ const TokenPage = ({ tokenInfo }: { tokenInfo: AllTokensDBOutput }) => {
               <Typography weight={500} variant="h1">
                 Stats
               </Typography>
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-lg md:grid-cols-3 bg-stone-900">
-                <div className="flex flex-col gap-1">
-                  <Typography variant="sm" className="text-stone-400">
-                    Price
-                  </Typography>
-                  <Typography variant="lg" weight={600}>
-                    {isHtr ? formatUSD(token?.price || 0) : formatHTR(token?.price || 0)}
-                  </Typography>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Typography variant="sm" className="text-stone-400">
-                    24h Volume
-                  </Typography>
-                  <Typography variant="lg" weight={600}>
-                    {formatUSD(token?.volume24h || 0)}
-                  </Typography>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Typography variant="sm" className="text-stone-400">
-                    Market Cap
-                  </Typography>
-                  <Typography variant="lg" weight={600}>
-                    {formatUSD(token?.marketCap || 0)}
-                  </Typography>
-                </div>
-              </div>
+              <TokenStats uuid={token.uuid} client={api} />
             </div>
 
             {/* About section */}
