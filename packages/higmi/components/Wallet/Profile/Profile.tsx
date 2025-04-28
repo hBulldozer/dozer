@@ -19,6 +19,8 @@ import { Tokens } from './Tokens'
 import { TokensEVM } from './TokensEVM'
 import { useBridge } from '../../contexts/BridgeContext'
 import bridgeConfig, { IS_TESTNET } from '../../../config/bridge'
+import { usePathname } from 'next/navigation'
+import path from 'path'
 
 interface ProfileProps {
   client: typeof client
@@ -65,6 +67,8 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   const { loadBalances } = useBridge()
   const { data: tokensData } = client.getTokens.all.useQuery()
   const { data: prices } = client.getPrices.all.useQuery()
+  const pathname = usePathname()
+  const isBridgePage = pathname.includes('/bridge')
 
   // Fetch EVM token balances for the Default view
   const fetchEvmBalances = async () => {
@@ -201,7 +205,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   }, [view, address])
 
   if (!address) {
-    return <Wallet.Button size="sm" className="border-none shadow-md whitespace-nowrap" />
+    return <Wallet.Button size="sm" className="border-none shadow-md whitespace-nowrap" showMetaMask={isBridgePage} />
   }
 
   if (address) {

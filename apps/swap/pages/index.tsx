@@ -403,10 +403,8 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             hasLowBalance={
               !!(
                 token0?.bridged &&
-                ((Number(input0) > 0 &&
-                  (balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) <
-                    Number(input0) * 100) ||
-                  (balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) === 0)
+                Number(input0) > 0 &&
+                (balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) < Number(input0) * 100
               )
             }
           />

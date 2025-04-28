@@ -19,7 +19,7 @@ export interface AccountAction {
 const Icons: Record<string, ReactNode> = {
   Injected: <ChevronDoubleDownIcon width={16} height={16} />,
   MetaMask: (
-    <div className="w-4 h-4 flex-shrink-0">
+    <div className="flex-shrink-0 w-4 h-4">
       <Image src="/images/MetaMask-icon-fox.svg" width={16} height={16} alt="MetaMask" />
     </div>
   ),
@@ -34,7 +34,7 @@ type Props<C extends React.ElementType> = ButtonProps<C> & {
 export const Button = <C extends React.ElementType>({
   children,
   appearOnMount = true,
-  showMetaMask = true,
+  showMetaMask = false,
   ...rest
 }: Props<C>) => {
   const [modal, setModal] = useState('')
@@ -144,9 +144,9 @@ export const Button = <C extends React.ElementType>({
               {connected ? (
                 <button
                   onClick={disconnectMetaMask}
-                  className="flex items-center gap-1 px-2 py-1 bg-green-800/30 border border-green-700 hover:bg-green-700/30 rounded-xl transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 transition-colors border border-green-700 bg-green-800/30 hover:bg-green-700/30 rounded-xl"
                 >
-                  <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                   {Icons['MetaMask']}
                   <span className="text-xs text-green-300">
                     {account ? `${account.substring(0, 4)}...${account.substring(account.length - 4)}` : 'Connected'}
@@ -156,7 +156,7 @@ export const Button = <C extends React.ElementType>({
                 <button
                   onClick={connectMetaMask}
                   disabled={connecting}
-                  className="flex items-center gap-1 px-2 py-1 bg-stone-800/50 border border-stone-700 hover:bg-stone-700/30 rounded-xl transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 transition-colors border bg-stone-800/50 border-stone-700 hover:bg-stone-700/30 rounded-xl"
                 >
                   {Icons['MetaMask']}
                   <span className="text-xs text-stone-300">{connecting ? 'Connecting...' : 'MetaMask'}</span>
