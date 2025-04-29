@@ -2,7 +2,7 @@ import { AppearOnMount, BreadcrumbLink, LoadingOverlay } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { Pair } from '@dozer/api'
-import { PoolChart } from '../../components/PoolSection/PoolChart'
+import { PoolChartNew } from '../../components/PoolSection/PoolChartNew'
 import TransactionHistory from '../../components/TransactionHistory/TransactionHistory'
 
 import {
@@ -73,6 +73,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   await ssg.getPools.firstLoadAll.prefetch()
   await ssg.getPrices.firstLoadAll.prefetch()
   await ssg.getPools.getPoolTransactionHistory.prefetch({ id: pool.id, limit: 10 })
+  
+  // Prefetch data for the new price service
+  await ssg.getNewPrices.isAvailable.prefetch()
+  await ssg.getNewPool.isPoolAvailable.prefetch({ poolId: pool.id })
   // await ssg.getPools.allDay.prefetch()
   return {
     props: {
@@ -153,7 +157,7 @@ const Pool = () => {
               <PoolHeader pair={pair} prices={prices} isLoading={isLoadingDetailed} />
               {/* uses chainid, swapfee, apr, incentivesapr */}
               <hr className="my-3 border-t border-stone-200/5" />
-              <PoolChart pair={pair} />
+              <PoolChartNew pair={pair} />
               {/* uses snapshots and swapfees */}
               <AppearOnMount>
                 <PoolStats pair={pair_day} prices={prices} />

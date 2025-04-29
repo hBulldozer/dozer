@@ -387,33 +387,6 @@ const PriceChart: React.FC<PriceChartProps> = ({
     [onPriceChange]
   )
 
-  // Callback for mouse leave events
-  const onMouseLeave = useCallback(() => {
-    if (chartData && chartData.length > 0) {
-      const firstValue =
-        chartType === 'line'
-          ? (chartData[0] as LineData<UTCTimestamp>).value
-          : (chartData[0] as CandlestickData<UTCTimestamp>).open
-
-      const lastValue =
-        chartType === 'line'
-          ? (chartData[chartData.length - 1] as LineData<UTCTimestamp>).value
-          : (chartData[chartData.length - 1] as CandlestickData<UTCTimestamp>).close
-
-      const change = (lastValue - firstValue) / (firstValue !== 0 ? firstValue : 1)
-
-      setCurrentPrice(lastValue)
-      setPriceChange(change)
-
-      const lastTime = (chartData[chartData.length - 1].time as number) * 1000
-      setFormattedTime(format(new Date(lastTime), 'dd MMM yyyy HH:mm'))
-
-      if (onPriceChange) {
-        onPriceChange(lastValue, change)
-      }
-    }
-  }, [chartData, chartType, onPriceChange])
-
   // Get the token symbol and name for display
   const displaySymbol = useMemo(() => {
     if (symbol) return symbol
