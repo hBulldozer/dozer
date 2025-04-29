@@ -1,11 +1,9 @@
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { createTRPCRouter, procedure } from '../trpc'
-import axios from 'axios'
+import { getPriceServiceData } from '../helpers/fetch'
 
-// Price service configuration
-const PRICE_SERVICE_URL = process.env.PRICE_SERVICE_URL || 'http://localhost:3000'
-// console.log('Using price service at:', PRICE_SERVICE_URL)
+// Types for price service responses
 
 // Define types for the price service responses
 interface TokenPrice {
@@ -77,27 +75,27 @@ export const newPricesRouter = createTRPCRouter({
           return null;
         }
 
-        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/current/${token}`, {
+        const data = await getPriceServiceData(`/api/v1/prices/current/${token}`, {
           params: {
-            currency: currency,
+            currency: currency
           },
-          timeout: 5000,
+          timeout: 5000
         })
 
-        console.log('Token price response:', response.data);
+        console.log('Token price response:', data);
 
         // Return the price in the requested currency
-        if (response.data) {
+        if (data) {
           if (currency.toUpperCase() === 'USD') {
-            return typeof response.data.priceInUSD === 'number' ? response.data.priceInUSD : 0;
+            return typeof data.priceInUSD === 'number' ? data.priceInUSD : 0;
           } else if (currency.toUpperCase() === 'HTR') {
-            return typeof response.data.priceInHTR === 'number' ? response.data.priceInHTR : 0;
+            return typeof data.priceInHTR === 'number' ? data.priceInHTR : 0;
           } else {
             return 0;
           }
         }
 
-        console.warn('Invalid response format for token price:', response.data);
+        console.warn('Invalid response format for token price:', data);
         return 0;
       } catch (error) {
         console.error(`Error fetching ${input.token} price from price service:`, error);
@@ -126,16 +124,16 @@ export const newPricesRouter = createTRPCRouter({
       // Also fetch token info from the price service to make sure we have data for any
       // tokens that might be in the price service but not in our database
       try {
-        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/info/tokens`, {
-          timeout: 5000,
+        const response = await getPriceServiceData(`/api/v1/info/tokens`, {
+          timeout: 5000
         })
 
         // Combine the data, preferring our database information
         const tokenMap: Record<string, { symbol: string; name?: string }> = {}
 
         // Add price service tokens first
-        if (response.data && response.data.tokens) {
-          response.data.tokens.forEach((token: { uuid: string; symbol: string; name?: string }) => {
+        if (response && response.tokens) {
+          response.tokens.forEach((token: { uuid: string; symbol: string; name?: string }) => {
             tokenMap[token.uuid] = {
               symbol: token.symbol,
               name: token.name,
@@ -196,19 +194,19 @@ export const newPricesRouter = createTRPCRouter({
       const tokenUuids = tokens.map((token) => token.uuid).join(',')
 
       // Get prices for all tokens from the price service
-      const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/current`, {
+      const response = await getPriceServiceData(`/api/v1/prices/current`, {
         params: {
           tokens: tokenUuids,
-          currency: 'USD',
+          currency: 'USD'
         },
-        timeout: 5000,
+        timeout: 5000
       })
 
       const prices: Record<string, number> = {}
 
       // Convert to the format expected by the frontend
-      if (response.data && response.data.prices) {
-        response.data.prices.forEach((price: TokenPrice) => {
+      if (response && response.prices) {
+        response.prices.forEach((price: TokenPrice) => {
           prices[price.token] = price.priceInUSD
         })
       }
@@ -262,18 +260,18 @@ export const newPricesRouter = createTRPCRouter({
               return
             }
 
-            const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/historical/${token.uuid}`, {
+            const data = await getPriceServiceData(`/api/v1/prices/historical/${token.uuid}`, {
               params: {
                 from: Math.floor(oneDayAgo / 1000),
                 to: Math.floor(now / 1000),
                 interval: '1h',
-                currency: 'USD',
+                currency: 'USD'
               },
-              timeout: 5000,
+              timeout: 5000
             })
 
-            if (response.data && response.data.prices) {
-              prices24hUSD[token.uuid] = response.data.prices.map((point: PricePoint) => point.price)
+            if (data && data.prices) {
+              prices24hUSD[token.uuid] = data.prices.map((point: PricePoint) => point.price)
             } else {
               prices24hUSD[token.uuid] = [0]
             }
@@ -315,20 +313,20 @@ export const newPricesRouter = createTRPCRouter({
       // Extract token UUIDs and create a comma-separated string
       const tokenUuids = tokens.map((token) => token.uuid).join(',')
 
-      const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/current`, {
+      const data = await getPriceServiceData(`/api/v1/prices/current`, {
         params: {
           tokens: tokenUuids,
           currency: 'USD',
-          timestamp: input.timestamp, // Use the provided timestamp
+          timestamp: input.timestamp // Use the provided timestamp
         },
-        timeout: 5000,
+        timeout: 5000
       })
 
       const prices: Record<string, number> = {}
 
       // Convert to the format expected by the frontend
-      if (response.data && response.data.prices) {
-        response.data.prices.forEach((price: TokenPrice) => {
+      if (data && data.prices) {
+        data.prices.forEach((price: TokenPrice) => {
           prices[price.token] = price.priceInUSD
         })
       }
@@ -348,15 +346,15 @@ export const newPricesRouter = createTRPCRouter({
   // Get historical HTR/USD price
   htr: procedure.output(z.number()).query(async () => {
     try {
-      const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/current/00`, {
+      const data = await getPriceServiceData(`/api/v1/prices/current/00`, {
         params: {
-          currency: 'USD',
+          currency: 'USD'
         },
-        timeout: 5000,
+        timeout: 5000
       })
 
-      if (response.data && typeof response.data.priceInUSD === 'number') {
-        return response.data.priceInUSD
+      if (data && typeof data.priceInUSD === 'number') {
+        return data.priceInUSD
       }
 
       throw new Error('Invalid response format')
@@ -395,18 +393,18 @@ export const newPricesRouter = createTRPCRouter({
         // Determine interval based on period
         const interval = input.period === 0 ? '15m' : input.period === 1 ? '1h' : '1d'
 
-        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/historical/00`, {
+        const data = await getPriceServiceData(`/api/v1/prices/historical/00`, {
           params: {
             from: Math.floor(startTime / 1000),
             to: Math.floor(now / 1000),
             interval,
-            currency: 'USD',
+            currency: 'USD'
           },
-          timeout: 5000,
+          timeout: 5000
         })
 
-        if (response.data && response.data.prices && Array.isArray(response.data.prices)) {
-          return response.data.prices.map((point: PricePoint) => ({
+        if (data && data.prices && Array.isArray(data.prices)) {
+          return data.prices.map((point: PricePoint) => ({
             price: point.price,
             date: point.timestamp,
           }))
@@ -448,11 +446,11 @@ export const newPricesRouter = createTRPCRouter({
 
         // Then check if it's available in the price service
         try {
-          const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/prices/current/${input.token}`, {
+          const data = await getPriceServiceData(`/api/v1/prices/current/${input.token}`, {
             timeout: 2000
           });
 
-          return response.status === 200 && !!response.data;
+          return !!data;
         } catch (error) {
           console.warn(`Token ${input.token} not available in price service`);
           return false;
@@ -466,11 +464,11 @@ export const newPricesRouter = createTRPCRouter({
   // Service health check
   isAvailable: procedure.query(async () => {
     try {
-      const response = await axios.get(`${PRICE_SERVICE_URL}/health`, {
-        timeout: 2000,
+      const data = await getPriceServiceData(`/health`, {
+        timeout: 2000
       })
 
-      return response.status === 200 && response.data?.status === 'ok'
+      return data?.status === 'ok'
     } catch (error) {
       return false
     }
@@ -519,37 +517,37 @@ export const newPricesRouter = createTRPCRouter({
         }
 
         // Log the request for debugging
-        console.log('Fetching line chart data from', `${PRICE_SERVICE_URL}/api/v1/chart/line/${input.token}`, {
+        console.log('Fetching line chart data from API endpoint:', `/api/v1/chart/line/${input.token}`, {
           from: input.from,
           to: input.to,
           interval: input.interval || '1h',
           currency: input.currency || 'USD',
         });
 
-        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/chart/line/${input.token}`, {
+        const response = await getPriceServiceData(`/api/v1/chart/line/${input.token}`, {
           params: {
             from: input.from,
             to: input.to,
             interval: input.interval || '1h',
             currency: input.currency || 'USD',
           },
-          timeout: 10000, // Longer timeout for historical data
+          timeout: 10000 // Longer timeout for historical data
         });
 
         // Check if response is as expected
-        if (!response.data) {
+        if (!response) {
           console.error('Empty response from price service');
           throw new Error('Invalid response format');
         }
 
         // Validate that data property exists and is an array
-        if (!response.data.data || !Array.isArray(response.data.data)) {
-          console.error('Invalid line chart response format:', response.data);
+        if (!response.data || !Array.isArray(response.data)) {
+          console.error('Invalid line chart response format:', response);
           throw new Error('Invalid response format from price service');
         }
 
         // Ensure each data point has time and value
-        const validData = response.data.data.every((point: any) => 
+        const validData = response.data.every((point: any) => 
           typeof point.time === 'number' && typeof point.value === 'number'
         );
 
@@ -560,12 +558,12 @@ export const newPricesRouter = createTRPCRouter({
 
         // Return the validated data
         return {
-          token: response.data.token || input.token,
-          symbol: response.data.symbol || input.token,
-          name: response.data.name || `Token ${input.token}`,
-          currency: response.data.currency || input.currency || 'USD',
-          interval: response.data.interval || input.interval || '1h',
-          data: response.data.data
+          token: response.token || input.token,
+          symbol: response.symbol || input.token,
+          name: response.name || `Token ${input.token}`,
+          currency: response.currency || input.currency || 'USD',
+          interval: response.interval || input.interval || '1h',
+          data: response.data
         };
       } catch (error) {
         console.error('Error fetching line chart data:', error);
@@ -617,7 +615,7 @@ export const newPricesRouter = createTRPCRouter({
           throw new Error(`Token ${input.token} not found`)
         }
 
-        console.log('Fetching candlestick data from', `${PRICE_SERVICE_URL}/api/v1/chart/candlestick/${input.token}`, {
+        console.log('Fetching candlestick data from API endpoint:', `/api/v1/chart/candlestick/${input.token}`, {
           from: input.from,
           to: input.to,
           interval: input.interval || '1h',
@@ -625,18 +623,18 @@ export const newPricesRouter = createTRPCRouter({
         })
 
         // Get candlestick data directly from the dedicated endpoint
-        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/chart/candlestick/${input.token}`, {
+        const response = await getPriceServiceData(`/api/v1/chart/candlestick/${input.token}`, {
           params: {
             from: input.from,
             to: input.to,
             interval: input.interval || '1h',
             currency: input.currency || 'USD',
           },
-          timeout: 10000, // Longer timeout for historical data
+          timeout: 10000 // Longer timeout for historical data
         })
 
-        if (!response.data || !response.data.data || !Array.isArray(response.data.data)) {
-          console.error('Invalid candlestick response format:', response.data)
+        if (!response || !response.data || !Array.isArray(response.data)) {
+          console.error('Invalid candlestick response format:', response)
           throw new Error('Invalid response format from price service')
         }
 
@@ -646,7 +644,7 @@ export const newPricesRouter = createTRPCRouter({
           name: token.name || `Token ${input.token}`,
           currency: input.currency || 'USD',
           interval: input.interval || '1h',
-          data: response.data.data
+          data: response.data
         }
       } catch (error) {
         console.error('Error fetching candlestick data:', error)

@@ -123,9 +123,11 @@ export const PoolChartNew: React.FC<PoolChartProps> = ({ pair }) => {
     },
     {
       enabled: !!isServiceAvailable && isPoolAvailable === true,
-      refetchInterval: 15000,
-      staleTime: 0,
+      refetchInterval: chartType === PoolChartType.Volume ? 30000 : 15000, // Longer interval for volume data
+      staleTime: chartType === PoolChartType.Volume ? 20000 : 0, // Add staleTime for volume to prevent unnecessary refetches
       retry: false,
+      refetchOnWindowFocus: false, // Prevent refetching on window focus
+      keepPreviousData: true, // Keep previous data while fetching new data
     }
   )
 
@@ -151,12 +153,21 @@ export const PoolChartNew: React.FC<PoolChartProps> = ({ pair }) => {
       return null
     }
 
+    // For volume data, use a more efficient approach
+    if (chartType === PoolChartType.Volume) {
+      return poolChartData.data
+        .map((point) => ({
+          time: transformTimestamp(Number(point.time)),
+          value: Number(point.value),
+        }))
+        .sort((a, b) => a.time - b.time)
+    }
+
+    // For TVL and APR, ensure unique timestamps
     const uniquePoints = new Map<number, any>()
     poolChartData.data.forEach((point) => {
-      // Get timestamp and apply transformation
       const rawTimestamp = Number(point.time)
       const timestamp = transformTimestamp(rawTimestamp)
-
       uniquePoints.set(Number(timestamp), Number(point.value))
     })
 
@@ -386,7 +397,12 @@ export const PoolChartNew: React.FC<PoolChartProps> = ({ pair }) => {
         {/* Chart type selector */}
         <div className="flex gap-6">
           <button
-            onClick={() => setChartType(PoolChartType.Volume)}
+            onClick={() => {
+              // Prevent unnecessary re-renders when already on Volume
+              if (chartType !== PoolChartType.Volume) {
+                setChartType(PoolChartType.Volume)
+              }
+            }}
             className={classNames(
               'border-b-[3px] pb-2 font-semibold text-sm',
               chartType === PoolChartType.Volume ? 'text-stone-50 border-yellow' : 'text-stone-500 border-transparent'
@@ -395,7 +411,12 @@ export const PoolChartNew: React.FC<PoolChartProps> = ({ pair }) => {
             Volume
           </button>
           <button
-            onClick={() => setChartType(PoolChartType.TVL)}
+            onClick={() => {
+              // Prevent unnecessary re-renders when already on TVL
+              if (chartType !== PoolChartType.TVL) {
+                setChartType(PoolChartType.TVL)
+              }
+            }}
             className={classNames(
               'border-b-[3px] pb-2 font-semibold text-sm',
               chartType === PoolChartType.TVL ? 'text-stone-50 border-yellow' : 'text-stone-500 border-transparent'
@@ -423,7 +444,9 @@ export const PoolChartNew: React.FC<PoolChartProps> = ({ pair }) => {
             <button
               key={range}
               onClick={() => setSelectedRange(range as TimeRangeOption)}
-              disabled={chartType === PoolChartType.APR && (range === '1H' || range === '24H')}
+              disabled={chartType === PoolChartType.APR && (range === '1H' || range === '24H') || 
+                       // Disable changing to the current selection to prevent unnecessary re-fetches
+                       selectedRange === range}
               className={classNames(
                 'font-semibold text-sm',
                 selectedRange === range ? 'text-yellow' : 'text-stone-500',

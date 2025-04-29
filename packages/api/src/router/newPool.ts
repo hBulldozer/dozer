@@ -1,11 +1,10 @@
 import { TRPCError } from '@trpc/server'
-import axios from 'axios'
 import { z } from 'zod'
+import { getPriceServiceData } from '../helpers/fetch'
 
 import { createTRPCRouter, procedure } from '../trpc'
 
-// Price service configuration
-const PRICE_SERVICE_URL = process.env.PRICE_SERVICE_URL || 'http://localhost:3000'
+// Types for pool data
 
 // Define types for pool data
 interface PoolDataPoint {
@@ -45,11 +44,11 @@ export const newPoolRouter = createTRPCRouter({
 
         // Then check if it's available in the price service
         try {
-          const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/pools/current/${input.poolId}`, {
-            timeout: 2000,
+          const data = await getPriceServiceData(`/api/v1/pools/current/${input.poolId}`, {
+            timeout: 2000
           })
 
-          return response.status === 200 && !!response.data
+          return !!data
         } catch (error) {
           console.warn(`Pool ${input.poolId} not available in price service`)
           return false
@@ -76,11 +75,11 @@ export const newPoolRouter = createTRPCRouter({
         })
       }
 
-      const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/pools/current/${input.poolId}`, {
-        timeout: 5000,
+      const data = await getPriceServiceData(`/api/v1/pools/current/${input.poolId}`, {
+        timeout: 5000
       })
 
-      return response.data
+      return data
     } catch (error) {
       console.error(`Error fetching pool data: ${error}`)
       throw new TRPCError({
@@ -129,32 +128,43 @@ export const newPoolRouter = createTRPCRouter({
           })
         }
 
-        const response = await axios.get(`${PRICE_SERVICE_URL}/api/v1/chart/pool/${input.poolId}`, {
+        // Apply a timeout specific to volume queries that take longer
+        const requestTimeout = input.metric === 'volume' ? 20000 : 10000;
+        
+        const response = await getPriceServiceData(`/api/v1/chart/pool/${input.poolId}`, {
           params: {
             from: input.from,
             to: input.to,
             interval: input.interval || '1h',
             metric: input.metric || 'tvl',
           },
-          timeout: 10000, // Longer timeout for historical data
+          timeout: requestTimeout // Longer timeout for volume data
         })
 
-          // Ensure timestamps are valid
-          if (!response.data || !response.data.data || !Array.isArray(response.data.data)) {
-            console.error('Invalid pool chart response format:', response.data)
+          // The response structure may vary depending on the API
+          // Let's be resilient to both formats
+          let chartData: any[] = [];
+          
+          if (response && Array.isArray(response)) {
+            // Direct array response
+            chartData = response;
+          } else if (response && response.data && Array.isArray(response.data)) {
+            // Object with data property as array
+            chartData = response.data;
+          } else {
+            console.error('Invalid pool chart response format:', response)
             throw new Error('Invalid response format from price service')
           }
           
-          // Process and validate the data by aggregating by timestamp
-          // Use a map to ensure unique timestamps and to handle aggregation
+          // Parse and aggregate data points by timestamp to ensure valid data
           const timestampMap = new Map<number, number[]>();
           
-          response.data.data.forEach((point: any) => {
+          chartData.forEach((point: any) => {
             const time = typeof point.time === 'number' ? point.time : Number(point.time);
             const value = typeof point.value === 'number' ? point.value : Number(point.value);
             
-            // Skip invalid values unless it's volume data where 0 is valid
-            if (isNaN(value) || (value === 0 && input.metric !== 'volume')) {
+            // Skip any NaN values
+            if (isNaN(value)) {
               return;
             }
             
@@ -174,82 +184,14 @@ export const newPoolRouter = createTRPCRouter({
             }))
             .sort((a, b) => a.time - b.time);
           
-          // If we don't have enough data points, create synthetic ones through interpolation
-          if (processedData.length > 0 && processedData.length < 10 && input.metric !== 'volume') {
-            const startPoint = processedData[0];
-            const endPoint = processedData[processedData.length - 1];
-            const timeRange = endPoint.time - startPoint.time;
-            
-            // Create ~50 evenly distributed points for a smooth chart
-            const desiredPoints = 50;
-            const timeStep = timeRange / (desiredPoints - 1);
-            
-            const interpolatedData = [];
-            
-            for (let i = 0; i < desiredPoints; i++) {
-              const currentTime = Math.floor(startPoint.time + i * timeStep);
-              
-              // Skip if we already have a point at this timestamp
-              if (timestampMap.has(currentTime)) {
-                continue;
-              }
-              
-              // Find the closest points before and after
-              let beforePoint = startPoint;
-              let afterPoint = endPoint;
-              
-              for (const point of processedData) {
-                if (point.time <= currentTime && point.time > beforePoint.time) {
-                  beforePoint = point;
-                }
-                if (point.time >= currentTime && point.time < afterPoint.time) {
-                  afterPoint = point;
-                }
-              }
-              
-              // Interpolate
-              if (beforePoint.time !== afterPoint.time) {
-                const ratio = (currentTime - beforePoint.time) / (afterPoint.time - beforePoint.time);
-                const value = beforePoint.value + ratio * (afterPoint.value - beforePoint.value);
-                interpolatedData.push({ time: currentTime, value });
-              }
-            }
-            
-            // Combine original and interpolated data
-            processedData.push(...interpolatedData);
-            processedData.sort((a, b) => a.time - b.time);
-          }
-          
-          // For volume metric, if we have no data, create some dummy points
-          if (processedData.length === 0 && input.metric === 'volume') {
-            // Create empty data points for the requested time range
-            const now = Math.floor(Date.now() / 1000)
-            const step = 3600 // hourly steps
-            const points = []
-            
-            // Create at least 24 points for a day's worth of data
-            for (let i = 0; i < 24; i++) {
-              points.push({
-                time: now - (23 - i) * step,
-                value: 0
-              })
-            }
-            
-            return {
-              poolId: response.data.poolId,
-              metric: response.data.metric, 
-              interval: response.data.interval,
-              data: points
-            }
-          }
-          
           return {
-            poolId: response.data.poolId,
-            metric: response.data.metric,
-            interval: response.data.interval,
+            poolId: input.poolId,
+            metric: input.metric || 'tvl',
+            interval: input.interval || '1h',
             data: processedData
           }
       } catch (error) {
+        // Log the error for debugging but keep it out of the response
         console.error('Error fetching pool chart data:', error)
 
         if (error instanceof TRPCError) {
