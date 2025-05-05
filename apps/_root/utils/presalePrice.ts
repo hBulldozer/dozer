@@ -12,8 +12,8 @@ export const PRESALE_CONFIG = {
   // Final price increase: Wednesday, April 30, 2025 at 9:00 AM EST
   FINAL_INCREASE_DATE: new Date('2025-04-30T13:00:00Z'), // 9:00 AM EST in UTC
 
-  // Pre-sale end: Monday, May 5, 2025 at 9:00 AM EST
-  END_DATE: new Date('2025-05-05T13:00:00Z'), // 9:00 AM EST in UTC
+  // Pre-sale end: Monday, May 5, 2025 at 23:59 PM PT
+  END_DATE: new Date('2025-05-06T06:59:00Z'), // 23:59 PM PT in UTC
 
   // Price tiers
   PRICES: {
