@@ -1,50 +1,42 @@
 import { App, AppType, Button, Link, Menu } from '@dozer/ui'
-import React, { FC, useState, useEffect } from 'react'
-import PresaleModal from '../components/PresaleModal/PresaleModal'
-import { calculatePresalePrice } from '../utils/presalePrice'
-
+import React, { FC, useEffect, useState } from 'react'
+// import { DonateModal } from './DonateModal'
 export const Header: FC = () => {
-  const [isPresaleModalOpen, setIsPresaleModalOpen] = useState<boolean>(false)
-  const [isPresaleActive, setIsPresaleActive] = useState<boolean>(true)
+  // const [open, setOpen] = useState(false)
 
-  // Check if presale is active on mount and when modal is opened/closed
-  useEffect(() => {
-    const { isPresaleActive } = calculatePresalePrice()
-    setIsPresaleActive(isPresaleActive)
+  // useEffect(() => {
+  //   const handleScroll = () => {
+  //     const windowHeight = window.innerHeight
+  //     const scrollY = window.scrollY || window.pageYOffset
+  //     const documentHeight = document.documentElement.scrollHeight
 
-    // Update status every minute
-    const timer = setInterval(() => {
-      const { isPresaleActive } = calculatePresalePrice()
-      setIsPresaleActive(isPresaleActive)
-    }, 60000)
+  //     if (windowHeight + scrollY >= documentHeight) {
+  //       // User has reached the end of the page
+  //       setTimeout(() => {
+  //         setOpen(true) // Show modal after 30 seconds
+  //       }, 10000) // 30 seconds in milliseconds
+  //     }
+  //   }
 
-    return () => clearInterval(timer)
-  }, [])
+  //   window.addEventListener('scroll', handleScroll)
 
+  //   return () => {
+  //     window.removeEventListener('scroll', handleScroll)
+  //   }
+  // }, [])
   return (
     <App.Header hide withScrollBackground={true} appType={AppType.Root} maxWidth="5xl" bgColor="bg-black">
       <div className="flex items-center gap-2">
-        <Button
-          onClick={() => setIsPresaleModalOpen(true)}
-          size="sm"
-          disabled={!isPresaleActive}
-          className={`ml-2 whitespace-nowrap ${
-            isPresaleActive
-              ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black'
-              : 'bg-gray-800 text-gray-400 border border-gray-700 shadow-inner hover:bg-gray-700'
-          }`}
-        >
-          {isPresaleActive ? 'Join Now' : 'Presale Ended'}
+        {/* <Link.Internal href="/swap" passHref={true}>
+          <Button  as="a" size="sm" className="ml-4 whitespace-nowrap">
+            Enter App
+          </Button>
+        </Link.Internal> */}
+        <Button as="a" href="https://testnet.dozer.finance/swap" size="sm" className="ml-4 whitespace-nowrap">
+          Join Now
         </Button>
       </div>
-
-      {/* Presale Modal */}
-      <PresaleModal
-        isOpen={isPresaleModalOpen}
-        onClose={() => setIsPresaleModalOpen(false)}
-        className="max-w-2xl"
-        isPresaleActive={isPresaleActive}
-      />
+      {/* <DonateModal open={open} setOpen={setOpen} /> */}
     </App.Header>
   )
 }

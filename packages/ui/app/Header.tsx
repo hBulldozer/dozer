@@ -70,7 +70,7 @@ export function Header({
 
   return (
     <>
-      {/* <div className="w-full bg-yellow-500 text-stone-900 z-[9999] sticky top-0">
+      <div className="w-full bg-yellow-500 text-stone-900 z-[9999] sticky top-0">
         <Container maxWidth="full" className="flex items-center justify-center h-12 px-4">
           <div className="w-full text-center">
             <a
@@ -84,7 +84,7 @@ export function Header({
             </a>
           </div>
         </Container>
-      </div> */}
+      </div>
 
       <header
         className={classNames('sticky mt-0 flex items-center left-0 right-0 top-0 w-full z-[1070] h-[54px]', className)}
