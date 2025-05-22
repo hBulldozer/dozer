@@ -93,6 +93,15 @@ const nextConfig = {
       },
     ]
   },
+  async redirects() {
+    return [
+      {
+        source: '/whitepaper',
+        destination: 'https://www.papermark.com/view/cmazvnn9o0001jy04tpvhphd7',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default nextConfig
