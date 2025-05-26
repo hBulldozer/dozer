@@ -102,7 +102,7 @@ const nextConfig = {
       },
       {
         source: '/onepager',
-        destination: 'https://www.papermark.com/view/cmb5c89zg000bjs04rjadwng6',
+        destination: '/Dozer-onepager.pdf',
         permanent: true,
       },
     ]
