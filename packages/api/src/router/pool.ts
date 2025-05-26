@@ -1,4 +1,4 @@
-import { PrismaClient, Token } from '@dozer/database'
+import { Token } from '@dozer/database'
 import { LiquidityPool } from '@dozer/nanocontracts'
 import { z } from 'zod'
 
@@ -6,7 +6,21 @@ import { Pair } from '../..'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 
-const fetchInitialLoad = (pool: any, htrPrice: number): Pair & { priceHTR: number } => {
+interface PoolData {
+  id: string;
+  token0: Token;
+  token1: Token;
+  liquidityUSD: number;
+  volumeUSD: number;
+  feeUSD: number;
+  fees1d: number;
+  volume1d: number;
+  reserve0: string | number;
+  reserve1: string | number;
+  chainId: number;
+}
+
+const fetchInitialLoad = (pool: PoolData, htrPrice: number): Pair & { priceHTR: number } => {
   return {
     priceHTR: htrPrice,
     id: pool.id,
@@ -114,7 +128,7 @@ const fetchAndProcessPoolData = async (
       daySnapshots: [],
       hourSnapshots: [],
     }
-  } catch (error) {
+  } catch {
     const endpoint = 'transaction'
     const response = await fetchNodeData(endpoint, [`id=${pool.id}`])
       .then((res) => {
@@ -162,7 +176,7 @@ const fetchAndProcessPoolData = async (
 }
 
 export const poolRouter = createTRPCRouter({
-  all: procedure.query(async ({ ctx }) => {
+  all: procedure.input(z.object({}).optional()).query(async ({ ctx }) => {
     // Fetch all pool IDs from the database
     const pools = await ctx.prisma.pool.findMany({
       select: {
@@ -218,7 +232,7 @@ export const poolRouter = createTRPCRouter({
     return allPoolData.filter((pool) => pool != ({} as Pair) && pool.reserve0 > 0 && pool.reserve1 > 0)
   }),
 
-  allDay: procedure.query(async ({ ctx }) => {
+  allDay: procedure.input(z.object({}).optional()).query(async ({ ctx }) => {
     // Fetch all pool IDs from the database
     const pools = await ctx.prisma.pool.findMany({
       select: {
@@ -274,7 +288,7 @@ export const poolRouter = createTRPCRouter({
     return allPoolData.filter((pool) => pool != ({} as Pair) && pool.reserve0 > 0 && pool.reserve1 > 0)
   }),
 
-  firstLoadAll: procedure.query(async ({ ctx }) => {
+  firstLoadAll: procedure.input(z.object({}).optional()).query(async ({ ctx }) => {
     // Fetch all pool IDs from the database
     const pools = await ctx.prisma.pool.findMany({
       select: {
@@ -313,7 +327,7 @@ export const poolRouter = createTRPCRouter({
     return allPoolData.filter((pool) => pool != ({} as Pair))
   }),
 
-  firstLoadAllDay: procedure.query(async ({ ctx }) => {
+  firstLoadAllDay: procedure.input(z.object({}).optional()).query(async ({ ctx }) => {
     // Fetch all pool IDs from the database
     const pools = await ctx.prisma.pool.findMany({
       select: {
@@ -364,7 +378,7 @@ export const poolRouter = createTRPCRouter({
   front_quote_add_liquidity_in: procedure
     .input(z.object({ id: z.string(), amount_in: z.number(), token_in: z.string() }))
     .output(z.number())
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
       const amount = input.amount_in * 100 // correcting input to the backend
       const queryParams = [`id=${input.id}`, `calls[]=front_quote_add_liquidity_in(${amount},"${input.token_in}")`]
@@ -379,7 +393,7 @@ export const poolRouter = createTRPCRouter({
   front_quote_add_liquidity_out: procedure
     .input(z.object({ id: z.string(), amount_out: z.number(), token_in: z.string() }))
     .output(z.number())
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
       const amount = input.amount_out * 100 // correcting input to the backend
       const queryParams = [`id=${input.id}`, `calls[]=front_quote_add_liquidity_out(${amount},"${input.token_in}")`]
@@ -395,7 +409,7 @@ export const poolRouter = createTRPCRouter({
   quote_exact_tokens_for_tokens: procedure
     .input(z.object({ id: z.string(), amount_in: z.number(), token_in: z.string() }))
     .output(z.object({ amount_out: z.number(), price_impact: z.number() }))
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
       const amount = input.amount_in * 100 // correcting input to the backend
       const queryParams = [
@@ -414,7 +428,7 @@ export const poolRouter = createTRPCRouter({
   quote_tokens_for_exact_tokens: procedure
     .input(z.object({ id: z.string(), amount_out: z.number(), token_in: z.string() }))
     .output(z.object({ amount_in: z.number(), price_impact: z.number() }))
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
       const amount = input.amount_out * 100 // correcting input to the backend
       const queryParams = [
@@ -526,7 +540,7 @@ export const poolRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      let response, endpoint
+      let endpoint
       let message = ''
       let validation = 'pending'
       if (input.hash == 'Error') {
@@ -535,7 +549,7 @@ export const poolRouter = createTRPCRouter({
 
       try {
         endpoint = 'transaction'
-        response = await fetchNodeData(endpoint, [`id=${input.hash}`]).then((res) => {
+        await fetchNodeData(endpoint, [`id=${input.hash}`]).then((res) => {
           validation = res.success
             ? res.meta.voided_by.length
               ? 'failed'
@@ -619,7 +633,7 @@ export const poolRouter = createTRPCRouter({
         },
       })
 
-      const updateToken = await ctx.prisma.token.update({
+      await ctx.prisma.token.update({
         where: { id: token1.uuid },
         data: { custom: false },
       })

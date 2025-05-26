@@ -71,6 +71,8 @@ const htrKline = async (input: { period: number; size: number; prisma: PrismaCli
     date: snapshot.date.getTime(),
   }))
 }
+/*
+// Unused function kept for future reference
 const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
   let result
   if (tokenUuid == '00') {
@@ -138,6 +140,7 @@ const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: nu
       return { price: parseFloat((snap.reserve0 / snap.reserve1).toFixed(6)), priceHTR: snap.priceHTR }
     })
 }
+*/
 
 const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
   let result
@@ -209,7 +212,7 @@ const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, s
       .map((snap) => {
         return { price: parseFloat((snap.reserve0 / snap.reserve1).toFixed(6)), priceHTR: snap.priceHTR }
       })[0]
-  } catch (error) {
+  } catch {
     return {
       price: 0,
       priceHTR: 0,
@@ -217,7 +220,7 @@ const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, s
   }
 }
 export const pricesRouter = createTRPCRouter({
-  firstLoadAll: procedure.query(async ({ ctx }) => {
+  firstLoadAll: procedure.input(z.object({}).optional()).query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
       select: {
         uuid: true,
@@ -234,7 +237,7 @@ export const pricesRouter = createTRPCRouter({
     })
     return prices
   }),
-  all: procedure.query(async ({ ctx }) => {
+  all: procedure.input(z.object({}).optional()).query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
       select: {
         uuid: true,
@@ -300,7 +303,7 @@ export const pricesRouter = createTRPCRouter({
     }
     return prices
   }),
-  firstLoadAll24h: procedure.query(async ({ ctx }) => {
+  firstLoadAll24h: procedure.input(z.object({}).optional()).query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
       select: {
         uuid: true,
@@ -316,7 +319,7 @@ export const pricesRouter = createTRPCRouter({
     })
     return prices24hUSD
   }),
-  all24h: procedure.query(async ({ ctx }) => {
+  all24h: procedure.input(z.object({}).optional()).query(async ({ ctx }) => {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
     // Combine queries to reduce connection time

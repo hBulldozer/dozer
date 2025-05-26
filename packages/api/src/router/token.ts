@@ -4,7 +4,7 @@ import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 
 export const tokenRouter = createTRPCRouter({
-  all: procedure.query(({ ctx }) => {
+  all: procedure.input(z.object({}).optional()).query(({ ctx }) => {
     const tokens = ctx.prisma.token.findMany({
       select: {
         custom: true,
@@ -62,13 +62,13 @@ export const tokenRouter = createTRPCRouter({
   bySymbol: procedure.input(z.object({ symbol: z.string().max(8).min(3) })).query(({ ctx, input }) => {
     return ctx.prisma.token.findFirst({ select: { uuid: true }, where: { symbol: input.symbol } })
   }),
-  totalSupply: procedure.input(z.string()).query(async ({ input }) => {
+  totalSupply: procedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
     const endpoint = 'thin_wallet/token'
-    const queryParams = [`id=${input}`]
+    const queryParams = [`id=${input.id}`]
     const rawTokenData = await fetchNodeData(endpoint, queryParams)
     return rawTokenData.total
   }),
-  firstLoadAllTotalSupply: procedure.query(async ({ ctx }) => {
+  firstLoadAllTotalSupply: procedure.input(z.object({}).optional()).query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
       select: {
         uuid: true,
@@ -83,7 +83,7 @@ export const tokenRouter = createTRPCRouter({
     })
     return totalSupplies
   }),
-  allTotalSupply: procedure.query(async ({ ctx }) => {
+  allTotalSupply: procedure.input(z.object({}).optional()).query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
       select: {
         uuid: true,

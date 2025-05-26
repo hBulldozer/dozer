@@ -10,6 +10,7 @@
 import prisma from '@dozer/database'
 import { initTRPC, TRPCError } from '@trpc/server'
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
+import { OperationMeta } from 'openapi-trpc'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 
@@ -66,19 +67,22 @@ export const createTRPCContext = async () => {
  * This is where the trpc api is initialized, connecting the context and
  * transformer
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
-  transformer: superjson,
-  isServer: true,
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
-      },
-    }
-  },
-})
+const t = initTRPC
+  .context<typeof createTRPCContext>()
+  .meta<OperationMeta>()
+  .create({
+    transformer: superjson,
+    isServer: true,
+    errorFormatter({ shape, error }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
+        },
+      }
+    },
+  })
 
 /**
  * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
