@@ -100,6 +100,11 @@ const nextConfig = {
         destination: 'https://www.papermark.com/view/cmazvnn9o0001jy04tpvhphd7',
         permanent: true,
       },
+      {
+        source: '/onepager',
+        destination: 'https://www.papermark.com/view/cmb5c89zg000bjs04rjadwng6',
+        permanent: true,
+      },
     ]
   },
 }
