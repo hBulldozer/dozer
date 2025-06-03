@@ -68,7 +68,8 @@
         "LPBLUEPRINT",
         "OASISBLUEPRINT",
         "BETBLUEPRINT",
-        "SUPABASE_ANON_KEY"
+        "SUPABASE_ANON_KEY",
+        "POOL_MANAGER_BLUEPRINT_ID"
       ],
       "outputs": [
         ".vercel/**/*",
@@ -137,7 +138,8 @@
         "LPBLUEPRINT",
         "OASISBLUEPRINT",
         "BETBLUEPRINT",
-        "SUPABASE_ANON_KEY"
+        "SUPABASE_ANON_KEY",
+        "POOL_MANAGER_BLUEPRINT_ID"
       ],
       "cache": false,
       "persistent": true

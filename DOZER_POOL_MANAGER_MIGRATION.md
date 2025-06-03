@@ -1,0 +1,184 @@
+# Dozer dApp Migration to Singleton Pool Manager (DozerPoolManager)
+
+## Project Context & What Was Learned
+
+- **Dozer dApp** is a DEX built on Hathor, using nano contracts (blueprints) for its liquidity pools and DEX logic.
+- The original architecture used one nano contract per pool (Uniswap v2 style), with each pool having its own contract and contract ID.
+- The new architecture uses a **singleton pool manager contract** (`DozerPoolManager`, Uniswap v4 style), which manages all pools within a single contract instance. Pools are identified by a composite pool key (e.g., `tokenA/tokenB/fee`).
+- The dApp integrates with nano contracts via a TypeScript/JS integration layer, API routers (TRPC), and seeding scripts for both blockchain and database.
+- The database previously stored a list of pools, but with the singleton manager, pools should be queried from the blockchain, and only tokens and historical data (snapshots) should be stored in the DB.
+- Only "signed pools" (as per the manager contract) should be listed in the dApp.
+
+## Migration Plan
+
+### 1. Seeding Scripts (Already Updated)
+- **`packages/nanocontracts/src/seed_nc.ts`**
+  - Deploys the singleton DozerPoolManager contract.
+  - Creates tokens and pools (HTR-token and at least one non-HTR pool for multi-hop testing) via the manager's `create_pool` method.
+  - Signs all but one pool (to test unsigned/hidden pool behavior).
+  - Outputs the manager contract ID and pool keys for use in the environment and DB.
+- **`packages/database/src/seed_db.ts`**
+  - Only creates tokens in the DB.
+  - Stores historical data (snapshots) indexed by pool key (using the `poolId` field).
+  - No longer creates or updates pools in the DB.
+  - Updates token UUIDs from the blockchain as before.
+- **`seed_all.ts`**
+  - Orchestrates the above scripts and is already compatible with the new flow.
+
+### 2. API Routers (To Do)
+- **`packages/api/src/router/pool.ts`** and related routers
+  - Refactor to fetch pools and tokens from the pool manager contract, not the DB.
+  - Only return signed pools (using the manager's `get_signed_pools` view).
+  - Only return tokens that have at least one signed pool.
+  - For pool and token metadata not available on-chain, merge with DB data as needed.
+  - Use pool keys as string identifiers in all API responses and DB references.
+  - For historical data (snapshots), index by pool key.
+- **`packages/api/src/router/token.ts`** and any other routers referencing pools/tokens
+  - Update to fetch token lists from the blockchain and filter as above.
+
+### 3. User Liquidity Position Fetching & Display (To Do)
+
+- **Context:**
+  - The singleton pool manager contract exposes `get_user_positions(address)` (returns all user positions across pools) and `user_info(address, pool_key)` (returns detailed info for a user in a specific pool).
+  - This enables efficient, single-call fetching of all user positions, replacing the need to loop over all pools/contracts.
+
+- **Required Changes:**
+  - Update the backend/API to use `get_user_positions(address)` and `user_info(address, pool_key)` for all user position queries.
+  - Update per-pool position components (e.g., `PoolPosition.tsx`) to use the new API/contract method, using pool keys.
+  - In the profile section (`Default.tsx`), add a new display of all current user positions:
+    - Show only signed/visible pools.
+    - For each position, show: pool (token pair), position in tokens (qty token A and B), and USD value.
+    - Sort the list by USD value (highest first).
+    - Show the total USD value of all positions.
+    - Keep the UI simple (list/table), as the view is small.
+    - Only show current positions (not historical/closed).
+
+- **Files Involved:**
+  - `packages/api/src/router/profile.ts` and any other relevant API routers
+  - `apps/earn/components/PoolSection/PoolPosition/PoolPosition.tsx` (and similar per-pool components)
+  - `packages/higmi/components/Wallet/Profile/Default.tsx` (profile overview)
+  - Any related UI or state management
+
+- **Goal:**
+  - Efficient, accurate, and user-friendly display of all current user positions across signed pools, with token and USD values, sorted by value, and a total USD value summary.
+
+### 4. Blockchain Integration Layer (To Do)
+- **`packages/nanocontracts/src/liquiditypool/index.ts`** (or create a new `poolmanager/index.ts`)
+  - Refactor or replace to interact with the singleton manager contract.
+  - Use pool keys for all pool operations.
+  - Update all methods to match the new manager's API.
+  - Remove per-pool contract logic.
+
+### 5. Database/Model Layer (To Do)
+- **Prisma schema and any DB access code**
+  - Ensure the DB schema and data access logic can handle pool keys as string identifiers.
+  - Remove any logic that maintains a list of pools in the DB.
+  - Keep token metadata and historical snapshots in the DB, indexed by pool key.
+
+### 6. Frontend Consistency (To Do)
+- **Frontend code (not covered in this migration yet)**
+  - Ensure the frontend only displays signed pools/tokens and uses pool key strings.
+  - Handles merged metadata from both blockchain and DB.
+
+### 7. Multi-hop Swap UI and Logic (To Do)
+
+- **Context:**
+  - The singleton pool manager contract supports multi-hop swaps via the `find_best_swap_path` (view) and `swap_exact_tokens_for_tokens_through_path` (public) methods.
+  - The dApp should always use the best route as returned by the contract, and visually indicate to the user when a multi-hop route is used.
+
+- **Required Changes:**
+  - Update the backend/API to call `find_best_swap_path` for swap quotes and to use the returned path for swap execution.
+  - Update the frontend to display the best route in the swap UI, using a stepper-like component (leveraging `IconList` for each hop).
+  - Show the fee for each hop if available from the contract's view method.
+  - Only the best route is shown; user cannot select alternative routes.
+
+- **Files Involved:**
+  - `packages/api/src/router/pool.ts` (update quote and swap endpoints to use best route logic)
+  - `apps/swap/components/SwapStatsDisclosure/SwapStatsDisclosure.tsx` (add a new line/component to display the best route)
+  - `apps/swap/components/Rate.tsx` and related swap logic (ensure correct quote and route display)
+  - `packages/ui/currency/IconList.tsx` (used for stepper UI)
+  - Any swap execution logic in the frontend/backend
+
+- **Goal:**
+  - Users see a clear, visual representation of the best route for their swap, including all hops and associated fees, and swaps always use the optimal path.
+
+### 8. On-chain USD Price Fetching (To Do)
+
+- **Context:**
+  - The pool manager contract provides `get_token_price_in_usd` and `get_all_token_prices_in_usd` view methods for on-chain price data.
+  - The current price logic in `prices.ts` is complex and DB-dependent; this should be replaced with direct on-chain queries.
+  - The HTR-USD pool must be set as the reference in the contract during seeding.
+
+- **Required Changes:**
+  - Update the seeding scripts to always set the first HTR-hUSDC pool as the HTR-USD reference using the contract's method.
+  - Create a new TRPC router (e.g., `packages/api/src/router/prices_onchain.ts`) that fetches token prices directly from the pool manager contract (both HTR and USD prices).
+  - Update all price consumers in the frontend and backend to use the new on-chain price router.
+  - Remove or refactor legacy price logic in `prices.ts` and related files.
+  - Ensure price formatting in the UI remains consistent.
+
+- **Files Involved:**
+  - `packages/nanocontracts/src/seed_nc.ts` (set HTR-USD pool during seeding)
+  - `packages/api/src/router/prices_onchain.ts` (new router for on-chain prices)
+  - `packages/api/src/router/prices.ts` (remove/refactor legacy logic)
+  - All frontend components consuming prices, e.g.:
+    - `apps/swap/components/Rate.tsx`
+    - `apps/swap/components/TokenPage/TokenHeader.tsx`
+    - `apps/swap/components/TokenPage/TokenStats.tsx`
+    - `apps/swap/components/TokensPage/Tables/TokensTable/Cells/TokenPriceCell.tsx`
+    - `apps/earn/components/PricePanel/index.tsx`
+    - Any other price consumers
+
+- **Goal:**
+  - All token price displays in the dApp are sourced directly from the blockchain, ensuring accuracy and reducing backend complexity. The HTR-USD pool is always set and used as the price reference.
+
+## Files That Need to Change (with Goals)
+
+- `packages/nanocontracts/src/seed_nc.ts`  
+  *Goal:* Deploy singleton manager, create pools via manager, output contract ID and pool keys.  
+  *Status:* **Updated**
+
+- `packages/database/src/seed_db.ts`  
+  *Goal:* Only create tokens, store snapshots indexed by pool key, update token UUIDs.  
+  *Status:* **Updated**
+
+- `seed_all.ts`  
+  *Goal:* Orchestrate seeding, pass manager_ncid and poolKeys to DB seeder.  
+  *Status:* **Compatible**
+
+- `packages/api/src/router/pool.ts`  
+  *Goal:* Fetch pools/tokens from blockchain, only return signed pools, use pool keys, merge metadata as needed.  
+  *Status:* **To Do**
+
+- `packages/api/src/router/token.ts`  
+  *Goal:* Fetch tokens from blockchain, filter for tokens with signed pools, merge metadata as needed.  
+  *Status:* **To Do**
+
+- `packages/nanocontracts/src/liquiditypool/index.ts` (or new `poolmanager/index.ts`)  
+  *Goal:* Refactor to interact with singleton manager, use pool keys, update all methods to match new API.  
+  *Status:* **To Do**
+
+- `prisma/schema.prisma` and any DB access code  
+  *Goal:* Ensure pool keys are used as string identifiers for snapshots, remove pool list logic.  
+  *Status:* **To Do**
+
+- **Frontend code** (various)  
+  *Goal:* Only display signed pools/tokens, use pool key strings, handle merged metadata.  
+  *Status:* **To Do**
+
+## Important Notes for Resuming Migration
+
+- The migration is partially complete: seeding scripts and DB logic are updated, but API, integration, and frontend layers still need to be migrated.
+- The singleton pool manager contract ID (`manager_ncid`) and pool keys are now output by the seeding scripts and should be set in the environment for API/backend use.
+- All pool operations must use pool keys (e.g., `tokenA/tokenB/fee`) as string identifiers.
+- Only signed pools (as per the manager contract) should be listed in the dApp.
+- For any data not available on-chain, keep it in the DB and merge as needed.
+- Snapshots are now indexed by pool key (stored in the `poolId` field).
+
+## Where to Find More Information
+- The full migration context, plan, and rationale are in this file.
+- For code details, see the updated files and the singleton pool manager blueprint (`contracts/dozer_pool_manager.py`).
+- For the latest pool manager contract ID and pool keys, run the seeding scripts and check the console output.
+
+---
+
+*This file is intended as a handoff and reference for resuming the migration in a new chat or by a new developer.* 
