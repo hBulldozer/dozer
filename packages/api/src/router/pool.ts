@@ -1,538 +1,428 @@
-import { PrismaClient, Token } from '@dozer/database'
-import { LiquidityPool } from '@dozer/nanocontracts'
 import { z } from 'zod'
 
-import { Pair } from '../..'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 
-const fetchInitialLoad = (pool: any, htrPrice: number): Pair & { priceHTR: number } => {
-  return {
-    priceHTR: htrPrice,
-    id: pool.id,
-    name: `${pool.token0.symbol}-${pool.token1.symbol}`,
-    liquidityUSD: pool.liquidityUSD > 10 ? pool.liquidityUSD : 15,
-    volume0: 0,
-    volume1: 0,
-    volumeUSD: pool.volumeUSD,
-    feeUSD: pool.feeUSD,
-    swapFee: 0.5,
-    apr: Math.exp(((pool.fees1d * htrPrice) / pool.liquidityUSD) * 365) - 1,
-    token0: pool.token0,
-    token1: pool.token1,
-    reserve0: Number(pool.reserve0) / 100,
-    reserve1: Number(pool.reserve1) / 100,
-    chainId: pool.chainId,
-    liquidity: (2 * Number(pool.reserve0)) / 100,
-    volume1d: pool.volume1d > 0.00001 ? pool.volume1d : 0,
-    fee0: 0,
-    fee1: 0,
-    fees1d: pool.fees1d > 0.00001 ? pool.fees1d : 0,
-    txCount: 0,
-    txCount1d: 0,
-    daySnapshots: [],
-    hourSnapshots: [],
+// Get the Pool Manager Contract ID from environment
+const POOL_MANAGER_CONTRACT_ID = process.env.POOL_MANAGER_CONTRACT_ID
+
+if (!POOL_MANAGER_CONTRACT_ID) {
+  console.warn('POOL_MANAGER_CONTRACT_ID environment variable not set')
+}
+
+// Cache for token information to avoid repeated API calls
+const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
+
+// Helper function to fetch data from the pool manager contract
+async function fetchFromPoolManager(calls: string[], timestamp?: number): Promise<any> {
+  if (!POOL_MANAGER_CONTRACT_ID) {
+    throw new Error('POOL_MANAGER_CONTRACT_ID environment variable not set')
+  }
+
+  const endpoint = 'nano_contract/state'
+  const queryParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, ...calls.map((call) => `calls[]=${call}`)]
+
+  if (timestamp) {
+    queryParams.push(`timestamp=${timestamp}`)
+  }
+
+  return await fetchNodeData(endpoint, queryParams)
+}
+
+// Helper function to extract tokens from pool keys
+function extractTokensFromPools(poolKeys: string[]): string[] {
+  const tokens = new Set<string>()
+
+  for (const poolKey of poolKeys) {
+    const [tokenA, tokenB] = poolKey.split('/')
+    if (tokenA) tokens.add(tokenA)
+    if (tokenB) tokens.add(tokenB)
+  }
+
+  return Array.from(tokens)
+}
+
+// Helper function to fetch token information from Hathor node
+async function fetchTokenInfo(tokenUuid: string): Promise<{ symbol: string; name: string }> {
+  if (tokenUuid === '00') {
+    return { symbol: 'HTR', name: 'Hathor' }
+  }
+
+  // Check cache first
+  if (tokenInfoCache.has(tokenUuid)) {
+    return tokenInfoCache.get(tokenUuid)!
+  }
+
+  try {
+    const endpoint = 'thin_wallet/token'
+    const queryParams = [`id=${tokenUuid}`]
+    const response = await fetchNodeData(endpoint, queryParams)
+
+    const tokenInfo = {
+      symbol: response.symbol || tokenUuid.substring(0, 8).toUpperCase(),
+      name: response.name || `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
+    }
+
+    // Cache the result
+    tokenInfoCache.set(tokenUuid, tokenInfo)
+    return tokenInfo
+  } catch (error) {
+    console.error(`Error fetching token info for ${tokenUuid}:`, error)
+    // Fallback to shortened UUID
+    const fallback = {
+      symbol: tokenUuid.substring(0, 8).toUpperCase(),
+      name: `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
+    }
+    tokenInfoCache.set(tokenUuid, fallback)
+    return fallback
   }
 }
 
-// 1. Modular Function to Fetch and Process Pool Data
-const fetchAndProcessPoolData = async (
-  pool: {
-    id: string
-    chainId: number
-    token0: Token
-    token1: Token
-    hourSnapshots: {
-      liquidityUSD: number
-      volumeUSD: number
-      priceHTR: number
-      reserve0: number
-      reserve1: number
-      volume0: number
-      volume1: number
-      fee0: number
-      fee1: number
-      feeUSD: number
-      txCount: number
-    }[]
-  },
-  priceHTR: number,
-  day?: boolean
-): Promise<Pair> => {
-  const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${pool.id}`, `calls[]=pool_data()`]
+// Helper function to get token symbol from UUID (with caching)
+async function getTokenSymbol(tokenUuid: string): Promise<string> {
+  const tokenInfo = await fetchTokenInfo(tokenUuid)
+  return tokenInfo.symbol
+}
 
-  try {
-    const rawPoolData = await fetchNodeData(endpoint, queryParams)
-    const poolData = rawPoolData.calls['pool_data()'].value
-    const { fee, reserve0, reserve1, fee0, fee1, volume0, volume1, transactions } = poolData
-
-    const { id, chainId, token0, token1 } = pool
-
-    const index = day ? pool.hourSnapshots.length - 1 : 0
-    const liquidityUSD = (2 * priceHTR * reserve0) / 100
-    const volume0old = pool.hourSnapshots[index]?.volume0 || 0
-    const volume1old = pool.hourSnapshots[index]?.volume1 || 0
-    const txCountold = pool.hourSnapshots[index]?.txCount || 0
-    const reserve0old = pool.hourSnapshots[index]?.reserve0 || 0
-    const reserve1old = pool.hourSnapshots[index]?.reserve1 || 1
-    // const txCountold = pool.hourSnapshots[0]?.txCount || 0
-    // const reserve0old = pool.hourSnapshots[0]?.reserve0 || 0
-    // const reserve1old = pool.hourSnapshots[0]?.reserve1 || 1
-    const volume1d =
-      (volume0 - volume0old) / 100 +
-      ((volume1 - volume1old) * (reserve0 / reserve1 + reserve0old / reserve1old)) / 2 / 100
-
-    const fees1d = (volume1d * fee) / 100
-
-    const feeUSD = fees1d * priceHTR //+ (pool.hourSnapshots[0]?.feeUSD || 0)
-    const volumeUSD = volume1d * priceHTR //+ (pool.hourSnapshots[0]?.volumeUSD || 0)
-    const txCount1d = transactions - txCountold
-
-    return {
-      id: id,
-      name: `${token0.symbol}-${token1.symbol}`,
-      liquidityUSD: liquidityUSD,
-      volume0: volume0,
-      volume1: volume1,
-      volumeUSD: volumeUSD,
-      feeUSD: feeUSD,
-      swapFee: fee,
-      apr: Math.exp(((fees1d * priceHTR) / liquidityUSD) * 365) - 1,
-      token0: token0,
-      token1: token1,
-      reserve0: reserve0 / 100,
-      reserve1: reserve1 / 100,
-      chainId: chainId,
-      liquidity: (2 * reserve0) / 100,
-      volume1d: volume1d > 0.00001 ? volume1d : 0,
-      fee0: fee0,
-      fee1: fee1,
-      fees1d: fees1d > 0.00001 ? fees1d : 0,
-      txCount: transactions,
-      txCount1d: txCount1d,
-      daySnapshots: [],
-      hourSnapshots: [],
-    }
-  } catch (error) {
-    const endpoint = 'transaction'
-    const response = await fetchNodeData(endpoint, [`id=${pool.id}`])
-      .then((res) => {
-        const validation = res.success
-          ? res.meta.voided_by.length
-            ? 'failed'
-            : res.meta.first_block
-            ? 'success'
-            : 'pending'
-          : 'failed'
-        if (validation == 'pending')
-          return {
-            id: `pending-${pool.id}`,
-            name: `${pool.token0.symbol}-${pool.token1.symbol}`,
-            liquidityUSD: 15,
-            volume0: 0,
-            volume1: 0,
-            volumeUSD: 0,
-            feeUSD: 0,
-            swapFee: 0,
-            apr: 0,
-            token0: pool.token0,
-            token1: pool.token1,
-            reserve0: 1,
-            reserve1: 1,
-            chainId: pool.chainId,
-            liquidity: 0,
-            volume1d: 0,
-            fee0: 0,
-            fee1: 0,
-            fees1d: 0,
-            txCount: 0,
-            txCount1d: 0,
-            daySnapshots: [],
-            hourSnapshots: [],
-          }
-        else return {} as Pair
-      })
-      .catch((err) => {
-        console.error(err)
-        return {} as Pair
-      })
-    return response
-  }
+// Helper function to get token name from UUID (with caching)
+async function getTokenName(tokenUuid: string): Promise<string> {
+  const tokenInfo = await fetchTokenInfo(tokenUuid)
+  return tokenInfo.name
 }
 
 export type TransactionHistory = {
-  hash: string;
-  timestamp: number;
-  method: string;
+  hash: string
+  timestamp: number
+  method: string
   context: {
     actions: {
-      type: string;
-      token_uid: string;
-      amount: number;
-    }[];
-    address: string;
-    timestamp: number;
-  };
+      type: string
+      token_uid: string
+      amount: number
+    }[]
+    address: string
+    timestamp: number
+  }
 }
 
 export const poolRouter = createTRPCRouter({
+  // Test endpoint to verify contract connection
+  test: procedure.query(async ({ ctx }) => {
+    try {
+      console.log('Testing contract connection...')
+      console.log('POOL_MANAGER_CONTRACT_ID:', POOL_MANAGER_CONTRACT_ID)
+
+      if (!POOL_MANAGER_CONTRACT_ID) {
+        return { error: 'POOL_MANAGER_CONTRACT_ID not set' }
+      }
+
+      // Try a simple contract call
+      const response = await fetchFromPoolManager(['get_signed_pools()'])
+      console.log('Test response:', JSON.stringify(response, null, 2))
+
+      // Also try get_all_pools to see if there are any pools at all
+      const allPoolsResponse = await fetchFromPoolManager(['get_all_pools()'])
+      console.log('All pools response:', JSON.stringify(allPoolsResponse, null, 2))
+
+      return {
+        contractId: POOL_MANAGER_CONTRACT_ID,
+        response: response,
+        success: true,
+      }
+    } catch (error) {
+      console.error('Test error:', error)
+      return {
+        contractId: POOL_MANAGER_CONTRACT_ID,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+      }
+    }
+  }),
+
+  // Get all signed pools
   all: procedure.query(async ({ ctx }) => {
-    // Fetch all pool IDs from the database
-    const pools = await ctx.prisma.pool.findMany({
-      select: {
-        id: true,
-        chainId: true,
-        token0: true,
-        token1: true,
-        hourSnapshots: {
-          select: {
-            volumeUSD: true,
-            volume0: true,
-            volume1: true,
-            fee0: true,
-            fee1: true,
-            feeUSD: true,
-            reserve0: true,
-            reserve1: true,
-            liquidityUSD: true,
-            priceHTR: true,
-            txCount: true,
-          },
-          where: {
-            date: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
+    try {
+      console.log('Fetching pools from contract ID:', POOL_MANAGER_CONTRACT_ID)
+      // Also fetch signed pools
+      const response = await fetchFromPoolManager(['get_signed_pools()'])
+      const poolKeys: string[] = response.calls['get_signed_pools()'].value || []
+      console.log('Pool keys:', poolKeys)
+
+      // Fetch detailed data for each pool
+      const poolDataPromises = poolKeys.map(async (poolKey) => {
+        try {
+          const poolResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
+          const poolData = poolResponse.calls[`front_end_api_pool("${poolKey}")`].value
+          console.log('Pool data:', poolData)
+
+          if (!poolData) return null
+
+          // Parse pool key to get tokens and fee
+          const [tokenA, tokenB, feeStr] = poolKey.split('/')
+          const fee = parseInt(feeStr || '0') / 1000 // Convert from basis points to percentage
+
+          return {
+            id: poolKey,
+            name: `${await getTokenSymbol(tokenA || '')}-${await getTokenSymbol(tokenB || '')}`,
+            liquidityUSD: poolData.liquidity_usd || 0,
+            volume0: poolData.volume_token_a || 0,
+            volume1: poolData.volume_token_b || 0,
+            volumeUSD: poolData.volume_usd || 0,
+            feeUSD: poolData.fee_usd || 0,
+            swapFee: fee,
+            apr: poolData.apr || 0,
+            token0: {
+              uuid: tokenA,
+              symbol: await getTokenSymbol(tokenA || ''),
+              name: await getTokenName(tokenA || ''),
+              decimals: 2,
+              chainId: 1,
             },
-          },
-          orderBy: {
-            date: 'desc',
-          },
-          // take: 1, // Get only the latest snapshot within the 24-hour period
-        },
-      },
-    })
-    const htrHusdcPool = pools.find((pool) => {
-      const symbols = [pool.token0.symbol, pool.token1.symbol]
-      return symbols.includes('HTR') && symbols.includes('hUSDC')
-    })
-
-    const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrHusdcPool?.id}`, `calls[]=pool_data()`]
-
-    const rawPoolData = await fetchNodeData(endpoint, queryParams)
-    const poolData = rawPoolData.calls['pool_data()'].value
-    const htrPrice = htrHusdcPool
-      ? htrHusdcPool.token0.symbol === 'HTR'
-        ? poolData.reserve1 / poolData.reserve0
-        : poolData.reserve0 / poolData.reserve1
-      : 1 // Default to 1 if htrHusdcPool is undefined
-    // Process each pool concurrently (for efficiency)
-    const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice))
-    const allPoolData = await Promise.all(poolDataPromises)
-
-    return allPoolData.filter((pool) => pool != ({} as Pair) && pool.reserve0 > 0 && pool.reserve1 > 0)
-  }),
-
-  allDay: procedure.query(async ({ ctx }) => {
-    // Fetch all pool IDs from the database
-    const pools = await ctx.prisma.pool.findMany({
-      select: {
-        id: true,
-        chainId: true,
-        token0: true,
-        token1: true,
-        hourSnapshots: {
-          select: {
-            volumeUSD: true,
-            volume0: true,
-            volume1: true,
-            fee0: true,
-            fee1: true,
-            feeUSD: true,
-            reserve0: true,
-            reserve1: true,
-            liquidityUSD: true,
-            priceHTR: true,
-            txCount: true,
-          },
-          where: {
-            date: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
+            token1: {
+              uuid: tokenB,
+              symbol: await getTokenSymbol(tokenB || ''),
+              name: await getTokenName(tokenB || ''),
+              decimals: 2,
+              chainId: 1,
             },
-          },
-          orderBy: {
-            date: 'desc',
-          },
-          // take: 1, // Get only the latest snapshot within the 24-hour period
+            reserve0: (poolData.reserve_a || 0) / 100,
+            reserve1: (poolData.reserve_b || 0) / 100,
+            chainId: 1,
+            liquidity: poolData.total_liquidity || 0,
+            volume1d: poolData.volume_24h || 0,
+            fee0: poolData.fee_token_a || 0,
+            fee1: poolData.fee_token_b || 0,
+            fees1d: poolData.fees_24h || 0,
+            txCount: poolData.transaction_count || 0,
+            txCount1d: poolData.transactions_24h || 0,
+            daySnapshots: [],
+            hourSnapshots: [],
+          }
+        } catch (error) {
+          console.error(`Error fetching data for pool ${poolKey}:`, error)
+          return null
+        }
+      })
+
+      const poolsData = await Promise.all(poolDataPromises)
+      return poolsData.filter((pool) => pool !== null)
+    } catch (error) {
+      console.error('Error fetching pools:', error)
+      throw new Error('Failed to fetch pools from contract')
+    }
+  }),
+
+  // Get pool by ID (pool key)
+  byId: procedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    try {
+      const response = await fetchFromPoolManager([`pool_info("${input.id}")`])
+      const poolInfo = response.calls[`pool_info("${input.id}")`].value
+
+      if (!poolInfo) {
+        throw new Error('Pool not found')
+      }
+
+      // Parse pool key
+      const [tokenA, tokenB, feeStr] = input.id.split('/')
+      const fee = parseInt(feeStr || '0') / 1000
+
+      return {
+        id: input.id,
+        name: `${await getTokenSymbol(tokenA || '')}-${await getTokenSymbol(tokenB || '')}`,
+        token0: {
+          uuid: tokenA,
+          symbol: await getTokenSymbol(tokenA || ''),
+          name: await getTokenName(tokenA || ''),
+          decimals: 2,
+          chainId: 1,
         },
-      },
-    })
-    const htrHusdcPool = pools.find((pool) => {
-      const symbols = [pool.token0.symbol, pool.token1.symbol]
-      return symbols.includes('HTR') && symbols.includes('hUSDC')
-    })
-
-    const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrHusdcPool?.id}`, `calls[]=pool_data()`]
-
-    const rawPoolData = await fetchNodeData(endpoint, queryParams)
-    const poolData = rawPoolData.calls['pool_data()'].value
-    const htrPrice = htrHusdcPool
-      ? htrHusdcPool.token0.symbol === 'HTR'
-        ? poolData.reserve1 / poolData.reserve0
-        : poolData.reserve0 / poolData.reserve1
-      : 1 // Default to 1 if htrHusdcPool is undefined
-    // Process each pool concurrently (for efficiency)
-    const poolDataPromises = pools.map((pool) => fetchAndProcessPoolData(pool, htrPrice, true))
-    const allPoolData = await Promise.all(poolDataPromises)
-
-    return allPoolData.filter((pool) => pool != ({} as Pair) && pool.reserve0 > 0 && pool.reserve1 > 0)
+        token1: {
+          uuid: tokenB,
+          symbol: await getTokenSymbol(tokenB || ''),
+          name: await getTokenName(tokenB || ''),
+          decimals: 2,
+          chainId: 1,
+        },
+        reserve0: (poolInfo.reserve_a || 0) / 100,
+        reserve1: (poolInfo.reserve_b || 0) / 100,
+        fee: fee,
+        totalLiquidity: poolInfo.total_liquidity || 0,
+        chainId: 1,
+      }
+    } catch (error) {
+      console.error(`Error fetching pool ${input.id}:`, error)
+      throw new Error('Failed to fetch pool data')
+    }
   }),
 
-  firstLoadAll: procedure.query(async ({ ctx }) => {
-    // Fetch all pool IDs from the database
-    const pools = await ctx.prisma.pool.findMany({
-      select: {
-        id: true,
-        chainId: true,
-        token0: true,
-        token1: true,
-        liquidityUSD: true,
-        volumeUSD: true,
-        feeUSD: true,
-        fees1d: true,
-        reserve0: true,
-        reserve1: true,
-        volume1d: true,
-      },
-    })
-    const htrHusdcPool = pools.find((pool) => {
-      const symbols = [pool.token0.symbol, pool.token1.symbol]
-      return symbols.includes('HTR') && symbols.includes('hUSDC')
-    })
+  // Get user liquidity positions
+  userPositions: procedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
+    try {
+      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
+      const positions = response.calls[`get_user_positions("${input.address}")`].value || {}
 
-    const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrHusdcPool?.id}`, `calls[]=pool_data()`]
+      const positionPromises = []
+      for (const [poolKey, position] of Object.entries(positions)) {
+        if (typeof position === 'object' && position !== null) {
+          const [tokenA, tokenB, feeStr] = poolKey.split('/')
+          positionPromises.push(
+            (async () => ({
+              poolKey,
+              poolName: `${await getTokenSymbol(tokenA || '')}-${await getTokenSymbol(tokenB || '')}`,
+              liquidity: (position as any).liquidity || 0,
+              token0Amount: ((position as any).token_a_amount || 0) / 100,
+              token1Amount: ((position as any).token_b_amount || 0) / 100,
+              token0: {
+                uuid: tokenA,
+                symbol: await getTokenSymbol(tokenA || ''),
+                name: await getTokenName(tokenA || ''),
+              },
+              token1: {
+                uuid: tokenB,
+                symbol: await getTokenSymbol(tokenB || ''),
+                name: await getTokenName(tokenB || ''),
+              },
+            }))()
+          )
+        }
+      }
 
-    const rawPoolData = await fetchNodeData(endpoint, queryParams)
-    const poolData = rawPoolData.calls['pool_data()'].value
-    const htrPrice = htrHusdcPool
-      ? htrHusdcPool.token0.symbol === 'HTR'
-        ? poolData.reserve1 / poolData.reserve0
-        : poolData.reserve0 / poolData.reserve1
-      : 1 // Default to 1 if htrHusdcPool is undefined
-    // Process each pool concurrently (for efficiency)
-    const allPoolData = pools.map((pool) => fetchInitialLoad(pool, htrPrice))
-    // const allPoolData = await Promise.all(poolDataPromises)
+      const positionData = await Promise.all(positionPromises)
 
-    return allPoolData.filter((pool) => pool != ({} as Pair))
+      return positionData
+    } catch (error) {
+      console.error(`Error fetching user positions for ${input.address}:`, error)
+      throw new Error('Failed to fetch user positions')
+    }
   }),
 
-  firstLoadAllDay: procedure.query(async ({ ctx }) => {
-    // Fetch all pool IDs from the database
-    const pools = await ctx.prisma.pool.findMany({
-      select: {
-        id: true,
-        chainId: true,
-        token0: true,
-        token1: true,
-        liquidityUSD: true,
-        volumeUSD: true,
-        feeUSD: true,
-        fees1d: true,
-        reserve0: true,
-        reserve1: true,
-        volume1d: true,
-      },
-    })
-    const htrHusdcPool = pools.find((pool) => {
-      const symbols = [pool.token0.symbol, pool.token1.symbol]
-      return symbols.includes('HTR') && symbols.includes('hUSDC')
-    })
-
-    const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrHusdcPool?.id}`, `calls[]=pool_data()`]
-
-    const rawPoolData = await fetchNodeData(endpoint, queryParams)
-    const poolData = rawPoolData.calls['pool_data()'].value
-    const htrPrice = htrHusdcPool
-      ? htrHusdcPool.token0.symbol === 'HTR'
-        ? poolData.reserve1 / poolData.reserve0
-        : poolData.reserve0 / poolData.reserve1
-      : 1 // Default to 1 if htrHusdcPool is undefined
-    // Process each pool concurrently (for efficiency)
-    const allPoolData = pools.map((pool) => fetchInitialLoad(pool, htrPrice))
-    // const allPoolData = await Promise.all(poolDataPromises)
-
-    return allPoolData.filter((pool) => pool != ({} as Pair))
-  }),
-  snapsById: procedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
-    return ctx.prisma.pool.findFirst({
-      where: { id: input.id },
-      include: {
-        hourSnapshots: { orderBy: { date: 'desc' } },
-        daySnapshots: { orderBy: { date: 'desc' } },
-      },
-    })
-  }),
-
-  front_quote_add_liquidity_in: procedure
-    .input(z.object({ id: z.string(), amount_in: z.number(), token_in: z.string() }))
-    .output(z.number())
-    .query(async ({ ctx, input }) => {
-      const endpoint = 'nano_contract/state'
-      const amount = input.amount_in * 100 // correcting input to the backend
-      const queryParams = [`id=${input.id}`, `calls[]=front_quote_add_liquidity_in(${amount},"${input.token_in}")`]
-      const response = await fetchNodeData(endpoint, queryParams)
-      if ('errmsg' in response['calls'][`front_quote_add_liquidity_in(${amount},"${input.token_in}")`]) return 0
-      else {
-        const result = response['calls'][`front_quote_add_liquidity_in(${amount},"${input.token_in}")`]['value']
-        const quote = Number((result / 100).toFixed(2)) // correcting output to the frontend
-        return quote
-      }
-    }),
-  front_quote_add_liquidity_out: procedure
-    .input(z.object({ id: z.string(), amount_out: z.number(), token_in: z.string() }))
-    .output(z.number())
-    .query(async ({ ctx, input }) => {
-      const endpoint = 'nano_contract/state'
-      const amount = input.amount_out * 100 // correcting input to the backend
-      const queryParams = [`id=${input.id}`, `calls[]=front_quote_add_liquidity_out(${amount},"${input.token_in}")`]
-      const response = await fetchNodeData(endpoint, queryParams)
-      if ('errmsg' in response['calls'][`front_quote_add_liquidity_out(${amount},"${input.token_in}")`]) return 0
-      else {
-        const result = response['calls'][`front_quote_add_liquidity_out(${amount},"${input.token_in}")`]['value']
-        const quote = Number((result / 100).toFixed(2)) // correcting output to the frontend
-        return quote
-      }
-    }),
-
-  quote_exact_tokens_for_tokens: procedure
-    .input(z.object({ id: z.string(), amount_in: z.number(), token_in: z.string() }))
-    .output(z.object({ amount_out: z.number(), price_impact: z.number() }))
-    .query(async ({ ctx, input }) => {
-      const endpoint = 'nano_contract/state'
-      const amount = input.amount_in * 100 // correcting input to the backend
-      const queryParams = [
-        `id=${input.id}`,
-        `calls[]=front_quote_exact_tokens_for_tokens(${amount},"${input.token_in}")`,
-      ]
-      const response = await fetchNodeData(endpoint, queryParams)
-      if ('errmsg' in response['calls'][`front_quote_exact_tokens_for_tokens(${amount},"${input.token_in}")`])
-        return { amount_out: 0, price_impact: 0 }
-      else {
-        const result = response['calls'][`front_quote_exact_tokens_for_tokens(${amount},"${input.token_in}")`]['value']
-        const amount_out = Number((result['amount_out'] / 100).toFixed(2)) // correcting output to the frontend
-        return { amount_out, price_impact: result['price_impact'] }
-      }
-    }),
-  quote_tokens_for_exact_tokens: procedure
-    .input(z.object({ id: z.string(), amount_out: z.number(), token_in: z.string() }))
-    .output(z.object({ amount_in: z.number(), price_impact: z.number() }))
-    .query(async ({ ctx, input }) => {
-      const endpoint = 'nano_contract/state'
-      const amount = input.amount_out * 100 // correcting input to the backend
-      const queryParams = [
-        `id=${input.id}`,
-        `calls[]=front_quote_tokens_for_exact_tokens(${amount},"${input.token_in}")`,
-      ]
-      const response = await fetchNodeData(endpoint, queryParams)
-      if ('errmsg' in response['calls'][`front_quote_tokens_for_exact_tokens(${amount},"${input.token_in}")`])
-        return { amount_in: 0, price_impact: 0 }
-      else {
-        const result = response['calls'][`front_quote_tokens_for_exact_tokens(${amount},"${input.token_in}")`]['value']
-        const amount_in = Number((result['amount_in'] / 100).toFixed(2)) // correcting output to the frontend
-        return { amount_in, price_impact: result['price_impact'] }
-      }
-    }),
-  swap_tokens_for_exact_tokens: procedure
+  // Get swap quote
+  quote: procedure
     .input(
       z.object({
-        hathorRpc: z.any(),
-        ncid: z.string(),
-        token_in: z.string(),
-        amount_in: z.number(),
-        token_out: z.string(),
-        amount_out: z.number(),
-        address: z.string(),
+        amountIn: z.number(),
+        tokenIn: z.string(),
+        tokenOut: z.string(),
+        maxHops: z.number().optional().default(3),
       })
     )
-    .mutation(async ({ input }) => {
-      const { hathorRpc, ncid, token_in, amount_in, token_out, amount_out, address } = input
-      const pool = new LiquidityPool(token_in, token_out, 5, 50, ncid)
-      const response = await pool.swap_tokens_for_exact_tokens(
-        hathorRpc,
-        address,
-        ncid,
-        token_in,
-        amount_in,
-        token_out,
-        amount_out
-      )
+    .query(async ({ input }) => {
+      try {
+        const amount = Math.round(input.amountIn * 100) // Convert to cents
+        const response = await fetchFromPoolManager([
+          `find_best_swap_path(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
+        ])
 
-      return response
+        const pathInfo =
+          response.calls[`find_best_swap_path(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`].value
+
+        if (!pathInfo) {
+          throw new Error('No swap path found')
+        }
+
+        return {
+          path: pathInfo.path || [],
+          amounts: (pathInfo.amounts || []).map((amt: number) => amt / 100),
+          amountOut: (pathInfo.amount_out || 0) / 100,
+          priceImpact: pathInfo.price_impact || 0,
+          route: pathInfo.path || [],
+        }
+      } catch (error) {
+        console.error('Error getting swap quote:', error)
+        throw new Error('Failed to get swap quote')
+      }
     }),
-  swap_exact_tokens_for_tokens: procedure
+
+  // Get pool history at specific timestamp
+  historyAt: procedure
     .input(
       z.object({
-        hathorRpc: z.any(),
-        ncid: z.string(),
-        token_in: z.string(),
-        amount_in: z.number(),
-        token_out: z.string(),
-        amount_out: z.number(),
-        address: z.string(),
+        poolKey: z.string(),
+        timestamp: z.number(),
       })
     )
-    .mutation(async ({ input }) => {
-      const { hathorRpc, ncid, token_in, amount_in, token_out, amount_out, address } = input
-      const pool = new LiquidityPool(token_in, token_out, 5, 50, ncid)
-      const response = await pool.swap_exact_tokens_for_tokens(
-        hathorRpc,
-        address,
-        ncid,
-        token_in,
-        amount_in,
-        token_out,
-        amount_out
-      )
+    .query(async ({ input }) => {
+      try {
+        const response = await fetchFromPoolManager([`pool_info("${input.poolKey}")`], input.timestamp)
+        const poolInfo = response.calls[`pool_info("${input.poolKey}")`].value
 
-      return response
+        if (!poolInfo) {
+          throw new Error('Pool data not found at timestamp')
+        }
+
+        return {
+          poolKey: input.poolKey,
+          timestamp: input.timestamp,
+          reserve0: (poolInfo.reserve_a || 0) / 100,
+          reserve1: (poolInfo.reserve_b || 0) / 100,
+          totalLiquidity: poolInfo.total_liquidity || 0,
+          volume24h: poolInfo.volume_24h || 0,
+          fees24h: poolInfo.fees_24h || 0,
+        }
+      } catch (error) {
+        console.error(`Error fetching pool history for ${input.poolKey} at ${input.timestamp}:`, error)
+        throw new Error('Failed to fetch historical pool data')
+      }
     }),
-  // add_liquidity: procedure
-  //   .input(
-  //     z.object({
-  //       ncid: z.string(),
-  //       token_a: z.string(),
-  //       amount_a: z.number(),
-  //       token_b: z.string(),
-  //       amount_b: z.number(),
-  //       address: z.string(),
-  //     })
-  //   )
-  //   .mutation(async ({ input }) => {
-  //     const { ncid, token_a, amount_a, token_b, amount_b, address } = input
-  //     const pool = new LiquidityPool(token_a, token_b, 5, 50, ncid)
-  //     const response = await pool.add_liquidity(undefined, token_a, amount_a, token_b, amount_b, address, 'users')
-  //     return response
-  //   }),
-  // remove_liquidity: procedure
-  //   .input(
-  //     z.object({
-  //       ncid: z.string(),
-  //       token_a: z.string(),
-  //       amount_a: z.number(),
-  //       token_b: z.string(),
-  //       amount_b: z.number(),
-  //       address: z.string(),
-  //     })
-  //   )
-  //   .mutation(async ({ input }) => {
-  //     const { ncid, token_a, amount_a, token_b, amount_b, address } = input
-  //     const pool = new LiquidityPool(token_a, token_b, 5, 50, ncid)
-  //     const response = await pool.remove_liquidity(token_a, amount_a, token_b, amount_b, address, 'users')
-  //     return response
-  //   }),
+
+  // Get all pools for a specific token
+  forToken: procedure.input(z.object({ tokenUid: z.string() })).query(async ({ input }) => {
+    try {
+      const response = await fetchFromPoolManager([`get_pools_for_token("${input.tokenUid}")`])
+      const poolKeys: string[] = response.calls[`get_pools_for_token("${input.tokenUid}")`].value || []
+
+      const poolPromises = poolKeys.map(async (poolKey) => {
+        const [tokenA, tokenB, feeStr] = poolKey.split('/')
+        return {
+          poolKey,
+          tokenA,
+          tokenB,
+          fee: parseInt(feeStr || '0') / 1000,
+          name: `${await getTokenSymbol(tokenA || '')}-${await getTokenSymbol(tokenB || '')}`,
+        }
+      })
+
+      return await Promise.all(poolPromises)
+    } catch (error) {
+      console.error(`Error fetching pools for token ${input.tokenUid}:`, error)
+      throw new Error('Failed to fetch pools for token')
+    }
+  }),
+
+  // Get transaction history for a pool
+  transactionHistory: procedure.input(z.object({ poolKey: z.string() })).query(async ({ input }) => {
+    try {
+      // Get transaction history from the nano contract history endpoint
+      const endpoint = 'nano_contract/history'
+      const queryParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `count=50`]
+
+      const response = await fetchNodeData(endpoint, queryParams)
+
+      if (!response || !response.success || !response.history) {
+        return []
+      }
+
+      // Filter transactions related to this specific pool
+      const poolTransactions: TransactionHistory[] = response.history
+        .filter((tx: any) => {
+          // Check if the transaction context mentions this pool key
+          return tx.nc_context && JSON.stringify(tx.nc_context).includes(input.poolKey)
+        })
+        .map((tx: any) => ({
+          hash: tx.hash,
+          timestamp: tx.timestamp,
+          method: tx.nc_method,
+          context: tx.nc_context,
+        }))
+
+      return poolTransactions
+    } catch (error) {
+      console.error(`Error fetching transaction history for ${input.poolKey}:`, error)
+      return []
+    }
+  }),
+
+  // Get transaction status
   getTxStatus: procedure
     .input(
       z.object({
@@ -541,182 +431,28 @@ export const poolRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      let response, endpoint
-      let message = ''
-      let validation = 'pending'
-      if (input.hash == 'Error') {
+      if (input.hash === 'Error') {
         return { status: 'failed', message: 'txHash not defined' }
       }
 
       try {
-        endpoint = 'transaction'
-        response = await fetchNodeData(endpoint, [`id=${input.hash}`]).then((res) => {
-          validation = res.success
-            ? res.meta.voided_by.length
-              ? 'failed'
-              : res.meta.first_block
-              ? 'success'
-              : 'pending'
-            : 'failed'
+        const endpoint = 'transaction'
+        const response = await fetchNodeData(endpoint, [`id=${input.hash}`])
 
-          message = 'Transaction failed: Low Slippage.'
-        })
-      } catch (e) {
-        console.log(e)
-      }
-      // }
-      return { status: validation, message: message }
-    }),
-  createPool: procedure
-    .input(
-      z.object({
-        name: z.string().min(3).max(100),
-        chainId: z.number().int().positive(),
-        token0Uuid: z.string(),
-        token1Uuid: z.string(),
-        reserve0: z.string().regex(/^\d+(\.\d+)?$/),
-        reserve1: z.string().regex(/^\d+(\.\d+)?$/),
-        id: z.string().min(64).max(64),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Check if pool already exists
-      const existingPool = await ctx.prisma.pool.findUnique({
-        where: { id: input.id },
-      })
+        const validation = response.success
+          ? response.meta.voided_by.length
+            ? 'failed'
+            : response.meta.first_block
+            ? 'success'
+            : 'pending'
+          : 'failed'
 
-      if (existingPool) {
-        throw new Error('Pool already exists')
-      }
+        const message = validation === 'failed' ? 'Transaction failed: Low Slippage.' : ''
 
-      // Check if tokens exist
-      const token0 = await ctx.prisma.token.findUnique({
-        where: {
-          chainId_uuid: {
-            chainId: input.chainId,
-            uuid: input.token0Uuid,
-          },
-        },
-      })
-
-      const token1 = await ctx.prisma.token.findUnique({
-        where: {
-          chainId_uuid: {
-            chainId: input.chainId,
-            uuid: input.token1Uuid,
-          },
-        },
-      })
-
-      if (!token0 || !token1) {
-        throw new Error('One or both tokens do not exist')
-      }
-
-      // Create the pool
-      const pool = await ctx.prisma.pool.create({
-        data: {
-          id: input.id,
-          name: input.name,
-          chainId: input.chainId,
-          token0: { connect: { id: token0.id } },
-          token1: { connect: { id: token1.id } },
-          reserve0: input.reserve0,
-          reserve1: input.reserve1,
-          swapFee: 0.3, // Default swap fee, adjust as needed
-          apr: 0,
-          version: '0',
-          feeUSD: 0,
-          liquidityUSD: 0,
-          volumeUSD: 0,
-          liquidity: 0,
-          volume1d: 0,
-          fees1d: 0,
-        },
-      })
-
-      const updateToken = await ctx.prisma.token.update({
-        where: { id: token1.uuid },
-        data: { custom: false },
-      })
-
-      return pool
-    }),
-  checkCreatedBy: procedure.input(z.object({ address: z.string() })).query(async ({ ctx, input }) => {
-    type Transaction = Record<string, unknown>
-
-    function hasObjectsWithKeys(transactions: Transaction[], key1: string, key2: string): boolean {
-      return transactions.some((tx) => key1 in tx && key2 in tx)
-    }
-    const endpoint = 'thin_wallet/address_search'
-    const queryParams = [`address=${input.address}`, 'count=20']
-    const data = await fetchNodeData(endpoint, queryParams)
-    if (!data || !data.success || !data.transactions) {
-      throw new Error('Failed to fetch transactions')
-    }
-    const transactions = data.transactions
-    if (transactions.has_more) {
-      // If more than 20 transactions, check only in database
-      const userToken = await ctx.prisma.token.findFirst({
-        where: { createdBy: input.address },
-        select: { uuid: true },
-      })
-      const checkInDb = await ctx.prisma.pool.findFirst({
-        where: { token1: { uuid: userToken?.uuid } },
-      })
-      return checkInDb ? true : false
-    } else {
-      // If less than 20 transactions, check in the node address_search endpoint
-      if (hasObjectsWithKeys(transactions, 'nc_method', 'nc_blueprint_id')) {
-        return transactions.some(
-          (tx: Transaction) => tx.nc_method === 'initialize' && tx.nc_blueprint_id == process.env.LPBLUEPRINT
-        )
-      }
-      return false
-    }
-  }),
-
-  getPoolTransactionHistory: procedure
-    .input(z.object({ 
-      id: z.string(), 
-      limit: z.number().default(20),
-      cursor: z.string().optional() // Transaction hash to use as cursor for pagination
-    }))
-    .query(async ({ input }) => {
-      const endpoint = 'nano_contract/history'
-      const queryParams = [`id=${input.id}`, `count=${input.limit}`]
-      
-      // Add cursor if provided (pagination)
-      if (input.cursor) {
-        queryParams.push(`after=${input.cursor}`)
-      }
-      
-      try {
-        const response = await fetchNodeData(endpoint, queryParams)
-        
-        if (!response || !response.success || !response.history) {
-          throw new Error('Failed to fetch transaction history')
-        }
-        
-        // Transform the data into a simplified format for the UI
-        const transactions: TransactionHistory[] = response.history.map((tx: any) => ({
-          hash: tx.hash,
-          timestamp: tx.timestamp,
-          method: tx.nc_method,
-          context: tx.nc_context
-        }))
-        
-        // Get the last item's hash to use as the next cursor
-        const lastItemHash = transactions.length > 0 ? transactions[transactions.length - 1].hash : null
-        
-        return {
-          transactions,
-          nextCursor: response.has_more ? lastItemHash : null,
-          hasMore: response.has_more || false
-        }
-      } catch (error: any) {
-        console.error('Error fetching pool transaction history:', error)
-        throw new Error(`Failed to fetch transaction history: ${error.message}`)
+        return { status: validation, message: message }
+      } catch (error) {
+        console.error('Error checking transaction status:', error)
+        return { status: 'failed', message: 'Error checking transaction status' }
       }
     }),
-
 })

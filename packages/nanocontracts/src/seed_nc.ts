@@ -219,73 +219,112 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
   manager_ncid = managerInitResp.hash
   managerContract.ncid = manager_ncid
   console.log(`DozerPoolManager deployed. Contract ID: ${manager_ncid}`)
+  await check_wallet('master')
 
-  // 4. Create HTR-token pools and at least one non-HTR pool
+  // 4. Create pools based on configuration
   const HTR_UUID = '00'
   const createdPools: { key: string; tokenA: string; tokenB: string; fee: number }[] = []
-  // HTR-token pools
-  for (const token of config.tokens) {
-    if (token.symbol === 'HTR') continue
-    const token_uuid = tokenUUIDs[`${token.symbol}_uuid`]
-    if (!token_uuid) throw new Error(`Token UUID for ${token.symbol} is undefined`)
+
+  // Create HTR-token pools from configuration
+  for (const poolConfig of config.pools) {
+    console.log(`Creating pool: HTR/${poolConfig.tokenSymbol}...`)
+
+    const token_uuid = tokenUUIDs[`${poolConfig.tokenSymbol}_uuid`]
+    if (!token_uuid) throw new Error(`Token UUID for ${poolConfig.tokenSymbol} is undefined`)
+
+    // Convert fee from percentage to basis points (e.g., 0.05% -> 5)
+    const fee = Math.round(poolConfig.fee * 1000) // 0.05 -> 50, but we use 5 for 0.005
+
     const actions = [
       {
         type: 'deposit' as const,
         token: HTR_UUID,
-        amount: 100000 * 100,
-        address: admin_address,
+        amount: poolConfig.htrQuantity * 100, // Convert to cents
         changeAddress: admin_address,
       },
       {
         type: 'deposit' as const,
         token: token_uuid,
-        amount: 70000 * 100,
-        address: admin_address,
+        amount: poolConfig.tokenQuantity * 100, // Convert to cents
         changeAddress: admin_address,
       },
     ]
-    const args = [5, 1] // Example: fee=5, protocolFee=1 (adjust as needed)
+
+    const args = [fee]
     const createResp = await managerContract.execute(admin_address, 'create_pool', actions, args)
-    const pool_key = createResp.value // Should be the returned pool key string
+    const pool_key = `${HTR_UUID}/${token_uuid}/${fee}`
     poolKeys.push(pool_key)
-    createdPools.push({ key: pool_key, tokenA: HTR_UUID, tokenB: token_uuid, fee: 5 })
-    console.log(`Created pool: ${pool_key}`)
-    await check_wallet('master')
-  }
-  // At least one non-HTR pool (multi-hop)
-  if (config.tokens.length > 2) {
-    const token1 = config.tokens[1]
-    const token2 = config.tokens[2]
-    if (!token1 || !token2) throw new Error('Not enough tokens for non-HTR pool creation')
-    const tokenA = tokenUUIDs[`${token1.symbol}_uuid`]
-    const tokenB = tokenUUIDs[`${token2.symbol}_uuid`]
-    if (!tokenA || !tokenB) throw new Error('Non-HTR token UUIDs are undefined')
-    const actions = [
-      {
-        type: 'deposit' as const,
-        token: tokenA,
-        amount: 50000 * 100,
-        address: admin_address,
-        changeAddress: admin_address,
-      },
-      {
-        type: 'deposit' as const,
-        token: tokenB,
-        amount: 50000 * 100,
-        address: admin_address,
-        changeAddress: admin_address,
-      },
-    ]
-    const args = [5, 1]
-    const createResp = await managerContract.execute(admin_address, 'create_pool', actions, args)
-    const pool_key = createResp.value
-    poolKeys.push(pool_key)
-    createdPools.push({ key: pool_key, tokenA, tokenB, fee: 5 })
-    console.log(`Created non-HTR pool: ${pool_key}`)
+    createdPools.push({ key: pool_key, tokenA: HTR_UUID, tokenB: token_uuid, fee })
+    console.log(
+      `Created pool: ${pool_key} with reserves HTR:${poolConfig.htrQuantity}, ${poolConfig.tokenSymbol}:${poolConfig.tokenQuantity}`
+    )
     await check_wallet('master')
   }
 
+  // Create one non-HTR pool for multi-hop testing (using first two non-HTR tokens)
+  if (config.tokens.length >= 2) {
+    console.log('Creating non-HTR pool for multi-hop testing...')
+    const fee = 5 // 0.5% fee for multi-hop pool
+    const token1 = config.tokens[0]
+    const token2 = config.tokens[1]
+
+    if (!token1 || !token2) {
+      console.log('Skipping non-HTR pool creation - insufficient tokens')
+    } else {
+      const tokenA_uuid = tokenUUIDs[`${token1.symbol}_uuid`]
+      const tokenB_uuid = tokenUUIDs[`${token2.symbol}_uuid`]
+
+      if (!tokenA_uuid || !tokenB_uuid) {
+        console.log('Skipping non-HTR pool creation - token UUIDs not found')
+      } else {
+        const actions = [
+          {
+            type: 'deposit' as const,
+            token: tokenA_uuid,
+            amount: 50000 * 100, // 50,000 tokens
+            changeAddress: admin_address,
+          },
+          {
+            type: 'deposit' as const,
+            token: tokenB_uuid,
+            amount: 50000 * 100, // 50,000 tokens
+            changeAddress: admin_address,
+          },
+        ]
+
+        const args = [fee]
+        const createResp = await managerContract.execute(admin_address, 'create_pool', actions, args)
+        const pool_key = `${tokenA_uuid}/${tokenB_uuid}/${fee}`
+        poolKeys.push(pool_key)
+        createdPools.push({ key: pool_key, tokenA: tokenA_uuid, tokenB: tokenB_uuid, fee })
+        console.log(`Created non-HTR pool: ${pool_key} (${token1.symbol}/${token2.symbol})`)
+        await check_wallet('master')
+      }
+    }
+  }
+
   await wait_next_block()
+
+  // 4.5. Set HTR-USD pool reference (if hUSDC pool exists)
+  const hUSDC_uuid = tokenUUIDs['hUSDC_uuid']
+  if (hUSDC_uuid) {
+    const hUSDCPool = createdPools.find((pool) => {
+      const tokens = [pool.tokenA, pool.tokenB]
+      return tokens.includes(HTR_UUID) && tokens.includes(hUSDC_uuid)
+    })
+
+    if (hUSDCPool) {
+      console.log('Setting HTR-USD pool reference...')
+      const args = [HTR_UUID, hUSDC_uuid, hUSDCPool.fee]
+      await managerContract.execute(admin_address, 'set_htr_usd_pool', [], args)
+      console.log(`Set HTR-USD pool reference: ${hUSDCPool.key}`)
+      await check_wallet('master')
+    } else {
+      console.log('No HTR-hUSDC pool found - HTR-USD reference not set')
+    }
+  } else {
+    console.log('No hUSDC token found - HTR-USD reference not set')
+  }
 
   // 5. Sign all but one pool
   for (let i = 0; i < createdPools.length; i++) {

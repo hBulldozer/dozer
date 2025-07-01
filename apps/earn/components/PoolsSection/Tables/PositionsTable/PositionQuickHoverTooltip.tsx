@@ -18,7 +18,7 @@ interface PositionQuickHoverTooltipProps {
 }
 
 export const PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row }) => {
-  const { data: prices, isLoading } = api.getPrices.all.useQuery()
+  const { data: prices, isLoading } = api.getPrices.allUSD.useQuery()
 
   if (!prices && isLoading)
     return (

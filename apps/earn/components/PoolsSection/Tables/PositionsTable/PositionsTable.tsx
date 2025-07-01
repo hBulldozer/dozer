@@ -46,7 +46,7 @@ export const PositionsTable: FC = () => {
   }, [network])
 
   const { data: pools, isLoading } = api.getPools.all.useQuery()
-  const { data: prices, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
+  const { data: prices, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery()
   const { data: allPoolInfo, isLoading: isLoadingPoolInfo } = api.getProfile.allPoolInfo.useQuery({ address: address })
 
   const _pairs_array: PositionPair[] = useMemo(() => {

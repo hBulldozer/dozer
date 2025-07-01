@@ -44,7 +44,7 @@ export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
   await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.all.prefetch()
+  await ssg.getPrices.allUSD.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),
@@ -56,7 +56,7 @@ export const getStaticProps: GetStaticProps = async () => {
 const Add: FC = () => {
   const { data: pools } = api.getPools.all.useQuery()
   const { data: tokens } = api.getTokens.all.useQuery()
-  const { data: prices } = api.getPrices.all.useQuery()
+  const { data: prices } = api.getPrices.allUSD.useQuery()
 
   const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
   const [selectedPool, setSelectedPool] = useState<Pair>()

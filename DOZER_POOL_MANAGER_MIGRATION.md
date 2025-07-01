@@ -174,10 +174,154 @@
 - For any data not available on-chain, keep it in the DB and merge as needed.
 - Snapshots are now indexed by pool key (stored in the `poolId` field).
 
+## Seed Script Updates - Database Elimination
+
+### Changes Made to Seed Scripts
+
+#### 1. Updated `seed_all.ts`
+
+**Before:**
+- Orchestrated both nano contract seeding (`seed_nc`) and database seeding (`seed_db`)
+- Required database for pool and token storage
+
+**After:**
+- Only runs nano contract seeding (`seed_nc`)
+- Removed database dependency
+- Added detailed logging of seeding results
+- Clear messaging that database seeding is no longer needed
+
+#### 2. Updated `packages/nanocontracts/src/seed_nc.ts`
+
+**Before:**
+- Hardcoded pool configurations (quantities, fees)
+- Manual pool creation without configuration
+
+**After:**
+- Uses pool configuration from `seed_config.ts`
+- Dynamic pool creation based on configuration
+- Automatic HTR-USD pool reference setting (if hUSDC pool exists)
+- Proper fee conversion from percentage to basis points
+- Outputs manager contract ID and pool keys for environment setup
+
+### Contract Data Fetching Examples
+
+The DozerPoolManager contract provides comprehensive view methods that replace database queries:
+
+#### Basic Pool Operations
+```typescript
+// Fetch all signed pools
+const endpoint = 'nano_contract/state'
+const queryParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `calls[]=get_signed_pools()`]
+const response = await fetchNodeData(endpoint, queryParams)
+const poolKeys = response.calls['get_signed_pools()'].value
+
+// Fetch detailed pool information
+const poolInfoParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `calls[]=pool_info("${poolKey}")`]
+const poolInfoResponse = await fetchNodeData(endpoint, poolInfoParams)
+const poolInfo = poolInfoResponse.calls[`pool_info("${poolKey}")`].value
+
+// Fetch frontend-ready pool data
+const frontEndParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `calls[]=front_end_api_pool("${poolKey}")`]
+const frontEndResponse = await fetchNodeData(endpoint, frontEndParams)
+const poolData = frontEndResponse.calls[`front_end_api_pool("${poolKey}")`].value
+```
+
+#### Price and Token Operations
+```typescript
+// Fetch all token prices in USD
+const priceParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `calls[]=get_all_token_prices_in_usd()`]
+const priceResponse = await fetchNodeData(endpoint, priceParams)
+const prices = priceResponse.calls['get_all_token_prices_in_usd()'].value
+
+// Fetch user positions across all pools
+const userParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `calls[]=get_user_positions("${address}")`]
+const userResponse = await fetchNodeData(endpoint, userParams)
+const positions = userResponse.calls[`get_user_positions("${address}")`].value
+
+// Find best swap path between tokens
+const swapParams = [
+  `id=${POOL_MANAGER_CONTRACT_ID}`,
+  `calls[]=find_best_swap_path(${amount},"${tokenIn}","${tokenOut}",${maxHops})`
+]
+const swapResponse = await fetchNodeData(endpoint, swapParams)
+const pathInfo = swapResponse.calls[`find_best_swap_path(...)`].value
+```
+
+#### Historical Data with Timestamps
+```typescript
+// Get pool data at specific timestamp
+const historicalParams = [
+  `id=${POOL_MANAGER_CONTRACT_ID}`, 
+  `calls[]=pool_info("${poolKey}")`, 
+  `timestamp=${timestamp}`
+]
+const historicalResponse = await fetchNodeData(endpoint, historicalParams)
+const historicalPoolInfo = historicalResponse.calls[`pool_info("${poolKey}")`].value
+```
+
+### Node State Endpoint Documentation
+
+The `/nano_contract/state` endpoint supports:
+- **`id`**: Contract ID (required)
+- **`calls[]`**: Array of method calls in format `method_name(arg1, arg2, ...)`
+- **`timestamp`**: Get state at specific timestamp
+- **`block_height`**: Get state at specific block height
+- **`block_hash`**: Get state at specific block hash
+
+### Environment Setup
+
+After running the seed scripts, set these environment variables:
+```bash
+POOL_MANAGER_CONTRACT_ID=<manager_ncid_from_seeding_output>
+```
+
+### API Migration Strategy
+
+1. **Pool Router**: Fetch pools directly from contract using `get_signed_pools()`
+2. **Token Router**: Derive tokens from pool data, no database dependency
+3. **Price Router**: Use contract's `get_all_token_prices_in_usd()` method
+4. **Historical Data**: Use timestamp-based contract queries instead of database snapshots
+5. **User Positions**: Use contract's `get_user_positions(address)` method
+6. **Token Metadata**: Fetch real token names and symbols from Hathor node
+
+### Token Metadata Enhancement
+
+All TRPC routers now fetch real token information from the Hathor node instead of using UUID slices:
+
+#### Implementation Details
+- **Endpoint**: `/v1a/thin_wallet/token?id={tokenUuid}`
+- **Response Format**: 
+  ```json
+  {
+    "success": true,
+    "name": "MyCoin",
+    "symbol": "MYC",
+    "mint": [...],
+    "melt": [...],
+    "total": 1000000
+  }
+  ```
+- **Caching**: In-memory caching implemented to avoid repeated API calls
+- **Fallback Strategy**: Falls back to shortened UUID if token info cannot be fetched
+- **HTR Special Case**: HTR token (UUID: '00') returns 'HTR' symbol and 'Hathor' name
+- **Error Handling**: Graceful error handling with fallback to UUID-based naming
+
+#### Files Updated
+- `packages/api/src/router/pool.ts` - Token names in pool data
+- `packages/api/src/router/token.ts` - All token metadata
+- `packages/api/src/router/prices.ts` - Token helper functions added
+- `packages/api/src/router/profile.ts` - User position token names
+
+#### Performance Optimizations
+- Shared token info cache across all routers
+- Parallel async operations for multiple token lookups
+- Efficient Promise.all() usage for batch operations
+
 ## Where to Find More Information
 - The full migration context, plan, and rationale are in this file.
 - For code details, see the updated files and the singleton pool manager blueprint (`contracts/dozer_pool_manager.py`).
 - For the latest pool manager contract ID and pool keys, run the seeding scripts and check the console output.
+- Database seeding is no longer needed - all data is fetched from the contract.
 
 ---
 

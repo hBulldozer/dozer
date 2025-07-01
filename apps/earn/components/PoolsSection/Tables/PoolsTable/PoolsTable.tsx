@@ -10,6 +10,7 @@ import { ChainId } from '@dozer/chain'
 import { PairQuickHoverTooltip } from './PairQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
 import { api } from '../../../../utils/api'
+import { Token } from '@dozer/currency'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -50,29 +51,20 @@ export const PoolsTable: FC = () => {
   }, [network])
 
   // Use enabled option to control when queries run
-  const initialQuery = api.getPools.firstLoadAllDay.useQuery(undefined, {
+  const poolsQuery = api.getPools.all.useQuery(undefined, {
     suspense: false, // Important for hydration
     refetchOnMount: false,
     staleTime: 30000, // Reduce refetches
     cacheTime: 1000 * 60 * 5, // Cache for 5 minutes
   })
 
-  const detailedQuery = api.getPools.allDay.useQuery(undefined, {
-    suspense: false, // Important for hydration
-    refetchOnMount: false,
-    staleTime: 30000,
-    cacheTime: 1000 * 60 * 5,
-    // Only run this query after initial data is loaded
-    enabled: !!initialQuery.data,
-  })
-
-  const pricesQuery = api.getPrices.all.useQuery(undefined, {
+  const pricesQuery = api.getPrices.allUSD.useQuery(undefined, {
     staleTime: 30000,
     cacheTime: 1000 * 60 * 5,
   })
 
   // Combine the data based on what's available
-  const _pools = detailedQuery.data || initialQuery.data || []
+  const _pools = poolsQuery.data || []
   const prices = pricesQuery.data || {}
 
   const pools = useMemo(() => {
@@ -101,7 +93,22 @@ export const PoolsTable: FC = () => {
         return true
       })
       .map((pool) => {
-        return { ...pool, priceHtr: prices?.['00'], isPending: pool.id.startsWith('pending-') }
+        // Construct Token instances for token0 and token1
+        const token0 = new Token({
+          chainId: pool.token0.chainId || 1,
+          uuid: pool.token0.uuid,
+          decimals: pool.token0.decimals || 2,
+          symbol: pool.token0.symbol,
+          name: pool.token0.name,
+        })
+        const token1 = new Token({
+          chainId: pool.token1.chainId || 1,
+          uuid: pool.token1.uuid,
+          decimals: pool.token1.decimals || 2,
+          symbol: pool.token1.symbol,
+          name: pool.token1.name,
+        })
+        return { ...pool, priceHtr: prices?.['00'], isPending: pool.id.startsWith('pending-'), token0, token1 }
       })
   }, [_pools, query, filters])
 
@@ -179,18 +186,18 @@ export const PoolsTable: FC = () => {
 
   return (
     <>
-      <LoadingOverlay show={isSomePending ? false : initialQuery.isLoading} />
-      <div className="flex flex-row items-center ">
+      <LoadingOverlay show={isSomePending ? false : poolsQuery.isLoading} />
+      <div className="flex flex-row items-center">
         <FilterPools maxValues={maxValues} search={query} setSearch={setQuery} setFilters={setFilters} />
-        {detailedQuery.isLoading && (
+        {poolsQuery.isLoading && (
           <Typography variant="xs" className="text-balance text-stone-500">
-            Loading detailed data for all pools...
+            Loading pool data...
           </Typography>
         )}
       </div>
       <GenericTable<ExtendedPair>
         table={table}
-        loading={initialQuery.isLoading}
+        loading={poolsQuery.isLoading}
         HoverElement={isMd ? PairQuickHoverTooltip : undefined}
         placeholder={'No pools found'}
         pageSize={PAGE_SIZE}

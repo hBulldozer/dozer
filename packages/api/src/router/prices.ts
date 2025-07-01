@@ -4,29 +4,7 @@ import { z } from 'zod'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 
-const idFromHTRPoolByTokenUuid = async (uuid: string, chainId: number, prisma: PrismaClient) => {
-  if (uuid == '00') {
-    return await prisma.pool.findFirst({
-      where: { token0: { uuid: '00' }, chainId: chainId },
-      select: { id: true },
-    })
-  } else {
-    return await prisma.pool.findFirst({
-      where: { token1: { uuid: uuid, chainId: chainId } },
-      select: { id: true },
-    })
-  }
-}
-
-const HTRPoolByTokenUuidFromContract = async (uuid: string, chainId: number, prisma: PrismaClient) => {
-  const poolId = await idFromHTRPoolByTokenUuid(uuid, chainId, prisma)
-  if (!poolId) return {}
-  const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${poolId.id}`, `calls[]=pool_data()`]
-  const response = await fetchNodeData(endpoint, queryParams)
-  const result = response['calls'][`pool_data()`]['value']
-  return result
-}
+// Legacy helper functions removed - now using DozerPoolManager contract methods
 const htrKline = async (input: { period: number; size: number; prisma: PrismaClient }) => {
   // const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
 
@@ -216,6 +194,81 @@ const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, s
     }
   }
 }
+
+// Get the Pool Manager Contract ID from environment
+const POOL_MANAGER_CONTRACT_ID = process.env.POOL_MANAGER_CONTRACT_ID
+
+if (!POOL_MANAGER_CONTRACT_ID) {
+  console.warn('POOL_MANAGER_CONTRACT_ID environment variable not set')
+}
+
+// Helper function to fetch data from the pool manager contract
+async function fetchFromPoolManager(calls: string[], timestamp?: number): Promise<any> {
+  if (!POOL_MANAGER_CONTRACT_ID) {
+    throw new Error('POOL_MANAGER_CONTRACT_ID environment variable not set')
+  }
+
+  const endpoint = 'nano_contract/state'
+  const queryParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, ...calls.map((call) => `calls[]=${call}`)]
+
+  if (timestamp) {
+    queryParams.push(`timestamp=${timestamp}`)
+  }
+
+  return await fetchNodeData(endpoint, queryParams)
+}
+
+// Cache for token information to avoid repeated API calls
+const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
+
+// Helper function to fetch token information from Hathor node
+async function fetchTokenInfo(tokenUuid: string): Promise<{ symbol: string; name: string }> {
+  if (tokenUuid === '00') {
+    return { symbol: 'HTR', name: 'Hathor' }
+  }
+
+  // Check cache first
+  if (tokenInfoCache.has(tokenUuid)) {
+    return tokenInfoCache.get(tokenUuid)!
+  }
+
+  try {
+    const endpoint = 'thin_wallet/token'
+    const queryParams = [`id=${tokenUuid}`]
+    const response = await fetchNodeData(endpoint, queryParams)
+
+    const tokenInfo = {
+      symbol: response.symbol || tokenUuid.substring(0, 8).toUpperCase(),
+      name: response.name || `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
+    }
+
+    // Cache the result
+    tokenInfoCache.set(tokenUuid, tokenInfo)
+    return tokenInfo
+  } catch (error) {
+    console.error(`Error fetching token info for ${tokenUuid}:`, error)
+    // Fallback to shortened UUID
+    const fallback = {
+      symbol: tokenUuid.substring(0, 8).toUpperCase(),
+      name: `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
+    }
+    tokenInfoCache.set(tokenUuid, fallback)
+    return fallback
+  }
+}
+
+// Helper function to get token symbol from UUID (with caching)
+async function getTokenSymbol(tokenUuid: string): Promise<string> {
+  const tokenInfo = await fetchTokenInfo(tokenUuid)
+  return tokenInfo.symbol
+}
+
+// Helper function to get token name from UUID (with caching)
+async function getTokenName(tokenUuid: string): Promise<string> {
+  const tokenInfo = await fetchTokenInfo(tokenUuid)
+  return tokenInfo.name
+}
+
 export const pricesRouter = createTRPCRouter({
   firstLoadAll: procedure.query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
@@ -235,70 +288,18 @@ export const pricesRouter = createTRPCRouter({
     return prices
   }),
   all: procedure.query(async ({ ctx }) => {
-    const tokens = await ctx.prisma.token.findMany({
-      select: {
-        uuid: true,
-        symbol: true,
-        chainId: true,
-      },
-    })
-    if (!tokens) {
-      throw new Error(`Failed to fetch tokens, received ${tokens}`)
+    try {
+      console.log('Legacy all method - Fetching USD prices from contract ID:', POOL_MANAGER_CONTRACT_ID)
+      const response = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
+      console.log('Legacy all method - Raw response:', JSON.stringify(response, null, 2))
+      const prices = response.calls['get_all_token_prices_in_usd()'].value || {}
+      console.log('Legacy all method - Prices found:', prices)
+
+      return prices
+    } catch (error) {
+      console.error('Error fetching all USD prices:', error)
+      return {}
     }
-    const pools = await ctx.prisma.pool.findMany({
-      select: {
-        id: true,
-        chainId: true,
-        token0: { select: { symbol: true } },
-        token1: { select: { symbol: true } },
-      },
-    })
-    const htrHusdcPool = pools.find((pool) => {
-      const symbols = [pool.token0.symbol, pool.token1.symbol]
-      return symbols.includes('HTR') && symbols.includes('hUSDC')
-    })
-
-    const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${htrHusdcPool?.id}`, `calls[]=pool_data()`]
-
-    const rawPoolData = await fetchNodeData(endpoint, queryParams)
-    const poolData = rawPoolData.calls['pool_data()'].value
-    const priceHTR = htrHusdcPool
-      ? htrHusdcPool.token0.symbol === 'HTR'
-        ? poolData.reserve1 / poolData.reserve0
-        : poolData.reserve0 / poolData.reserve1
-      : 1
-    const prices: { [key: string]: number } = {}
-
-    await Promise.all(
-      tokens.map(async (token) => {
-        if (token.uuid == '00') prices[token.uuid] = Number(priceHTR)
-        else if (token.symbol == 'hUSDC') prices[token.uuid] = 1
-        else {
-          const poolHTR = pools.find((pool) => {
-            const symbols = [pool.token0.symbol, pool.token1.symbol]
-            return symbols.includes(token.symbol) && symbols.includes('HTR')
-          })
-          if (!prices[token.uuid] && poolHTR) {
-            const queryParams = [`id=${poolHTR.id}`, `calls[]=pool_data()`]
-            const rawPoolData = await fetchNodeData(endpoint, queryParams)
-            const poolData = rawPoolData.calls['pool_data()'].value
-            const tokenPrice = poolHTR
-              ? poolHTR.token0.symbol === 'HTR'
-                ? poolData.reserve0 / poolData.reserve1
-                : poolData.reserve1 / poolData.reserve0
-              : 1
-            // console.log(token.uuid, poolHTR ? (Number(poolHTR?.reserve0) / Number(poolHTR?.reserve1)) * priceHTR : 0)
-            prices[token.uuid] = poolHTR ? parseFloat((tokenPrice * priceHTR).toFixed(6)) : 0
-          }
-        }
-      })
-    )
-
-    if (!prices) {
-      throw new Error(`Failed to fetch prices, received ${prices}`)
-    }
-    return prices
   }),
   firstLoadAll24h: procedure.query(async ({ ctx }) => {
     const tokens = await ctx.prisma.token.findMany({
@@ -455,15 +456,15 @@ export const pricesRouter = createTRPCRouter({
   }),
 
   htr: procedure.output(z.number()).query(async () => {
-    // const resp = await fetch('https://api.kucoin.com/api/v1/prices?currencies=HTR')
-    // const data = await resp.json()
-    // return Number(data.data.HTR)
-    const hUSDC = await prisma.token.findFirst({ where: { symbol: 'hUSDC' } })
-    if (!hUSDC) {
-      throw new Error('Failed to get hUSDC Token')
+    try {
+      const response = await fetchFromPoolManager(['get_token_price_in_usd("00")'])
+      const htrPrice = response.calls['get_token_price_in_usd("00")'].value || 0
+
+      return htrPrice
+    } catch (error) {
+      console.error('Error fetching HTR price in USD:', error)
+      return 0
     }
-    const pool = await HTRPoolByTokenUuidFromContract(hUSDC?.uuid, hUSDC?.chainId, prisma)
-    return Number(pool?.reserve1) / Number(pool?.reserve0)
   }),
   htrKline: procedure
     .output(z.array(z.object({ price: z.number(), date: z.number() })))
@@ -472,4 +473,208 @@ export const pricesRouter = createTRPCRouter({
       const result = await htrKline({ ...input, prisma: ctx.prisma })
       return result
     }),
+
+  // Get all token prices in USD
+  allUSD: procedure.query(async ({ ctx }) => {
+    try {
+      console.log('Fetching USD prices from contract ID:', POOL_MANAGER_CONTRACT_ID)
+      const response = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
+      console.log('Raw response from get_all_token_prices_in_usd():', JSON.stringify(response, null, 2))
+      const prices = response.calls['get_all_token_prices_in_usd()'].value || {}
+      console.log('Prices found:', prices)
+
+      return prices
+    } catch (error) {
+      console.error('Error fetching all USD prices:', error)
+      return {}
+    }
+  }),
+
+  // Get all token prices in HTR
+  allHTR: procedure.query(async ({ ctx }) => {
+    try {
+      const response = await fetchFromPoolManager(['get_all_token_prices_in_htr()'])
+      const prices = response.calls['get_all_token_prices_in_htr()'].value || {}
+
+      return prices
+    } catch (error) {
+      console.error('Error fetching all HTR prices:', error)
+      return {}
+    }
+  }),
+
+  // Get specific token price in USD
+  tokenUSD: procedure.input(z.object({ tokenUid: z.string() })).query(async ({ input }) => {
+    try {
+      const response = await fetchFromPoolManager([`get_token_price_in_usd("${input.tokenUid}")`])
+      const price = response.calls[`get_token_price_in_usd("${input.tokenUid}")`].value || 0
+
+      return price
+    } catch (error) {
+      console.error(`Error fetching USD price for token ${input.tokenUid}:`, error)
+      return 0
+    }
+  }),
+
+  // Get specific token price in HTR
+  tokenHTR: procedure.input(z.object({ tokenUid: z.string() })).query(async ({ input }) => {
+    try {
+      const response = await fetchFromPoolManager([`get_token_price_in_htr("${input.tokenUid}")`])
+      const price = response.calls[`get_token_price_in_htr("${input.tokenUid}")`].value || 0
+
+      return price
+    } catch (error) {
+      console.error(`Error fetching HTR price for token ${input.tokenUid}:`, error)
+      return 0
+    }
+  }),
+
+  // Get HTR price in USD (from the HTR-USD reference pool)
+  htrUSD: procedure.query(async ({ ctx }) => {
+    try {
+      const response = await fetchFromPoolManager(['get_token_price_in_usd("00")'])
+      const htrPrice = response.calls['get_token_price_in_usd("00")'].value || 0
+
+      return htrPrice
+    } catch (error) {
+      console.error('Error fetching HTR price in USD:', error)
+      return 0
+    }
+  }),
+
+  // Get historical prices at a specific timestamp
+  historicalUSD: procedure
+    .input(
+      z.object({
+        tokenUid: z.string(),
+        timestamp: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const response = await fetchFromPoolManager([`get_token_price_in_usd("${input.tokenUid}")`], input.timestamp)
+        const price = response.calls[`get_token_price_in_usd("${input.tokenUid}")`].value || 0
+
+        return price
+      } catch (error) {
+        console.error(`Error fetching historical USD price for token ${input.tokenUid} at ${input.timestamp}:`, error)
+        return 0
+      }
+    }),
+
+  // Get historical HTR prices at a specific timestamp
+  historicalHTR: procedure
+    .input(
+      z.object({
+        tokenUid: z.string(),
+        timestamp: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const response = await fetchFromPoolManager([`get_token_price_in_htr("${input.tokenUid}")`], input.timestamp)
+        const price = response.calls[`get_token_price_in_htr("${input.tokenUid}")`].value || 0
+
+        return price
+      } catch (error) {
+        console.error(`Error fetching historical HTR price for token ${input.tokenUid} at ${input.timestamp}:`, error)
+        return 0
+      }
+    }),
+
+  // Get price chart data for a token over time
+  chartData: procedure
+    .input(
+      z.object({
+        tokenUid: z.string(),
+        currency: z.enum(['USD', 'HTR']).default('USD'),
+        timeframe: z.enum(['1h', '24h', '7d', '30d']).default('24h'),
+        points: z.number().min(10).max(100).default(24),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const now = Math.floor(Date.now() / 1000)
+        const intervals = {
+          '1h': 60 * 60, // 1 hour
+          '24h': 24 * 60 * 60, // 24 hours
+          '7d': 7 * 24 * 60 * 60, // 7 days
+          '30d': 30 * 24 * 60 * 60, // 30 days
+        }
+
+        const totalTime = intervals[input.timeframe]
+        const interval = totalTime / input.points
+
+        const pricePromises = []
+
+        for (let i = 0; i < input.points; i++) {
+          const timestamp = now - (totalTime - i * interval)
+          const methodName =
+            input.currency === 'USD'
+              ? `get_token_price_in_usd("${input.tokenUid}")`
+              : `get_token_price_in_htr("${input.tokenUid}")`
+
+          pricePromises.push(
+            fetchFromPoolManager([methodName], timestamp)
+              .then((response) => ({
+                timestamp,
+                price: response.calls[methodName].value || 0,
+              }))
+              .catch(() => ({
+                timestamp,
+                price: 0,
+              }))
+          )
+        }
+
+        const priceData = await Promise.all(pricePromises)
+
+        return priceData.map((point) => ({
+          timestamp: point.timestamp * 1000, // Convert to milliseconds for frontend
+          price: point.price,
+          date: new Date(point.timestamp * 1000).toISOString(),
+        }))
+      } catch (error) {
+        console.error(`Error fetching chart data for token ${input.tokenUid}:`, error)
+        return []
+      }
+    }),
+
+  // Get market summary with key price information
+  marketSummary: procedure.query(async ({ ctx }) => {
+    try {
+      // Get all prices in USD
+      const usdResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
+      const usdPrices = usdResponse.calls['get_all_token_prices_in_usd()'].value || {}
+
+      // Get all prices in HTR
+      const htrResponse = await fetchFromPoolManager(['get_all_token_prices_in_htr()'])
+      const htrPrices = htrResponse.calls['get_all_token_prices_in_htr()'].value || {}
+
+      // Calculate some basic market stats
+      const tokenCount = Object.keys(usdPrices).length
+      const htrPriceUSD = usdPrices['00'] || 0
+
+      return {
+        tokenCount,
+        htrPriceUSD,
+        lastUpdated: new Date().toISOString(),
+        prices: {
+          usd: usdPrices,
+          htr: htrPrices,
+        },
+      }
+    } catch (error) {
+      console.error('Error fetching market summary:', error)
+      return {
+        tokenCount: 0,
+        htrPriceUSD: 0,
+        lastUpdated: new Date().toISOString(),
+        prices: {
+          usd: {},
+          htr: {},
+        },
+      }
+    }
+  }),
 })

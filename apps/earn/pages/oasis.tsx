@@ -104,7 +104,7 @@ const OasisProgram = () => {
   const currentBlockHeight = currentBlock?.number || 0
 
   const utils = api.useUtils()
-  const { data: prices } = api.getPrices.all.useQuery()
+  const { data: prices } = api.getPrices.allUSD.useQuery()
   const initialPrices = {
     htr: prices ? prices['00'] : 0,
     btc: 98520,
