@@ -218,6 +218,16 @@ async function fetchFromPoolManager(calls: string[], timestamp?: number): Promis
   return await fetchNodeData(endpoint, queryParams)
 }
 
+// Helper function to parse JSON string responses from _str methods
+function parseJsonResponse(jsonString: string): any {
+  try {
+    return JSON.parse(jsonString)
+  } catch (error) {
+    console.error('Error parsing JSON response:', error)
+    throw new Error('Failed to parse contract response')
+  }
+}
+
 // Cache for token information to avoid repeated API calls
 const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
 

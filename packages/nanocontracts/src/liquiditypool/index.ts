@@ -1,9 +1,9 @@
-import { NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/types'
 import {
   SendNanoContractRpcRequest,
   SendNanoContractTxResponse,
   sendNanoContractTxRpcRequest,
-} from 'hathor-rpc-handler-test'
+} from '@hathor/hathor-rpc-handler'
+import { NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/types'
 
 import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
@@ -103,14 +103,14 @@ export class LiquidityPool extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: token0,
-          amount: Math.ceil(amount0 * 100),
+          amount: BigInt(Math.ceil(amount0 * 100)),
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.DEPOSIT,
           token: token1,
-          amount: Math.ceil(amount1 * 100),
+          amount: BigInt(Math.ceil(amount1 * 100)),
           address: address,
           changeAddress: address,
         },
@@ -142,14 +142,14 @@ export class LiquidityPool extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: token_in,
-          amount: amount_in * 100,
+          amount: BigInt(amount_in * 100),
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: token_out,
-          amount: amount_out * 100,
+          amount: BigInt(amount_out * 100),
           address: address,
           changeAddress: address,
         },
@@ -182,14 +182,14 @@ export class LiquidityPool extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: token_in,
-          amount: amount_in * 100,
+          amount: BigInt(amount_in * 100),
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: token_out,
-          amount: amount_out * 100,
+          amount: BigInt(amount_out * 100),
           address: address,
           changeAddress: address,
         },
@@ -222,14 +222,14 @@ export class LiquidityPool extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: token_a,
-          amount: amount_a * 100,
+          amount: BigInt(amount_a * 100),
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.DEPOSIT,
           token: token_b,
-          amount: amount_b * 100,
+          amount: BigInt(amount_b * 100),
           address: address,
           changeAddress: address,
         },
@@ -261,14 +261,14 @@ export class LiquidityPool extends NanoContract {
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: token_a,
-          amount: amount_a * 100,
+          amount: BigInt(amount_a * 100),
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: token_b,
-          amount: amount_b * 100,
+          amount: BigInt(amount_b * 100),
           address: address,
           changeAddress: address,
         },

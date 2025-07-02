@@ -8,8 +8,7 @@ import {
   SendNanoContractTxResponse,
   SignOracleDataResponse,
   SignOracleDataRpcRequest,
-} from 'hathor-rpc-handler-test'
-import { create } from 'domain'
+} from '@hathor/hathor-rpc-handler'
 import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 import config from '../../config/bridge'
 

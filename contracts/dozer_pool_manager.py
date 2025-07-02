@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from sqlite3 import Time
 from typing import Any, NamedTuple
 
 from hathor.conf import settings
+from hathor.crypto.util import get_address_b58_from_bytes
 from hathor.nanocontracts.blueprint import Blueprint
 from hathor.nanocontracts.context import Context
 from hathor.nanocontracts.exception import NCFail
@@ -2154,7 +2156,7 @@ class DozerPoolManager(Blueprint):
         return positions
 
     @view
-    def get_token_price_in_htr(self, token: TokenUid) -> float:
+    def get_token_price_in_htr(self, token: TokenUid) -> Amount:
         """Get the price of a token in HTR.
 
         Args:
@@ -2165,12 +2167,12 @@ class DozerPoolManager(Blueprint):
         """
         # HTR itself has a price of 1 in HTR
         if token == HTR_UID:
-            return 1_000000  # 1 with 6 decimal places
+            return Amount(1_000000)  # 1 with 6 decimal places
 
         # Check if we have this token in the HTR token map
         pool_key = self.htr_token_map.get(token)
         if pool_key is None:
-            return 0
+            return Amount(0)
 
         reserve_a = self.pool_reserve_a[pool_key]
         reserve_b = self.pool_reserve_b[pool_key]
@@ -2185,19 +2187,19 @@ class DozerPoolManager(Blueprint):
 
         # Calculate price: HTR per token with 6 decimal places
         if token_reserve == 0:
-            return 0
+            return Amount(0)
 
-        return (htr_reserve * 1_000000) // token_reserve
+        return Amount((htr_reserve * 1_000000) // token_reserve)
 
     @view
-    def get_all_token_prices_in_htr(self) -> dict[str, float]:
+    def get_all_token_prices_in_htr(self) -> dict[str, Amount]:
         """Get the prices of all tokens that have HTR pools in HTR.
 
         Returns:
             A dictionary mapping token UIDs (hex) to their prices in HTR with 6 decimal places
         """
         result = {}
-        result[HTR_UID.hex()] = 1_000000  # HTR itself has a price of 1 in HTR
+        result[HTR_UID.hex()] = Amount(1_000000)  # HTR itself has a price of 1 in HTR
 
         # We can't use a for loop in public methods, but this is a view method
         for pool_key in self.all_pools:
@@ -2211,12 +2213,12 @@ class DozerPoolManager(Blueprint):
                 continue
             price = self.get_token_price_in_htr(token)
             if price > 0:
-                result[token.hex()] = price
+                result[token.hex()] = Amount(price)
 
         return result
 
     @view
-    def get_token_price_in_usd(self, token: TokenUid) -> float:
+    def get_token_price_in_usd(self, token: TokenUid) -> Amount:
         """Get the price of a token in USD.
 
         Args:
@@ -2227,12 +2229,12 @@ class DozerPoolManager(Blueprint):
         """
         # First, check if we have a HTR-USD pool set
         if not self.htr_usd_pool_key:
-            return 0
+            return Amount(0)
 
         # Get the token price in HTR
         token_price_in_htr = self.get_token_price_in_htr(token)
         if token_price_in_htr == 0:
-            return 0
+            return Amount(0)
 
         # Get the HTR price in USD
         pool_key = self.htr_usd_pool_key
@@ -2249,15 +2251,15 @@ class DozerPoolManager(Blueprint):
 
         # Calculate HTR price in USD with 6 decimal places
         if htr_reserve == 0:
-            return 0
+            return Amount(0)
 
         htr_price_in_usd = (usd_reserve * 1_000000) // htr_reserve
 
         # Calculate token price in USD: token_price_in_htr * htr_price_in_usd / 1_000000
-        return (token_price_in_htr * htr_price_in_usd) // 1_000000
+        return Amount((token_price_in_htr * htr_price_in_usd) // 1_000000)
 
     @view
-    def get_all_token_prices_in_usd(self) -> dict[str, float]:
+    def get_all_token_prices_in_usd(self) -> dict[str, Amount]:
         """Get the prices of all tokens that have HTR pools in USD.
 
         Returns:
@@ -2433,7 +2435,7 @@ class DozerPoolManager(Blueprint):
     def front_end_api_pool(
         self,
         pool_key: str,
-    ) -> dict[str, Any]:
+    ) -> dict[str, Amount]:
         """Get pool information for frontend display.
 
         Args:
@@ -2460,24 +2462,22 @@ class DozerPoolManager(Blueprint):
         is_signed = pool_key in self.pool_signers
 
         return {
-            "reserve0": self.pool_reserve_a[pool_key],
-            "reserve1": self.pool_reserve_b[pool_key],
-            "fee": self.pool_fee_numerator[pool_key]
-            / self.pool_fee_denominator[pool_key],
-            "volume": self.pool_volume_a[pool_key],
-            "fee0": self.pool_accumulated_fee[pool_key].get(token_a, 0),
-            "fee1": self.pool_accumulated_fee[pool_key].get(token_b, 0),
-            "dzr_rewards": 1000,  # Placeholder as in original implementation
-            "transactions": self.pool_transactions[pool_key],
-            "is_signed": is_signed,
-            "signer": self.pool_signers.get(pool_key, None),
+            "reserve0": Amount(self.pool_reserve_a[pool_key]),
+            "reserve1": Amount(self.pool_reserve_b[pool_key]),
+            "fee": Amount(self.pool_fee_numerator[pool_key]),
+            "volume": Amount(self.pool_volume_a[pool_key]),
+            "fee0": Amount(self.pool_accumulated_fee[pool_key].get(token_a, 0)),
+            "fee1": Amount(self.pool_accumulated_fee[pool_key].get(token_b, 0)),
+            "dzr_rewards": Amount(1000),  # Placeholder as in original implementation
+            "transactions": Amount(self.pool_transactions[pool_key]),
+            "is_signed": Amount(1 if is_signed else 0),
         }
 
     @view
     def pool_info(
         self,
         pool_key: str,
-    ) -> dict[str, Any]:
+    ) -> dict[str, str  | int | bool  | None]:
         """Get detailed information about a pool.
 
         Args:
@@ -2490,23 +2490,33 @@ class DozerPoolManager(Blueprint):
             PoolNotFound: If the pool does not exist
         """
         self._validate_pool_exists(pool_key)
-        is_signed = pool_key in self.pool_signers
+        is_signed = pool_key in self.pool_signers if self.pool_signers else False
+        signer_str = get_address_b58_from_bytes(self.pool_signers.get(pool_key, None)) if self.pool_signers else None
 
         return {
-            "token_a": self.pool_token_a[pool_key],
-            "token_b": self.pool_token_b[pool_key],
-            "reserve_a": self.pool_reserve_a[pool_key],
-            "reserve_b": self.pool_reserve_b[pool_key],
-            "fee": self.pool_fee_numerator[pool_key]
-            / self.pool_fee_denominator[pool_key],
-            "total_liquidity": self.pool_total_liquidity[pool_key],
-            "transactions": self.pool_transactions[pool_key],
-            "volume_a": self.pool_volume_a[pool_key],
-            "volume_b": self.pool_volume_b[pool_key],
-            "last_activity": self.pool_last_activity[pool_key],
+            "token_a": self.pool_token_a.get(pool_key, b'').hex(),
+            "token_b": self.pool_token_b.get(pool_key, b'').hex(),
+            "reserve_a": self.pool_reserve_a.get(pool_key, None),
+            "reserve_b": self.pool_reserve_b.get(pool_key, None),
+            "fee": self.pool_fee_numerator.get(pool_key, None),
+            "total_liquidity": self.pool_total_liquidity.get(pool_key, None),
+            "transactions": self.pool_transactions.get(pool_key, None),
+            "volume_a": self.pool_volume_a.get(pool_key, None),
+            "volume_b": self.pool_volume_b.get(pool_key, None),
+            "last_activity": self.pool_last_activity.get(pool_key, None),
             "is_signed": is_signed,
-            "signer": self.pool_signers.get(pool_key, None),
+            "signer": signer_str,
         }
+    
+    @view
+    def pool_info_str(
+        self,
+        pool_key: str,
+    ) -> str:
+        """Get detailed information about a pool.
+        """
+        pool_info = self.pool_info(pool_key)
+        return json.dumps(pool_info)
 
     @view
     def user_info(
@@ -3050,3 +3060,21 @@ class DozerPoolManager(Blueprint):
 
         # Round up
         return Amount(numerator // denominator)
+    
+    @view  
+    def get_user_positions_str(self, address: Address) -> str:
+        """Get detailed information about all user positions as JSON string."""
+        positions = self.get_user_positions(address)
+        return json.dumps(positions)
+
+    @view
+    def find_best_swap_path_str(self, amount_in: Amount, token_in: TokenUid, token_out: TokenUid, max_hops: int) -> str:
+        """Find the best path for swapping between two tokens as JSON string."""
+        path_info = self.find_best_swap_path(amount_in, token_in, token_out, max_hops)
+        return json.dumps(path_info)
+
+    @view
+    def user_info_str(self, address: Address, pool_key: str) -> str:
+        """Get detailed information about a user's position as JSON string."""
+        user_info = self.user_info(address, pool_key)
+        return json.dumps(user_info)

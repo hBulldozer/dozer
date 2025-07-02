@@ -29,6 +29,16 @@ async function fetchFromPoolManager(calls: string[], timestamp?: number): Promis
   return await fetchNodeData(endpoint, queryParams)
 }
 
+// Helper function to parse JSON string responses from _str methods
+function parseJsonResponse(jsonString: string): any {
+  try {
+    return JSON.parse(jsonString)
+  } catch (error) {
+    console.error('Error parsing JSON response:', error)
+    throw new Error('Failed to parse contract response')
+  }
+}
+
 // Helper function to extract tokens from pool keys
 function extractTokensFromPools(poolKeys: string[]): string[] {
   const tokens = new Set<string>()
@@ -148,10 +158,15 @@ export const poolRouter = createTRPCRouter({
       const poolKeys: string[] = response.calls['get_signed_pools()'].value || []
       console.log('Pool keys:', poolKeys)
 
+      // Get token prices for USD calculations
+      const pricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
+      const tokenPrices = pricesResponse.calls['get_all_token_prices_in_usd()'].value || {}
+
       // Fetch detailed data for each pool
       const poolDataPromises = poolKeys.map(async (poolKey) => {
         try {
           const poolResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
+          console.log('Pool response:', poolResponse)
           const poolData = poolResponse.calls[`front_end_api_pool("${poolKey}")`].value
           console.log('Pool data:', poolData)
 
@@ -161,16 +176,34 @@ export const poolRouter = createTRPCRouter({
           const [tokenA, tokenB, feeStr] = poolKey.split('/')
           const fee = parseInt(feeStr || '0') / 1000 // Convert from basis points to percentage
 
+          // Calculate USD values using reserves and token prices
+          const reserve0 = (poolData.reserve0 || 0) / 100
+          const reserve1 = (poolData.reserve1 || 0) / 100
+          const token0PriceUSD = (tokenA && tokenPrices[tokenA]) || 0
+          const token1PriceUSD = (tokenB && tokenPrices[tokenB]) || 0
+          const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
+
+          // Calculate volume (use volume from contract, fallback to 0)
+          const volume1d = (poolData.volume || 0) / 100
+
+          // Calculate fees (use accumulated fees from contract)
+          const fee0 = (poolData.fee0 || 0) / 100
+          const fee1 = (poolData.fee1 || 0) / 100
+          const fees1d = fee0 * token0PriceUSD + fee1 * token1PriceUSD
+
+          // Calculate APR (simplified - based on fees vs liquidity)
+          const apr = liquidityUSD > 0 ? (fees1d * 365) / liquidityUSD : 0
+
           return {
             id: poolKey,
             name: `${await getTokenSymbol(tokenA || '')}-${await getTokenSymbol(tokenB || '')}`,
-            liquidityUSD: poolData.liquidity_usd || 0,
-            volume0: poolData.volume_token_a || 0,
-            volume1: poolData.volume_token_b || 0,
-            volumeUSD: poolData.volume_usd || 0,
-            feeUSD: poolData.fee_usd || 0,
+            liquidityUSD,
+            volume0: reserve0, // Use reserves as volume proxy
+            volume1: reserve1,
+            volumeUSD: volume1d * token0PriceUSD, // Approximate volume USD
+            feeUSD: fees1d,
             swapFee: fee,
-            apr: poolData.apr || 0,
+            apr,
             token0: {
               uuid: tokenA,
               symbol: await getTokenSymbol(tokenA || ''),
@@ -185,16 +218,16 @@ export const poolRouter = createTRPCRouter({
               decimals: 2,
               chainId: 1,
             },
-            reserve0: (poolData.reserve_a || 0) / 100,
-            reserve1: (poolData.reserve_b || 0) / 100,
+            reserve0,
+            reserve1,
             chainId: 1,
-            liquidity: poolData.total_liquidity || 0,
-            volume1d: poolData.volume_24h || 0,
-            fee0: poolData.fee_token_a || 0,
-            fee1: poolData.fee_token_b || 0,
-            fees1d: poolData.fees_24h || 0,
-            txCount: poolData.transaction_count || 0,
-            txCount1d: poolData.transactions_24h || 0,
+            liquidity: 0, // Pool liquidity tokens (not available in current contract)
+            volume1d,
+            fee0,
+            fee1,
+            fees1d,
+            txCount: poolData.transactions || 0,
+            txCount1d: poolData.transactions || 0,
             daySnapshots: [],
             hourSnapshots: [],
           }
@@ -215,12 +248,15 @@ export const poolRouter = createTRPCRouter({
   // Get pool by ID (pool key)
   byId: procedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
     try {
-      const response = await fetchFromPoolManager([`pool_info("${input.id}")`])
-      const poolInfo = response.calls[`pool_info("${input.id}")`].value
+      const response = await fetchFromPoolManager([`pool_info_str("${input.id}")`])
+      const poolInfoStr = response.calls[`pool_info_str("${input.id}")`].value
 
-      if (!poolInfo) {
+      if (!poolInfoStr) {
         throw new Error('Pool not found')
       }
+
+      // Parse the JSON string response
+      const poolInfo = parseJsonResponse(poolInfoStr)
 
       // Parse pool key
       const [tokenA, tokenB, feeStr] = input.id.split('/')
@@ -258,8 +294,15 @@ export const poolRouter = createTRPCRouter({
   // Get user liquidity positions
   userPositions: procedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
     try {
-      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
-      const positions = response.calls[`get_user_positions("${input.address}")`].value || {}
+      const response = await fetchFromPoolManager([`get_user_positions_str("${input.address}")`])
+      const positionsStr = response.calls[`get_user_positions_str("${input.address}")`].value
+
+      if (!positionsStr) {
+        return []
+      }
+
+      // Parse the JSON string response
+      const positions = parseJsonResponse(positionsStr)
 
       const positionPromises = []
       for (const [poolKey, position] of Object.entries(positions)) {
@@ -310,15 +353,19 @@ export const poolRouter = createTRPCRouter({
       try {
         const amount = Math.round(input.amountIn * 100) // Convert to cents
         const response = await fetchFromPoolManager([
-          `find_best_swap_path(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
+          `find_best_swap_path_str(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
         ])
 
-        const pathInfo =
-          response.calls[`find_best_swap_path(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`].value
+        const pathInfoStr =
+          response.calls[`find_best_swap_path_str(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`]
+            .value
 
-        if (!pathInfo) {
+        if (!pathInfoStr) {
           throw new Error('No swap path found')
         }
+
+        // Parse the JSON string response
+        const pathInfo = parseJsonResponse(pathInfoStr)
 
         return {
           path: pathInfo.path || [],
@@ -343,12 +390,15 @@ export const poolRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       try {
-        const response = await fetchFromPoolManager([`pool_info("${input.poolKey}")`], input.timestamp)
-        const poolInfo = response.calls[`pool_info("${input.poolKey}")`].value
+        const response = await fetchFromPoolManager([`pool_info_str("${input.poolKey}")`], input.timestamp)
+        const poolInfoStr = response.calls[`pool_info_str("${input.poolKey}")`].value
 
-        if (!poolInfo) {
+        if (!poolInfoStr) {
           throw new Error('Pool data not found at timestamp')
         }
+
+        // Parse the JSON string response
+        const poolInfo = parseJsonResponse(poolInfoStr)
 
         return {
           poolKey: input.poolKey,

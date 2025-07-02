@@ -1,12 +1,12 @@
 import { Token } from '@dozer/database'
 import {
+  CreateTokenResponse,
+  CreateTokenRpcRequest,
   SendNanoContractRpcRequest,
   SendNanoContractTxResponse,
-  SignOracleDataRpcRequest,
   SignOracleDataResponse,
-  CreateTokenRpcRequest,
-  CreateTokenResponse,
-} from 'hathor-rpc-handler-test'
+  SignOracleDataRpcRequest,
+} from '@hathor/hathor-rpc-handler'
 
 export declare class NCTokenBalance {
   readonly token: Token

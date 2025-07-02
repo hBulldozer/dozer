@@ -1,9 +1,9 @@
-import { NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/types'
 import {
   SendNanoContractRpcRequest,
   SendNanoContractTxResponse,
   sendNanoContractTxRpcRequest,
-} from 'hathor-rpc-handler-test'
+} from '@hathor/hathor-rpc-handler'
+import { NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/types'
 
 import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
@@ -40,7 +40,7 @@ export class Oasis extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: '00',
-          amount: amount,
+          amount: BigInt(amount),
           address: address,
           changeAddress: address,
         },
@@ -71,7 +71,7 @@ export class Oasis extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: this.token,
-          amount: amount,
+          amount: BigInt(amount),
           address: address,
           changeAddress: address,
         },
@@ -148,7 +148,7 @@ export class Oasis extends NanoContract {
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: '00',
-          amount: amount * 100,
+          amount: BigInt(amount * 100),
           address: address,
           changeAddress: address,
         },

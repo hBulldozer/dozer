@@ -74,6 +74,16 @@ async function fetchFromPoolManager(calls: string[], timestamp?: number): Promis
   return await fetchNodeData(endpoint, queryParams)
 }
 
+// Helper function to parse JSON string responses from _str methods
+function parseJsonResponse(jsonString: string): any {
+  try {
+    return JSON.parse(jsonString)
+  } catch (error) {
+    console.error('Error parsing JSON response:', error)
+    throw new Error('Failed to parse contract response')
+  }
+}
+
 const poolInfoCall = async (input: {
   address: string
   contractId: string
@@ -216,8 +226,11 @@ export const profileRouter = createTRPCRouter({
         return []
       }
 
-      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
-      const positions = response.calls[`get_user_positions("${input.address}")`].value || {}
+      const response = await fetchFromPoolManager([`get_user_positions_str("${input.address}")`])
+      const positionsStr = response.calls[`get_user_positions_str("${input.address}")`].value || '{}'
+
+      // Parse the JSON string response
+      const positions = parseJsonResponse(positionsStr)
 
       // Get token prices for USD values
       const pricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
@@ -291,8 +304,11 @@ export const profileRouter = createTRPCRouter({
         }
       }
 
-      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
-      const positions = response.calls[`get_user_positions("${input.address}")`].value || {}
+      const response = await fetchFromPoolManager([`get_user_positions_str("${input.address}")`])
+      const positionsStr = response.calls[`get_user_positions_str("${input.address}")`].value || '{}'
+
+      // Parse the JSON string response
+      const positions = parseJsonResponse(positionsStr)
 
       // Get token prices for USD values
       const pricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])

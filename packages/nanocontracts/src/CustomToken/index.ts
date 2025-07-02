@@ -1,4 +1,5 @@
-import { CreateTokenResponse, createTokenRpcRequest, CreateTokenRpcRequest, RpcMethods } from 'hathor-rpc-handler-test'
+import { CreateTokenResponse, CreateTokenRpcRequest, createTokenRpcRequest } from '@hathor/hathor-rpc-handler'
+
 import { IHathorRpc } from '../types'
 
 export class CustomToken {
@@ -53,7 +54,7 @@ export class CustomToken {
       'testnet',
       this.name,
       this.symbol,
-      this.totalSupply,
+      this.totalSupply.toString(),
       address,
       true,
       true,

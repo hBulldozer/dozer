@@ -76,7 +76,7 @@ export const PoolsTable: FC = () => {
       ?.filter((pool) => {
         return pool.name?.toLowerCase().includes(query.toLowerCase())
       })
-      .filter((pool) => pool.liquidityUSD > 10)
+      .filter((pool) => pool.liquidityUSD > 1)
       .filter((pool) => {
         if (filters.apr.min || filters.apr.max) {
           return pool.apr * 100 >= (filters.apr.min || 0) && pool.apr * 100 <= (filters.apr.max || maxAPR)
