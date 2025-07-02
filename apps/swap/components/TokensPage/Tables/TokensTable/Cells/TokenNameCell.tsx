@@ -11,29 +11,21 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
   const ref = useRef<HTMLDivElement>(null)
   const inViewport = useInViewport(ref)
 
-  // Memoize token creation to avoid unnecessary recreations
-  const token = useMemo(() => {
-    if (row.id.includes('native')) {
-      const _token = row.token0.uuid == '00' ? row.token0 : row.token1
-      return new Token({
-        uuid: _token.uuid,
-        name: _token.name,
-        decimals: _token.decimals,
-        symbol: _token.symbol,
-        chainId: _token.chainId,
-      })
-    } else {
-      const _token = row.token0.uuid != '00' ? row.token0 : row.token1
-      return new Token({
+  // Always select the token whose UUID matches the row's id
+  const tokenUuid = row.id.replace('token-', '')
+  const _token = row.token0.uuid === tokenUuid ? row.token0 : row.token1
+  const token = useMemo(
+    () =>
+      new Token({
         uuid: _token.uuid,
         name: _token.name,
         decimals: _token.decimals,
         symbol: _token.symbol,
         chainId: _token.chainId,
         imageUrl: _token.imageUrl || undefined,
-      })
-    }
-  }, [row])
+      }),
+    [row]
+  )
 
   const shouldPrioritize = inViewport || (!ref.current && token.symbol === 'HTR')
 

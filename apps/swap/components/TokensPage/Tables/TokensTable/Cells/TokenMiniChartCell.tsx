@@ -71,8 +71,9 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   const tokenUuid = row.id.includes('native') ? row.token0.uuid : row.token1.uuid
   const lastPrice = lastPrices?.[tokenUuid]
   let price24h: number[] = []
-  if (prices24h) {
-    price24h = prices24h[tokenUuid].map((p) => Number(p.toPrecision(5)))
+  const arr = prices24h?.[tokenUuid]
+  if (Array.isArray(arr)) {
+    price24h = arr.map((p) => Number(p.toPrecision(5)))
   }
   price24h.push(lastPrice ? Number(lastPrice.toPrecision(5)) : price24h[0])
   const points = price24h.map((p, i) => ({ x: i, y: p }))

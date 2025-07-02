@@ -46,12 +46,17 @@ export const PoolsTable: FC = () => {
     apr: { min: undefined, max: undefined },
   })
 
+  // Add mounted state to handle hydration
+  const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
+    setMounted(true)
     setRendNetwork(network)
   }, [network])
 
   // Use enabled option to control when queries run
   const poolsQuery = api.getPools.all.useQuery(undefined, {
+    enabled: mounted, // Only run after mount
     suspense: false, // Important for hydration
     refetchOnMount: false,
     staleTime: 30000, // Reduce refetches
@@ -59,6 +64,7 @@ export const PoolsTable: FC = () => {
   })
 
   const pricesQuery = api.getPrices.allUSD.useQuery(undefined, {
+    enabled: mounted, // Only run after mount
     staleTime: 30000,
     cacheTime: 1000 * 60 * 5,
   })
@@ -68,6 +74,10 @@ export const PoolsTable: FC = () => {
   const prices = pricesQuery.data || {}
 
   const pools = useMemo(() => {
+    if (!mounted || !_pools.length) {
+      return []
+    }
+
     const maxAPR = Math.max(...(_pools?.map((pool) => pool.apr) || [])) * 100
     const maxTVL = Math.max(...(_pools?.map((pool) => pool.liquidityUSD) || []))
     const maxFees = Math.max(...(_pools?.map((pool) => pool.fees1d) || []))
@@ -110,9 +120,13 @@ export const PoolsTable: FC = () => {
         })
         return { ...pool, priceHtr: prices?.['00'], isPending: pool.id.startsWith('pending-'), token0, token1 }
       })
-  }, [_pools, query, filters])
+  }, [_pools, query, filters, prices, mounted])
 
   const maxValues = useMemo(() => {
+    if (!mounted || !_pools.length) {
+      return { tvl: 0, volume: 0, fees: 0, apr: 0 }
+    }
+
     const maxTVL = Math.max(...(_pools?.map((pool) => pool.liquidityUSD) || []))
     const maxVolume = Math.max(...(_pools?.map((pool) => pool.volume1d) || []))
     const maxFees = Math.max(...(_pools?.map((pool) => pool.fees1d) || []))
@@ -123,7 +137,7 @@ export const PoolsTable: FC = () => {
       fees: maxFees,
       apr: maxAPR,
     }
-  }, [_pools])
+  }, [_pools, mounted])
 
   const args = useMemo(
     () => ({
@@ -156,6 +170,8 @@ export const PoolsTable: FC = () => {
   })
 
   useEffect(() => {
+    if (!mounted) return // Wait for mount
+
     if (isSm && !isMd) {
       setColumnVisibility({
         volume: false,
@@ -174,15 +190,28 @@ export const PoolsTable: FC = () => {
         fees: false,
       })
     }
-  }, [isMd, isSm])
+  }, [isMd, isSm, mounted])
 
   const rowLink = useCallback((row: Pair) => {
     return `/${row.id}`
   }, [])
 
   const isSomePending = useMemo(() => {
+    if (!mounted) return false
     return table.getRowModel().rows.some((row) => row.original.id.startsWith('pending-'))
-  }, [table])
+  }, [table, mounted])
+
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <>
+        <div className="flex flex-row items-center">
+          <div className="h-12 w-96 bg-stone-700 animate-pulse rounded"></div>
+        </div>
+        <div className="h-96 w-full bg-stone-700 animate-pulse rounded"></div>
+      </>
+    )
+  }
 
   return (
     <>

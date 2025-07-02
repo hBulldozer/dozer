@@ -299,15 +299,12 @@ export const pricesRouter = createTRPCRouter({
   }),
   all: procedure.query(async ({ ctx }) => {
     try {
-      console.log('Legacy all method - Fetching USD prices from contract ID:', POOL_MANAGER_CONTRACT_ID)
       const response = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-      console.log('Legacy all method - Raw response:', JSON.stringify(response, null, 2))
       const prices = response.calls['get_all_token_prices_in_usd()'].value || {}
-      console.log('Legacy all method - Prices found:', prices)
-
-      return prices
+      // Format prices: divide by 1_000000
+      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, (v as number) / 1_000000]))
+      return formatted
     } catch (error) {
-      console.error('Error fetching all USD prices:', error)
       return {}
     }
   }),
@@ -469,10 +466,8 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager(['get_token_price_in_usd("00")'])
       const htrPrice = response.calls['get_token_price_in_usd("00")'].value || 0
-
-      return htrPrice
+      return htrPrice / 1_000000
     } catch (error) {
-      console.error('Error fetching HTR price in USD:', error)
       return 0
     }
   }),
@@ -487,15 +482,11 @@ export const pricesRouter = createTRPCRouter({
   // Get all token prices in USD
   allUSD: procedure.query(async ({ ctx }) => {
     try {
-      console.log('Fetching USD prices from contract ID:', POOL_MANAGER_CONTRACT_ID)
       const response = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-      console.log('Raw response from get_all_token_prices_in_usd():', JSON.stringify(response, null, 2))
       const prices = response.calls['get_all_token_prices_in_usd()'].value || {}
-      console.log('Prices found:', prices)
-
-      return prices
+      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, (v as number) / 1_000000]))
+      return formatted
     } catch (error) {
-      console.error('Error fetching all USD prices:', error)
       return {}
     }
   }),
@@ -505,10 +496,9 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager(['get_all_token_prices_in_htr()'])
       const prices = response.calls['get_all_token_prices_in_htr()'].value || {}
-
-      return prices
+      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, (v as number) / 1_000000]))
+      return formatted
     } catch (error) {
-      console.error('Error fetching all HTR prices:', error)
       return {}
     }
   }),
@@ -518,10 +508,8 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager([`get_token_price_in_usd("${input.tokenUid}")`])
       const price = response.calls[`get_token_price_in_usd("${input.tokenUid}")`].value || 0
-
-      return price
+      return price / 1_000000
     } catch (error) {
-      console.error(`Error fetching USD price for token ${input.tokenUid}:`, error)
       return 0
     }
   }),
@@ -531,10 +519,8 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager([`get_token_price_in_htr("${input.tokenUid}")`])
       const price = response.calls[`get_token_price_in_htr("${input.tokenUid}")`].value || 0
-
-      return price
+      return price / 1_000000
     } catch (error) {
-      console.error(`Error fetching HTR price for token ${input.tokenUid}:`, error)
       return 0
     }
   }),
@@ -544,10 +530,8 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager(['get_token_price_in_usd("00")'])
       const htrPrice = response.calls['get_token_price_in_usd("00")'].value || 0
-
-      return htrPrice
+      return htrPrice / 1_000000
     } catch (error) {
-      console.error('Error fetching HTR price in USD:', error)
       return 0
     }
   }),
@@ -564,10 +548,8 @@ export const pricesRouter = createTRPCRouter({
       try {
         const response = await fetchFromPoolManager([`get_token_price_in_usd("${input.tokenUid}")`], input.timestamp)
         const price = response.calls[`get_token_price_in_usd("${input.tokenUid}")`].value || 0
-
-        return price
+        return price / 1_000000
       } catch (error) {
-        console.error(`Error fetching historical USD price for token ${input.tokenUid} at ${input.timestamp}:`, error)
         return 0
       }
     }),
@@ -584,10 +566,8 @@ export const pricesRouter = createTRPCRouter({
       try {
         const response = await fetchFromPoolManager([`get_token_price_in_htr("${input.tokenUid}")`], input.timestamp)
         const price = response.calls[`get_token_price_in_htr("${input.tokenUid}")`].value || 0
-
-        return price
+        return price / 1_000000
       } catch (error) {
-        console.error(`Error fetching historical HTR price for token ${input.tokenUid} at ${input.timestamp}:`, error)
         return 0
       }
     }),
@@ -628,7 +608,7 @@ export const pricesRouter = createTRPCRouter({
             fetchFromPoolManager([methodName], timestamp)
               .then((response) => ({
                 timestamp,
-                price: response.calls[methodName].value || 0,
+                price: (response.calls[methodName].value || 0) / 1_000000,
               }))
               .catch(() => ({
                 timestamp,
@@ -645,7 +625,6 @@ export const pricesRouter = createTRPCRouter({
           date: new Date(point.timestamp * 1000).toISOString(),
         }))
       } catch (error) {
-        console.error(`Error fetching chart data for token ${input.tokenUid}:`, error)
         return []
       }
     }),

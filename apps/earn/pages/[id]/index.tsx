@@ -85,19 +85,28 @@ const Pool = () => {
 
   const id = router.query.id as string
 
-  const { data: initialPrices = {} } = api.getPrices.allUSD.useQuery()
-  if (!initialPrices) return <></>
-  const { data: initialPools } = api.getPools.all.useQuery()
-  if (!initialPools) return <></>
+  const { data: initialPrices = {} } = api.getPrices.allUSD.useQuery(undefined, {
+    suspense: false,
+    refetchOnMount: false,
+    staleTime: 30000,
+  })
+  const { data: initialPools } = api.getPools.all.useQuery(undefined, {
+    suspense: false,
+    refetchOnMount: false,
+    staleTime: 30000,
+  })
 
-  const initialPair = initialPools.find((pool: any) => pool.id === id)
-  if (!initialPair) return <></>
-
+  const initialPair = initialPools?.find((pool: any) => pool.id === id)
   const tokens = initialPair ? [initialPair.token0, initialPair.token1] : []
-  if (!tokens) return <></>
 
-  const { data: detailedPrices = {}, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery()
-  const { data: detailedPools, isLoading: isLoadingPools } = api.getPools.all.useQuery()
+  const { data: detailedPrices = {}, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery(undefined, {
+    staleTime: 30000,
+    enabled: !!initialPrices,
+  })
+  const { data: detailedPools, isLoading: isLoadingPools } = api.getPools.all.useQuery(undefined, {
+    staleTime: 30000,
+    enabled: !!initialPools,
+  })
 
   const detailedPair = detailedPools?.find((pool: any) => pool.id === id)
 
@@ -106,23 +115,35 @@ const Pool = () => {
   const prices = detailedPrices || initialPrices || {}
   const pair = detailedPair || initialPair
 
+  // Show loading overlay instead of early returns
+  const isLoading = !initialPrices || !initialPools || !initialPair || !tokens.length || !pair
+
+  if (isLoading) {
+    return (
+      <Layout breadcrumbs={[]}>
+        <LoadingOverlay show={true} />
+      </Layout>
+    )
+  }
+
   return (
     <PoolPositionProvider pair={pair} prices={prices}>
       <>
-        <LoadingOverlay show={!initialPrices || !initialPools || !initialPair || !tokens || !pair} />
         <Layout breadcrumbs={LINKS({ pair })}>
           <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
             <div className="flex flex-col order-1 gap-9">
               <PoolHeader pair={pair} prices={prices} isLoading={isLoadingDetailed} />
               <hr className="my-3 border-t border-stone-200/5" />
-              <PoolChart pair={pair} />
+              {/* TODO: Re-enable once history data access is refined */}
+              {/* <PoolChart pair={pair} /> */}
               <AppearOnMount>
                 <PoolStats pair={pair} prices={prices} />
               </AppearOnMount>
 
-              <AppearOnMount>
+              {/* TODO: Re-enable once history data access is refined */}
+              {/* <AppearOnMount>
                 <TransactionHistory pair={pair} />
-              </AppearOnMount>
+              </AppearOnMount> */}
             </div>
 
             <div className="flex flex-col order-2 gap-4">
