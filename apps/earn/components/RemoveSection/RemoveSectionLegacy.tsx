@@ -12,7 +12,7 @@ import { dbPoolWithTokens } from '@dozer/api'
 import { useUnderlyingTokenBalanceFromPair } from '@dozer/api'
 import { usePoolPosition } from '../PoolPositionProvider'
 import { api } from '../../utils/api'
-import { LiquidityPool } from '@dozer/nanocontracts'
+import { PoolManager } from '@dozer/nanocontracts'
 import { get } from 'lodash'
 
 interface RemoveSectionLegacyProps {
@@ -57,7 +57,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   const token0 = toToken(pair.token0)
   const token1 = toToken(pair.token1)
 
-  const liquiditypool = new LiquidityPool(token0?.uuid || '', token1?.uuid || '', 5, 50, pair?.id || '')
+  const poolManager = new PoolManager()
 
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
@@ -125,14 +125,15 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   const onClick = async () => {
     setSentTX(true)
     if (currencyAToRemove && currencyBToRemove && percentage) {
-      liquiditypool.remove_liquidity(
+      poolManager.removeLiquidity(
         hathorRpc,
-        pair.id,
+        address,
         token0.uuid,
         Number(currencyAToRemove?.toFixed(2) || 0),
         token1.uuid,
         Number(currencyBToRemove?.toFixed(2) || 0),
-        address
+        // TODO: get fee from pool manager
+        5
       )
     }
   }

@@ -35,14 +35,14 @@ export const Rate: FC<Rate> = ({ children, token1, token2, prices }) => {
 
   const content = isMounted ? (
     <>
-      {token1 && token2 && trade.amountSpecified ? (
+      {token1 && token2 && trade.amountSpecified && trade.outputAmount ? (
         invert ? (
           <>
-            1 {token2?.symbol} = {(trade.amountSpecified / trade.outputAmount).toFixed(2)} {token1?.symbol}
+            1 {token2?.symbol} = {(trade.amountSpecified / trade.outputAmount).toFixed(6)} {token1?.symbol}
           </>
         ) : (
           <>
-            1 {token1?.symbol} = {(trade.outputAmount / trade.amountSpecified).toFixed(2)} {token2?.symbol}
+            1 {token1?.symbol} = {(trade.outputAmount / trade.amountSpecified).toFixed(6)} {token2?.symbol}
           </>
         )
       ) : (

@@ -9,15 +9,250 @@ import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
 import { IHathorRpc } from '../types'
 
-export class LiquidityPool extends NanoContract {
+export class PoolManager extends NanoContract {
+  private readonly poolManagerContractId: string
+  private readonly poolManagerBlueprintId: string
+
+  public constructor(poolManagerContractId?: string, poolManagerBlueprintId?: string) {
+    super(poolManagerContractId || process.env.POOL_MANAGER_CONTRACT_ID || 'fake')
+    this.poolManagerContractId = poolManagerContractId || process.env.POOL_MANAGER_CONTRACT_ID || ''
+    this.poolManagerBlueprintId = poolManagerBlueprintId || process.env.POOL_MANAGER_BLUEPRINT_ID || ''
+
+    if (!this.poolManagerContractId || this.poolManagerContractId === 'fake') {
+      console.warn('PoolManager: POOL_MANAGER_CONTRACT_ID environment variable not set')
+    }
+    if (!this.poolManagerBlueprintId) {
+      console.warn('PoolManager: POOL_MANAGER_BLUEPRINT_ID environment variable not set')
+    }
+  }
+
+  /**
+   * Create a new pool in the manager
+   */
+  public async createPool(
+    hathorRpc: IHathorRpc,
+    address: string,
+    tokenA: string,
+    tokenB: string,
+    amountA: number,
+    amountB: number,
+    fee: number
+  ): Promise<SendNanoContractTxResponse> {
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'create_pool',
+      this.poolManagerContractId,
+      [
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: tokenA,
+          amount: BigInt(Math.ceil(amountA * 100)),
+          address: address,
+          changeAddress: address,
+        },
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: tokenB,
+          amount: BigInt(Math.ceil(amountB * 100)),
+          address: address,
+          changeAddress: address,
+        },
+      ],
+      [fee], // Only fee is needed as argument
+      true,
+      this.poolManagerContractId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    return rpcResponse
+  }
+
+  /**
+   * Swap with exact input through the best path
+   */
+  public async swapExactTokensForTokens(
+    hathorRpc: IHathorRpc,
+    address: string,
+    tokenIn: string,
+    amountIn: number,
+    tokenOut: string,
+    amountOut: number,
+    path?: string // Optional path, if not provided, contract will find best path
+  ): Promise<SendNanoContractTxResponse> {
+    // If path is provided, use swap_exact_tokens_for_tokens_through_path
+    // Otherwise, use swap_exact_tokens_for_tokens with default fee
+    const method = path ? 'swap_exact_tokens_for_tokens_through_path' : 'swap_exact_tokens_for_tokens'
+    const args = path ? [path] : [3] // Default fee of 3 basis points (0.3%) if no path
+
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      method,
+      this.poolManagerBlueprintId,
+      [
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: tokenIn,
+          amount: BigInt(amountIn * 100),
+          address: address,
+          changeAddress: address,
+        },
+        {
+          type: NanoContractActionType.WITHDRAWAL,
+          token: tokenOut,
+          amount: BigInt(amountOut * 100),
+          address: address,
+          changeAddress: address,
+        },
+      ],
+      args,
+      true,
+      this.poolManagerContractId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    return rpcResponse
+  }
+
+  /**
+   * Swap with exact output through the best path
+   */
+  public async swapTokensForExactTokens(
+    hathorRpc: IHathorRpc,
+    address: string,
+    tokenIn: string,
+    amountIn: number,
+    tokenOut: string,
+    amountOut: number,
+    path?: string
+  ): Promise<SendNanoContractTxResponse> {
+    const method = path ? 'swap_tokens_for_exact_tokens_through_path' : 'swap_tokens_for_exact_tokens'
+    const args = path ? [path] : [3] // Default fee of 3 basis points (0.3%) if no path
+
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      method,
+      this.poolManagerBlueprintId,
+      [
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: tokenIn,
+          amount: BigInt(amountIn * 100),
+          address: address,
+          changeAddress: address,
+        },
+        {
+          type: NanoContractActionType.WITHDRAWAL,
+          token: tokenOut,
+          amount: BigInt(amountOut * 100),
+          address: address,
+          changeAddress: address,
+        },
+      ],
+      args,
+      true,
+      this.poolManagerContractId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    return rpcResponse
+  }
+
+  /**
+   * Add liquidity to a pool
+   */
+  public async addLiquidity(
+    hathorRpc: IHathorRpc,
+    address: string,
+    tokenA: string,
+    amountA: number,
+    tokenB: string,
+    amountB: number,
+    fee: number
+  ): Promise<SendNanoContractTxResponse> {
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'add_liquidity',
+      this.poolManagerBlueprintId,
+      [
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: tokenA,
+          amount: BigInt(amountA * 100),
+          address: address,
+          changeAddress: address,
+        },
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: tokenB,
+          amount: BigInt(amountB * 100),
+          address: address,
+          changeAddress: address,
+        },
+      ],
+      [fee],
+      true,
+      this.poolManagerContractId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    return rpcResponse
+  }
+
+  /**
+   * Remove liquidity from a pool
+   */
+  public async removeLiquidity(
+    hathorRpc: IHathorRpc,
+    address: string,
+    tokenA: string,
+    amountA: number,
+    tokenB: string,
+    amountB: number,
+    fee: number
+  ): Promise<SendNanoContractTxResponse> {
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'remove_liquidity',
+      this.poolManagerBlueprintId,
+      [
+        {
+          type: NanoContractActionType.WITHDRAWAL,
+          token: tokenA,
+          amount: BigInt(amountA * 100),
+          address: address,
+          changeAddress: address,
+        },
+        {
+          type: NanoContractActionType.WITHDRAWAL,
+          token: tokenB,
+          amount: BigInt(amountB * 100),
+          address: address,
+          changeAddress: address,
+        },
+      ],
+      [fee],
+      true,
+      this.poolManagerContractId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    return rpcResponse
+  }
+}
+
+/**
+ * @deprecated LiquidityPool is deprecated. Use PoolManager instead.
+ * This class is kept for backward compatibility.
+ */
+export class LiquidityPool extends PoolManager {
   public readonly token0: string
   public readonly token1: string
   public fee: number
   public protocol_fee: number
 
   public constructor(token0: string, token1: string, fee: number, protocol_fee: number, ncid?: string) {
-    if (ncid) super(ncid)
-    else super('fake')
+    console.warn('LiquidityPool is deprecated. Use PoolManager instead.')
+    super(ncid || process.env.POOL_MANAGER_CONTRACT_ID)
     this.token0 = token0
     this.token1 = token1
     this.fee = fee
@@ -26,66 +261,28 @@ export class LiquidityPool extends NanoContract {
 
   public async getInfo() {
     // get info from network: it can be done by the ncid or by the tokens
+    console.warn('getInfo() is deprecated and not implemented in PoolManager')
   }
 
+  /**
+   * @deprecated Use PoolManager.createPool() instead
+   */
   public async initialize(admin_address: string, amount0: number, amount1: number) {
-    if (!process.env.LPBLUEPRINT || '') throw new Error('Missing environment variables')
-    const actions: NCAction[] = [
-      { type: 'deposit', token: this.token0, amount: 100 * amount0 },
-      { type: 'deposit', token: this.token1, amount: 100 * amount1 },
-    ]
-    const args: NCArgs[] = [this.token0, this.token1, this.fee, this.protocol_fee]
-    const response = await this.create(process.env.LPBLUEPRINT || '', admin_address, actions, args)
-    return response
+    console.warn('initialize() is deprecated. Use PoolManager.createPool() instead.')
+    return this.createPool(
+      {} as IHathorRpc, // This will fail, but maintains the interface
+      admin_address,
+      this.token0,
+      this.token1,
+      amount0,
+      amount1,
+      this.fee
+    )
   }
 
-  // public async swap_tokens_for_exact_tokens(
-  //   token_in: string,
-  //   amount_in: number,
-  //   token_out: string,
-  //   amount_out: number,
-  //   address: string,
-  //   wallet?: string
-  // ) {
-  //   const actions: NCAction[] = [
-  //     {
-  //       type: 'deposit',
-  //       token: token_in,
-  //       amount: (amount_in * 100),
-  //       address: address,
-  //       changeAddress: address,
-  //     },
-  //     { type: 'withdrawal', token: token_out, amount: (amount_out * 100), address: address },
-  //   ]
-  //   const args: NCArgs[] = []
-  //   // console.log('actions', actions)
-  //   const response = await this.execute(address, 'swap_tokens_for_exact_tokens', actions, args, wallet)
-  //   return response
-  // }
-  // public async swap_exact_tokens_for_tokens(
-  //   token_in: string,
-  //   amount_in: number,
-  //   token_out: string,
-  //   amount_out: number,
-  //   address: string,
-  //   wallet?: string
-  // ) {
-  //   const actions: NCAction[] = [
-  //     {
-  //       type: 'deposit',
-  //       token: token_in,
-  //       amount: (amount_in * 100),
-  //       address: address,
-  //       changeAddress: address,
-  //     },
-  //     { type: 'withdrawal', token: token_out, amount: (amount_out * 100), address: address },
-  //   ]
-  //   const args: NCArgs[] = []
-  //   // console.log('actions', actions)
-  //   const response = await this.execute(address, 'swap_exact_tokens_for_tokens', actions, args, wallet)
-  //   return response
-  // }
-
+  /**
+   * @deprecated Use PoolManager.createPool() instead
+   */
   public async wc_initialize(
     hathorRpc: IHathorRpc,
     address: string,
@@ -95,192 +292,70 @@ export class LiquidityPool extends NanoContract {
     amount1: number,
     fee: number,
     protocol_fee: number
-  ) {
-    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
-      'initialize',
-      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a0',
-      [
-        {
-          type: NanoContractActionType.DEPOSIT,
-          token: token0,
-          amount: BigInt(Math.ceil(amount0 * 100)),
-          address: address,
-          changeAddress: address,
-        },
-        {
-          type: NanoContractActionType.DEPOSIT,
-          token: token1,
-          amount: BigInt(Math.ceil(amount1 * 100)),
-          address: address,
-          changeAddress: address,
-        },
-      ],
-      [token0, token1, fee, protocol_fee],
-      true,
-      null
-    )
-    console.log('Will send rpc req: ', ncTxRpcReq)
-
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
-
-    return rpcResponse
+  ): Promise<SendNanoContractTxResponse> {
+    console.warn('wc_initialize() is deprecated. Use PoolManager.createPool() instead.')
+    return this.createPool(hathorRpc, address, token0, token1, amount0, amount1, fee)
   }
 
+  /**
+   * Legacy method signature for backward compatibility
+   */
   public async swap_exact_tokens_for_tokens(
     hathorRpc: IHathorRpc,
     address: string,
-    ncId: string,
+    ncId: string, // This parameter is ignored in the new implementation
     token_in: string,
     amount_in: number,
     token_out: string,
     amount_out: number
-  ) {
-    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
-      'swap_exact_tokens_for_tokens',
-      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a0',
-      [
-        {
-          type: NanoContractActionType.DEPOSIT,
-          token: token_in,
-          amount: BigInt(amount_in * 100),
-          address: address,
-          changeAddress: address,
-        },
-        {
-          type: NanoContractActionType.WITHDRAWAL,
-          token: token_out,
-          amount: BigInt(amount_out * 100),
-          address: address,
-          changeAddress: address,
-        },
-      ],
-      [],
-      true,
-      ncId
-    )
-
-    console.log('Will send rpc req: ', ncTxRpcReq)
-
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
-
-    return rpcResponse
+  ): Promise<SendNanoContractTxResponse> {
+    return this.swapExactTokensForTokens(hathorRpc, address, token_in, amount_in, token_out, amount_out)
   }
 
+  /**
+   * Legacy method signature for backward compatibility
+   */
   public async swap_tokens_for_exact_tokens(
     hathorRpc: IHathorRpc,
     address: string,
-    ncId: string,
+    ncId: string, // This parameter is ignored in the new implementation
     token_in: string,
     amount_in: number,
     token_out: string,
     amount_out: number
-  ) {
-    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
-      'swap_tokens_for_exact_tokens',
-      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a0',
-      [
-        {
-          type: NanoContractActionType.DEPOSIT,
-          token: token_in,
-          amount: BigInt(amount_in * 100),
-          address: address,
-          changeAddress: address,
-        },
-        {
-          type: NanoContractActionType.WITHDRAWAL,
-          token: token_out,
-          amount: BigInt(amount_out * 100),
-          address: address,
-          changeAddress: address,
-        },
-      ],
-      [],
-      true,
-      ncId
-    )
-
-    console.log('Will send rpc req: ', ncTxRpcReq)
-
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
-
-    return rpcResponse
+  ): Promise<SendNanoContractTxResponse> {
+    return this.swapTokensForExactTokens(hathorRpc, address, token_in, amount_in, token_out, amount_out)
   }
 
+  /**
+   * Legacy method signature for backward compatibility
+   */
   public async add_liquidity(
     hathorRpc: IHathorRpc,
-    ncId: string,
+    ncId: string, // This parameter is ignored in the new implementation
     token_a: string,
     amount_a: number,
     token_b: string,
     amount_b: number,
     address: string
-  ) {
-    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
-      'add_liquidity',
-      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a0',
-      [
-        {
-          type: NanoContractActionType.DEPOSIT,
-          token: token_a,
-          amount: BigInt(amount_a * 100),
-          address: address,
-          changeAddress: address,
-        },
-        {
-          type: NanoContractActionType.DEPOSIT,
-          token: token_b,
-          amount: BigInt(amount_b * 100),
-          address: address,
-          changeAddress: address,
-        },
-      ],
-      [],
-      true,
-      ncId
-    )
-    console.log('Will send rpc req: ', ncTxRpcReq)
-
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
-
-    return rpcResponse
+  ): Promise<SendNanoContractTxResponse> {
+    // Default fee of 0.3% (3 basis points) for backward compatibility
+    return this.addLiquidity(hathorRpc, address, token_a, amount_a, token_b, amount_b, 3)
   }
 
+  /**
+   * Legacy method signature for backward compatibility
+   */
   public async remove_liquidity(
     hathorRpc: IHathorRpc,
-    ncId: string,
+    ncId: string, // This parameter is ignored in the new implementation
     token_a: string,
     amount_a: number,
     token_b: string,
     amount_b: number,
     address: string
-  ) {
-    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
-      'remove_liquidity',
-      '27db2b0b1a943c2714fb19d190ce87dc0094bba463b26452dd98de21a42e96a0',
-      [
-        {
-          type: NanoContractActionType.WITHDRAWAL,
-          token: token_a,
-          amount: BigInt(amount_a * 100),
-          address: address,
-          changeAddress: address,
-        },
-        {
-          type: NanoContractActionType.WITHDRAWAL,
-          token: token_b,
-          amount: BigInt(amount_b * 100),
-          address: address,
-          changeAddress: address,
-        },
-      ],
-      [],
-      true,
-      ncId
-    )
-    console.log('Will send rpc req: ', ncTxRpcReq)
-
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
-
-    return rpcResponse
+  ): Promise<SendNanoContractTxResponse> {
+    // Default fee of 0.3% (3 basis points) for backward compatibility
+    return this.removeLiquidity(hathorRpc, address, token_a, amount_a, token_b, amount_b, 3)
   }
 }

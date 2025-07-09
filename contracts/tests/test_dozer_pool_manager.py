@@ -2901,4 +2901,3 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         )
 
         self._check_balance()
-

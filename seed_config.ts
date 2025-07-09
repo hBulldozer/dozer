@@ -15,6 +15,10 @@ export interface PoolConfig {
   tokenQuantity: number
   fee: number
   protocolFee: number
+  // Optional fields for non-HTR pools
+  dzrQuantity?: number
+  isNonHTRPool?: boolean
+  pairTokenSymbol?: string
 }
 
 export interface OasisConfig {
@@ -72,24 +76,35 @@ export const seedConfig: SeedConfig = {
   pools: [
     {
       tokenSymbol: 'DZR',
-      htrQuantity: 100000,
-      tokenQuantity: 10000,
-      fee: 0.05,
+      htrQuantity: 25000000, // 25M HTR worth $500k (at $0.02/HTR)
+      tokenQuantity: 1000000, // 1M DZR worth $500k (at $0.50/DZR) - balanced pool
+      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     {
       tokenSymbol: 'hUSDC',
-      htrQuantity: 462000,
-      tokenQuantity: 18480,
-      fee: 0.05,
+      htrQuantity: 25000000, // 25M HTR worth $500k (at $0.02/HTR)
+      tokenQuantity: 500000, // 500k USDC worth $500k (at $1.00/USDC) - balanced pool
+      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     {
       tokenSymbol: 'hBTC',
-      htrQuantity: 100000000,
-      tokenQuantity: 100,
-      fee: 0.05,
+      htrQuantity: 20000000, // 20M HTR worth $400k (at $0.02/HTR)
+      tokenQuantity: 4, // 4 BTC worth $400k (at $100k/BTC) - balanced pool
+      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
       protocolFee: 0.01,
+    },
+    // Non-HTR pool for multi-hop testing: DZR/hUSDC
+    {
+      tokenSymbol: 'hUSDC', // will be paired with DZR (instead of HTR)
+      htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
+      tokenQuantity: 250000, // 250k USDC worth $250k (increased liquidity)
+      dzrQuantity: 500000, // 500k DZR worth $250k (at $0.50/DZR) - balanced pool
+      fee: 0.005, // 0.5% -> converts to 5 basis points
+      protocolFee: 0.01,
+      isNonHTRPool: true, // Flag to identify this as a non-HTR pool
+      pairTokenSymbol: 'DZR', // The other token in the pair
     },
     // {
     //   tokenSymbol: 'hSLT7',
@@ -102,11 +117,11 @@ export const seedConfig: SeedConfig = {
   oasis: [
     {
       tokenSymbol: 'hUSDC',
-      htrQuantity: 1_000_000,
+      htrQuantity: 10_000_000,
     },
     {
       tokenSymbol: 'hBTC',
-      htrQuantity: 10_000_000,
+      htrQuantity: 50_000_000,
     },
     // {
     //   tokenSymbol: 'hSLT7',

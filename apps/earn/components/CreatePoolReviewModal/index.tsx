@@ -16,7 +16,7 @@ import {
 } from '@dozer/ui'
 import { useAccount, useNetwork, useTrade, TokenBalance, useSettings } from '@dozer/zustand'
 import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
-import { LiquidityPool } from '@dozer/nanocontracts'
+import { PoolManager } from '@dozer/nanocontracts'
 import { get } from 'lodash'
 import { api } from '../../utils/api'
 import { Rate } from '../Rate'
@@ -52,21 +52,20 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
 
   const createPoolMutation = api.getPools.createPool.useMutation()
 
-  const liquidityPool = new LiquidityPool(token0?.uuid || '', token1?.uuid || '', 5, 50)
+  const poolManager = new PoolManager()
 
   const onClick = async () => {
     setSentTX(true)
     if (token0 && token1 && input0 && input1) {
       try {
-        const response = await liquidityPool.wc_initialize(
+        const response = await poolManager.createPool(
           hathorRpc,
           address,
           token0.uuid,
           token1.uuid,
           parseFloat(input0),
           parseFloat(input1),
-          0,
-          0
+          5
         )
       } catch (error) {
         console.error('Error initializing pool:', error)

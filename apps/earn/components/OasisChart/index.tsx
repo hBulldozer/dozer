@@ -1,6 +1,11 @@
 import { text } from 'stream/consumers'
 import { ImprovedPairCalculator, TokenPrices, TradingPair } from '../../utils/calculationOasis'
-import ReactECharts from 'echarts-for-react'
+import dynamic from 'next/dynamic'
+
+const ReactECharts = dynamic(() => import('echarts-for-react'), {
+  ssr: false,
+  loading: () => <div className="h-full bg-stone-800 animate-pulse rounded" />
+})
 
 interface ChartProps {
   liquidityValue: number

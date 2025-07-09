@@ -1,4 +1,4 @@
-import { LiquidityPool } from './liquiditypool'
+import { PoolManager } from './liquiditypool'
 import { Oasis } from './oasis'
 import { NanoContract } from './nanocontract'
 

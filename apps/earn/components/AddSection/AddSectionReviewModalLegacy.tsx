@@ -4,7 +4,7 @@ import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } 
 import { FC, ReactNode, useEffect, useState } from 'react'
 import { useAccount, useNetwork, useTrade, TokenBalance, useSettings, useTempTxStore, TradeType } from '@dozer/zustand'
 import { AddSectionReviewModal } from './AddSectionReviewModal'
-import { LiquidityPool } from '@dozer/nanocontracts'
+import { PoolManager } from '@dozer/nanocontracts'
 import { api } from '../../utils/api'
 import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { get } from 'lodash'
@@ -43,7 +43,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
 
-  const liquiditypool = new LiquidityPool(mainCurrency?.uuid || '', otherCurrency?.uuid || '', 5, 50, pool?.id || '')
+  const poolManager = new PoolManager()
 
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
@@ -128,14 +128,14 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   const onClick = async () => {
     setSentTX(true)
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency && networkData) {
-      const response = await liquiditypool.add_liquidity(
+      const response = await poolManager.addLiquidity(
         hathorRpc,
-        pool.id,
+        address,
         mainCurrency.uuid,
         amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
         otherCurrency.uuid,
         outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
-        address
+        5
       )
       addTempTx(
         pool.id,

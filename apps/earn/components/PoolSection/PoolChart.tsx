@@ -2,9 +2,14 @@ import { formatPercent, formatUSD } from '@dozer/format'
 import { Pair, PairHourSnapshot } from '@dozer/api'
 import { AppearOnMount, classNames, Typography } from '@dozer/ui'
 import { format } from 'date-fns'
-import ReactECharts from 'echarts-for-react'
 import { EChartsOption } from 'echarts-for-react/lib/types'
 import { FC, useCallback, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
+
+const ReactECharts = dynamic(() => import('echarts-for-react'), {
+  ssr: false,
+  loading: () => <div className="h-96 bg-stone-800 animate-pulse rounded" />
+})
 import resolveConfig from 'tailwindcss/resolveConfig'
 
 import tailwindConfig from '../../tailwind.config.js'

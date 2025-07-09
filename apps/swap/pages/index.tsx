@@ -204,48 +204,76 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
       setFetchLoading(true)
       if (tradeType == TradeType.EXACT_INPUT) {
         const response =
-          selectedPool && token0
-            ? await utils.getPools.quote_exact_tokens_for_tokens.fetch({
-                id: selectedPool?.id,
-                amount_in: parseFloat(input0),
-                token_in: token0?.uuid,
+          token0 && token1 && parseFloat(input0) > 0
+            ? await utils.getPools.quote.fetch({
+                amountIn: parseFloat(input0),
+                tokenIn: token0?.uuid,
+                tokenOut: token1?.uuid,
+                maxHops: 3,
               })
             : undefined
-        // set state with the result if `isSubscribed` is true
 
-        setInput1(response && response.amount_out != 0 ? response.amount_out.toFixed(2) : '')
-        setPriceImpact(response ? response.price_impact : 0)
+        const quoteData = response?.data || response // Handle both nested and direct response
+        setInput1(quoteData && quoteData.amountOut != 0 ? quoteData.amountOut.toFixed(2) : '')
+        setPriceImpact(quoteData ? quoteData.priceImpact : 0)
+        
+        // Update route info for RouteDisplay component
+        if (quoteData) {
+          trade.setRouteInfo({
+            path: quoteData.path || [],
+            amounts: quoteData.amounts || [],
+            amountOut: quoteData.amountOut,
+            priceImpact: quoteData.priceImpact,
+          })
+        } else {
+          trade.setRouteInfo(undefined)
+        }
       } else {
+        // For exact output, use the new exact output quote endpoint
         const response =
-          selectedPool && token0
-            ? await utils.getPools.quote_tokens_for_exact_tokens.fetch({
-                id: selectedPool?.id,
-                amount_out: parseFloat(input1),
-                token_in: token0?.uuid,
+          token0 && token1 && parseFloat(input1) > 0
+            ? await utils.getPools.quoteExactOutput.fetch({
+                amountOut: parseFloat(input1),
+                tokenIn: token0?.uuid,
+                tokenOut: token1?.uuid,
+                maxHops: 3,
               })
             : undefined
 
-        setInput0(response && response.amount_in != 0 ? response.amount_in.toFixed(2) : '')
-        setPriceImpact(response ? response.price_impact : 0)
+        const quoteData = response?.data || response // Handle both nested and direct response
+        setInput0(quoteData && quoteData.amountIn != 0 ? quoteData.amountIn.toFixed(2) : '')
+        setPriceImpact(quoteData ? quoteData.priceImpact : 0)
+        
+        // Update route info for RouteDisplay component
+        if (quoteData) {
+          trade.setRouteInfo({
+            path: quoteData.path || [],
+            amounts: quoteData.amounts || [],
+            amountOut: parseFloat(input1),
+            priceImpact: quoteData.priceImpact,
+          })
+        } else {
+          trade.setRouteInfo(undefined)
+        }
       }
     }
     setSelectedPool(
       pools
         ? pools.find((pool: Pair) => {
-            const uuid0 = pool.token0.uuid
-            const uuid1 = pool.token1.uuid
+            const uuid0 = pool.token0?.uuid
+            const uuid1 = pool.token1?.uuid
             const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
             const result = checker(
-              [token0 ? token0.uuid : '', token1 ? token1.uuid : ''],
-              [uuid0 ? uuid0 : '', uuid1 ? uuid1 : '']
+              [token0?.uuid || '', token1?.uuid || ''],
+              [uuid0 || '', uuid1 || '']
             )
             return result
           })
         : undefined
     )
 
-    // call the function
-    if (selectedPool && (input1 || input0)) {
+    // call the function - now we only need both tokens selected and an input amount
+    if (token0 && token1 && ((tradeType === TradeType.EXACT_INPUT && input0) || (tradeType === TradeType.EXACT_OUTPUT && input1))) {
       fetchData()
         .then(() => {
           setFetchLoading(false)
@@ -306,8 +334,8 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         <CurrencyInput
           id={'swap-input-currency0'}
           className="p-3"
-          disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
-          value={token0?.symbol && token1?.symbol ? input0 : ''}
+          disabled={process.env.NODE_ENV === 'development' ? false : (!token0 || !token1)}
+          value={input0}
           onChange={onInput0}
           currency={token0}
           onSelect={_setToken0}
@@ -356,9 +384,9 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         <div className="bg-stone-800">
           <CurrencyInput
             id={'swap-output-currency1'}
-            disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
+            disabled={process.env.NODE_ENV === 'development' ? false : (!token0 || !token1)}
             className="p-3"
-            value={selectedPool ? (token0?.symbol && token1?.symbol ? input1 : '') : ''}
+            value={input1}
             onChange={onInput1}
             currency={token1}
             onSelect={_setToken1}
@@ -411,7 +439,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
 
           <div className="p-3 pt-0">
             <Checker.Connected fullWidth size="md">
-              <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
+              <Checker.Pool fullWidth size="md" poolExist={token0 && token1 ? true : false}>
                 <Checker.Amounts fullWidth size="md" amount={Number(input0)} token={token0}>
                   <SwapReviewModalLegacy chainId={network} onSuccess={onSuccess}>
                     {({ setOpen }) => {

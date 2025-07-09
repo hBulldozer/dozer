@@ -1,4 +1,6 @@
 export * from './CustomToken'
 export * from './liquiditypool'
+export { PoolManager, LiquidityPool } from './liquiditypool'
 export * from './oasis'
+export * from './nanocontract'
 export { seed_nc } from './seed_nc'
