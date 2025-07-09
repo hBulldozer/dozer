@@ -14,15 +14,15 @@ export class PoolManager extends NanoContract {
   private readonly poolManagerBlueprintId: string
 
   public constructor(poolManagerContractId?: string, poolManagerBlueprintId?: string) {
-    super(poolManagerContractId || process.env.POOL_MANAGER_CONTRACT_ID || 'fake')
-    this.poolManagerContractId = poolManagerContractId || process.env.POOL_MANAGER_CONTRACT_ID || ''
-    this.poolManagerBlueprintId = poolManagerBlueprintId || process.env.POOL_MANAGER_BLUEPRINT_ID || ''
+    super(poolManagerContractId || process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID || 'fake')
+    this.poolManagerContractId = poolManagerContractId || process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID || ''
+    this.poolManagerBlueprintId = poolManagerBlueprintId || process.env.NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID || ''
 
     if (!this.poolManagerContractId || this.poolManagerContractId === 'fake') {
-      console.warn('PoolManager: POOL_MANAGER_CONTRACT_ID environment variable not set')
+      console.warn('PoolManager: NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
     }
     if (!this.poolManagerBlueprintId) {
-      console.warn('PoolManager: POOL_MANAGER_BLUEPRINT_ID environment variable not set')
+      console.warn('PoolManager: NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID environment variable not set')
     }
   }
 
@@ -82,8 +82,7 @@ export class PoolManager extends NanoContract {
     // If path is provided, use swap_exact_tokens_for_tokens_through_path
     // Otherwise, use swap_exact_tokens_for_tokens with default fee
     const method = path ? 'swap_exact_tokens_for_tokens_through_path' : 'swap_exact_tokens_for_tokens'
-    const args = path ? [path] : [3] // Default fee of 3 basis points (0.3%) if no path
-
+    const args = path ? [path] : [5] // Default fee of 3 basis points (0.3%) if no path
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       method,
       this.poolManagerBlueprintId,
@@ -91,14 +90,14 @@ export class PoolManager extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenIn,
-          amount: BigInt(amountIn * 100),
+          amount: (amountIn * 100).toString(),
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenOut,
-          amount: BigInt(amountOut * 100),
+          amount: Math.floor(amountOut * 100).toString(),
           address: address,
           changeAddress: address,
         },
@@ -126,7 +125,7 @@ export class PoolManager extends NanoContract {
     path?: string
   ): Promise<SendNanoContractTxResponse> {
     const method = path ? 'swap_tokens_for_exact_tokens_through_path' : 'swap_tokens_for_exact_tokens'
-    const args = path ? [path] : [3] // Default fee of 3 basis points (0.3%) if no path
+    const args = path ? [path] : [5] // Default fee of 3 basis points (0.3%) if no path
 
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       method,
@@ -135,14 +134,14 @@ export class PoolManager extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenIn,
-          amount: BigInt(amountIn * 100),
+          amount: Math.ceil(amountIn * 100).toString(),
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenOut,
-          amount: BigInt(amountOut * 100),
+          amount: (amountOut * 100).toString(),
           address: address,
           changeAddress: address,
         },
@@ -176,14 +175,14 @@ export class PoolManager extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenA,
-          amount: BigInt(amountA * 100),
+          amount: (amountA * 100).toString(),
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenB,
-          amount: BigInt(amountB * 100),
+          amount: (amountB * 100).toString(),
           address: address,
           changeAddress: address,
         },
@@ -252,7 +251,7 @@ export class LiquidityPool extends PoolManager {
 
   public constructor(token0: string, token1: string, fee: number, protocol_fee: number, ncid?: string) {
     console.warn('LiquidityPool is deprecated. Use PoolManager instead.')
-    super(ncid || process.env.POOL_MANAGER_CONTRACT_ID)
+    super(ncid || process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID)
     this.token0 = token0
     this.token1 = token1
     this.fee = fee

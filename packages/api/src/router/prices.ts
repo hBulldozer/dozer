@@ -196,20 +196,20 @@ const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, s
 }
 
 // Get the Pool Manager Contract ID from environment
-const POOL_MANAGER_CONTRACT_ID = process.env.POOL_MANAGER_CONTRACT_ID
+const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
 
-if (!POOL_MANAGER_CONTRACT_ID) {
-  console.warn('POOL_MANAGER_CONTRACT_ID environment variable not set')
+if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
+  console.warn('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
 }
 
 // Helper function to fetch data from the pool manager contract
 async function fetchFromPoolManager(calls: string[], timestamp?: number): Promise<any> {
-  if (!POOL_MANAGER_CONTRACT_ID) {
-    throw new Error('POOL_MANAGER_CONTRACT_ID environment variable not set')
+  if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
+    throw new Error('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
   }
 
   const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, ...calls.map((call) => `calls[]=${call}`)]
+  const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, ...calls.map((call) => `calls[]=${call}`)]
 
   if (timestamp) {
     queryParams.push(`timestamp=${timestamp}`)

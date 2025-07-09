@@ -5,10 +5,10 @@ import { createTRPCRouter, procedure } from '../trpc'
 import { PoolManager } from '@dozer/nanocontracts'
 
 // Get the Pool Manager Contract ID from environment
-const POOL_MANAGER_CONTRACT_ID = process.env.POOL_MANAGER_CONTRACT_ID
+const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
 
-if (!POOL_MANAGER_CONTRACT_ID) {
-  console.warn('POOL_MANAGER_CONTRACT_ID environment variable not set')
+if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
+  console.warn('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
 }
 
 // Cache for token information to avoid repeated API calls
@@ -16,12 +16,12 @@ const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
 
 // Helper function to fetch data from the pool manager contract
 async function fetchFromPoolManager(calls: string[], timestamp?: number): Promise<any> {
-  if (!POOL_MANAGER_CONTRACT_ID) {
-    throw new Error('POOL_MANAGER_CONTRACT_ID environment variable not set')
+  if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
+    throw new Error('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
   }
 
   const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, ...calls.map((call) => `calls[]=${call}`)]
+  const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, ...calls.map((call) => `calls[]=${call}`)]
 
   if (timestamp) {
     queryParams.push(`timestamp=${timestamp}`)
@@ -121,10 +121,10 @@ export const poolRouter = createTRPCRouter({
   test: procedure.query(async ({ ctx }) => {
     try {
       console.log('Testing contract connection...')
-      console.log('POOL_MANAGER_CONTRACT_ID:', POOL_MANAGER_CONTRACT_ID)
+      console.log('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID:', NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID)
 
-      if (!POOL_MANAGER_CONTRACT_ID) {
-        return { error: 'POOL_MANAGER_CONTRACT_ID not set' }
+      if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
+        return { error: 'NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID not set' }
       }
 
       // Try a simple contract call
@@ -136,14 +136,14 @@ export const poolRouter = createTRPCRouter({
       console.log('All pools response:', JSON.stringify(allPoolsResponse, null, 2))
 
       return {
-        contractId: POOL_MANAGER_CONTRACT_ID,
+        contractId: NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID,
         response: response,
         success: true,
       }
     } catch (error) {
       console.error('Test error:', error)
       return {
-        contractId: POOL_MANAGER_CONTRACT_ID,
+        contractId: NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID,
         error: error instanceof Error ? error.message : 'Unknown error',
         success: false,
       }
@@ -153,7 +153,7 @@ export const poolRouter = createTRPCRouter({
   // Get all signed pools
   all: procedure.query(async ({ ctx }) => {
     try {
-      console.log('🔍 [GET_POOLS_ALL] Fetching pools from contract ID:', POOL_MANAGER_CONTRACT_ID)
+      console.log('🔍 [GET_POOLS_ALL] Fetching pools from contract ID:', NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID)
 
       // Batch fetch: get signed pools and token prices in one call
       const batchResponse = await fetchFromPoolManager(['get_signed_pools()', 'get_all_token_prices_in_usd()'])
@@ -689,7 +689,7 @@ export const poolRouter = createTRPCRouter({
     try {
       // Get transaction history from the nano contract history endpoint
       const endpoint = 'nano_contract/history'
-      const queryParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `count=50`]
+      const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, `count=50`]
 
       const response = await fetchNodeData(endpoint, queryParams)
 

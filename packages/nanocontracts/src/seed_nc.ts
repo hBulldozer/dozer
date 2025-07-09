@@ -213,7 +213,8 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
   // 3. Deploy the singleton DozerPoolManager contract
   console.log('Deploying DozerPoolManager contract...')
   // TODO: Replace with actual blueprint ID for DozerPoolManager
-  const manager_blueprint_id = process.env.POOL_MANAGER_BLUEPRINT_ID || 'DOZER_POOL_MANAGER_BLUEPRINT_ID'
+  const manager_blueprint_id =
+    process.env.NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID || 'DOZER_NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID'
   const managerContract = new NanoContract('fake')
   const managerInitResp = await managerContract.create(manager_blueprint_id, admin_address, [], [])
   manager_ncid = managerInitResp.hash

@@ -5,7 +5,7 @@ import { fetchNodeData } from '../helpers/fetchFunction'
 import { useTempTxStore } from '@dozer/zustand'
 
 // Get the Pool Manager Contract ID from environment
-const POOL_MANAGER_CONTRACT_ID = process.env.POOL_MANAGER_CONTRACT_ID
+const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
 
 // Cache for token information to avoid repeated API calls
 const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
@@ -60,12 +60,12 @@ async function getTokenName(tokenUuid: string): Promise<string> {
 
 // Helper function to fetch data from the pool manager contract
 async function fetchFromPoolManager(calls: string[], timestamp?: number): Promise<any> {
-  if (!POOL_MANAGER_CONTRACT_ID) {
-    throw new Error('POOL_MANAGER_CONTRACT_ID environment variable not set')
+  if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
+    throw new Error('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
   }
 
   const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, ...calls.map((call) => `calls[]=${call}`)]
+  const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, ...calls.map((call) => `calls[]=${call}`)]
 
   if (timestamp) {
     queryParams.push(`timestamp=${timestamp}`)
@@ -221,8 +221,8 @@ export const profileRouter = createTRPCRouter({
   // Get user positions from the pool manager contract
   userPositions: procedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
     try {
-      if (!POOL_MANAGER_CONTRACT_ID) {
-        console.warn('POOL_MANAGER_CONTRACT_ID not set, falling back to legacy method')
+      if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
+        console.warn('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID not set, falling back to legacy method')
         return []
       }
 
@@ -296,7 +296,7 @@ export const profileRouter = createTRPCRouter({
   // Get user positions summary
   userPositionsSummary: procedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
     try {
-      if (!POOL_MANAGER_CONTRACT_ID) {
+      if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
         return {
           totalPositions: 0,
           totalValueUSD: 0,

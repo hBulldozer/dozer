@@ -1,6 +1,6 @@
 # Pool Manager Environment Setup
 
-After running the seeding scripts, you need to set the `POOL_MANAGER_CONTRACT_ID` environment variable in your applications.
+After running the seeding scripts, you need to set the `NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID` environment variable in your applications.
 
 ## Steps:
 
@@ -19,17 +19,17 @@ After running the seeding scripts, you need to set the `POOL_MANAGER_CONTRACT_ID
 
    ### For Swap App (`apps/swap/.env.local`):
    ```bash
-   POOL_MANAGER_CONTRACT_ID=[CONTRACT_ID_HERE]
+   NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID=[CONTRACT_ID_HERE]
    ```
 
    ### For Earn App (`apps/earn/.env.local`):
    ```bash
-   POOL_MANAGER_CONTRACT_ID=[CONTRACT_ID_HERE]
+   NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID=[CONTRACT_ID_HERE]
    ```
 
    ### For Root App (`apps/_root/.env.local`):
    ```bash
-   POOL_MANAGER_CONTRACT_ID=[CONTRACT_ID_HERE]
+   NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID=[CONTRACT_ID_HERE]
    ```
 
 4. **Restart your development servers** for the environment variables to take effect.
@@ -43,11 +43,11 @@ To verify the setup is working:
    curl "http://localhost:3000/api/trpc/getPools.quote_exact_tokens_for_tokens?input={\"id\":\"any\",\"amount_in\":100,\"token_in\":\"00\"}"
    ```
 
-2. Check the browser console for any warnings about missing `POOL_MANAGER_CONTRACT_ID`.
+2. Check the browser console for any warnings about missing `NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID`.
 
 ## Troubleshooting:
 
-- **Error: "POOL_MANAGER_CONTRACT_ID environment variable not set"**
+- **Error: "NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set"**
   - Make sure you've added the environment variable to the correct `.env.local` file
   - Restart your development server
   

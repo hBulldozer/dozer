@@ -6,7 +6,7 @@ import { SwapReviewModalBase } from './SwapReviewModalBase'
 import { XMarkIcon } from '@heroicons/react/24/solid'
 import { api } from 'utils/api'
 import { TokenBalance } from '@dozer/zustand'
-import { LiquidityPool } from '@dozer/nanocontracts'
+import { PoolManager } from '@dozer/nanocontracts'
 import { main } from '@dozer/database/dist/seed_db'
 import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { get } from 'lodash'
@@ -33,7 +33,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   const [card, setCard] = useState(false)
   const { slippageTolerance } = useSettings()
 
-  const liquiditypool = new LiquidityPool(mainCurrency?.uuid || '', otherCurrency?.uuid || '', 5, 50, pool?.id || '')
+  const poolManager = new PoolManager()
 
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
@@ -69,70 +69,30 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
     }
   }
 
-  const swapFunction =
-    tradeType === TradeType.EXACT_INPUT
-      ? liquiditypool.swap_tokens_for_exact_tokens
-      : liquiditypool.swap_tokens_for_exact_tokens
-
-  // const mutation = mutateFunction({
-  //   onSuccess: (res) => {
-  //     console.log(res)
-  //     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
-  //       if (res.hash) {
-  //         const notificationData: NotificationData = {
-  //           type: 'swap',
-  //           chainId: network,
-  //           summary: {
-  //             pending: `Waiting for next block`,
-  //             completed: `Success! Traded ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
-  //             failed: 'Failed summary',
-  //             info: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
-  //           },
-  //           status: 'pending',
-  //           txHash: res.hash,
-  //           groupTimestamp: Math.floor(Date.now() / 1000),
-  //           timestamp: Math.floor(Date.now() / 1000),
-  //           promise: new Promise((resolve) => {
-  //             setTimeout(resolve, 500)
-  //           }),
-  //         }
-  //         editBalanceOnSwap(
-  //           amountSpecified,
-  //           mainCurrency.uuid,
-  //           outputAmount * (1 - slippageTolerance),
-  //           otherCurrency.uuid
-  //         )
-  //         const notificationGroup: string[] = []
-  //         notificationGroup.push(JSON.stringify(notificationData))
-  //         addNotification(notificationGroup)
-  //         createSuccessToast(notificationData)
-  //         setOpen(false)
-  //         setIsWritePending(false)
-  //       } else {
-  //         createErrorToast(`${res.error}`, true)
-  //         setIsWritePending(false)
-  //         setOpen(false)
-  //       }
-  //     }
-  //   },
-  //   onError: (error) => {
-  //     createErrorToast(`Error sending TX. \n${error}`, true)
-  //     setIsWritePending(false)
-  //     setOpen(false)
-  //   },
-  // })
   const onClick = async () => {
     setSentTX(true)
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
-      const response = await swapFunction(
-        hathorRpc,
-        address,
-        pool.id,
-        mainCurrency.uuid,
-        amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
-        otherCurrency.uuid,
-        outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 - slippageTolerance : 1)
-      )
+      if (tradeType === TradeType.EXACT_INPUT) {
+        await poolManager.swapExactTokensForTokens(
+          hathorRpc,
+          address,
+          mainCurrency.uuid,
+          amountSpecified,
+          otherCurrency.uuid,
+          outputAmount * (1 - slippageTolerance),
+          (pool as any).path
+        )
+      } else {
+        await poolManager.swapTokensForExactTokens(
+          hathorRpc,
+          address,
+          mainCurrency.uuid,
+          amountSpecified * (1 + slippageTolerance),
+          otherCurrency.uuid,
+          outputAmount,
+          (pool as any).path
+        )
+      }
     }
   }
 
@@ -185,7 +145,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
     <>
       {children({ setOpen })}
       <SwapReviewModalBase chainId={chainId} open={open} setOpen={setOpen}>
-        <div className="flex flex-col justify-between gap-2">
+        <div className="flex flex-col gap-2 justify-between">
           <Button
             size="md"
             testdata-id="swap-review-confirm-button"

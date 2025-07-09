@@ -69,8 +69,8 @@
         "OASISBLUEPRINT",
         "BETBLUEPRINT",
         "SUPABASE_ANON_KEY",
-        "POOL_MANAGER_BLUEPRINT_ID",
-        "POOL_MANAGER_CONTRACT_ID"
+        "NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID",
+        "NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID"
       ],
       "outputs": [
         ".vercel/**/*",
@@ -140,8 +140,8 @@
         "OASISBLUEPRINT",
         "BETBLUEPRINT",
         "SUPABASE_ANON_KEY",
-        "POOL_MANAGER_BLUEPRINT_ID",
-        "POOL_MANAGER_CONTRACT_ID"
+        "NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID",
+        "NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID"
       ],
       "cache": false,
       "persistent": true

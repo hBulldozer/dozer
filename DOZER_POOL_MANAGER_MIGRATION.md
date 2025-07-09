@@ -221,17 +221,17 @@ The DozerPoolManager contract provides comprehensive view methods that replace d
 ```typescript
 // Fetch all signed pools
 const endpoint = 'nano_contract/state'
-const queryParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `calls[]=get_signed_pools()`]
+const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, `calls[]=get_signed_pools()`]
 const response = await fetchNodeData(endpoint, queryParams)
 const poolKeys = response.calls['get_signed_pools()'].value
 
 // Fetch detailed pool information
-const poolInfoParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `calls[]=pool_info("${poolKey}")`]
+const poolInfoParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, `calls[]=pool_info("${poolKey}")`]
 const poolInfoResponse = await fetchNodeData(endpoint, poolInfoParams)
 const poolInfo = poolInfoResponse.calls[`pool_info("${poolKey}")`].value
 
 // Fetch frontend-ready pool data
-const frontEndParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `calls[]=front_end_api_pool("${poolKey}")`]
+const frontEndParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, `calls[]=front_end_api_pool("${poolKey}")`]
 const frontEndResponse = await fetchNodeData(endpoint, frontEndParams)
 const poolData = frontEndResponse.calls[`front_end_api_pool("${poolKey}")`].value
 ```
@@ -239,18 +239,18 @@ const poolData = frontEndResponse.calls[`front_end_api_pool("${poolKey}")`].valu
 #### Price and Token Operations
 ```typescript
 // Fetch all token prices in USD
-const priceParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `calls[]=get_all_token_prices_in_usd()`]
+const priceParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, `calls[]=get_all_token_prices_in_usd()`]
 const priceResponse = await fetchNodeData(endpoint, priceParams)
 const prices = priceResponse.calls['get_all_token_prices_in_usd()'].value
 
 // Fetch user positions across all pools
-const userParams = [`id=${POOL_MANAGER_CONTRACT_ID}`, `calls[]=get_user_positions("${address}")`]
+const userParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, `calls[]=get_user_positions("${address}")`]
 const userResponse = await fetchNodeData(endpoint, userParams)
 const positions = userResponse.calls[`get_user_positions("${address}")`].value
 
 // Find best swap path between tokens
 const swapParams = [
-  `id=${POOL_MANAGER_CONTRACT_ID}`,
+  `id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`,
   `calls[]=find_best_swap_path(${amount},"${tokenIn}","${tokenOut}",${maxHops})`
 ]
 const swapResponse = await fetchNodeData(endpoint, swapParams)
@@ -261,7 +261,7 @@ const pathInfo = swapResponse.calls[`find_best_swap_path(...)`].value
 ```typescript
 // Get pool data at specific timestamp
 const historicalParams = [
-  `id=${POOL_MANAGER_CONTRACT_ID}`, 
+  `id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, 
   `calls[]=pool_info("${poolKey}")`, 
   `timestamp=${timestamp}`
 ]
@@ -282,7 +282,7 @@ The `/nano_contract/state` endpoint supports:
 
 After running the seed scripts, set these environment variables:
 ```bash
-POOL_MANAGER_CONTRACT_ID=<manager_ncid_from_seeding_output>
+NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID=<manager_ncid_from_seeding_output>
 ```
 
 ### API Migration Strategy
