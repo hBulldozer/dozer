@@ -145,6 +145,10 @@ export interface PoolConfig {
   tokenQuantity: number
   fee: number
   protocolFee: number
+  // Optional fields for non-HTR pools
+  dzrQuantity?: number
+  isNonHTRPool?: boolean
+  pairTokenSymbol?: string
 }
 
 export interface OasisConfig {
@@ -226,81 +230,81 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
   const HTR_UUID = '00'
   const createdPools: { key: string; tokenA: string; tokenB: string; fee: number }[] = []
 
-  // Create HTR-token pools from configuration
+  // Create pools from configuration
   for (const poolConfig of config.pools) {
-    console.log(`Creating pool: HTR/${poolConfig.tokenSymbol}...`)
-
-    const token_uuid = tokenUUIDs[`${poolConfig.tokenSymbol}_uuid`]
-    if (!token_uuid) throw new Error(`Token UUID for ${poolConfig.tokenSymbol} is undefined`)
-
-    // Convert fee from percentage to basis points (e.g., 0.05% -> 5)
-    const fee = Math.round(poolConfig.fee * 1000) // 0.05 -> 50, but we use 5 for 0.005
-
-    const actions = [
-      {
-        type: 'deposit' as const,
-        token: HTR_UUID,
-        amount: poolConfig.htrQuantity * 100, // Convert to cents
-        changeAddress: admin_address,
-      },
-      {
-        type: 'deposit' as const,
-        token: token_uuid,
-        amount: poolConfig.tokenQuantity * 100, // Convert to cents
-        changeAddress: admin_address,
-      },
-    ]
-
-    const args = [fee]
-    const createResp = await managerContract.execute(admin_address, 'create_pool', actions, args)
-    const pool_key = `${HTR_UUID}/${token_uuid}/${fee}`
-    poolKeys.push(pool_key)
-    createdPools.push({ key: pool_key, tokenA: HTR_UUID, tokenB: token_uuid, fee })
-    console.log(
-      `Created pool: ${pool_key} with reserves HTR:${poolConfig.htrQuantity}, ${poolConfig.tokenSymbol}:${poolConfig.tokenQuantity}`
-    )
-    await check_wallet('master')
-  }
-
-  // Create one non-HTR pool for multi-hop testing (using first two non-HTR tokens)
-  if (config.tokens.length >= 2) {
-    console.log('Creating non-HTR pool for multi-hop testing...')
-    const fee = 5 // 0.5% fee for multi-hop pool
-    const token1 = config.tokens[0]
-    const token2 = config.tokens[1]
-
-    if (!token1 || !token2) {
-      console.log('Skipping non-HTR pool creation - insufficient tokens')
-    } else {
-      const tokenA_uuid = tokenUUIDs[`${token1.symbol}_uuid`]
-      const tokenB_uuid = tokenUUIDs[`${token2.symbol}_uuid`]
-
+    if (poolConfig.isNonHTRPool) {
+      // Handle non-HTR pools
+      console.log(`Creating non-HTR pool: ${poolConfig.pairTokenSymbol}/${poolConfig.tokenSymbol}...`)
+      
+      const tokenA_uuid = tokenUUIDs[`${poolConfig.pairTokenSymbol}_uuid`]
+      const tokenB_uuid = tokenUUIDs[`${poolConfig.tokenSymbol}_uuid`]
+      
       if (!tokenA_uuid || !tokenB_uuid) {
-        console.log('Skipping non-HTR pool creation - token UUIDs not found')
-      } else {
-        const actions = [
-          {
-            type: 'deposit' as const,
-            token: tokenA_uuid,
-            amount: 50000 * 100, // 50,000 tokens
-            changeAddress: admin_address,
-          },
-          {
-            type: 'deposit' as const,
-            token: tokenB_uuid,
-            amount: 50000 * 100, // 50,000 tokens
-            changeAddress: admin_address,
-          },
-        ]
-
-        const args = [fee]
-        const createResp = await managerContract.execute(admin_address, 'create_pool', actions, args)
-        const pool_key = `${tokenA_uuid}/${tokenB_uuid}/${fee}`
-        poolKeys.push(pool_key)
-        createdPools.push({ key: pool_key, tokenA: tokenA_uuid, tokenB: tokenB_uuid, fee })
-        console.log(`Created non-HTR pool: ${pool_key} (${token1.symbol}/${token2.symbol})`)
-        await check_wallet('master')
+        console.log(`Skipping non-HTR pool - token UUIDs not found for ${poolConfig.pairTokenSymbol}/${poolConfig.tokenSymbol}`)
+        continue
       }
+
+      // Convert fee from percentage to basis points
+      const fee = Math.round(poolConfig.fee * 1000)
+
+      const actions = [
+        {
+          type: 'deposit' as const,
+          token: tokenA_uuid,
+          amount: (poolConfig.dzrQuantity || 0) * 100, // DZR amount
+          changeAddress: admin_address,
+        },
+        {
+          type: 'deposit' as const,
+          token: tokenB_uuid,
+          amount: poolConfig.tokenQuantity * 100, // Other token amount
+          changeAddress: admin_address,
+        },
+      ]
+
+      const args = [fee]
+      const createResp = await managerContract.execute(admin_address, 'create_pool', actions, args)
+      const pool_key = `${tokenA_uuid}/${tokenB_uuid}/${fee}`
+      poolKeys.push(pool_key)
+      createdPools.push({ key: pool_key, tokenA: tokenA_uuid, tokenB: tokenB_uuid, fee })
+      console.log(
+        `Created non-HTR pool: ${pool_key} with reserves ${poolConfig.pairTokenSymbol}:${poolConfig.dzrQuantity}, ${poolConfig.tokenSymbol}:${poolConfig.tokenQuantity}`
+      )
+      await check_wallet('master')
+    } else {
+      // Handle HTR-token pools
+      console.log(`Creating HTR pool: HTR/${poolConfig.tokenSymbol}...`)
+
+      const token_uuid = tokenUUIDs[`${poolConfig.tokenSymbol}_uuid`]
+      if (!token_uuid) throw new Error(`Token UUID for ${poolConfig.tokenSymbol} is undefined`)
+
+      // Convert fee from percentage to basis points (e.g., 0.05% -> 5)
+      const fee = Math.round(poolConfig.fee * 1000)
+
+      const actions = [
+        {
+          type: 'deposit' as const,
+          token: HTR_UUID,
+          amount: poolConfig.htrQuantity * 100, // Convert to cents
+          changeAddress: admin_address,
+        },
+        {
+          type: 'deposit' as const,
+          token: token_uuid,
+          amount: poolConfig.tokenQuantity * 100, // Convert to cents
+          changeAddress: admin_address,
+        },
+      ]
+
+      const args = [fee]
+      const createResp = await managerContract.execute(admin_address, 'create_pool', actions, args)
+      const pool_key = `${HTR_UUID}/${token_uuid}/${fee}`
+      poolKeys.push(pool_key)
+      createdPools.push({ key: pool_key, tokenA: HTR_UUID, tokenB: token_uuid, fee })
+      console.log(
+        `Created HTR pool: ${pool_key} with reserves HTR:${poolConfig.htrQuantity}, ${poolConfig.tokenSymbol}:${poolConfig.tokenQuantity}`
+      )
+      await check_wallet('master')
     }
   }
 
