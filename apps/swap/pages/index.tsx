@@ -224,6 +224,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             amounts: quoteData.amounts || [],
             amountOut: quoteData.amountOut,
             priceImpact: quoteData.priceImpact,
+            poolPath: quoteData.poolPath, // Add pool path for contract execution
           })
         } else {
           trade.setRouteInfo(undefined)
@@ -251,6 +252,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             amounts: quoteData.amounts || [],
             amountOut: parseFloat(input1),
             priceImpact: quoteData.priceImpact,
+            poolPath: quoteData.poolPath, // Add pool path for contract execution
           })
         } else {
           trade.setRouteInfo(undefined)

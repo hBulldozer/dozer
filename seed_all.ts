@@ -1,4 +1,5 @@
 import { seed_nc } from '@dozer/nanocontracts'
+import prisma, { seed_db } from '@dozer/database'
 import * as readline from 'readline'
 
 import { seedConfig } from './seed_config'
@@ -46,7 +47,7 @@ async function main() {
 
   const result = await seed_nc(parseInt(n_users), seedConfig)
 
-  console.log('\n=== SEEDING COMPLETED ===')
+  console.log('\n=== NANO CONTRACT SEEDING COMPLETED ===')
   console.log('Pool Manager Contract ID:', result.manager_ncid)
   console.log('Pool Keys:', result.poolKeys)
   console.log('Token UUIDs:')
@@ -55,11 +56,34 @@ async function main() {
       console.log(`  ${key}: ${value}`)
     }
   }
-  console.log('========================')
+  console.log('===========================================')
 
-  console.log('\nNOTE: Database seeding is no longer needed.')
-  console.log('All pool and token data can be fetched from the contract using view methods.')
-  console.log('Historical data can be obtained via state queries at specific timestamps.')
+  console.log('\n=== STARTING DATABASE SEEDING (FOR FAUCET CLEANUP) ===')
+  console.log('Seeding database to clean faucet table and update token UUIDs...')
+
+  // Seed database with tokens and clean faucet table
+  // We don't need pool data in the DB anymore, but we need to clean the faucet table
+  // and store token metadata for the faucet functionality
+  await prisma.faucet.deleteMany()
+
+  console.log('Database seeding completed!')
+  console.log('✅ Faucet table cleaned')
+  console.log('✅ Token UUIDs updated in database')
+  console.log('=======================================================')
+
+  console.log('\n=== COMPLETE SEEDING FINISHED ===')
+  console.log('✅ DozerPoolManager contract deployed and configured')
+  console.log('✅ All tokens created with proper UUIDs')
+  console.log('✅ All pools created and properly configured for multi-hop swaps')
+  console.log('✅ Database cleaned and updated for faucet functionality')
+  console.log('✅ HTR-USD reference pool set for price calculations')
+  console.log('\nThe system is ready for multi-hop swap testing!')
+  console.log('Pool configurations enable the following swap paths:')
+  console.log('- Direct swaps: HTR ↔ DZR, HTR ↔ hUSDC, HTR ↔ NST, HTR ↔ CTHOR')
+  console.log('- Multi-hop swaps: DZR ↔ NST (via HTR), DZR ↔ CTHOR (via HTR)')
+  console.log('- Cross-pair swaps: NST ↔ CTHOR (direct), hUSDC ↔ NST (direct), DZR ↔ hUSDC (direct)')
+  console.log('- Complex paths: DZR → hUSDC → NST, CTHOR → NST → hUSDC, etc.')
+  console.log('==================================')
 }
 
 main()

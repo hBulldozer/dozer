@@ -100,79 +100,35 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
 
   // Convert route info to RouteDisplay format
   const routeSteps = useMemo(() => {
-    if (!routeInfo || !routeInfo.path || !mainCurrency || !otherCurrency) return []
+    if (!routeInfo || !routeInfo.poolPath || !routeInfo.path || !mainCurrency || !otherCurrency) return []
     
-    // Handle string path (comma-separated pool keys)
-    let pathArray = []
-    if (typeof routeInfo.path === 'string') {
-      pathArray = routeInfo.path.split(',').map(s => s.trim())
-    } else if (Array.isArray(routeInfo.path)) {
-      pathArray = routeInfo.path
-    }
+    // Use poolPath for pool keys and path for token sequence
+    const poolKeys = routeInfo.poolPath.split(',').map(s => s.trim())
+    const tokenPath = routeInfo.path // This is already the token sequence
     
-    if (pathArray.length < 1) return []
+    if (poolKeys.length < 1 || tokenPath.length < 2) return []
 
     const steps = []
     
-    // Use the same logic as extractRouteTokens to get the correct token sequence
-    const tokens = []
-    
-    // Start with the input token (mainCurrency)
-    tokens.push(mainCurrency.uuid)
-    
-    // Process each pool key to build the route in the correct direction
-    for (let i = 0; i < pathArray.length; i++) {
-      const poolKey = pathArray[i]
-      if (typeof poolKey === 'string' && poolKey.includes('/')) {
-        const [tokenA, tokenB] = poolKey.split('/')
-        
-        const lastToken = tokens[tokens.length - 1]
-        
-        // Add the token that's not the last one (the destination token in this hop)
-        if (tokenA === lastToken && tokenB && !tokens.includes(tokenB)) {
-          tokens.push(tokenB)
-        } else if (tokenB === lastToken && tokenA && !tokens.includes(tokenA)) {
-          tokens.push(tokenA)
-        } else if (!tokens.includes(tokenA) && !tokens.includes(tokenB)) {
-          // Fallback case
-          tokens.push(tokenA, tokenB)
-        }
-      }
-    }
-    
-    // Ensure we end with the output token (otherCurrency)
-    if (tokens[tokens.length - 1] !== otherCurrency.uuid) {
-      if (!tokens.includes(otherCurrency.uuid)) {
-        tokens.push(otherCurrency.uuid)
-      } else {
-        // Reorder to end with output token
-        const filtered = tokens.filter(t => t !== otherCurrency.uuid)
-        filtered.push(otherCurrency.uuid)
-        tokens.length = 0
-        tokens.push(...filtered, otherCurrency.uuid)
-      }
-    }
-    
-    // Create steps from consecutive token pairs
-    for (let i = 0; i < tokens.length - 1; i++) {
-      const tokenInUuid = tokens[i]
-      const tokenOutUuid = tokens[i + 1]
+    // Create steps from consecutive token pairs using the correct token path
+    for (let i = 0; i < tokenPath.length - 1; i++) {
+      const tokenInUuid = tokenPath[i]
+      const tokenOutUuid = tokenPath[i + 1]
 
       const tokenIn = getTokenByUuid(tokenInUuid)
       const tokenOut = getTokenByUuid(tokenOutUuid)
 
       if (tokenIn && tokenOut) {
         // Find the pool that connects these tokens
-        const connectingPool = pathArray.find(poolKey => 
-          typeof poolKey === 'string' && 
-          poolKey.includes('/') &&
-          poolKey.includes(tokenInUuid) && 
-          poolKey.includes(tokenOutUuid)
-        )
+        const connectingPool = poolKeys.find(poolKey => {
+          const [tokenA, tokenB] = poolKey.split('/')
+          return (tokenA === tokenInUuid && tokenB === tokenOutUuid) || 
+                 (tokenA === tokenOutUuid && tokenB === tokenInUuid)
+        })
         
         // Extract fee from pool key (format: tokenA/tokenB/fee)
         let fee = 0.5 // Default
-        if (connectingPool && typeof connectingPool === 'string') {
+        if (connectingPool) {
           const parts = connectingPool.split('/')
           if (parts[2]) {
             fee = parseInt(parts[2]) / 1000 // Convert from basis points to percentage
@@ -182,11 +138,11 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
         steps.push({
           tokenIn,
           tokenOut,
-          pool: connectingPool || `${tokenInUuid}/${tokenOutUuid}/${fee}`,
+          pool: connectingPool || `${tokenInUuid}/${tokenOutUuid}/${fee * 1000}`,
           fee,
           amountIn: routeInfo.amounts[i] || 0,
           amountOut: routeInfo.amounts[i + 1] || 0,
-          priceImpact: routeInfo.priceImpact / tokens.length, // Distribute price impact
+          priceImpact: routeInfo.priceImpact / (tokenPath.length - 1), // Distribute price impact
         })
       }
     }

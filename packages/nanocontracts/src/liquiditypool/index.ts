@@ -77,12 +77,20 @@ export class PoolManager extends NanoContract {
     amountIn: number,
     tokenOut: string,
     amountOut: number,
-    path?: string // Optional path, if not provided, contract will find best path
+    path: string // Mandatory path (single pool_key for single-hop, comma-separated for multi-hop)
   ): Promise<SendNanoContractTxResponse> {
-    // If path is provided, use swap_exact_tokens_for_tokens_through_path
-    // Otherwise, use swap_exact_tokens_for_tokens with default fee
-    const method = path ? 'swap_exact_tokens_for_tokens_through_path' : 'swap_exact_tokens_for_tokens'
-    const args = path ? [path] : [5] // Default fee of 3 basis points (0.3%) if no path
+    // Parse path to determine if single-hop or multi-hop
+    const pathSegments = path.split(',')
+    const isSingleHop = pathSegments.length === 1
+    
+    // Extract fee from the first pool key (format: tokenA/tokenB/fee)
+    const firstPoolKey = pathSegments[0]
+    const poolKeyParts = firstPoolKey.split('/')
+    const fee = parseInt(poolKeyParts[2]) // Fee is the third part of pool_key
+    
+    // Choose method based on path length
+    const method = isSingleHop ? 'swap_exact_tokens_for_tokens' : 'swap_exact_tokens_for_tokens_through_path'
+    const args = isSingleHop ? [fee] : [path]
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       method,
       this.poolManagerBlueprintId,
@@ -122,10 +130,20 @@ export class PoolManager extends NanoContract {
     amountIn: number,
     tokenOut: string,
     amountOut: number,
-    path?: string
+    path: string // Mandatory path (single pool_key for single-hop, comma-separated for multi-hop)
   ): Promise<SendNanoContractTxResponse> {
-    const method = path ? 'swap_tokens_for_exact_tokens_through_path' : 'swap_tokens_for_exact_tokens'
-    const args = path ? [path] : [5] // Default fee of 3 basis points (0.3%) if no path
+    // Parse path to determine if single-hop or multi-hop
+    const pathSegments = path.split(',')
+    const isSingleHop = pathSegments.length === 1
+    
+    // Extract fee from the first pool key (format: tokenA/tokenB/fee)
+    const firstPoolKey = pathSegments[0]
+    const poolKeyParts = firstPoolKey.split('/')
+    const fee = parseInt(poolKeyParts[2]) // Fee is the third part of pool_key
+    
+    // Choose method based on path length
+    const method = isSingleHop ? 'swap_tokens_for_exact_tokens' : 'swap_tokens_for_exact_tokens_through_path'
+    const args = isSingleHop ? [fee] : [path]
 
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       method,
@@ -308,7 +326,9 @@ export class LiquidityPool extends PoolManager {
     token_out: string,
     amount_out: number
   ): Promise<SendNanoContractTxResponse> {
-    return this.swapExactTokensForTokens(hathorRpc, address, token_in, amount_in, token_out, amount_out)
+    // Construct a single-hop path using the legacy fee (5 basis points)
+    const path = `${token_in}/${token_out}/5`
+    return this.swapExactTokensForTokens(hathorRpc, address, token_in, amount_in, token_out, amount_out, path)
   }
 
   /**
@@ -323,7 +343,9 @@ export class LiquidityPool extends PoolManager {
     token_out: string,
     amount_out: number
   ): Promise<SendNanoContractTxResponse> {
-    return this.swapTokensForExactTokens(hathorRpc, address, token_in, amount_in, token_out, amount_out)
+    // Construct a single-hop path using the legacy fee (5 basis points)
+    const path = `${token_in}/${token_out}/5`
+    return this.swapTokensForExactTokens(hathorRpc, address, token_in, amount_in, token_out, amount_out, path)
   }
 
   /**

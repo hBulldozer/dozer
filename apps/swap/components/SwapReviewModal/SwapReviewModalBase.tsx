@@ -21,7 +21,8 @@ interface SwapReviewModalBase {
 
 export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children, open, setOpen }) => {
   const { slippageTolerance } = useSettings()
-  const { amountSpecified, outputAmount, tradeType, mainCurrencyPrice, otherCurrencyPrice, pool, routeInfo } = useTrade()
+  const { amountSpecified, outputAmount, tradeType, mainCurrencyPrice, otherCurrencyPrice, pool, routeInfo } =
+    useTrade()
   const { data: tokens } = api.getTokens.all.useQuery()
   const input0 = amountSpecified
     ? amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1)
@@ -61,22 +62,22 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
     if (!routeInfo || !Array.isArray(routeInfo.path) || routeInfo.path.length < 2) return []
 
     const steps = []
-    
+
     // Based on the console output, the path contains pool keys like "tokenA/tokenB/fee"
     // Let's extract tokens in order by parsing the path sequentially
     const tokens = []
-    
+
     // First item might be a token UUID (starting token)
     if (routeInfo.path[0] && typeof routeInfo.path[0] === 'string' && !routeInfo.path[0].includes('/')) {
       tokens.push(routeInfo.path[0])
     }
-    
+
     // Process each pool key to extract the token sequence
     for (let i = 0; i < routeInfo.path.length; i++) {
       const poolKey = routeInfo.path[i]
       if (typeof poolKey === 'string' && poolKey.includes('/')) {
         const [tokenA, tokenB, feeStr] = poolKey.split('/')
-        
+
         // Add tokens in sequence (avoid duplicates while maintaining order)
         if (tokens.length === 0) {
           tokens.push(tokenA, tokenB)
@@ -95,7 +96,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
         }
       }
     }
-    
+
     // Create steps from consecutive token pairs
     for (let i = 0; i < tokens.length - 1; i++) {
       const tokenInUuid = tokens[i]
@@ -106,13 +107,14 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
 
       if (tokenIn && tokenOut) {
         // Find the pool that connects these tokens
-        const connectingPool = routeInfo.path.find(poolKey => 
-          typeof poolKey === 'string' && 
-          poolKey.includes('/') &&
-          poolKey.includes(tokenInUuid) && 
-          poolKey.includes(tokenOutUuid)
+        const connectingPool = routeInfo.path.find(
+          (poolKey) =>
+            typeof poolKey === 'string' &&
+            poolKey.includes('/') &&
+            poolKey.includes(tokenInUuid) &&
+            poolKey.includes(tokenOutUuid)
         )
-        
+
         // Extract fee from pool key (format: tokenA/tokenB/fee)
         let fee = 0.5 // Default
         if (connectingPool && typeof connectingPool === 'string') {
@@ -142,13 +144,13 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
       <Dialog.Content className="max-w-sm !pb-4">
         <Dialog.Header border={false} title="Confirm Swap" onClose={() => setOpen(false)} />
         <div className="!my-0 grid grid-cols-12 items-center">
-          <div className="relative flex flex-col col-span-12 gap-1 p-2 border sm:p-4 rounded-2xl bg-stone-700/40 border-stone-200/5">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-between w-full gap-2">
+          <div className="flex relative flex-col col-span-12 gap-1 p-2 rounded-2xl border sm:p-4 bg-stone-700/40 border-stone-200/5">
+            <div className="flex gap-2 items-center">
+              <div className="flex gap-2 justify-between items-center w-full">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
                   {input0?.toFixed(2)}{' '}
                 </Typography>
-                <div className="flex items-center justify-end gap-2 text-right">
+                <div className="flex gap-2 justify-end items-center text-right">
                   {input0 && (
                     <div className="w-5 h-5">
                       <Currency.Icon currency={token1 ? token1 : getTokens(chainId)[0]} width={20} height={20} />
@@ -169,13 +171,13 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
               <ChevronDownIcon width={18} height={18} className="text-stone-200" />
             </div>
           </div>
-          <div className="flex flex-col col-span-12 gap-1 p-2 border sm:p-4 rounded-2xl bg-stone-700/40 border-stone-200/5">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-between w-full gap-2">
+          <div className="flex flex-col col-span-12 gap-1 p-2 rounded-2xl border sm:p-4 bg-stone-700/40 border-stone-200/5">
+            <div className="flex gap-2 items-center">
+              <div className="flex gap-2 justify-between items-center w-full">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
                   {input1?.toFixed(2)}{' '}
                 </Typography>
-                <div className="flex items-center justify-end gap-2 text-right">
+                <div className="flex gap-2 justify-end items-center text-right">
                   {input1 && (
                     <div className="w-5 h-5">
                       <Currency.Icon currency={token2 ? token2 : getTokens(chainId)[0]} width={20} height={20} />
@@ -192,38 +194,22 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
             </Typography>
           </div>
         </div>
-        <div className="flex items-center justify-between gap-2 py-6 pl-4 ">
-          <div className="flex-1">
-            <Rate token1={token1} token2={token2}>
-              {({ toggleInvert, content, usdPrice }) => (
-                <Typography
-                  as="button"
-                  onClick={() => toggleInvert()}
-                  // variant="sm"
-                  weight={600}
-                  className="flex items-center gap-1 text-stone-100"
-                >
-                  {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
-                </Typography>
-              )}
-            </Rate>
-          </div>
-          <div className="flex-1 text-right ">
-            <CopyHelper className="" toCopy={pool?.id || ''} hideIcon={true}>
-              {(isCopied) => (
-                <IconButton className="px-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy contract ID'}>
-                  <div className="flex flex-row justify-center gap-1">
-                    <Square2StackIcon width={20} height={20} color="stone-100" />
-                    <Typography variant="sm" className="text-stone-100">
-                      Register Contract
-                    </Typography>
-                  </div>
-                </IconButton>
-              )}
-            </CopyHelper>
-          </div>
+        <div className="flex gap-2 justify-center items-center py-6">
+          <Rate token1={token1} token2={token2}>
+            {({ toggleInvert, content, usdPrice }) => (
+              <Typography
+                as="button"
+                onClick={() => toggleInvert()}
+                // variant="sm"
+                weight={600}
+                className="flex gap-1 items-center text-stone-100"
+              >
+                {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
+              </Typography>
+            )}
+          </Rate>
         </div>
-        
+
         {/* Route Display */}
         {routeSteps.length > 0 && (
           <div className="px-4 pb-4">
@@ -235,7 +221,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
             />
           </div>
         )}
-        
+
         {children}
       </Dialog.Content>
     </Dialog>

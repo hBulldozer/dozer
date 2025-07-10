@@ -52,26 +52,25 @@ export const seedConfig: SeedConfig = {
       originalAddress: '0x3E1Adb4e24a48B90ca10c28388cE733a6267BAc4',
     },
     {
-      name: 'Bitcoin',
-      symbol: 'hBTC',
+      name: 'NileSwap Token',
+      symbol: 'NST',
       totalSupply: 10000000000,
-      about:
-        'Bitcoin (BTC) is a decentralized digital currency. hBTC is the bridged version of BTC on the Hathor Network.',
+      about: 'NileSwap Token is the designated rewards token for the NileSwap platform.',
       bridged: true,
       sourceChain: 'Sepolia',
       targetChain: 'Hathor',
-      originalAddress: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
+      originalAddress: '0xa1b2c3d4e5f6789012345678901234567890abcd',
     },
-    // {
-    //   name: 'Storm Labs Token 7',
-    //   symbol: 'hSLT7',
-    //   totalSupply: 5000000000,
-    //   about: 'SLT7 is a test token used for bridging between Sepolia and Hathor.',
-    //   bridged: true,
-    //   sourceChain: 'Sepolia',
-    //   targetChain: 'Hathor',
-    //   originalAddress: '0x97118caaE1F773a84462490Dd01FE7a3e7C4cdCd',
-    // },
+    {
+      name: 'Cathor',
+      symbol: 'CTHOR',
+      totalSupply: 10000000000,
+      about: 'Cathor is the original Hathor Network community coin.',
+      bridged: true,
+      sourceChain: 'Sepolia',
+      targetChain: 'Hathor',
+      originalAddress: '0x1234567890abcdef1234567890abcdef12345678',
+    },
   ],
   pools: [
     {
@@ -89,9 +88,16 @@ export const seedConfig: SeedConfig = {
       protocolFee: 0.01,
     },
     {
-      tokenSymbol: 'hBTC',
+      tokenSymbol: 'NST',
+      htrQuantity: 15000000, // 15M HTR worth $300k (at $0.02/HTR)
+      tokenQuantity: 200000, // 200k NST worth $300k (at $1.50/NST) - balanced pool
+      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
+      protocolFee: 0.01,
+    },
+    {
+      tokenSymbol: 'CTHOR',
       htrQuantity: 20000000, // 20M HTR worth $400k (at $0.02/HTR)
-      tokenQuantity: 4, // 4 BTC worth $400k (at $100k/BTC) - balanced pool
+      tokenQuantity: 80000, // 80k CTHOR worth $400k (at $5.00/CTHOR) - balanced pool
       fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
@@ -106,26 +112,41 @@ export const seedConfig: SeedConfig = {
       isNonHTRPool: true, // Flag to identify this as a non-HTR pool
       pairTokenSymbol: 'DZR', // The other token in the pair
     },
-    // {
-    //   tokenSymbol: 'hSLT7',
-    //   htrQuantity: 50000,
-    //   tokenQuantity: 5000,
-    //   fee: 0.05,
-    //   protocolFee: 0.01,
-    // },
+    // Non-HTR pool for multi-hop testing: NST/CTHOR
+    {
+      tokenSymbol: 'CTHOR', // will be paired with NST (instead of HTR)
+      htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
+      tokenQuantity: 30000, // 30k CTHOR worth $150k (at $5.00/CTHOR)
+      dzrQuantity: 100000, // 100k NST worth $150k (at $1.50/NST) - balanced pool
+      fee: 0.005, // 0.5% -> converts to 5 basis points
+      protocolFee: 0.01,
+      isNonHTRPool: true, // Flag to identify this as a non-HTR pool
+      pairTokenSymbol: 'NST', // The other token in the pair
+    },
+    // Non-HTR pool for multi-hop testing: hUSDC/NST (stable/rewards pair)
+    {
+      tokenSymbol: 'NST', // will be paired with hUSDC (instead of HTR)
+      htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
+      tokenQuantity: 66666, // 66.6k NST worth $100k (at $1.50/NST)
+      dzrQuantity: 100000, // 100k USDC worth $100k - balanced pool
+      fee: 0.003, // 0.3% -> converts to 3 basis points (medium fee for stable/rewards pair)
+      protocolFee: 0.01,
+      isNonHTRPool: true, // Flag to identify this as a non-HTR pool
+      pairTokenSymbol: 'hUSDC', // The other token in the pair
+    },
   ],
   oasis: [
-    {
-      tokenSymbol: 'hUSDC',
-      htrQuantity: 10_000_000,
-    },
-    {
-      tokenSymbol: 'hBTC',
-      htrQuantity: 50_000_000,
-    },
     // {
-    //   tokenSymbol: 'hSLT7',
-    //   htrQuantity: 500_000,
+    //   tokenSymbol: 'hUSDC',
+    //   htrQuantity: 10_000_000,
+    // },
+    // {
+    //   tokenSymbol: 'NST',
+    //   htrQuantity: 15_000_000,
+    // },
+    // {
+    //   tokenSymbol: 'CTHOR',
+    //   htrQuantity: 8_000_000,
     // },
   ],
 }

@@ -18,7 +18,7 @@ interface SwapReviewModalLegacy {
 }
 
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
-  const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency } = useTrade()
+  const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency, routeInfo } = useTrade()
   const [sentTX, setSentTX] = useState(false)
   const {
     // address,
@@ -71,7 +71,10 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
 
   const onClick = async () => {
     setSentTX(true)
-    if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
+    if (amountSpecified && outputAmount && mainCurrency && otherCurrency && routeInfo) {
+      // Use poolPath from routeInfo, fallback to constructing from path if needed
+      const swapPath = routeInfo.poolPath || routeInfo.path.join(',')
+      
       if (tradeType === TradeType.EXACT_INPUT) {
         await poolManager.swapExactTokensForTokens(
           hathorRpc,
@@ -80,7 +83,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
           amountSpecified,
           otherCurrency.uuid,
           outputAmount * (1 - slippageTolerance),
-          (pool as any).path
+          swapPath
         )
       } else {
         await poolManager.swapTokensForExactTokens(
@@ -90,7 +93,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
           amountSpecified * (1 + slippageTolerance),
           otherCurrency.uuid,
           outputAmount,
-          (pool as any).path
+          swapPath
         )
       }
     }

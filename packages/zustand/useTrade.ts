@@ -14,6 +14,7 @@ interface RouteInfo {
   amounts: number[]
   amountOut: number
   priceImpact: number
+  poolPath?: string // Comma-separated pool keys for contract execution
 }
 
 interface TradeProps {

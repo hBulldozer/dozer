@@ -426,12 +426,36 @@ export const poolRouter = createTRPCRouter({
         console.log(`   📈 Amount Out: ${(pathInfo.amount_out || 0) / 100}`)
         console.log(`   📊 Price Impact: ${pathInfo.price_impact || 0}%`)
 
+        // Extract pool path (comma-separated pool keys) and derive token path
+        const poolPath = pathInfo.path || ''
+        const poolKeys = poolPath ? poolPath.split(',') : []
+        
+        // Extract unique tokens from pool keys to build token path
+        const tokenPath = []
+        if (poolKeys.length > 0) {
+          // Start with input token
+          tokenPath.push(input.tokenIn)
+          
+          // Follow the path through each pool to build token sequence
+          let currentToken = input.tokenIn
+          for (const poolKey of poolKeys) {
+            const [tokenA, tokenB] = poolKey.split('/')
+            if (tokenA === currentToken) {
+              currentToken = tokenB
+            } else if (tokenB === currentToken) {
+              currentToken = tokenA
+            }
+            tokenPath.push(currentToken)
+          }
+        }
+
         return {
-          path: pathInfo.path || [],
+          path: tokenPath,
           amounts: (pathInfo.amounts || []).map((amt: number) => amt / 100),
           amountOut: (pathInfo.amount_out || 0) / 100,
           priceImpact: pathInfo.price_impact || 0,
-          route: pathInfo.path || [],
+          route: tokenPath, // Keep for backward compatibility
+          poolPath: poolPath, // Add the pool path for contract execution
         }
       } catch (error) {
         console.error('❌ [QUOTE] Error getting swap quote:', error)
@@ -477,12 +501,36 @@ export const poolRouter = createTRPCRouter({
         console.log(`   📈 Amount In: ${(pathInfo.amount_in || 0) / 100}`)
         console.log(`   📊 Price Impact: ${pathInfo.price_impact || 0}%`)
 
+        // Extract pool path (comma-separated pool keys) and derive token path
+        const poolPath = pathInfo.path || ''
+        const poolKeys = poolPath ? poolPath.split(',') : []
+        
+        // Extract unique tokens from pool keys to build token path
+        const tokenPath = []
+        if (poolKeys.length > 0) {
+          // Start with input token
+          tokenPath.push(input.tokenIn)
+          
+          // Follow the path through each pool to build token sequence
+          let currentToken = input.tokenIn
+          for (const poolKey of poolKeys) {
+            const [tokenA, tokenB] = poolKey.split('/')
+            if (tokenA === currentToken) {
+              currentToken = tokenB
+            } else if (tokenB === currentToken) {
+              currentToken = tokenA
+            }
+            tokenPath.push(currentToken)
+          }
+        }
+
         return {
-          path: pathInfo.path || [],
+          path: tokenPath,
           amounts: (pathInfo.amounts || []).map((amt: number) => amt / 100),
           amountIn: (pathInfo.amount_in || 0) / 100,
           priceImpact: pathInfo.price_impact || 0,
-          route: pathInfo.path || [],
+          route: tokenPath, // Keep for backward compatibility
+          poolPath: poolPath, // Add the pool path for contract execution
         }
       } catch (error) {
         console.error('❌ [QUOTE EXACT OUTPUT] Error getting exact output quote:', error)

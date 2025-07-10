@@ -247,17 +247,22 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
       // Convert fee from percentage to basis points
       const fee = Math.round(poolConfig.fee * 1000)
 
+      // Determine the amounts for each token
+      // dzrQuantity is used generically for the "other" token amount in the pair
+      const pairTokenAmount = (poolConfig.dzrQuantity || 0) * 100 // Generic pair token amount
+      const tokenAmount = poolConfig.tokenQuantity * 100 // Token amount
+      
       const actions = [
         {
           type: 'deposit' as const,
           token: tokenA_uuid,
-          amount: (poolConfig.dzrQuantity || 0) * 100, // DZR amount
+          amount: pairTokenAmount,
           changeAddress: admin_address,
         },
         {
           type: 'deposit' as const,
           token: tokenB_uuid,
-          amount: poolConfig.tokenQuantity * 100, // Other token amount
+          amount: tokenAmount,
           changeAddress: admin_address,
         },
       ]
