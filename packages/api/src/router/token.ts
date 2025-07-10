@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
+import { parsePoolApiInfo, type PoolApiInfo } from '../utils/namedTupleParsers'
 
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -268,21 +269,21 @@ export const tokenRouter = createTRPCRouter({
       const pools = []
 
       if (tokenPools.length > 0) {
-        // Batch fetch all pool data using front_end_api_pool_str
-        const poolDataCalls = tokenPools.map((poolKey) => `front_end_api_pool_str("${poolKey}")`)
+        // Batch fetch all pool data using front_end_api_pool
+        const poolDataCalls = tokenPools.map((poolKey) => `front_end_api_pool("${poolKey}")`)
         const poolDataResponse = await fetchFromPoolManager(poolDataCalls)
 
         for (const poolKey of tokenPools) {
           try {
-            const poolDataStr = poolDataResponse.calls[`front_end_api_pool_str("${poolKey}")`]?.value
+            const poolDataArray = poolDataResponse.calls[`front_end_api_pool("${poolKey}")`]?.value
 
-            if (!poolDataStr) {
+            if (!poolDataArray) {
               console.warn(`⚠️  No data found for pool ${poolKey}`)
               continue
             }
 
-            // Parse the JSON string response
-            const poolData = parseJsonResponse(poolDataStr)
+            // Parse the NamedTuple array to an object with proper property names
+            const poolData = parsePoolApiInfo(poolDataArray)
 
             // Parse pool key to get tokens and fee
             const [tokenA, tokenB, feeStr] = poolKey.split('/')

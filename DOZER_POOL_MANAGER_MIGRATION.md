@@ -558,7 +558,71 @@ NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID=<manager_ncid_from_seeding_output>
    - User acceptance testing for UI/UX improvements
    - Documentation updates for new architecture
 
-## Recently Completed Work (User Position Migration)
+## Recently Completed Work
+
+### ✅ Contract JSON Dependency Removal & NamedTuple Parser Implementation (Complete)
+
+**Context:** Successfully removed JSON library dependency from the DozerPoolManager contract and implemented proper NamedTuple parsing in the API layer.
+
+**Problem Identified:**
+- NamedTuples from nano contracts return as arrays, not objects with named properties
+- Example: `['path', [1000, 39], 39, 2]` instead of `{path: 'path', amounts: [1000, 39], amount_out: 39, price_impact: 2}`
+- The `_str` methods using `json.dumps()` were no longer needed and created dependency issues
+
+**Key Changes Made:**
+
+1. **Contract Updates (`contracts/dozer_pool_manager.py`):**
+   - **Removed JSON import**: Eliminated `import json` dependency
+   - **Created 6 new NamedTuple classes**:
+     - `PoolApiInfo` - for frontend API pool information
+     - `PoolInfo` - for detailed pool information  
+     - `UserInfo` - for user position information
+     - `UserPosition` - for user position collections
+     - `SwapPathInfo` - for swap path information
+     - `SwapPathExactOutputInfo` - for exact output swap paths
+   - **Updated 6 view methods** to return NamedTuples instead of dictionaries:
+     - `front_end_api_pool()` → returns `PoolApiInfo`
+     - `pool_info()` → returns `PoolInfo`
+     - `user_info()` → returns `UserInfo`
+     - `get_user_positions()` → returns `dict[str, UserPosition]`
+     - `find_best_swap_path()` → returns `SwapPathInfo`
+     - `find_best_swap_path_exact_output()` → returns `SwapPathExactOutputInfo`
+   - **Removed 6 "_str" methods** that used `json.dumps()`:
+     - `front_end_api_pool_str()`, `pool_info_str()`, `get_user_positions_str()`, etc.
+
+2. **NamedTuple Parser Utility (`packages/api/src/utils/namedTupleParsers.ts`):**
+   - **6 TypeScript interfaces** matching the NamedTuple structures
+   - **6 parser functions** to convert arrays to objects with proper property names
+   - **Error handling** for invalid array formats
+   - **Special parser** for user positions object: `parseUserPositions()`
+
+3. **Router Updates:**
+   - **`pool.ts`**: Updated 8 locations where NamedTuple arrays are accessed
+   - **`profile.ts`**: Updated 3 locations for user position and info methods
+   - **`token.ts`**: Updated 1 location for pool API info
+   - **Removed unused** `parseJsonResponse()` functions
+   - **Fixed field name access** (e.g., `token_a_amount` → `token0Amount`)
+
+**Files Modified:**
+- `contracts/dozer_pool_manager.py` - Removed JSON dependency and updated method signatures
+- `packages/api/src/utils/namedTupleParsers.ts` - New parser utility functions
+- `packages/api/src/router/pool.ts` - Updated to use parser functions
+- `packages/api/src/router/profile.ts` - Updated to use parser functions
+- `packages/api/src/router/token.ts` - Updated to use parser functions
+
+**Testing Results:**
+- ✅ All NamedTuple arrays now properly parsed to objects with named properties
+- ✅ Type safety improved with TypeScript interfaces
+- ✅ No more JSON dependency in the contract
+- ✅ API responses maintain same structure for frontend compatibility
+- ✅ Error handling for malformed contract responses
+
+**Technical Benefits:**
+- **No JSON dependency**: Contract no longer depends on the `json` library
+- **Type safety**: NamedTuples provide better type checking than dictionaries
+- **Performance**: NamedTuples are more efficient than JSON parsing
+- **Compatibility**: NamedTuple is a supported return type for nano contracts
+- **Maintainability**: Centralized parsing logic in utility functions
 
 ### ✅ User Position Fetching & Display Migration (Complete)
 
@@ -612,11 +676,21 @@ NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID=<manager_ncid_from_seeding_output>
 
 ## Next Steps for New Chat Sessions
 1. **Focus areas**: Remove liquidity API completion and frontend page migrations
-2. **Current status**: Core swap functionality working, user positions complete, remove liquidity needs completion
+2. **Current status**: Core swap functionality working, user positions complete, JSON dependency removed, NamedTuple parsing implemented
 3. **Priority**: Complete remove liquidity API endpoints before UI/UX refinements
 4. **Context**: This document provides complete understanding of remaining migration tasks
 
-**Recent Progress:** User position fetching has been fully migrated to DozerPoolManager. All components now use contract-based data with proper decimal conversion. The migration work is progressing well with core functionality operational.
+**Recent Progress:** 
+- ✅ **Contract JSON Dependency Removal**: Successfully removed JSON library dependency from DozerPoolManager contract and implemented proper NamedTuple parsing in API layer
+- ✅ **User Position Migration**: All user position fetching migrated to DozerPoolManager contract methods with proper decimal conversion
+- ✅ **NamedTuple Parser Implementation**: Created utility functions to parse contract NamedTuple arrays into properly typed objects
+- ✅ **Router Updates**: Updated all affected API routers to use new parser functions
+
+**Current Technical Status:**
+- **Contract**: Clean, no external dependencies, proper NamedTuple return types
+- **API Layer**: NamedTuple arrays properly parsed to objects with named properties
+- **Type Safety**: Full TypeScript typing for all contract interactions
+- **Performance**: Efficient parsing without JSON serialization overhead
 
 ---
 

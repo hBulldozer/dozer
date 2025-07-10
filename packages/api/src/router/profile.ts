@@ -3,6 +3,12 @@ import { z } from 'zod'
 import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { useTempTxStore } from '@dozer/zustand'
+import { 
+  parseUserPositions, 
+  parseUserInfo,
+  type UserPosition,
+  type UserInfo
+} from '../utils/namedTupleParsers'
 
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -226,11 +232,11 @@ export const profileRouter = createTRPCRouter({
         return []
       }
 
-      const response = await fetchFromPoolManager([`get_user_positions_str("${input.address}")`])
-      const positionsStr = response.calls[`get_user_positions_str("${input.address}")`].value || '{}'
+      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
+      const positionsArrays = response.calls[`get_user_positions("${input.address}")`].value || {}
 
-      // Parse the JSON string response
-      const positions = parseJsonResponse(positionsStr)
+      // Parse the user positions object (contains NamedTuple arrays for each pool)
+      const positions = parseUserPositions(positionsArrays)
 
       // Get token prices for USD values
       const pricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
@@ -240,12 +246,11 @@ export const profileRouter = createTRPCRouter({
       for (const [poolKey, position] of Object.entries(positions)) {
         if (typeof position === 'object' && position !== null) {
           const [tokenA, tokenB, feeStr] = poolKey.split('/')
-          const pos = position as any
 
           positionPromises.push(
             (async () => {
-              const token0Amount = (pos.token_a_amount || 0) / 100
-              const token1Amount = (pos.token_b_amount || 0) / 100
+              const token0Amount = (position.token0Amount || 0) / 100
+              const token1Amount = (position.token1Amount || 0) / 100
 
               // Calculate USD values
               const token0PriceUSD = (tokenA && tokenPrices[tokenA]) || 0
@@ -257,7 +262,7 @@ export const profileRouter = createTRPCRouter({
               return {
                 poolKey,
                 poolName: `${await getTokenSymbol(tokenA || '')}-${await getTokenSymbol(tokenB || '')}`,
-                liquidity: pos.liquidity || 0,
+                liquidity: position.liquidity || 0,
                 token0Amount,
                 token1Amount,
                 token0ValueUSD,
@@ -304,11 +309,11 @@ export const profileRouter = createTRPCRouter({
         }
       }
 
-      const response = await fetchFromPoolManager([`get_user_positions_str("${input.address}")`])
-      const positionsStr = response.calls[`get_user_positions_str("${input.address}")`].value || '{}'
+      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
+      const positionsArrays = response.calls[`get_user_positions("${input.address}")`].value || {}
 
-      // Parse the JSON string response
-      const positions = parseJsonResponse(positionsStr)
+      // Parse the user positions object (contains NamedTuple arrays for each pool)
+      const positions = parseUserPositions(positionsArrays)
 
       // Get token prices for USD values
       const pricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
@@ -374,14 +379,16 @@ export const profileRouter = createTRPCRouter({
           return null
         }
 
-        const response = await fetchFromPoolManager([`user_info_str("${input.address}", "${input.poolKey}")`])
-        const userInfo = parseJsonResponse(
-          response.calls[`user_info_str("${input.address}", "${input.poolKey}")`].value
-        )
+        const response = await fetchFromPoolManager([`user_info("${input.address}", "${input.poolKey}")`])
+        const userInfoArray = 
+          response.calls[`user_info("${input.address}", "${input.poolKey}")`].value
 
-        if (!userInfo || typeof userInfo !== 'object') {
+        if (!userInfoArray || !Array.isArray(userInfoArray)) {
           return null
         }
+
+        // Parse the NamedTuple array to an object with proper property names
+        const userInfo = parseUserInfo(userInfoArray)
 
         // Get token prices for USD values
         const pricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
@@ -390,8 +397,8 @@ export const profileRouter = createTRPCRouter({
         const [tokenA, tokenB, feeStr] = input.poolKey.split('/')
 
         // Convert amounts from cents to decimals
-        const token0Amount = userInfo.token_a_amount || 0
-        const token1Amount = userInfo.token_b_amount || 0
+        const token0Amount = userInfo.token0Amount || 0
+        const token1Amount = userInfo.token1Amount || 0
         const balanceA = userInfo.balance_a || 0
         const balanceB = userInfo.balance_b || 0
 

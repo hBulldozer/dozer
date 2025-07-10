@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from typing import Any, NamedTuple
 
 from hathor.nanocontracts.blueprint import Blueprint
@@ -96,6 +95,82 @@ class SwapResult(NamedTuple):
     token_in: TokenUid
     amount_out: Amount
     token_out: TokenUid
+
+
+class PoolApiInfo(NamedTuple):
+    """Pool information for frontend API display."""
+
+    reserve0: Amount
+    reserve1: Amount
+    fee: Amount
+    volume: Amount
+    fee0: Amount
+    fee1: Amount
+    dzr_rewards: Amount
+    transactions: Amount
+    is_signed: Amount
+    signer: str | None
+
+
+class PoolInfo(NamedTuple):
+    """Detailed information about a pool."""
+
+    token_a: str
+    token_b: str
+    reserve_a: Amount | None
+    reserve_b: Amount | None
+    fee: Amount | None
+    total_liquidity: Amount | None
+    transactions: Amount | None
+    volume_a: Amount | None
+    volume_b: Amount | None
+    last_activity: Timestamp | None
+    is_signed: bool
+    signer: str | None
+
+
+class UserInfo(NamedTuple):
+    """Detailed information about a user's position in a pool."""
+
+    liquidity: Amount
+    token0Amount: Amount
+    token1Amount: Amount
+    share: Amount
+    balance_a: Amount
+    balance_b: Amount
+    token_a: str
+    token_b: str
+
+
+class UserPosition(NamedTuple):
+    """User position information with extended details."""
+
+    liquidity: Amount
+    token0Amount: Amount
+    token1Amount: Amount
+    share: Amount
+    balance_a: Amount
+    balance_b: Amount
+    token_a: str
+    token_b: str
+
+
+class SwapPathInfo(NamedTuple):
+    """Information about the best swap path between tokens."""
+
+    path: str
+    amounts: list[Amount]
+    amount_out: Amount
+    price_impact: Amount
+
+
+class SwapPathExactOutputInfo(NamedTuple):
+    """Information about the best swap path for exact output swaps."""
+
+    path: str
+    amounts: list[Amount]
+    amount_in: Amount
+    price_impact: Amount
 
 
 class DozerPoolManager(Blueprint):
@@ -2300,14 +2375,14 @@ class DozerPoolManager(Blueprint):
         return user_pools
 
     @view
-    def get_user_positions(self, address: Address) -> dict[str, dict[str, Any]]:
+    def get_user_positions(self, address: Address) -> dict[str, UserPosition]:
         """Get detailed information about all user positions across pools.
 
         Args:
             address: The address to check
 
         Returns:
-            A dictionary mapping pool keys to position information
+            A dictionary mapping pool keys to UserPosition information
         """
         positions = {}
         for pool_key in self.all_pools:
@@ -2316,14 +2391,18 @@ class DozerPoolManager(Blueprint):
                 user_liquidity = self.pool_user_liquidity[pool_key].get(address, 0)
                 if user_liquidity > 0:
                     # Get detailed information about this position
-                    positions[pool_key] = self.user_info(address, pool_key)
-
-                    # Add token information to make it more user-friendly
-                    positions[pool_key]["token_a"] = self.pool_token_a[pool_key].hex()
-                    positions[pool_key]["token_b"] = self.pool_token_b[pool_key].hex()
-                    positions[pool_key]["fee"] = (
-                        self.pool_fee_numerator[pool_key]
-                        / self.pool_fee_denominator[pool_key]
+                    user_info = self.user_info(address, pool_key)
+                    
+                    # Create UserPosition with additional fee information
+                    positions[pool_key] = UserPosition(
+                        liquidity=user_info.liquidity,
+                        token0Amount=user_info.token0Amount,
+                        token1Amount=user_info.token1Amount,
+                        share=user_info.share,
+                        balance_a=user_info.balance_a,
+                        balance_b=user_info.balance_b,
+                        token_a=user_info.token_a,
+                        token_b=user_info.token_b,
                     )
         return positions
 
@@ -2607,14 +2686,14 @@ class DozerPoolManager(Blueprint):
     def front_end_api_pool(
         self,
         pool_key: str,
-    ) -> dict[str, Amount | str | None]:
+    ) -> PoolApiInfo:
         """Get pool information for frontend display.
 
         Args:
             pool_key: The pool key to check
 
         Returns:
-            A dictionary with pool information
+            A PoolApiInfo NamedTuple with pool information
 
         Raises:
             PoolNotFound: If the pool does not exist
@@ -2639,40 +2718,32 @@ class DozerPoolManager(Blueprint):
             else None
         )
 
-        return {
-            "reserve0": Amount(self.pool_reserve_a[pool_key]),
-            "reserve1": Amount(self.pool_reserve_b[pool_key]),
-            "fee": Amount(self.pool_fee_numerator[pool_key]),
-            "volume": Amount(self.pool_volume_a[pool_key]),
-            "fee0": Amount(self.pool_accumulated_fee[pool_key].get(token_a, 0)),
-            "fee1": Amount(self.pool_accumulated_fee[pool_key].get(token_b, 0)),
-            "dzr_rewards": Amount(1000),  # Placeholder as in original implementation
-            "transactions": Amount(self.pool_transactions[pool_key]),
-            "is_signed": Amount(1 if is_signed else 0),
-            "signer": signer_str,
-        }
+        return PoolApiInfo(
+            reserve0=Amount(self.pool_reserve_a[pool_key]),
+            reserve1=Amount(self.pool_reserve_b[pool_key]),
+            fee=Amount(self.pool_fee_numerator[pool_key]),
+            volume=Amount(self.pool_volume_a[pool_key]),
+            fee0=Amount(self.pool_accumulated_fee[pool_key].get(token_a, 0)),
+            fee1=Amount(self.pool_accumulated_fee[pool_key].get(token_b, 0)),
+            dzr_rewards=Amount(1000),  # Placeholder as in original implementation
+            transactions=Amount(self.pool_transactions[pool_key]),
+            is_signed=Amount(1 if is_signed else 0),
+            signer=signer_str,
+        )
 
-    @view
-    def front_end_api_pool_str(
-        self,
-        pool_key: str,
-    ) -> str:
-        """Get pool information for frontend display as JSON string."""
-        json_pool_info = self.front_end_api_pool(pool_key)
-        return json.dumps(json_pool_info)
 
     @view
     def pool_info(
         self,
         pool_key: str,
-    ) -> dict[str, str | int | bool | None]:
+    ) -> PoolInfo:
         """Get detailed information about a pool.
 
         Args:
             pool_key: The pool key to check
 
         Returns:
-            A dictionary with pool information
+            A PoolInfo NamedTuple with pool information
 
         Raises:
             PoolNotFound: If the pool does not exist
@@ -2686,36 +2757,28 @@ class DozerPoolManager(Blueprint):
             else None
         )
 
-        return {
-            "token_a": self.pool_token_a.get(pool_key, b"").hex(),
-            "token_b": self.pool_token_b.get(pool_key, b"").hex(),
-            "reserve_a": self.pool_reserve_a.get(pool_key, None),
-            "reserve_b": self.pool_reserve_b.get(pool_key, None),
-            "fee": self.pool_fee_numerator.get(pool_key, None),
-            "total_liquidity": self.pool_total_liquidity.get(pool_key, None),
-            "transactions": self.pool_transactions.get(pool_key, None),
-            "volume_a": self.pool_volume_a.get(pool_key, None),
-            "volume_b": self.pool_volume_b.get(pool_key, None),
-            "last_activity": self.pool_last_activity.get(pool_key, None),
-            "is_signed": is_signed,
-            "signer": signer_str,
-        }
+        return PoolInfo(
+            token_a=self.pool_token_a.get(pool_key, b"").hex(),
+            token_b=self.pool_token_b.get(pool_key, b"").hex(),
+            reserve_a=self.pool_reserve_a.get(pool_key, None),
+            reserve_b=self.pool_reserve_b.get(pool_key, None),
+            fee=self.pool_fee_numerator.get(pool_key, None),
+            total_liquidity=self.pool_total_liquidity.get(pool_key, None),
+            transactions=self.pool_transactions.get(pool_key, None),
+            volume_a=self.pool_volume_a.get(pool_key, None),
+            volume_b=self.pool_volume_b.get(pool_key, None),
+            last_activity=self.pool_last_activity.get(pool_key, None),
+            is_signed=is_signed,
+            signer=signer_str,
+        )
 
-    @view
-    def pool_info_str(
-        self,
-        pool_key: str,
-    ) -> str:
-        """Get detailed information about a pool."""
-        pool_info = self.pool_info(pool_key)
-        return json.dumps(pool_info)
 
     @view
     def user_info(
         self,
         address: Address,
         pool_key: str,
-    ) -> dict[str, Any]:
+    ) -> UserInfo:
         """Get detailed information about a user's position in a pool.
 
         Args:
@@ -2723,7 +2786,7 @@ class DozerPoolManager(Blueprint):
             pool_key: The pool key to check
 
         Returns:
-            A dictionary with user information
+            A UserInfo NamedTuple with user information
 
         Raises:
             PoolNotFound: If the pool does not exist
@@ -2737,7 +2800,7 @@ class DozerPoolManager(Blueprint):
         # Calculate share
         share = 0
         if self.pool_total_liquidity[pool_key] > 0:
-            share = liquidity * 100 / self.pool_total_liquidity[pool_key]
+            share = liquidity * 100 // self.pool_total_liquidity[pool_key]
 
         # Calculate token amounts based on share
         token_a_amount = (
@@ -2751,14 +2814,16 @@ class DozerPoolManager(Blueprint):
             // self.pool_total_liquidity[pool_key]
         )
 
-        return {
-            "liquidity": liquidity,
-            "share": share,
-            "token_a_amount": token_a_amount,
-            "token_b_amount": token_b_amount,
-            "balance_a": balance_a,
-            "balance_b": balance_b,
-        }
+        return UserInfo(
+            liquidity=Amount(liquidity),
+            token0Amount=Amount(token_a_amount),
+            token1Amount=Amount(token_b_amount),
+            share=Amount(share),
+            balance_a=Amount(balance_a),
+            balance_b=Amount(balance_b),
+            token_a=self.pool_token_a.get(pool_key, b"").hex(),
+            token_b=self.pool_token_b.get(pool_key, b"").hex(),
+        )
 
     @view
     def front_quote_exact_tokens_for_tokens(
@@ -2900,7 +2965,7 @@ class DozerPoolManager(Blueprint):
     @view
     def find_best_swap_path(
         self, amount_in: Amount, token_in: TokenUid, token_out: TokenUid, max_hops: int
-    ) -> dict[str, Any]:
+    ) -> SwapPathInfo:
         """Find the best path for swapping between two tokens using Dijkstra's algorithm.
 
         This method calculates the optimal path for swapping from token_in to token_out,
@@ -2913,7 +2978,7 @@ class DozerPoolManager(Blueprint):
             max_hops: Maximum number of hops (1-3, but algorithm handles any number)
 
         Returns:
-            A dictionary containing:
+            A SwapPathInfo NamedTuple containing:
             - path: Comma-separated string of pool keys to traverse
             - amounts: Expected amounts at each step
             - amount_out: Final expected output amount
@@ -2927,12 +2992,12 @@ class DozerPoolManager(Blueprint):
         graph = self._build_token_graph(amount_in)
 
         if token_in not in graph:
-            return {
-                "path": "",
-                "amounts": [amount_in],
-                "amount_out": 0,
-                "price_impact": 0,
-            }
+            return SwapPathInfo(
+                path="",
+                amounts=[amount_in],
+                amount_out=Amount(0),
+                price_impact=Amount(0),
+            )
 
         # Run Dijkstra's algorithm to find optimal path
         path_info = self._dijkstra_shortest_path(
@@ -2940,24 +3005,24 @@ class DozerPoolManager(Blueprint):
         )
 
         if not path_info["path"]:
-            return {
-                "path": "",
-                "amounts": [amount_in],
-                "amount_out": 0,
-                "price_impact": 0,
-            }
+            return SwapPathInfo(
+                path="",
+                amounts=[amount_in],
+                amount_out=Amount(0),
+                price_impact=Amount(0),
+            )
 
         # Calculate price impact for the optimal path
         price_impact = self._calculate_price_impact(
             amount_in, path_info["amount_out"], path_info["path"], token_in, token_out
         )
 
-        return {
-            "path": path_info["path"],
-            "amounts": path_info["amounts"],
-            "amount_out": path_info["amount_out"],
-            "price_impact": price_impact,
-        }
+        return SwapPathInfo(
+            path=path_info["path"],
+            amounts=path_info["amounts"],
+            amount_out=path_info["amount_out"],
+            price_impact=price_impact,
+        )
 
     @view
     def _build_token_graph(
@@ -3312,24 +3377,12 @@ class DozerPoolManager(Blueprint):
         theoretical_output = (current_amount * amount_in) // ref_amount
         return Amount(theoretical_output)
 
-    @view
-    def get_user_positions_str(self, address: Address) -> str:
-        """Get detailed information about all user positions as JSON string."""
-        positions = self.get_user_positions(address)
-        return json.dumps(positions)
 
-    @view
-    def find_best_swap_path_str(
-        self, amount_in: Amount, token_in: TokenUid, token_out: TokenUid, max_hops: int
-    ) -> str:
-        """Find the best path for swapping between two tokens as JSON string."""
-        path_info = self.find_best_swap_path(amount_in, token_in, token_out, max_hops)
-        return json.dumps(path_info)
 
     @view
     def find_best_swap_path_exact_output(
         self, amount_out: Amount, token_in: TokenUid, token_out: TokenUid, max_hops: int
-    ) -> dict[str, Any]:
+    ) -> SwapPathExactOutputInfo:
         """Find the best path for swapping to get exact output amount using reverse pathfinding.
 
         This method calculates the optimal path for swapping from token_in to token_out,
@@ -3342,7 +3395,7 @@ class DozerPoolManager(Blueprint):
             max_hops: Maximum number of hops (1-3, but algorithm handles any number)
 
         Returns:
-            A dictionary containing:
+            A SwapPathExactOutputInfo NamedTuple containing:
             - path: Comma-separated string of pool keys to traverse
             - amounts: Expected amounts at each step (reverse order)
             - amount_in: Required input amount
@@ -3356,12 +3409,12 @@ class DozerPoolManager(Blueprint):
         graph = self._build_reverse_token_graph(amount_out)
 
         if token_out not in graph:
-            return {
-                "path": "",
-                "amounts": [amount_out],
-                "amount_in": 0,
-                "price_impact": 0,
-            }
+            return SwapPathExactOutputInfo(
+                path="",
+                amounts=[amount_out],
+                amount_in=Amount(0),
+                price_impact=Amount(0),
+            )
 
         # Run reverse Dijkstra's algorithm to find optimal path
         path_info = self._dijkstra_reverse_shortest_path(
@@ -3369,24 +3422,24 @@ class DozerPoolManager(Blueprint):
         )
 
         if not path_info["path"]:
-            return {
-                "path": "",
-                "amounts": [amount_out],
-                "amount_in": 0,
-                "price_impact": 0,
-            }
+            return SwapPathExactOutputInfo(
+                path="",
+                amounts=[amount_out],
+                amount_in=Amount(0),
+                price_impact=Amount(0),
+            )
 
         # Calculate price impact for the optimal path
         price_impact = self._calculate_price_impact(
             path_info["amount_in"], amount_out, path_info["path"], token_in, token_out
         )
 
-        return {
-            "path": path_info["path"],
-            "amounts": path_info["amounts"],
-            "amount_in": path_info["amount_in"],
-            "price_impact": price_impact,
-        }
+        return SwapPathExactOutputInfo(
+            path=path_info["path"],
+            amounts=path_info["amounts"],
+            amount_in=path_info["amount_in"],
+            price_impact=price_impact,
+        )
 
     @view
     def _build_reverse_token_graph(
@@ -3573,21 +3626,7 @@ class DozerPoolManager(Blueprint):
             "amount_in": final_input_amount,
         }
 
-    @view
-    def find_best_swap_path_exact_output_str(
-        self, amount_out: Amount, token_in: TokenUid, token_out: TokenUid, max_hops: int
-    ) -> str:
-        """Find the best path for exact output swapping as JSON string."""
-        path_info = self.find_best_swap_path_exact_output(
-            amount_out, token_in, token_out, max_hops
-        )
-        return json.dumps(path_info)
 
-    @view
-    def user_info_str(self, address: Address, pool_key: str) -> str:
-        """Get detailed information about a user's position as JSON string."""
-        user_info = self.user_info(address, pool_key)
-        return json.dumps(user_info)
 
     @view
     def calculate_amount_out(

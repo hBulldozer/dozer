@@ -2,6 +2,17 @@ import { z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
+import { 
+  parsePoolApiInfo, 
+  parsePoolInfo, 
+  parseSwapPathInfo, 
+  parseSwapPathExactOutputInfo,
+  parseUserPositions,
+  type PoolApiInfo,
+  type PoolInfo,
+  type SwapPathInfo,
+  type SwapPathExactOutputInfo
+} from '../utils/namedTupleParsers'
 
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -29,15 +40,6 @@ async function fetchFromPoolManager(calls: string[], timestamp?: number): Promis
   return await fetchNodeData(endpoint, queryParams)
 }
 
-// Helper function to parse JSON string responses from _str methods
-function parseJsonResponse(jsonString: string): any {
-  try {
-    return JSON.parse(jsonString)
-  } catch (error) {
-    console.error('Error parsing JSON response:', error)
-    throw new Error('Failed to parse contract response')
-  }
-}
 
 // Helper function to extract tokens from pool keys
 function extractTokensFromPools(poolKeys: string[]): string[] {
@@ -174,8 +176,8 @@ export const poolRouter = createTRPCRouter({
         return []
       }
 
-      // Batch fetch all pool data using front_end_api_pool_str
-      const poolDataCalls = poolKeys.map((poolKey) => `front_end_api_pool_str("${poolKey}")`)
+      // Batch fetch all pool data using front_end_api_pool
+      const poolDataCalls = poolKeys.map((poolKey) => `front_end_api_pool("${poolKey}")`)
       const poolDataResponse = await fetchFromPoolManager(poolDataCalls)
       // Extract unique tokens from all pool keys for batch symbol fetching
       const uniqueTokens = extractTokensFromPools(poolKeys)
@@ -197,15 +199,15 @@ export const poolRouter = createTRPCRouter({
       // Process each pool
       const poolsData = poolKeys.map((poolKey) => {
         try {
-          const poolDataStr = poolDataResponse.calls[`front_end_api_pool_str("${poolKey}")`]?.value
+          const poolDataArray = poolDataResponse.calls[`front_end_api_pool("${poolKey}")`]?.value
 
-          if (!poolDataStr) {
+          if (!poolDataArray) {
             console.warn(`⚠️  [GET_POOLS_ALL] No data found for pool ${poolKey}`)
             return null
           }
 
-          // Parse the JSON string response
-          const poolData = parseJsonResponse(poolDataStr)
+          // Parse the NamedTuple array to an object with proper property names
+          const poolData = parsePoolApiInfo(poolDataArray)
 
           // Parse pool key to get tokens and fee
           const [tokenA, tokenB, feeStr] = poolKey.split('/')
@@ -299,15 +301,15 @@ export const poolRouter = createTRPCRouter({
   // Get pool by ID (pool key)
   byId: procedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
     try {
-      const response = await fetchFromPoolManager([`pool_info_str("${input.id}")`])
-      const poolInfoStr = response.calls[`pool_info_str("${input.id}")`].value
+      const response = await fetchFromPoolManager([`pool_info("${input.id}")`])
+      const poolInfoArray = response.calls[`pool_info("${input.id}")`].value
 
-      if (!poolInfoStr) {
+      if (!poolInfoArray) {
         throw new Error('Pool not found')
       }
 
-      // Parse the JSON string response
-      const poolInfo = parseJsonResponse(poolInfoStr)
+      // Parse the NamedTuple array to an object with proper property names
+      const poolInfo = parsePoolInfo(poolInfoArray)
 
       // Parse pool key
       const [tokenA, tokenB, feeStr] = input.id.split('/')
@@ -394,19 +396,19 @@ export const poolRouter = createTRPCRouter({
 
       // Get the pool data using the found pool key and also fetch additional data like prices
       const batchResponseData = await fetchFromPoolManager([
-        `front_end_api_pool_str("${matchingPoolKey}")`,
+        `front_end_api_pool("${matchingPoolKey}")`,
         'get_all_token_prices_in_usd()',
       ])
 
-      const poolDataStr = batchResponseData.calls[`front_end_api_pool_str("${matchingPoolKey}")`]?.value
+      const poolDataArray = batchResponseData.calls[`front_end_api_pool("${matchingPoolKey}")`]?.value
       const tokenPrices = batchResponseData.calls['get_all_token_prices_in_usd()'].value || {}
 
-      if (!poolDataStr) {
+      if (!poolDataArray) {
         throw new Error('Pool data not found')
       }
 
-      // Parse the JSON string response
-      const poolData = parseJsonResponse(poolDataStr)
+      // Parse the NamedTuple array to an object with proper property names
+      const poolData = parsePoolApiInfo(poolDataArray)
 
       // Parse pool key
       const [tokenA, tokenB, feeStrSecond] = matchingPoolKey.split('/')
@@ -486,15 +488,15 @@ export const poolRouter = createTRPCRouter({
   // Get user liquidity positions
   userPositions: procedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
     try {
-      const response = await fetchFromPoolManager([`get_user_positions_str("${input.address}")`])
-      const positionsStr = response.calls[`get_user_positions_str("${input.address}")`].value
+      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
+      const positionsArrays = response.calls[`get_user_positions("${input.address}")`].value
 
-      if (!positionsStr) {
+      if (!positionsArrays) {
         return []
       }
 
-      // Parse the JSON string response
-      const positions = parseJsonResponse(positionsStr)
+      // Parse the user positions object (contains NamedTuple arrays for each pool)
+      const positions = parseUserPositions(positionsArrays)
 
       const positionPromises = []
       for (const [poolKey, position] of Object.entries(positions)) {
@@ -504,9 +506,9 @@ export const poolRouter = createTRPCRouter({
             (async () => ({
               poolKey,
               poolName: `${await getTokenSymbol(tokenA || '')}-${await getTokenSymbol(tokenB || '')}`,
-              liquidity: (position as any).liquidity || 0,
-              token0Amount: ((position as any).token_a_amount || 0) / 100,
-              token1Amount: ((position as any).token_b_amount || 0) / 100,
+              liquidity: position.liquidity || 0,
+              token0Amount: (position.token0Amount || 0) / 100,
+              token1Amount: (position.token1Amount || 0) / 100,
               token0: {
                 uuid: tokenA,
                 symbol: await getTokenSymbol(tokenA || ''),
@@ -545,20 +547,19 @@ export const poolRouter = createTRPCRouter({
       try {
         const amount = Math.round(input.amountIn * 100) // Convert to cents
         const response = await fetchFromPoolManager([
-          `find_best_swap_path_str(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
+          `find_best_swap_path(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
         ])
+        const pathInfoArray =
+          response.calls[`find_best_swap_path(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`].value
 
-        const pathInfoStr =
-          response.calls[`find_best_swap_path_str(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`]
-            .value
-
-        if (!pathInfoStr) {
+        console.log(pathInfoArray)
+        if (!pathInfoArray) {
           console.log(`❌ [QUOTE] No swap path found for ${input.tokenIn} → ${input.tokenOut}`)
           throw new Error('No swap path found')
         }
 
-        // Parse the JSON string response
-        const pathInfo = parseJsonResponse(pathInfoStr)
+        // Parse the NamedTuple array to an object with proper property names
+        const pathInfo = parseSwapPathInfo(pathInfoArray)
 
         // Extract pool path (comma-separated pool keys) and derive token path
         const poolPath = pathInfo.path || ''
@@ -611,21 +612,21 @@ export const poolRouter = createTRPCRouter({
       try {
         const amount = Math.round(input.amountOut * 100) // Convert to cents
         const response = await fetchFromPoolManager([
-          `find_best_swap_path_exact_output_str(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
+          `find_best_swap_path_exact_output(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
         ])
 
-        const pathInfoStr =
+        const pathInfoArray =
           response.calls[
-            `find_best_swap_path_exact_output_str(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`
+            `find_best_swap_path_exact_output(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`
           ].value
 
-        if (!pathInfoStr) {
+        if (!pathInfoArray) {
           console.log(`❌ [QUOTE EXACT OUTPUT] No swap path found for ${input.tokenIn} → ${input.tokenOut}`)
           throw new Error('No swap path found')
         }
 
-        // Parse the JSON string response
-        const pathInfo = parseJsonResponse(pathInfoStr)
+        // Parse the NamedTuple array to an object with proper property names
+        const pathInfo = parseSwapPathExactOutputInfo(pathInfoArray)
 
         // Extract pool path (comma-separated pool keys) and derive token path
         const poolPath = pathInfo.path || ''
@@ -674,15 +675,15 @@ export const poolRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       try {
-        const response = await fetchFromPoolManager([`pool_info_str("${input.poolKey}")`], input.timestamp)
-        const poolInfoStr = response.calls[`pool_info_str("${input.poolKey}")`].value
+        const response = await fetchFromPoolManager([`pool_info("${input.poolKey}")`], input.timestamp)
+        const poolInfoArray = response.calls[`pool_info("${input.poolKey}")`].value
 
-        if (!poolInfoStr) {
+        if (!poolInfoArray) {
           throw new Error('Pool data not found at timestamp')
         }
 
-        // Parse the JSON string response
-        const poolInfo = parseJsonResponse(poolInfoStr)
+        // Parse the NamedTuple array to an object with proper property names
+        const poolInfo = parsePoolInfo(poolInfoArray)
 
         return {
           poolKey: input.poolKey,
@@ -809,15 +810,15 @@ export const poolRouter = createTRPCRouter({
 
         // Get the best route
         const routeResponse = await fetchFromPoolManager([
-          `find_best_swap_path_str(${amountInCents},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
+          `find_best_swap_path(${amountInCents},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
         ])
 
-        const pathInfoStr =
+        const pathInfoArray =
           routeResponse.calls[
-            `find_best_swap_path_str(${amountInCents},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`
+            `find_best_swap_path(${amountInCents},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`
           ].value
 
-        if (!pathInfoStr) {
+        if (!pathInfoArray) {
           console.log(`❌ [ROUTE ANALYSIS] No route found`)
           return {
             success: false,
@@ -826,7 +827,8 @@ export const poolRouter = createTRPCRouter({
           }
         }
 
-        const pathInfo = parseJsonResponse(pathInfoStr)
+        // Parse the NamedTuple array to an object with proper property names
+        const pathInfo = parseSwapPathInfo(pathInfoArray)
 
         console.log(`✅ [ROUTE ANALYSIS] Route found:`)
         console.log(`   📍 Full Path: ${JSON.stringify(pathInfo.path || [])}`)
@@ -952,13 +954,13 @@ export const poolRouter = createTRPCRouter({
         // Call our route analysis endpoint
         const amountInCents = Math.round(input.amountIn * 100)
         const routeResponse = await fetchFromPoolManager([
-          `find_best_swap_path_str(${amountInCents},"${input.tokenIn}","${tokenOut}",3)`,
+          `find_best_swap_path(${amountInCents},"${input.tokenIn}","${tokenOut}",3)`,
         ])
 
-        const pathInfoStr =
-          routeResponse.calls[`find_best_swap_path_str(${amountInCents},"${input.tokenIn}","${tokenOut}",3)`].value
+        const pathInfoArray =
+          routeResponse.calls[`find_best_swap_path(${amountInCents},"${input.tokenIn}","${tokenOut}",3)`].value
 
-        if (!pathInfoStr) {
+        if (!pathInfoArray) {
           console.log(`❌ [ROUTE TEST] No route found for test`)
           return {
             success: false,
@@ -966,7 +968,8 @@ export const poolRouter = createTRPCRouter({
           }
         }
 
-        const pathInfo = parseJsonResponse(pathInfoStr)
+        // Parse the NamedTuple array to an object with proper property names
+        const pathInfo = parseSwapPathInfo(pathInfoArray)
 
         console.log(`✅ [ROUTE TEST] Test route found:`)
         console.log(`   📍 Path: ${JSON.stringify(pathInfo.path || [])}`)
@@ -1007,7 +1010,7 @@ export const poolRouter = createTRPCRouter({
       }
     }),
 
-  // Get add liquidity quote for exact input amount  
+  // Get add liquidity quote for exact input amount
   front_quote_add_liquidity_in: procedure
     .input(
       z.object({
@@ -1072,19 +1075,20 @@ export const poolRouter = createTRPCRouter({
 
         // Convert decimal amount to cents (Amount type expects integers)
         const amountInCents = Math.round(input.amount_in * 100)
-        
+
         // Call the contract method with the pool key
         const response = await fetchFromPoolManager([
           `front_quote_add_liquidity_in(${amountInCents}, "${input.token_in}", "${poolKey}")`,
         ])
 
-        const resultInCents = response.calls[`front_quote_add_liquidity_in(${amountInCents}, "${input.token_in}", "${poolKey}")`].value
-        
+        const resultInCents =
+          response.calls[`front_quote_add_liquidity_in(${amountInCents}, "${input.token_in}", "${poolKey}")`].value
+
         // Validate and convert result back from cents to decimal
         if (typeof resultInCents !== 'number' || !isFinite(resultInCents)) {
           throw new Error('Invalid response from contract')
         }
-        
+
         const result = resultInCents / 100
 
         return result
@@ -1159,19 +1163,20 @@ export const poolRouter = createTRPCRouter({
 
         // Convert decimal amount to cents (Amount type expects integers)
         const amountOutCents = Math.round(input.amount_out * 100)
-        
+
         // Call the contract method with the pool key
         const response = await fetchFromPoolManager([
           `front_quote_add_liquidity_out(${amountOutCents}, "${input.token_in}", "${poolKey}")`,
         ])
 
-        const resultInCents = response.calls[`front_quote_add_liquidity_out(${amountOutCents}, "${input.token_in}", "${poolKey}")`].value
-        
+        const resultInCents =
+          response.calls[`front_quote_add_liquidity_out(${amountOutCents}, "${input.token_in}", "${poolKey}")`].value
+
         // Validate and convert result back from cents to decimal
         if (typeof resultInCents !== 'number' || !isFinite(resultInCents)) {
           throw new Error('Invalid response from contract')
         }
-        
+
         const result = resultInCents / 100
 
         return result
