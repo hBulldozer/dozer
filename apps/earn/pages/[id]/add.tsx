@@ -18,11 +18,11 @@ type PoolsOutput = ElementType<PoolsOutputArray>
 
 const LINKS = (pool: PoolsOutput): BreadcrumbLink[] => [
   {
-    href: `/${pool.id}`,
+    href: `/${(pool as any).symbolId || pool.id}`,
     label: `${pool.name}`,
   },
   {
-    href: `/${pool.id}/add`,
+    href: `/${(pool as any).symbolId || pool.id}/add`,
     label: `Add Liquidity`,
   },
 ]

@@ -193,7 +193,7 @@ export const PoolsTable: FC = () => {
   }, [isMd, isSm, mounted])
 
   const rowLink = useCallback((row: Pair) => {
-    return `/${row.id}`
+    return `/${(row as any).symbolId || row.id}`
   }, [])
 
   const isSomePending = useMemo(() => {

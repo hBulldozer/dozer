@@ -19,7 +19,7 @@ export const PoolButtons: FC<PoolButtonsProps> = ({ pair }) => {
   return (
     <div className="flex flex-col w-full gap-2">
       <div className="flex gap-2">
-        <Link.Internal href={`/${pair.id}/remove`} passHref={true}>
+        <Link.Internal href={`/${(pair as any).symbolId || pair.id}/remove`} passHref={true}>
           <a className="w-full">
             <Button
               // disabled
@@ -31,7 +31,7 @@ export const PoolButtons: FC<PoolButtonsProps> = ({ pair }) => {
             </Button>
           </a>
         </Link.Internal>
-        <Link.Internal href={`/${pair.id}/add`} passHref={true}>
+        <Link.Internal href={`/${(pair as any).symbolId || pair.id}/add`} passHref={true}>
           <Button as="a" size="md" fullWidth>
             Deposit
           </Button>

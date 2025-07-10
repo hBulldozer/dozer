@@ -1,8 +1,7 @@
 import { z } from 'zod'
 
-import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
-import { PoolManager } from '@dozer/nanocontracts'
+import { fetchNodeData } from '../helpers/fetchFunction'
 
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -99,6 +98,18 @@ async function getTokenSymbol(tokenUuid: string): Promise<string> {
 async function getTokenName(tokenUuid: string): Promise<string> {
   const tokenInfo = await fetchTokenInfo(tokenUuid)
   return tokenInfo.name
+}
+
+// Helper function to generate symbol-based identifier from pool key
+async function generateSymbolId(poolKey: string): Promise<string> {
+  const [tokenA, tokenB, feeStr] = poolKey.split('/')
+  const feeBasisPoints = parseInt(feeStr || '0')
+  const feeForId = feeBasisPoints / 10 // Convert from basis points to identifier format (e.g., 30 -> 3)
+
+  const symbolA = await getTokenSymbol(tokenA || '')
+  const symbolB = await getTokenSymbol(tokenB || '')
+
+  return `${symbolA}-${symbolB}-${feeForId}`
 }
 
 export type TransactionHistory = {
@@ -240,8 +251,14 @@ export const poolRouter = createTRPCRouter({
             }, TVL: $${liquidityUSD.toFixed(2)}, APR: ${apr.toFixed(2)}%`
           )
 
+          // Generate symbol-based identifier for URL-friendly access
+          const feeBasisPoints = parseInt(feeStr || '0')
+          const feeForId = feeBasisPoints / 10 // Convert from basis points to identifier format
+          const symbolId = `${token0Info.symbol}-${token1Info.symbol}-${feeForId}`
+
           return {
             id: poolKey,
+            symbolId,
             name: `${token0Info.symbol}-${token1Info.symbol}`,
             liquidityUSD,
             volume0: reserve0,
@@ -341,6 +358,152 @@ export const poolRouter = createTRPCRouter({
     }
   }),
 
+  // Get pool by symbol-based identifier (e.g., "HTR-DZR-3" for HTR/DZR pool with 0.03% fee)
+  bySymbolId: procedure.input(z.object({ symbolId: z.string() })).query(async ({ input }) => {
+    try {
+      console.log(`🔍 [GET_POOL_BY_SYMBOL] Looking for pool with symbol ID: ${input.symbolId}`)
+
+      // Parse symbol-based identifier (e.g., "HTR-DZR-3" -> symbols: ["HTR", "DZR"], fee: 3 -> 0.03%)
+      const parts = input.symbolId.split('-')
+      if (parts.length !== 3) {
+        throw new Error('Invalid symbol ID format. Expected format: SYMBOL1-SYMBOL2-FEE (e.g., HTR-DZR-3)')
+      }
+
+      const [symbol0, symbol1, feeString] = parts
+      const feeValue = parseFloat(feeString || '0') // Parse as float to handle decimals
+      const feePercent = feeValue / 100 // Convert to percentage (e.g., 5 -> 0.05)
+      const feeBasisPoints = Math.round(feeValue * 10) // Convert to basis points (e.g., 5 -> 50)
+
+      console.log(`   📊 Parsed: ${symbol0}/${symbol1} with ${feePercent}% fee (${feeBasisPoints} basis points)`)
+
+      // Get all signed pools to find the matching one
+      const batchResponse = await fetchFromPoolManager(['get_signed_pools()'])
+      const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
+
+      if (poolKeys.length === 0) {
+        throw new Error('No signed pools found')
+      }
+
+      // Find the pool that matches the symbol and fee criteria
+      let matchingPoolKey: string | null = null
+
+      for (const poolKey of poolKeys) {
+        const [tokenA, tokenB, feeStr] = poolKey.split('/')
+        const poolFeeBasisPoints = parseInt(feeStr || '0')
+
+        // Check if fee matches
+        if (poolFeeBasisPoints === feeBasisPoints) {
+          // Get token symbols for comparison
+          const tokenASymbol = await getTokenSymbol(tokenA || '')
+          const tokenBSymbol = await getTokenSymbol(tokenB || '')
+
+          // Check if symbols match (in either order)
+          if (
+            (tokenASymbol === symbol0 && tokenBSymbol === symbol1) ||
+            (tokenASymbol === symbol1 && tokenBSymbol === symbol0)
+          ) {
+            matchingPoolKey = poolKey
+            console.log(`   ✅ Found matching pool: ${poolKey} (${tokenASymbol}-${tokenBSymbol})`)
+            break
+          }
+        }
+      }
+
+      if (!matchingPoolKey) {
+        throw new Error(`No pool found with symbols ${symbol0}-${symbol1} and fee ${feePercent}%`)
+      }
+
+      // Get the pool data using the found pool key and also fetch additional data like prices
+      const batchResponseData = await fetchFromPoolManager([
+        `front_end_api_pool_str("${matchingPoolKey}")`,
+        'get_all_token_prices_in_usd()',
+      ])
+
+      const poolDataStr = batchResponseData.calls[`front_end_api_pool_str("${matchingPoolKey}")`]?.value
+      const tokenPrices = batchResponseData.calls['get_all_token_prices_in_usd()'].value || {}
+
+      if (!poolDataStr) {
+        throw new Error('Pool data not found')
+      }
+
+      // Parse the JSON string response
+      const poolData = parseJsonResponse(poolDataStr)
+
+      // Parse pool key
+      const [tokenA, tokenB, feeStrSecond] = matchingPoolKey.split('/')
+      const fee = parseInt(feeStrSecond || '0') / 1000
+      const swapFee = parseInt(feeStrSecond || '0') / 1000 // Convert from basis points to percentage
+
+      // Get token metadata
+      const token0Info = await fetchTokenInfo(tokenA || '')
+      const token1Info = await fetchTokenInfo(tokenB || '')
+
+      // Calculate reserves (convert from cents to full units)
+      const reserve0 = (poolData.reserve0 || 0) / 100
+      const reserve1 = (poolData.reserve1 || 0) / 100
+
+      // Get token prices
+      const token0PriceUSD = tokenPrices[tokenA || ''] || 0
+      const token1PriceUSD = tokenPrices[tokenB || ''] || 0
+
+      // Calculate USD values
+      const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
+
+      // Calculate volume and fees
+      const volume1d = (poolData.volume || 0) / 100
+      const volumeUSD = volume1d * token0PriceUSD // Approximate volume USD
+
+      const fee0 = (poolData.fee0 || 0) / 100
+      const fee1 = (poolData.fee1 || 0) / 100
+      const feeUSD = fee0 * token0PriceUSD + fee1 * token1PriceUSD
+
+      // Calculate APR (annualized based on daily fees)
+      const apr = liquidityUSD > 0 ? ((feeUSD * 365) / liquidityUSD) * 100 : 0
+
+      return {
+        id: matchingPoolKey,
+        symbolId: input.symbolId,
+        name: `${token0Info.symbol}-${token1Info.symbol}`,
+        liquidityUSD,
+        volume0: reserve0,
+        volume1: reserve1,
+        volumeUSD,
+        feeUSD,
+        swapFee,
+        apr: apr / 100, // Convert back to decimal for consistency
+        token0: {
+          uuid: tokenA,
+          symbol: token0Info.symbol,
+          name: token0Info.name,
+          decimals: 2,
+          chainId: 1,
+        },
+        token1: {
+          uuid: tokenB,
+          symbol: token1Info.symbol,
+          name: token1Info.name,
+          decimals: 2,
+          chainId: 1,
+        },
+        reserve0,
+        reserve1,
+        chainId: 1,
+        liquidity: poolData.total_liquidity || 0,
+        volume1d,
+        fee0,
+        fee1,
+        fees1d: feeUSD,
+        txCount: poolData.transactions || 0,
+        txCount1d: poolData.transactions || 0,
+        daySnapshots: [],
+        hourSnapshots: [],
+      }
+    } catch (error) {
+      console.error(`Error fetching pool with symbol ID ${input.symbolId}:`, error)
+      throw new Error(`Failed to fetch pool data: ${error}`)
+    }
+  }),
+
   // Get user liquidity positions
   userPositions: procedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
     try {
@@ -429,13 +592,13 @@ export const poolRouter = createTRPCRouter({
         // Extract pool path (comma-separated pool keys) and derive token path
         const poolPath = pathInfo.path || ''
         const poolKeys = poolPath ? poolPath.split(',') : []
-        
+
         // Extract unique tokens from pool keys to build token path
         const tokenPath = []
         if (poolKeys.length > 0) {
           // Start with input token
           tokenPath.push(input.tokenIn)
-          
+
           // Follow the path through each pool to build token sequence
           let currentToken = input.tokenIn
           for (const poolKey of poolKeys) {
@@ -504,13 +667,13 @@ export const poolRouter = createTRPCRouter({
         // Extract pool path (comma-separated pool keys) and derive token path
         const poolPath = pathInfo.path || ''
         const poolKeys = poolPath ? poolPath.split(',') : []
-        
+
         // Extract unique tokens from pool keys to build token path
         const tokenPath = []
         if (poolKeys.length > 0) {
           // Start with input token
           tokenPath.push(input.tokenIn)
-          
+
           // Follow the path through each pool to build token sequence
           let currentToken = input.tokenIn
           for (const poolKey of poolKeys) {

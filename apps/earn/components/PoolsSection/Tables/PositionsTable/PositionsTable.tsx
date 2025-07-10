@@ -151,7 +151,7 @@ export const PositionsTable: FC = () => {
   }, [isMd, isSm])
 
   const rowLink = useCallback((row: Pair) => {
-    return `/${row.id}`
+    return `/${(row as any).symbolId || row.id}`
   }, [])
 
   return (

@@ -35,9 +35,9 @@ export const getStaticPaths: GetStaticPaths = async () => {
   if (!pools) {
     throw new Error(`Failed to fetch pool, received ${pools}`)
   }
-  // Get the paths we want to pre-render based on pairs
+  // Get the paths we want to pre-render based on symbol IDs instead of pool keys
   const paths = pools?.map((pool: any) => ({
-    params: { id: `${pool.id}` },
+    params: { id: pool.symbolId || `${pool.id}` }, // Use symbolId if available, fallback to pool key
   }))
 
   // We'll pre-render only these paths at build time.
@@ -49,13 +49,30 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
-  if (!pools) {
-    throw new Error(`Failed to fetch pool, received ${pools}`)
-  }
-  const pool = pools.find((pool: any) => pool.id === id)
-  if (!pool) {
-    throw new Error(`Failed to find pool with id ${id}`)
+
+  // Try to determine if this is a symbol-based ID (contains hyphens) or a pool key (contains slashes)
+  const isSymbolId = id.includes('-') && !id.includes('/')
+
+  let pool: any = null
+
+  if (isSymbolId) {
+    // Try to fetch using the symbol-based ID
+    try {
+      pool = await ssg.getPools.bySymbolId.fetch({ symbolId: id })
+    } catch (error) {
+      console.error(`Failed to fetch pool with symbol ID ${id}:`, error)
+      throw new Error(`Failed to find pool with symbol ID ${id}`)
+    }
+  } else {
+    // Fallback to old method - search in all pools
+    const pools = await ssg.getPools.all.fetch()
+    if (!pools) {
+      throw new Error(`Failed to fetch pool, received ${pools}`)
+    }
+    pool = pools.find((pool: any) => pool.id === id || pool.symbolId === id)
+    if (!pool) {
+      throw new Error(`Failed to find pool with id ${id}`)
+    }
   }
 
   await ssg.getPools.all.prefetch()
@@ -72,7 +89,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
-    href: `/${pair.id}`,
+    href: `/${(pair as any).symbolId || pair.id}`, // Use symbolId if available, fallback to pool key
     label: `${pair.name}`,
   },
 ]
@@ -85,38 +102,76 @@ const Pool = () => {
 
   const id = router.query.id as string
 
+  // Determine if this is a symbol-based ID or pool key
+  const isSymbolId = id.includes('-') && !id.includes('/')
+
   const { data: initialPrices = {} } = api.getPrices.allUSD.useQuery(undefined, {
     suspense: false,
     refetchOnMount: false,
     staleTime: 30000,
   })
-  const { data: initialPools } = api.getPools.all.useQuery(undefined, {
+
+  // Fetch the specific pool by symbol ID if it's a symbol-based ID
+  const { data: poolBySymbolId, isLoading: isLoadingPoolBySymbolId } = api.getPools.bySymbolId.useQuery(
+    { symbolId: id },
+    {
+      enabled: isSymbolId,
+      suspense: false,
+      refetchOnMount: false,
+      staleTime: 30000,
+    }
+  )
+
+  // Fallback: fetch all pools to find the pool by ID (for backwards compatibility)
+  const { data: initialPools, isLoading: isLoadingAllPools } = api.getPools.all.useQuery(undefined, {
+    enabled: !isSymbolId,
     suspense: false,
     refetchOnMount: false,
     staleTime: 30000,
   })
 
-  const initialPair = initialPools?.find((pool: any) => pool.id === id)
+  // Determine the initial pair
+  const initialPair = isSymbolId
+    ? poolBySymbolId
+    : initialPools?.find((pool: any) => pool.id === id || pool.symbolId === id)
+
   const tokens = initialPair ? [initialPair.token0, initialPair.token1] : []
 
   const { data: detailedPrices = {}, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery(undefined, {
     staleTime: 30000,
     enabled: !!initialPrices,
   })
-  const { data: detailedPools, isLoading: isLoadingPools } = api.getPools.all.useQuery(undefined, {
+
+  // For detailed data, we'll fetch the specific pool again or from all pools
+  const { data: detailedPoolBySymbolId, isLoading: isLoadingDetailedPoolBySymbolId } = api.getPools.bySymbolId.useQuery(
+    { symbolId: id },
+    {
+      enabled: isSymbolId && !!initialPair,
+      staleTime: 30000,
+    }
+  )
+
+  const { data: detailedPools, isLoading: isLoadingDetailedPools } = api.getPools.all.useQuery(undefined, {
+    enabled: !isSymbolId && !!initialPair,
     staleTime: 30000,
-    enabled: !!initialPools,
   })
 
-  const detailedPair = detailedPools?.find((pool: any) => pool.id === id)
+  const detailedPair = isSymbolId
+    ? detailedPoolBySymbolId
+    : detailedPools?.find((pool: any) => pool.id === id || pool.symbolId === id)
 
-  const isLoadingDetailed = isLoadingPrices || isLoadingPools
+  const isLoadingDetailed = isLoadingPrices || (isSymbolId ? isLoadingDetailedPoolBySymbolId : isLoadingDetailedPools)
 
   const prices = detailedPrices || initialPrices || {}
   const pair = detailedPair || initialPair
 
   // Show loading overlay instead of early returns
-  const isLoading = !initialPrices || !initialPools || !initialPair || !tokens.length || !pair
+  const isLoading =
+    !initialPrices ||
+    !initialPair ||
+    !tokens.length ||
+    !pair ||
+    (isSymbolId ? isLoadingPoolBySymbolId : isLoadingAllPools)
 
   if (isLoading) {
     return (
