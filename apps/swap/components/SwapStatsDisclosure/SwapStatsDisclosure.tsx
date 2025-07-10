@@ -26,27 +26,27 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
   const extractRouteTokens = useCallback(() => {
     if (!routeInfo?.path || !mainCurrency || !otherCurrency) return []
 
-    const tokens = []
-    
+    const tokens: string[] = []
+
     // Handle string path (comma-separated pool keys)
-    let pathArray = []
+    let pathArray: string[] = []
     if (typeof routeInfo.path === 'string') {
-      pathArray = routeInfo.path.split(',').map(s => s.trim())
+      pathArray = (routeInfo.path as string).split(',').map((s: string) => s.trim())
     } else if (Array.isArray(routeInfo.path)) {
       pathArray = routeInfo.path
     }
-    
+
     // Start with the input token (mainCurrency)
     tokens.push(mainCurrency.uuid)
-    
+
     // Process each pool key to build the route in the correct direction
     for (let i = 0; i < pathArray.length; i++) {
       const poolKey = pathArray[i]
       if (typeof poolKey === 'string' && poolKey.includes('/')) {
         const [tokenA, tokenB] = poolKey.split('/')
-        
-        const lastToken = tokens[tokens.length - 1]
-        
+
+        const lastToken: string = tokens[tokens.length - 1]
+
         // Add the token that's not the last one (the destination token in this hop)
         if (tokenA === lastToken && tokenB && !tokens.includes(tokenB)) {
           tokens.push(tokenB)
@@ -59,19 +59,19 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
         }
       }
     }
-    
+
     // Ensure we end with the output token (otherCurrency)
     if (tokens[tokens.length - 1] !== otherCurrency.uuid) {
       if (!tokens.includes(otherCurrency.uuid)) {
         tokens.push(otherCurrency.uuid)
       } else {
         // Reorder to end with output token
-        const filtered = tokens.filter(t => t !== otherCurrency.uuid)
+        const filtered = tokens.filter((t) => t !== otherCurrency.uuid)
         filtered.push(otherCurrency.uuid)
         return filtered
       }
     }
-    
+
     return tokens
   }, [routeInfo, mainCurrency, otherCurrency])
 
@@ -101,15 +101,16 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
   // Convert route info to RouteDisplay format
   const routeSteps = useMemo(() => {
     if (!routeInfo || !routeInfo.poolPath || !routeInfo.path || !mainCurrency || !otherCurrency) return []
-    
+
     // Use poolPath for pool keys and path for token sequence
-    const poolKeys = routeInfo.poolPath.split(',').map(s => s.trim())
-    const tokenPath = routeInfo.path // This is already the token sequence
-    
+    const poolKeys =
+      typeof routeInfo.poolPath === 'string' ? routeInfo.poolPath.split(',').map((s: string) => s.trim()) : []
+    const tokenPath = Array.isArray(routeInfo.path) ? routeInfo.path : []
+
     if (poolKeys.length < 1 || tokenPath.length < 2) return []
 
     const steps = []
-    
+
     // Create steps from consecutive token pairs using the correct token path
     for (let i = 0; i < tokenPath.length - 1; i++) {
       const tokenInUuid = tokenPath[i]
@@ -120,12 +121,13 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
 
       if (tokenIn && tokenOut) {
         // Find the pool that connects these tokens
-        const connectingPool = poolKeys.find(poolKey => {
+        const connectingPool = poolKeys.find((poolKey) => {
           const [tokenA, tokenB] = poolKey.split('/')
-          return (tokenA === tokenInUuid && tokenB === tokenOutUuid) || 
-                 (tokenA === tokenOutUuid && tokenB === tokenInUuid)
+          return (
+            (tokenA === tokenInUuid && tokenB === tokenOutUuid) || (tokenA === tokenOutUuid && tokenB === tokenInUuid)
+          )
         })
-        
+
         // Extract fee from pool key (format: tokenA/tokenB/fee)
         let fee = 0.5 // Default
         if (connectingPool) {
@@ -179,7 +181,11 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
   return (
     <>
       <Transition
-        show={Boolean(trade.amountSpecified || routeInfo || (process.env.NODE_ENV === 'development' && mainCurrency && otherCurrency))}
+        show={Boolean(
+          trade.amountSpecified ||
+            routeInfo ||
+            (process.env.NODE_ENV === 'development' && mainCurrency && otherCurrency)
+        )}
         unmount={false}
         className="p-3 !pb-1 transition-[max-height] overflow-hidden"
         enter="duration-300 ease-in-out"
@@ -199,125 +205,76 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                       className="text-sm text-stone-300 hover:text-stone-50 cursor-pointer gap-1 font-semibold tracking-tight h-[36px] flex items-center truncate"
                       onClick={toggleInvert}
                     >
-                      <Tooltip
-                        panel={<div className="grid grid-cols-2 gap-1">{stats}</div>}
-                        button={<InformationCircleIcon width={16} height={16} />}
-                      >
-                        <></>
-                      </Tooltip>{' '}
-                      {content}{' '}
-                      {usdPrice && trade.amountSpecified ? (
-                        <span className="font-medium text-stone-500">(${Number(usdPrice).toFixed(2)})</span>
-                      ) : null}
+                      <Typography variant="sm" weight={600} className="flex items-center gap-1 text-stone-100">
+                        {content}
+                      </Typography>
+                      {usdPrice && (
+                        <Typography variant="sm" weight={500} className="text-stone-300">
+                          (${usdPrice})
+                        </Typography>
+                      )}
                     </div>
                   )}
                 </Rate>
-                <Disclosure.Button className="flex items-center justify-end flex-grow cursor-pointer">
-                  <ChevronDownIcon
-                    width={24}
-                    height={24}
-                    className={classNames(
-                      open ? '!rotate-180' : '',
-                      'rotate-0 transition-[transform] duration-300 ease-in-out delay-200'
-                    )}
-                  />
+                <Disclosure.Button>
+                  <div className="flex items-center gap-2 cursor-pointer text-stone-400 hover:text-stone-100">
+                    <Typography variant="sm" weight={500}>
+                      {open ? 'Hide' : 'Details'}
+                    </Typography>
+                    <ChevronDownIcon
+                      width={20}
+                      className={classNames('transition-all', open ? 'rotate-180' : 'rotate-0')}
+                    />
+                  </div>
                 </Disclosure.Button>
               </div>
+
               <Transition
-                show={open}
                 unmount={false}
+                show={open}
                 className="transition-[max-height] overflow-hidden"
                 enter="duration-300 ease-in-out"
                 enterFrom="transform max-h-0"
-                enterTo="transform max-h-[500px]"
+                enterTo="transform max-h-[380px]"
                 leave="transition-[max-height] duration-250 ease-in-out"
-                leaveFrom="transform max-h-[500px]"
+                leaveFrom="transform max-h-[380px]"
                 leaveTo="transform max-h-0"
               >
-                <div className="space-y-4 mb-4">
-                  <Disclosure.Panel
-                    as="div"
-                    className="grid grid-cols-2 gap-1 px-4 py-2 border border-stone-200/5 rounded-2xl"
-                  >
-                    {stats}
-                  </Disclosure.Panel>
-
-                  {/* Route Display */}
-                  {routeSteps.length > 0 ? (
-                    <RouteDisplay
-                      route={routeSteps}
-                      totalPriceImpact={routeInfo?.priceImpact || 0}
-                      estimatedCost={0.01}
-                    />
-                  ) : process.env.NODE_ENV === 'development' && routeInfo && routeInfo.path ? (
-                    <div className="p-6 bg-stone-800/40 rounded-2xl border border-stone-700/50">
-                      <div className="text-center">
-                        <p className="text-stone-400 text-sm mb-4">🛣️ Development Route Preview</p>
-                        
-                        {/* Simple Token Route Display - Extract ACTUAL route from API */}
-                        <div className="flex items-center justify-center mb-4 flex-wrap">
-                          {(() => {
-                            const tokens = extractRouteTokens()
-                            
-                            if (tokens.length === 0) {
-                              return <p className="text-stone-500 text-sm">No route tokens found</p>
-                            }
-                            
-                            return (
-                              <div className="flex items-center justify-center flex-wrap gap-2">
-                                {tokens.map((tokenUuid, index) => {
-                                  const token = getTokenByUuid(tokenUuid)
-                                  const symbol = token?.symbol || (tokenUuid === '00' ? 'HTR' : tokenUuid.substring(0, 6).toUpperCase())
-                                  
-                                  return (
-                                    <div key={tokenUuid} className="flex items-center">
-                                      <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-full px-2 py-1 text-white text-xs font-medium min-w-[40px] text-center">
-                                        {symbol}
-                                      </div>
-                                      {index < tokens.length - 1 && (
-                                        <div className="mx-2 text-stone-400 text-sm">→</div>
-                                      )}
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            )
-                          })()}
-                        </div>
-                        
-                        <div className="space-y-2 text-xs text-stone-400">
-                          <p>Price Impact: {routeInfo.priceImpact?.toFixed(2)}%</p>
-                          <p>Route: {typeof routeInfo.path === 'string' ? routeInfo.path.split(',').length : routeInfo.path?.length || 0} pools</p>
-                          <p className="text-stone-500 font-mono text-[10px]">
-                            Raw: {typeof routeInfo.path === 'string' ? routeInfo.path.substring(0, 80) : JSON.stringify(routeInfo.path).substring(0, 80)}...
-                          </p>
-                        </div>
-                      </div>
+                <Disclosure.Panel className="grid grid-cols-2 gap-x-2 gap-y-1 pt-4 text-xs border-t bg-white bg-opacity-[.02] -m-4 mt-4 p-4 border-stone-200/5">
+                  <div className="flex col-span-2 gap-1 items-center">
+                    <Typography variant="sm" weight={500} className="text-stone-400">
+                      Network Fee
+                    </Typography>
+                    <Tooltip
+                      placement="bottom"
+                      panel={
+                        <div>This fee is paid to the network to process your transaction and does not go to Dozer.</div>
+                      }
+                      button={<InformationCircleIcon width={16} className="text-stone-500" />}
+                    >
+                      <></>
+                    </Tooltip>
+                  </div>
+                  <Typography variant="sm" weight={500} className="text-right truncate col-span-1 text-stone-400">
+                    ~0.01 HTR
+                  </Typography>
+                  {stats}
+                  {routeInfo && routeSteps.length > 0 && (
+                    <div className="col-span-2 pt-2 mt-2 border-t border-stone-700">
+                      <RouteDisplay
+                        route={routeSteps}
+                        totalPriceImpact={routeInfo.priceImpact}
+                        estimatedCost={0.01} // Example cost
+                        className="!p-0"
+                      />
                     </div>
-                  ) : process.env.NODE_ENV === 'development' && mainCurrency && otherCurrency ? (
-                    <div className="p-6 bg-stone-800/40 rounded-2xl border border-stone-700/50">
-                      <div className="text-center">
-                        <p className="text-stone-400 text-sm mb-4">🔍 Development Mode</p>
-                        <div className="flex items-center justify-center mb-2">
-                          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-full px-3 py-1 text-white text-sm font-medium">
-                            {mainCurrency.symbol}
-                          </div>
-                          <div className="mx-3 text-stone-400">→</div>
-                          <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-full px-3 py-1 text-white text-sm font-medium">
-                            {otherCurrency.symbol}
-                          </div>
-                        </div>
-                        <p className="text-stone-500 text-xs">Enter amounts to see actual route</p>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
+                  )}
+                </Disclosure.Panel>
               </Transition>
             </>
           )}
         </Disclosure>
       </Transition>
-      
     </>
   )
 }

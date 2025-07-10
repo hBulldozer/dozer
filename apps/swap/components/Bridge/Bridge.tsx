@@ -55,12 +55,13 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         .filter((token) => token.bridged)
         .map((token) => {
           // Convert null values to undefined for correct Token initialization
-          const { originalAddress, sourceChain, targetChain, ...rest } = token
+          const { originalAddress, sourceChain, targetChain, imageUrl, ...rest } = token
           return new Token({
             ...rest,
             originalAddress: originalAddress || undefined,
             sourceChain: sourceChain || undefined,
             targetChain: targetChain || undefined,
+            imageUrl: imageUrl || undefined,
           })
         })
     : []

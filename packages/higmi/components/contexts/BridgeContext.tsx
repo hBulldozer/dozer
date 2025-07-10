@@ -171,7 +171,7 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               if (typeof tokenContract.methods.symbol === 'function') {
                 const symbolResult = await tokenContract.methods.symbol().call()
                 if (symbolResult) {
-                  symbol = symbolResult
+                  symbol = String(symbolResult)
                   console.log(`Symbol for token ${address}: ${symbol}`)
                 }
               } else {

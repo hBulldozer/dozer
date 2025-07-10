@@ -13,6 +13,7 @@ import { Pair } from '@dozer/api'
 import { api } from '../../../../utils/api'
 import { usePoolPosition } from '../../../PoolPositionProvider'
 import { useWalletConnectClient } from '@dozer/higmi'
+import { Token } from '@dozer/currency'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -63,7 +64,11 @@ export const PositionsTable: FC = () => {
           prices[pool.token0.uuid] &&
           prices[pool.token1.uuid]
         ) {
-          const pair: PositionPair = pool
+          const pair: PositionPair = {
+            ...pool,
+            token0: new Token(pool.token0),
+            token1: new Token(pool.token1),
+          }
           pair.value0 = (userInfo.max_withdraw_a / 100) * prices?.[pool.token0.uuid]
           pair.value1 = (userInfo.max_withdraw_b / 100) * prices?.[pool.token1.uuid]
           array.push(pair)

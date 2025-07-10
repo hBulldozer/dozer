@@ -54,9 +54,19 @@ export const getStaticProps: GetStaticProps = async () => {
 }
 
 const Add: FC = () => {
-  const { data: pools } = api.getPools.all.useQuery()
+  const { data: pools_db } = api.getPools.all.useQuery()
   const { data: tokens } = api.getTokens.all.useQuery()
   const { data: prices } = api.getPrices.allUSD.useQuery()
+  const pools = useMemo(() => {
+    if (!pools_db) return []
+    return pools_db.map((pool) => {
+      return {
+        ...pool,
+        token0: new Token(pool.token0),
+        token1: new Token(pool.token1),
+      }
+    })
+  }, [pools_db])
 
   const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
   const [selectedPool, setSelectedPool] = useState<Pair>()
@@ -100,7 +110,7 @@ const Add: FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       setFetchLoading(true)
-      if (trade.tradeType == TradeType.EXACT_INPUT) {
+      /* if (trade.tradeType == TradeType.EXACT_INPUT) {
         const response =
           selectedPool && token0
             ? await utils.getPools.front_quote_add_liquidity_in.fetch({
@@ -123,7 +133,7 @@ const Add: FC = () => {
             : undefined
 
         setInput0(response && response != 0 ? response.toFixed(2) : '')
-      }
+      } */
     }
     if (pools)
       setSelectedPool(
@@ -141,7 +151,7 @@ const Add: FC = () => {
 
     // call the function
     if (input1 || input0) {
-      fetchData()
+      /* fetchData()
         .then(() => {
           setFetchLoading(false)
           trade.setMainCurrency(token0)
@@ -157,7 +167,7 @@ const Add: FC = () => {
         .catch((err) => {
           console.error(err)
           setFetchLoading(false)
-        })
+        }) */
     } else {
       trade.setMainCurrencyPrice(0)
       trade.setOtherCurrencyPrice(0)
@@ -166,12 +176,8 @@ const Add: FC = () => {
       trade.setPriceImpact(0)
       trade.setTradeType(trade.tradeType)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pools, token0, token1, input0, input1, prices, network, tokens, selectedPool])
-
-  const onSuccess = useCallback(() => {
-    setInput0('')
-    setInput1('')
-  }, [])
 
   const _setToken0 = useCallback((currency: Token) => {
     setTokens(([prevSrc, prevDst]) => {
@@ -212,7 +218,13 @@ const Add: FC = () => {
                   tokens={
                     tokens
                       ? tokens.map((token) => {
-                          return new Token(token)
+                          return new Token({
+                            ...token,
+                            imageUrl: token.imageUrl ?? undefined,
+                            originalAddress: token.originalAddress ?? undefined,
+                            sourceChain: token.sourceChain ?? undefined,
+                            targetChain: token.targetChain ?? undefined,
+                          })
                         })
                       : []
                   }
@@ -236,7 +248,13 @@ const Add: FC = () => {
                     tokens={
                       tokens
                         ? tokens.map((token) => {
-                            return new Token(token)
+                            return new Token({
+                              ...token,
+                              imageUrl: token.imageUrl ?? undefined,
+                              originalAddress: token.originalAddress ?? undefined,
+                              sourceChain: token.sourceChain ?? undefined,
+                              targetChain: token.targetChain ?? undefined,
+                            })
                           })
                         : []
                     }

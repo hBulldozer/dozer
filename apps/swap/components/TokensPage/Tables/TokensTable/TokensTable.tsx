@@ -227,7 +227,7 @@ export const TokensTable: FC = () => {
 
     return {
       tvl: Math.max(..._pairs_array.map((p) => p.liquidityUSD)),
-      volume: Math.max(..._pairs_array.map((p) => p.volume1d)),
+      volume: Math.max(..._pairs_array.map((p) => p.volume1d ?? 0)),
       price: Math.max(..._pairs_array.map((p) => p.price || 0)),
       marketcap: Math.max(..._pairs_array.map((p) => p.marketCap || 0)),
     }

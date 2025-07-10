@@ -21,7 +21,7 @@ export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' 
   loading?: boolean
   includeNative?: boolean
   prices?: { [key: string]: number }
-  tokens?: Token[]
+  tokens?: any[]
   hidePercentageButtons?: boolean
 }
 

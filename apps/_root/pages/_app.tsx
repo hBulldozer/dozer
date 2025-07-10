@@ -17,6 +17,7 @@ import { Header } from '../components'
 import Head from 'next/head'
 
 import { init } from '@socialgouv/matomo-next'
+import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 
 const MATOMO_URL = process.env.NEXT_PUBLIC_MATOMO_URL || 'https://matomo.self2.dozer.finance/'
 const MATOMO_SITE_ID = process.env.NEXT_PUBLIC_MATOMO_SITE_ID || '1'
@@ -74,12 +75,18 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
       </Head>
       <ThemeProvider>
         <App.Shell>
-          <Header />
-          <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
-            <Component {...pageProps} />
-          </MotionConfig>
-          <App.Footer />
-          <ToastContainer className="mt-[50px]" />
+          <ClientContextProvider>
+            <JsonRpcContextProvider>
+              <BridgeProvider>
+                <Header />
+                <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
+                  <Component {...pageProps} />
+                </MotionConfig>
+                <App.Footer />
+                <ToastContainer className="mt-[50px]" />
+              </BridgeProvider>
+            </JsonRpcContextProvider>
+          </ClientContextProvider>
         </App.Shell>
       </ThemeProvider>
       <Analytics />

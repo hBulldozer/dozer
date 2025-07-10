@@ -50,8 +50,6 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const { pool } = useTrade()
 
-  const createPoolMutation = api.getPools.createPool.useMutation()
-
   const poolManager = new PoolManager()
 
   const onClick = async () => {
@@ -75,36 +73,12 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
     }
   }
 
-  const editBalanceOnCreatePool = (amount0: number, token0: string, amount1: number, token1: string) => {
-    setBalance(
-      balance.map((token: TokenBalance) => {
-        if (token.token_uuid === token0) {
-          return { ...token, token_balance: token.token_balance - amount0 * 100 }
-        } else if (token.token_uuid === token1) {
-          return { ...token, token_balance: token.token_balance - amount1 * 100 }
-        }
-        return token
-      })
-    )
-  }
-
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result && sentTX) {
       console.log(rpcResult)
       if (token0 && token1 && input0 && input1) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
-          // Create pool in database
-          createPoolMutation.mutate({
-            name: `${token0.symbol}-${token1.symbol}`,
-            chainId: network,
-            token0Uuid: token0.uuid,
-            token1Uuid: token1.uuid,
-            reserve0: input0,
-            reserve1: input1,
-            id: hash,
-          })
-
           const notificationData: NotificationData = {
             type: 'swap',
             chainId: network,
@@ -124,8 +98,6 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
             account: address,
           }
 
-          editBalanceOnCreatePool(parseFloat(input0), token0.uuid, parseFloat(input1), token1.uuid)
-
           const notificationGroup: string[] = []
           notificationGroup.push(JSON.stringify(notificationData))
           addNotification(notificationGroup)
@@ -139,7 +111,7 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
         }
       }
     }
-  }, [rpcResult])
+  }, [rpcResult, sentTX, token0, token1, input0, input1, network, address, addNotification])
 
   return (
     <>

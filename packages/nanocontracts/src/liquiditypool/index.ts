@@ -82,12 +82,13 @@ export class PoolManager extends NanoContract {
     // Parse path to determine if single-hop or multi-hop
     const pathSegments = path.split(',')
     const isSingleHop = pathSegments.length === 1
-    
+
     // Extract fee from the first pool key (format: tokenA/tokenB/fee)
     const firstPoolKey = pathSegments[0]
+    if (!firstPoolKey) throw new Error('Invalid path')
     const poolKeyParts = firstPoolKey.split('/')
-    const fee = parseInt(poolKeyParts[2]) // Fee is the third part of pool_key
-    
+    const fee = parseInt(poolKeyParts[2] || '0') // Fee is the third part of pool_key
+
     // Choose method based on path length
     const method = isSingleHop ? 'swap_exact_tokens_for_tokens' : 'swap_exact_tokens_for_tokens_through_path'
     const args = isSingleHop ? [fee] : [path]
@@ -95,6 +96,7 @@ export class PoolManager extends NanoContract {
       method,
       this.poolManagerBlueprintId,
       [
+        // @ts-ignore
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenIn,
@@ -102,6 +104,7 @@ export class PoolManager extends NanoContract {
           address: address,
           changeAddress: address,
         },
+        // @ts-ignore
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenOut,
@@ -135,12 +138,13 @@ export class PoolManager extends NanoContract {
     // Parse path to determine if single-hop or multi-hop
     const pathSegments = path.split(',')
     const isSingleHop = pathSegments.length === 1
-    
+
     // Extract fee from the first pool key (format: tokenA/tokenB/fee)
     const firstPoolKey = pathSegments[0]
+    if (!firstPoolKey) throw new Error('Invalid path')
     const poolKeyParts = firstPoolKey.split('/')
-    const fee = parseInt(poolKeyParts[2]) // Fee is the third part of pool_key
-    
+    const fee = parseInt(poolKeyParts[2] || '0') // Fee is the third part of pool_key
+
     // Choose method based on path length
     const method = isSingleHop ? 'swap_tokens_for_exact_tokens' : 'swap_tokens_for_exact_tokens_through_path'
     const args = isSingleHop ? [fee] : [path]
@@ -149,6 +153,7 @@ export class PoolManager extends NanoContract {
       method,
       this.poolManagerBlueprintId,
       [
+        // @ts-ignore
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenIn,
@@ -156,6 +161,7 @@ export class PoolManager extends NanoContract {
           address: address,
           changeAddress: address,
         },
+        // @ts-ignore
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenOut,
@@ -190,6 +196,7 @@ export class PoolManager extends NanoContract {
       'add_liquidity',
       this.poolManagerBlueprintId,
       [
+        // @ts-ignore
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenA,
@@ -197,6 +204,7 @@ export class PoolManager extends NanoContract {
           address: address,
           changeAddress: address,
         },
+        // @ts-ignore
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenB,

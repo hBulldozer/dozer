@@ -65,7 +65,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
 
     // Based on the console output, the path contains pool keys like "tokenA/tokenB/fee"
     // Let's extract tokens in order by parsing the path sequentially
-    const tokens = []
+    const tokens: string[] = []
 
     // First item might be a token UUID (starting token)
     if (routeInfo.path[0] && typeof routeInfo.path[0] === 'string' && !routeInfo.path[0].includes('/')) {
@@ -137,7 +137,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
     }
 
     return steps
-  }, [routeInfo, tokens])
+  }, [routeInfo, getTokenByUuid])
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>

@@ -58,8 +58,8 @@ importers:
         specifier: '*'
         version: 9.0.0(eslint@8.56.0)
       eslint-config-turbo:
-        specifier: '*'
-        version: 1.10.14(eslint@8.56.0)
+        specifier: ^2.0.0
+        version: 2.1.3(eslint@8.56.0)
       eslint-plugin-prettier:
         specifier: '*'
         version: 4.2.1(eslint-config-prettier@9.0.0(eslint@8.56.0))(eslint@8.56.0)(prettier@2.8.2)
@@ -522,6 +522,13 @@ importers:
         version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   config/prettier:
+    optionalDependencies:
+      prettier-plugin-solidity:
+        specifier: '*'
+        version: 1.3.1(prettier@3.3.3)
+      prettier-plugin-tailwindcss:
+        specifier: '*'
+        version: 0.2.1(prettier@3.3.3)
     devDependencies:
       '@dozer/typescript-config':
         specifier: workspace:*
@@ -538,13 +545,6 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.5.3
-    optionalDependencies:
-      prettier-plugin-solidity:
-        specifier: '*'
-        version: 1.3.1(prettier@3.3.3)
-      prettier-plugin-tailwindcss:
-        specifier: '*'
-        version: 0.2.1(prettier@3.3.3)
 
   config/tailwindcss:
     dependencies:
@@ -831,6 +831,10 @@ importers:
       web3:
         specifier: ^4.16.0
         version: 4.16.0(bufferutil@4.0.8)(typescript@5.5.3)(utf-8-validate@5.0.10)(zod@3.23.8)
+    optionalDependencies:
+      next:
+        specifier: 14.2.5
+        version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@dozer/eslint-config':
         specifier: workspace:*
@@ -865,10 +869,6 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.5.3
-    optionalDependencies:
-      next:
-        specifier: 14.2.5
-        version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   packages/hooks:
     dependencies:
@@ -1130,6 +1130,13 @@ importers:
       use-resize-observer:
         specifier: ^9.1.0
         version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+    optionalDependencies:
+      next:
+        specifier: 14.2.5
+        version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      wagmi:
+        specifier: 1.4.12
+        version: 1.4.12(@types/react@18.2.46)(bufferutil@4.0.8)(react-dom@18.3.1(react@18.3.1))(react-native@0.73.1(@babel/core@7.25.2)(@babel/preset-env@7.23.7(@babel/core@7.25.2))(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.5.3)(utf-8-validate@5.0.10)(viem@2.0.0(bufferutil@4.0.8)(typescript@5.5.3)(utf-8-validate@5.0.10)(zod@3.23.8))(zod@3.23.8)
     devDependencies:
       '@dozer/eslint-config':
         specifier: workspace:*
@@ -1182,13 +1189,6 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.5.3
-    optionalDependencies:
-      next:
-        specifier: 14.2.5
-        version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      wagmi:
-        specifier: 1.4.12
-        version: 1.4.12(@types/react@18.2.46)(bufferutil@4.0.8)(react-dom@18.3.1(react@18.3.1))(react-native@0.73.1(@babel/core@7.25.2)(@babel/preset-env@7.23.7(@babel/core@7.25.2))(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.5.3)(utf-8-validate@5.0.10)(viem@2.0.0(bufferutil@4.0.8)(typescript@5.5.3)(utf-8-validate@5.0.10)(zod@3.23.8))(zod@3.23.8)
 
   packages/zustand:
     dependencies:
@@ -6088,11 +6088,6 @@ packages:
     peerDependencies:
       eslint: '>=7.0.0'
 
-  eslint-config-turbo@1.10.14:
-    resolution: {integrity: sha512-ZeB+IcuFXy1OICkLuAplVa0euoYbhK+bMEQd0nH9+Lns18lgZRm33mVz/iSoH9VdUzl/1ZmFmoK+RpZc+8R80A==}
-    peerDependencies:
-      eslint: '>6.6.0'
-
   eslint-config-turbo@2.1.3:
     resolution: {integrity: sha512-smdkhd01V/e/I4EjJxaZA1kxZ1vdFCHpyryolxLtRBP0bZTrHDYh1H6NAyZ3Fy1jkhsQzXw+L+6m17ygROvNFw==}
     peerDependencies:
@@ -6178,11 +6173,6 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0, npm: '>=6'}
     peerDependencies:
       eslint: ^7.5.0 || ^8.0.0
-
-  eslint-plugin-turbo@1.10.14:
-    resolution: {integrity: sha512-sBdBDnYr9AjT1g4lR3PBkZDonTrMnR4TvuGv5W0OiF7z9az1rI68yj2UHJZvjkwwcGu5mazWA1AfB0oaagpmfg==}
-    peerDependencies:
-      eslint: '>6.6.0'
 
   eslint-plugin-turbo@2.1.3:
     resolution: {integrity: sha512-I9vPArzyOSYa6bm0iMCgD07MgdExc1VK2wGuVz21g4BUdj83w7mDKyCXR2rwOtCEW+wemFwgxanJ81imQZijNg==}
@@ -16332,11 +16322,6 @@ snapshots:
     dependencies:
       eslint: 8.56.0
 
-  eslint-config-turbo@1.10.14(eslint@8.56.0):
-    dependencies:
-      eslint: 8.56.0
-      eslint-plugin-turbo: 1.10.14(eslint@8.56.0)
-
   eslint-config-turbo@2.1.3(eslint@8.56.0):
     dependencies:
       eslint: 8.56.0
@@ -16476,11 +16461,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
-
-  eslint-plugin-turbo@1.10.14(eslint@8.56.0):
-    dependencies:
-      dotenv: 16.0.3
-      eslint: 8.56.0
 
   eslint-plugin-turbo@2.1.3(eslint@8.56.0):
     dependencies:

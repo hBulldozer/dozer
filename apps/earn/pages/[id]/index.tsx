@@ -23,6 +23,8 @@ import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../../utils/api'
 import { useAccount } from '@dozer/zustand'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
+import { useMemo } from 'react'
+import { Token } from '@dozer/currency'
 
 export const config = {
   maxDuration: 60,
@@ -96,10 +98,6 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
 
 const Pool = () => {
   const router = useRouter()
-  if (router.isFallback) {
-    return <div>Loading...</div>
-  }
-
   const id = router.query.id as string
 
   // Determine if this is a symbol-based ID or pool key
@@ -131,11 +129,12 @@ const Pool = () => {
   })
 
   // Determine the initial pair
-  const initialPair = isSymbolId
-    ? poolBySymbolId
-    : initialPools?.find((pool: any) => pool.id === id || pool.symbolId === id)
-
-  const tokens = initialPair ? [initialPair.token0, initialPair.token1] : []
+  const initialPair = useMemo(() => {
+    if (isSymbolId) {
+      return poolBySymbolId
+    }
+    return initialPools?.find((pool: any) => pool.id === id || pool.symbolId === id)
+  }, [isSymbolId, poolBySymbolId, initialPools, id])
 
   const { data: detailedPrices = {}, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery(undefined, {
     staleTime: 30000,
@@ -156,24 +155,36 @@ const Pool = () => {
     staleTime: 30000,
   })
 
-  const detailedPair = isSymbolId
-    ? detailedPoolBySymbolId
-    : detailedPools?.find((pool: any) => pool.id === id || pool.symbolId === id)
-
-  const isLoadingDetailed = isLoadingPrices || (isSymbolId ? isLoadingDetailedPoolBySymbolId : isLoadingDetailedPools)
+  const detailedPair = useMemo(() => {
+    if (isSymbolId) {
+      return detailedPoolBySymbolId
+    }
+    return detailedPools?.find((pool: any) => pool.id === id || pool.symbolId === id)
+  }, [isSymbolId, detailedPoolBySymbolId, detailedPools, id])
 
   const prices = detailedPrices || initialPrices || {}
   const pair = detailedPair || initialPair
 
+  const memoizedPair = useMemo(() => {
+    if (!pair) return null
+    return {
+      ...pair,
+      token0: new Token(pair.token0),
+      token1: new Token(pair.token1),
+    }
+  }, [pair])
+
   // Show loading overlay instead of early returns
   const isLoading =
+    router.isFallback ||
+    isLoadingPrices ||
+    (isSymbolId ? isLoadingDetailedPoolBySymbolId : isLoadingDetailedPools) ||
     !initialPrices ||
     !initialPair ||
-    !tokens.length ||
     !pair ||
     (isSymbolId ? isLoadingPoolBySymbolId : isLoadingAllPools)
 
-  if (isLoading) {
+  if (isLoading || !memoizedPair) {
     return (
       <Layout breadcrumbs={[]}>
         <LoadingOverlay show={true} />
@@ -182,17 +193,17 @@ const Pool = () => {
   }
 
   return (
-    <PoolPositionProvider pair={pair} prices={prices}>
+    <PoolPositionProvider pair={memoizedPair as Pair} prices={prices}>
       <>
-        <Layout breadcrumbs={LINKS({ pair })}>
+        <Layout breadcrumbs={LINKS({ pair: memoizedPair as Pair })}>
           <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
             <div className="flex flex-col order-1 gap-9">
-              <PoolHeader pair={pair} prices={prices} isLoading={isLoadingDetailed} />
+              <PoolHeader pair={memoizedPair as Pair} prices={prices} isLoading={isLoading} />
               <hr className="my-3 border-t border-stone-200/5" />
               {/* TODO: Re-enable once history data access is refined */}
               {/* <PoolChart pair={pair} /> */}
               <AppearOnMount>
-                <PoolStats pair={pair} prices={prices} />
+                <PoolStats pair={memoizedPair as Pair} prices={prices} />
               </AppearOnMount>
 
               {/* TODO: Re-enable once history data access is refined */}
@@ -204,18 +215,18 @@ const Pool = () => {
             <div className="flex flex-col order-2 gap-4">
               <AppearOnMount>
                 <div className="flex flex-col gap-10">
-                  <PoolComposition pair={pair} prices={prices} isLoading={isLoadingDetailed} />
-                  <PoolPosition pair={pair} isLoading={isLoadingDetailed} />
+                  <PoolComposition pair={memoizedPair as Pair} prices={prices} isLoading={isLoading} />
+                  <PoolPosition pair={memoizedPair as Pair} isLoading={isLoading} />
                 </div>
               </AppearOnMount>
               <div className="hidden lg:flex">
-                <PoolButtons pair={pair} />
+                <PoolButtons pair={memoizedPair as Pair} />
               </div>
             </div>
           </div>
           <BlockTracker client={api} />
         </Layout>
-        <PoolActionBar pair={pair} />
+        <PoolActionBar pair={memoizedPair as Pair} />
       </>
     </PoolPositionProvider>
   )

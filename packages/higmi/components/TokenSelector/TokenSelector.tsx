@@ -17,7 +17,7 @@ export type TokenSelectorProps = {
   onClose(): void
   onSelect?(currency: Token): void
   includeNative?: boolean
-  tokens?: Token[]
+  tokens?: any[]
   pricesMap?: { [key: string]: number }
   customTokensOnly?: boolean
 }

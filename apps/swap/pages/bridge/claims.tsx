@@ -134,7 +134,7 @@ const ClaimsContent = () => {
                 No Pending Claims
               </Typography>
               <Typography variant="sm" className="mb-6 text-stone-500">
-                You don't have any tokens ready to be claimed.
+                You don&apos;t have any tokens ready to be claimed.
               </Typography>
               <Button size="sm" color="blue" onClick={navigateToBridge}>
                 Go to Bridge

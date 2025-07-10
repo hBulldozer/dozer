@@ -16,7 +16,7 @@
     "eslint": "*",
     "eslint-config-next": "*",
     "eslint-config-prettier": "*",
-    "eslint-config-turbo": "*",
+    "eslint-config-turbo": "^2.0.0",
     "eslint-plugin-prettier": "*",
     "eslint-plugin-simple-import-sort": "*",
     "eslint-plugin-testing-library": "*",

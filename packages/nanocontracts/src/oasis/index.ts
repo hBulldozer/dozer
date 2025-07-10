@@ -127,6 +127,7 @@ export class Oasis extends NanoContract {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_withdraw',
       '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
+      // @ts-ignore
       actions,
       [],
       true,

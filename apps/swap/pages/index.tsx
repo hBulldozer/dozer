@@ -25,23 +25,22 @@ type TokenOutputArray = RouterOutputs['getTokens']['all']
 type ElementType<T> = T extends (infer U)[] ? U : never
 type TokenOutput = ElementType<TokenOutputArray>
 
-// Convert database token to Token model
 const toToken = (token: any): Token | undefined => {
-  if (!token) return undefined
-
-  // Convert database fields to Token model and handle null/undefined
+  if (!token) {
+    return undefined
+  }
   return new Token({
-    chainId: token.chainId,
-    uuid: token.uuid,
-    decimals: token.decimals,
-    name: token.name,
-    symbol: token.symbol,
+    ...token,
     imageUrl: token.imageUrl || undefined,
-    bridged: !!token.bridged,
-    originalAddress: token.originalAddress || undefined,
-    sourceChain: token.sourceChain || undefined,
-    targetChain: token.targetChain || undefined,
   })
+}
+
+const toPair = (pool: any): Pair => {
+  return {
+    ...pool,
+    token0: toToken(pool.token0),
+    token1: toToken(pool.token1),
+  }
 }
 
 export const getStaticProps: GetStaticProps = async () => {
@@ -213,7 +212,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
               })
             : undefined
 
-        const quoteData = response?.data || response // Handle both nested and direct response
+        const quoteData = response // Handle both nested and direct response
         setInput1(quoteData && quoteData.amountOut != 0 ? quoteData.amountOut.toFixed(2) : '')
         setPriceImpact(quoteData ? quoteData.priceImpact : 0)
 
@@ -241,7 +240,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
               })
             : undefined
 
-        const quoteData = response?.data || response // Handle both nested and direct response
+        const quoteData = response // Handle both nested and direct response
         setInput0(quoteData && quoteData.amountIn != 0 ? quoteData.amountIn.toFixed(2) : '')
         setPriceImpact(quoteData ? quoteData.priceImpact : 0)
 
@@ -259,17 +258,17 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         }
       }
     }
-    setSelectedPool(
-      pools
-        ? pools.find((pool: Pair) => {
-            const uuid0 = pool.token0?.uuid
-            const uuid1 = pool.token1?.uuid
-            const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
-            const result = checker([token0?.uuid || '', token1?.uuid || ''], [uuid0 || '', uuid1 || ''])
-            return result
-          })
-        : undefined
-    )
+    const selected = pools?.find((pool) => {
+      const uuid0 = pool.token0?.uuid
+      const uuid1 = pool.token1?.uuid
+      const checker = (arr: (string | undefined)[], target: (string | undefined)[]) =>
+        target.every((v) => arr.includes(v))
+      const result = checker([token0?.uuid, token1?.uuid], [uuid0, uuid1])
+      return result
+    })
+    if (selected) {
+      setSelectedPool(toPair(selected))
+    }
 
     // call the function - now we only need both tokens selected and an input amount
     if (
@@ -303,7 +302,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
       trade.setPriceImpact(0)
       trade.setTradeType(tradeType)
     }
-  }, [pools, token0, token1, input0, input1, prices, network, tokens, priceImpact, selectedPool])
+  }, [pools, token0, token1, input0, input1, prices, network, tokens])
 
   const onSuccess = useCallback(() => {
     setInput0('')

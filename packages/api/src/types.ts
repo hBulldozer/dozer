@@ -92,16 +92,16 @@ export type Pair = {
   swapFee: number
   apr: number
   /**  First Token  */
-  token0: Token | _Token
+  token0: Token
   /**  Second Token  */
-  token1: Token | _Token
+  token1: Token
   // tokenLP: Token
   chainId: ChainId
   reserve0: number
   reserve1: number
   liquidity: number
-  volume1d: number
-  fees1d: number
+  volume1d?: number
+  fees1d?: number
   volume0?: number
   volume1?: number
   volumeUSD: number

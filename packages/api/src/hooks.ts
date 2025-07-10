@@ -41,47 +41,12 @@ export const useUnderlyingTokenBalanceFromPair: UseUnderlyingTokenBalanceFromPai
 
 export const useTokensFromPair = (pair: Pair) => {
   return useMemo(() => {
-    const _token0 = new Token({
-      uuid: pair.token0.uuid,
-      name: pair.token0.name,
-      decimals: pair.token0.decimals,
-      symbol: pair.token0.symbol,
-      chainId: pair.chainId,
-      imageUrl: pair.token0.imageUrl || undefined,
-    })
-
-    const _token1 = new Token({
-      uuid: pair.token1.uuid,
-      name: pair.token1.name,
-      decimals: pair.token1.decimals,
-      symbol: pair.token1.symbol,
-      chainId: pair.chainId,
-      imageUrl: pair.token1.imageUrl || undefined,
-    })
-
-    const [token0, token1] = [_token0, _token1]
-
+    const { token0, token1, reserve0, reserve1 } = pair
     return {
       token0,
       token1,
-      reserve0: Amount.fromFractionalAmount(token0, Math.floor(Number(pair.reserve0) * 100) || 0, 1),
-      reserve1: Amount.fromFractionalAmount(token1, Math.floor(Number(pair.reserve1) * 100) || 0, 1),
+      reserve0: Amount.fromFractionalAmount(token0, Math.floor(Number(reserve0) * 100) || 0, 1),
+      reserve1: Amount.fromFractionalAmount(token1, Math.floor(Number(reserve1) * 100) || 0, 1),
     }
-  }, [
-    pair.chainId,
-    pair.id,
-    pair.reserve0,
-    pair.reserve1,
-    pair.token0.decimals,
-    pair.token0.uuid,
-    pair.token0.name,
-    pair.token0.symbol,
-    pair.token1.decimals,
-    pair.token1.uuid,
-    pair.token1.name,
-    pair.token1.symbol,
-    pair.token0.imageUrl,
-    pair.token1.imageUrl,
-    pair.liquidity,
-  ])
+  }, [pair])
 }

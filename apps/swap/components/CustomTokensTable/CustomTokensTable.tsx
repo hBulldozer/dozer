@@ -10,8 +10,10 @@ interface CustomTokensTableProps {
   address: string
 }
 
-interface CustomToken extends AllTokensDBOutput {
+interface CustomToken extends Omit<AllTokensDBOutput, 'pools0' | 'pools1'> {
   totalSupply?: number
+  pools0: { id: string }[]
+  pools1: { id: string }[]
 }
 
 export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
@@ -22,11 +24,14 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
   const { data: tokens, isLoading } = api.getTokens.all.useQuery(undefined, { staleTime: 5000 })
   const { data: totalSupplies } = api.getTokens.allTotalSupply.useQuery()
 
-  const customTokens = useMemo(() => {
-    return (tokens?.filter((token) => token.createdBy === address) || []).map((token) => ({
-      ...token,
-      totalSupply: totalSupplies?.[token.uuid] || 0,
-    }))
+  const customTokens: CustomToken[] = useMemo(() => {
+    return (tokens?.filter((token) => token.createdBy === address) || []).map(
+      (token) =>
+        ({
+          ...token,
+          totalSupply: totalSupplies?.[token.uuid] || 0,
+        } as CustomToken)
+    )
   }, [tokens, address, totalSupplies])
 
   const COLUMNS: ColumnDef<CustomToken, unknown>[] = [
@@ -35,7 +40,9 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
       header: 'Token',
       cell: (info) => (
         <div className="flex items-center gap-2">
-          <img src={info.row.original.imageUrl} alt={info.row.original.name} className="w-6 h-6 rounded-full" />
+          {info.row.original.imageUrl && (
+            <img src={info.row.original.imageUrl} alt={info.row.original.name || ''} className="w-6 h-6 rounded-full" />
+          )}
           <Typography variant="sm" weight={500} className="truncate text-stone-50">
             {info.row.original.symbol}
           </Typography>
@@ -62,19 +69,21 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
           <Button
             as="a"
             href={
-              !info.row.original.custom
-                ? `/pool/${info.row.original.uuid}`
+              !info.row.original.custom && info.row.original.pools1?.[0]?.id
+                ? `/pool/${info.row.original.pools1[0].id}`
                 : `/pool/create?token=${info.row.original.uuid}`
             }
             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault()
-              window.location.href = !info.row.original.custom
-                ? `/pool/${info.row.original.pools1[0].id}`
-                : `/pool/create?token=${info.row.original.uuid}`
+              if (!info.row.original.custom && info.row.original.pools1?.[0]?.id) {
+                window.location.href = `/pool/${info.row.original.pools1[0].id}`
+              } else {
+                window.location.href = `/pool/create?token=${info.row.original.uuid}`
+              }
             }}
             size="sm"
           >
-            {!info.row.original.custom ? 'View Pool' : 'Create Pool'}
+            {!info.row.original.custom && info.row.original.pools1?.[0]?.id ? 'View Pool' : 'Create Pool'}
           </Button>
         </div>
       ),

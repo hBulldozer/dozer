@@ -1,6 +1,6 @@
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
 import { formatPercent } from '@dozer/format'
-// import { Pair } from '@dozer/api'
+import { Pair } from '@dozer/api'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
@@ -10,6 +10,8 @@ import { AddSectionLegacy, AddSectionMyPosition, Layout } from '../../components
 import { RouterOutputs, api } from '../../utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
+import { useMemo } from 'react'
+import { Token } from '@dozer/currency'
 
 type PoolsOutputArray = RouterOutputs['getPools']['all']
 
@@ -31,15 +33,24 @@ const Add: NextPage = () => {
   const router = useRouter()
   const id = router.query.id as string
 
-  const { data: pools } = api.getPools.firstLoadAll.useQuery()
-  if (!pools) return <></>
-  const pair = pools.find((pool) => pool.id === id)
-  // const pair = pool ? pairFromPool(pool) : ({} as Pair)
-  if (!pair) return <></>
-  const tokens = pair ? [pair.token0, pair.token1] : []
-  if (!tokens) return <></>
-  const { data: prices = {} } = api.getPrices.firstLoadAll.useQuery()
-  if (!prices) return <></>
+  const { data: pools } = api.getPools.all.useQuery()
+  const { data: prices = {} } = api.getPrices.all.useQuery()
+
+  const pair = useMemo(() => {
+    if (!pools) return null
+    return pools.find((pool) => pool.id === id)
+  }, [pools, id])
+
+  const memoizedPair = useMemo(() => {
+    if (!pair) return null
+    return {
+      ...pair,
+      token0: new Token(pair.token0),
+      token1: new Token(pair.token1),
+    }
+  }, [pair])
+
+  if (!pools || !prices || !pair || !memoizedPair) return <></>
 
   return (
     // <PoolPositionProvider pair={pair}>
@@ -50,7 +61,7 @@ const Add: NextPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
           <div className="hidden md:block" />
           <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-            <AddSectionLegacy pool={pair} prices={prices} />
+            <AddSectionLegacy pool={memoizedPair as Pair} prices={prices} />
             {/* <AddSectionStake poolAddress={pair.id} /> */}
             <Container className="flex justify-center">
               <Link.External
@@ -80,7 +91,7 @@ const Add: NextPage = () => {
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.firstLoadAll.fetch()
+  const pools = await ssg.getPools.all.fetch()
 
   if (!pools) {
     throw new Error(`Failed to fetch pool, received ${pools}`)
@@ -99,7 +110,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.firstLoadAll.fetch()
+  const pools = await ssg.getPools.all.fetch()
   if (!pools) {
     throw new Error(`Failed to fetch pool, received ${pools}`)
   }
@@ -109,8 +120,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   }
   const tokens = [pool.token0, pool.token1]
   await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.firstLoadAll.prefetch()
-  await ssg.getPools.firstLoadAll.prefetch()
+  await ssg.getPrices.all.prefetch()
+  await ssg.getPools.all.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),
