@@ -15,8 +15,6 @@
 import json
 from typing import Any, NamedTuple
 
-from hathor.conf import settings
-from hathor.crypto.util import get_address_b58_from_bytes
 from hathor.nanocontracts.blueprint import Blueprint
 from hathor.nanocontracts.context import Context
 from hathor.nanocontracts.exception import NCFail
@@ -33,12 +31,9 @@ from hathor.nanocontracts.types import (
     public,
     view,
 )
-import logging
-
-logger = logging.getLogger(__name__)
 
 PRECISION = Amount(10**20)
-HTR_UID = settings.HATHOR_TOKEN_UID
+HTR_UID = b'\x00'
 
 
 # Custom error classes
@@ -1927,10 +1922,7 @@ class DozerPoolManager(Blueprint):
                 first_fee_denominator,
             )
 
-            logger.error(f"Amount in: {amount_in}")
-            logger.error(f"first_intermediate_amount: {first_intermediate_amount}")
-            logger.error(f"second_intermediate_amount: {second_intermediate_amount}")
-
+            
             # Check if the provided amount is sufficient
             if actual_amount_in < amount_in:
                 raise InvalidAction("Amount in is too low")
@@ -2642,7 +2634,7 @@ class DozerPoolManager(Blueprint):
         is_signed = pool_key in self.pool_signers
         signer_address = self.pool_signers.get(pool_key, None)
         signer_str = (
-            get_address_b58_from_bytes(signer_address)
+            signer_address.hex()
             if signer_address is not None
             else None
         )
@@ -2689,7 +2681,7 @@ class DozerPoolManager(Blueprint):
         is_signed = pool_key in self.pool_signers
         signer_address = self.pool_signers.get(pool_key, None)
         signer_str = (
-            get_address_b58_from_bytes(signer_address)
+            signer_address.hex()
             if signer_address is not None
             else None
         )
