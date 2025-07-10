@@ -74,7 +74,10 @@ const Add: FC = () => {
   const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([undefined, undefined])
   const [input1, setInput1] = useState<string>('')
   const [parsedInput0, parsedInput1] = useMemo(() => {
-    return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
+    return [
+      parseInt((Number(input0) * 100).toString()) || 0,
+      parseInt((Number(input1) * 100).toString()) || 0
+    ]
   }, [input0, input1])
   const { network } = useNetwork()
   const trade = useTrade()
@@ -91,93 +94,115 @@ const Add: FC = () => {
   }, [chainId])
   // const [fee, setFee] = useState(2)
 
-  const onInput0 = async (val: string) => {
+  const onInput0 = useCallback(async (val: string) => {
     setInput0(val)
     if (!val) {
       setInput1('')
     }
     trade.setTradeType(TradeType.EXACT_INPUT)
-  }
+  }, [trade])
 
-  const onInput1 = async (val: string) => {
+  const onInput1 = useCallback(async (val: string) => {
     setInput1(val)
     if (!val) {
       setInput0('')
     }
     trade.setTradeType(TradeType.EXACT_OUTPUT)
-  }
+  }, [trade])
 
+  // Pool finding effect - runs when tokens change
   useEffect(() => {
-    const fetchData = async () => {
-      setFetchLoading(true)
-      /* if (trade.tradeType == TradeType.EXACT_INPUT) {
-        const response =
-          selectedPool && token0
-            ? await utils.getPools.front_quote_add_liquidity_in.fetch({
-                id: selectedPool?.id,
-                amount_in: parseFloat(input0),
-                token_in: token0?.uuid,
-              })
-            : undefined
-        // set state with the result if `isSubscribed` is true
-
-        setInput1(response && response != 0 ? response.toFixed(2) : '')
+    if (pools && token0 && token1) {
+      const foundPool = pools.find((pool: Pair) => {
+        const uuid0 = pool.token0.uuid
+        const uuid1 = pool.token1.uuid
+        const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
+        return checker([token0.uuid, token1.uuid], [uuid0, uuid1])
+      })
+      
+      setSelectedPool(foundPool)
+      
+      // Update pool state based on what we found
+      if (foundPool) {
+        setPoolState(PairState.EXISTS)
+      } else if (token0 && token1) {
+        setPoolState(PairState.NOT_EXISTS)
+        // Reset inputs when no pool exists
+        setInput0('')
+        setInput1('')
       } else {
-        const response =
-          selectedPool && token0
-            ? await utils.getPools.front_quote_add_liquidity_out.fetch({
-                id: selectedPool?.id,
-                amount_out: parseFloat(input1),
-                token_in: token0?.uuid,
-              })
-            : undefined
-
-        setInput0(response && response != 0 ? response.toFixed(2) : '')
-      } */
+        setPoolState(PairState.INVALID)
+      }
+    } else {
+      setSelectedPool(undefined)
+      setPoolState(PairState.INVALID)
     }
-    if (pools)
-      setSelectedPool(
-        pools.find((pool: Pair) => {
-          const uuid0 = pool.token0.uuid
-          const uuid1 = pool.token1.uuid
-          const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
-          const result = checker(
-            [token0 ? token0.uuid : '', token1 ? token1.uuid : ''],
-            [uuid0 ? uuid0 : '', uuid1 ? uuid1 : '']
-          )
-          return result
-        })
-      )
+  }, [pools, token0, token1])
 
-    // call the function
-    if (input1 || input0) {
-      /* fetchData()
-        .then(() => {
-          setFetchLoading(false)
+  // Quote fetching effect - runs when inputs change
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const fetchQuote = async () => {
+        if (!selectedPool || !token0 || !token1) return
+        
+        setFetchLoading(true)
+        
+        try {
+          if (trade.tradeType === TradeType.EXACT_INPUT) {
+            // User entered amount for token0, calculate required token1
+            if (parseFloat(input0) > 0) {
+              const response = await utils.getPools.front_quote_add_liquidity_in.fetch({
+                id: selectedPool.id,
+                amount_in: parseFloat(input0),
+                token_in: token0.uuid,
+              })
+              setInput1(response != null && !isNaN(response) ? Number(response).toFixed(2) : '')
+            }
+          } else {
+            // User entered amount for token1, calculate required token0
+            if (parseFloat(input1) > 0) {
+              const response = await utils.getPools.front_quote_add_liquidity_out.fetch({
+                id: selectedPool.id,
+                amount_out: parseFloat(input1),
+                token_in: token0.uuid,
+              })
+              setInput0(response != null && !isNaN(response) ? Number(response).toFixed(2) : '')
+            }
+          }
+
+          // Update trade state after successful quote
           trade.setMainCurrency(token0)
           trade.setOtherCurrency(token1)
-          trade.setMainCurrencyPrice(token0 && prices ? prices[token0?.uuid] : 0)
-          trade.setOtherCurrencyPrice(token1 && prices ? prices[token1?.uuid] : 0)
+          trade.setMainCurrencyPrice(token0 && prices ? prices[token0.uuid] : 0)
+          trade.setOtherCurrencyPrice(token1 && prices ? prices[token1.uuid] : 0)
           trade.setAmountSpecified(Number(input0) || 0)
           trade.setOutputAmount(Number(input1) || 0)
           trade.setTradeType(trade.tradeType)
-          if (selectedPool) trade.setPool(selectedPool)
-        })
-        // make sure to catch any error
-        .catch((err) => {
-          console.error(err)
+          trade.setPool(selectedPool)
+        } catch (error) {
+          console.error('Error fetching liquidity quote:', error)
+        } finally {
           setFetchLoading(false)
-        }) */
-    } else {
-      trade.setMainCurrencyPrice(0)
-      trade.setOtherCurrencyPrice(0)
-      trade.setAmountSpecified(0)
-      trade.setOutputAmount(0)
-      trade.setPriceImpact(0)
-      trade.setTradeType(trade.tradeType)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pools, token0, token1, input0, input1, prices, network, tokens, selectedPool])
+        }
+      }
+
+      // Call the function only if there are inputs and a valid pool
+      if ((input0 || input1) && selectedPool && token0 && token1) {
+        fetchQuote()
+      } else {
+        // Reset trade state when no inputs or pool
+        trade.setMainCurrencyPrice(0)
+        trade.setOtherCurrencyPrice(0)
+        trade.setAmountSpecified(0)
+        trade.setOutputAmount(0)
+        trade.setPriceImpact(0)
+        trade.setTradeType(trade.tradeType)
+        setFetchLoading(false)
+      }
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(timeoutId)
+  }, [input0, input1, trade.tradeType, selectedPool, token0, token1, prices, trade, utils.getPools])
 
   const _setToken0 = useCallback((currency: Token) => {
     setTokens(([prevSrc, prevDst]) => {
@@ -209,7 +234,7 @@ const Add: FC = () => {
                   className="p-3"
                   value={input0}
                   onChange={onInput0}
-                  disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
+                  disabled={!(token0 && token1 && selectedPool)}
                   currency={token0}
                   onSelect={_setToken0}
                   chainId={chainId}
@@ -239,7 +264,7 @@ const Add: FC = () => {
                     className="p-3 !pb-1"
                     value={input1}
                     onChange={onInput1}
-                    disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
+                    disabled={!(token0 && token1 && selectedPool)}
                     currency={token1}
                     onSelect={_setToken1}
                     chainId={chainId}
@@ -329,16 +354,15 @@ const Add: FC = () => {
           </PoolPositionProvider>
         )} */}
           </div>
+          {selectedPool && (
+            <div className="order-1 sm:order-3">
+              <AppearOnMount>
+                <AddSectionMyPosition pair={selectedPool} />
+              </AppearOnMount>
+            </div>
+          )}
         </div>
       </Layout>
-
-      {/* {selectedPool && (
-        <div className="order-1 sm:order-3">
-          <AppearOnMount>
-            <AddSectionMyPosition pair={selectedPool} />
-          </AppearOnMount>
-        </div>
-      )} */}
     </>
   )
 }

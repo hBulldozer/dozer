@@ -161,7 +161,8 @@ The migration to the singleton `DozerPoolManager` contract is **PARTIALLY COMPLE
 - **Individual Token Pages:** ✅ Now using symbol-based URLs and contract data via `bySymbolDetailed` procedure
 - **Individual Pool Pages:** ✅ Now using symbol-based URLs and contract data via `bySymbolId` procedure
 - **Static Generation:** ✅ Updated to use contract-based prefetching for pool and token pages
-- **Add Liquidity Page:** ✅ Updated to support both symbol-based IDs and pool keys
+- **Add Liquidity Page (Pool-specific):** ✅ Updated to support both symbol-based IDs and pool keys
+- **Add Liquidity Page (Token selector):** ✅ Complete quote functionality with pool detection and validation
 - **Add Liquidity Quote API:** ✅ New TRPC procedures for liquidity quoting integrated with DozerPoolManager
 - **Decimal/Cents Conversion:** ✅ Proper handling of Amount types (cents) and UI decimal values
 
