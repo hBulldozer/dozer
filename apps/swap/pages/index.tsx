@@ -79,11 +79,11 @@ const Home = () => {
           <div className="flex flex-col gap-4" style={{ maxWidth: '400px' }}>
             <SwapWidget token0_idx={'2'} token1_idx={'0'} />
             <div
-              className="flex items-center justify-between gap-3 p-4 transition-colors border rounded-lg cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800"
+              className="flex gap-3 justify-between items-center p-4 rounded-lg border transition-colors cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800"
               onClick={() => (window.location.href = '/bridge')}
             >
-              <div className="flex items-center gap-4">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-900/20">
+              <div className="flex gap-4 items-center">
+                <div className="flex justify-center items-center w-12 h-12 rounded-full bg-blue-900/20">
                   <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
                 </div>
                 <div className="flex flex-col">
@@ -216,7 +216,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         const quoteData = response?.data || response // Handle both nested and direct response
         setInput1(quoteData && quoteData.amountOut != 0 ? quoteData.amountOut.toFixed(2) : '')
         setPriceImpact(quoteData ? quoteData.priceImpact : 0)
-        
+
         // Update route info for RouteDisplay component
         if (quoteData) {
           trade.setRouteInfo({
@@ -244,7 +244,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         const quoteData = response?.data || response // Handle both nested and direct response
         setInput0(quoteData && quoteData.amountIn != 0 ? quoteData.amountIn.toFixed(2) : '')
         setPriceImpact(quoteData ? quoteData.priceImpact : 0)
-        
+
         // Update route info for RouteDisplay component
         if (quoteData) {
           trade.setRouteInfo({
@@ -265,17 +265,18 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             const uuid0 = pool.token0?.uuid
             const uuid1 = pool.token1?.uuid
             const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
-            const result = checker(
-              [token0?.uuid || '', token1?.uuid || ''],
-              [uuid0 || '', uuid1 || '']
-            )
+            const result = checker([token0?.uuid || '', token1?.uuid || ''], [uuid0 || '', uuid1 || ''])
             return result
           })
         : undefined
     )
 
     // call the function - now we only need both tokens selected and an input amount
-    if (token0 && token1 && ((tradeType === TradeType.EXACT_INPUT && input0) || (tradeType === TradeType.EXACT_OUTPUT && input1))) {
+    if (
+      token0 &&
+      token1 &&
+      ((tradeType === TradeType.EXACT_INPUT && input0) || (tradeType === TradeType.EXACT_OUTPUT && input1))
+    ) {
       fetchData()
         .then(() => {
           setFetchLoading(false)
@@ -336,7 +337,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         <CurrencyInput
           id={'swap-input-currency0'}
           className="p-3"
-          disabled={process.env.NODE_ENV === 'development' ? false : (!token0 || !token1)}
+          disabled={process.env.NODE_ENV === 'development' ? false : !token0 || !token1}
           value={input0}
           onChange={onInput0}
           currency={token0}
@@ -386,7 +387,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         <div className="bg-stone-800">
           <CurrencyInput
             id={'swap-output-currency1'}
-            disabled={process.env.NODE_ENV === 'development' ? false : (!token0 || !token1)}
+            disabled={process.env.NODE_ENV === 'development' ? false : !token0 || !token1}
             className="p-3"
             value={input1}
             onChange={onInput1}
@@ -428,7 +429,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
           <SwapStatsDisclosure prices={prices || {}} />
 
           {/* Show bridge suggestion when balance is low */}
-          <SwapLowBalanceBridge
+          {/* <SwapLowBalanceBridge
             token={token0}
             hasLowBalance={
               !!(
@@ -437,7 +438,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
                 (balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) < Number(input0) * 100
               )
             }
-          />
+          /> */}
 
           <div className="p-3 pt-0">
             <Checker.Connected fullWidth size="md">
