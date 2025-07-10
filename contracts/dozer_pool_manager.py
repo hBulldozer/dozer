@@ -2601,16 +2601,7 @@ class DozerPoolManager(Blueprint):
         pool_key: str,
     ) -> str:
         """Get pool information for frontend display as JSON string."""
-        pool_info = self.front_end_api_pool(pool_key)
-        
-        # Convert Amount objects to int for JSON serialization
-        json_pool_info = {}
-        for key, value in pool_info.items():
-            if isinstance(value, Amount):
-                json_pool_info[key] = int(value)
-            else:
-                json_pool_info[key] = value
-        
+        json_pool_info = self.front_end_api_pool(pool_key)
         return json.dumps(json_pool_info)
 
     @view
@@ -3148,8 +3139,121 @@ class DozerPoolManager(Blueprint):
                 price_impact = (100 * (no_fee_quote - amount_out)) // no_fee_quote
                 return Amount(max(0, price_impact))
 
-        # For multi-hop, approximate price impact (simplified)
-        return Amount(0)  # Could be enhanced with more complex calculation
+        # For multi-hop, calculate cumulative price impact across all pools
+        return self._calculate_multi_hop_price_impact(
+            amount_in, amount_out, pool_keys, token_in, token_out
+        )
+
+    @view
+    def _calculate_multi_hop_price_impact(
+        self,
+        amount_in: Amount,
+        amount_out: Amount,
+        pool_keys: list[str],
+        token_in: TokenUid,
+        token_out: TokenUid,
+    ) -> Amount:
+        """Calculate price impact for multi-hop swaps.
+        
+        The strategy is to calculate the theoretical amount out using spot prices
+        (without considering slippage) and compare it with the actual amount out.
+        
+        Args:
+            amount_in: Input amount
+            amount_out: Actual output amount
+            pool_keys: List of pool keys in the swap path
+            token_in: Input token
+            token_out: Output token
+            
+        Returns:
+            Price impact as a percentage (with precision)
+        """
+        if len(pool_keys) <= 1 or amount_out == 0:
+            return Amount(0)
+            
+        try:
+            # Calculate theoretical amount out using spot prices (no slippage)
+            theoretical_amount_out = self._calculate_theoretical_multi_hop_output(
+                amount_in, pool_keys, token_in, token_out
+            )
+            
+            if theoretical_amount_out == 0:
+                return Amount(0)
+                
+            # Price impact = (theoretical - actual) / theoretical * 100
+            price_impact = (100 * (theoretical_amount_out - amount_out)) // theoretical_amount_out
+            return Amount(max(0, min(price_impact, 100)))  # Cap at 100%
+            
+        except Exception:
+            # If calculation fails, return 0 to avoid contract failure
+            return Amount(0)
+            
+    @view
+    def _calculate_theoretical_multi_hop_output(
+        self,
+        amount_in: Amount,
+        pool_keys: list[str],
+        token_in: TokenUid,
+        token_out: TokenUid,
+    ) -> Amount:
+        """Calculate theoretical output for multi-hop swap using spot prices.
+        
+        This simulates the swap using very small amounts to approximate spot prices,
+        avoiding the slippage that occurs with large trades.
+        
+        Args:
+            amount_in: Input amount
+            pool_keys: List of pool keys in the swap path
+            token_in: Input token
+            token_out: Output token
+            
+        Returns:
+            Theoretical output amount
+        """
+        # Use a small reference amount (1% of input) to calculate spot rates
+        ref_amount = max(Amount(1), amount_in // 100)
+        current_amount = ref_amount
+        current_token = token_in
+        
+        # Trace through each pool to get the exchange rate
+        for pool_key in pool_keys:
+            if pool_key not in self.all_pools:
+                return Amount(0)
+                
+            token_a = self.pool_token_a[pool_key]
+            token_b = self.pool_token_b[pool_key]
+            
+            # Determine which direction we're swapping
+            if current_token == token_a:
+                # Swapping A -> B
+                reserve_in = self.pool_reserve_a[pool_key]
+                reserve_out = self.pool_reserve_b[pool_key]
+                current_token = token_b
+            elif current_token == token_b:
+                # Swapping B -> A
+                reserve_in = self.pool_reserve_b[pool_key]
+                reserve_out = self.pool_reserve_a[pool_key]
+                current_token = token_a
+            else:
+                # Token not found in this pool
+                return Amount(0)
+                
+            # Calculate spot price output (without fees for theoretical calculation)
+            if reserve_in == 0:
+                return Amount(0)
+                
+            # Use spot price formula: output = input * reserve_out / reserve_in
+            current_amount = (current_amount * reserve_out) // reserve_in
+            
+            if current_amount == 0:
+                return Amount(0)
+                
+        # Scale the result back to the original amount
+        if ref_amount == 0:
+            return Amount(0)
+            
+        theoretical_output = (current_amount * amount_in) // ref_amount
+        return theoretical_output
 
     @view
     def get_user_positions_str(self, address: Address) -> str:
@@ -3315,19 +3419,19 @@ class DozerPoolManager(Blueprint):
         """
         # Priority queue: (negative_total_input, current_token, path, amounts, hops)
         import heapq
-        
+
         pq = [(0, start_token, [], [amount_out], 0)]
         visited = set()
-        
+
         while pq:
             neg_total_input, current_token, path, amounts, hops = heapq.heappop(pq)
-            
+
             # Skip if we've already visited this token with fewer hops
             visit_key = (current_token, hops)
             if visit_key in visited:
                 continue
             visited.add(visit_key)
-            
+
             # If we've reached the target token, return the path
             if current_token == end_token:
                 return {
@@ -3335,19 +3439,21 @@ class DozerPoolManager(Blueprint):
                     "amounts": list(reversed(amounts)),
                     "amount_in": -neg_total_input,
                 }
-            
+
             # If we've exceeded max hops, skip
             if hops >= max_hops:
                 continue
-            
+
             # Explore neighbors
             if current_token in graph:
                 current_amount = amounts[-1]
-                for neighbor_token, (base_input, pool_key, fee) in graph[current_token].items():
+                for neighbor_token, (base_input, pool_key, fee) in graph[
+                    current_token
+                ].items():
                     # Calculate required input for current amount
                     reserve_in = self._get_reserve(neighbor_token, pool_key)
                     reserve_out = self._get_reserve(current_token, pool_key)
-                    
+
                     try:
                         required_input = self.get_amount_in(
                             current_amount,
@@ -3356,22 +3462,25 @@ class DozerPoolManager(Blueprint):
                             fee,
                             self.pool_fee_denominator[pool_key],
                         )
-                        
+
                         new_path = path + [pool_key]
                         new_amounts = amounts + [required_input]
                         new_total_input = -neg_total_input + required_input
-                        
-                        heapq.heappush(pq, (
-                            -new_total_input,
-                            neighbor_token,
-                            new_path,
-                            new_amounts,
-                            hops + 1
-                        ))
+
+                        heapq.heappush(
+                            pq,
+                            (
+                                -new_total_input,
+                                neighbor_token,
+                                new_path,
+                                new_amounts,
+                                hops + 1,
+                            ),
+                        )
                     except Exception:
                         # Skip if calculation fails
                         continue
-        
+
         # No path found
         return {
             "path": "",
@@ -3384,7 +3493,9 @@ class DozerPoolManager(Blueprint):
         self, amount_out: Amount, token_in: TokenUid, token_out: TokenUid, max_hops: int
     ) -> str:
         """Find the best path for exact output swapping as JSON string."""
-        path_info = self.find_best_swap_path_exact_output(amount_out, token_in, token_out, max_hops)
+        path_info = self.find_best_swap_path_exact_output(
+            amount_out, token_in, token_out, max_hops
+        )
         return json.dumps(path_info)
 
     @view
@@ -3496,4 +3607,3 @@ class DozerPoolManager(Blueprint):
 
         # Round up
         return Amount(numerator // denominator)
-
