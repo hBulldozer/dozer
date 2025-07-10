@@ -57,6 +57,13 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   const token0 = toToken(pair.token0)
   const token1 = toToken(pair.token1)
 
+  // Extract fee from pool key (format: tokenA/tokenB/fee)
+  const fee = useMemo(() => {
+    if (!pair.id) return 5 // fallback
+    const [, , feeStr] = pair.id.split('/')
+    return parseInt(feeStr) || 5
+  }, [pair.id])
+
   const poolManager = new PoolManager()
 
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
@@ -132,8 +139,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
         Number(currencyAToRemove?.toFixed(2) || 0),
         token1.uuid,
         Number(currencyBToRemove?.toFixed(2) || 0),
-        // TODO: get fee from pool manager
-        5
+        fee
       )
     }
   }

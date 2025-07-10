@@ -239,17 +239,19 @@ export class PoolManager extends NanoContract {
       'remove_liquidity',
       this.poolManagerBlueprintId,
       [
+        // @ts-ignore
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenA,
-          amount: BigInt(amountA * 100),
+          amount: Math.ceil(amountA * 100).toString(),
           address: address,
           changeAddress: address,
         },
+        // @ts-ignore
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenB,
-          amount: BigInt(amountB * 100),
+          amount: Math.ceil(amountB * 100).toString(),
           address: address,
           changeAddress: address,
         },
