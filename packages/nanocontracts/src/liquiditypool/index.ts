@@ -200,7 +200,7 @@ export class PoolManager extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenA,
-          amount: (amountA * 100).toString(),
+          amount: Math.ceil(amountA * 100).toString(),
           address: address,
           changeAddress: address,
         },
@@ -208,7 +208,7 @@ export class PoolManager extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenB,
-          amount: (amountB * 100).toString(),
+          amount: Math.ceil(amountB * 100).toString(),
           address: address,
           changeAddress: address,
         },

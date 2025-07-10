@@ -1006,4 +1006,178 @@ export const poolRouter = createTRPCRouter({
         }
       }
     }),
+
+  // Get add liquidity quote for exact input amount  
+  front_quote_add_liquidity_in: procedure
+    .input(
+      z.object({
+        id: z.string(), // Pool ID (can be pool key or symbol ID)
+        amount_in: z.number(),
+        token_in: z.string(), // Token UUID
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        // Detect if ID is symbol-based or pool key
+        const isSymbolId = input.id.includes('-') && !input.id.includes('/')
+        let poolKey: string
+
+        if (isSymbolId) {
+          // Convert symbol ID to pool key
+          const parts = input.id.split('-')
+          if (parts.length !== 3) {
+            throw new Error('Invalid symbol ID format')
+          }
+
+          const [symbol0, symbol1, feeString] = parts
+          const feeValue = parseFloat(feeString || '0')
+          const feeBasisPoints = Math.round(feeValue * 10)
+
+          // Get all signed pools to find the matching one
+          const batchResponse = await fetchFromPoolManager(['get_signed_pools()'])
+          const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
+
+          let matchingPoolKey: string | null = null
+          for (const key of poolKeys) {
+            const [tokenA, tokenB, feeStr] = key.split('/')
+            const poolFeeBasisPoints = parseInt(feeStr || '0')
+
+            if (poolFeeBasisPoints === feeBasisPoints) {
+              const tokenASymbol = await getTokenSymbol(tokenA || '')
+              const tokenBSymbol = await getTokenSymbol(tokenB || '')
+
+              if (
+                (tokenASymbol === symbol0 && tokenBSymbol === symbol1) ||
+                (tokenASymbol === symbol1 && tokenBSymbol === symbol0)
+              ) {
+                matchingPoolKey = key
+                break
+              }
+            }
+          }
+
+          if (!matchingPoolKey) {
+            throw new Error(`Pool not found for symbol ID: ${input.id}`)
+          }
+          poolKey = matchingPoolKey
+        } else {
+          // Use the ID as pool key directly
+          poolKey = input.id
+        }
+
+        // Validate input amount
+        if (input.amount_in <= 0 || !isFinite(input.amount_in)) {
+          throw new Error('Invalid amount_in value')
+        }
+
+        // Convert decimal amount to cents (Amount type expects integers)
+        const amountInCents = Math.round(input.amount_in * 100)
+        
+        // Call the contract method with the pool key
+        const response = await fetchFromPoolManager([
+          `front_quote_add_liquidity_in(${amountInCents}, "${input.token_in}", "${poolKey}")`,
+        ])
+
+        const resultInCents = response.calls[`front_quote_add_liquidity_in(${amountInCents}, "${input.token_in}", "${poolKey}")`].value
+        
+        // Validate and convert result back from cents to decimal
+        if (typeof resultInCents !== 'number' || !isFinite(resultInCents)) {
+          throw new Error('Invalid response from contract')
+        }
+        
+        const result = resultInCents / 100
+
+        return result
+      } catch (error) {
+        console.error(`Error in front_quote_add_liquidity_in for ${input.id}:`, error)
+        throw new Error(`Failed to get liquidity quote: ${error}`)
+      }
+    }),
+
+  // Get add liquidity quote for exact output amount
+  front_quote_add_liquidity_out: procedure
+    .input(
+      z.object({
+        id: z.string(), // Pool ID (can be pool key or symbol ID)
+        amount_out: z.number(),
+        token_in: z.string(), // Token UUID
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        // Detect if ID is symbol-based or pool key
+        const isSymbolId = input.id.includes('-') && !input.id.includes('/')
+        let poolKey: string
+
+        if (isSymbolId) {
+          // Convert symbol ID to pool key
+          const parts = input.id.split('-')
+          if (parts.length !== 3) {
+            throw new Error('Invalid symbol ID format')
+          }
+
+          const [symbol0, symbol1, feeString] = parts
+          const feeValue = parseFloat(feeString || '0')
+          const feeBasisPoints = Math.round(feeValue * 10)
+
+          // Get all signed pools to find the matching one
+          const batchResponse = await fetchFromPoolManager(['get_signed_pools()'])
+          const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
+
+          let matchingPoolKey: string | null = null
+          for (const key of poolKeys) {
+            const [tokenA, tokenB, feeStr] = key.split('/')
+            const poolFeeBasisPoints = parseInt(feeStr || '0')
+
+            if (poolFeeBasisPoints === feeBasisPoints) {
+              const tokenASymbol = await getTokenSymbol(tokenA || '')
+              const tokenBSymbol = await getTokenSymbol(tokenB || '')
+
+              if (
+                (tokenASymbol === symbol0 && tokenBSymbol === symbol1) ||
+                (tokenASymbol === symbol1 && tokenBSymbol === symbol0)
+              ) {
+                matchingPoolKey = key
+                break
+              }
+            }
+          }
+
+          if (!matchingPoolKey) {
+            throw new Error(`Pool not found for symbol ID: ${input.id}`)
+          }
+          poolKey = matchingPoolKey
+        } else {
+          // Use the ID as pool key directly
+          poolKey = input.id
+        }
+
+        // Validate input amount
+        if (input.amount_out <= 0 || !isFinite(input.amount_out)) {
+          throw new Error('Invalid amount_out value')
+        }
+
+        // Convert decimal amount to cents (Amount type expects integers)
+        const amountOutCents = Math.round(input.amount_out * 100)
+        
+        // Call the contract method with the pool key
+        const response = await fetchFromPoolManager([
+          `front_quote_add_liquidity_out(${amountOutCents}, "${input.token_in}", "${poolKey}")`,
+        ])
+
+        const resultInCents = response.calls[`front_quote_add_liquidity_out(${amountOutCents}, "${input.token_in}", "${poolKey}")`].value
+        
+        // Validate and convert result back from cents to decimal
+        if (typeof resultInCents !== 'number' || !isFinite(resultInCents)) {
+          throw new Error('Invalid response from contract')
+        }
+        
+        const result = resultInCents / 100
+
+        return result
+      } catch (error) {
+        console.error(`Error in front_quote_add_liquidity_out for ${input.id}:`, error)
+        throw new Error(`Failed to get liquidity quote: ${error}`)
+      }
+    }),
 })

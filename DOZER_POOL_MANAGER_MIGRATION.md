@@ -148,14 +148,22 @@ The migration to the singleton `DozerPoolManager` contract is **PARTIALLY COMPLE
 - **Route Display:** Working route visualization with proper import structure
 - **Token Metadata:** Real token names fetched from Hathor node instead of UUID slices
 - **Copy Configuration:** Added copy functionality to tokens list page
+- **URL Identification System:** Symbol-based URLs implemented for both pools and tokens
+- **Pool Detail Pages:** Fully migrated to use symbol-based IDs and contract data
+- **Token Detail Pages:** Fully migrated to use symbol-based URLs and contract data
+- **Add Liquidity Page:** Updated to support both symbol-based IDs and pool keys
 
 ### ⚠️ Partially Complete / Needs Work
 
 - **Prices Router:** Mixed approach - new methods use contract, legacy methods still use database
-- **Add/Remove Liquidity:** Transaction execution migrated but missing API endpoints for quoting
-- **Individual Token Pages:** Still using database queries instead of contract data
-- **Individual Pool Pages:** Charts and transaction history incomplete, using legacy data sources
-- **Static Generation:** Many pages still use database-based prefetching instead of contract data
+- **Add Liquidity:** ✅ Complete - Transaction execution and quoting fully migrated to DozerPoolManager
+- **Remove Liquidity:** ⚠️ Transaction execution migrated but missing API endpoints for quoting
+- **Individual Token Pages:** ✅ Now using symbol-based URLs and contract data via `bySymbolDetailed` procedure
+- **Individual Pool Pages:** ✅ Now using symbol-based URLs and contract data via `bySymbolId` procedure
+- **Static Generation:** ✅ Updated to use contract-based prefetching for pool and token pages
+- **Add Liquidity Page:** ✅ Updated to support both symbol-based IDs and pool keys
+- **Add Liquidity Quote API:** ✅ New TRPC procedures for liquidity quoting integrated with DozerPoolManager
+- **Decimal/Cents Conversion:** ✅ Proper handling of Amount types (cents) and UI decimal values
 
 ### ❌ Not Started / Needs Migration
 
@@ -278,10 +286,10 @@ The migration to the singleton `DozerPoolManager` contract is **PARTIALLY COMPLE
 - **Single-hop Swaps**: ✅ Fully functional  
 - **Route Display**: ✅ Working with proper UI components
 - **Token Configuration Copy**: ✅ Available on tokens list page
-- **Add Liquidity**: ⚠️ Partially functional (execution works, quoting missing)
+- **Add Liquidity**: ✅ Fully functional (execution works, quoting implemented, supports symbol-based URLs)
 - **Remove Liquidity**: ⚠️ Partially functional (execution works, quoting missing)
-- **Token Pages**: ⚠️ Working but using legacy data sources
-- **Pool Pages**: ⚠️ Basic functionality, charts/history incomplete
+- **Token Pages**: ✅ Fully functional with symbol-based URLs and contract data
+- **Pool Pages**: ✅ Fully functional with symbol-based URLs and contract data
 - **Price Data**: ⚠️ Mixed contract and database sources
 
 ## Seed Script Updates - Database Elimination

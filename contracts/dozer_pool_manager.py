@@ -487,6 +487,72 @@ class DozerPoolManager(Blueprint):
             )
         return Amount(amount_in)
 
+    @view
+    def front_quote_add_liquidity_in(
+        self, amount_in: Amount, token_in: TokenUid, pool_key: str
+    ) -> Amount:
+        """Calculate the amount of other tokens to include for a given input amount in add liquidity event.
+
+        Args:
+            amount_in: The amount of input tokens
+            token_in: The token to be used as input
+            pool_key: The pool key identifying the pool
+
+        Returns:
+            The calculated amount of other tokens to include
+
+        Raises:
+            PoolNotFound: If the pool does not exist
+        """
+        if pool_key not in self.all_pools:
+            raise PoolNotFound()
+
+        reserve_a = self.pool_reserve_a[pool_key]
+        reserve_b = self.pool_reserve_b[pool_key]
+        token_a = self.pool_token_a[pool_key]
+
+        if token_in == token_a:
+            # Input is token A, calculate required token B
+            quote = self.quote(amount_in, reserve_a, reserve_b)
+        else:
+            # Input is token B, calculate required token A
+            quote = self.quote(amount_in, reserve_b, reserve_a)
+
+        return quote
+
+    @view
+    def front_quote_add_liquidity_out(
+        self, amount_out: Amount, token_in: TokenUid, pool_key: str
+    ) -> Amount:
+        """Calculate the amount of other tokens to include for a given output amount in add liquidity event.
+
+        Args:
+            amount_out: The amount of output tokens
+            token_in: The token to be used as input
+            pool_key: The pool key identifying the pool
+
+        Returns:
+            The calculated amount of other tokens to include
+
+        Raises:
+            PoolNotFound: If the pool does not exist
+        """
+        if pool_key not in self.all_pools:
+            raise PoolNotFound()
+
+        reserve_a = self.pool_reserve_a[pool_key]
+        reserve_b = self.pool_reserve_b[pool_key]
+        token_a = self.pool_token_a[pool_key]
+
+        if token_in == token_a:
+            # Input is token A, calculate required token A for given token B output
+            quote = self.quote(amount_out, reserve_b, reserve_a)
+        else:
+            # Input is token B, calculate required token B for given token A output
+            quote = self.quote(amount_out, reserve_a, reserve_b)
+
+        return quote
+
     def _get_protocol_liquidity_increase(
         self, protocol_fee_amount: Amount, token: TokenUid, pool_key: str
     ) -> Amount:
