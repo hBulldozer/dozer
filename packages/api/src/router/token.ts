@@ -216,6 +216,209 @@ export const tokenRouter = createTRPCRouter({
     }
   }),
 
+  // Get comprehensive token data by symbol (for token detail page)
+  bySymbolDetailed: procedure.input(z.object({ symbol: z.string().max(8).min(1) })).query(async ({ input }) => {
+    try {
+      console.log(`🔍 [TOKEN_BY_SYMBOL_DETAILED] Looking for token with symbol: ${input.symbol}`)
+
+      // Find token UUID by symbol
+      let tokenUuid: string | undefined
+      if (input.symbol.toLowerCase() === 'htr') {
+        tokenUuid = '00'
+      } else {
+        // Fetch all signed pools to find tokens
+        const response = await fetchFromPoolManager(['get_signed_pools()'])
+        const poolKeys: string[] = response.calls['get_signed_pools()'].value || []
+        const tokenUuids = extractTokensFromPools(poolKeys)
+
+        // Find matching token by checking symbols
+        for (const uuid of tokenUuids) {
+          const symbol = await getTokenSymbol(uuid)
+          if (symbol.toLowerCase() === input.symbol.toLowerCase()) {
+            tokenUuid = uuid
+            break
+          }
+        }
+      }
+
+      if (!tokenUuid) {
+        throw new Error(`Token with symbol ${input.symbol} not found`)
+      }
+
+      // Get token basic info
+      const tokenInfo = await fetchTokenInfo(tokenUuid)
+
+      // Get pools for this token and token prices
+      const batchResponse = await fetchFromPoolManager([
+        `get_pools_for_token("${tokenUuid}")`,
+        'get_all_token_prices_in_usd()',
+        'get_signed_pools()',
+      ])
+
+      const tokenPools: string[] = batchResponse.calls[`get_pools_for_token("${tokenUuid}")`].value || []
+      const tokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      const allPools: string[] = batchResponse.calls['get_signed_pools()'].value || []
+
+      console.log(`   📊 Found ${tokenPools.length} pools for token ${input.symbol}`)
+
+      // Get detailed pool data for token's pools
+      let totalLiquidityUSD = 0
+      let totalVolumeUSD = 0
+      let totalFeesUSD = 0
+      const pools = []
+
+      if (tokenPools.length > 0) {
+        // Batch fetch all pool data using front_end_api_pool_str
+        const poolDataCalls = tokenPools.map((poolKey) => `front_end_api_pool_str("${poolKey}")`)
+        const poolDataResponse = await fetchFromPoolManager(poolDataCalls)
+
+        for (const poolKey of tokenPools) {
+          try {
+            const poolDataStr = poolDataResponse.calls[`front_end_api_pool_str("${poolKey}")`]?.value
+
+            if (!poolDataStr) {
+              console.warn(`⚠️  No data found for pool ${poolKey}`)
+              continue
+            }
+
+            // Parse the JSON string response
+            const poolData = parseJsonResponse(poolDataStr)
+
+            // Parse pool key to get tokens and fee
+            const [tokenA, tokenB, feeStr] = poolKey.split('/')
+            const swapFee = parseInt(feeStr || '0') / 1000 // Convert from basis points to percentage
+
+            // Get token metadata for both tokens
+            const token0Info = await fetchTokenInfo(tokenA || '')
+            const token1Info = await fetchTokenInfo(tokenB || '')
+
+            // Calculate reserves (convert from cents to full units)
+            const reserve0 = (poolData.reserve0 || 0) / 100
+            const reserve1 = (poolData.reserve1 || 0) / 100
+
+            // Get token prices
+            const token0PriceUSD = tokenPrices[tokenA || ''] || 0
+            const token1PriceUSD = tokenPrices[tokenB || ''] || 0
+
+            // Calculate USD values
+            const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
+
+            // Calculate volume and fees
+            const volume1d = (poolData.volume || 0) / 100
+            const volumeUSD = volume1d * token0PriceUSD // Approximate volume USD
+
+            const fee0 = (poolData.fee0 || 0) / 100
+            const fee1 = (poolData.fee1 || 0) / 100
+            const feeUSD = fee0 * token0PriceUSD + fee1 * token1PriceUSD
+
+            // Calculate APR (annualized based on daily fees)
+            const apr = liquidityUSD > 0 ? ((feeUSD * 365) / liquidityUSD) * 100 : 0
+
+            // Generate symbol-based identifier for URL-friendly access
+            const feeBasisPoints = parseInt(feeStr || '0')
+            const feeForId = feeBasisPoints / 10 // Convert from basis points to identifier format
+            const symbolId = `${token0Info.symbol}-${token1Info.symbol}-${feeForId}`
+
+            const poolDetails = {
+              id: poolKey,
+              symbolId,
+              name: `${token0Info.symbol}-${token1Info.symbol}`,
+              liquidityUSD,
+              volumeUSD,
+              feeUSD,
+              swapFee,
+              apr: apr / 100, // Convert back to decimal for consistency
+              token0: {
+                uuid: tokenA,
+                symbol: token0Info.symbol,
+                name: token0Info.name,
+                decimals: 2,
+                chainId: 1,
+              },
+              token1: {
+                uuid: tokenB,
+                symbol: token1Info.symbol,
+                name: token1Info.name,
+                decimals: 2,
+                chainId: 1,
+              },
+              reserve0,
+              reserve1,
+              chainId: 1,
+            }
+
+            pools.push(poolDetails)
+
+            // Aggregate totals
+            totalLiquidityUSD += liquidityUSD
+            totalVolumeUSD += volumeUSD
+            totalFeesUSD += feeUSD
+
+            console.log(
+              `   ✅ Processed pool ${poolKey}: ${token0Info.symbol}-${token1Info.symbol}, TVL: $${liquidityUSD.toFixed(
+                2
+              )}`
+            )
+          } catch (error) {
+            console.error(`❌ Error processing pool ${poolKey}:`, error)
+          }
+        }
+      }
+
+      // Get total supply
+      let totalSupply = 0
+      try {
+        const endpoint = 'thin_wallet/token'
+        const queryParams = [`id=${tokenUuid}`]
+        const tokenData = await fetchNodeData(endpoint, queryParams)
+        totalSupply = (tokenData.total || 0) / 100
+      } catch (error) {
+        console.error(`Error fetching total supply for token ${tokenUuid}:`, error)
+      }
+
+      // Get current price
+      const currentPriceUSD = tokenPrices[tokenUuid] || 0
+      const marketCap = totalSupply * currentPriceUSD
+
+      console.log(`🎉 [TOKEN_BY_SYMBOL_DETAILED] Successfully processed token ${input.symbol}:`)
+      console.log(`   💰 Total TVL: $${totalLiquidityUSD.toFixed(2)}`)
+      console.log(`   📊 Total Pools: ${pools.length}`)
+      console.log(`   💲 Price: $${currentPriceUSD.toFixed(4)}`)
+      console.log(`   🏦 Market Cap: $${marketCap.toFixed(2)}`)
+
+      return {
+        // Basic token info
+        uuid: tokenUuid,
+        symbol: tokenInfo.symbol,
+        name: tokenInfo.name,
+        decimals: 2,
+        chainId: 1,
+
+        // Token metrics
+        totalSupply,
+        priceUSD: currentPriceUSD,
+        marketCap,
+
+        // Aggregated pool data
+        totalLiquidityUSD,
+        totalVolumeUSD,
+        totalFeesUSD,
+        poolCount: pools.length,
+
+        // Related pools
+        pools: pools.sort((a, b) => b.liquidityUSD - a.liquidityUSD), // Sort by TVL descending
+
+        // Additional metadata
+        bridged: tokenUuid !== '00',
+        sourceChain: tokenUuid !== '00' ? 'unknown' : null,
+        targetChain: tokenUuid !== '00' ? 'hathor' : null,
+      }
+    } catch (error) {
+      console.error(`❌ [TOKEN_BY_SYMBOL_DETAILED] Error fetching detailed token data for ${input.symbol}:`, error)
+      throw new Error(`Failed to fetch detailed token data: ${error}`)
+    }
+  }),
+
   // Get total supply for a token
   totalSupply: procedure.input(z.string()).query(async ({ input }) => {
     try {

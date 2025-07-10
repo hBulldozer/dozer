@@ -213,9 +213,10 @@ export const TokensTable: FC = () => {
   }, [isMd, isSm, mounted])
 
   const rowLink = useCallback((row: Pair) => {
-    // Extract token UUID from the modified ID
+    // Extract token UUID from the modified ID and get the symbol
     const tokenUuid = row.id.replace('token-', '')
-    return `/tokens/${row.chainId}/${tokenUuid}`
+    const token = row.token0.uuid === tokenUuid ? row.token0 : row.token1
+    return `/tokens/${(token.symbol || 'unknown').toLowerCase()}`
   }, [])
 
   // Calculate max values for filters

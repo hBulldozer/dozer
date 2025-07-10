@@ -289,7 +289,7 @@ const Token = () => {
                 Stats
               </Typography>
               <TokenStats pair={pair_day} prices={prices} />
-              <Typography weight={500} className="flex flex-col " variant="h2">
+              <Typography weight={500} className="flex flex-col" variant="h2">
                 About
               </Typography>
               <ReadMore
@@ -303,7 +303,7 @@ const Token = () => {
               />
             </div>
           </div>
-          <div className="flex-col order-2 hidden gap-4 lg:flex">
+          <div className="hidden flex-col order-2 gap-4 lg:flex">
             <AppearOnMount>
               <SwapWidget token0_idx={tokens[0].id} token1_idx={tokens[1].id} />
             </AppearOnMount>
@@ -325,7 +325,7 @@ const Token = () => {
         </Dialog>
       </Layout>
       <AppearOnMount as={Fragment}>
-        <div className="fixed left-0 right-0 flex justify-center lg:hidden bottom-6">
+        <div className="flex fixed right-0 left-0 bottom-6 justify-center lg:hidden">
           <div>
             <div className="divide-x rounded-xl min-w-[95vw] shadow-md shadow-black/50 bg-yellow divide-stone-800">
               <Button
