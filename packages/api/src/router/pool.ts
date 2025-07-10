@@ -169,7 +169,11 @@ export const poolRouter = createTRPCRouter({
       const batchResponse = await fetchFromPoolManager(['get_signed_pools()', 'get_all_token_prices_in_usd()'])
 
       const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
-      const tokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      const rawTokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      // Convert token prices from contract units to USD (divide by 1,000,000)
+      const tokenPrices: Record<string, number> = Object.fromEntries(
+        Object.entries(rawTokenPrices).map(([k, v]) => [k, (v as number) / 1_000000])
+      )
 
       if (poolKeys.length === 0) {
         console.log('⚠️  [GET_POOLS_ALL] No signed pools found')
@@ -401,7 +405,11 @@ export const poolRouter = createTRPCRouter({
       ])
 
       const poolDataArray = batchResponseData.calls[`front_end_api_pool("${matchingPoolKey}")`]?.value
-      const tokenPrices = batchResponseData.calls['get_all_token_prices_in_usd()'].value || {}
+      const rawTokenPrices = batchResponseData.calls['get_all_token_prices_in_usd()'].value || {}
+      // Convert token prices from contract units to USD (divide by 1,000,000)
+      const tokenPrices: Record<string, number> = Object.fromEntries(
+        Object.entries(rawTokenPrices).map(([k, v]) => [k, (v as number) / 1_000000])
+      )
 
       if (!poolDataArray) {
         throw new Error('Pool data not found')
