@@ -164,16 +164,10 @@ export const poolRouter = createTRPCRouter({
   // Get all signed pools
   all: procedure.query(async ({ ctx }) => {
     try {
-      console.log('🔍 [GET_POOLS_ALL] Fetching pools from contract ID:', NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID)
-
-      // Batch fetch: get signed pools and token prices in one call
       const batchResponse = await fetchFromPoolManager(['get_signed_pools()', 'get_all_token_prices_in_usd()'])
 
       const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
       const tokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
-
-      console.log(`📊 [GET_POOLS_ALL] Found ${poolKeys.length} signed pools`)
-      console.log(`💰 [GET_POOLS_ALL] Token prices available for ${Object.keys(tokenPrices).length} tokens`)
 
       if (poolKeys.length === 0) {
         console.log('⚠️  [GET_POOLS_ALL] No signed pools found')
@@ -183,10 +177,8 @@ export const poolRouter = createTRPCRouter({
       // Batch fetch all pool data using front_end_api_pool_str
       const poolDataCalls = poolKeys.map((poolKey) => `front_end_api_pool_str("${poolKey}")`)
       const poolDataResponse = await fetchFromPoolManager(poolDataCalls)
-      console.log('Pool data response:', JSON.stringify(poolDataResponse, null, 2))
       // Extract unique tokens from all pool keys for batch symbol fetching
       const uniqueTokens = extractTokensFromPools(poolKeys)
-      console.log(`🏷️  [GET_POOLS_ALL] Fetching metadata for ${uniqueTokens.length} unique tokens`)
 
       // Batch fetch token metadata
       const tokenMetadataPromises = uniqueTokens.map(async (token) => {
@@ -245,12 +237,6 @@ export const poolRouter = createTRPCRouter({
           // Calculate APR (annualized based on daily fees)
           const apr = liquidityUSD > 0 ? ((feeUSD * 365) / liquidityUSD) * 100 : 0
 
-          console.log(
-            `✅ [GET_POOLS_ALL] Processed pool ${poolKey}: ${token0Info.symbol}-${
-              token1Info.symbol
-            }, TVL: $${liquidityUSD.toFixed(2)}, APR: ${apr.toFixed(2)}%`
-          )
-
           // Generate symbol-based identifier for URL-friendly access
           const feeBasisPoints = parseInt(feeStr || '0')
           const feeForId = feeBasisPoints / 10 // Convert from basis points to identifier format
@@ -301,8 +287,6 @@ export const poolRouter = createTRPCRouter({
       })
 
       const validPools = poolsData.filter((pool) => pool !== null)
-
-      console.log(`🎉 [GET_POOLS_ALL] Successfully processed ${validPools.length}/${poolKeys.length} pools`)
 
       // Sort by liquidity USD (highest first)
       return validPools.sort((a, b) => (b?.liquidityUSD || 0) - (a?.liquidityUSD || 0))
@@ -361,8 +345,6 @@ export const poolRouter = createTRPCRouter({
   // Get pool by symbol-based identifier (e.g., "HTR-DZR-3" for HTR/DZR pool with 0.03% fee)
   bySymbolId: procedure.input(z.object({ symbolId: z.string() })).query(async ({ input }) => {
     try {
-      console.log(`🔍 [GET_POOL_BY_SYMBOL] Looking for pool with symbol ID: ${input.symbolId}`)
-
       // Parse symbol-based identifier (e.g., "HTR-DZR-3" -> symbols: ["HTR", "DZR"], fee: 3 -> 0.03%)
       const parts = input.symbolId.split('-')
       if (parts.length !== 3) {
@@ -373,8 +355,6 @@ export const poolRouter = createTRPCRouter({
       const feeValue = parseFloat(feeString || '0') // Parse as float to handle decimals
       const feePercent = feeValue / 100 // Convert to percentage (e.g., 5 -> 0.05)
       const feeBasisPoints = Math.round(feeValue * 10) // Convert to basis points (e.g., 5 -> 50)
-
-      console.log(`   📊 Parsed: ${symbol0}/${symbol1} with ${feePercent}% fee (${feeBasisPoints} basis points)`)
 
       // Get all signed pools to find the matching one
       const batchResponse = await fetchFromPoolManager(['get_signed_pools()'])
@@ -403,7 +383,6 @@ export const poolRouter = createTRPCRouter({
             (tokenASymbol === symbol1 && tokenBSymbol === symbol0)
           ) {
             matchingPoolKey = poolKey
-            console.log(`   ✅ Found matching pool: ${poolKey} (${tokenASymbol}-${tokenBSymbol})`)
             break
           }
         }
@@ -564,8 +543,6 @@ export const poolRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       try {
-        console.log(`🔍 [QUOTE] Finding route for ${input.amountIn} ${input.tokenIn} → ${input.tokenOut}`)
-
         const amount = Math.round(input.amountIn * 100) // Convert to cents
         const response = await fetchFromPoolManager([
           `find_best_swap_path_str(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
@@ -582,12 +559,6 @@ export const poolRouter = createTRPCRouter({
 
         // Parse the JSON string response
         const pathInfo = parseJsonResponse(pathInfoStr)
-
-        console.log(`✅ [QUOTE] Route found:`)
-        console.log(`   📍 Path: ${JSON.stringify(pathInfo.path || [])}`)
-        console.log(`   💰 Amounts: ${JSON.stringify((pathInfo.amounts || []).map((amt: number) => amt / 100))}`)
-        console.log(`   📈 Amount Out: ${(pathInfo.amount_out || 0) / 100}`)
-        console.log(`   📊 Price Impact: ${pathInfo.price_impact || 0}%`)
 
         // Extract pool path (comma-separated pool keys) and derive token path
         const poolPath = pathInfo.path || ''
@@ -638,8 +609,6 @@ export const poolRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       try {
-        console.log(`🔍 [QUOTE EXACT OUTPUT] Finding route for ${input.tokenIn} → ${input.amountOut} ${input.tokenOut}`)
-
         const amount = Math.round(input.amountOut * 100) // Convert to cents
         const response = await fetchFromPoolManager([
           `find_best_swap_path_exact_output_str(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
@@ -657,12 +626,6 @@ export const poolRouter = createTRPCRouter({
 
         // Parse the JSON string response
         const pathInfo = parseJsonResponse(pathInfoStr)
-
-        console.log(`✅ [QUOTE EXACT OUTPUT] Route found:`)
-        console.log(`   📍 Path: ${JSON.stringify(pathInfo.path || [])}`)
-        console.log(`   💰 Amounts: ${JSON.stringify((pathInfo.amounts || []).map((amt: number) => amt / 100))}`)
-        console.log(`   📈 Amount In: ${(pathInfo.amount_in || 0) / 100}`)
-        console.log(`   📊 Price Impact: ${pathInfo.price_impact || 0}%`)
 
         // Extract pool path (comma-separated pool keys) and derive token path
         const poolPath = pathInfo.path || ''
@@ -700,141 +663,6 @@ export const poolRouter = createTRPCRouter({
         throw new Error('Failed to get exact output quote')
       }
     }),
-
-  // Legacy quote endpoint for exact input (backward compatibility) - COMMENTED OUT
-  /*
-  quote_exact_tokens_for_tokens: procedure
-    .input(
-      z.object({
-        id: z.string(), // Pool ID - ignored in new implementation
-        amount_in: z.number(),
-        token_in: z.string(),
-      })
-    )
-    .query(async ({ input }) => {
-      try {
-        console.log(`🔍 [LEGACY QUOTE] ${input.amount_in} ${input.token_in} → ? (pool: ${input.id})`)
-
-        const amount = Math.round(input.amount_in * 100) // Convert to cents
-
-        // Extract token_out from pool ID if possible, otherwise default to HTR
-        let token_out = '00' // Default to HTR
-        if (input.id && input.id.includes('/')) {
-          const [tokenA, tokenB] = input.id.split('/')
-          // Determine which token is the output (the one that's not the input)
-          token_out = tokenA === input.token_in ? tokenB || '00' : tokenA || '00'
-        }
-
-        console.log(`🎯 [LEGACY QUOTE] Resolved output token: ${token_out}`)
-
-        // Use the find_best_swap_path method for better routing
-        const response = await fetchFromPoolManager([
-          `find_best_swap_path_str(${amount},"${input.token_in}","${token_out}",3)`,
-        ])
-
-        const pathInfoStr =
-          response.calls[`find_best_swap_path_str(${amount},"${input.token_in}","${token_out}",3)`].value
-
-        if (!pathInfoStr) {
-          console.log(`❌ [LEGACY QUOTE] No path found for ${input.token_in} → ${token_out}`)
-          return {
-            amount_out: 0,
-            price_impact: 0,
-          }
-        }
-
-        // Parse the JSON string response
-        const pathInfo = parseJsonResponse(pathInfoStr)
-
-        console.log(`✅ [LEGACY QUOTE] Route found:`)
-        console.log(`   📍 Path: ${JSON.stringify(pathInfo.path || [])}`)
-        console.log(`   💰 Amount Out: ${(pathInfo.amount_out || 0) / 100}`)
-        console.log(`   📊 Price Impact: ${pathInfo.price_impact || 0}%`)
-
-        return {
-          amount_out: (pathInfo.amount_out || 0) / 100,
-          price_impact: pathInfo.price_impact || 0,
-        }
-      } catch (error) {
-        console.error('❌ [LEGACY QUOTE] Error getting exact tokens for tokens quote:', error)
-        return {
-          amount_out: 0,
-          price_impact: 0,
-        }
-      }
-    }),
-  */
-
-  // Legacy quote endpoint for exact output (backward compatibility) - COMMENTED OUT
-  /*
-  quote_tokens_for_exact_tokens: procedure
-    .input(
-      z.object({
-        id: z.string(), // Pool ID - ignored in new implementation
-        amount_out: z.number(),
-        token_in: z.string(),
-      })
-    )
-    .query(async ({ input }) => {
-      try {
-        console.log(`🔍 [LEGACY QUOTE REVERSE] ? ${input.token_in} → ${input.amount_out} (pool: ${input.id})`)
-
-        const amount = Math.round(input.amount_out * 100) // Convert to cents
-
-        // Extract token_out from pool ID if possible, otherwise default to HTR
-        let token_out = '00' // Default to HTR
-        if (input.id && input.id.includes('/')) {
-          const [tokenA, tokenB] = input.id.split('/')
-          // Determine which token is the output (the one that's not the input)
-          token_out = tokenA === input.token_in ? tokenB || '00' : tokenA || '00'
-        }
-
-        console.log(`🎯 [LEGACY QUOTE REVERSE] Resolved output token: ${token_out}`)
-
-        // For exact output, we need to estimate the input amount first
-        // Use a reasonable estimate and then use find_best_swap_path
-        const estimatedInput = Math.round(amount * 1.1) // 10% buffer for estimation
-
-        const response = await fetchFromPoolManager([
-          `find_best_swap_path_str(${estimatedInput},"${input.token_in}","${token_out}",3)`,
-        ])
-
-        const pathInfoStr =
-          response.calls[`find_best_swap_path_str(${estimatedInput},"${input.token_in}","${token_out}",3)`].value
-
-        if (!pathInfoStr) {
-          console.log(`❌ [LEGACY QUOTE REVERSE] No path found for ${input.token_in} → ${token_out}`)
-          return {
-            amount_in: 0,
-            price_impact: 0,
-          }
-        }
-
-        // Parse the JSON string response
-        const pathInfo = parseJsonResponse(pathInfoStr)
-
-        // Calculate the required input for the exact output
-        const ratio = amount / (pathInfo.amount_out || 1)
-        const requiredInput = Math.round((pathInfo.amounts?.[0] || estimatedInput) * ratio)
-
-        console.log(`✅ [LEGACY QUOTE REVERSE] Route found:`)
-        console.log(`   📍 Path: ${JSON.stringify(pathInfo.path || [])}`)
-        console.log(`   💰 Required Input: ${requiredInput / 100}`)
-        console.log(`   📊 Price Impact: ${pathInfo.price_impact || 0}%`)
-
-        return {
-          amount_in: requiredInput / 100,
-          price_impact: pathInfo.price_impact || 0,
-        }
-      } catch (error) {
-        console.error('❌ [LEGACY QUOTE REVERSE] Error getting tokens for exact tokens quote:', error)
-        return {
-          amount_in: 0,
-          price_impact: 0,
-        }
-      }
-    }),
-  */
 
   // Get pool history at specific timestamp
   historyAt: procedure
@@ -959,182 +787,6 @@ export const poolRouter = createTRPCRouter({
       } catch (error) {
         console.error('Error checking transaction status:', error)
         return { status: 'failed', message: 'Error checking transaction status' }
-      }
-    }),
-
-  // Execute swap with exact input
-  swapExactTokensForTokens: procedure
-    .input(
-      z.object({
-        tokenIn: z.string(),
-        amountIn: z.number(),
-        tokenOut: z.string(),
-        amountOutMin: z.number(),
-        address: z.string(),
-        path: z.array(z.string()).optional(), // Optional explicit path
-        maxHops: z.number().optional().default(3),
-      })
-    )
-    .mutation(async ({ input }) => {
-      try {
-        console.log(`🚀 [SWAP] Executing swap: ${input.amountIn} ${input.tokenIn} → ${input.tokenOut}`)
-        console.log(`   👤 Address: ${input.address}`)
-        console.log(`   💰 Min Amount Out: ${input.amountOutMin}`)
-        console.log(`   🛣️  Explicit Path: ${input.path ? JSON.stringify(input.path) : 'Auto-route'}`)
-
-        // First, get the optimal route to log it
-        const amountInCents = Math.round(input.amountIn * 100)
-        const routeResponse = await fetchFromPoolManager([
-          `find_best_swap_path_str(${amountInCents},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
-        ])
-
-        const pathInfoStr =
-          routeResponse.calls[
-            `find_best_swap_path_str(${amountInCents},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`
-          ].value
-
-        if (pathInfoStr) {
-          const pathInfo = parseJsonResponse(pathInfoStr)
-          console.log(`   🗺️  Auto-discovered route: ${JSON.stringify(pathInfo.path || [])}`)
-          console.log(
-            `   💰 Expected amounts: ${JSON.stringify((pathInfo.amounts || []).map((amt: number) => amt / 100))}`
-          )
-          console.log(`   📊 Expected price impact: ${pathInfo.price_impact || 0}%`)
-        }
-
-        // Note: Actual swap execution would require integrating with wallet/transaction signing
-        // For now, we'll return the route information
-        console.log(`⚠️  [SWAP] Note: Swap execution requires wallet integration - returning route info`)
-
-        return {
-          success: true,
-          message: 'Swap route calculated - wallet integration needed for execution',
-          route: pathInfoStr ? parseJsonResponse(pathInfoStr) : null,
-          // In a real implementation, this would return transaction hash
-          hash: 'pending_wallet_integration',
-        }
-      } catch (error) {
-        console.error('❌ [SWAP] Error executing swap:', error)
-        throw new Error(`Failed to execute swap: ${error}`)
-      }
-    }),
-
-  // Execute swap with exact output
-  swapTokensForExactTokens: procedure
-    .input(
-      z.object({
-        tokenIn: z.string(),
-        amountInMax: z.number(),
-        tokenOut: z.string(),
-        amountOut: z.number(),
-        address: z.string(),
-        path: z.array(z.string()).optional(), // Optional explicit path
-        maxHops: z.number().optional().default(3),
-      })
-    )
-    .mutation(async ({ input }) => {
-      try {
-        console.log(
-          `🚀 [SWAP REVERSE] Executing reverse swap: ? ${input.tokenIn} → ${input.amountOut} ${input.tokenOut}`
-        )
-        console.log(`   👤 Address: ${input.address}`)
-        console.log(`   💰 Max Amount In: ${input.amountInMax}`)
-        console.log(`   🛣️  Explicit Path: ${input.path ? JSON.stringify(input.path) : 'Auto-route'}`)
-
-        // For exact output, estimate the input needed
-        const amountOutCents = Math.round(input.amountOut * 100)
-        const estimatedInputCents = Math.round(input.amountInMax * 100)
-
-        const routeResponse = await fetchFromPoolManager([
-          `find_best_swap_path_str(${estimatedInputCents},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`,
-        ])
-
-        const pathInfoStr =
-          routeResponse.calls[
-            `find_best_swap_path_str(${estimatedInputCents},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`
-          ].value
-
-        if (pathInfoStr) {
-          const pathInfo = parseJsonResponse(pathInfoStr)
-          console.log(`   🗺️  Auto-discovered route: ${JSON.stringify(pathInfo.path || [])}`)
-
-          // Calculate required input for exact output
-          const ratio = amountOutCents / (pathInfo.amount_out || 1)
-          const requiredInput = Math.round((pathInfo.amounts?.[0] || estimatedInputCents) * ratio)
-
-          console.log(`   💰 Required input: ${requiredInput / 100}`)
-          console.log(`   📊 Expected price impact: ${pathInfo.price_impact || 0}%`)
-        }
-
-        console.log(`⚠️  [SWAP REVERSE] Note: Swap execution requires wallet integration - returning route info`)
-
-        return {
-          success: true,
-          message: 'Reverse swap route calculated - wallet integration needed for execution',
-          route: pathInfoStr ? parseJsonResponse(pathInfoStr) : null,
-          hash: 'pending_wallet_integration',
-        }
-      } catch (error) {
-        console.error('❌ [SWAP REVERSE] Error executing reverse swap:', error)
-        throw new Error(`Failed to execute reverse swap: ${error}`)
-      }
-    }),
-
-  // Legacy swap endpoint for backward compatibility
-  swap_exact_tokens_for_tokens: procedure
-    .input(
-      z.object({
-        id: z.string(), // Pool ID - used to determine route
-        amount_in: z.number(),
-        token_in: z.string(),
-        amount_out_min: z.number(),
-        address: z.string(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      try {
-        console.log(
-          `🚀 [LEGACY SWAP] Executing legacy swap: ${input.amount_in} ${input.token_in} → ? (pool: ${input.id})`
-        )
-
-        // Extract token_out from pool ID
-        let token_out = '00' // Default to HTR
-        if (input.id && input.id.includes('/')) {
-          const [tokenA, tokenB] = input.id.split('/')
-          token_out = tokenA === input.token_in ? tokenB || '00' : tokenA || '00'
-        }
-
-        console.log(`   🎯 Resolved output token: ${token_out}`)
-        console.log(`   👤 Address: ${input.address}`)
-        console.log(`   💰 Min Amount Out: ${input.amount_out_min}`)
-
-        // Get the route for this legacy swap
-        const amountInCents = Math.round(input.amount_in * 100)
-        const routeResponse = await fetchFromPoolManager([
-          `find_best_swap_path_str(${amountInCents},"${input.token_in}","${token_out}",3)`,
-        ])
-
-        const pathInfoStr =
-          routeResponse.calls[`find_best_swap_path_str(${amountInCents},"${input.token_in}","${token_out}",3)`].value
-
-        if (pathInfoStr) {
-          const pathInfo = parseJsonResponse(pathInfoStr)
-          console.log(`   🗺️  Legacy route: ${JSON.stringify(pathInfo.path || [])}`)
-          console.log(`   💰 Expected amount out: ${(pathInfo.amount_out || 0) / 100}`)
-          console.log(`   📊 Price impact: ${pathInfo.price_impact || 0}%`)
-        }
-
-        console.log(`⚠️  [LEGACY SWAP] Note: Swap execution requires wallet integration - returning route info`)
-
-        return {
-          success: true,
-          message: 'Legacy swap route calculated - wallet integration needed for execution',
-          route: pathInfoStr ? parseJsonResponse(pathInfoStr) : null,
-          hash: 'pending_wallet_integration',
-        }
-      } catch (error) {
-        console.error('❌ [LEGACY SWAP] Error executing legacy swap:', error)
-        throw new Error(`Failed to execute legacy swap: ${error}`)
       }
     }),
 

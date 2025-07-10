@@ -1,12 +1,11 @@
 import { useInViewport } from '@dozer/hooks'
-import { Currency, Typography, classNames, CopyHelper, IconButton } from '@dozer/ui'
+import { Currency, Typography, classNames } from '@dozer/ui'
 import { FC, useMemo, useRef } from 'react'
 
 import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
 import { Token } from '@dozer/currency'
-import { UsersIcon, Square2StackIcon } from '@heroicons/react/24/outline'
-import { hathorLib } from '@dozer/nanocontracts'
+import { UsersIcon } from '@heroicons/react/24/outline'
 
 export const TokenNameCell: FC<CellProps> = ({ row }) => {
   const ref = useRef<HTMLDivElement>(null)
@@ -41,8 +40,8 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
           loading={shouldPrioritize ? 'eager' : 'lazy'}
         />
       </div>
-      <div className="flex items-center flex-grow min-w-0 ml-3">
-        <div className="flex flex-col flex-grow min-w-0 mr-2">
+      <div className="flex flex-grow items-center ml-3 min-w-0">
+        <div className="flex flex-col flex-grow mr-2 min-w-0">
           <Typography variant="sm" weight={500} className="truncate text-stone-50">
             {token.symbol}
           </Typography>
@@ -60,25 +59,6 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
             </div>
           </>
         )}
-        <div className="flex items-center ml-2">
-          <CopyHelper
-            toCopy={hathorLib.tokensUtils.getConfigurationString(
-              token.uuid,
-              token.name || '',
-              token.symbol || ''
-            )}
-            hideIcon={true}
-          >
-            {(isCopied) => (
-              <IconButton
-                className="p-1 text-stone-400 hover:text-stone-300 transition-colors"
-                description={isCopied ? 'Copied!' : 'Copy Configuration String'}
-              >
-                <Square2StackIcon width={16} height={16} />
-              </IconButton>
-            )}
-          </CopyHelper>
-        </div>
       </div>
     </div>
   )
