@@ -1,17 +1,15 @@
 import { useBreakpoint } from '@dozer/hooks'
 import { GenericTable } from '@dozer/ui'
-import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
-import stringify from 'fast-json-stable-stringify'
+import { getCoreRowModel, getSortedRowModel, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { APR_COLUMN, NAME_COLUMN, NETWORK_COLUMN, VALUE_COLUMN } from './Cells/columns'
 import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
-import { useAccount, useNetwork } from '@dozer/zustand'
+import { useNetwork } from '@dozer/zustand'
 import { PAGE_SIZE } from '../contants'
 import { ChainId } from '@dozer/chain'
 import { Pair } from '@dozer/api'
 import { api } from '../../../../utils/api'
-import { usePoolPosition } from '../../../PoolPositionProvider'
 import { useWalletConnectClient } from '@dozer/higmi'
 import { Token } from '@dozer/currency'
 
@@ -34,10 +32,6 @@ export const PositionsTable: FC = () => {
 
   const [sorting, setSorting] = useState<SortingState>([{ id: 'value', desc: true }])
   const [columnVisibility, setColumnVisibility] = useState({})
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: PAGE_SIZE,
-  })
 
   const [rendNetwork, setRendNetwork] = useState<number>(ChainId.HATHOR)
   const { network } = useNetwork()
@@ -48,18 +42,21 @@ export const PositionsTable: FC = () => {
 
   const { data: pools, isLoading } = api.getPools.all.useQuery()
   const { data: prices, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery()
-  const { data: allPoolInfo, isLoading: isLoadingPoolInfo } = api.getProfile.allPoolInfo.useQuery({ address: address })
+  const { data: userPositions, isLoading: isLoadingPositions } = api.getProfile.userPositions.useQuery({ address: address })
 
   const _pairs_array: PositionPair[] = useMemo(() => {
     const array: PositionPair[] = []
-    if (pools && prices && allPoolInfo && !isLoadingPrices && !isLoadingPoolInfo && !isLoading) {
+    if (pools && prices && userPositions && !isLoadingPrices && !isLoadingPositions && !isLoading) {
+      // Create a map of pool keys to user positions for quick lookup
+      const positionMap = new Map(userPositions.map(pos => [pos.poolKey, pos]))
+      
       pools.map((pool) => {
-        const userInfo = allPoolInfo?.find((info) => info.contractId == pool.id)
+        const userPosition = positionMap.get(pool.id)
 
         if (
-          userInfo &&
-          userInfo.max_withdraw_a > 0 &&
-          userInfo.max_withdraw_b > 0 &&
+          userPosition &&
+          userPosition.token0Amount > 0 &&
+          userPosition.token1Amount > 0 &&
           prices &&
           prices[pool.token0.uuid] &&
           prices[pool.token1.uuid]
@@ -69,14 +66,15 @@ export const PositionsTable: FC = () => {
             token0: new Token(pool.token0),
             token1: new Token(pool.token1),
           }
-          pair.value0 = (userInfo.max_withdraw_a / 100) * prices?.[pool.token0.uuid]
-          pair.value1 = (userInfo.max_withdraw_b / 100) * prices?.[pool.token1.uuid]
+          // userPosition.token0Amount and token1Amount are already in decimal format
+          pair.value0 = userPosition.token0Amount * prices[pool.token0.uuid]
+          pair.value1 = userPosition.token1Amount * prices[pool.token1.uuid]
           array.push(pair)
         }
       })
       return array
     } else return []
-  }, [pools, prices, allPoolInfo, isLoadingPrices, isLoadingPoolInfo, isLoading])
+  }, [pools, prices, userPositions, isLoadingPrices, isLoadingPositions, isLoading])
 
   // if (pools)
   //   pools.map((pool) => {
@@ -104,19 +102,6 @@ export const PositionsTable: FC = () => {
       return pair.chainId == rendNetwork
     })
     .filter((pool) => pool.liquidityUSD > 10)
-  const args = useMemo(
-    () => ({
-      sorting,
-      pagination,
-      // selectedNetworks,
-      // selectedPoolTypes,
-      // farmsOnly,
-      // query,
-      // extraQuery,
-    }),
-    [sorting, pagination]
-    // [sorting, pagination, selectedNetworks, selectedPoolTypes, farmsOnly, query, extraQuery]
-  )
 
   const table = useReactTable<PositionPair>({
     data: pairs_array || [],
@@ -127,7 +112,6 @@ export const PositionsTable: FC = () => {
     },
     // pageCount: Math.ceil((poolCount || 0) / PAGE_SIZE),
     onSortingChange: setSorting,
-    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualSorting: true,

@@ -2328,8 +2328,8 @@ class DozerPoolManager(Blueprint):
                     positions[pool_key] = self.user_info(address, pool_key)
 
                     # Add token information to make it more user-friendly
-                    positions[pool_key]["token_a"] = self.pool_token_a[pool_key]
-                    positions[pool_key]["token_b"] = self.pool_token_b[pool_key]
+                    positions[pool_key]["token_a"] = self.pool_token_a[pool_key].hex()
+                    positions[pool_key]["token_b"] = self.pool_token_b[pool_key].hex()
                     positions[pool_key]["fee"] = (
                         self.pool_fee_numerator[pool_key]
                         / self.pool_fee_denominator[pool_key]
@@ -3319,7 +3319,7 @@ class DozerPoolManager(Blueprint):
             return Amount(0)
             
         theoretical_output = (current_amount * amount_in) // ref_amount
-        return theoretical_output
+        return Amount(theoretical_output)
 
     @view
     def get_user_positions_str(self, address: Address) -> str:

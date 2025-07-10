@@ -363,4 +363,70 @@ export const profileRouter = createTRPCRouter({
       }
     }
   }),
+
+  // Get user position for a specific pool using DozerPoolManager
+  userPositionByPool: procedure
+    .input(z.object({ address: z.string(), poolKey: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
+          console.warn('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID not set, falling back to legacy method')
+          return null
+        }
+
+        const response = await fetchFromPoolManager([`user_info_str("${input.address}", "${input.poolKey}")`])
+        const userInfo = parseJsonResponse(
+          response.calls[`user_info_str("${input.address}", "${input.poolKey}")`].value
+        )
+
+        if (!userInfo || typeof userInfo !== 'object') {
+          return null
+        }
+
+        // Get token prices for USD values
+        const pricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
+        const tokenPrices = pricesResponse.calls['get_all_token_prices_in_usd()'].value || {}
+
+        const [tokenA, tokenB, feeStr] = input.poolKey.split('/')
+
+        // Convert amounts from cents to decimals
+        const token0Amount = userInfo.token_a_amount || 0
+        const token1Amount = userInfo.token_b_amount || 0
+        const balanceA = userInfo.balance_a || 0
+        const balanceB = userInfo.balance_b || 0
+
+        // Calculate USD values
+        const token0PriceUSD = (tokenA && tokenPrices[tokenA]) || 0
+        const token1PriceUSD = (tokenB && tokenPrices[tokenB]) || 0
+        const token0ValueUSD = token0Amount * token0PriceUSD
+        const token1ValueUSD = token1Amount * token1PriceUSD
+
+        return {
+          poolKey: input.poolKey,
+          liquidity: userInfo.liquidity || 0,
+          token0Amount,
+          token1Amount,
+          balanceA,
+          balanceB,
+          token0ValueUSD,
+          token1ValueUSD,
+          totalValueUSD: token0ValueUSD + token1ValueUSD,
+          token0: {
+            uuid: tokenA,
+            symbol: await getTokenSymbol(tokenA || ''),
+            name: await getTokenName(tokenA || ''),
+            priceUSD: token0PriceUSD,
+          },
+          token1: {
+            uuid: tokenB,
+            symbol: await getTokenSymbol(tokenB || ''),
+            name: await getTokenName(tokenB || ''),
+            priceUSD: token1PriceUSD,
+          },
+        }
+      } catch (error) {
+        console.error(`Error fetching user position for ${input.address} in pool ${input.poolKey}:`, error)
+        return null
+      }
+    }),
 })

@@ -1,13 +1,7 @@
-import { Amount, Token, Type } from '@dozer/currency'
-import { FundSource } from '@dozer/hooks'
-import { createContext, FC, ReactNode, useContext, useEffect, useMemo, useState } from 'react'
-import { useAccount } from '@dozer/zustand'
+import { Amount, Type } from '@dozer/currency'
+import { createContext, FC, ReactNode, useContext, useMemo } from 'react'
 import { Pair, toToken } from '@dozer/api'
-import { useTokensFromPair } from '@dozer/api'
-import { useUnderlyingTokenBalanceFromPair } from '@dozer/api'
 import { api } from '../utils/api'
-import { max } from 'date-fns'
-import { MAX_SAFE_INTEGER } from '@dozer/math'
 import { useWalletConnectClient } from '@dozer/higmi'
 
 interface PoolPositionContext {
@@ -33,8 +27,7 @@ export const PoolPositionProvider: FC<{
   pair: Pair
   prices: { [key: string]: number }
   children: ReactNode
-  watch?: boolean
-}> = ({ pair, prices, children, watch = true }) => {
+}> = ({ pair, prices, children }) => {
   const token0 = toToken(pair.token0)
   const token1 = toToken(pair.token1)
 
@@ -46,36 +39,30 @@ export const PoolPositionProvider: FC<{
     data: poolInfo,
     isLoading: isLoadingPoolInfo,
     isError,
-  } = api.getProfile.poolInfo.useQuery({ address: address, contractId: pair.id })
+  } = api.getProfile.userPositionByPool.useQuery({ address: address, poolKey: pair.id })
 
   const {
     liquidity,
-    max_withdraw_a,
-    max_withdraw_b,
+    token0Amount,
+    token1Amount,
     // user_deposited_a, user_deposited_b,
-    last_tx,
   } = poolInfo || {
     liquidity: undefined,
-    max_withdraw_a: undefined,
-    max_withdraw_b: undefined,
+    token0Amount: undefined,
+    token1Amount: undefined,
     // user_deposited_a: undefined,
     // user_deposited_b: undefined,
-    last_tx: 0,
   }
 
-  const { data: pricesAtTimestamp, isLoading: isLoadingPricesAtTimestamp } = api.getPrices.allAtTimestamp.useQuery({
-    timestamp: last_tx,
-  })
-
   const isLoading = useMemo(() => {
-    return isLoadingPoolInfo || isLoadingPricesAtTimestamp
-  }, [isLoadingPoolInfo, isLoadingPricesAtTimestamp])
+    return isLoadingPoolInfo
+  }, [isLoadingPoolInfo])
 
-  const _max_withdraw_a: Amount<Type> | undefined = max_withdraw_a
-    ? Amount.fromFractionalAmount(token0, max_withdraw_a * 100, 100)
+  const _max_withdraw_a: Amount<Type> | undefined = token0Amount
+    ? Amount.fromFractionalAmount(token0, token0Amount * 100, 100)
     : undefined
-  const _max_withdraw_b: Amount<Type> | undefined = max_withdraw_b
-    ? Amount.fromFractionalAmount(token1, max_withdraw_b * 100, 100)
+  const _max_withdraw_b: Amount<Type> | undefined = token1Amount
+    ? Amount.fromFractionalAmount(token1, token1Amount * 100, 100)
     : undefined
 
   // const _user_deposited_a: Amount<Type> | undefined = user_deposited_a
@@ -86,11 +73,11 @@ export const PoolPositionProvider: FC<{
   //   : undefined
 
   const value0 = useMemo(() => {
-    return (prices[token0.uuid] * Number(max_withdraw_a?.toFixed(2))) / 100
-  }, [prices, token0, max_withdraw_a])
+    return (prices[token0.uuid] * (token0Amount || 0))
+  }, [prices, token0, token0Amount])
   const value1 = useMemo(() => {
-    return (prices[token1.uuid] * Number(max_withdraw_b?.toFixed(2))) / 100
-  }, [prices, token1, max_withdraw_b])
+    return (prices[token1.uuid] * (token1Amount || 0))
+  }, [prices, token1, token1Amount])
 
   // const depositedUSD0 = useMemo(() => {
   //   return ((pricesAtTimestamp ? pricesAtTimestamp[token0.uuid] : 0) * Number(user_deposited_a?.toFixed(2))) / 100
@@ -119,7 +106,7 @@ export const PoolPositionProvider: FC<{
           max_withdraw_b: _max_withdraw_b,
           // user_deposited_a: _user_deposited_a,
           // user_deposited_b: _user_deposited_b,
-          last_tx: last_tx,
+          last_tx: 0,
           // changeUSD0,
           // changeUSD1,
           // depositedUSD0,
@@ -135,13 +122,14 @@ export const PoolPositionProvider: FC<{
           _max_withdraw_b,
           // _user_deposited_a,
           // _user_deposited_b,
-          last_tx,
           // depositedUSD0,
           // depositedUSD1,
           // changeUSD0,
           // changeUSD1,
           value0,
           value1,
+          token0Amount,
+          token1Amount,
         ]
       )}
     >
