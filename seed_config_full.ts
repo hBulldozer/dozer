@@ -3,6 +3,10 @@ export interface TokenConfig {
   symbol: string
   totalSupply: number
   about: string
+  bridged?: boolean
+  sourceChain?: string
+  targetChain?: string
+  originalAddress?: string
 }
 
 export interface PoolConfig {
@@ -11,11 +15,21 @@ export interface PoolConfig {
   tokenQuantity: number
   fee: number
   protocolFee: number
+  // Optional fields for non-HTR pools
+  dzrQuantity?: number
+  isNonHTRPool?: boolean
+  pairTokenSymbol?: string
+}
+
+export interface OasisConfig {
+  tokenSymbol: string
+  htrQuantity: number
 }
 
 export interface SeedConfig {
   tokens: TokenConfig[]
   pools: PoolConfig[]
+  oasis: OasisConfig[]
 }
 
 export const seedConfig: SeedConfig = {
@@ -87,6 +101,28 @@ export const seedConfig: SeedConfig = {
       tokenQuantity: 2900,
       fee: 0.05,
       protocolFee: 0.01,
+    },
+  ],
+  oasis: [
+    {
+      tokenSymbol: 'DZR',
+      htrQuantity: 100000,
+    },
+    {
+      tokenSymbol: 'hUSDC',
+      htrQuantity: 462000,
+    },
+    {
+      tokenSymbol: 'NST',
+      htrQuantity: 50000,
+    },
+    {
+      tokenSymbol: 'CTHOR',
+      htrQuantity: 50000,
+    },
+    {
+      tokenSymbol: 'KELB',
+      htrQuantity: 50000,
     },
   ],
 }
