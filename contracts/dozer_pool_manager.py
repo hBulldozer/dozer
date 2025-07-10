@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import json
-from sqlite3 import Time
 from typing import Any, NamedTuple
 
 from hathor.conf import settings
@@ -3483,75 +3482,103 @@ class DozerPoolManager(Blueprint):
         Returns:
             Dictionary with path, amounts, and required input amount
         """
-        # Priority queue: (negative_total_input, current_token, path, amounts, hops)
-        import heapq
+        # distances[token] = (min_amount_of_token_needed, hops)
+        distances = {}
+        previous = {}
+        unvisited = set()
 
-        pq = [(0, start_token, [], [amount_out], 0)]
-        visited = set()
+        # Initialize all tokens with a very large number for infinity
+        for token in graph.keys():
+            distances[token] = (Amount(2**256 - 1), 0)
+            unvisited.add(token)
 
-        while pq:
-            neg_total_input, current_token, path, amounts, hops = heapq.heappop(pq)
+        # We want to obtain `amount_out` of `start_token`.
+        distances[start_token] = (amount_out, 0)
 
-            # Skip if we've already visited this token with fewer hops
-            visit_key = (current_token, hops)
-            if visit_key in visited:
+        while unvisited:
+            # Find unvisited token with minimum required amount.
+            current = None
+            min_amount = Amount(2**256 - 1)
+
+            for token in unvisited:
+                amount, _ = distances[token]
+                if token in unvisited and amount < min_amount:
+                    min_amount = amount
+                    current = token
+
+            if current is None or min_amount == Amount(2**256 - 1):
+                break  # No reachable tokens
+
+            if current == end_token:
+                break  # Found target
+
+            current_amount, current_hops = distances[current]
+
+            if current_hops >= max_hops:
+                unvisited.remove(current)
                 continue
-            visited.add(visit_key)
 
-            # If we've reached the target token, return the path
-            if current_token == end_token:
-                return {
-                    "path": ",".join(reversed(path)),
-                    "amounts": list(reversed(amounts)),
-                    "amount_in": -neg_total_input,
-                }
+            unvisited.remove(current)
 
-            # If we've exceeded max hops, skip
-            if hops >= max_hops:
+            # Explore neighbors. In the reverse graph, neighbors are tokens that can produce the current token.
+            if current not in graph:
                 continue
 
-            # Explore neighbors
-            if current_token in graph:
-                current_amount = amounts[-1]
-                for neighbor_token, (base_input, pool_key, fee) in graph[
-                    current_token
-                ].items():
-                    # Calculate required input for current amount
-                    reserve_in = self._get_reserve(neighbor_token, pool_key)
-                    reserve_out = self._get_reserve(current_token, pool_key)
+            for neighbor, (
+                reference_input,
+                pool_key,
+                fee,
+            ) in graph.get(current, {}).items():
+                if neighbor not in unvisited:
+                    continue
 
-                    try:
-                        required_input = self.get_amount_in(
-                            current_amount,
-                            reserve_in,
-                            reserve_out,
-                            fee,
-                            self.pool_fee_denominator[pool_key],
-                        )
+                # We need `current_amount` of `current` token. How much `neighbor` token is needed?
+                try:
+                    # We are swapping from `neighbor` (in) to `current` (out).
+                    reserve_in = self._get_reserve(neighbor, pool_key)
+                    reserve_out = self._get_reserve(current, pool_key)
 
-                        new_path = path + [pool_key]
-                        new_amounts = amounts + [required_input]
-                        new_total_input = -neg_total_input + required_input
+                    required_input_for_neighbor = self.get_amount_in(
+                        current_amount,
+                        reserve_in,
+                        reserve_out,
+                        fee,
+                        self.pool_fee_denominator[pool_key],
+                    )
 
-                        heapq.heappush(
-                            pq,
-                            (
-                                -new_total_input,
-                                neighbor_token,
-                                new_path,
-                                new_amounts,
-                                hops + 1,
-                            ),
-                        )
-                    except Exception:
-                        # Skip if calculation fails
-                        continue
+                    neighbor_amount, _ = distances[neighbor]
+                    new_hops = current_hops + 1
 
-        # No path found
+                    if required_input_for_neighbor < neighbor_amount:
+                        distances[neighbor] = (required_input_for_neighbor, new_hops)
+                        previous[neighbor] = (current, pool_key)
+
+                except Exception:
+                    continue
+
+        # Reconstruct path
+        final_input_amount = distances.get(end_token, (Amount(2**256 - 1), 0))[0]
+
+        if final_input_amount == Amount(2**256 - 1):
+            return {"path": "", "amounts": [amount_out], "amount_in": 0}
+
+        path_pools = []
+        amounts = []
+        current = end_token
+
+        # Build path backwards from `end_token` to `start_token`.
+        while current in previous:
+            prev_token, pool_key = previous[current]
+            path_pools.insert(0, pool_key)
+            amounts.insert(0, distances[current][0])
+            current = prev_token
+
+        amounts.insert(0, distances[start_token][0])
+
         return {
-            "path": "",
-            "amounts": [amount_out],
-            "amount_in": 0,
+            "path": ",".join(path_pools),
+            "amounts": amounts,
+            "amount_in": final_input_amount,
         }
 
     @view
