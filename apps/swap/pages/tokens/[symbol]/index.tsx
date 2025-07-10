@@ -11,6 +11,7 @@ import { TokenStats } from 'components/TokenPage/TokenStats'
 import ReadMore from '@dozer/ui/readmore/ReadMore'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 import { toToken } from '@dozer/api'
+import { TokenHeader } from 'components/TokenPage/TokenHeader'
 
 export const config = {
   maxDuration: 60,
@@ -127,6 +128,7 @@ const Token = () => {
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-6">
             {aggregatedPair && <>{/* <TokenChart pair={aggregatedPair} setIsDialogOpen={setIsDialogOpen} /> */}</>}
+            {aggregatedPair && <TokenHeader pair={aggregatedPair} />}
             <div className="flex flex-col gap-4">
               <Typography weight={500} variant="h1">
                 Stats
