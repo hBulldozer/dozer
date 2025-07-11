@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 from hathor.nanocontracts.blueprint import Blueprint
 from hathor.nanocontracts.context import Context
@@ -2825,143 +2825,7 @@ class DozerPoolManager(Blueprint):
             token_b=self.pool_token_b.get(pool_key, b"").hex(),
         )
 
-    @view
-    def front_quote_exact_tokens_for_tokens(
-        self, amount_in: Amount, token_in: TokenUid, token_out: TokenUid, fee: Amount
-    ) -> dict[str, Any]:
-        """Calculate the amount of tokens received for a given input amount.
-
-        Args:
-            amount_in: The amount of input tokens
-            token_in: The input token
-            token_out: The output token
-            fee: The pool fee (used for direct pools, ignored for multi-hop)
-
-        Returns:
-            A dictionary with amount_out and price_impact
-        """
-        # First try direct swap with the specified fee
-        try:
-            pool_key = self._get_pool_key(token_in, token_out, fee)
-            if pool_key in self.all_pools:
-                # Calculate price impact
-                reserve_in = 0
-                reserve_out = 0
-
-                if self.pool_token_a[pool_key] == token_in:
-                    reserve_in = self.pool_reserve_a[pool_key]
-                    reserve_out = self.pool_reserve_b[pool_key]
-                else:
-                    reserve_in = self.pool_reserve_b[pool_key]
-                    reserve_out = self.pool_reserve_a[pool_key]
-
-                # Calculate amount_out using the correct parameters
-                fee_denominator = self.pool_fee_denominator[pool_key]
-                amount_out = self.get_amount_out(
-                    amount_in, reserve_in, reserve_out, fee, fee_denominator
-                )
-
-                # Calculate quote (no fee)
-                quote = (amount_in * reserve_out) // reserve_in
-
-                if amount_out == 0:
-                    price_impact = 0
-                else:
-                    price_impact = 100 * (quote - amount_out) / amount_out - fee / 10
-
-                if price_impact < 0:
-                    price_impact = 0
-
-                return {
-                    "amount_out": amount_out,
-                    "price_impact": price_impact,
-                    "path": pool_key,
-                    "amounts": [amount_in, amount_out],
-                }
-        except Exception:
-            pass  # Fall through to pathfinding
-
-        # If direct swap fails or doesn't exist, use pathfinding
-        return self.find_best_swap_path(amount_in, token_in, token_out, 3)
-
-    @view
-    def front_quote_tokens_for_exact_tokens(
-        self, amount_out: Amount, token_in: TokenUid, token_out: TokenUid, fee: Amount
-    ) -> dict[str, Any]:
-        """Calculate the required amount of input tokens to obtain a specific amount of output tokens.
-
-        Args:
-            amount_out: The desired amount of output tokens
-            token_in: The input token
-            token_out: The output token
-            fee: The pool fee (used for direct pools, ignored for multi-hop)
-
-        Returns:
-            A dictionary with amount_in and price_impact
-        """
-        # First try direct swap with the specified fee
-        try:
-            pool_key = self._get_pool_key(token_in, token_out, fee)
-            if pool_key in self.all_pools:
-                # Calculate price impact
-                reserve_in = 0
-                reserve_out = 0
-
-                if self.pool_token_a[pool_key] == token_in:
-                    reserve_in = self.pool_reserve_a[pool_key]
-                    reserve_out = self.pool_reserve_b[pool_key]
-                else:
-                    reserve_in = self.pool_reserve_b[pool_key]
-                    reserve_out = self.pool_reserve_a[pool_key]
-
-                # Calculate amount_in using the correct parameters
-                fee_denominator = self.pool_fee_denominator[pool_key]
-                amount_in = self.get_amount_in(
-                    amount_out, reserve_in, reserve_out, fee, fee_denominator
-                )
-
-                # Calculate quote (no fee)
-                quote = (amount_out * reserve_in) // reserve_out
-
-                if amount_in == 0:
-                    price_impact = 0
-                else:
-                    price_impact = 100 * (amount_in - quote) / quote - fee / 10
-
-                if price_impact < 0:
-                    price_impact = 0
-
-                return {
-                    "amount_in": amount_in,
-                    "price_impact": price_impact,
-                    "path": pool_key,
-                    "amounts": [amount_in, amount_out],
-                }
-        except Exception:
-            pass  # Fall through to pathfinding
-
-        # If direct swap fails, use reverse pathfinding for exact output
-        # Use the new exact output pathfinding algorithm
-        path_result = self.find_best_swap_path_exact_output(
-            amount_out, token_in, token_out, 3
-        )
-
-        if path_result["amount_in"] > 0:
-            return {
-                "amount_in": path_result["amount_in"],
-                "price_impact": path_result["price_impact"],
-                "path": path_result["path"],
-                "amounts": [path_result["amount_in"], amount_out],
-            }
-
-        # If pathfinding fails, return zero result
-        return {
-            "amount_in": 0,
-            "price_impact": 0,
-            "path": "",
-            "amounts": [0, amount_out],
-        }
-
+    
     @view
     def find_best_swap_path(
         self, amount_in: Amount, token_in: TokenUid, token_out: TokenUid, max_hops: int
@@ -3103,7 +2967,7 @@ class DozerPoolManager(Blueprint):
         end: TokenUid,
         amount_in: Amount,
         max_hops: int,
-    ) -> dict[str, Any]:
+    ) -> dict[str, str | list[Amount] | int]:
         """Find the optimal path using Dijkstra's algorithm.
 
         Args:
@@ -3514,7 +3378,7 @@ class DozerPoolManager(Blueprint):
         end_token: TokenUid,
         amount_out: Amount,
         max_hops: int,
-    ) -> dict[str, Any]:
+    ) -> dict[str, str | list[Amount] | int]:
         """Use Dijkstra's algorithm to find the path that minimizes input amount for exact output.
 
         Args:
