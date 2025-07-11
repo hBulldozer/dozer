@@ -554,6 +554,95 @@ export const pricesRouter = createTRPCRouter({
       }
     }),
 
+  // Get current vs historical prices with automatic change calculation (environment-aware)
+  priceChange: procedure
+    .input(
+      z.object({
+        tokenUid: z.string(),
+        timeRange: z.enum(['5min', '24h']).optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        // Environment-aware time range selection
+        const isDevelopment = process.env.NODE_ENV === 'development'
+        const defaultTimeRange = isDevelopment ? '5min' : '24h'
+        const timeRange = input.timeRange || defaultTimeRange
+
+        // Calculate timestamps (integers for contract)
+        const now = Math.floor(Date.now() / 1000)
+        const timeRangeSeconds = timeRange === '5min' ? 5 * 60 : 24 * 60 * 60
+        const historicalTimestamp = now - timeRangeSeconds
+
+        // Fetch current price first
+        const currentResponse = await fetchFromPoolManager([`get_token_price_in_usd("${input.tokenUid}")`])
+
+        // Then fetch historical price with fallback to current price if historical data unavailable
+        const historicalResponse = await fetchFromPoolManager(
+          [`get_token_price_in_usd("${input.tokenUid}")`],
+          historicalTimestamp
+        ).catch(() => {
+          // If historical data fails (common in development), use current data as fallback
+          console.warn(
+            `Historical data unavailable for ${input.tokenUid} at ${historicalTimestamp}, using current price as fallback`
+          )
+          return currentResponse
+        })
+
+        const currentPriceRaw = currentResponse.calls[`get_token_price_in_usd("${input.tokenUid}")`].value || 0
+        const historicalPriceRaw = historicalResponse.calls[`get_token_price_in_usd("${input.tokenUid}")`].value || 0
+
+        const currentPrice = currentPriceRaw / 1_000000
+        const historicalPrice = historicalPriceRaw / 1_000000
+
+        // Calculate percentage change as decimal (formatPercentChange expects decimal, not percentage)
+        let change = 0
+        if (historicalPrice > 0 && currentPrice > 0) {
+          change = (currentPrice - historicalPrice) / historicalPrice // Decimal format, not * 100
+
+          // Safeguard against extreme values that might indicate data issues
+          if (Math.abs(change) > 10) {
+            // 10 = 1000% in decimal format
+            console.warn(
+              `Extreme price change detected for ${input.tokenUid}: ${change * 100}%. This might indicate data issues.`
+            )
+            change = 0 // Reset to 0 for extreme values
+          }
+        }
+
+        // Debug logging for troubleshooting
+        console.log(`Price change debug for ${input.tokenUid}:`, {
+          currentPriceRaw,
+          historicalPriceRaw,
+          currentPrice,
+          historicalPrice,
+          change,
+          timeRange,
+          timestamp: now,
+          historicalTimestamp,
+        })
+
+        return {
+          currentPrice,
+          historicalPrice,
+          change,
+          timeRange,
+          timestamp: now,
+          historicalTimestamp,
+        }
+      } catch (error) {
+        console.error(`Error fetching price change for ${input.tokenUid}:`, error)
+        return {
+          currentPrice: 0,
+          historicalPrice: 0,
+          change: 0,
+          timeRange: input.timeRange || '24h',
+          timestamp: Math.floor(Date.now() / 1000),
+          historicalTimestamp: 0,
+        }
+      }
+    }),
+
   // Get historical HTR prices at a specific timestamp
   historicalHTR: procedure
     .input(
@@ -578,27 +667,34 @@ export const pricesRouter = createTRPCRouter({
       z.object({
         tokenUid: z.string(),
         currency: z.enum(['USD', 'HTR']).default('USD'),
-        timeframe: z.enum(['1h', '24h', '7d', '30d']).default('24h'),
-        points: z.number().min(10).max(100).default(24),
+        timeframe: z.enum(['5min', '1h', '24h', '7d', '30d']).optional(), // Added 5min option
+        points: z.number().min(5).max(20).default(10), // Reduced max for better performance
       })
     )
     .query(async ({ input }) => {
       try {
-        const now = Math.floor(Date.now() / 1000)
+        const now = Math.floor(Date.now() / 1000) // Integer timestamp for contract
+
+        // Environment-aware timeframe selection
+        const isDevelopment = process.env.NODE_ENV === 'development'
+        const defaultTimeframe = isDevelopment ? '5min' : '24h'
+        const timeframe = input.timeframe || defaultTimeframe
+
         const intervals = {
+          '5min': 5 * 60, // 5 minutes for development
           '1h': 60 * 60, // 1 hour
           '24h': 24 * 60 * 60, // 24 hours
           '7d': 7 * 24 * 60 * 60, // 7 days
           '30d': 30 * 24 * 60 * 60, // 30 days
         }
 
-        const totalTime = intervals[input.timeframe]
+        const totalTime = intervals[timeframe]
         const interval = totalTime / input.points
 
         const pricePromises = []
 
         for (let i = 0; i < input.points; i++) {
-          const timestamp = now - (totalTime - i * interval)
+          const timestamp = Math.floor(now - (totalTime - i * interval)) // Ensure integer timestamp
           const methodName =
             input.currency === 'USD'
               ? `get_token_price_in_usd("${input.tokenUid}")`
@@ -619,12 +715,28 @@ export const pricesRouter = createTRPCRouter({
 
         const priceData = await Promise.all(pricePromises)
 
+        // Add current price as the last point
+        try {
+          const currentMethodName =
+            input.currency === 'USD'
+              ? `get_token_price_in_usd("${input.tokenUid}")`
+              : `get_token_price_in_htr("${input.tokenUid}")`
+          const currentResponse = await fetchFromPoolManager([currentMethodName])
+          const currentPrice = (currentResponse.calls[currentMethodName].value || 0) / 1_000000
+          priceData.push({ timestamp: now, price: currentPrice })
+        } catch (error) {
+          // Use last historical price if current price fails
+          priceData.push({ timestamp: now, price: priceData[priceData.length - 1]?.price || 0 })
+        }
+
+        // Return with simple integer timestamps (not milliseconds)
         return priceData.map((point) => ({
-          timestamp: point.timestamp * 1000, // Convert to milliseconds for frontend
+          timestamp: point.timestamp, // Keep as integer seconds
           price: point.price,
           date: new Date(point.timestamp * 1000).toISOString(),
         }))
       } catch (error) {
+        console.error(`Error fetching chart data for ${input.tokenUid}:`, error)
         return []
       }
     }),

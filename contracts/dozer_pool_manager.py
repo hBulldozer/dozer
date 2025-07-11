@@ -2911,51 +2911,48 @@ class DozerPoolManager(Blueprint):
             fee = self.pool_fee_numerator[pool_key]
             fee_denominator = self.pool_fee_denominator[pool_key]
 
-            try:
+            # Check if pool has valid reserves for A->B calculation
+            reserve_a = self.pool_reserve_a[pool_key]
+            reserve_b = self.pool_reserve_b[pool_key]
+            
+            if reserve_a > 0 and reserve_b > 0 and fee_denominator > 0:
                 # Calculate A->B exchange rate
-                output_b = self.get_amount_out(
-                    reference_amount,
-                    self.pool_reserve_a[pool_key],
-                    self.pool_reserve_b[pool_key],
-                    fee,
-                    fee_denominator,
-                )
+                a = fee_denominator - fee
+                b = fee_denominator
+                denominator = reserve_a * b + reference_amount * a
+                
+                if denominator > 0:
+                    output_b = (reserve_b * reference_amount * a) // denominator
+                    if output_b <= reserve_b:  # Ensure output doesn't exceed reserves
+                        if token_a not in graph:
+                            graph[token_a] = {}
 
-                if token_a not in graph:
-                    graph[token_a] = {}
+                        # Only add edge if it's better than existing edge or no edge exists
+                        if (
+                            token_b not in graph[token_a]
+                            or output_b > graph[token_a][token_b][0]
+                        ):
+                            graph[token_a][token_b] = (output_b, pool_key, fee)
 
-                # Only add edge if it's better than existing edge or no edge exists
-                if (
-                    token_b not in graph[token_a]
-                    or output_b > graph[token_a][token_b][0]
-                ):
-                    graph[token_a][token_b] = (output_b, pool_key, fee)
-
-            except Exception:
-                pass  # Skip pools with insufficient liquidity
-
-            try:
+            # Check if pool has valid reserves for B->A calculation
+            if reserve_a > 0 and reserve_b > 0 and fee_denominator > 0:
                 # Calculate B->A exchange rate
-                output_a = self.get_amount_out(
-                    reference_amount,
-                    self.pool_reserve_b[pool_key],
-                    self.pool_reserve_a[pool_key],
-                    fee,
-                    fee_denominator,
-                )
+                a = fee_denominator - fee
+                b = fee_denominator
+                denominator = reserve_b * b + reference_amount * a
+                
+                if denominator > 0:
+                    output_a = (reserve_a * reference_amount * a) // denominator
+                    if output_a <= reserve_a:  # Ensure output doesn't exceed reserves
+                        if token_b not in graph:
+                            graph[token_b] = {}
 
-                if token_b not in graph:
-                    graph[token_b] = {}
-
-                # Only add edge if it's better than existing edge or no edge exists
-                if (
-                    token_a not in graph[token_b]
-                    or output_a > graph[token_b][token_a][0]
-                ):
-                    graph[token_b][token_a] = (output_a, pool_key, fee)
-
-            except Exception:
-                pass  # Skip pools with insufficient liquidity
+                        # Only add edge if it's better than existing edge or no edge exists
+                        if (
+                            token_a not in graph[token_b]
+                            or output_a > graph[token_b][token_a][0]
+                        ):
+                            graph[token_b][token_a] = (output_a, pool_key, fee)
 
         return graph
 
@@ -3028,33 +3025,32 @@ class DozerPoolManager(Blueprint):
                     continue
 
                 # Calculate actual output for current amount
-                try:
-                    # Get current reserves for this pool
-                    if self.pool_token_a[pool_key] == current:
-                        reserve_in = self.pool_reserve_a[pool_key]
-                        reserve_out = self.pool_reserve_b[pool_key]
-                    else:
-                        reserve_in = self.pool_reserve_b[pool_key]
-                        reserve_out = self.pool_reserve_a[pool_key]
+                # Get current reserves for this pool
+                if self.pool_token_a[pool_key] == current:
+                    reserve_in = self.pool_reserve_a[pool_key]
+                    reserve_out = self.pool_reserve_b[pool_key]
+                else:
+                    reserve_in = self.pool_reserve_b[pool_key]
+                    reserve_out = self.pool_reserve_a[pool_key]
 
-                    actual_output = self.get_amount_out(
-                        current_amount,
-                        reserve_in,
-                        reserve_out,
-                        fee,
-                        self.pool_fee_denominator[pool_key],
-                    )
+                # Check if calculation is valid
+                if reserve_in > 0 and reserve_out > 0 and pool_key in self.pool_fee_denominator:
+                    fee_denominator = self.pool_fee_denominator[pool_key]
+                    if fee_denominator > 0:
+                        a = fee_denominator - fee
+                        b = fee_denominator
+                        denominator = reserve_in * b + current_amount * a
+                        
+                        if denominator > 0:
+                            actual_output = (reserve_out * current_amount * a) // denominator
+                            if actual_output <= reserve_out:  # Ensure output doesn't exceed reserves
+                                neighbor_amount, neighbor_hops = distances[neighbor]
+                                new_hops = current_hops + 1
 
-                    neighbor_amount, neighbor_hops = distances[neighbor]
-                    new_hops = current_hops + 1
-
-                    # Update if we found a better path
-                    if actual_output > neighbor_amount:
-                        distances[neighbor] = (actual_output, new_hops)
-                        previous[neighbor] = (current, pool_key)
-
-                except Exception:
-                    continue  # Skip if calculation fails
+                                # Update if we found a better path
+                                if actual_output > neighbor_amount:
+                                    distances[neighbor] = (actual_output, new_hops)
+                                    previous[neighbor] = (current, pool_key)
 
         # Reconstruct path
         if end not in previous and end != start:
@@ -3118,12 +3114,13 @@ class DozerPoolManager(Blueprint):
                 reserve_out = self.pool_reserve_a[pool_key]
 
             # Calculate quote without fees
-            no_fee_quote = (amount_in * reserve_out) // reserve_in
+            if reserve_in > 0:
+                no_fee_quote = (amount_in * reserve_out) // reserve_in
 
-            if no_fee_quote > 0:
-                # Price impact = (no_fee_quote - actual_output) / no_fee_quote * 100
-                price_impact = (100 * (no_fee_quote - amount_out)) // no_fee_quote
-                return Amount(max(0, price_impact))
+                if no_fee_quote > 0:
+                    # Price impact = (no_fee_quote - actual_output) / no_fee_quote * 100
+                    price_impact = (100 * (no_fee_quote - amount_out)) // no_fee_quote
+                    return Amount(max(0, price_impact))
 
         # For multi-hop, calculate cumulative price impact across all pools
         return self._calculate_multi_hop_price_impact(
@@ -3157,22 +3154,17 @@ class DozerPoolManager(Blueprint):
         if len(pool_keys) <= 1 or amount_out == 0:
             return Amount(0)
             
-        try:
-            # Calculate theoretical amount out using spot prices (no slippage)
-            theoretical_amount_out = self._calculate_theoretical_multi_hop_output(
-                amount_in, pool_keys, token_in, token_out
-            )
-            
-            if theoretical_amount_out == 0:
-                return Amount(0)
-                
-            # Price impact = (theoretical - actual) / theoretical * 100
-            price_impact = (100 * (theoretical_amount_out - amount_out)) // theoretical_amount_out
-            return Amount(max(0, min(price_impact, 100)))  # Cap at 100%
-            
-        except Exception:
-            # If calculation fails, return 0 to avoid contract failure
+        # Calculate theoretical amount out using spot prices (no slippage)
+        theoretical_amount_out = self._calculate_theoretical_multi_hop_output(
+            amount_in, pool_keys, token_in, token_out
+        )
+        
+        if theoretical_amount_out == 0:
             return Amount(0)
+            
+        # Price impact = (theoretical - actual) / theoretical * 100
+        price_impact = (100 * (theoretical_amount_out - amount_out)) // theoretical_amount_out
+        return Amount(max(0, min(price_impact, 100)))  # Cap at 100%
             
     @view
     def _calculate_theoretical_multi_hop_output(
@@ -3325,48 +3317,46 @@ class DozerPoolManager(Blueprint):
             fee = self.pool_fee_numerator[pool_key]
             fee_denominator = self.pool_fee_denominator[pool_key]
 
-            try:
-                # Calculate A->B exchange rate (reverse: how much A needed for reference_amount B)
-                input_a = self.get_amount_in(
-                    reference_amount,
-                    self.pool_reserve_a[pool_key],
-                    self.pool_reserve_b[pool_key],
-                    fee,
-                    fee_denominator,
-                )
+            # Check if pool has valid reserves for A->B calculation (reverse: how much A needed for reference_amount B)
+            reserve_a = self.pool_reserve_a[pool_key]
+            reserve_b = self.pool_reserve_b[pool_key]
+            
+            if reserve_a > 0 and reserve_b > 0 and fee_denominator > 0 and reference_amount < reserve_b:
+                a = fee_denominator - fee
+                b = fee_denominator
+                denominator = (reserve_b - reference_amount) * a
+                
+                if denominator > 0:
+                    input_a = (reserve_a * reference_amount * b) // denominator
 
-                if token_b not in graph:
-                    graph[token_b] = {}
+                    if token_b not in graph:
+                        graph[token_b] = {}
 
-                # Only add edge if it's better than existing edge or no edge exists
-                if (
-                    token_a not in graph[token_b]
-                    or graph[token_b][token_a][0] > input_a
-                ):
-                    graph[token_b][token_a] = (input_a, pool_key, fee)
+                    # Only add edge if it's better than existing edge or no edge exists
+                    if (
+                        token_a not in graph[token_b]
+                        or graph[token_b][token_a][0] > input_a
+                    ):
+                        graph[token_b][token_a] = (input_a, pool_key, fee)
 
-                # Calculate B->A exchange rate (reverse: how much B needed for reference_amount A)
-                input_b = self.get_amount_in(
-                    reference_amount,
-                    self.pool_reserve_b[pool_key],
-                    self.pool_reserve_a[pool_key],
-                    fee,
-                    fee_denominator,
-                )
+            # Check if pool has valid reserves for B->A calculation (reverse: how much B needed for reference_amount A)
+            if reserve_a > 0 and reserve_b > 0 and fee_denominator > 0 and reference_amount < reserve_a:
+                a = fee_denominator - fee
+                b = fee_denominator
+                denominator = (reserve_a - reference_amount) * a
+                
+                if denominator > 0:
+                    input_b = (reserve_b * reference_amount * b) // denominator
 
-                if token_a not in graph:
-                    graph[token_a] = {}
+                    if token_a not in graph:
+                        graph[token_a] = {}
 
-                # Only add edge if it's better than existing edge or no edge exists
-                if (
-                    token_b not in graph[token_a]
-                    or graph[token_a][token_b][0] > input_b
-                ):
-                    graph[token_a][token_b] = (input_b, pool_key, fee)
-
-            except Exception:
-                # Skip pools with insufficient liquidity or other errors
-                continue
+                    # Only add edge if it's better than existing edge or no edge exists
+                    if (
+                        token_b not in graph[token_a]
+                        or graph[token_a][token_b][0] > input_b
+                    ):
+                        graph[token_a][token_b] = (input_b, pool_key, fee)
 
         return graph
 
@@ -3442,28 +3432,27 @@ class DozerPoolManager(Blueprint):
                     continue
 
                 # We need `current_amount` of `current` token. How much `neighbor` token is needed?
-                try:
-                    # We are swapping from `neighbor` (in) to `current` (out).
-                    reserve_in = self._get_reserve(neighbor, pool_key)
-                    reserve_out = self._get_reserve(current, pool_key)
+                # We are swapping from `neighbor` (in) to `current` (out).
+                reserve_in = self._get_reserve(neighbor, pool_key)
+                reserve_out = self._get_reserve(current, pool_key)
 
-                    required_input_for_neighbor = self.get_amount_in(
-                        current_amount,
-                        reserve_in,
-                        reserve_out,
-                        fee,
-                        self.pool_fee_denominator[pool_key],
-                    )
+                # Check if calculation is valid
+                if reserve_in > 0 and reserve_out > 0 and pool_key in self.pool_fee_denominator:
+                    fee_denominator = self.pool_fee_denominator[pool_key]
+                    if fee_denominator > 0 and current_amount < reserve_out:
+                        a = fee_denominator - fee
+                        b = fee_denominator
+                        denominator = (reserve_out - current_amount) * a
+                        
+                        if denominator > 0:
+                            required_input_for_neighbor = (reserve_in * current_amount * b) // denominator
 
-                    neighbor_amount, _ = distances[neighbor]
-                    new_hops = current_hops + 1
+                            neighbor_amount, _ = distances[neighbor]
+                            new_hops = current_hops + 1
 
-                    if required_input_for_neighbor < neighbor_amount:
-                        distances[neighbor] = (required_input_for_neighbor, new_hops)
-                        previous[neighbor] = (current, pool_key)
-
-                except Exception:
-                    continue
+                            if required_input_for_neighbor < neighbor_amount:
+                                distances[neighbor] = (required_input_for_neighbor, new_hops)
+                                previous[neighbor] = (current, pool_key)
 
         # Reconstruct path
         final_input_amount = distances.get(end_token, (Amount(2**256 - 1), 0))[0]
@@ -3595,3 +3584,5 @@ class DozerPoolManager(Blueprint):
 
         # Round up
         return Amount(numerator // denominator)
+
+__blueprint__ = DozerPoolManager

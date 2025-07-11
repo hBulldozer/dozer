@@ -28,7 +28,7 @@ export interface ExtendedPair extends Pair {
   priceHtr?: number
   price?: number
   marketCap?: number
-  change?: number
+  change?: number // Will be calculated by TokenChangeCell component, not set here
 }
 
 // Utility to normalize a token object to the Token class structure
@@ -102,6 +102,39 @@ export const TokensTable: FC = () => {
     // Convert pools to token-like entries (show each pool as representing its tokens)
     const tokenEntries: ExtendedPair[] = []
 
+    // Add HTR token entry first (special case)
+    const htrPool = allPools.find(pool => 
+      (pool.token0.uuid === '00' && pool.token1.symbol === 'hUSDC') ||
+      (pool.token1.uuid === '00' && pool.token0.symbol === 'hUSDC')
+    )
+    
+    if (htrPool) {
+      tokenEntries.push({
+        ...htrPool,
+        id: `token-00`,
+        name: 'HTR',
+        token0: normalizeToken({ 
+          uuid: '00', 
+          symbol: 'HTR', 
+          name: 'Hathor',
+          chainId: 1,
+          decimals: 2,
+          imageUrl: '',
+          bridged: false,
+          originalAddress: '',
+          sourceChain: '',
+          targetChain: '',
+          rebase: { base: 1, elastic: 1 }
+        }),
+        token1: normalizeToken(htrPool.token0.uuid === '00' ? htrPool.token1 : htrPool.token0),
+        liquidityUSD: htrPool.liquidityUSD / 2,
+        price: currentPrices['00'] || 0,
+        marketCap: 0,
+        change: undefined,
+        priceHtr: currentPrices['00'] || 0,
+      } as ExtendedPair)
+    }
+
     allPools.forEach((pool) => {
       // Add entry for token0 if not HTR
       if (pool.token0.uuid !== '00') {
@@ -114,7 +147,7 @@ export const TokensTable: FC = () => {
           liquidityUSD: pool.liquidityUSD / 2, // Split liquidity between token pair
           price: currentPrices[pool.token0.uuid] || 0,
           marketCap: 0, // TODO: Calculate when we have total supply data
-          change: 0, // TODO: Calculate when we have 24h price data
+          change: undefined, // Will be calculated by TokenChangeCell component
           priceHtr: currentPrices['00'] || 0,
         } as ExtendedPair)
       }
@@ -130,7 +163,7 @@ export const TokensTable: FC = () => {
           liquidityUSD: pool.liquidityUSD / 2, // Split liquidity between token pair
           price: currentPrices[pool.token1.uuid] || 0,
           marketCap: 0, // TODO: Calculate when we have total supply data
-          change: 0, // TODO: Calculate when we have 24h price data
+          change: undefined, // Will be calculated by TokenChangeCell component
           priceHtr: currentPrices['00'] || 0,
         } as ExtendedPair)
       }

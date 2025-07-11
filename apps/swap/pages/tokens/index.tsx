@@ -12,8 +12,8 @@ import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
   await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.all.prefetch()
-  await ssg.getPrices.all24h.prefetch()
+  await ssg.getPrices.allUSD.prefetch() // Use new contract-based price API
+  await ssg.getPools.all.prefetch() // Prefetch pool data for tokens display
   await ssg.getTokens.allTotalSupply.prefetch()
   await ssg.getNetwork.getBestBlock.prefetch()
   return {
