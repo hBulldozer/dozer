@@ -31,6 +31,7 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
 
   return (
     <div className="flex items-center">
+      {/* Always show icon for visual identification */}
       <div className="flex-shrink-0" style={{ width: `${ICON_SIZE}px` }}>
         <Currency.Icon
           width={ICON_SIZE}
@@ -42,7 +43,16 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
       </div>
       <div className="flex flex-grow items-center ml-3 min-w-0">
         <div className="flex flex-col flex-grow mr-2 min-w-0">
-          <Typography variant="sm" weight={500} className="truncate text-stone-50">
+          {/* Mobile: Show symbol prominently with name smaller underneath */}
+          <Typography variant="sm" weight={600} className="truncate text-stone-50 block sm:hidden">
+            {token.symbol}
+          </Typography>
+          <Typography variant="xxs" className="truncate text-stone-400 block sm:hidden">
+            {token.name}
+          </Typography>
+          
+          {/* Desktop: Show symbol with name underneath */}
+          <Typography variant="sm" weight={500} className="truncate text-stone-50 hidden sm:block">
             {token.symbol}
           </Typography>
           <Typography variant="xxs" className="hidden truncate sm:block text-stone-400">

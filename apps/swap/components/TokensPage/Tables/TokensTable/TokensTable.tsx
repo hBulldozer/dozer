@@ -202,12 +202,16 @@ export const TokensTable: FC = () => {
     } else if (isSm) {
       setColumnVisibility({})
     } else {
+      // Mobile view: show only name and price for better readability
       setColumnVisibility({
         network: false,
-        price: false,
+        change: false,
         rewards: false,
         liquidityUSD: false,
         fees: false,
+        volume: false,
+        marketcap: false,
+        chart: false,
       })
     }
   }, [isMd, isSm, mounted])

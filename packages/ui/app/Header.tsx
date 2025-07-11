@@ -22,6 +22,7 @@ export enum AppType {
   Root = 'Explore',
   Swap = 'Swap',
   Invest = 'Pools',
+  Oasis = 'Oasis',
   Blog = 'Blog',
   Tokens = 'Tokens',
 }
@@ -31,6 +32,7 @@ const LINK = {
   [AppType.Swap]: '/swap',
   [AppType.Invest]: '/pool',
   [AppType.Tokens]: '/swap/tokens',
+  [AppType.Oasis]: '/pool/oasis',
 }
 
 export interface HeaderProps extends React.HTMLProps<HTMLElement> {
@@ -70,7 +72,7 @@ export function Header({
 
   return (
     <header
-      className={classNames('sticky mt-0 flex items-center left-0 right-0 top-0 w-full z-[1070] h-[54px]', className)}
+      className={classNames('flex sticky top-0 right-0 left-0 items-center mt-0 w-full z-[1070] h-[54px]', className)}
       {...props}
     >
       <Transition
@@ -87,15 +89,15 @@ export function Header({
       </Transition>
       <Container
         maxWidth={maxWidth}
-        className={classNames('grid grid-cols-3 items-center w-full mx-auto z-[101] px-4 row-full')}
+        className={classNames('grid grid-cols-3 items-center px-4 mx-auto w-full z-[101] row-full')}
       >
-        <div className="flex items-center flex-grow gap-3">
+        <div className="flex flex-grow gap-3 items-center">
           {withScrollBackground ? (
             <a className="flex flex-row items-center gap-1.5" href="/">
               <div
                 className={classNames(
-                  'relative overflow-hidden transition-all duration-300 ease-in-out',
-                  !showBackground ? 'w-[120px] h-9' : 'w-9 h-9'
+                  'overflow-hidden relative transition-all duration-300 ease-in-out',
+                  !showBackground ? 'h-9 w-[120px]' : 'w-9 h-9'
                 )}
               >
                 <div
@@ -108,7 +110,7 @@ export function Header({
                 </div>
                 <div className="absolute inset-0 z-10 pointer-events-none">
                   <div className="relative w-9 h-9">
-                    <div className="absolute inset-0 pr-1 bg-black bg-clip-content"></div>
+                    <div className="absolute inset-0 pr-1 bg-clip-content bg-black"></div>
                     <DozerIcon width="36" height="36" className="relative z-20" />
                   </div>
                 </div>
@@ -116,8 +118,8 @@ export function Header({
             </a>
           ) : (
             <a className="flex flex-row items-center gap-1.5" href="/">
-              <div className="hidden md:block w-9 h-9 hover:animate-heartbeat">
-                <DozerIcon width="100%" height="100%" className="mr-2 " />
+              <div className="hidden w-9 h-9 md:block hover:animate-heartbeat">
+                <DozerIcon width="100%" height="100%" className="mr-2" />
               </div>
               <div className="w-24 md:hidden">
                 <DozerWithTextIcon width="100%" height="100%" />
@@ -130,7 +132,7 @@ export function Header({
               button={
                 <Listbox.Button
                   type="button"
-                  className="flex items-center gap-2 font-semibold hover:text-stone-200 text-stone-300"
+                  className="flex gap-2 items-center font-semibold hover:text-stone-200 text-stone-300"
                 >
                   <span className="hidden text-sm truncate sm:block">{AppType.Root}</span>
                   <IconButton as="div" className="p-1">
@@ -190,8 +192,8 @@ export function Header({
                     <Select.Option
                       as="a"
                       href="/pool/oasis"
-                      key={AppType.Invest}
-                      value={AppType.Invest}
+                      key={AppType.Oasis}
+                      value={AppType.Oasis}
                       className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
                     >
                       <div className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500 !hover:text-transparent">
@@ -312,8 +314,8 @@ export function Header({
             <></>
           )}
         </div>
-        <div className="flex justify-center flex-grow">{nav}</div>
-        <div className="flex justify-end flex-grow">{children}</div>
+        <div className="flex flex-grow justify-center">{nav}</div>
+        <div className="flex flex-grow justify-end">{children}</div>
       </Container>
     </header>
   )

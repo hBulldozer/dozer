@@ -19,13 +19,15 @@ import { hathorLib } from '@dozer/nanocontracts'
 
 interface TokenHeader {
   pair: Pair
+  prices?: Record<string, number>
 }
 
-export const TokenHeader: FC<TokenHeader> = ({ pair }) => {
+export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
   const token0 = pair.token0
   const token1 = pair.token1
   const token = pair.id.includes('native') ? token0 : token1
-  const price = Number(pair.reserve0) / Number(pair.reserve1)
+  // Get price from getPrices router instead of calculating from reserves
+  const price = prices[token.uuid] / 1000000 || 0
 
   return (
     <div className="flex flex-col gap-4">

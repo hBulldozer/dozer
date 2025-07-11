@@ -182,11 +182,11 @@ export const PoolsTable: FC = () => {
     } else if (isSm) {
       setColumnVisibility({})
     } else {
+      // Mobile view: show TVL and APR instead of just APR
       setColumnVisibility({
         volume: false,
         network: false,
         rewards: false,
-        liquidityUSD: false,
         fees: false,
       })
     }
