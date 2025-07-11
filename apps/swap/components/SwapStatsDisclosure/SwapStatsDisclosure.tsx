@@ -21,7 +21,6 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
   // const [showRoute, setShowRoute] = useState(false)
   const { mainCurrency, otherCurrency, routeInfo } = useTrade()
 
-
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const priceImpactSeverity = useMemo(() => warningSeverity(trade?.priceImpact), [trade?.priceImpact])
 
@@ -101,7 +100,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
 
   const stats = (
     <>
-      <Typography variant="sm" className="text-stone-400 flex items-center">
+      <Typography variant="sm" className="flex items-center text-stone-400">
         Price Impact
       </Typography>
       <Typography
@@ -115,10 +114,14 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
         -{trade?.priceImpact?.toFixed(2)}%
       </Typography>
       <div className="col-span-2 border-t border-stone-200/5 w-full py-0.5" />
-      <Typography variant="sm" className="text-stone-400 flex items-center">
+      <Typography variant="sm" className="flex items-center text-stone-400">
         Min. Received
       </Typography>
-      <Typography variant="sm" weight={500} className="text-right truncate text-stone-400 flex items-center justify-end">
+      <Typography
+        variant="sm"
+        weight={500}
+        className="flex justify-end items-center text-right truncate text-stone-400"
+      >
         {trade.outputAmount ? (trade?.outputAmount * (1 - slippageTolerance / 100)).toFixed(2) : ''}{' '}
         {trade.outputAmount ? trade?.otherCurrency?.symbol : ''}
       </Typography>
@@ -187,7 +190,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                 leaveFrom="transform max-h-[380px]"
                 leaveTo="transform max-h-0"
               >
-                <Disclosure.Panel className="grid grid-cols-2 gap-x-2 gap-y-2 pt-4 text-xs border-t bg-white bg-opacity-[.02] -m-4 mt-4 p-4 border-stone-200/5">
+                <Disclosure.Panel className="grid grid-cols-2 gap-x-2 gap-y-2 pt-4 text-xs border bg-white bg-opacity-[.02] p-2 mb-2 border-stone-200/5">
                   {stats}
                   {routeInfo && routeSteps.length > 0 && (
                     <div className="col-span-2 pt-4 mt-2 border-t border-stone-200/5">

@@ -109,6 +109,10 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const balances = useAccount((state) => state.balance)
   const router = useRouter()
 
+  // Find HTR and hUSDC tokens for defaults
+  const htrToken = tokens?.find(token => token.uuid === '00') // HTR token
+  const usdcToken = tokens?.find(token => token.symbol === 'hUSDC') // hUSDC token
+
   useEffect(() => {
     const params = router.query
     const _initialToken0 =
@@ -131,21 +135,13 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
 
   const [initialToken0, setInitialToken0] = useState(
     tokens
-      ? toToken(
-          tokens.filter((token) => {
-            return token.id == token0_idx
-          })[0]
-        )
+      ? toToken(htrToken || tokens.filter((token) => token.id == token0_idx)[0])
       : undefined
   )
 
   const [initialToken1, setInitialToken1] = useState(
     tokens
-      ? toToken(
-          tokens.filter((token) => {
-            return token.id == token1_idx
-          })[0]
-        )
+      ? toToken(usdcToken || tokens.filter((token) => token.id == token1_idx)[0])
       : undefined
   )
 
@@ -181,11 +177,16 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
 
   const switchCurrencies = async () => {
     setTokens(([prevSrc, prevDst]) => [prevDst, prevSrc])
-    if (tradeType == TradeType.EXACT_INPUT) {
-      setInput1('')
-    } else {
-      setInput0('')
-    }
+    
+    // Swap the input values and trade type
+    const tempInput0 = input0
+    const tempInput1 = input1
+    
+    setInput0(tempInput1)
+    setInput1(tempInput0)
+    
+    // Invert the trade type
+    setTradeType(tradeType === TradeType.EXACT_INPUT ? TradeType.EXACT_OUTPUT : TradeType.EXACT_INPUT)
   }
 
   // const onSuccess = () => {
@@ -336,7 +337,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         <CurrencyInput
           id={'swap-input-currency0'}
           className="p-3"
-          disabled={process.env.NODE_ENV === 'development' ? false : !token0 || !token1}
+          disabled={!token0 || !token1}
           value={input0}
           onChange={onInput0}
           currency={token0}
@@ -386,7 +387,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         <div className="bg-stone-800">
           <CurrencyInput
             id={'swap-output-currency1'}
-            disabled={process.env.NODE_ENV === 'development' ? false : !token0 || !token1}
+            disabled={!token0 || !token1}
             className="p-3"
             value={input1}
             onChange={onInput1}
@@ -425,7 +426,8 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             }
             // isWrap={isWrap}
           />
-          <SwapStatsDisclosure prices={prices || {}} />
+          {/* Hide route/price impact details when tokens not chosen or no input values */}
+          {token0 && token1 && (input0 || input1) && <SwapStatsDisclosure prices={prices || {}} />}
 
           {/* Show bridge suggestion when balance is low */}
           {/* <SwapLowBalanceBridge

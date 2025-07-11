@@ -68,10 +68,17 @@ const Add: FC = () => {
     })
   }, [pools_db])
 
+  // Find HTR and hUSDC tokens for defaults
+  const htrToken = tokens?.find(token => token.uuid === '00') // HTR token
+  const usdcToken = tokens?.find(token => token.symbol === 'hUSDC') // hUSDC token
+
   const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
   const [selectedPool, setSelectedPool] = useState<Pair>()
   const [input0, setInput0] = useState<string>('')
-  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([undefined, undefined])
+  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([
+    htrToken ? toToken(htrToken) : undefined,
+    usdcToken ? toToken(usdcToken) : undefined
+  ])
   const [input1, setInput1] = useState<string>('')
   const [parsedInput0, parsedInput1] = useMemo(() => {
     return [
@@ -92,6 +99,13 @@ const Add: FC = () => {
   useEffect(() => {
     setTokens([undefined, undefined])
   }, [chainId])
+
+  // Set default tokens when tokens data is loaded
+  useEffect(() => {
+    if (tokens && htrToken && usdcToken && !token0 && !token1) {
+      setTokens([toToken(htrToken), toToken(usdcToken)])
+    }
+  }, [tokens, htrToken, usdcToken, token0, token1])
   // const [fee, setFee] = useState(2)
 
   const onInput0 = useCallback(async (val: string) => {
@@ -234,7 +248,7 @@ const Add: FC = () => {
                   className="p-3"
                   value={input0}
                   onChange={onInput0}
-                  disabled={!(token0 && token1 && selectedPool)}
+                  disabled={!token0 || !token1}
                   currency={token0}
                   onSelect={_setToken0}
                   chainId={chainId}
@@ -264,7 +278,7 @@ const Add: FC = () => {
                     className="p-3 !pb-1"
                     value={input1}
                     onChange={onInput1}
-                    disabled={!(token0 && token1 && selectedPool)}
+                    disabled={!token0 || !token1}
                     currency={token1}
                     onSelect={_setToken1}
                     chainId={chainId}

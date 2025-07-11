@@ -61,33 +61,31 @@ export const TokenHeader: FC<TokenHeader> = ({ pair }) => {
           <div className="flex flex-col gap-4">
             <div className="flex gap-4 justify-between items-center md:justify-end">
               <div className="flex gap-4 items-center">
-                <IconButton className="p-1 text-stone-400" description={token.uuid}>
-                  <CopyHelper
-                    toCopy={
-                      pair.id == 'native'
-                        ? hathorLib.tokensUtils.getConfigurationString(
-                            pair.token0.uuid,
-                            pair.token0.name || '',
-                            pair.token0.symbol || ''
-                          )
-                        : hathorLib.tokensUtils.getConfigurationString(
-                            pair.token1.uuid,
-                            pair.token1.name || '',
-                            pair.token1.symbol || ''
-                          )
-                    }
-                    hideIcon={true}
-                  >
-                    {(isCopied) => (
-                      <IconButton
-                        className="p-1 text-stone-400"
-                        description={isCopied ? 'Copied!' : 'Configuration String'}
-                      >
-                        <Square2StackIcon width={20} height={20} color="stone-500" />
-                      </IconButton>
-                    )}
-                  </CopyHelper>
-                </IconButton>
+                <CopyHelper
+                  toCopy={
+                    pair.id == 'native'
+                      ? hathorLib.tokensUtils.getConfigurationString(
+                          pair.token0.uuid,
+                          pair.token0.name || '',
+                          pair.token0.symbol || ''
+                        )
+                      : hathorLib.tokensUtils.getConfigurationString(
+                          pair.token1.uuid,
+                          pair.token1.name || '',
+                          pair.token1.symbol || ''
+                        )
+                  }
+                  hideIcon={true}
+                >
+                  {(isCopied) => (
+                    <IconButton
+                      className="p-1 text-stone-400"
+                      description={isCopied ? 'Copied!' : 'Configuration String'}
+                    >
+                      <Square2StackIcon width={20} height={20} color="stone-500" />
+                    </IconButton>
+                  )}
+                </CopyHelper>
               </div>
             </div>
           </div>

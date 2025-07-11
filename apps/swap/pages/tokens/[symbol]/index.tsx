@@ -165,7 +165,7 @@ const Token = () => {
                           {pool.name}
                         </Typography>
                         <Typography variant="sm" className="text-stone-400">
-                          {pool.swapFee}% fee
+                          {(pool.swapFee / 100).toFixed(2)}% fee
                         </Typography>
                       </div>
                       <div className="flex gap-4 items-center">
@@ -174,7 +174,7 @@ const Token = () => {
                             TVL
                           </Typography>
                           <Typography weight={500} className="text-stone-50">
-                            ${pool.liquidityUSD.toLocaleString()}
+                            ${(pool.liquidityUSD / 1000000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </Typography>
                         </div>
                         <Button as="a" href={`/pool/${pool.symbolId}`} size="sm" variant="outlined">

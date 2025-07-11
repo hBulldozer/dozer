@@ -203,6 +203,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
         currency1={currencyBToRemove?.currency}
         setPercentage={setPercentage}
         prices={prices}
+        hasLiquidity={!!(liquidity && Number(liquidity) > 0)}
       >
         <Checker.Connected fullWidth size="md">
           <div className="flex flex-col justify-between gap-2">

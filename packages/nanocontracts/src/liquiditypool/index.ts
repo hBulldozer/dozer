@@ -45,14 +45,14 @@ export class PoolManager extends NanoContract {
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenA,
-          amount: BigInt(Math.ceil(amountA * 100)),
+          amount: Math.floor(amountA * 100).toString(),
           address: address,
           changeAddress: address,
         },
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenB,
-          amount: BigInt(Math.ceil(amountB * 100)),
+          amount: Math.floor(amountB * 100).toString(),
           address: address,
           changeAddress: address,
         },
@@ -96,19 +96,17 @@ export class PoolManager extends NanoContract {
       method,
       this.poolManagerBlueprintId,
       [
-        // @ts-ignore
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenIn,
-          amount: (amountIn * 100).toString(),
+          amount: Math.floor(amountIn * 100).toString(),
           address: address,
           changeAddress: address,
         },
-        // @ts-ignore
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenOut,
-          amount: Math.floor(amountOut * 100).toString(),
+          amount: Math.ceil(amountOut * 100).toString(),
           address: address,
           changeAddress: address,
         },
@@ -153,7 +151,6 @@ export class PoolManager extends NanoContract {
       method,
       this.poolManagerBlueprintId,
       [
-        // @ts-ignore
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenIn,
@@ -161,11 +158,10 @@ export class PoolManager extends NanoContract {
           address: address,
           changeAddress: address,
         },
-        // @ts-ignore
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenOut,
-          amount: (amountOut * 100).toString(),
+          amount: Math.floor(amountOut * 100).toString(),
           address: address,
           changeAddress: address,
         },
@@ -196,19 +192,17 @@ export class PoolManager extends NanoContract {
       'add_liquidity',
       this.poolManagerBlueprintId,
       [
-        // @ts-ignore
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenA,
-          amount: Math.ceil(amountA * 100).toString(),
+          amount: Math.floor(amountA * 100).toString(),
           address: address,
           changeAddress: address,
         },
-        // @ts-ignore
         {
           type: NanoContractActionType.DEPOSIT,
           token: tokenB,
-          amount: Math.ceil(amountB * 100).toString(),
+          amount: Math.floor(amountB * 100).toString(),
           address: address,
           changeAddress: address,
         },
@@ -239,7 +233,6 @@ export class PoolManager extends NanoContract {
       'remove_liquidity',
       this.poolManagerBlueprintId,
       [
-        // @ts-ignore
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenA,
@@ -247,7 +240,6 @@ export class PoolManager extends NanoContract {
           address: address,
           changeAddress: address,
         },
-        // @ts-ignore
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenB,

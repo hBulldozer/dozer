@@ -723,6 +723,108 @@ NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID=<manager_ncid_from_seeding_output>
 - **Performance:** Single contract calls with proper data conversion
 - **Maintainability:** Consistent patterns across all liquidity management pages
 
+### ✅ UI/UX Improvements & Amount Handling Fixes (Complete)
+
+**Context:** Comprehensive UI/UX improvements addressing decimal formatting, input validation, amount handling, and user experience issues across the entire dApp.
+
+**Problems Identified:**
+1. **Inconsistent decimal formatting** - Token amounts showing 6+ decimal places instead of Hathor's 2-decimal standard
+2. **Amount handling bugs** - Inconsistent rounding and type conversion in PoolManager NanoContract actions
+3. **Input validation issues** - Users could input excessive decimals and amounts weren't properly validated
+4. **Poor default UX** - No default tokens selected, unclear input states
+5. **UI feedback issues** - Incorrect liquidity messages, copy helper showing wrong information
+6. **Display formatting** - TVL and fee values incorrectly formatted on token pages
+
+**Key Changes Made:**
+
+#### 1. **Decimal Formatting Standardization**
+**Files Modified:**
+- `apps/swap/components/Rate.tsx` - Changed `toFixed(6)` to `toFixed(2)` for exchange rates
+- `apps/swap/components/SwapStatsDisclosure/SwapStatsDisclosure.tsx` - Updated price impact and minimum received to 2 decimals
+
+**Impact:**
+- All token amounts now display maximum 2 decimal places (matching Hathor Network standards)
+- Exchange rates show proper format: "1 HTR = 12.34 USDC" instead of "1 HTR = 12.345678 USDC"
+- Consistent decimal display across all swap components
+
+#### 2. **NanoContract Amount Handling Fixes**
+**Files Modified:**
+- `packages/nanocontracts/src/liquiditypool/index.ts` - Fixed all amount conversion and rounding issues
+
+**Critical Fixes:**
+- **Consistent String Conversion**: All amounts now use `.toString()` instead of mixed `BigInt()` approaches
+- **Proper Rounding Logic**:
+  - **Deposits** (user sending): `Math.floor(amount * 100).toString()` - prevents sending more than intended
+  - **Withdrawals** (user receiving): `Math.ceil(amount * 100).toString()` - ensures minimum received
+- **Removed BigInt Inconsistencies**: Eliminated mixed type conversion that could cause transaction failures
+- **Fixed Slippage Calculations**: Proper percentage-to-decimal conversion for slippage tolerance
+
+#### 3. **Input Validation & UX Improvements**
+**Files Modified:**
+- `packages/ui/input/utils.ts` - Added 2-decimal limit and automatic decimal formatting
+- `packages/ui/input/Numeric.tsx` - Enhanced numeric input with `autoDecimal` mode
+- `apps/swap/pages/index.tsx` - Default tokens, input restrictions, token inversion
+- `apps/earn/pages/add.tsx` - Default tokens and input validation
+
+**New Features:**
+- **Automatic Decimal Formatting**: Option to format user input as currency (e.g., 1234 → 12.34)
+- **2-Decimal Input Limit**: Regex validation prevents users from entering more than 2 decimal places
+- **Default Token Selection**: HTR and hUSDC automatically selected on page load
+- **Input Restrictions**: Users cannot enter amounts until both tokens are selected
+- **Smart Token Inversion**: Clicking invert button swaps values AND trade types
+- **Conditional Route Display**: Route/price impact hidden until valid inputs are provided
+
+#### 4. **Liquidity Management Fixes**
+**Files Modified:**
+- `apps/earn/components/RemoveSection/RemoveSectionLegacy.tsx` - Fixed liquidity detection
+- `apps/earn/components/RemoveSection/RemoveSectionWidget.tsx` - Updated "no liquidity" message logic
+
+**Fixes:**
+- **Proper Liquidity Detection**: Changed from checking token prices to checking actual user liquidity amounts
+- **Accurate Messaging**: "You don't have liquidity in this pool" now appears correctly when user has no position
+- **Improved UX**: Clear feedback when users try to remove liquidity from pools they don't participate in
+
+#### 5. **Token Page Display Fixes**
+**Files Modified:**
+- `apps/swap/pages/tokens/[symbol]/index.tsx` - Fixed TVL and fee formatting
+- `apps/swap/components/TokenPage/TokenHeader.tsx` - Fixed copy helper tooltip
+
+**Fixes:**
+- **TVL Display**: Fixed from inflated trillions to realistic amounts with proper formatting
+- **Fee Display**: Corrected from basis points to percentage (e.g., 5 → 0.05%)
+- **Copy Helper**: Removed redundant UUID tooltip, now shows proper "Configuration String" label
+- **Number Formatting**: Added proper locale formatting for currency values
+
+**Testing Results:**
+- ✅ All token amounts display exactly 2 decimal places across the entire dApp
+- ✅ NanoContract transactions execute successfully with proper amount handling
+- ✅ Default tokens (HTR/hUSDC) automatically selected on page load
+- ✅ Input validation prevents invalid decimal entries
+- ✅ "No liquidity" messages appear correctly based on actual user positions
+- ✅ Token page displays show realistic TVL and properly formatted fees
+- ✅ Copy helper shows correct tooltip without UUID clutter
+- ✅ Route display appears conditionally with proper formatting
+
+**Technical Benefits:**
+- **Consistency**: Uniform 2-decimal formatting throughout the application
+- **Reliability**: Proper amount handling prevents transaction failures
+- **User Experience**: Clear feedback, sensible defaults, and intuitive interactions
+- **Maintainability**: Centralized formatting logic and consistent patterns
+- **Performance**: Efficient input validation and conditional rendering
+
+**Files Modified Summary:**
+1. `packages/ui/input/utils.ts` - Enhanced decimal validation and formatting utilities
+2. `packages/ui/input/Numeric.tsx` - Added automatic decimal formatting option
+3. `packages/nanocontracts/src/liquiditypool/index.ts` - Fixed all amount handling inconsistencies
+4. `apps/swap/pages/index.tsx` - Default tokens, input restrictions, token inversion
+5. `apps/earn/pages/add.tsx` - Default tokens and input validation
+6. `apps/swap/components/Rate.tsx` - 2-decimal formatting for exchange rates
+7. `apps/swap/components/SwapStatsDisclosure/SwapStatsDisclosure.tsx` - Improved stats display
+8. `apps/earn/components/RemoveSection/RemoveSectionLegacy.tsx` - Fixed liquidity detection
+9. `apps/earn/components/RemoveSection/RemoveSectionWidget.tsx` - Updated no-liquidity logic
+10. `apps/swap/pages/tokens/[symbol]/index.tsx` - Fixed TVL and fee formatting
+11. `apps/swap/components/TokenPage/TokenHeader.tsx` - Fixed copy helper tooltip
+
 ## Next Steps for New Chat Sessions
 1. **Focus areas**: Frontend page migrations and legacy code cleanup
 2. **Current status**: Core swap functionality working, user positions complete, remove liquidity complete, TVL/volume displays fixed
@@ -736,6 +838,7 @@ NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID=<manager_ncid_from_seeding_output>
 - ✅ **Router Updates**: Updated all affected API routers to use new parser functions
 - ✅ **Remove Liquidity Migration**: Complete symbol-based URL support and fee extraction implementation
 - ✅ **TVL/Volume Display Fix**: Fixed inflated values by properly converting token prices from contract units to USD
+- ✅ **UI/UX Improvements & Amount Handling**: Complete overhaul of decimal formatting, input validation, and user experience
 
 **Current Technical Status:**
 - **Contract**: Clean, no external dependencies, proper NamedTuple return types
@@ -744,6 +847,7 @@ NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID=<manager_ncid_from_seeding_output>
 - **Performance**: Efficient parsing without JSON serialization overhead
 - **Liquidity Management**: Both add and remove liquidity flows fully functional with symbol-based URLs
 - **Financial Data**: TVL and volume displays show accurate values matching seed configuration
+- **UI/UX**: Consistent 2-decimal formatting, proper input validation, and improved user experience
 
 ---
 
