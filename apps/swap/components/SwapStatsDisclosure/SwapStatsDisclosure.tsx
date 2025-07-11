@@ -1,8 +1,7 @@
 import { Disclosure, Transition } from '@headlessui/react'
-import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
-import { classNames, Tooltip, Typography } from '@dozer/ui'
-import React, { FC, useMemo, useCallback } from 'react'
+import { classNames, Typography } from '@dozer/ui'
+import React, { FC, useMemo } from 'react'
 import { Token } from '@dozer/currency'
 
 import { Rate } from '../../components'
@@ -22,85 +21,33 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
   // const [showRoute, setShowRoute] = useState(false)
   const { mainCurrency, otherCurrency, routeInfo } = useTrade()
 
-  // Extract route tokens for development mode display
-  const extractRouteTokens = useCallback(() => {
-    if (!routeInfo?.path || !mainCurrency || !otherCurrency) return []
-
-    const tokens: string[] = []
-
-    // Handle string path (comma-separated pool keys)
-    let pathArray: string[] = []
-    if (typeof routeInfo.path === 'string') {
-      pathArray = (routeInfo.path as string).split(',').map((s: string) => s.trim())
-    } else if (Array.isArray(routeInfo.path)) {
-      pathArray = routeInfo.path
-    }
-
-    // Start with the input token (mainCurrency)
-    tokens.push(mainCurrency.uuid)
-
-    // Process each pool key to build the route in the correct direction
-    for (let i = 0; i < pathArray.length; i++) {
-      const poolKey = pathArray[i]
-      if (typeof poolKey === 'string' && poolKey.includes('/')) {
-        const [tokenA, tokenB] = poolKey.split('/')
-
-        const lastToken: string = tokens[tokens.length - 1]
-
-        // Add the token that's not the last one (the destination token in this hop)
-        if (tokenA === lastToken && tokenB && !tokens.includes(tokenB)) {
-          tokens.push(tokenB)
-        } else if (tokenB === lastToken && tokenA && !tokens.includes(tokenA)) {
-          tokens.push(tokenA)
-        } else if (!tokens.includes(tokenA) && !tokens.includes(tokenB)) {
-          // If neither token is in our path yet, choose based on which connects to our last token
-          // This shouldn't happen if the route is properly ordered, but it's a fallback
-          tokens.push(tokenA, tokenB)
-        }
-      }
-    }
-
-    // Ensure we end with the output token (otherCurrency)
-    if (tokens[tokens.length - 1] !== otherCurrency.uuid) {
-      if (!tokens.includes(otherCurrency.uuid)) {
-        tokens.push(otherCurrency.uuid)
-      } else {
-        // Reorder to end with output token
-        const filtered = tokens.filter((t) => t !== otherCurrency.uuid)
-        filtered.push(otherCurrency.uuid)
-        return filtered
-      }
-    }
-
-    return tokens
-  }, [routeInfo, mainCurrency, otherCurrency])
 
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const priceImpactSeverity = useMemo(() => warningSeverity(trade?.priceImpact), [trade?.priceImpact])
 
-  // Helper function to get token by UUID
-  const getTokenByUuid = (uuid: string): Token | undefined => {
-    if (!tokens) return undefined
-    const dbToken = tokens.find((t) => t.uuid === uuid)
-    if (!dbToken) return undefined
-
-    return new Token({
-      chainId: dbToken.chainId,
-      uuid: dbToken.uuid,
-      decimals: dbToken.decimals,
-      name: dbToken.name,
-      symbol: dbToken.symbol,
-      imageUrl: dbToken.imageUrl || undefined,
-      bridged: !!dbToken.bridged,
-      originalAddress: dbToken.originalAddress || undefined,
-      sourceChain: dbToken.sourceChain || undefined,
-      targetChain: dbToken.targetChain || undefined,
-    })
-  }
-
   // Convert route info to RouteDisplay format
   const routeSteps = useMemo(() => {
     if (!routeInfo || !routeInfo.poolPath || !routeInfo.path || !mainCurrency || !otherCurrency) return []
+
+    // Helper function to get token by UUID
+    const getTokenByUuid = (uuid: string): Token | undefined => {
+      if (!tokens) return undefined
+      const dbToken = tokens.find((t) => t.uuid === uuid)
+      if (!dbToken) return undefined
+
+      return new Token({
+        chainId: dbToken.chainId,
+        uuid: dbToken.uuid,
+        decimals: dbToken.decimals,
+        name: dbToken.name,
+        symbol: dbToken.symbol,
+        imageUrl: dbToken.imageUrl || undefined,
+        bridged: !!dbToken.bridged,
+        originalAddress: dbToken.originalAddress || undefined,
+        sourceChain: dbToken.sourceChain || undefined,
+        targetChain: dbToken.targetChain || undefined,
+      })
+    }
 
     // Use poolPath for pool keys and path for token sequence
     const poolKeys =
@@ -133,14 +80,14 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
         if (connectingPool) {
           const parts = connectingPool.split('/')
           if (parts[2]) {
-            fee = parseInt(parts[2]) / 1000 // Convert from basis points to percentage
+            fee = parseInt(parts[2]) / 10 // Convert from basis points to percentage
           }
         }
 
         steps.push({
           tokenIn,
           tokenOut,
-          pool: connectingPool || `${tokenInUuid}/${tokenOutUuid}/${fee * 1000}`,
+          pool: connectingPool || `${tokenInUuid}/${tokenOutUuid}/${fee * 10}`,
           fee,
           amountIn: routeInfo.amounts[i] || 0,
           amountOut: routeInfo.amounts[i + 1] || 0,
@@ -154,7 +101,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
 
   const stats = (
     <>
-      <Typography variant="sm" className="text-stone-400">
+      <Typography variant="sm" className="text-stone-400 flex items-center">
         Price Impact
       </Typography>
       <Typography
@@ -162,16 +109,16 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
         weight={500}
         className={classNames(
           priceImpactSeverity === 2 ? 'text-yellow' : priceImpactSeverity > 2 ? 'text-red' : 'text-stone-200',
-          'text-right truncate'
+          'text-right truncate flex items-center justify-end'
         )}
       >
         -{trade?.priceImpact?.toFixed(2)}%
       </Typography>
       <div className="col-span-2 border-t border-stone-200/5 w-full py-0.5" />
-      <Typography variant="sm" className="text-stone-400">
+      <Typography variant="sm" className="text-stone-400 flex items-center">
         Min. Received
       </Typography>
-      <Typography variant="sm" weight={500} className="text-right truncate text-stone-400">
+      <Typography variant="sm" weight={500} className="text-right truncate text-stone-400 flex items-center justify-end">
         {trade.outputAmount ? (trade?.outputAmount * (1 - slippageTolerance / 100)).toFixed(2) : ''}{' '}
         {trade.outputAmount ? trade?.otherCurrency?.symbol : ''}
       </Typography>
@@ -205,7 +152,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                       className="text-sm text-stone-300 hover:text-stone-50 cursor-pointer gap-1 font-semibold tracking-tight h-[36px] flex items-center truncate"
                       onClick={toggleInvert}
                     >
-                      <Typography variant="sm" weight={600} className="flex items-center gap-1 text-stone-100">
+                      <Typography variant="sm" weight={600} className="flex gap-1 items-center text-stone-100">
                         {content}
                       </Typography>
                       {usdPrice && (
@@ -217,7 +164,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                   )}
                 </Rate>
                 <Disclosure.Button>
-                  <div className="flex items-center gap-2 cursor-pointer text-stone-400 hover:text-stone-100">
+                  <div className="flex gap-2 items-center cursor-pointer text-stone-400 hover:text-stone-100">
                     <Typography variant="sm" weight={500}>
                       {open ? 'Hide' : 'Details'}
                     </Typography>
@@ -240,33 +187,11 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                 leaveFrom="transform max-h-[380px]"
                 leaveTo="transform max-h-0"
               >
-                <Disclosure.Panel className="grid grid-cols-2 gap-x-2 gap-y-1 pt-4 text-xs border-t bg-white bg-opacity-[.02] -m-4 mt-4 p-4 border-stone-200/5">
-                  <div className="flex col-span-2 gap-1 items-center">
-                    <Typography variant="sm" weight={500} className="text-stone-400">
-                      Network Fee
-                    </Typography>
-                    <Tooltip
-                      placement="bottom"
-                      panel={
-                        <div>This fee is paid to the network to process your transaction and does not go to Dozer.</div>
-                      }
-                      button={<InformationCircleIcon width={16} className="text-stone-500" />}
-                    >
-                      <></>
-                    </Tooltip>
-                  </div>
-                  <Typography variant="sm" weight={500} className="text-right truncate col-span-1 text-stone-400">
-                    ~0.01 HTR
-                  </Typography>
+                <Disclosure.Panel className="grid grid-cols-2 gap-x-2 gap-y-2 pt-4 text-xs border-t bg-white bg-opacity-[.02] -m-4 mt-4 p-4 border-stone-200/5">
                   {stats}
                   {routeInfo && routeSteps.length > 0 && (
-                    <div className="col-span-2 pt-2 mt-2 border-t border-stone-700">
-                      <RouteDisplay
-                        route={routeSteps}
-                        totalPriceImpact={routeInfo.priceImpact}
-                        estimatedCost={0.01} // Example cost
-                        className="!p-0"
-                      />
+                    <div className="col-span-2 pt-4 mt-2 border-t border-stone-200/5">
+                      <RouteDisplay route={routeSteps} />
                     </div>
                   )}
                 </Disclosure.Panel>
