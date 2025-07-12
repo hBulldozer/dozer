@@ -11,4 +11,4 @@ next
 superjson
 framer-motion
 tanstack/react-query
-Additional dependencies may also be affected.
+Additional dependencies may also be affected
