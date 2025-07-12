@@ -113,37 +113,50 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const htrToken = tokens?.find(token => token.uuid === '00') // HTR token
   const usdcToken = tokens?.find(token => token.symbol === 'hUSDC') // hUSDC token
 
-  useEffect(() => {
-    const params = router.query
-    const _initialToken0 =
-      params?.token0 && params?.chainId && tokens
-        ? tokens.find((token) => {
-            return params.token0 == token.uuid
-          })
-        : undefined
-    const _initialToken1 =
-      params?.token1 && params?.chainId && tokens
-        ? tokens.find((token) => {
-            return params.token1 == token.uuid
-          })
-        : undefined
-    if (_initialToken0) setInitialToken0(toToken(_initialToken0))
-    if (_initialToken1) setInitialToken1(toToken(_initialToken1))
-  }, [router.query, router.query.isReady, tokens])
-
   const network = useNetwork((state) => state.network)
 
-  const [initialToken0, setInitialToken0] = useState(
-    tokens
-      ? toToken(htrToken || tokens.filter((token) => token.id == token0_idx)[0])
-      : undefined
-  )
+  const [initialToken0, setInitialToken0] = useState<Token | undefined>(undefined)
+  const [initialToken1, setInitialToken1] = useState<Token | undefined>(undefined)
 
-  const [initialToken1, setInitialToken1] = useState(
-    tokens
-      ? toToken(usdcToken || tokens.filter((token) => token.id == token1_idx)[0])
-      : undefined
-  )
+  // Consolidated token initialization logic
+  useEffect(() => {
+    if (!tokens || tokens.length === 0) return
+
+    const params = router.query
+    let selectedToken0: Token | undefined
+    let selectedToken1: Token | undefined
+
+    // Priority 1: URL parameters (if present)
+    if (params?.token0 && params?.chainId) {
+      const urlToken0 = tokens.find((token) => params.token0 == token.uuid)
+      if (urlToken0) {
+        selectedToken0 = toToken(urlToken0)
+      }
+    }
+
+    if (params?.token1 && params?.chainId) {
+      const urlToken1 = tokens.find((token) => params.token1 == token.uuid)
+      if (urlToken1) {
+        selectedToken1 = toToken(urlToken1)
+      }
+    }
+
+    // Priority 2: Props (if no URL params)
+    if (!selectedToken0) {
+      const htrFromTokens = tokens.find(token => token.uuid === '00')
+      const token0FromProp = tokens.find(token => token.uuid === token0_idx)
+      selectedToken0 = toToken(htrFromTokens || token0FromProp)
+    }
+
+    if (!selectedToken1) {
+      const token1FromProp = tokens.find(token => token.uuid === token1_idx)
+      const usdcFromTokens = tokens.find(token => token.symbol === 'hUSDC')
+      selectedToken1 = toToken(token1FromProp || usdcFromTokens)
+    }
+
+    setInitialToken0(selectedToken0)
+    setInitialToken1(selectedToken1)
+  }, [tokens, token0_idx, token1_idx, router.query, router.query.isReady])
 
   useEffect(() => {
     setTokens([initialToken0, initialToken1])

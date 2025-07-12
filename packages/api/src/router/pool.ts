@@ -582,12 +582,19 @@ export const poolRouter = createTRPCRouter({
           let currentToken = input.tokenIn
           for (const poolKey of poolKeys) {
             const [tokenA, tokenB] = poolKey.split('/')
+            let nextToken = null
+            
             if (tokenA && tokenA === currentToken && tokenB) {
-              currentToken = tokenB
+              nextToken = tokenB
             } else if (tokenB && tokenB === currentToken && tokenA) {
-              currentToken = tokenA
+              nextToken = tokenA
             }
-            tokenPath.push(currentToken)
+            
+            // Only add the next token if we found a valid transition
+            if (nextToken && nextToken !== currentToken) {
+              tokenPath.push(nextToken)
+              currentToken = nextToken
+            }
           }
         }
 
@@ -640,31 +647,46 @@ export const poolRouter = createTRPCRouter({
         const poolKeys = poolPath ? poolPath.split(',') : []
 
         // Extract unique tokens from pool keys to build token path
+        // For exact output, the pool path is returned in REVERSE order from contract
         const tokenPath = []
         if (poolKeys.length > 0) {
+          // For exact output, reverse the pool keys to get forward path
+          const reversedPoolKeys = [...poolKeys].reverse()
+          
           // Start with input token
           tokenPath.push(input.tokenIn)
 
           // Follow the path through each pool to build token sequence
           let currentToken = input.tokenIn
-          for (const poolKey of poolKeys) {
+          for (const poolKey of reversedPoolKeys) {
             const [tokenA, tokenB] = poolKey.split('/')
+            let nextToken = null
+            
             if (tokenA && tokenA === currentToken && tokenB) {
-              currentToken = tokenB
+              nextToken = tokenB
             } else if (tokenB && tokenB === currentToken && tokenA) {
-              currentToken = tokenA
+              nextToken = tokenA
             }
-            tokenPath.push(currentToken)
+            
+            // Only add the next token if we found a valid transition
+            if (nextToken && nextToken !== currentToken) {
+              tokenPath.push(nextToken)
+              currentToken = nextToken
+            }
           }
         }
 
+        // For exact output, we need to reverse the poolPath for contract execution
+        // The contract returns paths in reverse order, but expects them in forward order for execution
+        const executionPoolPath = poolKeys.length > 0 ? [...poolKeys].reverse().join(',') : poolPath
+        
         return {
           path: tokenPath,
           amounts: (pathInfo.amounts || []).map((amt: number) => amt / 100),
           amountIn: (pathInfo.amount_in || 0) / 100,
           priceImpact: pathInfo.price_impact || 0,
           route: tokenPath, // Keep for backward compatibility
-          poolPath: poolPath, // Add the pool path for contract execution
+          poolPath: executionPoolPath, // Add the pool path for contract execution (reversed for exact output)
         }
       } catch (error) {
         console.error('❌ [QUOTE EXACT OUTPUT] Error getting exact output quote:', error)

@@ -12,6 +12,7 @@ import ReadMore from '@dozer/ui/readmore/ReadMore'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 import { toToken } from '@dozer/api'
 import { TokenHeader } from 'components/TokenPage/TokenHeader'
+import Image from 'next/image'
 
 export const config = {
   maxDuration: 60,
@@ -174,7 +175,11 @@ const Token = () => {
                             TVL
                           </Typography>
                           <Typography weight={500} className="text-stone-50">
-                            ${(pool.liquidityUSD / 1000000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            $
+                            {(pool.liquidityUSD / 1000000).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
                           </Typography>
                         </div>
                         <Button as="a" href={`/pool/${pool.symbolId}`} size="sm" variant="outlined">
@@ -190,7 +195,7 @@ const Token = () => {
           <div className="hidden flex-col order-2 gap-4 lg:flex">
             <AppearOnMount>
               {primaryPoolForSwap ? (
-                <SwapWidget token0_idx={primaryPoolForSwap.token0.uuid} token1_idx={primaryPoolForSwap.token1.uuid} />
+                <SwapWidget token0_idx={'00'} token1_idx={tokenData.uuid} />
               ) : (
                 <div className="p-6 text-center rounded-lg shadow-md bg-stone-800 shadow-black/20">
                   <Typography className="text-stone-400">No pools available for swapping</Typography>
@@ -205,8 +210,8 @@ const Token = () => {
               <Dialog.Header title="Community Token Image" onClose={() => setIsDialogOpen(false)} />
               {toToken(currentToken).imageUrl && (
                 <div className="flex justify-center items-center w-full max-h-[80vh] overflow-hidden">
-                  <img
-                    src={toToken(currentToken).imageUrl}
+                  <Image
+                    src={toToken(currentToken).imageUrl || ''}
                     alt="Community Token Image"
                     className="object-contain max-w-full max-h-full"
                   />
@@ -225,7 +230,7 @@ const Token = () => {
                 as="a"
                 href={
                   primaryPoolForSwap
-                    ? `/swap?token0=${primaryPoolForSwap.token0.uuid}&token1=${primaryPoolForSwap.token1.uuid}&chainId=${primaryPoolForSwap.chainId}`
+                    ? `/swap?token0=00&token1=${tokenData.uuid}&chainId=${primaryPoolForSwap.chainId}`
                     : undefined
                 }
                 className={!primaryPoolForSwap ? 'opacity-50 cursor-not-allowed' : ''}
