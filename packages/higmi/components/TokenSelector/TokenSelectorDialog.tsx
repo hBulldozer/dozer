@@ -52,7 +52,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
         <SlideIn>
           <Dialog.Header onClose={onClose} title="Select Token" />
           <div className="flex flex-col h-full">
-            <div className="flex-grow pb-2 overflow-y-auto custom-scrollbar">
+            <div className="overflow-y-auto flex-grow pb-2 custom-scrollbar">
               <Currency.List
                 className="divide-y hide-scrollbar divide-stone-700"
                 currencies={currencies}
@@ -80,7 +80,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                 )}
               />
             </div>
-            {createTokenOption && (
+            {/* {createTokenOption && (
               <div className="mt-auto -mb-12 border-t border-stone-700">
                 <TokenSelectorRow
                   id={id}
@@ -91,7 +91,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                   isCreateToken={true}
                 />
               </div>
-            )}
+            )} */}
           </div>
         </SlideIn>
       </Dialog.Content>

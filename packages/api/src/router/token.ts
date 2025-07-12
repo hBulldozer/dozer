@@ -11,6 +11,16 @@ if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
   console.warn('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
 }
 
+// Get the bridged token UUIDs from environment
+const BRIDGED_TOKEN_UUIDS = process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS
+  ? process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS.split(',').map(uuid => uuid.trim())
+  : []
+
+// Helper function to check if a token is bridged
+function isBridgedToken(uuid: string): boolean {
+  return BRIDGED_TOKEN_UUIDS.includes(uuid)
+}
+
 // Helper function to fetch data from the pool manager contract
 async function fetchFromPoolManager(calls: string[], timestamp?: number): Promise<any> {
   if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
@@ -127,9 +137,9 @@ export const tokenRouter = createTRPCRouter({
         twitter: null, // Will be null until added to contract
         website: null, // Will be null until added to contract
         createdBy: null, // Will be null until added to contract
-        bridged: uuid !== '00', // Assume all non-HTR tokens are bridged for now
-        sourceChain: uuid !== '00' ? 'unknown' : null,
-        targetChain: uuid !== '00' ? 'hathor' : null,
+        bridged: isBridgedToken(uuid),
+        sourceChain: isBridgedToken(uuid) ? 'unknown' : null,
+        targetChain: isBridgedToken(uuid) ? 'hathor' : null,
         originalAddress: null, // Will be null until added to contract
         // Add pool information for each token
         pools0: [], // Will be populated by frontend if needed
@@ -206,9 +216,9 @@ export const tokenRouter = createTRPCRouter({
         twitter: null,
         website: null,
         createdBy: null,
-        bridged: input.uuid !== '00',
-        sourceChain: input.uuid !== '00' ? 'unknown' : null,
-        targetChain: input.uuid !== '00' ? 'hathor' : null,
+        bridged: isBridgedToken(input.uuid),
+        sourceChain: isBridgedToken(input.uuid) ? 'unknown' : null,
+        targetChain: isBridgedToken(input.uuid) ? 'hathor' : null,
         originalAddress: null,
       }
     } catch (error) {
@@ -410,9 +420,9 @@ export const tokenRouter = createTRPCRouter({
         pools: pools.sort((a, b) => b.liquidityUSD - a.liquidityUSD), // Sort by TVL descending
 
         // Additional metadata
-        bridged: tokenUuid !== '00',
-        sourceChain: tokenUuid !== '00' ? 'unknown' : null,
-        targetChain: tokenUuid !== '00' ? 'hathor' : null,
+        bridged: isBridgedToken(tokenUuid),
+        sourceChain: isBridgedToken(tokenUuid) ? 'unknown' : null,
+        targetChain: isBridgedToken(tokenUuid) ? 'hathor' : null,
       }
     } catch (error) {
       console.error(`❌ [TOKEN_BY_SYMBOL_DETAILED] Error fetching detailed token data for ${input.symbol}:`, error)

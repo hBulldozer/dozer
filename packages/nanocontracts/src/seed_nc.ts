@@ -359,7 +359,22 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
     console.log(key)
   }
 
-  // 7. Return token UUIDs and pool keys
+  // 7. Output bridged token UUIDs for environment configuration
+  const bridgedTokenUUIDs: string[] = []
+  for (const token of seedConfig.tokens) {
+    if (token.bridged) {
+      const uuid = tokenUUIDs[`${token.symbol}_uuid`]
+      if (uuid) {
+        bridgedTokenUUIDs.push(uuid)
+      }
+    }
+  }
+  if (bridgedTokenUUIDs.length > 0) {
+    console.log('--- BRIDGED TOKEN UUIDS (for NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS env var) ---')
+    console.log(bridgedTokenUUIDs.join(','))
+  }
+
+  // 8. Return token UUIDs and pool keys
   return {
     manager_ncid,
     ...tokenUUIDs,
