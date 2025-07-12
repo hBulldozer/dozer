@@ -15,6 +15,8 @@ interface RouteStep {
 
 interface RouteDisplayProps {
   route: RouteStep[]
+  totalPriceImpact?: number
+  estimatedCost?: number
   className?: string
 }
 
@@ -22,6 +24,8 @@ interface RouteDisplayProps {
 
 export const RouteDisplay: FC<RouteDisplayProps> = ({
   route,
+  totalPriceImpact,
+  estimatedCost,
   className,
 }) => {
   if (!route || route.length === 0) {

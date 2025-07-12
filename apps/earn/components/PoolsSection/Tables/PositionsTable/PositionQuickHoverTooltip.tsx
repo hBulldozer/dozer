@@ -34,7 +34,7 @@ export const PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ 
     )
 
   return (
-    <PoolPositionProvider watch={false} pair={row} prices={prices}>
+    <PoolPositionProvider pair={row} prices={prices}>
       <_PositionQuickHoverTooltip row={row} />
     </PoolPositionProvider>
   )

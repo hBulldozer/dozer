@@ -88,8 +88,8 @@ const Home = () => {
                   <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-white">Hathor-Arbitrum Bridge</span>
-                  <span className="text-xs text-gray-400">Transfer tokens between networks</span>
+                  <span className="text-sm font-medium text-white">Bridge EVM</span>
+                  <span className="text-xs text-gray-400">Transfer tokens between Arbitrum and Hathor.</span>
                 </div>
               </div>
               <ArrowTopRightOnSquareIcon width={20} height={20} className="text-gray-400" />
@@ -112,8 +112,8 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const router = useRouter()
 
   // Find HTR and hUSDC tokens for defaults
-  const htrToken = tokens?.find(token => token.uuid === '00') // HTR token
-  const usdcToken = tokens?.find(token => token.symbol === 'hUSDC') // hUSDC token
+  const htrToken = tokens?.find((token) => token.uuid === '00') // HTR token
+  const usdcToken = tokens?.find((token) => token.symbol === 'hUSDC') // hUSDC token
 
   useEffect(() => {
     const params = router.query
@@ -136,15 +136,11 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const network = useNetwork((state) => state.network)
 
   const [initialToken0, setInitialToken0] = useState(
-    tokens
-      ? toToken(htrToken || tokens.filter((token) => token.id == token0_idx)[0])
-      : undefined
+    tokens ? toToken(htrToken || tokens.filter((token) => token.id == token0_idx)[0]) : undefined
   )
 
   const [initialToken1, setInitialToken1] = useState(
-    tokens
-      ? toToken(usdcToken || tokens.filter((token) => token.id == token1_idx)[0])
-      : undefined
+    tokens ? toToken(usdcToken || tokens.filter((token) => token.id == token1_idx)[0]) : undefined
   )
 
   useEffect(() => {
@@ -206,14 +202,14 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
 
   const switchCurrencies = async () => {
     setTokens(([prevSrc, prevDst]) => [prevDst, prevSrc])
-    
+
     // Swap the input values and trade type
     const tempInput0 = input0
     const tempInput1 = input1
-    
+
     setInput0(tempInput1)
     setInput1(tempInput0)
-    
+
     // Invert the trade type
     setTradeType(tradeType === TradeType.EXACT_INPUT ? TradeType.EXACT_OUTPUT : TradeType.EXACT_INPUT)
   }
@@ -304,7 +300,8 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
     if (
       token0 &&
       token1 &&
-      ((tradeType === TradeType.EXACT_INPUT && debouncedInput0) || (tradeType === TradeType.EXACT_OUTPUT && debouncedInput1))
+      ((tradeType === TradeType.EXACT_INPUT && debouncedInput0) ||
+        (tradeType === TradeType.EXACT_OUTPUT && debouncedInput1))
     ) {
       fetchData()
         .then(() => {
@@ -316,7 +313,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
           trade.setAmountSpecified(Number(input0) || 0)
           trade.setOutputAmount(Number(input1) || 0)
           trade.setPriceImpact(priceImpact || 0)
-          
+
           // Calculate USD-based price impact
           const inputTokenPrice = token0 && prices ? prices[token0.uuid] : undefined
           const outputTokenPrice = token1 && prices ? prices[token1.uuid] : undefined
@@ -327,7 +324,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             outputTokenPrice
           )
           trade.setUsdPriceImpact(usdPriceImpact)
-          
+
           trade.setTradeType(tradeType)
           if (selectedPool) trade.setPool(selectedPool)
         })
@@ -469,7 +466,9 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             // isWrap={isWrap}
           />
           {/* Hide route/price impact details when tokens not chosen or no input values */}
-          {token0 && token1 && (input0 || input1) && <SwapStatsDisclosure prices={prices || {}} loading={fetchLoading || isTyping} />}
+          {token0 && token1 && (input0 || input1) && (
+            <SwapStatsDisclosure prices={prices || {}} loading={fetchLoading || isTyping} />
+          )}
 
           {/* Show bridge suggestion when balance is low */}
           {/* <SwapLowBalanceBridge
@@ -550,7 +549,10 @@ export const SwapButton: FC<{
         size="md"
         color={(priceImpactTooHigh && !expertMode) || priceImpactSeverity > 2 ? 'red' : 'blue'}
         {...(Boolean(priceImpactSeverity > 2) && {
-          title: requiresConfirmation && !expertMode ? 'Requires confirmation for high price impact' : 'Enable expert mode to swap with high price impact',
+          title:
+            requiresConfirmation && !expertMode
+              ? 'Requires confirmation for high price impact'
+              : 'Enable expert mode to swap with high price impact',
         })}
       >
         {false

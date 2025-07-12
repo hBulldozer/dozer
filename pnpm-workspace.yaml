@@ -1,4 +1,4 @@
-image.pngpackages:
+packages:
   - 'apps/*'
   - 'config/*'
   - 'packages/**'
