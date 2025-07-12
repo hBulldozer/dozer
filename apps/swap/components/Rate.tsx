@@ -1,7 +1,31 @@
 import { Token } from '@dozer/currency'
-import { classNames, Typography } from '@dozer/ui'
+import { classNames, Typography, Skeleton } from '@dozer/ui'
 import { FC, ReactElement, ReactNode, useCallback, useEffect, useState } from 'react'
 import { useTrade } from '@dozer/zustand'
+
+// Simple number formatting
+const formatRate = (value: number): string => {
+  if (value === 0) return '0.00'
+  if (value >= 0.1) {
+    return value.toFixed(2)
+  }
+  if (value < 0.1) {
+    return value.toFixed(4)
+  }
+  return value.toFixed(2)
+}
+
+// Simple USD formatting
+const formatUSD = (value: number): string => {
+  if (value === 0) return '0.00'
+  if (value >= 0.1) {
+    return value.toFixed(2)
+  }
+  if (value < 0.1) {
+    return value.toFixed(4)
+  }
+  return value.toFixed(2)
+}
 
 interface RenderPayload {
   invert: boolean
@@ -16,14 +40,31 @@ interface Rate {
   token2: Token | undefined
   children?: (payload: RenderPayload) => ReactNode
   prices?: { [key: string]: number }
+  loading?: boolean
 }
 
-export const Rate: FC<Rate> = ({ children, token1, token2, prices }) => {
+export const Rate: FC<Rate> = ({ children, token1, token2, prices, loading = false }) => {
   const [invert, setInvert] = useState(false)
   const [isMounted, setIsMounted] = useState<boolean>(false)
+  const [delayedLoading, setDelayedLoading] = useState(false)
   const trade = useTrade()
   const usd = token1 && token2 ? prices?.[invert ? token2.uuid : token1.uuid] : undefined
   const [usdPrice, setUsdPrice] = useState<string | undefined>('')
+  
+  // Add delay when removing loading state to prevent glitch
+  useEffect(() => {
+    if (loading) {
+      setDelayedLoading(true)
+    } else {
+      const timer = setTimeout(() => {
+        setDelayedLoading(false)
+      }, 350)
+      return () => clearTimeout(timer)
+    }
+  }, [loading])
+  
+  // Show loading when we don't have trade data but tokens are selected, or when loading prop is true
+  const isDataLoading = delayedLoading || (token1 && token2 && (!trade.amountSpecified || !trade.outputAmount))
 
   useEffect(() => {
     setUsdPrice(usd?.toString())
@@ -35,16 +76,35 @@ export const Rate: FC<Rate> = ({ children, token1, token2, prices }) => {
 
   const content = isMounted ? (
     <>
-      {token1 && token2 && trade.amountSpecified && trade.outputAmount ? (
-        invert ? (
-          <>
-            1 {token2?.symbol} = {(trade.amountSpecified / trade.outputAmount).toFixed(2)} {token1?.symbol}
-          </>
-        ) : (
-          <>
-            1 {token1?.symbol} = {(trade.outputAmount / trade.amountSpecified).toFixed(2)} {token2?.symbol}
-          </>
-        )
+      {isDataLoading ? (
+        <div className="flex items-center gap-1">
+          <span className="whitespace-nowrap">1 {invert ? token2?.symbol : token1?.symbol}</span>
+          <span className="mx-1">=</span>
+          <div className="w-[45px] flex justify-end">
+            <Skeleton.Box variant="fast" className="w-[40px] h-[14px]" />
+          </div>
+          <span className="whitespace-nowrap">{invert ? token1?.symbol : token2?.symbol}</span>
+        </div>
+      ) : token1 && token2 && trade.amountSpecified && trade.outputAmount && !isDataLoading ? (
+        <div className="flex items-center gap-1">
+          <span className="whitespace-nowrap">
+            1 {invert ? token2?.symbol : token1?.symbol}
+          </span>
+          <span className="mx-1">=</span>
+          <div className="w-[50px] flex justify-end">
+            <span className="text-right">
+              {(() => {
+                const rate = invert 
+                  ? (trade.amountSpecified / trade.outputAmount)
+                  : (trade.outputAmount / trade.amountSpecified)
+                return (rate && rate > 0) ? formatRate(rate) : ''
+              })()}
+            </span>
+          </div>
+          <span className="whitespace-nowrap">
+            {invert ? token1?.symbol : token2?.symbol}
+          </span>
+        </div>
       ) : (
         <Typography>Enter an amount</Typography>
       )}
@@ -73,7 +133,21 @@ export const Rate: FC<Rate> = ({ children, token1, token2, prices }) => {
       <Typography variant="xs" className={classNames('cursor-pointer h-[36px] flex items-center ')}>
         <div className="flex items-center h-full gap-1 font-medium" onClick={toggleInvert}>
           {content}
-          {/* <span className="text-stone-500">{trade.amountSpecified ? `(${usdPrice})` : null}</span> */}
+          <div className="w-[60px] flex justify-end ml-2">
+            {isDataLoading ? (
+              <span className="text-stone-500">
+                (<Skeleton.Box variant="fast" className="w-[35px] h-[12px] inline-block" />)
+              </span>
+            ) : trade.amountSpecified && trade.outputAmount && usdPrice ? (
+              <span className="text-stone-500 text-right">
+                (${formatUSD(Number(usdPrice))})
+              </span>
+            ) : (
+              <span className="text-stone-500 invisible">
+                ($00.00)
+              </span>
+            )}
+          </div>
         </div>
       </Typography>
     </div>

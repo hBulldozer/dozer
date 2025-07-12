@@ -1,8 +1,20 @@
 import { Disclosure, Transition } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { classNames, Typography } from '@dozer/ui'
-import React, { FC, useMemo } from 'react'
+import React, { FC, useMemo, useState, useEffect } from 'react'
 import { Token } from '@dozer/currency'
+
+// Simple USD formatting
+const formatUSD = (value: number): string => {
+  if (value === 0) return '0.00'
+  if (value >= 0.1) {
+    return value.toFixed(2)
+  }
+  if (value < 0.1) {
+    return value.toFixed(4)
+  }
+  return value.toFixed(2)
+}
 
 import { Rate } from '../../components'
 import { RouteDisplay } from '../RouteDisplay'
@@ -13,13 +25,31 @@ import { api } from 'utils/api'
 
 interface SwapStats {
   prices: { [key: string]: number }
+  loading?: boolean
 }
 
-export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
+export const SwapStatsDisclosure: FC<SwapStats> = ({ prices, loading = false }) => {
   const trade = useTrade()
   const { data: tokens } = api.getTokens.all.useQuery()
   // const [showRoute, setShowRoute] = useState(false)
   const { mainCurrency, otherCurrency, routeInfo } = useTrade()
+  
+  // Add same delay as Rate component to prevent glitch
+  const [delayedLoading, setDelayedLoading] = useState(false)
+  
+  useEffect(() => {
+    if (loading) {
+      setDelayedLoading(true)
+    } else {
+      const timer = setTimeout(() => {
+        setDelayedLoading(false)
+      }, 350)
+      return () => clearTimeout(timer)
+    }
+  }, [loading])
+  
+  // Check if we have valid trade data to prevent showing stale data
+  const hasValidTradeData = trade.amountSpecified && trade.outputAmount && !delayedLoading
 
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const priceImpactSeverity = useMemo(() => warningSeverity(trade?.priceImpact), [trade?.priceImpact])
@@ -149,7 +179,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
           {({ open }) => (
             <>
               <div className="flex justify-between items-center bg-white bg-opacity-[0.04] hover:bg-opacity-[0.08] rounded-2xl px-4 mb-4 py-2.5 gap-2">
-                <Rate token1={mainCurrency} token2={otherCurrency} prices={prices}>
+                <Rate token1={mainCurrency} token2={otherCurrency} prices={prices} loading={loading}>
                   {({ content, usdPrice, toggleInvert }) => (
                     <div
                       className="text-sm text-stone-300 hover:text-stone-50 cursor-pointer gap-1 font-semibold tracking-tight h-[36px] flex items-center truncate"
@@ -158,9 +188,10 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                       <Typography variant="sm" weight={600} className="flex gap-1 items-center text-stone-100">
                         {content}
                       </Typography>
-                      {usdPrice && (
+                      {/* Don't show USD price if loading or no valid trade data */}
+                      {usdPrice && Number(usdPrice) > 0 && hasValidTradeData && (
                         <Typography variant="sm" weight={500} className="text-stone-300">
-                          (${usdPrice})
+                          (${formatUSD(Number(usdPrice))})
                         </Typography>
                       )}
                     </div>

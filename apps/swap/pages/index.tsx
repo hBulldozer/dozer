@@ -6,6 +6,7 @@ import { Token } from '@dozer/currency'
 import { useState, useCallback, useMemo, useEffect, FC, ReactNode } from 'react'
 import { TradeType } from '../components/utils/TradeType'
 import { useAccount, useNetwork, useSettings, useTrade } from '@dozer/zustand'
+import { useDebounce } from '@dozer/hooks'
 import { SwapStatsDisclosure, SettingsOverlay, SwapLowBalanceBridge, SwapSideBridgeSuggestion } from '../components'
 import { BridgeProvider, Checker, EventType, useWebSocketGeneric } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
@@ -159,10 +160,30 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const trade = useTrade()
   const [fetchLoading, setFetchLoading] = useState<boolean>(false)
 
+  // Debounce input values to reduce API calls
+  const debouncedInput0 = useDebounce(input0, 300)
+  const debouncedInput1 = useDebounce(input1, 300)
+
+  // Show loading state when user is typing but before debounced value updates
+  const isTyping = useMemo(() => {
+    if (tradeType === TradeType.EXACT_INPUT) {
+      return input0 !== debouncedInput0 && input0 !== ''
+    } else {
+      return input1 !== debouncedInput1 && input1 !== ''
+    }
+  }, [input0, debouncedInput0, input1, debouncedInput1, tradeType])
+
   const onInput0 = async (val: string) => {
     setInput0(val)
     if (!val) {
       setInput1('')
+      trade.setRouteInfo(undefined) // Clear route info immediately
+    } else {
+      // Clear the output immediately when user starts typing to prevent showing stale data
+      if (tradeType === TradeType.EXACT_INPUT) {
+        setInput1('')
+        trade.setRouteInfo(undefined)
+      }
     }
     setTradeType(TradeType.EXACT_INPUT)
   }
@@ -171,6 +192,13 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
     setInput1(val)
     if (!val) {
       setInput0('')
+      trade.setRouteInfo(undefined) // Clear route info immediately
+    } else {
+      // Clear the input immediately when user starts typing to prevent showing stale data
+      if (tradeType === TradeType.EXACT_OUTPUT) {
+        setInput0('')
+        trade.setRouteInfo(undefined)
+      }
     }
     setTradeType(TradeType.EXACT_OUTPUT)
   }
@@ -204,9 +232,9 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
       setFetchLoading(true)
       if (tradeType == TradeType.EXACT_INPUT) {
         const response =
-          token0 && token1 && parseFloat(input0) > 0
+          token0 && token1 && parseFloat(debouncedInput0) > 0
             ? await utils.getPools.quote.fetch({
-                amountIn: parseFloat(input0),
+                amountIn: parseFloat(debouncedInput0),
                 tokenIn: token0?.uuid,
                 tokenOut: token1?.uuid,
                 maxHops: 3,
@@ -232,9 +260,9 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
       } else {
         // For exact output, use the new exact output quote endpoint
         const response =
-          token0 && token1 && parseFloat(input1) > 0
+          token0 && token1 && parseFloat(debouncedInput1) > 0
             ? await utils.getPools.quoteExactOutput.fetch({
-                amountOut: parseFloat(input1),
+                amountOut: parseFloat(debouncedInput1),
                 tokenIn: token0?.uuid,
                 tokenOut: token1?.uuid,
                 maxHops: 3,
@@ -250,7 +278,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
           trade.setRouteInfo({
             path: quoteData.path || [],
             amounts: quoteData.amounts || [],
-            amountOut: parseFloat(input1),
+            amountOut: parseFloat(debouncedInput1),
             priceImpact: quoteData.priceImpact,
             poolPath: quoteData.poolPath, // Add pool path for contract execution
           })
@@ -275,7 +303,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
     if (
       token0 &&
       token1 &&
-      ((tradeType === TradeType.EXACT_INPUT && input0) || (tradeType === TradeType.EXACT_OUTPUT && input1))
+      ((tradeType === TradeType.EXACT_INPUT && debouncedInput0) || (tradeType === TradeType.EXACT_OUTPUT && debouncedInput1))
     ) {
       fetchData()
         .then(() => {
@@ -303,7 +331,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
       trade.setPriceImpact(0)
       trade.setTradeType(tradeType)
     }
-  }, [pools, token0, token1, input0, input1, prices, network, tokens])
+  }, [pools, token0, token1, debouncedInput0, debouncedInput1, prices, network, tokens])
 
   const onSuccess = useCallback(() => {
     setInput0('')
@@ -349,7 +377,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
           // tokenMap={tokenMap}
           inputType={TradeType.EXACT_INPUT}
           tradeType={tradeType}
-          loading={tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
+          loading={tradeType == TradeType.EXACT_OUTPUT && (fetchLoading || isTyping)}
           prices={prices || {}}
           tokens={
             tokens
@@ -401,7 +429,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             // tokenMap={tokenMap}
             inputType={TradeType.EXACT_OUTPUT}
             tradeType={tradeType}
-            loading={tradeType == TradeType.EXACT_INPUT && fetchLoading}
+            loading={tradeType == TradeType.EXACT_INPUT && (fetchLoading || isTyping)}
             prices={prices || {}}
             tokens={
               tokens
@@ -427,7 +455,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             // isWrap={isWrap}
           />
           {/* Hide route/price impact details when tokens not chosen or no input values */}
-          {token0 && token1 && (input0 || input1) && <SwapStatsDisclosure prices={prices || {}} />}
+          {token0 && token1 && (input0 || input1) && <SwapStatsDisclosure prices={prices || {}} loading={fetchLoading || isTyping} />}
 
           {/* Show bridge suggestion when balance is low */}
           {/* <SwapLowBalanceBridge
