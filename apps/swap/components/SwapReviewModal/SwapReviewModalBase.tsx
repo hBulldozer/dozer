@@ -215,8 +215,6 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
           <div className="px-4 pb-4">
             <RouteDisplay
               route={routeSteps}
-              totalPriceImpact={routeInfo?.priceImpact || 0}
-              estimatedCost={0.01}
               className="!p-4 !bg-stone-800/20"
             />
           </div>

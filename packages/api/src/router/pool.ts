@@ -276,7 +276,7 @@ export const poolRouter = createTRPCRouter({
             reserve0,
             reserve1,
             chainId: 1,
-            liquidity: poolData.total_liquidity || 0,
+            liquidity: liquidityUSD,
             volume1d,
             fee0,
             fee1,
@@ -477,7 +477,7 @@ export const poolRouter = createTRPCRouter({
         reserve0,
         reserve1,
         chainId: 1,
-        liquidity: poolData.total_liquidity || 0,
+        liquidity: liquidityUSD,
         volume1d,
         fee0,
         fee1,
@@ -583,9 +583,9 @@ export const poolRouter = createTRPCRouter({
           let currentToken = input.tokenIn
           for (const poolKey of poolKeys) {
             const [tokenA, tokenB] = poolKey.split('/')
-            if (tokenA === currentToken) {
+            if (tokenA && tokenA === currentToken && tokenB) {
               currentToken = tokenB
-            } else if (tokenB === currentToken) {
+            } else if (tokenB && tokenB === currentToken && tokenA) {
               currentToken = tokenA
             }
             tokenPath.push(currentToken)
@@ -650,9 +650,9 @@ export const poolRouter = createTRPCRouter({
           let currentToken = input.tokenIn
           for (const poolKey of poolKeys) {
             const [tokenA, tokenB] = poolKey.split('/')
-            if (tokenA === currentToken) {
+            if (tokenA && tokenA === currentToken && tokenB) {
               currentToken = tokenB
-            } else if (tokenB === currentToken) {
+            } else if (tokenB && tokenB === currentToken && tokenA) {
               currentToken = tokenA
             }
             tokenPath.push(currentToken)
@@ -699,8 +699,8 @@ export const poolRouter = createTRPCRouter({
           reserve0: (poolInfo.reserve_a || 0) / 100,
           reserve1: (poolInfo.reserve_b || 0) / 100,
           totalLiquidity: poolInfo.total_liquidity || 0,
-          volume24h: poolInfo.volume_24h || 0,
-          fees24h: poolInfo.fees_24h || 0,
+          volume24h: (poolInfo.volume_a || 0) + (poolInfo.volume_b || 0),
+          fees24h: poolInfo.fee || 0,
         }
       } catch (error) {
         console.error(`Error fetching pool history for ${input.poolKey} at ${input.timestamp}:`, error)
@@ -996,7 +996,8 @@ export const poolRouter = createTRPCRouter({
           }
         }
 
-        const pathWithSymbols = (pathInfo.path || []).map((token: string) => `${token} (${tokenSymbols.get(token)})`)
+        const pathArray = Array.isArray(pathInfo.path) ? pathInfo.path : []
+        const pathWithSymbols = pathArray.map((token: string) => `${token} (${tokenSymbols.get(token)})`)
 
         console.log(`   🏷️  Path with symbols: ${pathWithSymbols.join(' → ')}`)
 
