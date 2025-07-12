@@ -8,9 +8,10 @@ import { TradeType } from '../components/utils/TradeType'
 import { useAccount, useNetwork, useSettings, useTrade } from '@dozer/zustand'
 import { useDebounce } from '@dozer/hooks'
 import { SwapStatsDisclosure, SettingsOverlay, SwapLowBalanceBridge, SwapSideBridgeSuggestion } from '../components'
+import { HighPriceImpactConfirmation } from '../components/HighPriceImpactConfirmation'
 import { BridgeProvider, Checker, EventType, useWebSocketGeneric } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
-import { warningSeverity } from '../components/utils/functions'
+import { warningSeverity, calculateUSDPriceImpact } from '../components/utils/functions'
 import { useRouter } from 'next/router'
 import { api, RouterOutputs } from 'utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
@@ -315,6 +316,18 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
           trade.setAmountSpecified(Number(input0) || 0)
           trade.setOutputAmount(Number(input1) || 0)
           trade.setPriceImpact(priceImpact || 0)
+          
+          // Calculate USD-based price impact
+          const inputTokenPrice = token0 && prices ? prices[token0.uuid] : undefined
+          const outputTokenPrice = token1 && prices ? prices[token1.uuid] : undefined
+          const usdPriceImpact = calculateUSDPriceImpact(
+            Number(input0) || 0,
+            Number(input1) || 0,
+            inputTokenPrice,
+            outputTokenPrice
+          )
+          trade.setUsdPriceImpact(usdPriceImpact)
+          
           trade.setTradeType(tradeType)
           if (selectedPool) trade.setPool(selectedPool)
         })
@@ -329,6 +342,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
       trade.setAmountSpecified(0)
       trade.setOutputAmount(0)
       trade.setPriceImpact(0)
+      trade.setUsdPriceImpact(undefined)
       trade.setTradeType(tradeType)
     }
   }, [pools, token0, token1, debouncedInput0, debouncedInput1, prices, network, tokens])
@@ -500,39 +514,60 @@ export const SwapButton: FC<{
   outputAmount: number
 }> = ({ setOpen, priceImpact, outputAmount }) => {
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
+  const [showConfirmation, setShowConfirmation] = useState(false)
 
   const priceImpactSeverity = useMemo(() => warningSeverity(priceImpact), [priceImpact])
   const priceImpactTooHigh = priceImpactSeverity > 3
+  const requiresConfirmation = priceImpact >= 10 && !priceImpactTooHigh // 10-15% range
   const { expertMode } = useSettings()
 
   const onClick = useCallback(() => {
+    // If price impact >= 10% and not expert mode, show confirmation modal
+    if (requiresConfirmation && !expertMode) {
+      setShowConfirmation(true)
+    } else {
+      // Otherwise proceed directly to swap
+      setOpen(true)
+    }
+  }, [requiresConfirmation, expertMode, setOpen])
+
+  const handleConfirmHighImpact = useCallback(() => {
     setOpen(true)
   }, [setOpen])
 
   return (
-    <Button
-      testdata-id="swap-button"
-      fullWidth
-      onClick={onClick}
-      disabled={
-        (priceImpactTooHigh && !expertMode) ||
-        Number(
-          (outputAmount ? outputAmount : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)).toFixed(2)
-        ) == 0
-      }
-      size="md"
-      color={(priceImpactTooHigh && !expertMode) || priceImpactSeverity > 2 ? 'red' : 'blue'}
-      {...(Boolean(priceImpactSeverity > 2) && {
-        title: 'Enable expert mode to swap with high price impact',
-      })}
-    >
-      {false
-        ? 'Finding Best Price'
-        : priceImpactTooHigh && !expertMode
-        ? 'High Price Impact'
-        : priceImpactSeverity > 2
-        ? 'Swap Anyway'
-        : 'Swap'}
-    </Button>
+    <>
+      <Button
+        testdata-id="swap-button"
+        fullWidth
+        onClick={onClick}
+        disabled={
+          (priceImpactTooHigh && !expertMode) ||
+          Number(
+            (outputAmount ? outputAmount : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)).toFixed(2)
+          ) == 0
+        }
+        size="md"
+        color={(priceImpactTooHigh && !expertMode) || priceImpactSeverity > 2 ? 'red' : 'blue'}
+        {...(Boolean(priceImpactSeverity > 2) && {
+          title: requiresConfirmation && !expertMode ? 'Requires confirmation for high price impact' : 'Enable expert mode to swap with high price impact',
+        })}
+      >
+        {false
+          ? 'Finding Best Price'
+          : priceImpactTooHigh && !expertMode
+          ? 'High Price Impact'
+          : priceImpactSeverity > 2
+          ? 'Swap Anyway'
+          : 'Swap'}
+      </Button>
+
+      <HighPriceImpactConfirmation
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleConfirmHighImpact}
+        priceImpact={priceImpact}
+      />
+    </>
   )
 }

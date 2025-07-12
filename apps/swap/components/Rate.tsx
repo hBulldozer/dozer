@@ -2,7 +2,6 @@ import { Token } from '@dozer/currency'
 import { classNames, Typography, Skeleton } from '@dozer/ui'
 import { FC, ReactElement, ReactNode, useCallback, useEffect, useState } from 'react'
 import { useTrade } from '@dozer/zustand'
-
 // Simple number formatting
 const formatRate = (value: number): string => {
   if (value === 0) return '0.00'

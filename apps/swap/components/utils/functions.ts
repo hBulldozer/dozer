@@ -25,3 +25,32 @@ export function warningSeverity(priceImpact: number | undefined): WarningSeverit
   }
   return 0
 }
+
+/**
+ * Calculates price impact based on USD values of input and output amounts
+ * Formula: ((inputUSD - outputUSD) / inputUSD) * 100
+ * @param inputAmount - The amount being traded in
+ * @param outputAmount - The amount being received
+ * @param inputTokenPrice - USD price per unit of input token
+ * @param outputTokenPrice - USD price per unit of output token
+ * @returns Price impact percentage, or undefined if insufficient data
+ */
+export function calculateUSDPriceImpact(
+  inputAmount: number | undefined,
+  outputAmount: number | undefined,
+  inputTokenPrice: number | undefined,
+  outputTokenPrice: number | undefined
+): number | undefined {
+  if (!inputAmount || !outputAmount || !inputTokenPrice || !outputTokenPrice) {
+    return undefined
+  }
+
+  const inputUSD = inputAmount * inputTokenPrice
+  const outputUSD = outputAmount * outputTokenPrice
+
+  if (inputUSD <= 0) {
+    return undefined
+  }
+
+  return ((inputUSD - outputUSD) / inputUSD) * 100
+}
