@@ -86,7 +86,7 @@ export const PoolsTable: FC = () => {
       ?.filter((pool) => {
         return pool.name?.toLowerCase().includes(query.toLowerCase())
       })
-      .filter((pool) => pool.liquidityUSD > 1)
+      .filter((pool) => pool.liquidity > 1)
       .filter((pool) => {
         if (filters.apr.min || filters.apr.max) {
           return pool.apr * 100 >= (filters.apr.min || 0) && pool.apr * 100 <= (filters.apr.max || maxAPR)
@@ -206,9 +206,9 @@ export const PoolsTable: FC = () => {
     return (
       <>
         <div className="flex flex-row items-center">
-          <div className="h-12 w-96 bg-stone-700 animate-pulse rounded"></div>
+          <div className="w-96 h-12 rounded animate-pulse bg-stone-700"></div>
         </div>
-        <div className="h-96 w-full bg-stone-700 animate-pulse rounded"></div>
+        <div className="w-full h-96 rounded animate-pulse bg-stone-700"></div>
       </>
     )
   }

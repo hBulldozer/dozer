@@ -2,16 +2,16 @@ import { z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
-import { 
-  parsePoolApiInfo, 
-  parsePoolInfo, 
-  parseSwapPathInfo, 
+import {
+  parsePoolApiInfo,
+  parsePoolInfo,
+  parseSwapPathInfo,
   parseSwapPathExactOutputInfo,
   parseUserPositions,
   type PoolApiInfo,
   type PoolInfo,
   type SwapPathInfo,
-  type SwapPathExactOutputInfo
+  type SwapPathExactOutputInfo,
 } from '../utils/namedTupleParsers'
 
 // Get the Pool Manager Contract ID from environment
@@ -39,7 +39,6 @@ async function fetchFromPoolManager(calls: string[], timestamp?: number): Promis
 
   return await fetchNodeData(endpoint, queryParams)
 }
-
 
 // Helper function to extract tokens from pool keys
 function extractTokensFromPools(poolKeys: string[]): string[] {
@@ -276,7 +275,7 @@ export const poolRouter = createTRPCRouter({
             reserve0,
             reserve1,
             chainId: 1,
-            liquidity: liquidityUSD,
+            liquidity: reserve0 * 2,
             volume1d,
             fee0,
             fee1,
@@ -1194,5 +1193,4 @@ export const poolRouter = createTRPCRouter({
         throw new Error(`Failed to get liquidity quote: ${error}`)
       }
     }),
-
 })
