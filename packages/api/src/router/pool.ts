@@ -583,13 +583,13 @@ export const poolRouter = createTRPCRouter({
           for (const poolKey of poolKeys) {
             const [tokenA, tokenB] = poolKey.split('/')
             let nextToken = null
-            
+
             if (tokenA && tokenA === currentToken && tokenB) {
               nextToken = tokenB
             } else if (tokenB && tokenB === currentToken && tokenA) {
               nextToken = tokenA
             }
-            
+
             // Only add the next token if we found a valid transition
             if (nextToken && nextToken !== currentToken) {
               tokenPath.push(nextToken)
@@ -652,7 +652,7 @@ export const poolRouter = createTRPCRouter({
         if (poolKeys.length > 0) {
           // For exact output, reverse the pool keys to get forward path
           const reversedPoolKeys = [...poolKeys].reverse()
-          
+
           // Start with input token
           tokenPath.push(input.tokenIn)
 
@@ -661,13 +661,13 @@ export const poolRouter = createTRPCRouter({
           for (const poolKey of reversedPoolKeys) {
             const [tokenA, tokenB] = poolKey.split('/')
             let nextToken = null
-            
+
             if (tokenA && tokenA === currentToken && tokenB) {
               nextToken = tokenB
             } else if (tokenB && tokenB === currentToken && tokenA) {
               nextToken = tokenA
             }
-            
+
             // Only add the next token if we found a valid transition
             if (nextToken && nextToken !== currentToken) {
               tokenPath.push(nextToken)
@@ -679,7 +679,7 @@ export const poolRouter = createTRPCRouter({
         // For exact output, we need to reverse the poolPath for contract execution
         // The contract returns paths in reverse order, but expects them in forward order for execution
         const executionPoolPath = poolKeys.length > 0 ? [...poolKeys].reverse().join(',') : poolPath
-        
+
         return {
           path: tokenPath,
           amounts: (pathInfo.amounts || []).map((amt: number) => amt / 100),
@@ -1213,6 +1213,245 @@ export const poolRouter = createTRPCRouter({
       } catch (error) {
         console.error(`Error in front_quote_add_liquidity_out for ${input.id}:`, error)
         throw new Error(`Failed to get liquidity quote: ${error}`)
+      }
+    }),
+
+  // Get all transaction history for debugging and analysis
+  getAllTransactionHistory: procedure
+    .input(
+      z.object({
+        count: z.number().min(1).max(500).optional().default(100),
+        after: z.string().optional(),
+        before: z.string().optional(),
+        methodFilter: z.string().optional(),
+        poolFilter: z.string().optional(),
+        tokenFilter: z.string().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        // Build query parameters following the nano contract history API
+        const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, `count=${input.count}`]
+
+        if (input.after) queryParams.push(`after=${input.after}`)
+        if (input.before) queryParams.push(`before=${input.before}`)
+
+        const endpoint = 'nano_contract/history'
+        const response = await fetchNodeData(endpoint, queryParams)
+
+        if (!response || !response.success || !response.history) {
+          return {
+            transactions: [],
+            hasMore: false,
+            pagination: { after: null, before: null },
+          }
+        }
+
+        // Filter transactions first
+        const filteredTransactions = response.history.filter((tx: any) => {
+          // Apply filters
+          if (input.methodFilter && tx.nc_method !== input.methodFilter) {
+            return false
+          }
+          if (input.poolFilter && (!tx.nc_args || !JSON.stringify(tx.nc_args).includes(input.poolFilter))) {
+            return false
+          }
+          if (input.tokenFilter && (!tx.nc_args || !JSON.stringify(tx.nc_args).includes(input.tokenFilter))) {
+            return false
+          }
+          return true
+        })
+
+        // Parse and enrich transaction data with async processing
+        const transactions = await Promise.all(
+          filteredTransactions.map(async (tx: any) => {
+            // Analyze transaction for multi-hop routing
+            const isMultiHop =
+              tx.nc_args && tx.nc_args.path && typeof tx.nc_args.path === 'string' && tx.nc_args.path.includes(',')
+
+            // Extract pool information from transaction args
+            let poolsInvolved: string[] = []
+            let tokensInvolved: string[] = []
+
+            // Extract tokens from transaction outputs using proper Hathor format
+            const tokensFromOutputs = new Set<string>()
+
+            if (tx.outputs && Array.isArray(tx.outputs)) {
+              tx.outputs.forEach((output: any) => {
+                if (output.token_data !== undefined) {
+                  const tokenIndex = output.token_data & 0b01111111 // Lower 7 bits
+                  const isAuthority = (output.token_data & 0b10000000) !== 0 // Highest bit
+
+                  // Skip authority outputs for token extraction
+                  if (!isAuthority) {
+                    if (tokenIndex === 0) {
+                      // Index 0 is always HTR
+                      tokensFromOutputs.add('00')
+                    } else if (tx.tokens && tx.tokens[tokenIndex - 1]) {
+                      // Other tokens map to tokens array (index - 1)
+                      tokensFromOutputs.add(tx.tokens[tokenIndex - 1])
+                    }
+                  }
+                }
+              })
+            }
+
+            // For multi-hop swaps, also extract tokens from the routing path in nc_args
+            const tokensFromArgs = new Set<string>()
+            if (tx.nc_args) {
+              // Extract tokens from pool path for multi-hop swaps
+              // Format is: {uuid}/{uuid}/{fee}/{uuid}/{uuid}/{fee}/{uuid}/{uuid}/{fee}
+              if (tx.nc_args.path && typeof tx.nc_args.path === 'string') {
+                console.log('Processing multi-hop path:', tx.nc_args.path)
+                const pathParts = tx.nc_args.path.split('/')
+                console.log('Path parts array:', pathParts)
+                console.log('Path parts length:', pathParts.length)
+
+                // Every group of 3 is a pool: tokenA/tokenB/fee
+                for (let i = 0; i < pathParts.length; i += 3) {
+                  const tokenA = pathParts[i]
+                  const tokenB = pathParts[i + 1]
+                  const fee = pathParts[i + 2]
+                  console.log(`Group ${i / 3}: tokenA='${tokenA}', tokenB='${tokenB}', fee='${fee}'`)
+
+                  if (tokenA && tokenA.trim()) {
+                    console.log('Adding tokenA:', tokenA)
+                    tokensFromArgs.add(tokenA)
+                  }
+                  if (tokenB && tokenB.trim()) {
+                    console.log('Adding tokenB:', tokenB)
+                    tokensFromArgs.add(tokenB)
+                  }
+                }
+                console.log('Final tokensFromArgs:', Array.from(tokensFromArgs))
+              }
+
+              // Also check for direct token arguments
+              if (tx.nc_args.token_in) {
+                tokensFromArgs.add(tx.nc_args.token_in)
+              }
+              if (tx.nc_args.token_out) {
+                tokensFromArgs.add(tx.nc_args.token_out)
+              }
+              if (tx.nc_args.token_a) {
+                tokensFromArgs.add(tx.nc_args.token_a)
+              }
+              if (tx.nc_args.token_b) {
+                tokensFromArgs.add(tx.nc_args.token_b)
+              }
+            }
+
+            // Combine tokens from outputs and arguments
+            const allTokens = new Set([...tokensFromOutputs, ...tokensFromArgs])
+            tokensInvolved = Array.from(allTokens)
+
+            // Fetch token symbols for display
+            const tokenSymbolPromises = tokensInvolved.map(async (tokenUuid) => {
+              try {
+                const tokenInfo = await fetchTokenInfo(tokenUuid)
+                return {
+                  uuid: tokenUuid,
+                  symbol: tokenInfo.symbol,
+                  name: tokenInfo.name,
+                }
+              } catch (error) {
+                // Fallback for failed token info fetch
+                return {
+                  uuid: tokenUuid,
+                  symbol: tokenUuid === '00' ? 'HTR' : tokenUuid.substring(0, 8).toUpperCase(),
+                  name: tokenUuid === '00' ? 'Hathor' : `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
+                }
+              }
+            })
+
+            const tokenSymbols = await Promise.all(tokenSymbolPromises)
+
+            // Try to extract pool information from nc_args if available
+            if (tx.nc_args) {
+              const args = tx.nc_args
+
+              // For swap transactions, check for path (multi-hop)
+              if (tx.nc_method && tx.nc_method.includes('swap') && args.path && typeof args.path === 'string') {
+                // Parse the path format: {uuid}/{uuid}/{fee}/{uuid}/{uuid}/{fee}...
+                const pathParts = args.path.split('/')
+                const pools = []
+                // Every group of 3 is a pool: tokenA/tokenB/fee
+                for (let i = 0; i < pathParts.length; i += 3) {
+                  const tokenA = pathParts[i]
+                  const tokenB = pathParts[i + 1]
+                  const fee = pathParts[i + 2]
+                  if (tokenA && tokenB && fee) {
+                    pools.push(`${tokenA}/${tokenB}/${fee}`)
+                  }
+                }
+                poolsInvolved = pools
+              }
+
+              // For liquidity transactions, extract single pool
+              if (
+                tx.nc_method &&
+                (tx.nc_method.includes('add_liquidity') || tx.nc_method.includes('remove_liquidity')) &&
+                args.pool_key
+              ) {
+                poolsInvolved = [args.pool_key]
+              }
+
+              // For pool creation, extract tokens from arguments
+              if (tx.nc_method && tx.nc_method.includes('create_pool') && args.token_a && args.token_b) {
+                // Construct pool key for display
+                if (args.fee !== undefined) {
+                  poolsInvolved = [`${args.token_a}/${args.token_b}/${args.fee}`]
+                }
+              }
+            }
+
+            return {
+              id: tx.tx_id, // Required by GenericTable
+              tx_id: tx.tx_id,
+              timestamp: tx.timestamp,
+              method: tx.nc_method,
+              args: tx.nc_args,
+              poolsInvolved,
+              tokensInvolved,
+              tokenSymbols, // Include resolved token symbols
+              isMultiHop,
+              weight: tx.weight,
+              success: Array.isArray(tx.voided_by) ? tx.voided_by.length === 0 : !tx.voided_by,
+              // Include full transaction data for debugging
+              debug: {
+                fullTx: tx,
+                inputs: tx.inputs,
+                outputs: tx.outputs,
+                parents: tx.parents,
+                // Add debug info for token extraction only for multi-hop with string path
+                ...(isMultiHop && tx.nc_args?.path && typeof tx.nc_args.path === 'string'
+                  ? {
+                      tokensFromOutputs: Array.from(tokensFromOutputs),
+                      tokensFromArgs: Array.from(tokensFromArgs),
+                      pathString: tx.nc_args.path,
+                      pathParts: tx.nc_args.path.split('/'),
+                    }
+                  : {}),
+              },
+            }
+          })
+        )
+
+        return {
+          transactions,
+          hasMore: response.has_more || false,
+          pagination: {
+            after: response.after || null,
+            before: response.before || null,
+          },
+        }
+      } catch (error) {
+        console.error('Error fetching all transaction history:', error)
+        return {
+          transactions: [],
+          hasMore: false,
+          pagination: { after: null, before: null },
+        }
       }
     }),
 })

@@ -15,6 +15,8 @@ interface RouteStep {
 
 interface RouteDisplayProps {
   route: RouteStep[]
+  totalPriceImpact?: number
+  estimatedCost?: number
   className?: string
 }
 
@@ -22,6 +24,8 @@ interface RouteDisplayProps {
 
 export const RouteDisplay: FC<RouteDisplayProps> = ({
   route,
+  totalPriceImpact,
+  estimatedCost,
   className,
 }) => {
   if (!route || route.length === 0) {
@@ -39,43 +43,37 @@ export const RouteDisplay: FC<RouteDisplayProps> = ({
   const outputToken = route[route.length - 1]?.tokenOut
 
   return (
-    <div className={classNames('py-2', className)}>
-      {/* Route Header */}
-      <div className="flex items-center justify-between mb-3">
-        <Typography variant="sm" className="text-stone-300 font-medium">
-          {route.length} hop{route.length !== 1 ? 's' : ''}
-        </Typography>
-      </div>
-
+    <div className={classNames('py-2 min-h-[88px]', className)}>
       {/* Simplified Route Visualization */}
-      <div className="flex items-center justify-center space-x-3 py-2">
+      <div className="flex items-center justify-center space-x-4 py-3 mb-2">
         {/* Input Token */}
-        <div className="flex flex-col items-center space-y-1">
-          <Currency.Icon currency={inputToken} width={24} height={24} />
-          <Typography variant="xs" className="text-stone-400 font-medium">
+        <div className="flex flex-col items-center space-y-2">
+          <Currency.Icon currency={inputToken} width={28} height={28} />
+          <Typography variant="xs" weight={500} className="text-stone-300">
             {inputToken?.symbol}
           </Typography>
         </div>
 
         {/* Route Flow */}
         {route.map((step, index) => (
-          <div key={index} className="flex items-center space-x-2">
+          <div key={index} className="flex items-center space-x-3">
             {/* Arrow to Pool */}
-            <svg className="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
             
             {/* Pool Token Pair and Fee */}
-            <div className="flex flex-col items-center space-y-1">
+            <div className="flex flex-col items-center space-y-2">
               {/* Pool Token Pair */}
-              <Currency.IconList iconWidth={24} iconHeight={24}>
-                <Currency.Icon currency={step.tokenIn} width={24} height={24} />
-                <Currency.Icon currency={step.tokenOut} width={24} height={24} />
+              <Currency.IconList iconWidth={28} iconHeight={28}>
+                <Currency.Icon currency={step.tokenIn} width={28} height={28} />
+                <Currency.Icon currency={step.tokenOut} width={28} height={28} />
               </Currency.IconList>
               {/* Pool Fee */}
               <Typography 
                 variant="xs" 
-                className={classNames('font-bold text-xs text-center', getFeeColor(step.fee))}
+                weight={600}
+                className={classNames('text-center', getFeeColor(step.fee))}
               >
                 {step.fee}%
               </Typography>
@@ -84,17 +82,24 @@ export const RouteDisplay: FC<RouteDisplayProps> = ({
         ))}
 
         {/* Final Arrow to Output Token */}
-        <svg className="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
         </svg>
 
         {/* Output Token */}
-        <div className="flex flex-col items-center space-y-1">
-          <Currency.Icon currency={outputToken} width={24} height={24} />
-          <Typography variant="xs" className="text-stone-400 font-medium">
+        <div className="flex flex-col items-center space-y-2">
+          <Currency.Icon currency={outputToken} width={28} height={28} />
+          <Typography variant="xs" weight={500} className="text-stone-300">
             {outputToken?.symbol}
           </Typography>
         </div>
+      </div>
+
+      {/* Route Label Below */}
+      <div className="flex items-center justify-center">
+        <Typography variant="sm" weight={500} className="text-stone-400">
+          {route.length === 1 ? 'Direct route' : route.length === 2 ? 'Double swap' : route.length === 3 ? 'Triple swap' : `${route.length} hops`}
+        </Typography>
       </div>
     </div>
   )

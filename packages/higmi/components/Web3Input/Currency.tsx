@@ -79,7 +79,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
         <div className="relative flex items-center gap-1">
           {loading && isMounted ? (
             <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
-              <Skeleton.Box className="w-[120px] h-[22px] bg-white/[0.06] rounded-full" />
+              <Skeleton.Box variant="fast" className="w-[120px] h-[22px] rounded-full" />
             </div>
           ) : (
             <Input.Numeric
@@ -112,8 +112,8 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
           >
             {loading && !currency ? (
               <div className="flex gap-1">
-                <Skeleton.Circle radius={20} className="bg-white/[0.06]" />
-                <Skeleton.Box className="w-[60px] h-[20px] bg-white/[0.06]" />
+                <Skeleton.Circle variant="fast" radius={20} />
+                <Skeleton.Box variant="fast" className="w-[60px] h-[20px]" />
               </div>
             ) : currency ? (
               <>
@@ -230,7 +230,7 @@ const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, loa
   if ((!prices && isMounted) || loading)
     return (
       <div className="h-[24px] w-[60px] flex items-center">
-        <Skeleton.Box className="bg-white/[0.06] h-[12px] w-full" />
+        <Skeleton.Box variant="fast" className="h-[12px] w-full" />
       </div>
     )
 

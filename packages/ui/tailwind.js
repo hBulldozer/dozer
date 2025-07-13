@@ -15,9 +15,9 @@ module.exports = {
         // 'gradient-radial': 'radial-gradient(at center center, yellow-400, yellow-300, yellow-200)',
         // 'gradient-radial': 'radial-gradient(#171717, #150E02)', testing gradient
         'shimmer-gradient':
-          'linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.03) 30%, rgba(255, 255, 255, 0.06) 50%, rgba(255, 255, 255, 0.03) 70%, rgba(255, 255, 255, 0) 100%)',
+          'linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 20%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 80%, rgba(255, 255, 255, 0) 100%)',
         'shimmer-gradient-dark':
-          'linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.03) 30%, rgba(0, 0, 0, 0.06) 50%, rgba(0, 0, 0, 0.03) 70%, rgba(0, 0, 0, 0) 100%)',
+          'linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.05) 20%, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.05) 80%, rgba(0, 0, 0, 0) 100%)',
       }),
       boxShadow: {
         'depth-1': '0px 3px 6px rgba(15, 15, 15, 0.5)',
@@ -51,10 +51,20 @@ module.exports = {
         heartbeat: 'heartbeat 1s ease 0.2s infinite normal forwards',
         rotate: 'rotate360 1s cubic-bezier(0.83, 0, 0.17, 1) infinite',
         wave: 'shimmer 1.25s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'shimmer-fast': 'shimmer-fast 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'pulse-subtle': 'pulse-subtle 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
+        },
+        'shimmer-fast': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        'pulse-subtle': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.6' },
         },
         ellipsis: {
           '0%': { content: '"."' },

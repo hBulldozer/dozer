@@ -38,6 +38,8 @@ interface TradeProps {
   setOutputAmount: (outputAmount: number) => void
   priceImpact: number
   setPriceImpact: (priceImpact: number) => void
+  usdPriceImpact: number | undefined
+  setUsdPriceImpact: (usdPriceImpact: number | undefined) => void
   routeInfo: RouteInfo | undefined
   setRouteInfo: (routeInfo: RouteInfo | undefined) => void
 }
@@ -67,6 +69,8 @@ export const useTrade = create<TradeProps>()(
       setOutputAmount: (outputAmount: number) => set((state) => ({ outputAmount: outputAmount })),
       priceImpact: 0,
       setPriceImpact: (priceImpact: number) => set((state) => ({ priceImpact: priceImpact })),
+      usdPriceImpact: undefined,
+      setUsdPriceImpact: (usdPriceImpact: number | undefined) => set((state) => ({ usdPriceImpact: usdPriceImpact })),
       routeInfo: undefined,
       setRouteInfo: (routeInfo: RouteInfo | undefined) => set((state) => ({ routeInfo: routeInfo })),
     }),

@@ -1,28 +1,73 @@
 import { Disclosure, Transition } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
-import { classNames, Typography } from '@dozer/ui'
-import React, { FC, useMemo } from 'react'
+import { classNames, Typography, Skeleton } from '@dozer/ui'
+import React, { FC, useMemo, useState, useEffect } from 'react'
 import { Token } from '@dozer/currency'
 
+// Simple USD formatting
+const formatUSD = (value: number): string => {
+  if (value === 0) return '0.00'
+  if (value >= 0.1) {
+    return value.toFixed(2)
+  }
+  if (value < 0.1) {
+    return value.toFixed(4)
+  }
+  return value.toFixed(2)
+}
+
 import { Rate } from '../../components'
-import { RouteDisplay } from '../RouteDisplay'
+import { RouteDisplay, RouteDisplaySkeleton } from '../RouteDisplay'
 import { useTrade, useSettings } from '@dozer/zustand'
-import { warningSeverity } from '../utils/functions'
+import { warningSeverity, calculateUSDPriceImpact } from '../utils/functions'
 import { api } from 'utils/api'
 // import { useSettings } from '../../lib/state/storage'
 
 interface SwapStats {
   prices: { [key: string]: number }
+  loading?: boolean
 }
 
-export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
+export const SwapStatsDisclosure: FC<SwapStats> = ({ prices, loading = false }) => {
   const trade = useTrade()
   const { data: tokens } = api.getTokens.all.useQuery()
   // const [showRoute, setShowRoute] = useState(false)
   const { mainCurrency, otherCurrency, routeInfo } = useTrade()
 
+  // Add same delay as Rate component to prevent glitch
+  const [delayedLoading, setDelayedLoading] = useState(false)
+
+  useEffect(() => {
+    if (loading) {
+      setDelayedLoading(true)
+    } else {
+      const timer = setTimeout(() => {
+        setDelayedLoading(false)
+      }, 350)
+      return () => clearTimeout(timer)
+    }
+  }, [loading])
+
+  // Check if we have valid trade data to prevent showing stale data
+  const hasValidTradeData = trade.amountSpecified && trade.outputAmount && !delayedLoading
+
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
-  const priceImpactSeverity = useMemo(() => warningSeverity(trade?.priceImpact), [trade?.priceImpact])
+
+  // Calculate USD-based price impact
+  const usdPriceImpact = useMemo(() => {
+    if (!trade.mainCurrency || !trade.otherCurrency || !trade.amountSpecified || !trade.outputAmount) {
+      return undefined
+    }
+
+    const inputTokenPrice = prices[trade.mainCurrency.uuid]
+    const outputTokenPrice = prices[trade.otherCurrency.uuid]
+
+    return calculateUSDPriceImpact(trade.amountSpecified, trade.outputAmount, inputTokenPrice, outputTokenPrice)
+  }, [trade.amountSpecified, trade.outputAmount, trade.mainCurrency, trade.otherCurrency, prices])
+
+  // Use USD price impact if available, fallback to contract price impact
+  const displayPriceImpact = usdPriceImpact ?? trade?.priceImpact
+  const priceImpactSeverity = useMemo(() => warningSeverity(displayPriceImpact), [displayPriceImpact])
 
   // Convert route info to RouteDisplay format
   const routeSteps = useMemo(() => {
@@ -99,33 +144,44 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
   }, [routeInfo, tokens, mainCurrency, otherCurrency])
 
   const stats = (
-    <>
-      <Typography variant="sm" className="flex items-center text-stone-400">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+      <Typography variant="xs" weight={400} className="flex items-center text-stone-500">
         Price Impact
       </Typography>
       <Typography
         variant="sm"
-        weight={500}
+        weight={600}
         className={classNames(
-          priceImpactSeverity === 2 ? 'text-yellow' : priceImpactSeverity > 2 ? 'text-red' : 'text-stone-200',
+          priceImpactSeverity === 2 ? 'text-yellow-400' : priceImpactSeverity > 2 ? 'text-red-400' : 'text-stone-100',
           'text-right truncate flex items-center justify-end'
         )}
       >
-        -{trade?.priceImpact?.toFixed(2)}%
+        {delayedLoading || !hasValidTradeData ? (
+          <div className="w-[50px] h-[14px] bg-stone-600 animate-pulse rounded" />
+        ) : displayPriceImpact && displayPriceImpact > 0 ? (
+          `${displayPriceImpact.toFixed(2)}%`
+        ) : (
+          '< 0.01%'
+        )}
       </Typography>
-      <div className="col-span-2 border-t border-stone-200/5 w-full py-0.5" />
-      <Typography variant="sm" className="flex items-center text-stone-400">
-        Min. Received
+
+      <Typography variant="xs" weight={400} className="flex items-center text-stone-500">
+        Minimum Received
       </Typography>
       <Typography
         variant="sm"
-        weight={500}
-        className="flex justify-end items-center text-right truncate text-stone-400"
+        weight={600}
+        className="flex justify-end items-center text-right truncate text-stone-100"
       >
-        {trade.outputAmount ? (trade?.outputAmount * (1 - slippageTolerance / 100)).toFixed(2) : ''}{' '}
-        {trade.outputAmount ? trade?.otherCurrency?.symbol : ''}
+        {delayedLoading || !hasValidTradeData ? (
+          <div className="w-[80px] h-[14px] bg-stone-600 animate-pulse rounded" />
+        ) : trade.outputAmount ? (
+          `${(trade.outputAmount * (1 - slippageTolerance / 100)).toFixed(2)} ${trade.otherCurrency?.symbol || ''}`
+        ) : (
+          ''
+        )}
       </Typography>
-    </>
+    </div>
   )
 
   return (
@@ -148,8 +204,8 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
         <Disclosure>
           {({ open }) => (
             <>
-              <div className="flex justify-between items-center bg-white bg-opacity-[0.04] hover:bg-opacity-[0.08] rounded-2xl px-4 mb-4 py-2.5 gap-2">
-                <Rate token1={mainCurrency} token2={otherCurrency} prices={prices}>
+              <div className="flex justify-between items-center px-4 py-3 gap-2">
+                <Rate token1={mainCurrency} token2={otherCurrency} prices={prices} loading={loading}>
                   {({ content, usdPrice, toggleInvert }) => (
                     <div
                       className="text-sm text-stone-300 hover:text-stone-50 cursor-pointer gap-1 font-semibold tracking-tight h-[36px] flex items-center truncate"
@@ -158,9 +214,10 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                       <Typography variant="sm" weight={600} className="flex gap-1 items-center text-stone-100">
                         {content}
                       </Typography>
-                      {usdPrice && (
+                      {/* Don't show USD price if loading or no valid trade data */}
+                      {usdPrice && Number(usdPrice) > 0 && hasValidTradeData && (
                         <Typography variant="sm" weight={500} className="text-stone-300">
-                          (${usdPrice})
+                          (${formatUSD(Number(usdPrice))})
                         </Typography>
                       )}
                     </div>
@@ -190,13 +247,19 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices }) => {
                 leaveFrom="transform max-h-[380px]"
                 leaveTo="transform max-h-0"
               >
-                <Disclosure.Panel className="grid grid-cols-2 gap-x-2 gap-y-2 pt-4 text-xs border bg-white bg-opacity-[.02] p-2 mb-2 border-stone-200/5">
+                <Disclosure.Panel className="border-t border-stone-200/10 px-4 pb-4 pt-4">
                   {stats}
-                  {routeInfo && routeSteps.length > 0 && (
-                    <div className="col-span-2 pt-4 mt-2 border-t border-stone-200/5">
-                      <RouteDisplay route={routeSteps} />
+                  {(routeInfo && routeSteps.length > 0) ||
+                  delayedLoading ||
+                  (trade.amountSpecified && trade.mainCurrency && trade.otherCurrency) ? (
+                    <div className="pt-6 mt-4 border-t border-stone-200/5">
+                      {delayedLoading || !hasValidTradeData || routeSteps.length === 0 ? (
+                        <RouteDisplaySkeleton hopCount={1} />
+                      ) : (
+                        <RouteDisplay route={routeSteps} />
+                      )}
                     </div>
-                  )}
+                  ) : null}
                 </Disclosure.Panel>
               </Transition>
             </>
