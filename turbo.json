@@ -70,7 +70,9 @@
         "BETBLUEPRINT",
         "SUPABASE_ANON_KEY",
         "NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID",
-        "NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID"
+        "NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID",
+        "NEXT_PUBLIC_OASIS_CONTRACT_IDS",
+        "NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS"
       ],
       "outputs": [
         ".vercel/**/*",
@@ -141,7 +143,9 @@
         "BETBLUEPRINT",
         "SUPABASE_ANON_KEY",
         "NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID",
-        "NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID"
+        "NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID",
+        "NEXT_PUBLIC_OASIS_CONTRACT_IDS",
+        "NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS"
       ],
       "cache": false,
       "persistent": true

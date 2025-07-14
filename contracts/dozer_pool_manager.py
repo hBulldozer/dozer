@@ -124,7 +124,7 @@ class PoolInfo(NamedTuple):
     transactions: Amount | None
     volume_a: Amount | None
     volume_b: Amount | None
-    last_activity: Timestamp | None
+    last_activity: int | None
     is_signed: bool
     signer: str | None
 
@@ -195,7 +195,7 @@ class DozerPoolManager(Blueprint):
     owner: Address
     default_fee: Amount
     default_protocol_fee: Amount
-    authorized_signers: dict[Address, bool]  # Addresses authorized to sign pools
+    authorized_signers: dict[bytes, bool]  # Addresses authorized to sign pools
     htr_usd_pool_key: str  # Reference pool key for HTR-USD price calculations
 
     # Pool registry - token_a/token_b/fee -> exists
@@ -207,7 +207,7 @@ class DozerPoolManager(Blueprint):
 
     # Signed pools for dApp listing
     signed_pools: list[str]  # List of all signed pools
-    pool_signers: dict[str, Address]  # pool_key -> signer_address
+    pool_signers: dict[str, bytes]  # pool_key -> signer_address
 
     # Price calculation
     htr_token_map: dict[
@@ -232,12 +232,12 @@ class DozerPoolManager(Blueprint):
     # Liquidity tracking
     pool_total_liquidity: dict[str, Amount]  # pool_key -> total_liquidity
     pool_user_liquidity: dict[
-        str, dict[Address, Amount]
+        str, dict[bytes, Amount]
     ]  # pool_key -> user -> liquidity
 
     # User balances (for slippage)
-    pool_balance_a: dict[str, dict[Address, Amount]]  # pool_key -> user -> balance_a
-    pool_balance_b: dict[str, dict[Address, Amount]]  # pool_key -> user -> balance_b
+    pool_balance_a: dict[str, dict[bytes, Amount]]  # pool_key -> user -> balance_a
+    pool_balance_b: dict[str, dict[bytes, Amount]]  # pool_key -> user -> balance_b
     pool_total_balance_a: dict[str, Amount]  # pool_key -> total_balance_a
     pool_total_balance_b: dict[str, Amount]  # pool_key -> total_balance_b
 
@@ -246,7 +246,7 @@ class DozerPoolManager(Blueprint):
         str, dict[TokenUid, Amount]
     ]  # pool_key -> token -> amount
     pool_transactions: dict[str, Amount]  # pool_key -> transaction count
-    pool_last_activity: dict[str, Timestamp]  # pool_key -> last activity timestamp
+    pool_last_activity: dict[str, int]  # pool_key -> last activity timestamp
     pool_volume_a: dict[str, Amount]  # pool_key -> volume_a
     pool_volume_b: dict[str, Amount]  # pool_key -> volume_b
 
@@ -318,7 +318,7 @@ class DozerPoolManager(Blueprint):
         action_b = ctx.get_single_action(token_b)
 
         # Update last activity timestamp
-        self.pool_last_activity[pool_key] = Timestamp(ctx.timestamp)
+        self.pool_last_activity[pool_key] = int(ctx.timestamp)
 
         return action_a, action_b
 

@@ -154,6 +154,8 @@ export interface PoolConfig {
 export interface OasisConfig {
   tokenSymbol: string
   htrQuantity: number
+  poolFee: number
+  protocolFee: number
 }
 
 export interface SeedConfig {
@@ -351,7 +353,28 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
 
   await wait_next_block()
 
-  // 6. Output manager contract ID and pool keys
+  // 6. Deploy Oasis contracts
+  const oasisContractIds: string[] = []
+  for (const oasisConfig of config.oasis) {
+    console.log(`Deploying Oasis contract for ${oasisConfig.tokenSymbol}...`)
+    
+    const token_uuid = tokenUUIDs[`${oasisConfig.tokenSymbol}_uuid`]
+    if (!token_uuid) {
+      console.log(`Skipping Oasis for ${oasisConfig.tokenSymbol} - token UUID not found`)
+      continue
+    }
+
+    const oasisContract = new Oasis(token_uuid, manager_ncid, oasisConfig.poolFee)
+    const oasisResponse = await oasisContract.initialize(admin_address, oasisConfig.htrQuantity, oasisConfig.protocolFee)
+    const oasisContractId = oasisResponse.hash
+    oasisContractIds.push(oasisContractId)
+    
+    console.log(`Deployed Oasis contract for ${oasisConfig.tokenSymbol}: ${oasisContractId}`)
+    await check_wallet('master')
+    await wait_next_block()
+  }
+
+  // 7. Output manager contract ID and pool keys
   console.log('--- POOL MANAGER CONTRACT ID ---')
   console.log(manager_ncid)
   console.log('--- POOL KEYS ---')
@@ -359,7 +382,13 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
     console.log(key)
   }
 
-  // 7. Output bridged token UUIDs for environment configuration
+  // Output Oasis contract IDs
+  if (oasisContractIds.length > 0) {
+    console.log('--- OASIS CONTRACT IDS (for NEXT_PUBLIC_OASIS_CONTRACT_IDS env var) ---')
+    console.log(oasisContractIds.join(','))
+  }
+
+  // 8. Output bridged token UUIDs for environment configuration
   const bridgedTokenUUIDs: string[] = []
   for (const token of seedConfig.tokens) {
     if (token.bridged) {
@@ -374,10 +403,11 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
     console.log(bridgedTokenUUIDs.join(','))
   }
 
-  // 8. Return token UUIDs and pool keys
+  // 9. Return token UUIDs, pool keys, and Oasis contract IDs
   return {
     manager_ncid,
     ...tokenUUIDs,
     poolKeys,
+    oasisContractIds,
   }
 }

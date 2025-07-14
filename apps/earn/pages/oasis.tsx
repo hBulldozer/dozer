@@ -46,7 +46,7 @@ const TokenOption = ({ token, disabled }: { token: { symbol: string; uuid: strin
     token.symbol == 'hUSDC' ? 'hUSDC' : token.symbol == 'hETH' ? 'ETH' : token.symbol == 'hBTC' ? 'BTC' : 'hUSDC'
   return (
     <div className={classNames('flex flex-row items-center w-full gap-4', disabled && 'opacity-50')}>
-      <div className="flex flex-row items-center w-full gap-4">
+      <div className="flex flex-row gap-4 items-center w-full">
         <div className="flex-shrink-0 w-7 h-7">
           <Icon key={token.symbol} currency={toToken(token)} width={28} height={28} />
         </div>
@@ -142,7 +142,7 @@ const OasisProgram = () => {
   const oasisName = oasis?.name || ''
   const poolId = oasis?.pool.id || ''
   const tokenUuid = oasis?.token.uuid || ''
-  const oasisObj = new Oasis(tokenUuid, poolId)
+  const oasisObj = new Oasis(tokenUuid, oasis?.pool_manager || '', oasis?.pool_fee || 100)
   const handleAddLiquidity = async (): Promise<void> => {
     setAddingLiquidity(true)
     setTxType('Add liquidity')
@@ -158,7 +158,7 @@ const OasisProgram = () => {
         address,
         lockPeriod,
         oasisId,
-        Math.floor(parseFloat(amount) * 100),
+        parseFloat(amount),
         prices['00']
       )
 
@@ -502,7 +502,7 @@ const OasisProgram = () => {
         amount && lockPeriod && oasisId
           ? await utils.getOasis.getFrontQuoteLiquidityIn.fetch({
               id: oasisId,
-              amount_in: Math.floor(parseFloat(amount) * 100),
+              amount_in: parseFloat(amount),
               timelock: lockPeriod,
               now: Math.floor(Date.now()),
               address: address || 'WZhKusv57pvzotZrf4s7yt7P7PXEqyFTHk',
@@ -562,7 +562,7 @@ const OasisProgram = () => {
         />
       </div>
 
-      <div className="relative z-10 min-h-screen px-4 py-2 lg:mx-8 lg:my-4 bg-black/80">
+      <div className="relative z-10 px-4 py-2 min-h-screen lg:mx-8 lg:my-4 bg-black/80">
         {/* Title Section */}
         <div className="flex flex-col items-center pt-6 mb-4 lg:pt-10 lg:mb-16">
           <h1 className="relative z-20 text-6xl font-bold text-center text-white sm:text-7xl lg:text-9xl">OASIS</h1>
@@ -584,14 +584,14 @@ const OasisProgram = () => {
             <motion.div
               layout
               className={`flex flex-col lg:${
-                showChart ? 'flex flex-col max-w-[1400px] mx-auto px-6' : 'grid grid-cols-[300px_520px_320px]'
+                showChart ? 'flex flex-col px-6 mx-auto max-w-[1400px]' : 'grid grid-cols-[300px_520px_320px]'
               } gap-6 lg:gap-10`}
             >
               <motion.div
                 className={`${
                   showChart
-                    ? 'grid grid-cols-1 lg:grid-cols-3 gap-4 col-span-full mb-6'
-                    : 'flex flex-col col-start-1 order-2 lg:order-none space-y-6'
+                    ? 'grid grid-cols-1 col-span-full gap-4 mb-6 lg:grid-cols-3'
+                    : 'flex flex-col order-2 col-start-1 space-y-6 lg:order-none'
                 }`}
               >
                 {/* Card 1 */}
@@ -646,13 +646,13 @@ const OasisProgram = () => {
                 <motion.div
                   layout
                   className={`${
-                    showChart ? 'flex flex-row justify-center col-span-full gap-4' : 'flex flex-col gap-4'
+                    showChart ? 'flex flex-row col-span-full gap-4 justify-center' : 'flex flex-col gap-4'
                   } `}
                 >
                   <Link href="https://docs.dozer.finance/oasis" target="_blank">
                     <Button
                       variant="outlined"
-                      className="justify-center hidden w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"
+                      className="hidden justify-center w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"
                     >
                       <Typography variant="sm" className="text-nowrap" weight={500}>
                         Learn More
@@ -662,7 +662,7 @@ const OasisProgram = () => {
                   </Link>
                   <Button
                     variant="outlined"
-                    className="justify-center hidden border lg:flex text-yellow hover:text-yellow-600 border-yellow"
+                    className="hidden justify-center border lg:flex text-yellow hover:text-yellow-600 border-yellow"
                     onClick={() => setShowChart(!showChart)}
                   >
                     <Typography variant="sm" weight={500}>
@@ -677,19 +677,19 @@ const OasisProgram = () => {
               <motion.div
                 className={`${
                   showChart
-                    ? 'grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 items-start'
-                    : 'order-1 lg:order-none col-start-2 w-full lg:w-[520px]'
+                    ? 'grid grid-cols-1 gap-6 items-start lg:grid-cols-[1fr_2fr]'
+                    : 'order-1 col-start-2 w-full lg:order-none lg:w-[520px]'
                 }`}
               >
                 {/* Input Form */}
                 <motion.div layout className="w-full">
                   <Widget id="oasisInput" maxWidth="full" className="py-5 mb-4">
                     <Widget.Content>
-                      <div className="grid ">
+                      <div className="grid">
                         <div className="flex flex-col gap-2">
                           <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
                             <div>
-                              <div className="flex items-center gap-4 mb-6 ml-4 sm:gap-6 sm:ml-8">
+                              <div className="flex gap-4 items-center mb-6 ml-4 sm:gap-6 sm:ml-8">
                                 <Tab
                                   className={({ selected }) =>
                                     classNames(
@@ -719,7 +719,7 @@ const OasisProgram = () => {
                               <Tab.Panels>
                                 <Tab.Panel>
                                   <div className="flex flex-col gap-4 px-4 sm:px-8">
-                                    <div className="flex flex-col gap-4 sm:flex-row sm:gap-2 justify-items-end">
+                                    <div className="flex flex-col gap-4 justify-items-end sm:flex-row sm:gap-2">
                                       <div className="flex flex-col flex-1 gap-2">
                                         <Typography variant="sm" className="text-stone-400">
                                           Amount to lock
@@ -729,9 +729,9 @@ const OasisProgram = () => {
                                             value={amount}
                                             ref={inputRef}
                                             onUserInput={(val) => setAmount(val)}
-                                            className="h-full pl-3 text-2xl"
+                                            className="pl-3 h-full text-2xl"
                                           />
-                                          <div className="absolute flex items-center -translate-y-1/2 right-4 top-1/2">
+                                          <div className="flex absolute right-4 top-1/2 items-center -translate-y-1/2">
                                             <PricePanel
                                               amount={amount}
                                               tokenSymbol={token}
@@ -755,7 +755,7 @@ const OasisProgram = () => {
                                           }}
                                           button={
                                             <Select.Button>
-                                              <div className="flex flex-row items-center flex-grow gap-4 mr-8">
+                                              <div className="flex flex-row flex-grow gap-4 items-center mr-8">
                                                 <div className="flex-shrink-0 w-7 h-7">
                                                   <Icon
                                                     key={currency}
@@ -819,7 +819,7 @@ const OasisProgram = () => {
                                             </Typography>
                                           </div>
                                         </Transition>
-                                        <div className="flex flex-col w-full gap-2">
+                                        <div className="flex flex-col gap-2 w-full">
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
                                               {currency} Price Change
@@ -863,7 +863,7 @@ const OasisProgram = () => {
                                       </Select>
                                     </div>
 
-                                    <div className="p-4 mt-2 sm:mt-4 bg-stone-800 rounded-xl">
+                                    <div className="p-4 mt-2 rounded-xl sm:mt-4 bg-stone-800">
                                       {fetchLoading ? (
                                         <div className="hidden gap-4 lg:flex lg:flex-col">
                                           <div className="flex justify-between">
@@ -967,7 +967,7 @@ const OasisProgram = () => {
                                         amount={Number(amount)}
                                         token={new Token({ chainId: ChainId.HATHOR, uuid: tokenUuid, decimals: 2 })}
                                       >
-                                        <div className="flex flex-col justify-between gap-2">
+                                        <div className="flex flex-col gap-2 justify-between">
                                           <Button
                                             size="md"
                                             disabled={isRpcRequestPending || !prices || !prices['00']}
@@ -995,7 +995,7 @@ const OasisProgram = () => {
                                       <div className="text-center">
                                         <Typography
                                           variant="xl"
-                                          className="my-8 rounded-xl bg-stone-700/20 py-36 text-stone-300"
+                                          className="py-36 my-8 rounded-xl bg-stone-700/20 text-stone-300"
                                         >
                                           Please connect your wallet to view your positions.
                                         </Typography>
@@ -1007,7 +1007,7 @@ const OasisProgram = () => {
                                       <div className="text-center">
                                         <Typography
                                           variant="xl"
-                                          className="my-8 rounded-xl bg-stone-700/20 py-36 text-stone-300"
+                                          className="py-36 my-8 rounded-xl bg-stone-700/20 text-stone-300"
                                         >
                                           No active positions.
                                         </Typography>
@@ -1081,17 +1081,17 @@ const OasisProgram = () => {
                   </Widget>
 
                   {/* Reserve Info Box */}
-                  <motion.div layout className="p-4 my-6 rounded-lg ">
+                  <motion.div layout className="p-4 my-6 rounded-lg">
                     <Typography className="mb-2 text-stone-200">Bonus Reserve</Typography>
                     <div className="relative h-[30px] w-full overflow-hidden rounded-md">
                       <div className="absolute inset-0 bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500" />
                       <div
-                        className="absolute inset-y-0 left-0 overflow-hidden rounded-md"
+                        className="overflow-hidden absolute inset-y-0 left-0 rounded-md"
                         style={{ width: `${progress}%` }}
                       >
-                        <div className="h-full bg-gradient-to-r from-green-700 via-emerald-500 to-green-800 " />
+                        <div className="h-full bg-gradient-to-r from-green-700 via-emerald-500 to-green-800" />
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-between px-3">
+                      <div className="flex absolute inset-0 justify-between items-center px-3">
                         <Typography variant="base" weight={600} className="text-white drop-shadow-md">
                           {availableHTR.toLocaleString()} HTR
                         </Typography>

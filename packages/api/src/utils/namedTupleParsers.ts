@@ -209,3 +209,107 @@ export function parseUserPositions(positions: Record<string, any[]>): Record<str
   
   return result
 }
+
+export interface OasisInfo {
+  total_liquidity: number
+  oasis_htr_balance: number
+  token_b: string
+  protocol_fee: number
+  dev_deposit_amount: number
+}
+
+export interface OasisUserInfo {
+  user_deposit_b: number
+  user_liquidity: number
+  user_withdrawal_time: number
+  oasis_htr_balance: number
+  total_liquidity: number
+  user_balance_a: number
+  user_balance_b: number
+  closed_balance_a: number
+  closed_balance_b: number
+  user_lp_b: number
+  user_lp_htr: number
+  max_withdraw_b: number
+  max_withdraw_htr: number
+  htr_price_in_deposit: number
+  token_price_in_htr_in_deposit: number
+  position_closed: boolean
+}
+
+export interface OasisQuoteInfo {
+  bonus: number
+  htr_amount: number
+  withdrawal_time: number
+  has_position: boolean
+  deposit_amount: number
+  fee_amount: number
+  protocol_fee: number
+}
+
+/**
+ * Parse OasisInfo NamedTuple array to object
+ * Contract definition: [total_liquidity, oasis_htr_balance, token_b, protocol_fee, dev_deposit_amount]
+ */
+export function parseOasisInfo(array: any[]): OasisInfo {
+  if (!Array.isArray(array) || array.length !== 5) {
+    throw new Error('Invalid OasisInfo array format')
+  }
+  
+  return {
+    total_liquidity: array[0] || 0,
+    oasis_htr_balance: array[1] || 0,
+    token_b: array[2] || '',
+    protocol_fee: array[3] || 0,
+    dev_deposit_amount: array[4] || 0,
+  }
+}
+
+/**
+ * Parse OasisUserInfo NamedTuple array to object
+ * Contract definition: [user_deposit_b, user_liquidity, user_withdrawal_time, oasis_htr_balance, total_liquidity, user_balance_a, user_balance_b, closed_balance_a, closed_balance_b, user_lp_b, user_lp_htr, max_withdraw_b, max_withdraw_htr, htr_price_in_deposit, token_price_in_htr_in_deposit, position_closed]
+ */
+export function parseOasisUserInfo(array: any[]): OasisUserInfo {
+  if (!Array.isArray(array) || array.length !== 16) {
+    throw new Error('Invalid OasisUserInfo array format')
+  }
+  
+  return {
+    user_deposit_b: array[0] || 0,
+    user_liquidity: array[1] || 0,
+    user_withdrawal_time: array[2] || 0,
+    oasis_htr_balance: array[3] || 0,
+    total_liquidity: array[4] || 0,
+    user_balance_a: array[5] || 0,
+    user_balance_b: array[6] || 0,
+    closed_balance_a: array[7] || 0,
+    closed_balance_b: array[8] || 0,
+    user_lp_b: array[9] || 0,
+    user_lp_htr: array[10] || 0,
+    max_withdraw_b: array[11] || 0,
+    max_withdraw_htr: array[12] || 0,
+    htr_price_in_deposit: array[13] || 0,
+    token_price_in_htr_in_deposit: array[14] || 0,
+    position_closed: Boolean(array[15] || false),
+  }
+}
+
+/**
+ * Parse OasisQuoteInfo NamedTuple array to object
+ * Contract definition: [bonus, htr_amount, withdrawal_time, has_position, fee_amount, deposit_amount, protocol_fee]
+ */
+export function parseOasisQuoteInfo(array: any[]): OasisQuoteInfo {
+  if (!Array.isArray(array) || array.length !== 7) {
+    throw new Error('Invalid OasisQuoteInfo array format')
+  }
+  
+  return {
+    bonus: array[0] || 0,
+    htr_amount: array[1] || 0,
+    withdrawal_time: array[2] || 0,
+    has_position: Boolean(array[3] || false),
+    fee_amount: array[4] || 0,
+    deposit_amount: array[5] || 0,
+    protocol_fee: array[6] || 0,
+  }
+}

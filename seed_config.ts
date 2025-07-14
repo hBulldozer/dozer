@@ -24,6 +24,8 @@ export interface PoolConfig {
 export interface OasisConfig {
   tokenSymbol: string
   htrQuantity: number
+  poolFee: number // Pool fee in basis points (e.g., 100 = 1%)
+  protocolFee: number // Protocol fee in thousandths (e.g., 50 = 5%)
 }
 
 export interface SeedConfig {
@@ -87,66 +89,78 @@ export const seedConfig: SeedConfig = {
       fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
-    {
-      tokenSymbol: 'NST',
-      htrQuantity: 15000000, // 15M HTR worth $300k (at $0.02/HTR)
-      tokenQuantity: 200000, // 200k NST worth $300k (at $1.50/NST) - balanced pool
-      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
-      protocolFee: 0.01,
-    },
-    {
-      tokenSymbol: 'CTHOR',
-      htrQuantity: 20000000, // 20M HTR worth $400k (at $0.02/HTR)
-      tokenQuantity: 80000, // 80k CTHOR worth $400k (at $5.00/CTHOR) - balanced pool
-      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
-      protocolFee: 0.01,
-    },
-    // Non-HTR pool for multi-hop testing: DZR/hUSDC
-    {
-      tokenSymbol: 'hUSDC', // will be paired with DZR (instead of HTR)
-      htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
-      tokenQuantity: 250000, // 250k USDC worth $250k (increased liquidity)
-      dzrQuantity: 500000, // 500k DZR worth $250k (at $0.50/DZR) - balanced pool
-      fee: 0.005, // 0.5% -> converts to 5 basis points
-      protocolFee: 0.01,
-      isNonHTRPool: true, // Flag to identify this as a non-HTR pool
-      pairTokenSymbol: 'DZR', // The other token in the pair
-    },
-    // Non-HTR pool for multi-hop testing: NST/CTHOR
-    {
-      tokenSymbol: 'CTHOR', // will be paired with NST (instead of HTR)
-      htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
-      tokenQuantity: 30000, // 30k CTHOR worth $150k (at $5.00/CTHOR)
-      dzrQuantity: 100000, // 100k NST worth $150k (at $1.50/NST) - balanced pool
-      fee: 0.005, // 0.5% -> converts to 5 basis points
-      protocolFee: 0.01,
-      isNonHTRPool: true, // Flag to identify this as a non-HTR pool
-      pairTokenSymbol: 'NST', // The other token in the pair
-    },
-    // Non-HTR pool for multi-hop testing: hUSDC/NST (stable/rewards pair)
-    {
-      tokenSymbol: 'NST', // will be paired with hUSDC (instead of HTR)
-      htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
-      tokenQuantity: 66666, // 66.6k NST worth $100k (at $1.50/NST)
-      dzrQuantity: 100000, // 100k USDC worth $100k - balanced pool
-      fee: 0.003, // 0.3% -> converts to 3 basis points (medium fee for stable/rewards pair)
-      protocolFee: 0.01,
-      isNonHTRPool: true, // Flag to identify this as a non-HTR pool
-      pairTokenSymbol: 'hUSDC', // The other token in the pair
-    },
+    // {
+    //   tokenSymbol: 'NST',
+    //   htrQuantity: 15000000, // 15M HTR worth $300k (at $0.02/HTR)
+    //   tokenQuantity: 200000, // 200k NST worth $300k (at $1.50/NST) - balanced pool
+    //   fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
+    //   protocolFee: 0.01,
+    // },
+    // {
+    //   tokenSymbol: 'CTHOR',
+    //   htrQuantity: 20000000, // 20M HTR worth $400k (at $0.02/HTR)
+    //   tokenQuantity: 80000, // 80k CTHOR worth $400k (at $5.00/CTHOR) - balanced pool
+    //   fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
+    //   protocolFee: 0.01,
+    // },
+    // // Non-HTR pool for multi-hop testing: DZR/hUSDC
+    // {
+    //   tokenSymbol: 'hUSDC', // will be paired with DZR (instead of HTR)
+    //   htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
+    //   tokenQuantity: 250000, // 250k USDC worth $250k (increased liquidity)
+    //   dzrQuantity: 500000, // 500k DZR worth $250k (at $0.50/DZR) - balanced pool
+    //   fee: 0.005, // 0.5% -> converts to 5 basis points
+    //   protocolFee: 0.01,
+    //   isNonHTRPool: true, // Flag to identify this as a non-HTR pool
+    //   pairTokenSymbol: 'DZR', // The other token in the pair
+    // },
+    // // Non-HTR pool for multi-hop testing: NST/CTHOR
+    // {
+    //   tokenSymbol: 'CTHOR', // will be paired with NST (instead of HTR)
+    //   htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
+    //   tokenQuantity: 30000, // 30k CTHOR worth $150k (at $5.00/CTHOR)
+    //   dzrQuantity: 100000, // 100k NST worth $150k (at $1.50/NST) - balanced pool
+    //   fee: 0.005, // 0.5% -> converts to 5 basis points
+    //   protocolFee: 0.01,
+    //   isNonHTRPool: true, // Flag to identify this as a non-HTR pool
+    //   pairTokenSymbol: 'NST', // The other token in the pair
+    // },
+    // // Non-HTR pool for multi-hop testing: hUSDC/NST (stable/rewards pair)
+    // {
+    //   tokenSymbol: 'NST', // will be paired with hUSDC (instead of HTR)
+    //   htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
+    //   tokenQuantity: 66666, // 66.6k NST worth $100k (at $1.50/NST)
+    //   dzrQuantity: 100000, // 100k USDC worth $100k - balanced pool
+    //   fee: 0.003, // 0.3% -> converts to 3 basis points (medium fee for stable/rewards pair)
+    //   protocolFee: 0.01,
+    //   isNonHTRPool: true, // Flag to identify this as a non-HTR pool
+    //   pairTokenSymbol: 'hUSDC', // The other token in the pair
+    // },
   ],
   oasis: [
+    {
+      tokenSymbol: 'hUSDC',
+      htrQuantity: 10_000_000,
+      poolFee: 5, // 0.5% pool fee (matches the pool fee)
+      protocolFee: 50, // 5% protocol fee
+    },
     // {
-    //   tokenSymbol: 'hUSDC',
-    //   htrQuantity: 10_000_000,
+    //   tokenSymbol: 'DZR',
+    //   htrQuantity: 15_000_000,
+    //   poolFee: 5, // 0.5% pool fee (matches the pool fee)
+    //   protocolFee: 50, // 5% protocol fee
     // },
     // {
     //   tokenSymbol: 'NST',
-    //   htrQuantity: 15_000_000,
+    //   htrQuantity: 12_000_000,
+    //   poolFee: 5, // 0.5% pool fee (matches the pool fee)
+    //   protocolFee: 50, // 5% protocol fee
     // },
     // {
     //   tokenSymbol: 'CTHOR',
     //   htrQuantity: 8_000_000,
+    //   poolFee: 5, // 0.5% pool fee (matches the pool fee)
+    //   protocolFee: 50, // 5% protocol fee
     // },
   ],
 }

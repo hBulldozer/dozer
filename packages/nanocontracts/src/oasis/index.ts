@@ -11,13 +11,15 @@ import { IHathorRpc } from '../types'
 
 export class Oasis extends NanoContract {
   public token: string
-  public pool: string
+  public poolManagerId: string
+  public poolFee: number
 
-  public constructor(token: string, pool: string, ncid?: string) {
+  public constructor(token: string, poolManagerId: string, poolFee: number = 100, ncid?: string) {
     if (ncid) super(ncid)
     else super('fake')
     this.token = token
-    this.pool = pool
+    this.poolManagerId = poolManagerId
+    this.poolFee = poolFee
   }
 
   public async getInfo() {
@@ -26,26 +28,41 @@ export class Oasis extends NanoContract {
 
   public async initialize(admin_address: string, amount: number, protocolFee: number) {
     if (!process.env.OASISBLUEPRINT || '') throw new Error('Missing environment variables')
+
     const actions: NCAction[] = [{ type: 'deposit', token: '00', amount: 100 * amount }]
-    const args: NCArgs[] = [this.pool, this.token, protocolFee]
+    const args: NCArgs[] = [
+      this.poolManagerId, // dozer_pool_manager
+      this.token, // token_b
+      this.poolFee, // pool_fee
+      protocolFee, // protocol_fee
+    ]
     const response = await this.create(process.env.OASISBLUEPRINT || '', admin_address, actions, args)
     return response
   }
 
-  public async wc_initialize(hathorRpc: IHathorRpc, address: string, token: string, pool: string, amount: number) {
+  public async wc_initialize(
+    hathorRpc: IHathorRpc,
+    address: string,
+    token: string,
+    poolManagerId: string,
+    poolFee: number,
+    protocolFee: number,
+    amount: number
+  ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'initialize',
       '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
       [
+        //@ts-ignore
         {
           type: NanoContractActionType.DEPOSIT,
           token: '00',
-          amount: BigInt(amount),
+          amount: Math.floor(amount * 100).toString(),
           address: address,
           changeAddress: address,
         },
       ],
-      [pool, token],
+      [poolManagerId, token, poolFee, protocolFee], // Updated args for new contract
       true,
       null
     )
@@ -68,15 +85,16 @@ export class Oasis extends NanoContract {
       'user_deposit',
       '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
       [
+        //@ts-ignore
         {
           type: NanoContractActionType.DEPOSIT,
           token: this.token,
-          amount: BigInt(amount),
+          amount: Math.floor(amount * 100).toString(),
           address: address,
           changeAddress: address,
         },
       ],
-      [timelock, Number(htr_price.toFixed(4))],
+      [timelock, Math.floor(htr_price * 100)], // Convert to Amount (cents) for new contract
       true,
       ncId
     )
@@ -110,7 +128,7 @@ export class Oasis extends NanoContract {
       {
         type: NanoContractActionType.WITHDRAWAL,
         token: this.token,
-        amount: amount * 100,
+        amount: Math.floor(amount * 100).toString(),
         address: address,
         changeAddress: address,
       },
@@ -119,7 +137,7 @@ export class Oasis extends NanoContract {
       actions.push({
         type: NanoContractActionType.WITHDRAWAL,
         token: '00',
-        amount: amount_htr * 100,
+        amount: Math.floor(amount_htr * 100).toString(),
         address: address,
         changeAddress: address,
       })
@@ -146,10 +164,11 @@ export class Oasis extends NanoContract {
       'user_withdraw_bonus',
       '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
       [
+        //@ts-ignore
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: '00',
-          amount: BigInt(amount * 100),
+          amount: Math.floor(amount * 100).toString(),
           address: address,
           changeAddress: address,
         },
