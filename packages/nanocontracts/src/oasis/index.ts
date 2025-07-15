@@ -53,7 +53,7 @@ export class Oasis extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'initialize',
-      '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
+      process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '',
       [
         //@ts-ignore
         {
@@ -85,7 +85,7 @@ export class Oasis extends NanoContract {
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_deposit',
-      '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
+      process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '',
       [
         //@ts-ignore
         {
@@ -111,7 +111,7 @@ export class Oasis extends NanoContract {
   public async close_position(hathorRpc: IHathorRpc, address: string, ncId: string) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'close_position',
-      '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
+      process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '',
       [],
       [],
       true,
@@ -146,7 +146,7 @@ export class Oasis extends NanoContract {
     }
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_withdraw',
-      '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
+      process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '',
       // @ts-ignore
       actions,
       [],
@@ -164,7 +164,7 @@ export class Oasis extends NanoContract {
   public async user_withdraw_bonus(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_withdraw_bonus',
-      '8e424db8e5664ade76226356bcf5ef6ad9d0879bdad6377db835868b17c443ba',
+      process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '',
       [
         //@ts-ignore
         {
