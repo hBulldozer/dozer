@@ -559,7 +559,6 @@ export const poolRouter = createTRPCRouter({
         const pathInfoArray =
           response.calls[`find_best_swap_path(${amount},"${input.tokenIn}","${input.tokenOut}",${input.maxHops})`].value
 
-        console.log(pathInfoArray)
         if (!pathInfoArray) {
           console.log(`❌ [QUOTE] No swap path found for ${input.tokenIn} → ${input.tokenOut}`)
           throw new Error('No swap path found')

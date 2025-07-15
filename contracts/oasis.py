@@ -156,6 +156,7 @@ class Oasis(Blueprint):
         Args:
             ctx: Execution context
             timelock: Lock period in months (6, 9, or 12)
+            htr_price: HTR price in USD scaled by PRICE_PRECISION (10^8)
 
         Raises:
             NCFail: If deposit requirements not met or invalid timelock
@@ -168,6 +169,12 @@ class Oasis(Blueprint):
 
         if self.user_position_closed.get(ctx.address, False):
             raise NCFail("Need to close position before deposit")
+
+        # Validate htr_price is properly scaled (should be > 0 and reasonable for USD price)
+        if htr_price <= 0:
+            raise NCFail("HTR price must be positive")
+        if htr_price > 1000 * PRICE_PRECISION:  # Max $1000 per HTR seems reasonable
+            raise NCFail("HTR price too high")
 
         # Calculate and deduct protocol fee
         amount = action.amount
@@ -751,3 +758,5 @@ class Oasis(Blueprint):
             loss_htr=Amount(loss_htr),
             position_closed=False,
         )
+
+__blueprint__ = Oasis

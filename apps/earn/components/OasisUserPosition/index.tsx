@@ -141,19 +141,19 @@ const UserOasisPosition = ({
   const formattedTimeRemaining = getFormattedTimeRemaining()
 
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-lg">
+    <div className="flex overflow-hidden relative flex-col rounded-lg">
       {/* Only show loading overlay for wallet confirmation */}
       {isRpcRequestPending && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-black/80">
+        <div className="flex absolute inset-0 z-50 justify-center items-center rounded-lg bg-black/80">
           <Dots>Confirm in wallet</Dots>
         </div>
       )}
 
       {/* Position Header */}
-      <div className="flex items-center justify-between p-4 rounded-lg bg-stone-800/50">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-shrink-0 w-8 h-8 mr-2 -mt-5">
-            <div className="absolute z-10 mt-7 ">
+      <div className="flex justify-between items-center p-4 rounded-lg bg-stone-800/50">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-shrink-0 -mt-5 mr-2 w-8 h-8">
+            <div className="absolute z-10 mt-7">
               <Currency.IconList iconWidth={18} iconHeight={18}>
                 <Currency.Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} />
                 <Currency.Icon currency={toToken(oasis.token)} />
@@ -167,8 +167,8 @@ const UserOasisPosition = ({
             <Typography variant="lg" weight={600} className="text-stone-200">
               HTR-{oasis.token.symbol}
             </Typography>
-            <div className="flex flex-wrap items-start gap-1">
-              <div className="flex items-center gap-1 ">
+            <div className="flex flex-wrap gap-1 items-start">
+              <div className="flex gap-1 items-center">
                 <div
                   className={`w-2 h-2 rounded-full ${
                     oasis.position_closed ? 'bg-blue-500' : isUnlocked ? 'bg-green-500' : 'bg-yellow-500'
@@ -179,7 +179,7 @@ const UserOasisPosition = ({
                 </Typography>
               </div>
               {formattedTimeRemaining && (
-                <div className="w-full mt-1 sm:w-auto sm:mt-0 sm:ml-1">
+                <div className="mt-1 w-full sm:w-auto sm:mt-0 sm:ml-1">
                   <Typography variant="xs" className="text-yellow">
                     {formattedTimeRemaining}
                   </Typography>
@@ -194,7 +194,7 @@ const UserOasisPosition = ({
             <Typography variant="lg" weight={600} className="text-stone-200">
               ${roiData.totalCurrentValueUSD.toFixed(2)}
             </Typography>
-            <div className="flex items-center justify-end gap-1">
+            <div className="flex gap-1 justify-end items-center">
               <div
                 className={`${
                   roiData.roi > 0 ? 'text-green-500' : Math.abs(roiData.roi) < 0.01 ? 'text-stone-500' : 'text-red-500'
@@ -238,8 +238,8 @@ const UserOasisPosition = ({
           </Typography>
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
-              <div className="flex items-center gap-2">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-stone-800/50">
+              <div className="flex gap-2 items-center">
                 <div className="w-6 h-6">
                   <Icon currency={toToken(oasis.token)} width={24} height={24} />
                 </div>
@@ -252,8 +252,8 @@ const UserOasisPosition = ({
               </Typography>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
-              <div className="flex items-center gap-2">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-stone-800/50">
+              <div className="flex gap-2 items-center">
                 <div className="w-6 h-6">
                   <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} width={24} height={24} />
                 </div>
@@ -307,8 +307,8 @@ const UserOasisPosition = ({
               </Tooltip>
             </Typography>
 
-            <div className="flex items-center justify-between p-3 rounded-lg bg-stone-800/50">
-              <div className="flex items-center gap-2">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-stone-800/50">
+              <div className="flex gap-2 items-center">
                 <div className="w-6 h-6">
                   <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} width={24} height={24} />
                 </div>
@@ -327,8 +327,8 @@ const UserOasisPosition = ({
         <Typography variant="sm" weight={600} className="mb-2 text-stone-300">
           Position Details
         </Typography>
-        <div className="flex flex-col gap-4 p-4 bg-stone-800 rounded-xl">
-          <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-4 p-4 rounded-xl bg-stone-800">
+          <div className="flex justify-between items-start">
             <Typography variant="sm" className="text-stone-400">
               Unlock Date
             </Typography>
@@ -412,16 +412,16 @@ const UserOasisPosition = ({
       </div>
 
       {/* Actions */}
-      <div className="flex flex-row w-full gap-2 p-1">
+      <div className="flex flex-row gap-2 p-1 w-full">
         {/* When position is unlocked but not closed, show Close Position button */}
-        {isUnlocked && !oasis.position_closed && <div className="w-full ">{buttonClosePosition}</div>}
+        {isUnlocked && !oasis.position_closed && <div className="w-full">{buttonClosePosition}</div>}
 
         {/* When position is closed, show Withdraw Position button */}
-        {oasis.position_closed && <div className="w-full ">{buttonWithdraw}</div>}
+        {oasis.position_closed && <div className="w-full">{buttonWithdraw}</div>}
 
-        {!isUnlocked && oasis.user_balance_a > 0 && <div className="w-full ">{buttonWithdrawBonus}</div>}
+        {!isUnlocked && oasis.user_balance_a > 0 && <div className="w-full">{buttonWithdrawBonus}</div>}
         {!oasis.position_closed && (
-          <div className="w-full ">
+          <div className="w-full">
             <Button
               size="md"
               fullWidth

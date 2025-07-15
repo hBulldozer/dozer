@@ -4,6 +4,9 @@ import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 import { parseOasisInfo, parseOasisUserInfo, parseOasisQuoteInfo } from '../utils/namedTupleParsers'
 
+// Price precision constant to match the contract (10^8 for 8 decimal places)
+const PRICE_PRECISION = 10 ** 8
+
 // Cache for token information to avoid repeated API calls
 const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
 
@@ -140,8 +143,8 @@ const fetchAndProcessUserOasis = async (
       user_lp_htr: userInfo.user_lp_htr / 100,
       max_withdraw_htr: userInfo.max_withdraw_htr / 100,
       max_withdraw_b: userInfo.max_withdraw_b / 100,
-      htr_price_in_deposit: userInfo.htr_price_in_deposit / 100,
-      token_price_in_htr_in_deposit: userInfo.token_price_in_htr_in_deposit,
+      htr_price_in_deposit: userInfo.htr_price_in_deposit / PRICE_PRECISION,
+      token_price_in_htr_in_deposit: userInfo.token_price_in_htr_in_deposit / PRICE_PRECISION,
       position_closed: userInfo.position_closed,
     }
   } else {
@@ -320,9 +323,9 @@ export const oasisRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const endpoint = 'nano_contract/state'
       const amount = input.amount_in
-      const call = `front_quote_add_liquidity_in(${amount},${input.timelock},${Math.floor(input.now / 1000)},"${
-        input.address
-      }")`
+      const call = `front_quote_add_liquidity_in(${Math.floor(amount * 100)},${input.timelock},${Math.floor(
+        input.now / 1000
+      )},"${input.address}")`
       const queryParams = [`id=${input.id}`, `calls[]=${call}`]
       const response = await fetchNodeData(endpoint, queryParams)
       const result = response['calls'][`${call}`]['value']

@@ -9,6 +9,8 @@ import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
 import { IHathorRpc } from '../types'
 
+const PRICE_PRECISION = 10 ** 8 // For decimal price handling (8 decimal places)
+
 export class Oasis extends NanoContract {
   public token: string
   public poolManagerId: string
@@ -94,7 +96,7 @@ export class Oasis extends NanoContract {
           changeAddress: address,
         },
       ],
-      [timelock, Math.floor(htr_price * 100)], // Convert to Amount (cents) for new contract
+      [timelock, Math.floor(htr_price * PRICE_PRECISION)], // Convert to Amount (cents) for new contract
       true,
       ncId
     )
