@@ -32,7 +32,6 @@ from hathor.nanocontracts.types import (
 )
 
 PRECISION = Amount(10**20)
-PRICE_PRECISION = Amount(10**8)  # 8 decimal places for price precision
 HTR_UID = b'\x00'
 
 
@@ -263,6 +262,9 @@ class DozerPoolManager(Blueprint):
 
         # Add owner as authorized signer
         self.authorized_signers[self.owner] = True
+        
+        # Initialize htr_usd_pool_key to empty string
+        self.htr_usd_pool_key = ""
 
     def _get_pool_key(self, token_a: TokenUid, token_b: TokenUid, fee: Amount) -> str:
         """Create a standardized pool key from tokens and fee.
@@ -2419,7 +2421,7 @@ class DozerPoolManager(Blueprint):
         """
         # HTR itself has a price of 1 in HTR
         if token == HTR_UID:
-            return PRICE_PRECISION  # 1 with 8 decimal places
+            return Amount(100_000000)  # 1 with 8 decimal places
 
         # Get token price in USD
         token_usd_price = self.get_token_price_in_usd(token)
@@ -2432,8 +2434,8 @@ class DozerPoolManager(Blueprint):
             return Amount(0)
         
         # Calculate HTR price: token_htr_price = token_usd_price / htr_usd_price
-        # Both prices have 8 decimal places, so: (token_usd_price * PRICE_PRECISION) / htr_usd_price
-        return Amount((token_usd_price * PRICE_PRECISION) // htr_usd_price)
+        # Both prices have 8 decimal places, so: (token_usd_price * 100_000000) / htr_usd_price
+        return Amount((token_usd_price * 100_000000) // htr_usd_price)
 
     @view
     def get_all_token_prices_in_htr(self) -> dict[str, Amount]:
@@ -2443,7 +2445,7 @@ class DozerPoolManager(Blueprint):
             A dictionary mapping token UIDs (hex) to their prices in HTR with 8 decimal places
         """
         result = {}
-        result[HTR_UID.hex()] = PRICE_PRECISION  # HTR itself has a price of 1 in HTR
+        result[HTR_UID.hex()] = Amount(100_000000)  # HTR itself has a price of 1 in HTR
         
         # Get all unique tokens from all pools
         unique_tokens = set()
@@ -2485,7 +2487,7 @@ class DozerPoolManager(Blueprint):
         
         # USD token price is always 1.00
         if token == usd_token:
-            return PRICE_PRECISION  # 8 decimal places to match contract storage
+            return Amount(100_000000)  # 8 decimal places to match contract storage
         
         # Find the best path from USD to target token using pathfinding
         # This gives us the path USD → TOKEN_A (but we'll calculate in reverse)
@@ -2532,7 +2534,7 @@ class DozerPoolManager(Blueprint):
             current_token = next_token
         
         # Convert final price to integer with 8 decimal places
-        return Amount(int(final_price * PRICE_PRECISION))
+        return Amount(int(final_price * 100_000000))
 
     @view
     def get_all_token_prices_in_usd(self) -> dict[str, Amount]:
@@ -2564,9 +2566,9 @@ class DozerPoolManager(Blueprint):
         
         # Calculate USD price for each token
         for token in unique_tokens:
-            # USD token is always 1.00 (PRICE_PRECISION with 8 decimal places)
+            # USD token is always 1.00 (100_000000 with 8 decimal places)
             if token == usd_token:
-                result[token.hex()] = PRICE_PRECISION
+                result[token.hex()] = Amount(100_000000)
             else:
                 price = self.get_token_price_in_usd(token)
                 if price > 0:
