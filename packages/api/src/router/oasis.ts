@@ -3,9 +3,7 @@ import { z } from 'zod'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 import { parseOasisInfo, parseOasisUserInfo, parseOasisQuoteInfo } from '../utils/namedTupleParsers'
-
-// Price precision constant to match the contract (10^8 for 8 decimal places)
-const PRICE_PRECISION = 10 ** 8
+import { PRICE_PRECISION, formatPrice, TOKEN_PRECISION, formatTokenAmount } from './constants'
 
 // Cache for token information to avoid repeated API calls
 const tokenInfoCache = new Map<string, { symbol: string; name: string }>()

@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
+import { PRICE_PRECISION, formatPrice } from './constants'
 
 // Legacy helper functions removed - now using DozerPoolManager contract methods
 const htrKline = async (input: { period: number; size: number; prisma: PrismaClient }) => {
@@ -301,8 +302,8 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
       const prices = response.calls['get_all_token_prices_in_usd()'].value || {}
-      // Format prices: divide by 1_000000
-      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, (v as number) / 1_000000]))
+      // Format prices: divide by PRICE_PRECISION (8 decimal places)
+      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, formatPrice(v as number)]))
       return formatted
     } catch (error) {
       return {}
@@ -466,7 +467,7 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager(['get_token_price_in_usd("00")'])
       const htrPrice = response.calls['get_token_price_in_usd("00")'].value || 0
-      return htrPrice / 1_000000
+      return formatPrice(htrPrice)
     } catch (error) {
       return 0
     }
@@ -484,7 +485,7 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
       const prices = response.calls['get_all_token_prices_in_usd()'].value || {}
-      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, (v as number) / 1_000000]))
+      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, (v as number) / 100_000000]))
       return formatted
     } catch (error) {
       return {}
@@ -496,7 +497,7 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager(['get_all_token_prices_in_htr()'])
       const prices = response.calls['get_all_token_prices_in_htr()'].value || {}
-      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, (v as number) / 1_000000]))
+      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, (v as number) / 100_000000]))
       return formatted
     } catch (error) {
       return {}
@@ -508,7 +509,7 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager([`get_token_price_in_usd("${input.tokenUid}")`])
       const price = response.calls[`get_token_price_in_usd("${input.tokenUid}")`].value || 0
-      return price / 1_000000
+      return formatPrice(price)
     } catch (error) {
       return 0
     }
@@ -519,7 +520,7 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager([`get_token_price_in_htr("${input.tokenUid}")`])
       const price = response.calls[`get_token_price_in_htr("${input.tokenUid}")`].value || 0
-      return price / 1_000000
+      return formatPrice(price)
     } catch (error) {
       return 0
     }
@@ -530,7 +531,7 @@ export const pricesRouter = createTRPCRouter({
     try {
       const response = await fetchFromPoolManager(['get_token_price_in_usd("00")'])
       const htrPrice = response.calls['get_token_price_in_usd("00")'].value || 0
-      return htrPrice / 1_000000
+      return formatPrice(htrPrice)
     } catch (error) {
       return 0
     }
@@ -548,7 +549,7 @@ export const pricesRouter = createTRPCRouter({
       try {
         const response = await fetchFromPoolManager([`get_token_price_in_usd("${input.tokenUid}")`], input.timestamp)
         const price = response.calls[`get_token_price_in_usd("${input.tokenUid}")`].value || 0
-        return price / 1_000000
+        return formatPrice(price)
       } catch (error) {
         return 0
       }
@@ -592,8 +593,8 @@ export const pricesRouter = createTRPCRouter({
         const currentPriceRaw = currentResponse.calls[`get_token_price_in_usd("${input.tokenUid}")`].value || 0
         const historicalPriceRaw = historicalResponse.calls[`get_token_price_in_usd("${input.tokenUid}")`].value || 0
 
-        const currentPrice = currentPriceRaw / 1_000000
-        const historicalPrice = historicalPriceRaw / 1_000000
+        const currentPrice = formatPrice(currentPriceRaw)
+        const historicalPrice = formatPrice(historicalPriceRaw)
 
         // Calculate percentage change as decimal (formatPercentChange expects decimal, not percentage)
         let change = 0
@@ -655,7 +656,7 @@ export const pricesRouter = createTRPCRouter({
       try {
         const response = await fetchFromPoolManager([`get_token_price_in_htr("${input.tokenUid}")`], input.timestamp)
         const price = response.calls[`get_token_price_in_htr("${input.tokenUid}")`].value || 0
-        return price / 1_000000
+        return formatPrice(price)
       } catch (error) {
         return 0
       }
@@ -704,7 +705,7 @@ export const pricesRouter = createTRPCRouter({
             fetchFromPoolManager([methodName], timestamp)
               .then((response) => ({
                 timestamp,
-                price: (response.calls[methodName].value || 0) / 1_000000,
+                price: formatPrice(response.calls[methodName].value || 0),
               }))
               .catch(() => ({
                 timestamp,
@@ -722,7 +723,7 @@ export const pricesRouter = createTRPCRouter({
               ? `get_token_price_in_usd("${input.tokenUid}")`
               : `get_token_price_in_htr("${input.tokenUid}")`
           const currentResponse = await fetchFromPoolManager([currentMethodName])
-          const currentPrice = (currentResponse.calls[currentMethodName].value || 0) / 1_000000
+          const currentPrice = formatPrice(currentResponse.calls[currentMethodName].value || 0)
           priceData.push({ timestamp: now, price: currentPrice })
         } catch (error) {
           // Use last historical price if current price fails

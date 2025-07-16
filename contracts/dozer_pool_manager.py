@@ -32,6 +32,7 @@ from hathor.nanocontracts.types import (
 )
 
 PRECISION = Amount(10**20)
+PRICE_PRECISION = Amount(10**8)  # 8 decimal places for price precision
 HTR_UID = b'\x00'
 
 
@@ -2414,11 +2415,11 @@ class DozerPoolManager(Blueprint):
             token: The token to get the price for
 
         Returns:
-            The price of the token in HTR with 6 decimal places, or 0 if not available
+            The price of the token in HTR with 8 decimal places, or 0 if not available
         """
         # HTR itself has a price of 1 in HTR
         if token == HTR_UID:
-            return Amount(1_000000)  # 1 with 6 decimal places
+            return PRICE_PRECISION  # 1 with 8 decimal places
 
         # Get token price in USD
         token_usd_price = self.get_token_price_in_usd(token)
@@ -2431,18 +2432,18 @@ class DozerPoolManager(Blueprint):
             return Amount(0)
         
         # Calculate HTR price: token_htr_price = token_usd_price / htr_usd_price
-        # Both prices have 6 decimal places, so: (token_usd_price * 1_000000) / htr_usd_price
-        return Amount((token_usd_price * 1_000000) // htr_usd_price)
+        # Both prices have 8 decimal places, so: (token_usd_price * PRICE_PRECISION) / htr_usd_price
+        return Amount((token_usd_price * PRICE_PRECISION) // htr_usd_price)
 
     @view
     def get_all_token_prices_in_htr(self) -> dict[str, Amount]:
         """Get the prices of all tokens in HTR based on USD prices and HTR-USD rate.
 
         Returns:
-            A dictionary mapping token UIDs (hex) to their prices in HTR with 6 decimal places
+            A dictionary mapping token UIDs (hex) to their prices in HTR with 8 decimal places
         """
         result = {}
-        result[HTR_UID.hex()] = Amount(1_000000)  # HTR itself has a price of 1 in HTR
+        result[HTR_UID.hex()] = PRICE_PRECISION  # HTR itself has a price of 1 in HTR
         
         # Get all unique tokens from all pools
         unique_tokens = set()
@@ -2463,13 +2464,13 @@ class DozerPoolManager(Blueprint):
 
     @view
     def get_token_price_in_usd(self, token: TokenUid) -> Amount:
-        """Get the price of a token in USD by simulating a swap from 500 USD tokens.
+        """Get the price of a token in USD using reserve ratio method.
 
         Args:
             token: The token to get the price for
 
         Returns:
-            The price of the token in USD with 6 decimal places, or 0 if not available
+            The price of the token in USD with 8 decimal places, or 0 if not available
         """
         # First, check if we have a HTR-USD pool set
         if not self.htr_usd_pool_key:
@@ -2484,25 +2485,61 @@ class DozerPoolManager(Blueprint):
         
         # USD token price is always 1.00
         if token == usd_token:
-            return Amount(1_000000)
+            return PRICE_PRECISION  # 8 decimal places to match contract storage
         
-        # Simulate swapping 500 USD tokens to target token
-        usd_amount = Amount(500_00)  # 500 USD with 2 decimal places
-        swap_info = self.find_best_swap_path(usd_amount, usd_token, token, 3)
+        # Find the best path from USD to target token using pathfinding
+        # This gives us the path USD → TOKEN_A (but we'll calculate in reverse)
+        ref_amount = Amount(100_00)  # Reference amount to get the path
+        swap_info = self.find_best_swap_path(ref_amount, usd_token, token, 3)
         
-        if swap_info.amount_out == 0:
+        if not swap_info.path or swap_info.amount_out == 0:
             return Amount(0)
         
-        # Calculate price: price_per_token = 500_USD / tokens_received
-        # Convert to 6 decimal places: (500_00 * 1_000000) / tokens_received
-        return Amount((usd_amount * 1_000000) // swap_info.amount_out)
+        # Parse the path to get pool keys
+        pool_keys = swap_info.path.split(",")
+        
+        # Calculate cumulative price using reserve ratios with float precision
+        # We want TOKEN_A price in USD, so we calculate in reverse direction
+        # Start with 1.0 
+        final_price = 1.0
+        current_token = token  # Start from TOKEN_A
+        
+        # Iterate through pools in reverse order (TOKEN_A → USD direction)
+        for pool_key in reversed(pool_keys):
+            # Determine which token is the input and output for this hop
+            if self.pool_token_a[pool_key] == current_token:
+                reserve_in = float(self.pool_reserve_a[pool_key])
+                reserve_out = float(self.pool_reserve_b[pool_key])
+                next_token = self.pool_token_b[pool_key]
+            elif self.pool_token_b[pool_key] == current_token:
+                reserve_in = float(self.pool_reserve_b[pool_key])
+                reserve_out = float(self.pool_reserve_a[pool_key])
+                next_token = self.pool_token_a[pool_key]
+            else:
+                # Invalid path - token not found in pool
+                return Amount(0)
+            
+            # Check for zero reserves (avoid division by zero)
+            if reserve_in == 0:
+                return Amount(0)
+            
+            # Calculate spot price for this hop: reserve_out / reserve_in
+            # This gives us "how much of next_token per current_token"
+            hop_price = reserve_out / reserve_in
+            final_price = final_price * hop_price
+            
+            # Move to next token in the path
+            current_token = next_token
+        
+        # Convert final price to integer with 8 decimal places
+        return Amount(int(final_price * PRICE_PRECISION))
 
     @view
     def get_all_token_prices_in_usd(self) -> dict[str, Amount]:
-        """Get the prices of all tokens in USD by simulating swaps from 500 USD tokens.
+        """Get the prices of all tokens in USD using reserve ratio method.
 
         Returns:
-            A dictionary mapping token UIDs (hex) to their prices in USD with 6 decimal places
+            A dictionary mapping token UIDs (hex) to their prices in USD with 8 decimal places
         """
         # First, check if we have a HTR-USD pool set
         if not self.htr_usd_pool_key:
@@ -2527,9 +2564,9 @@ class DozerPoolManager(Blueprint):
         
         # Calculate USD price for each token
         for token in unique_tokens:
-            # USD token is always 1.00 (1_000000 with 6 decimal places)
+            # USD token is always 1.00 (PRICE_PRECISION with 8 decimal places)
             if token == usd_token:
-                result[token.hex()] = Amount(1_000000)
+                result[token.hex()] = PRICE_PRECISION
             else:
                 price = self.get_token_price_in_usd(token)
                 if price > 0:
