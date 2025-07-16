@@ -601,7 +601,7 @@ export const poolRouter = createTRPCRouter({
           path: tokenPath,
           amounts: (pathInfo.amounts || []).map((amt: number) => amt / 100),
           amountOut: (pathInfo.amount_out || 0) / 100,
-          priceImpact: pathInfo.price_impact || 0,
+          priceImpact: (pathInfo.price_impact || 0) / 100, // Convert from integer format (341 = 3.41%) to percentage
           route: tokenPath, // Keep for backward compatibility
           poolPath: poolPath, // Add the pool path for contract execution
         }
@@ -683,7 +683,7 @@ export const poolRouter = createTRPCRouter({
           path: tokenPath,
           amounts: (pathInfo.amounts || []).map((amt: number) => amt / 100),
           amountIn: (pathInfo.amount_in || 0) / 100,
-          priceImpact: pathInfo.price_impact || 0,
+          priceImpact: (pathInfo.price_impact || 0) / 100, // Convert from integer format (341 = 3.41%) to percentage
           route: tokenPath, // Keep for backward compatibility
           poolPath: executionPoolPath, // Add the pool path for contract execution (reversed for exact output)
         }
@@ -864,14 +864,14 @@ export const poolRouter = createTRPCRouter({
           `   💰 Amount progression: ${JSON.stringify((pathInfo.amounts || []).map((amt: number) => amt / 100))}`
         )
         console.log(`   📈 Final amount out: ${(pathInfo.amount_out || 0) / 100}`)
-        console.log(`   📊 Price impact: ${pathInfo.price_impact || 0}%`)
+        console.log(`   📊 Price impact: ${((pathInfo.price_impact || 0) / 100).toFixed(2)}%`)
         console.log(`   🔀 Number of hops: ${(pathInfo.path || []).length - 1}`)
 
         // Calculate efficiency metrics
         const inputAmount = input.amountIn
         const outputAmount = (pathInfo.amount_out || 0) / 100
         const directRate = outputAmount / inputAmount
-        const priceImpact = pathInfo.price_impact || 0
+        const priceImpact = (pathInfo.price_impact || 0) / 100 // Convert from integer format to percentage
 
         // Analyze each hop
         const hops = []
@@ -1003,7 +1003,7 @@ export const poolRouter = createTRPCRouter({
         console.log(`   📍 Path: ${JSON.stringify(pathInfo.path || [])}`)
         console.log(`   💰 Amounts: ${JSON.stringify((pathInfo.amounts || []).map((amt: number) => amt / 100))}`)
         console.log(`   📈 Amount Out: ${(pathInfo.amount_out || 0) / 100}`)
-        console.log(`   📊 Price Impact: ${pathInfo.price_impact || 0}%`)
+        console.log(`   📊 Price Impact: ${((pathInfo.price_impact || 0) / 100).toFixed(2)}%`)
 
         // Get token symbols for the path
         const tokenSymbols = new Map()

@@ -9,7 +9,6 @@ import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
 import { IHathorRpc } from '../types'
 
-const PRICE_PRECISION = 10 ** 8 // For decimal price handling (8 decimal places)
 
 export class Oasis extends NanoContract {
   public token: string
@@ -80,8 +79,7 @@ export class Oasis extends NanoContract {
     address: string,
     timelock: number,
     ncId: string,
-    amount: number,
-    htr_price: number
+    amount: number
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_deposit',
@@ -96,7 +94,7 @@ export class Oasis extends NanoContract {
           changeAddress: address,
         },
       ],
-      [timelock, Math.floor(htr_price * PRICE_PRECISION)], // Convert to Amount (cents) for new contract
+      [timelock], // HTR price will be fetched automatically from DozerPoolManager
       true,
       ncId
     )

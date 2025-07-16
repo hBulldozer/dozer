@@ -2408,7 +2408,7 @@ class DozerPoolManager(Blueprint):
 
     @view
     def get_token_price_in_htr(self, token: TokenUid) -> Amount:
-        """Get the price of a token in HTR.
+        """Get the price of a token in HTR based on USD price and HTR-USD rate.
 
         Args:
             token: The token to get the price for
@@ -2420,57 +2420,50 @@ class DozerPoolManager(Blueprint):
         if token == HTR_UID:
             return Amount(1_000000)  # 1 with 6 decimal places
 
-        # Check if we have this token in the HTR token map
-        pool_key = self.htr_token_map.get(token)
-        if pool_key is None:
+        # Get token price in USD
+        token_usd_price = self.get_token_price_in_usd(token)
+        if token_usd_price == 0:
             return Amount(0)
-
-        reserve_a = self.pool_reserve_a[pool_key]
-        reserve_b = self.pool_reserve_b[pool_key]
-
-        # Determine which reserve is HTR and which is the token
-        if self.pool_token_a[pool_key] == HTR_UID:
-            htr_reserve = reserve_a
-            token_reserve = reserve_b
-        else:
-            htr_reserve = reserve_b
-            token_reserve = reserve_a
-
-        # Calculate price: HTR per token with 6 decimal places
-        if token_reserve == 0:
+        
+        # Get HTR price in USD
+        htr_usd_price = self.get_token_price_in_usd(HTR_UID)
+        if htr_usd_price == 0:
             return Amount(0)
-
-        return Amount((htr_reserve * 1_000000) // token_reserve)
+        
+        # Calculate HTR price: token_htr_price = token_usd_price / htr_usd_price
+        # Both prices have 6 decimal places, so: (token_usd_price * 1_000000) / htr_usd_price
+        return Amount((token_usd_price * 1_000000) // htr_usd_price)
 
     @view
     def get_all_token_prices_in_htr(self) -> dict[str, Amount]:
-        """Get the prices of all tokens that have HTR pools in HTR.
+        """Get the prices of all tokens in HTR based on USD prices and HTR-USD rate.
 
         Returns:
             A dictionary mapping token UIDs (hex) to their prices in HTR with 6 decimal places
         """
         result = {}
         result[HTR_UID.hex()] = Amount(1_000000)  # HTR itself has a price of 1 in HTR
-
-        # We can't use a for loop in public methods, but this is a view method
+        
+        # Get all unique tokens from all pools
+        unique_tokens = set()
         for pool_key in self.all_pools:
             token_a = self.pool_token_a[pool_key]
             token_b = self.pool_token_b[pool_key]
-            if token_a == HTR_UID:
-                token = token_b
-            elif token_b == HTR_UID:
-                token = token_a
-            else:
-                continue
-            price = self.get_token_price_in_htr(token)
-            if price > 0:
-                result[token.hex()] = Amount(price)
+            unique_tokens.add(token_a)
+            unique_tokens.add(token_b)
+        
+        # Calculate price for each token (except HTR)
+        for token in unique_tokens:
+            if token != HTR_UID:
+                price = self.get_token_price_in_htr(token)
+                if price > 0:
+                    result[token.hex()] = Amount(price)
 
         return result
 
     @view
     def get_token_price_in_usd(self, token: TokenUid) -> Amount:
-        """Get the price of a token in USD.
+        """Get the price of a token in USD by simulating a swap from 500 USD tokens.
 
         Args:
             token: The token to get the price for
@@ -2481,37 +2474,32 @@ class DozerPoolManager(Blueprint):
         # First, check if we have a HTR-USD pool set
         if not self.htr_usd_pool_key:
             return Amount(0)
-
-        # Get the token price in HTR
-        token_price_in_htr = self.get_token_price_in_htr(token)
-        if token_price_in_htr == 0:
-            return Amount(0)
-
-        # Get the HTR price in USD
+        
+        # Get the USD token from the HTR-USD pool
         pool_key = self.htr_usd_pool_key
-        reserve_a = self.pool_reserve_a[pool_key]
-        reserve_b = self.pool_reserve_b[pool_key]
-
-        # Determine which reserve is HTR and which is USD
         if self.pool_token_a[pool_key] == HTR_UID:
-            htr_reserve = reserve_a
-            usd_reserve = reserve_b
+            usd_token = self.pool_token_b[pool_key]
         else:
-            htr_reserve = reserve_b
-            usd_reserve = reserve_a
-
-        # Calculate HTR price in USD with 6 decimal places
-        if htr_reserve == 0:
+            usd_token = self.pool_token_a[pool_key]
+        
+        # USD token price is always 1.00
+        if token == usd_token:
+            return Amount(1_000000)
+        
+        # Simulate swapping 500 USD tokens to target token
+        usd_amount = Amount(500_00)  # 500 USD with 2 decimal places
+        swap_info = self.find_best_swap_path(usd_amount, usd_token, token, 3)
+        
+        if swap_info.amount_out == 0:
             return Amount(0)
-
-        htr_price_in_usd = (usd_reserve * 1_000000) // htr_reserve
-
-        # Calculate token price in USD: token_price_in_htr * htr_price_in_usd / 1_000000
-        return Amount((token_price_in_htr * htr_price_in_usd) // 1_000000)
+        
+        # Calculate price: price_per_token = 500_USD / tokens_received
+        # Convert to 6 decimal places: (500_00 * 1_000000) / tokens_received
+        return Amount((usd_amount * 1_000000) // swap_info.amount_out)
 
     @view
     def get_all_token_prices_in_usd(self) -> dict[str, Amount]:
-        """Get the prices of all tokens that have HTR pools in USD.
+        """Get the prices of all tokens in USD by simulating swaps from 500 USD tokens.
 
         Returns:
             A dictionary mapping token UIDs (hex) to their prices in USD with 6 decimal places
@@ -2519,36 +2507,33 @@ class DozerPoolManager(Blueprint):
         # First, check if we have a HTR-USD pool set
         if not self.htr_usd_pool_key:
             return {}
-
-        # Get all token prices in HTR
-        token_prices_in_htr = self.get_all_token_prices_in_htr()
-        if not token_prices_in_htr:
-            return {}
-
-        # Get the HTR price in USD
-        pool_key = self.htr_usd_pool_key
-        reserve_a = self.pool_reserve_a[pool_key]
-        reserve_b = self.pool_reserve_b[pool_key]
-
-        # Determine which reserve is HTR and which is USD
-        if self.pool_token_a[pool_key] == HTR_UID:
-            htr_reserve = reserve_a
-            usd_reserve = reserve_b
-        else:
-            htr_reserve = reserve_b
-            usd_reserve = reserve_a
-
-        # Calculate HTR price in USD with 6 decimal places
-        if htr_reserve == 0:
-            return {}
-
-        htr_price_in_usd = (usd_reserve * 1_000000) // htr_reserve
-
-        # Calculate all token prices in USD
+        
         result = {}
-        for token_hex, price_in_htr in token_prices_in_htr.items():
-            price_in_usd = (price_in_htr * htr_price_in_usd) // 1_000000
-            result[token_hex] = price_in_usd
+        
+        # Get the USD token from the HTR-USD pool
+        pool_key = self.htr_usd_pool_key
+        if self.pool_token_a[pool_key] == HTR_UID:
+            usd_token = self.pool_token_b[pool_key]
+        else:
+            usd_token = self.pool_token_a[pool_key]
+        
+        # Get all unique tokens from all pools
+        unique_tokens = set()
+        for pool_key in self.all_pools:
+            token_a = self.pool_token_a[pool_key]
+            token_b = self.pool_token_b[pool_key]
+            unique_tokens.add(token_a)
+            unique_tokens.add(token_b)
+        
+        # Calculate USD price for each token
+        for token in unique_tokens:
+            # USD token is always 1.00 (1_000000 with 6 decimal places)
+            if token == usd_token:
+                result[token.hex()] = Amount(1_000000)
+            else:
+                price = self.get_token_price_in_usd(token)
+                if price > 0:
+                    result[token.hex()] = Amount(price)
 
         return result
 
@@ -3118,8 +3103,9 @@ class DozerPoolManager(Blueprint):
                 no_fee_quote = (amount_in * reserve_out) // reserve_in
 
                 if no_fee_quote > 0:
-                    # Price impact = (no_fee_quote - actual_output) / no_fee_quote * 100
-                    price_impact = (100 * (no_fee_quote - amount_out)) // no_fee_quote
+                    # Price impact = (no_fee_quote - actual_output) / no_fee_quote * 10000
+                    # Return as integer with 2 decimal precision (e.g., 3.41% = 341)
+                    price_impact = (10000 * (no_fee_quote - amount_out)) // no_fee_quote
                     return Amount(max(0, price_impact))
 
         # For multi-hop, calculate cumulative price impact across all pools
@@ -3162,9 +3148,10 @@ class DozerPoolManager(Blueprint):
         if theoretical_amount_out == 0:
             return Amount(0)
             
-        # Price impact = (theoretical - actual) / theoretical * 100
-        price_impact = (100 * (theoretical_amount_out - amount_out)) // theoretical_amount_out
-        return Amount(max(0, min(price_impact, 100)))  # Cap at 100%
+        # Price impact = (theoretical - actual) / theoretical * 10000
+        # Return as integer with 2 decimal precision (e.g., 3.41% = 341)
+        price_impact = (10000 * (theoretical_amount_out - amount_out)) // theoretical_amount_out
+        return Amount(max(0, min(price_impact, 10000)))  # Cap at 100.00% = 10000
             
     @view
     def _calculate_theoretical_multi_hop_output(

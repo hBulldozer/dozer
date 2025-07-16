@@ -150,13 +150,12 @@ class Oasis(Blueprint):
         self.dev_deposit_amount = Amount(self.dev_deposit_amount + action.amount)
 
     @public(allow_deposit=True)
-    def user_deposit(self, ctx: Context, timelock: int, htr_price: Amount) -> None:
+    def user_deposit(self, ctx: Context, timelock: int) -> None:
         """Deposits token B with a timelock period for bonus rewards.
 
         Args:
             ctx: Execution context
             timelock: Lock period in months (6, 9, or 12)
-            htr_price: HTR price in USD scaled by PRICE_PRECISION (10^8)
 
         Raises:
             NCFail: If deposit requirements not met or invalid timelock
@@ -170,11 +169,12 @@ class Oasis(Blueprint):
         if self.user_position_closed.get(ctx.address, False):
             raise NCFail("Need to close position before deposit")
 
-        # Validate htr_price is properly scaled (should be > 0 and reasonable for USD price)
-        if htr_price <= 0:
-            raise NCFail("HTR price must be positive")
-        if htr_price > 1000 * PRICE_PRECISION:  # Max $1000 per HTR seems reasonable
-            raise NCFail("HTR price too high")
+        # Get HTR price in USD from the DozerPoolManager
+        htr_price = self.syscall.call_view_method(
+            self.dozer_pool_manager, "get_token_price_in_usd", HTR_UID
+        )
+        if htr_price == 0:
+            raise NCFail("HTR price not available from pool manager")
 
         # Calculate and deduct protocol fee
         amount = action.amount
@@ -188,7 +188,7 @@ class Oasis(Blueprint):
 
         # Continue with deposit using reduced amount
         htr_amount = self._quote_add_liquidity_in(deposit_amount)
-        token_price_in_htr = deposit_amount * PRICE_PRECISION // htr_amount if htr_amount > 0 else 0
+        token_price_in_htr = htr_amount * PRICE_PRECISION // deposit_amount if deposit_amount > 0 else 0
         bonus = self._get_user_bonus(timelock, htr_amount)
         now = ctx.timestamp
         if htr_amount + bonus > self.oasis_htr_balance:
@@ -226,7 +226,7 @@ class Oasis(Blueprint):
                 self.user_withdrawal_time[ctx.address] = (
                     int(now + int(timelock * int(MONTHS_IN_SECONDS)))
                 )
-            # updating position intial price with weighted average
+            # updating position initial price with weighted average
             self.htr_price_in_deposit[ctx.address] = Amount(
                 (
                     self.htr_price_in_deposit[ctx.address]

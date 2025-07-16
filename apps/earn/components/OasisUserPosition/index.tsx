@@ -92,11 +92,14 @@ const UserOasisPosition = ({
     const currencyUuid = oasis.token.uuid
 
     // Use initial prices from deposit if available, otherwise fallback to current prices
-    const initialHtrPrice = oasis.htr_price_in_deposit
-    const initialTokenPrice = oasis.token_price_in_htr_in_deposit / initialHtrPrice
+    const initialHtrPriceUSD = oasis.htr_price_in_deposit
+    const initialTokenPriceHTR = oasis.token_price_in_htr_in_deposit
+    
+    // Calculate initial token price in USD: token_price_htr * htr_price_usd
+    const initialTokenPriceUSD = initialTokenPriceHTR * initialHtrPriceUSD
 
     // Initial investment value in USD using initial prices
-    const initialInvestmentUSD = oasis.user_deposit_b * initialTokenPrice
+    const initialInvestmentUSD = oasis.user_deposit_b * initialTokenPriceUSD
 
     // Current position value in USD using current prices
     const tokenValueUSD = oasis.max_withdraw_b * prices[currencyUuid]
@@ -118,8 +121,9 @@ const UserOasisPosition = ({
       bonusValueUSD,
       totalCurrentValueUSD,
       // Include initial prices for debugging or display
-      initialHtrPrice,
-      initialTokenPrice,
+      initialHtrPriceUSD,
+      initialTokenPriceHTR,
+      initialTokenPriceUSD,
     }
   }
 
