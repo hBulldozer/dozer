@@ -39,6 +39,7 @@ import Icon from '@dozer/ui/currency/Icon'
 import { toToken } from '@dozer/api'
 import UserOasisPosition, { OasisInterface } from '../components/OasisUserPosition'
 import { editOasisBonusOnWithdraw, editOasisOnWithdraw, editOasisOnAdd, editOasisOnClose } from '../utils'
+import { PRICE_PRECISION } from '@dozer/api/src/router/constants'
 
 const TokenOption = ({ token, disabled }: { token: { symbol: string; uuid: string }; disabled?: boolean }) => {
   return (
@@ -148,14 +149,7 @@ const OasisProgram = () => {
         setAddingToOasisId(existingPosition.id)
       }
 
-      await oasisObj.user_deposit(
-        hathorRpc,
-        address,
-        lockPeriod,
-        oasisId,
-        parseFloat(amount),
-        prices['00']
-      )
+      await oasisObj.user_deposit(hathorRpc, address, lockPeriod, oasisId, parseFloat(amount))
 
       // Do not clear the addingLiquidity state here - let it be cleared in the useEffect
       // This ensures the loading overlay remains visible until confirmation
@@ -167,13 +161,7 @@ const OasisProgram = () => {
     setTxType('Remove liquidity')
 
     // Send the transaction first - user will confirm in wallet
-    await oasisObj.user_withdraw(
-      hathorRpc,
-      address,
-      selectedOasisForRemove.id,
-      removeAmount,
-      removeAmountHtr
-    )
+    await oasisObj.user_withdraw(hathorRpc, address, selectedOasisForRemove.id, removeAmount, removeAmountHtr)
   }
 
   const handleRemoveBonus = async (removeAmount: number): Promise<void> => {
@@ -181,12 +169,7 @@ const OasisProgram = () => {
     setTxType('Remove bonus')
 
     // Send the transaction first - user will confirm in wallet
-    await oasisObj.user_withdraw_bonus(
-      hathorRpc,
-      address,
-      selectedOasisForRemoveBonus.id,
-      removeAmount
-    )
+    await oasisObj.user_withdraw_bonus(hathorRpc, address, selectedOasisForRemoveBonus.id, removeAmount)
   }
 
   const handleClosePosition = async (): Promise<void> => {
@@ -294,36 +277,38 @@ const OasisProgram = () => {
 
             if (existingPosition) {
               // Apply optimistic update for existing position
-              utils.getOasis.allUser.setData(
-                { address: address },
-                (currentData) => {
-                  const filteredData = (currentData || []).filter(item => item !== null).map(item => ({
-                    id: item.id,
-                    user_deposit_b: item.user_deposit_b,
-                    user_balance_a: item.user_balance_a,
-                    user_withdrawal_time: item.user_withdrawal_time,
-                    max_withdraw_htr: item.max_withdraw_htr,
-                    max_withdraw_b: item.max_withdraw_b,
-                    token: item.token,
-                    user_lp_htr: item.user_lp_htr,
-                    user_lp_b: item.user_lp_b,
-                    htr_price_in_deposit: item.htr_price_in_deposit,
-                    token_price_in_htr_in_deposit: item.token_price_in_htr_in_deposit,
-                    position_closed: item.position_closed,
-                    closed_balance_a: item.closed_balance_a,
-                    closed_balance_b: item.closed_balance_b,
-                  } as OasisInterface))
-                  return editOasisOnAdd(
-                    filteredData,
-                    existingPosition.id,
-                    parseFloat(amount),
-                    bonus,
-                    htrMatch,
-                    unlockDate,
-                    prices ? prices['00'] : 0
-                  ) as typeof currentData
-                }
-              )
+              utils.getOasis.allUser.setData({ address: address }, (currentData) => {
+                const filteredData = (currentData || [])
+                  .filter((item) => item !== null)
+                  .map(
+                    (item) =>
+                      ({
+                        id: item.id,
+                        user_deposit_b: item.user_deposit_b,
+                        user_balance_a: item.user_balance_a,
+                        user_withdrawal_time: item.user_withdrawal_time,
+                        max_withdraw_htr: item.max_withdraw_htr,
+                        max_withdraw_b: item.max_withdraw_b,
+                        token: item.token,
+                        user_lp_htr: item.user_lp_htr,
+                        user_lp_b: item.user_lp_b,
+                        htr_price_in_deposit: item.htr_price_in_deposit,
+                        token_price_in_htr_in_deposit: item.token_price_in_htr_in_deposit,
+                        position_closed: item.position_closed,
+                        closed_balance_a: item.closed_balance_a,
+                        closed_balance_b: item.closed_balance_b,
+                      } as OasisInterface)
+                  )
+                return editOasisOnAdd(
+                  filteredData,
+                  existingPosition.id,
+                  parseFloat(amount),
+                  bonus,
+                  htrMatch,
+                  unlockDate,
+                  prices ? prices['00'] : 0
+                ) as typeof currentData
+              })
 
               // Set flag to prevent auto-refetching while showing optimistic update
               setHasOptimisticUpdate(true)
@@ -346,8 +331,8 @@ const OasisProgram = () => {
                 max_withdraw_b: depositAmount, // Use depositAmount from the API response
                 user_lp_htr: htrMatch, // htr_amount from the API response
                 user_lp_b: depositAmount, // Use depositAmount for LP tokens
-                htr_price_in_deposit: prices ? prices['00'] : 0, // Current HTR price
-                token_price_in_htr_in_deposit: prices ? prices['00'] : 0, // Calculate token price in HTR
+                htr_price_in_deposit: prices ? prices['00'] * PRICE_PRECISION : 0, // Current HTR price
+                token_price_in_htr_in_deposit: prices ? prices[token] * PRICE_PRECISION : 0, // Calculate token price in HTR
                 position_closed: false,
               }
 
@@ -410,28 +395,30 @@ const OasisProgram = () => {
             })
 
             // Important: Update the data in the local state for immediate UI feedback
-            utils.getOasis.allUser.setData(
-              { address: address },
-              (currentData) => {
-                const filteredData = (currentData || []).filter(item => item !== null).map(item => ({
-                  id: item.id,
-                  user_deposit_b: item.user_deposit_b,
-                  user_balance_a: item.user_balance_a,
-                  user_withdrawal_time: item.user_withdrawal_time,
-                  max_withdraw_htr: item.max_withdraw_htr,
-                  max_withdraw_b: item.max_withdraw_b,
-                  token: item.token,
-                  user_lp_htr: item.user_lp_htr,
-                  user_lp_b: item.user_lp_b,
-                  htr_price_in_deposit: item.htr_price_in_deposit,
-                  token_price_in_htr_in_deposit: item.token_price_in_htr_in_deposit,
-                  position_closed: item.position_closed,
-                  closed_balance_a: item.closed_balance_a,
-                  closed_balance_b: item.closed_balance_b,
-                } as OasisInterface))
-                return editOasisBonusOnWithdraw(filteredData, selectedOasisForRemoveBonus.id) as typeof currentData
-              }
-            )
+            utils.getOasis.allUser.setData({ address: address }, (currentData) => {
+              const filteredData = (currentData || [])
+                .filter((item) => item !== null)
+                .map(
+                  (item) =>
+                    ({
+                      id: item.id,
+                      user_deposit_b: item.user_deposit_b,
+                      user_balance_a: item.user_balance_a,
+                      user_withdrawal_time: item.user_withdrawal_time,
+                      max_withdraw_htr: item.max_withdraw_htr,
+                      max_withdraw_b: item.max_withdraw_b,
+                      token: item.token,
+                      user_lp_htr: item.user_lp_htr,
+                      user_lp_b: item.user_lp_b,
+                      htr_price_in_deposit: item.htr_price_in_deposit,
+                      token_price_in_htr_in_deposit: item.token_price_in_htr_in_deposit,
+                      position_closed: item.position_closed,
+                      closed_balance_a: item.closed_balance_a,
+                      closed_balance_b: item.closed_balance_b,
+                    } as OasisInterface)
+                )
+              return editOasisBonusOnWithdraw(filteredData, selectedOasisForRemoveBonus.id) as typeof currentData
+            })
 
             // Set flag to prevent auto-refetching while showing optimistic update
             setHasOptimisticUpdate(true)
@@ -483,28 +470,30 @@ const OasisProgram = () => {
             })
 
             // Important: Update the data in the local state for immediate UI feedback
-            utils.getOasis.allUser.setData(
-              { address: address },
-              (currentData) => {
-                const filteredData = (currentData || []).filter(item => item !== null).map(item => ({
-                  id: item.id,
-                  user_deposit_b: item.user_deposit_b,
-                  user_balance_a: item.user_balance_a,
-                  user_withdrawal_time: item.user_withdrawal_time,
-                  max_withdraw_htr: item.max_withdraw_htr,
-                  max_withdraw_b: item.max_withdraw_b,
-                  token: item.token,
-                  user_lp_htr: item.user_lp_htr,
-                  user_lp_b: item.user_lp_b,
-                  htr_price_in_deposit: item.htr_price_in_deposit,
-                  token_price_in_htr_in_deposit: item.token_price_in_htr_in_deposit,
-                  position_closed: item.position_closed,
-                  closed_balance_a: item.closed_balance_a,
-                  closed_balance_b: item.closed_balance_b,
-                } as OasisInterface))
-                return editOasisOnWithdraw(filteredData, selectedOasisForRemove.id) as typeof currentData
-              }
-            )
+            utils.getOasis.allUser.setData({ address: address }, (currentData) => {
+              const filteredData = (currentData || [])
+                .filter((item) => item !== null)
+                .map(
+                  (item) =>
+                    ({
+                      id: item.id,
+                      user_deposit_b: item.user_deposit_b,
+                      user_balance_a: item.user_balance_a,
+                      user_withdrawal_time: item.user_withdrawal_time,
+                      max_withdraw_htr: item.max_withdraw_htr,
+                      max_withdraw_b: item.max_withdraw_b,
+                      token: item.token,
+                      user_lp_htr: item.user_lp_htr,
+                      user_lp_b: item.user_lp_b,
+                      htr_price_in_deposit: item.htr_price_in_deposit,
+                      token_price_in_htr_in_deposit: item.token_price_in_htr_in_deposit,
+                      position_closed: item.position_closed,
+                      closed_balance_a: item.closed_balance_a,
+                      closed_balance_b: item.closed_balance_b,
+                    } as OasisInterface)
+                )
+              return editOasisOnWithdraw(filteredData, selectedOasisForRemove.id) as typeof currentData
+            })
 
             // Set flag to prevent auto-refetching while showing optimistic update
             setHasOptimisticUpdate(true)
@@ -518,28 +507,30 @@ const OasisProgram = () => {
 
           if (txType == 'Close position' && selectedOasisForClose) {
             // Apply optimistic update for position closing
-            utils.getOasis.allUser.setData(
-              { address: address },
-              (currentData) => {
-                const filteredData = (currentData || []).filter(item => item !== null).map(item => ({
-                  id: item.id,
-                  user_deposit_b: item.user_deposit_b,
-                  user_balance_a: item.user_balance_a,
-                  user_withdrawal_time: item.user_withdrawal_time,
-                  max_withdraw_htr: item.max_withdraw_htr,
-                  max_withdraw_b: item.max_withdraw_b,
-                  token: item.token,
-                  user_lp_htr: item.user_lp_htr,
-                  user_lp_b: item.user_lp_b,
-                  htr_price_in_deposit: item.htr_price_in_deposit,
-                  token_price_in_htr_in_deposit: item.token_price_in_htr_in_deposit,
-                  position_closed: item.position_closed,
-                  closed_balance_a: item.closed_balance_a,
-                  closed_balance_b: item.closed_balance_b,
-                } as OasisInterface))
-                return editOasisOnClose(filteredData, selectedOasisForClose.id) as typeof currentData
-              }
-            )
+            utils.getOasis.allUser.setData({ address: address }, (currentData) => {
+              const filteredData = (currentData || [])
+                .filter((item) => item !== null)
+                .map(
+                  (item) =>
+                    ({
+                      id: item.id,
+                      user_deposit_b: item.user_deposit_b,
+                      user_balance_a: item.user_balance_a,
+                      user_withdrawal_time: item.user_withdrawal_time,
+                      max_withdraw_htr: item.max_withdraw_htr,
+                      max_withdraw_b: item.max_withdraw_b,
+                      token: item.token,
+                      user_lp_htr: item.user_lp_htr,
+                      user_lp_b: item.user_lp_b,
+                      htr_price_in_deposit: item.htr_price_in_deposit,
+                      token_price_in_htr_in_deposit: item.token_price_in_htr_in_deposit,
+                      position_closed: item.position_closed,
+                      closed_balance_a: item.closed_balance_a,
+                      closed_balance_b: item.closed_balance_b,
+                    } as OasisInterface)
+                )
+              return editOasisOnClose(filteredData, selectedOasisForClose.id) as typeof currentData
+            })
 
             // Set flag to prevent auto-refetching while showing optimistic update
             setHasOptimisticUpdate(true)
@@ -1082,57 +1073,59 @@ const OasisProgram = () => {
                                       </div>
                                     ) : (
                                       <div>
-                                        {allUserOasis?.filter((oasis): oasis is NonNullable<typeof oasis> => oasis !== null).map((oasis) => (
-                                          <UserOasisPosition
-                                            oasis={oasis}
-                                            key={oasis.id}
-                                            prices={prices || {}}
-                                            isRpcRequestPending={isRpcRequestPending}
-                                            setSelectedTab={setSelectedTab}
-                                            buttonClosePosition={
-                                              <Button
-                                                size="md"
-                                                fullWidth
-                                                color="gray"
-                                                disabled={isRpcRequestPending}
-                                                onClick={() => {
-                                                  setSelectedOasisForClose(oasis)
-                                                  setClosePositionModalOpen(true)
-                                                }}
-                                              >
-                                                Close Position
-                                              </Button>
-                                            }
-                                            buttonWithdraw={
-                                              <Button
-                                                size="md"
-                                                color="gray"
-                                                fullWidth
-                                                disabled={isRpcRequestPending}
-                                                onClick={() => {
-                                                  setSelectedOasisForRemove(oasis)
-                                                  setRemoveModalOpen(true)
-                                                }}
-                                              >
-                                                Withdraw Position
-                                              </Button>
-                                            }
-                                            buttonWithdrawBonus={
-                                              <Button
-                                                size="md"
-                                                fullWidth
-                                                variant="outlined"
-                                                disabled={isRpcRequestPending || oasis.user_balance_a <= 0}
-                                                onClick={() => {
-                                                  setSelectedOasisForRemoveBonus(oasis)
-                                                  setRemoveBonusModalOpen(true)
-                                                }}
-                                              >
-                                                Withdraw Bonus
-                                              </Button>
-                                            }
-                                          />
-                                        ))}
+                                        {allUserOasis
+                                          ?.filter((oasis): oasis is NonNullable<typeof oasis> => oasis !== null)
+                                          .map((oasis) => (
+                                            <UserOasisPosition
+                                              oasis={oasis}
+                                              key={oasis.id}
+                                              prices={prices || {}}
+                                              isRpcRequestPending={isRpcRequestPending}
+                                              setSelectedTab={setSelectedTab}
+                                              buttonClosePosition={
+                                                <Button
+                                                  size="md"
+                                                  fullWidth
+                                                  color="gray"
+                                                  disabled={isRpcRequestPending}
+                                                  onClick={() => {
+                                                    setSelectedOasisForClose(oasis)
+                                                    setClosePositionModalOpen(true)
+                                                  }}
+                                                >
+                                                  Close Position
+                                                </Button>
+                                              }
+                                              buttonWithdraw={
+                                                <Button
+                                                  size="md"
+                                                  color="gray"
+                                                  fullWidth
+                                                  disabled={isRpcRequestPending}
+                                                  onClick={() => {
+                                                    setSelectedOasisForRemove(oasis)
+                                                    setRemoveModalOpen(true)
+                                                  }}
+                                                >
+                                                  Withdraw Position
+                                                </Button>
+                                              }
+                                              buttonWithdrawBonus={
+                                                <Button
+                                                  size="md"
+                                                  fullWidth
+                                                  variant="outlined"
+                                                  disabled={isRpcRequestPending || oasis.user_balance_a <= 0}
+                                                  onClick={() => {
+                                                    setSelectedOasisForRemoveBonus(oasis)
+                                                    setRemoveBonusModalOpen(true)
+                                                  }}
+                                                >
+                                                  Withdraw Bonus
+                                                </Button>
+                                              }
+                                            />
+                                          ))}
                                       </div>
                                     )}
                                   </div>
