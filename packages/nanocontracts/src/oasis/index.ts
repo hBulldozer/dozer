@@ -9,7 +9,6 @@ import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
 import { IHathorRpc } from '../types'
 
-
 export class Oasis extends NanoContract {
   public token: string
   public poolManagerId: string
@@ -28,7 +27,7 @@ export class Oasis extends NanoContract {
   }
 
   public async initialize(admin_address: string, amount: number, protocolFee: number) {
-    if (!process.env.OASISBLUEPRINT || '') throw new Error('Missing environment variables')
+    if (!process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '') throw new Error('Missing environment variables')
 
     const actions: NCAction[] = [{ type: 'deposit', token: '00', amount: 100 * amount }]
     const args: NCArgs[] = [
@@ -37,7 +36,7 @@ export class Oasis extends NanoContract {
       this.poolFee, // pool_fee
       protocolFee, // protocol_fee
     ]
-    const response = await this.create(process.env.OASISBLUEPRINT || '', admin_address, actions, args)
+    const response = await this.create(process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '', admin_address, actions, args)
     return response
   }
 
@@ -74,13 +73,7 @@ export class Oasis extends NanoContract {
     return rpcResponse
   }
 
-  public async user_deposit(
-    hathorRpc: IHathorRpc,
-    address: string,
-    timelock: number,
-    ncId: string,
-    amount: number
-  ) {
+  public async user_deposit(hathorRpc: IHathorRpc, address: string, timelock: number, ncId: string, amount: number) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_deposit',
       process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '',

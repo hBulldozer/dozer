@@ -8,8 +8,8 @@ import { Oasis } from '@dozer/nanocontracts'
 
 const OasisIcon: React.FC<{ token: string }> = ({ token }) => {
   return (
-    <div className="relative flex-shrink-0 w-8 h-8 mr-2 -mt-5">
-      <div className="absolute z-10 mt-7 ">
+    <div className="relative flex-shrink-0 -mt-5 mr-2 w-8 h-8">
+      <div className="absolute z-10 mt-7">
         <Currency.IconList iconWidth={18} iconHeight={18}>
           <Currency.Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} />
           <Currency.Icon currency={toToken({ symbol: token, uuid: '00' })} />
@@ -39,7 +39,7 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
       <Dialog.Content className="max-w-sm !pb-4">
         <Dialog.Header border={false} title="Close Position" onClose={() => setOpen(false)} />
         <div className="flex flex-col gap-4 p-4">
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4 items-center">
             <div className="w-8 h-8">
               <OasisIcon token={oasis.token.symbol} />
             </div>
@@ -49,13 +49,13 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
           </div>
         </div>
         <div className="flex flex-col gap-4 p-4">
-          <div className="p-4 mb-2 bg-stone-700/20 rounded-xl">
+          <div className="p-4 mb-2 rounded-xl bg-stone-700/20">
             <Typography variant="sm" weight={600} className="mb-3 text-stone-300">
               Position details:
             </Typography>
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex justify-between items-center">
+                <div className="flex gap-2 items-center">
                   <div className="w-5 h-5">
                     <Icon currency={toToken(oasis.token)} />
                   </div>
@@ -68,8 +68,8 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
                 </Typography>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex justify-between items-center">
+                <div className="flex gap-2 items-center">
                   <div className="w-5 h-5">
                     <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} />
                   </div>
@@ -84,7 +84,7 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
             </div>
           </div>
 
-          <div className="p-3 border rounded-lg border-stone-400 bg-stone-700">
+          <div className="p-3 rounded-lg border border-stone-400 bg-stone-700">
             <Typography variant="xs" weight={400} className="text-stone-200">
               This process ensures you receive any applicable protection against impermanent loss while clearly defining
               which assets (and their quantities) you can withdraw from the protocol.
@@ -131,7 +131,7 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
       <Dialog.Content className="max-w-sm !pb-4">
         <Dialog.Header border={false} title="Withdraw Position" onClose={() => setOpen(false)} />
         <div className="flex flex-col gap-4 p-4">
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4 items-center">
             <div className="w-8 h-8">
               <OasisIcon token={oasis.token.symbol} />
             </div>
@@ -141,13 +141,13 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
           </div>
         </div>
         <div className="flex flex-col gap-4 p-4">
-          <div className="p-4 mb-2 bg-stone-700/20 rounded-xl">
+          <div className="p-4 mb-2 rounded-xl bg-stone-700/20">
             <Typography variant="sm" weight={600} className="mb-3 text-stone-300">
               You will receive:
             </Typography>
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex justify-between items-center">
+                <div className="flex gap-2 items-center">
                   <div className="w-5 h-5">
                     <Icon currency={toToken(oasis.token)} />
                   </div>
@@ -160,8 +160,8 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
                 </Typography>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex justify-between items-center">
+                <div className="flex gap-2 items-center">
                   <div className="w-5 h-5">
                     <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} />
                   </div>
@@ -215,11 +215,11 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
       <Dialog.Content className="max-w-sm !pb-4">
         <Dialog.Header border={false} title="Withdraw Bonus" onClose={() => setOpen(false)} />
         <div className="flex flex-col gap-4 p-4">
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4 items-center">
             <OasisIcon token={oasis.token.symbol} />
             <Typography variant="h3">HTR-{oasis.token.symbol}</Typography>
           </div>
-          {/* <div className="p-4 mt-2 bg-stone-800 rounded-xl">
+          {/* <div className="p-4 mt-2 rounded-xl bg-stone-800">
             <div className="flex flex-col gap-2">
               <div className="flex justify-between">
                 <Typography variant="base" weight={500} className="text-yellow">
@@ -232,8 +232,8 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
             </div>
           </div> */}
           {oasis.user_balance_a > 0 && (
-            <div className="flex items-center justify-between p-4 my-4 rounded-lg bg-stone-700/20">
-              <div className="flex items-center gap-2">
+            <div className="flex justify-between items-center p-4 my-4 rounded-lg bg-stone-700/20">
+              <div className="flex gap-2 items-center">
                 <div className="w-6 h-6">
                   <Icon currency={toToken({ symbol: 'HTR', uuid: '00' })} width={24} height={24} />
                 </div>
@@ -286,7 +286,7 @@ export const OasisAddModal: React.FC<OasisAddModalProps> = ({
       <Dialog.Content className="max-w-sm !pb-4">
         <Dialog.Header border={false} title="Add Liquidity" onClose={() => setOpen(false)} />
         <div className="flex flex-col gap-4 p-4">
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4 items-center">
             <div className="w-8 h-8">
               <OasisIcon token={token} />
             </div>
@@ -295,7 +295,7 @@ export const OasisAddModal: React.FC<OasisAddModalProps> = ({
             </Typography>
           </div>
 
-          <div className="p-4 my-2 bg-stone-700/20 rounded-xl">
+          <div className="p-4 my-2 rounded-xl bg-stone-700/20">
             <div className="flex flex-col gap-3">
               <div className="flex justify-between">
                 <Typography variant="sm" className="text-stone-400">
@@ -305,12 +305,12 @@ export const OasisAddModal: React.FC<OasisAddModalProps> = ({
                   {amount} {token}
                 </Typography>
               </div>
-              <div className="flex justify-between">
+              {/* <div className="flex justify-between">
                 <Typography variant="sm" className="text-stone-400">
                   HTR matched
                 </Typography>
                 <Typography variant="sm">{htrMatch.toString()} HTR</Typography>
-              </div>
+              </div> */}
               <div className="flex justify-between">
                 <Typography variant="sm" className="text-stone-400">
                   Bonus

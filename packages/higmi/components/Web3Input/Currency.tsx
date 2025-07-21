@@ -50,19 +50,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   const isMounted = useIsMounted()
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
 
-  const [isInputFocused, setIsInputFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  const handleInputFocus = () => {
-    setIsInputFocused(true)
-  }
-
-  const handleInputBlur = () => {
-    // Add a small delay to keep the buttons visible briefly after blur
-    setTimeout(() => {
-      setIsInputFocused(false)
-    }, 200)
-  }
 
   const focusInput = useCallback(() => {
     if (disabled) return
@@ -88,8 +76,6 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               variant="unstyled"
               disabled={disabled}
               onUserInput={onChange}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
               className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-3xl py-1 text-stone-200 hover:text-stone-100')}
               value={value}
               readOnly={disabled}
@@ -158,7 +144,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               currency={currency}
               disableMaxButton={disableMaxButton}
               hidePercentageButtons={hidePercentageButtons}
-              showPercentageButtons={isInputFocused}
+              showPercentageButtons={!hidePercentageButtons}
             />
           </div>
         </div>
@@ -204,7 +190,6 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
       usdPctChange,
       value,
       hidePercentageButtons,
-      isInputFocused,
     ]
   )
 }

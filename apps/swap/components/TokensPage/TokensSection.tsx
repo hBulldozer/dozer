@@ -24,7 +24,7 @@ export const TokensSection: FC = () => {
     <section className="flex flex-col">
       <Tab.Group selectedIndex={tab} onChange={setTab}>
         <div>
-          <div className="flex items-center gap-6 mb-6">
+          <div className="flex gap-6 items-center mb-6">
             <Tab
               className={({ selected }) =>
                 classNames(
@@ -36,7 +36,7 @@ export const TokensSection: FC = () => {
               All Tokens
             </Tab>
 
-            {address && (
+            {/* {address && (
               <Tab
                 className={({ selected }) =>
                   classNames(
@@ -47,7 +47,7 @@ export const TokensSection: FC = () => {
               >
                 My Custom Tokens
               </Tab>
-            )}
+            )} */}
           </div>
           <Tab.Panels>
             <Tab.Panel unmount={false}>

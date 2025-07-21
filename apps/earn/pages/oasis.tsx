@@ -938,14 +938,14 @@ const OasisProgram = () => {
                                               -
                                             </Typography>
                                           </div>
-                                          <div className="flex justify-between">
+                                          {/* <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
                                               HTR matched
                                             </Typography>
                                             <Typography variant="sm" className="text-yellow">
                                               -
                                             </Typography>
-                                          </div>
+                                          </div> */}
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
                                               Unlock date
@@ -973,14 +973,14 @@ const OasisProgram = () => {
                                               {amount ? `${bonus.toFixed(2)} HTR` : '-'}
                                             </Typography>
                                           </div>
-                                          <div className="flex justify-between">
+                                          {/* <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
                                               HTR matched
                                             </Typography>
                                             <Typography variant="sm" className="text-yellow">
                                               {amount ? `${htrMatch.toFixed(2)} HTR` : '-'}
                                             </Typography>
-                                          </div>
+                                          </div> */}
                                           <div className="flex justify-between">
                                             <div className="flex flex-row gap-1">
                                               <Typography variant="sm" className="text-stone-400">
