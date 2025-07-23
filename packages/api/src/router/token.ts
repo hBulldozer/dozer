@@ -16,9 +16,23 @@ const BRIDGED_TOKEN_UUIDS = process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS
   ? process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS.split(',').map(uuid => uuid.trim())
   : []
 
+// Get the bridged token original addresses from environment
+const BRIDGED_TOKEN_ADDRESSES = process.env.NEXT_PUBLIC_BRIDGED_TOKEN_ADDRESSES
+  ? process.env.NEXT_PUBLIC_BRIDGED_TOKEN_ADDRESSES.split(',').map(address => address.trim())
+  : []
+
 // Helper function to check if a token is bridged
 function isBridgedToken(uuid: string): boolean {
   return BRIDGED_TOKEN_UUIDS.includes(uuid)
+}
+
+// Helper function to get original address for a bridged token
+function getBridgedTokenOriginalAddress(uuid: string): string | null {
+  const index = BRIDGED_TOKEN_UUIDS.indexOf(uuid)
+  if (index !== -1 && index < BRIDGED_TOKEN_ADDRESSES.length) {
+    return BRIDGED_TOKEN_ADDRESSES[index]
+  }
+  return null
 }
 
 // Helper function to fetch data from the pool manager contract
@@ -140,7 +154,7 @@ export const tokenRouter = createTRPCRouter({
         bridged: isBridgedToken(uuid),
         sourceChain: isBridgedToken(uuid) ? 'unknown' : null,
         targetChain: isBridgedToken(uuid) ? 'hathor' : null,
-        originalAddress: null, // Will be null until added to contract
+        originalAddress: getBridgedTokenOriginalAddress(uuid),
         // Add pool information for each token
         pools0: [], // Will be populated by frontend if needed
         pools1: [], // Will be populated by frontend if needed
@@ -219,7 +233,7 @@ export const tokenRouter = createTRPCRouter({
         bridged: isBridgedToken(input.uuid),
         sourceChain: isBridgedToken(input.uuid) ? 'unknown' : null,
         targetChain: isBridgedToken(input.uuid) ? 'hathor' : null,
-        originalAddress: null,
+        originalAddress: getBridgedTokenOriginalAddress(input.uuid),
       }
     } catch (error) {
       console.error(`Error fetching token by UUID ${input.uuid}:`, error)
@@ -423,6 +437,7 @@ export const tokenRouter = createTRPCRouter({
         bridged: isBridgedToken(tokenUuid),
         sourceChain: isBridgedToken(tokenUuid) ? 'unknown' : null,
         targetChain: isBridgedToken(tokenUuid) ? 'hathor' : null,
+        originalAddress: getBridgedTokenOriginalAddress(tokenUuid),
       }
     } catch (error) {
       console.error(`❌ [TOKEN_BY_SYMBOL_DETAILED] Error fetching detailed token data for ${input.symbol}:`, error)
