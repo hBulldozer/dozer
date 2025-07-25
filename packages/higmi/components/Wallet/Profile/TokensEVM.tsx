@@ -1,6 +1,6 @@
 import { ChevronLeftIcon, ArrowPathIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/solid'
 import { Button, Currency, Dialog, IconButton, NetworkIcon, SlideIn, Typography, Loader } from '@dozer/ui'
-import React, { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
+import React, { Dispatch, FC, SetStateAction, useEffect, useState, useCallback } from 'react'
 import { ProfileView } from './Profile'
 import { client, toToken } from '@dozer/api'
 import { TokenBalance, useAccount, useNetwork } from '@dozer/zustand'
@@ -25,8 +25,6 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
   const [currentNetwork, setCurrentNetwork] = useState<string>('')
   const { data: prices } = client.getPrices.all.useQuery()
 
-  // Get tokens data using the query hook
-  const { data: tokensData, isLoading: isTokensLoading } = client.getTokens.all.useQuery()
 
   // Get the correct network configuration based on test environment
   const networkConfig = IS_TESTNET ? bridgeConfig.ethereumConfig.name : 'Arbitrum One'
@@ -60,55 +58,30 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
     checkNetwork()
   }, [metaMaskConnected, networkConfig])
 
-  // Filter tokens with originalAddress for bridged tokens
+  // Get bridged tokens from the same source as Bridge component (database API)
+  const { data: tokens } = client.getTokens.all.useQuery()
+  
   const bridgedTokens = React.useMemo(() => {
-    if (!tokensData) return []
-
-    // Filter tokens that match our test environment
-    return tokensData
-      .filter((token: any) => {
-        // Check if token has originalAddress (bridged) and matches our current environment (testnet or mainnet)
-        return (
-          token.bridged &&
-          token.originalAddress &&
-          ((IS_TESTNET && token.sourceChain?.toLowerCase() === 'sepolia') ||
-            (!IS_TESTNET && token.sourceChain?.toLowerCase() === 'arbitrum'))
-        )
-      })
-      .map((token: any) => {
+    if (!tokens) return []
+    
+    // Filter tokens that are bridged (same logic as Bridge component)
+    return tokens
+      .filter((token) => token.bridged)
+      .map((token) => {
+        // Convert null values to undefined for correct Token initialization (same as Bridge component)
+        const { originalAddress, sourceChain, targetChain, imageUrl, ...rest } = token
         return new Token({
-          chainId: token.chainId,
-          uuid: token.uuid,
-          decimals: token.decimals || 18,
-          name: token.name || '',
-          symbol: token.symbol || '',
-          imageUrl: token.imageUrl || undefined,
-          bridged: true,
-          originalAddress: token.originalAddress || undefined,
-          sourceChain: token.sourceChain || undefined,
-          targetChain: token.targetChain || undefined,
+          ...rest,
+          originalAddress: originalAddress || undefined,
+          sourceChain: sourceChain || undefined,
+          targetChain: targetChain || undefined,
+          imageUrl: imageUrl || undefined,
         })
       })
-  }, [tokensData])
-
-  // Load token balances when MetaMask is connected
-  useEffect(() => {
-    if (metaMaskConnected && metaMaskAccount && bridgedTokens.length > 0 && !error) {
-      fetchBalances()
-    }
-  }, [metaMaskConnected, metaMaskAccount, bridgedTokens, error])
-
-  // Add a separate effect for immediate refresh on mount if connected
-  useEffect(() => {
-    // Auto-refresh once when component mounts if already connected
-    if (metaMaskConnected && metaMaskAccount && !error) {
-      console.log('TokensEVM: Initial refresh on mount')
-      fetchBalances()
-    }
-  }, [metaMaskConnected, error]) // Re-trigger when connection or error status changes
+  }, [tokens])
 
   // Extract fetchBalances to a separate function to avoid duplication
-  const fetchBalances = async () => {
+  const fetchBalances = useCallback(async () => {
     setIsLoading(true)
     try {
       // Check if we're on the correct network first
@@ -124,30 +97,49 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
         }
       }
 
-      // Extract token addresses
-      const tokenAddresses = bridgedTokens
-        .filter((token) => token.originalAddress)
-        .map((token) => token.originalAddress as string)
-
-      console.log(`Fetching balances for ${IS_TESTNET ? 'TESTNET' : 'MAINNET'} tokens:`, tokenAddresses)
-
-      if (tokenAddresses.length > 0) {
-        console.log('Fetching balances from:', networkConfig)
-        const balances = await loadBalances(tokenAddresses)
-        if (balances) {
-          console.log('Received balances:', balances)
-          setTokenBalances(balances)
+      // Load balances for each token individually (same as BridgeBalancePanel)
+      const newBalances: Record<string, number> = {}
+      
+      for (const token of bridgedTokens) {
+        if (token.originalAddress) {
+          try {
+            const balances = await loadBalances([token.originalAddress])
+            const balance = balances?.[token.originalAddress] || 0
+            newBalances[token.originalAddress] = balance
+          } catch (error) {
+            console.error(`TokensEVM: Error loading balance for ${token.symbol}:`, error)
+            newBalances[token.originalAddress] = 0
+          }
         }
-      } else {
-        console.log('No bridged token addresses found for current network')
       }
+      
+      setTokenBalances(newBalances)
     } catch (error: any) {
       console.error('Error loading EVM token balances:', error)
       setError(error.message || 'Failed to load token balances')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [bridgedTokens, loadBalances, networkConfig])
+
+  // Load token balances when MetaMask is connected
+  useEffect(() => {
+    if (metaMaskConnected && metaMaskAccount && bridgedTokens.length > 0 && !error) {
+      // Clear existing balances first to avoid showing stale data
+      setTokenBalances({})
+      fetchBalances()
+    }
+  }, [metaMaskConnected, metaMaskAccount, bridgedTokens, error, fetchBalances])
+
+  // Add a separate effect for immediate refresh on mount if connected
+  useEffect(() => {
+    if (metaMaskConnected && metaMaskAccount && !error) {
+      fetchBalances()
+    } else if (!metaMaskConnected) {
+      // Clear balances when disconnected
+      setTokenBalances({})
+    }
+  }, [metaMaskConnected, metaMaskAccount, error, fetchBalances])
 
   // Connect to MetaMask
   const connectMetaMask = async () => {
@@ -195,7 +187,6 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
 
     try {
       sdk.terminate()
-      console.log('Disconnected from MetaMask')
       // Clear balances to prevent showing stale data
       setTokenBalances({})
       setError('')
@@ -210,7 +201,7 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
   }
 
   // Determine overall loading state
-  const loading = isLoading || isTokensLoading
+  const loading = isLoading
 
   return (
     <div className="">

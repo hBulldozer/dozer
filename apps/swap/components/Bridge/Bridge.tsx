@@ -15,7 +15,7 @@ import Image from 'next/legacy/image'
 import { ExclamationCircleIcon } from '@heroicons/react/24/solid'
 import { api } from 'utils/api'
 import bridgeIcon from '../../public/bridge-icon.jpeg'
-import { CurrencyInput } from '../CurrencyInput'
+import { BridgeCurrencyInput } from '../BridgeCurrencyInput'
 import { TradeType } from '../utils/TradeType'
 import { nanoid } from 'nanoid'
 import bridgeConfig from '@dozer/higmi/config/bridge'
@@ -586,7 +586,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
             </div>
           )}
 
-          <CurrencyInput
+          <BridgeCurrencyInput
             id={'bridge-token-input'}
             className="p-3"
             value={amount}
