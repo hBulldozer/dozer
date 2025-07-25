@@ -1,5 +1,5 @@
 import { ArrowTopRightOnSquareIcon, ChevronDownIcon } from '@heroicons/react/24/solid'
-import { App, Button, classNames, Widget } from '@dozer/ui'
+import { App, Button, classNames, Link, Widget } from '@dozer/ui'
 import { Layout } from '../components/Layout'
 import { CurrencyInput } from '../components/CurrencyInput'
 import { Token } from '@dozer/currency'
@@ -79,21 +79,20 @@ const Home = () => {
         <div className="flex flex-col md:flex-row justify-center gap-4 max-w-[800px] mx-auto">
           <div className="flex flex-col gap-4" style={{ maxWidth: '400px' }}>
             <SwapWidget token0_idx={'2'} token1_idx={'0'} />
-            <div
-              className="flex gap-3 justify-between items-center p-4 rounded-lg border transition-colors cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800"
-              onClick={() => (window.location.href = '/bridge')}
-            >
-              <div className="flex gap-4 items-center">
-                <div className="flex justify-center items-center w-12 h-12 rounded-full bg-blue-900/20">
-                  <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
+            <Link.Internal href="/bridge">
+              <div className="flex gap-3 justify-between items-center p-4 rounded-lg border transition-colors cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800">
+                <div className="flex gap-4 items-center">
+                  <div className="flex justify-center items-center w-12 h-12 rounded-full bg-blue-900/20">
+                    <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-white">Bridge EVM</span>
+                    <span className="text-xs text-gray-400">Transfer tokens between Arbitrum and Hathor.</span>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-white">Bridge EVM</span>
-                  <span className="text-xs text-gray-400">Transfer tokens between Arbitrum and Hathor.</span>
-                </div>
+                <ArrowTopRightOnSquareIcon width={20} height={20} className="text-gray-400" />
               </div>
-              <ArrowTopRightOnSquareIcon width={20} height={20} className="text-gray-400" />
-            </div>
+            </Link.Internal>
           </div>
         </div>
         <BlockTracker client={api} />

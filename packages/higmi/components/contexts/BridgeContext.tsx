@@ -5,48 +5,12 @@ import { useNetwork, useAccount } from '@dozer/zustand'
 import BRIDGE_ABI from '../../abis/bridge.json'
 import ERC20_ABI from '../../abis/erc20.json'
 import config from '../../config/bridge'
-import { NotificationData } from '@dozer/ui'
-import chains, { ChainId } from '@dozer/chain'
 
 // Add ethereum to Window interface
 declare global {
   interface Window {
     ethereum: any
   }
-}
-
-// Helper function to simplify error messages for UI display
-function simplifyErrorMessage(message: string | undefined): string {
-  if (!message) return 'Transaction failed'
-
-  // Common error patterns and their simplified versions
-  if (
-    message.includes('User denied') ||
-    message.includes('User rejected') ||
-    message.includes('cancelled') ||
-    message.includes('canceled')
-  ) {
-    return 'Transaction cancelled by user'
-  }
-
-  if (
-    message.includes('Transaction reverted') ||
-    message.includes('execution reverted') ||
-    message.includes('has been reverted by the EVM')
-  ) {
-    return 'Transaction failed on blockchain'
-  }
-
-  if (message.includes('timeout') || message.includes('timed out')) {
-    return 'Transaction timed out'
-  }
-
-  // Keep message short
-  if (message.length > 100) {
-    return message.substring(0, 100) + '...'
-  }
-
-  return message
 }
 
 // Define interface for bridge context
@@ -73,13 +37,6 @@ interface BridgeContextType {
     logIndex: number,
     originChainId: number
   ) => Promise<any>
-  createBridgeNotification: (
-    txHash: string,
-    tokenSymbol: string,
-    amount: string,
-    tokenDecimals: number,
-    hathorAddress: string
-  ) => void
 }
 
 // Create the context
@@ -87,15 +44,12 @@ const BridgeContext = createContext<BridgeContextType | undefined>(undefined)
 
 // Bridge contract addresses from centralized config
 const BRIDGE_CONTRACT_ADDRESS = config.ethereumConfig.bridge
-const HATHOR_FEDERATION_ADDRESS = config.hathorConfig.federation
 const ARBITRUM_FEDERATION_HOST = config.arbitrumFederationHost
 
 // Create a provider component
 export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { accounts } = useWalletConnectClient()
   const hathorAddress = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
-  const network = useNetwork((state) => state.network)
-  const { addNotification } = useAccount()
   const [pendingClaims, setPendingClaims] = useState<any[]>([])
 
   // Load token balances from Arbitrum
@@ -315,81 +269,6 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     []
   )
 
-  // Helper function to create a notification for a bridge transaction
-  const createBridgeNotification = useCallback(
-    (txHash: string, tokenSymbol: string, amount: string, tokenDecimals: number, hathorAddress: string) => {
-      // Create notification data
-      const notificationData: NotificationData = {
-        type: 'send',
-        chainId: config.ethereumConfig.networkId, // Use network ID from config
-        summary: {
-          pending: `Bridging ${amount} ${tokenSymbol} to Hathor network...`,
-          completed: `Successfully bridged ${amount} ${tokenSymbol} to Hathor address ${hathorAddress}`,
-          failed: `Failed to bridge ${amount} ${tokenSymbol} to Hathor`,
-          info: `Bridge transaction for ${amount} ${tokenSymbol} to Hathor address ${hathorAddress}`,
-        },
-        status: 'pending',
-        txHash: txHash,
-        groupTimestamp: Math.floor(Date.now() / 1000),
-        timestamp: Math.floor(Date.now() / 1000),
-        href: `${config.ethereumConfig.explorer}/tx/${txHash}`,
-        promise: new Promise((resolve, reject) => {
-          // Use Web3.js to subscribe to transaction receipt
-          if (window.ethereum) {
-            const web3 = new Web3(window.ethereum)
-
-            // Check transaction receipt every 5 seconds
-            const checkReceipt = async () => {
-              try {
-                const receipt = await web3.eth.getTransactionReceipt(txHash)
-
-                if (receipt) {
-                  if (receipt.status) {
-                    console.log('Bridge transaction confirmed:', receipt)
-                    setTimeout(resolve, 1000) // Resolve after a delay for UI
-                  } else {
-                    console.error('Bridge transaction failed:', receipt)
-                    reject(new Error('Transaction failed on blockchain'))
-                  }
-                  return true
-                }
-                return false
-              } catch (error) {
-                console.error('Error checking transaction receipt:', error)
-                return false
-              }
-            }
-
-            // Start polling
-            const intervalId = setInterval(async () => {
-              const done = await checkReceipt()
-              if (done) clearInterval(intervalId)
-            }, 5000)
-
-            // Backup timeout after 10 minutes
-            setTimeout(() => {
-              clearInterval(intervalId)
-              // Don't reject, let the user check manually
-              // since blockchain transactions can take longer
-            }, 10 * 60 * 1000)
-          } else {
-            // If no web3, resolve after a delay
-            setTimeout(resolve, 5000)
-          }
-        }),
-        account: hathorAddress,
-      }
-
-      // Add to notifications
-      const notificationGroup: string[] = []
-      notificationGroup.push(JSON.stringify(notificationData))
-      addNotification(notificationGroup)
-
-      console.log('Added bridge transaction to notifications:', txHash)
-    },
-    [addNotification, hathorAddress]
-  )
-
   // Bridge a token from Arbitrum to Hathor
   const bridgeTokenToHathor = useCallback(
     async (tokenAddress: string, amount: string, hathorAddress: string, skipApproval = false) => {
@@ -433,7 +312,6 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       // Get token decimals (fallback to 18 if call fails)
       let decimals: number = 18
-      let tokenSymbol: string = ''
       try {
         // Check for known tokens first - USDC is always 6 decimals
         if (actualTokenAddress.toLowerCase() === '0x3e1adb4e24a48b90ca10c28388ce733a6267bac4'.toLowerCase()) {
@@ -463,15 +341,6 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               console.warn('Could not determine token symbol')
             }
           }
-        }
-
-        // Try to get token symbol
-        try {
-          const symbol = await tokenContract.methods.symbol().call()
-          tokenSymbol = String(symbol || '')
-        } catch (error) {
-          console.warn('Could not determine token symbol, using generic "TOKEN"')
-          tokenSymbol = 'TOKEN'
         }
       } catch (error) {
         console.warn('Error determining token decimals, using default 18:', error)
@@ -559,6 +428,13 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           try {
             console.log(`Executing approval for ${humanReadableAmount} tokens`)
 
+            // Dispatch approval started event
+            window.dispatchEvent(
+              new CustomEvent('bridgeApprovalStarted', {
+                detail: { tokenAddress: actualTokenAddress, amount: humanReadableAmount },
+              })
+            )
+
             // Use a higher amount for approval to avoid needing to approve again
             const factor = Math.pow(10, decimals)
             const largeAmount = 1000000000 // 1 billion tokens
@@ -586,23 +462,103 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const gasPriceAdjusted = Math.floor(Number(gasPrice) * 1.1) // 10% more than current
             console.log('Gas price for approval:', gasPriceAdjusted)
 
-            // Execute the approval transaction
+            // Execute the approval transaction with immediate feedback
             console.log('Sending approval transaction...')
-            const approveTx = await approveMethod.send({
-              from: arbitrumAddress,
-              gas: String(Math.floor(Number(approveGasEstimate) * 1.2)),
-              gasPrice: String(gasPriceAdjusted),
+            const approveTxHash = await new Promise<string>((resolve, reject) => {
+              try {
+                const txPromise = approveMethod.send({
+                  from: arbitrumAddress,
+                  gas: String(Math.floor(Number(approveGasEstimate) * 1.2)),
+                  gasPrice: String(gasPriceAdjusted),
+                })
+
+                txPromise
+                  .on('transactionHash', (hash: string) => {
+                    console.log('Approval transaction accepted by user:', hash)
+                    // Dispatch approval transaction sent event immediately when user accepts
+                    window.dispatchEvent(
+                      new CustomEvent('bridgeApprovalSent', {
+                        detail: { txHash: hash },
+                      })
+                    )
+                    resolve(hash)
+                  })
+                  .on('error', (error: any) => {
+                    console.error('Approval transaction error:', error)
+                    // Check if this is a user rejection
+                    if (error.code === 4001 || error.message?.includes('User denied')) {
+                      reject(new Error('Transaction cancelled: You rejected the request in MetaMask'))
+                    } else {
+                      reject(error)
+                    }
+                  })
+                  .catch((error: any) => {
+                    console.error('Approval transaction promise rejection:', error)
+                    // Check if this is a user rejection
+                    if (error.code === 4001 || error.message?.includes('User denied') || error.message?.includes('MetaMask Tx Signature')) {
+                      reject(new Error('Transaction cancelled: You rejected the request in MetaMask'))
+                    } else {
+                      reject(error)
+                    }
+                  })
+              } catch (error: any) {
+                console.error('Approval transaction immediate error:', error)
+                // Check if this is a user rejection
+                if (error.code === 4001 || error.message?.includes('User denied') || error.message?.includes('MetaMask Tx Signature')) {
+                  reject(new Error('Transaction cancelled: You rejected the request in MetaMask'))
+                } else {
+                  reject(error)
+                }
+              }
             })
 
-            console.log('Approval transaction completed:', approveTx.transactionHash)
+            console.log('Approval transaction completed:', approveTxHash)
 
-            // Verify the approval succeeded by checking allowance again
-            const newAllowance = await tokenContract.methods.allowance(arbitrumAddress, BRIDGE_CONTRACT_ADDRESS).call()
-            console.log('New allowance after approval:', newAllowance)
+            // Wait for transaction confirmation and verify allowance
+            await new Promise<void>((resolve, reject) => {
+              const checkConfirmation = async () => {
+                try {
+                  const receipt = await web3.eth.getTransactionReceipt(approveTxHash)
+                  if (receipt && receipt.status) {
+                    // Verify the approval succeeded by checking allowance
+                    const newAllowance = await tokenContract.methods
+                      .allowance(arbitrumAddress, BRIDGE_CONTRACT_ADDRESS)
+                      .call()
+                    console.log('New allowance after approval:', newAllowance)
 
-            if (BigInt(String(newAllowance)) < BigInt(amountInWei)) {
-              throw new Error('Approval transaction completed but allowance is still insufficient')
-            }
+                    if (BigInt(String(newAllowance)) < BigInt(amountInWei)) {
+                      reject(new Error('Approval transaction completed but allowance is still insufficient'))
+                      return
+                    }
+
+                    // Dispatch approval confirmed event
+                    window.dispatchEvent(
+                      new CustomEvent('bridgeApprovalConfirmed', {
+                        detail: { txHash: approveTxHash },
+                      })
+                    )
+                    resolve()
+                  } else if (receipt && !receipt.status) {
+                    reject(new Error('Approval transaction failed'))
+                  }
+                  // If no receipt yet, keep waiting
+                } catch (error) {
+                  console.error('Error checking approval confirmation:', error)
+                  // Keep trying
+                }
+              }
+
+              // Check immediately
+              checkConfirmation()
+              // Then check every 3 seconds
+              const interval = setInterval(checkConfirmation, 3000)
+
+              // Cleanup after 5 minutes
+              setTimeout(() => {
+                clearInterval(interval)
+                reject(new Error('Approval confirmation timeout'))
+              }, 5 * 60 * 1000)
+            })
 
             // After successful approval, try bridging
             return bridgeTokenToHathor(tokenAddress, amount, hathorAddress, true)
@@ -678,30 +634,71 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         const gasPriceAdjusted = Math.floor(Number(gasPrice) * 1.1) // 10% more than current
         console.log('Gas price for bridge:', gasPriceAdjusted)
 
-        // Execute the transaction
+        // Execute the transaction with immediate feedback
         console.log('Sending bridge transaction...')
-        const bridgeTx = await bridgeMethod.send({
-          from: arbitrumAddress,
-          gas: String(Math.floor(Number(gasEstimate) * 1.2)), // Convert to string
-          gasPrice: String(gasPriceAdjusted), // Convert to string
+        const bridgeTxHash = await new Promise<string>((resolve, reject) => {
+          try {
+            const txPromise = bridgeMethod.send({
+              from: arbitrumAddress,
+              gas: String(Math.floor(Number(gasEstimate) * 1.2)),
+              gasPrice: String(gasPriceAdjusted),
+            })
+
+            txPromise
+              .on('transactionHash', (hash: string) => {
+                console.log('Bridge transaction accepted by user:', hash)
+                // Dispatch bridge transaction sent event immediately when user accepts
+                window.dispatchEvent(
+                  new CustomEvent('bridgeTransactionSent', {
+                    detail: { txHash: hash },
+                  })
+                )
+                resolve(hash)
+              })
+              .on('error', (error: any) => {
+                console.error('Bridge transaction error:', error)
+                // Check if this is a user rejection
+                if (error.code === 4001 || error.message?.includes('User denied')) {
+                  reject(new Error('Transaction cancelled: You rejected the request in MetaMask'))
+                } else {
+                  reject(error)
+                }
+              })
+              .catch((error: any) => {
+                console.error('Bridge transaction promise rejection:', error)
+                // Check if this is a user rejection
+                if (error.code === 4001 || error.message?.includes('User denied') || error.message?.includes('MetaMask Tx Signature')) {
+                  reject(new Error('Transaction cancelled: You rejected the request in MetaMask'))
+                } else {
+                  reject(error)
+                }
+              })
+          } catch (error: any) {
+            console.error('Bridge transaction immediate error:', error)
+            // Check if this is a user rejection
+            if (error.code === 4001 || error.message?.includes('User denied') || error.message?.includes('MetaMask Tx Signature')) {
+              reject(new Error('Transaction cancelled: You rejected the request in MetaMask'))
+            } else {
+              reject(error)
+            }
+          }
         })
 
-        console.log('Bridge transaction completed:', bridgeTx.transactionHash)
+        console.log('Bridge transaction hash received:', bridgeTxHash)
 
-        // Create notification for the bridge transaction
-        createBridgeNotification(bridgeTx.transactionHash, tokenSymbol, amount, decimals, hathorAddress)
+        // Note: Removed notification creation - now using bridge stepper instead
 
         // Return transaction hash for tracking
         return {
           status: 'confirming' as const,
-          transactionHash: bridgeTx.transactionHash,
+          transactionHash: bridgeTxHash,
         }
       } catch (error) {
         console.error('Error during bridge operation:', error)
         throw error
       }
     },
-    [createBridgeNotification]
+    []
   )
 
   const contextValue = {
@@ -710,7 +707,6 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     pendingClaims,
     loadPendingClaims,
     claimTokenFromArbitrum,
-    createBridgeNotification,
   }
 
   return <BridgeContext.Provider value={contextValue}>{children}</BridgeContext.Provider>

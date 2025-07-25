@@ -21,6 +21,8 @@ import { nanoid } from 'nanoid'
 import bridgeConfig from '@dozer/higmi/config/bridge'
 import { MetaMaskConnect } from '../MetaMaskConnect'
 import { useSDK } from '@metamask/sdk-react'
+import { BridgeStepper } from './BridgeStepper'
+import { useBridgeTransactionStore } from '@dozer/zustand'
 
 interface BridgeProps {
   initialToken?: Token
@@ -37,9 +39,30 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   const [amount, setAmount] = useState<string>('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
-  const [successMessage, setSuccessMessage] = useState<string>('')
   const [transactionHash, setTransactionHash] = useState<string>('')
   const [txStatus, setTxStatus] = useState<string>('idle')
+  const [showStepper, setShowStepper] = useState(false)
+
+  // Use Zustand store for bridge transaction state
+  const {
+    // State
+    isActive: isBridgeActive,
+    steps,
+    currentStep,
+    isDismissed,
+    tokenSymbol: storedTokenSymbol,
+
+    // Actions
+    startBridge,
+    updateStep,
+    setApprovalTxHash,
+    setBridgeTxHash,
+    setEvmConfirmationTime,
+    setHathorReceipt,
+    dismissTransaction,
+    clearTransaction,
+    restoreTransaction,
+  } = useBridgeTransactionStore()
 
   // Use a ref to track mounted state to avoid state updates after unmount
   const isMounted = useRef(true)
@@ -48,6 +71,71 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
   // Get hathorAddress from WalletConnect accounts
   const hathorAddress = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
+
+  // Function to poll for EVM transaction confirmation
+  const startEvmConfirmationPolling = async (txHash: string) => {
+    if (!window.ethereum) return
+
+    const Web3 = (await import('web3')).default
+    const web3 = new Web3(window.ethereum)
+
+    const checkConfirmation = async () => {
+      try {
+        const receipt = await web3.eth.getTransactionReceipt(txHash)
+
+        if (receipt && receipt.status) {
+          // Transaction confirmed successfully
+          console.log('EVM transaction confirmed:', receipt)
+
+          if (isMounted.current) {
+            setIsProcessing(false)
+
+            // Update stepper - EVM confirmation complete, now checking Hathor
+            updateStep('evm-confirmed', 'completed', txHash)
+            updateStep('hathor-received', 'active')
+            setEvmConfirmationTime(Math.floor(Date.now() / 1000))
+
+            // Note: Removed intermediate success toast - only showing final completion toast
+          }
+          return true // Stop polling
+        } else if (receipt && !receipt.status) {
+          // Transaction failed
+          console.error('EVM transaction failed:', receipt)
+          if (isMounted.current) {
+            updateStep('evm-confirmed', 'failed', undefined, 'Transaction failed on blockchain')
+            setIsProcessing(false)
+            setErrorMessage('Transaction failed on blockchain')
+            createErrorToast('Transaction failed on blockchain', false)
+          }
+          return true // Stop polling
+        }
+
+        return false // Keep polling
+      } catch (error) {
+        console.error('Error checking EVM confirmation:', error)
+        return false // Keep polling
+      }
+    }
+
+    // Start polling every 5 seconds
+    const interval = setInterval(async () => {
+      const done = await checkConfirmation()
+      if (done) {
+        clearInterval(interval)
+      }
+    }, 5000)
+
+    // Initial check
+    const done = await checkConfirmation()
+    if (done) {
+      clearInterval(interval)
+    }
+
+    // Cleanup timeout after 10 minutes
+    setTimeout(() => {
+      clearInterval(interval)
+    }, 10 * 60 * 1000)
+  }
 
   // Filter to only show bridged tokens
   const bridgedTokens = tokens
@@ -70,6 +158,41 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     // Set the mounted ref to true
     isMounted.current = true
 
+    // Add event listeners for real-time bridge progress
+    const handleApprovalStarted = (event: CustomEvent) => {
+      console.log('Approval started:', event.detail)
+      updateStep('approval', 'active')
+    }
+
+    const handleApprovalSent = (event: CustomEvent) => {
+      console.log('Approval sent:', event.detail)
+      setApprovalTxHash(event.detail.txHash)
+      updateStep('approval', 'completed', event.detail.txHash)
+      updateStep('approval-confirmed', 'active', event.detail.txHash)
+    }
+
+    const handleApprovalConfirmed = (event: CustomEvent) => {
+      console.log('Approval confirmed:', event.detail)
+      updateStep('approval-confirmed', 'completed', event.detail.txHash)
+      updateStep('bridge-tx', 'active')
+    }
+
+    const handleBridgeTransactionSent = (event: CustomEvent) => {
+      console.log('Bridge transaction sent:', event.detail)
+      setBridgeTxHash(event.detail.txHash)
+      updateStep('bridge-tx', 'completed', event.detail.txHash)
+      updateStep('evm-confirmed', 'active', event.detail.txHash)
+
+      // Start EVM polling
+      startEvmConfirmationPolling(event.detail.txHash)
+    }
+
+    // Add event listeners
+    window.addEventListener('bridgeApprovalStarted', handleApprovalStarted as EventListener)
+    window.addEventListener('bridgeApprovalSent', handleApprovalSent as EventListener)
+    window.addEventListener('bridgeApprovalConfirmed', handleApprovalConfirmed as EventListener)
+    window.addEventListener('bridgeTransactionSent', handleBridgeTransactionSent as EventListener)
+
     // Add event listener for bridge transaction updates
     const handleBridgeTransactionUpdate = (event: CustomEvent) => {
       if (!isMounted.current) return
@@ -80,24 +203,10 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       if (detail.status === 'confirmed' && detail.success) {
         // Handle successful transaction confirmation
         setTransactionHash(detail.transactionHash || '')
-        const msg = 'Transaction confirmed! Your tokens will be available in Hathor soon.'
-        setSuccessMessage(msg)
         setIsProcessing(false)
         setTxStatus('idle')
 
-        // Show success toast
-        createSuccessToast({
-          type: 'send',
-          summary: {
-            pending: 'Bridging tokens',
-            completed: 'Transaction confirmed! Your tokens will be available in Hathor soon.',
-            failed: 'Failed to bridge tokens',
-          },
-          txHash: detail.transactionHash || nanoid(),
-          groupTimestamp: Date.now(),
-          timestamp: Date.now(),
-          href: detail.transactionHash ? `https://arbiscan.io/tx/${detail.transactionHash}` : undefined,
-        })
+        // Note: Removed intermediate success toast - only showing final completion toast
       } else if (detail.status === 'failed') {
         // Handle failed transaction
         setIsProcessing(false)
@@ -140,25 +249,22 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           event.reason.code === 4001)
       ) {
         console.log('Detected MetaMask transaction rejection via global handler')
+        
+        // Prevent the error from bubbling up and causing a runtime error
+        event.preventDefault()
 
         // Reset the processing state if component is still mounted
         if (isMounted.current) {
           setIsProcessing(false)
           setErrorMessage('Transaction cancelled: You rejected the request in MetaMask')
+          
+          // Reset bridge state to allow retry
+          clearTransaction()
+          setShowStepper(false)
+          setTxStatus('idle')
 
-          // Show info toast for cancellation
-          createInfoToast({
-            type: 'send',
-            summary: {
-              pending: '',
-              completed: '',
-              failed: '',
-              info: 'Transaction cancelled by user',
-            },
-            txHash: nanoid(),
-            groupTimestamp: Date.now(),
-            timestamp: Date.now(),
-          })
+          // Show error toast for cancellation
+          createErrorToast('Transaction cancelled: You rejected the request in MetaMask', false)
         }
       }
     }
@@ -170,21 +276,89 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       isMounted.current = false
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       window.removeEventListener('bridgeTransactionUpdate', handleBridgeTransactionUpdate as EventListener)
+      window.removeEventListener('bridgeApprovalStarted', handleApprovalStarted as EventListener)
+      window.removeEventListener('bridgeApprovalSent', handleApprovalSent as EventListener)
+      window.removeEventListener('bridgeApprovalConfirmed', handleApprovalConfirmed as EventListener)
+      window.removeEventListener('bridgeTransactionSent', handleBridgeTransactionSent as EventListener)
     }
-  }, [])
+  }, [updateStep, setApprovalTxHash, setBridgeTxHash])
 
   useEffect(() => {
     if (initialToken) {
       setSelectedToken(initialToken)
+    } else if (bridgedTokens && bridgedTokens.length > 0 && !selectedToken) {
+      // Auto-select the first token if no token is selected
+      setSelectedToken(bridgedTokens[0])
     }
-  }, [initialToken])
+  }, [initialToken, bridgedTokens, selectedToken])
+
+  // Effect to restore persisted bridge transaction on page load
+  useEffect(() => {
+    if (isBridgeActive && !isDismissed) {
+      setShowStepper(true)
+
+      // If we have a bridge transaction hash but EVM confirmation is still pending, resume polling
+      const evmStep = steps.find((step) => step.id === 'evm-confirmed')
+      if (evmStep?.status === 'active' && evmStep.txHash) {
+        startEvmConfirmationPolling(evmStep.txHash)
+      }
+    }
+  }, [isBridgeActive, isDismissed, steps])
+
+  // Effect to show completion notification when all steps are finished
+  useEffect(() => {
+    if (isBridgeActive && !isDismissed && steps.length > 0) {
+      const allCompleted = steps.every((step) => step.status === 'completed')
+      const hasAnyCompleted = steps.some((step) => step.status === 'completed')
+
+      if (allCompleted && hasAnyCompleted) {
+        // Show simple completion toast without adding to transaction list
+        const hathorTxHash = steps.find((step) => step.id === 'hathor-received')?.txHash
+        const explorerUrl = hathorTxHash
+          ? `https://explorer.${
+              bridgeConfig.isTestnet ? 'bravo.nano-testnet.' : ''
+            }hathor.network/transaction/${hathorTxHash}`
+          : undefined
+
+        // Create a simple completion toast that won't add to transaction list
+        createSuccessToast({
+          type: 'send',
+          summary: {
+            pending: '',
+            completed: `🎉 Bridge Complete! Your ${
+              storedTokenSymbol || 'tokens'
+            } have been successfully transferred to your Hathor wallet.`,
+            failed: '',
+          },
+          txHash: nanoid(), // Use random ID to avoid transaction tracking
+          groupTimestamp: Date.now(),
+          timestamp: Date.now(),
+          href: explorerUrl,
+        })
+
+        // Automatically clear the transaction after showing notification
+        setTimeout(() => {
+          clearTransaction()
+        }, 2000)
+      }
+    }
+  }, [steps, isBridgeActive, isDismissed, storedTokenSymbol, clearTransaction])
 
   const handleBridge = async () => {
     // Reset state
     setErrorMessage('')
-    setSuccessMessage('')
     setTransactionHash('')
     setTxStatus('processing')
+
+    // Initialize stepper with Zustand store
+    setShowStepper(true)
+    startBridge({
+      tokenAddress: selectedToken?.originalAddress || '',
+      tokenUuid: selectedToken?.uuid || '',
+      tokenSymbol: selectedToken?.symbol || '',
+      amount,
+      hathorAddress,
+    })
 
     if (!selectedToken || !amount || !metaMaskAccount) {
       const msg = 'Please connect your wallet, select a token, and enter an amount'
@@ -285,19 +459,10 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           // Don't clear processing state, but update status message
           setTxStatus('approval')
 
-          // Show a toast to let the user know we're asking for approval
-          createInfoToast({
-            type: 'send',
-            summary: {
-              pending: '',
-              completed: '',
-              failed: '',
-              info: 'Please approve token access in MetaMask to continue with the bridge operation.',
-            },
-            txHash: nanoid(),
-            groupTimestamp: Date.now(),
-            timestamp: Date.now(),
-          })
+          // Update stepper - approval step is active
+          updateStep('approval', 'active')
+
+          // Note: Removed approval info toast - stepper provides visual feedback
         }
         return // Exit early without clearing processing flag
       } else if (result.status === 'confirming') {
@@ -306,45 +471,24 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           setTransactionHash(txHash)
           setTxStatus('confirming')
 
-          // Show a waiting toast
-          createInfoToast({
-            type: 'send',
-            summary: {
-              pending: 'Transaction submitted',
-              completed: '',
-              failed: '',
-              info: 'Waiting for network confirmation...',
-            },
-            txHash: txHash || nanoid(),
-            groupTimestamp: Date.now(),
-            timestamp: Date.now(),
-            href: txHash ? `https://arbiscan.io/tx/${txHash}` : undefined,
-          })
+          // Update stepper - if we reach here directly, approval was already sufficient
+          // Mark approval steps as completed and update bridge transaction
+          updateStep('approval', 'completed')
+          updateStep('approval-confirmed', 'completed')
+          updateStep('bridge-tx', 'completed', txHash)
+          updateStep('evm-confirmed', 'active', txHash)
+          setBridgeTxHash(txHash)
+
+          // Note: Removed intermediate info toast - stepper provides visual feedback
+
+          // Start polling for EVM confirmation
+          startEvmConfirmationPolling(txHash)
         }
         return // Exit without clearing processing state
       }
 
-      // If we get here, the transaction was confirmed successfully
-      if (isMounted.current) {
-        setTransactionHash(txHash)
-        const msg = 'Transaction confirmed! Your tokens will be available in Hathor soon.'
-        setSuccessMessage(msg)
-        setIsProcessing(false)
-
-        // Show success toast
-        createSuccessToast({
-          type: 'send',
-          summary: {
-            pending: 'Bridging tokens',
-            completed: 'Transaction confirmed! Your tokens will be available in Hathor soon.',
-            failed: 'Failed to bridge tokens',
-          },
-          txHash: txHash || nanoid(),
-          groupTimestamp: Date.now(),
-          timestamp: Date.now(),
-          href: txHash ? `https://arbiscan.io/tx/${txHash}` : undefined,
-        })
-      }
+      // If we get here, something unexpected happened (shouldn't reach here with current logic)
+      console.warn('Unexpected bridge result status:', result)
     } catch (error: any) {
       console.error('Bridge operation failed:', error)
       clearTimeout(safetyTimeout)
@@ -359,6 +503,29 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         }
 
         setErrorMessage(errorMsg)
+
+        // Check if this is a user cancellation to handle differently
+        const isUserCancellation = errorMsg.includes('User denied') || 
+                                   errorMsg.includes('cancelled') || 
+                                   errorMsg.includes('canceled') ||
+                                   errorMsg.includes('rejected')
+        
+        if (isUserCancellation) {
+          // For user cancellations, reset the entire bridge state to allow retry
+          console.log('User cancelled transaction, resetting bridge state')
+          clearTransaction()
+          setShowStepper(false)
+          setTxStatus('idle')
+        } else {
+          // For other errors, update stepper to show failure
+          if (txStatus === 'approval') {
+            updateStep('approval', 'failed', undefined, errorMsg)
+          } else if (txStatus === 'processing') {
+            updateStep('bridge-tx', 'failed', undefined, errorMsg)
+          } else {
+            updateStep('evm-confirmed', 'failed', undefined, errorMsg)
+          }
+        }
 
         // Show error toast
         createErrorToast(errorMsg, false)
@@ -401,31 +568,21 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     <Widget id="bridge" maxWidth={400} className="shadow-2xl shadow-blue-900/20">
       <Widget.Content>
         <div className="px-4 py-4 font-medium border-b border-stone-700">
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
             <div>
               <h2 className="text-xl font-semibold">Arbitrum to Hathor Bridge</h2>
-              <p className="text-gray-400 text-xs mt-1">Transfer tokens from Arbitrum to Hathor Network</p>
+              <p className="mt-1 text-xs text-gray-400">Transfer tokens from Arbitrum to Hathor Network</p>
             </div>
           </div>
         </div>
 
         <div className="p-4 bg-stone-800">
           {errorMessage && (
-            <div className="p-3 mb-5 border border-red-600 rounded-lg bg-red-900/20">
+            <div className="p-3 mb-5 rounded-lg border border-red-600 bg-red-900/20">
               <div className="flex items-start">
                 <ExclamationCircleIcon className="w-5 h-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
                 <span className="text-sm text-red-300">{errorMessage}</span>
               </div>
-            </div>
-          )}
-
-          {successMessage && transactionHash && (
-            <div className="p-3 mb-5 border border-green-600 rounded-lg bg-green-900/20">
-              <p className="mb-2 text-sm text-green-300">{successMessage}</p>
-              <p className="text-xs text-green-400">
-                Transaction: {transactionHash.substring(0, 10)}...
-                {transactionHash.substring(transactionHash.length - 10)}
-              </p>
             </div>
           )}
 
@@ -443,19 +600,26 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
             tokens={bridgedTokens}
           />
 
-          {/* Inform user about using WalletConnect's Hathor address */}
-          <div className="mt-5 mb-5">
-            <div className="p-3 border border-blue-600 rounded-lg bg-blue-800/20">
-              <p className="text-xs text-blue-300">
-                {hathorAddress
-                  ? `Your tokens will be sent to your connected Hathor wallet: ${hathorAddress.substring(
-                      0,
-                      10
-                    )}...${hathorAddress.substring(hathorAddress.length - 5)}`
-                  : 'Please connect your Hathor wallet first'}
-              </p>
+          {/* Bridge Transaction Stepper */}
+          {(showStepper || (isBridgeActive && !isDismissed)) && (
+            <div className="mt-5 mb-5">
+              <BridgeStepper
+                steps={steps}
+                currentStep={currentStep}
+                onClose={() => {
+                  const isCompleted = steps.every((step) => step.status === 'completed')
+                  if (isCompleted || !isProcessing) {
+                    setShowStepper(false)
+                    if (isCompleted) {
+                      clearTransaction()
+                    } else {
+                      dismissTransaction()
+                    }
+                  }
+                }}
+              />
             </div>
-          </div>
+          )}
 
           <div className="mt-5">
             {metaMaskConnected ? (
@@ -465,16 +629,20 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                 size="lg"
                 color="blue"
                 onClick={handleBridge}
-                disabled={!selectedToken || !amount || isProcessing || !hathorAddress}
+                disabled={
+                  !selectedToken || !amount || isProcessing || !hathorAddress || (isBridgeActive && !isDismissed)
+                }
               >
-                {isProcessing
+                {isProcessing || (isBridgeActive && !isDismissed)
                   ? txStatus === 'processing'
                     ? 'Processing...'
                     : txStatus === 'approval'
                     ? 'Waiting for Approval...'
                     : txStatus === 'confirming'
                     ? 'Confirming Transaction...'
-                    : 'Processing...'
+                    : steps.every((step) => step.status === 'completed')
+                    ? 'Bridge Complete'
+                    : 'Bridge in Progress...'
                   : 'Bridge Token'}
               </Button>
             ) : (
@@ -500,7 +668,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
             {/* Add a small status indicator for MetaMask when connected */}
             {metaMaskConnected && (
-              <div className="flex items-center justify-center gap-1 mt-3">
+              <div className="flex gap-1 justify-center items-center mt-3">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 <span className="text-xs text-green-400">
                   MetaMask Connected:{' '}
