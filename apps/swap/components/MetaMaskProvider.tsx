@@ -19,7 +19,7 @@ export const MetaMaskProvider: FC<MetaMaskProviderProps> = ({ children }) => {
   const sdkOptions = {
     logging: { developerMode: false },
     checkInstallationImmediately: false,
-    checkInstallationOnAllCalls: false, // Prevent constant checks
+    checkInstallationOnAllCalls: !isMobile, // Only check on desktop where extensions are used
     extensionOnly: false,
     preferDesktop: !isMobile,
     forceInjectProvider: false,

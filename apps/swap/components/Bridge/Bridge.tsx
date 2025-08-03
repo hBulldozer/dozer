@@ -66,6 +66,10 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
   // Use a ref to track mounted state to avoid state updates after unmount
   const isMounted = useRef(true)
+  
+  // Store timeout and interval refs to clear them when needed
+  const evmTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const evmIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const { bridgeTokenToHathor } = useBridge()
 
@@ -116,9 +120,20 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
             setIsProcessing(false)
 
             // Update stepper - EVM confirmation complete, now checking Hathor
+            // Ensure all previous steps are completed before moving to final step
+            updateStep('processing', 'completed')
+            updateStep('approval', 'completed')
+            updateStep('approval-confirmed', 'completed')
+            updateStep('bridge-tx', 'completed')
             updateStep('evm-confirming', 'completed', txHash)
             updateStep('hathor-received', 'active')
             setEvmConfirmationTime(Math.floor(Date.now() / 1000))
+
+            // Clear timeout since we're done
+            if (evmTimeoutRef.current) {
+              clearTimeout(evmTimeoutRef.current)
+              evmTimeoutRef.current = null
+            }
 
             // Note: Removed intermediate success toast - only showing final completion toast
           }
@@ -153,21 +168,26 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       }
 
       // Start polling every 5 seconds
-      const interval = setInterval(async () => {
+      evmIntervalRef.current = setInterval(async () => {
         const done = await checkConfirmation()
-        if (done) {
-          clearInterval(interval)
+        if (done && evmIntervalRef.current) {
+          clearInterval(evmIntervalRef.current)
+          evmIntervalRef.current = null
         }
       }, 5000)
 
       // Cleanup timeout after 10 minutes
-      setTimeout(() => {
-        clearInterval(interval)
+      evmTimeoutRef.current = setTimeout(() => {
+        if (evmIntervalRef.current) {
+          clearInterval(evmIntervalRef.current)
+          evmIntervalRef.current = null
+        }
         console.warn('EVM confirmation polling timed out after 10 minutes')
         if (isMounted.current) {
           updateStep('evm-confirming', 'failed', undefined, 'Transaction confirmation timed out')
           setErrorMessage('Transaction confirmation timed out. Please check your transaction manually.')
         }
+        evmTimeoutRef.current = null
       }, 10 * 60 * 1000)
     }, 2000) // 2 second delay to allow app switching and provider stabilization
   }
@@ -309,6 +329,17 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     // Clean up function - remove event listeners and set mounted ref to false
     return () => {
       isMounted.current = false
+      
+      // Clear any ongoing EVM polling
+      if (evmIntervalRef.current) {
+        clearInterval(evmIntervalRef.current)
+        evmIntervalRef.current = null
+      }
+      if (evmTimeoutRef.current) {
+        clearTimeout(evmTimeoutRef.current)
+        evmTimeoutRef.current = null
+      }
+      
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       window.removeEventListener('bridgeTransactionUpdate', handleBridgeTransactionUpdate as EventListener)
       window.removeEventListener('bridgeApprovalStarted', handleApprovalStarted as EventListener)
@@ -347,6 +378,16 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       const hasAnyCompleted = steps.some((step) => step.status === 'completed')
 
       if (allCompleted && hasAnyCompleted) {
+        // Clear any remaining EVM polling timers
+        if (evmIntervalRef.current) {
+          clearInterval(evmIntervalRef.current)
+          evmIntervalRef.current = null
+        }
+        if (evmTimeoutRef.current) {
+          clearTimeout(evmTimeoutRef.current)
+          evmTimeoutRef.current = null
+        }
+        
         // Show simple completion toast without adding to transaction list
         const hathorTxHash = steps.find((step) => step.id === 'hathor-received')?.txHash
         const explorerUrl = hathorTxHash
@@ -371,10 +412,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           href: explorerUrl,
         })
 
-        // Automatically clear the transaction after showing notification
-        setTimeout(() => {
-          clearTransaction()
-        }, 2000)
+        // Don't automatically clear completed transactions - let user close manually
+        // This prevents the gray icons issue where steps are reset while still visible
       }
     }
   }, [steps, isBridgeActive, isDismissed, storedTokenSymbol, clearTransaction])

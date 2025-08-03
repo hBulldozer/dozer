@@ -151,7 +151,12 @@ export const BridgeStepper: FC<BridgeStepperProps> = ({ steps, currentStep, onCl
                     'text-stone-400'
                   )}
                 >
-                  {step.title}
+                  {/* Dynamic title based on status */}
+                  {step.status === 'completed' && step.id === 'evm-confirming' 
+                    ? 'EVM Confirmed'
+                    : step.status === 'completed' && step.id === 'hathor-received'
+                    ? 'Tokens Received'
+                    : step.title}
                 </Typography>
                 {step.txHash && (
                   <a

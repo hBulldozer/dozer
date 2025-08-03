@@ -54,12 +54,31 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Load token balances from Arbitrum
   const loadBalances = useCallback(async (tokenAddresses: string[]) => {
-    if (!window.ethereum) return {}
+    console.log('Loading balances - checking window.ethereum:', !!window.ethereum)
+    
+    // Wait for ethereum provider to be available (browser extension might take time to inject)
+    let ethereum = window.ethereum
+    if (!ethereum) {
+      console.log('Waiting for ethereum provider to be injected...')
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
+      ethereum = window.ethereum
+      if (!ethereum) {
+        console.warn('window.ethereum not available after waiting')
+        return {}
+      }
+    }
 
     try {
-      const web3 = new Web3(window.ethereum)
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' })
-      if (!accounts || accounts.length === 0) return {}
+      const web3 = new Web3(ethereum)
+      console.log('Web3 instance created')
+      
+      const accounts = await ethereum.request({ method: 'eth_accounts' })
+      console.log('Retrieved accounts:', accounts)
+      
+      if (!accounts || accounts.length === 0) {
+        console.warn('No accounts available')
+        return {}
+      }
 
       const arbitrumAddress = accounts[0]
       const balances: Record<string, number> = {}
