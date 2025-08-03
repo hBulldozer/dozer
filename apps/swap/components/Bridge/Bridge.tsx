@@ -74,14 +74,39 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
   // Function to poll for EVM transaction confirmation
   const startEvmConfirmationPolling = async (txHash: string) => {
-    if (!window.ethereum) return
-
-    const Web3 = (await import('web3')).default
-    const web3 = new Web3(window.ethereum)
+    console.log('Starting EVM confirmation polling for tx:', txHash)
+    
+    const getWeb3Provider = async () => {
+      const Web3 = (await import('web3')).default
+      
+      // First try window.ethereum (browser extension or injected provider)
+      if (window.ethereum) {
+        console.log('Using window.ethereum provider')
+        return new Web3(window.ethereum)
+      }
+      
+      // Fallback to public RPC for read-only operations like getting transaction receipts
+      // This is more reliable for native app scenarios since we only need to read transaction status
+      console.log('window.ethereum not available, using public RPC endpoint for transaction confirmation')
+      
+      // Import bridge config to get the correct RPC URL
+      const bridgeConfig = (await import('@dozer/higmi/config/bridge')).default
+      const publicRpcUrl = bridgeConfig.ethereumConfig.rpcUrl
+      console.log('Using RPC URL:', publicRpcUrl)
+      return new Web3(publicRpcUrl)
+    }
 
     const checkConfirmation = async () => {
       try {
+        const web3 = await getWeb3Provider()
+        if (!web3) {
+          console.warn('No Web3 provider available, retrying...')
+          return false // Keep polling
+        }
+
+        console.log('Checking confirmation for tx:', txHash)
         const receipt = await web3.eth.getTransactionReceipt(txHash)
+        console.log('Transaction receipt:', receipt)
 
         if (receipt && receipt.status) {
           // Transaction confirmed successfully
@@ -110,31 +135,41 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           return true // Stop polling
         }
 
+        // No receipt yet, keep polling
+        console.log('Transaction not confirmed yet, continuing to poll...')
         return false // Keep polling
       } catch (error) {
         console.error('Error checking EVM confirmation:', error)
+        // For network errors or provider issues, keep polling
         return false // Keep polling
       }
     }
 
-    // Start polling every 5 seconds
-    const interval = setInterval(async () => {
+    // Initial check with a small delay to allow provider to stabilize
+    setTimeout(async () => {
       const done = await checkConfirmation()
       if (done) {
-        clearInterval(interval)
+        return
       }
-    }, 5000)
 
-    // Initial check
-    const done = await checkConfirmation()
-    if (done) {
-      clearInterval(interval)
-    }
+      // Start polling every 5 seconds
+      const interval = setInterval(async () => {
+        const done = await checkConfirmation()
+        if (done) {
+          clearInterval(interval)
+        }
+      }, 5000)
 
-    // Cleanup timeout after 10 minutes
-    setTimeout(() => {
-      clearInterval(interval)
-    }, 10 * 60 * 1000)
+      // Cleanup timeout after 10 minutes
+      setTimeout(() => {
+        clearInterval(interval)
+        console.warn('EVM confirmation polling timed out after 10 minutes')
+        if (isMounted.current) {
+          updateStep('evm-confirmed', 'failed', undefined, 'Transaction confirmation timed out')
+          setErrorMessage('Transaction confirmation timed out. Please check your transaction manually.')
+        }
+      }, 10 * 60 * 1000)
+    }, 2000) // 2 second delay to allow app switching and provider stabilization
   }
 
   // Filter to only show bridged tokens
