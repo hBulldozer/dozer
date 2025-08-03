@@ -19,15 +19,25 @@ export const MetaMaskProvider: FC<MetaMaskProviderProps> = ({ children }) => {
   const sdkOptions = {
     logging: { developerMode: false },
     checkInstallationImmediately: false,
-    checkInstallationOnAllCalls: true,
+    checkInstallationOnAllCalls: false, // Prevent constant checks
     extensionOnly: false,
     preferDesktop: !isMobile,
     forceInjectProvider: false,
+    // More conservative deep link handling
     openDeeplink: (link: string) => {
-      // Custom deep link handling for better mobile app connectivity
-      if (isMobile) {
-        console.log('Opening MetaMask deep link:', link)
-        window.open(link, '_self')
+      // Only open deep links on mobile and only if user initiated an action
+      if (isMobile && typeof window !== 'undefined') {
+        // Check if there's an active user gesture (e.g., recent click)
+        const now = Date.now()
+        const lastUserAction = (window as any).lastUserAction || 0
+        
+        // Only open if user action was within last 5 seconds
+        if (now - lastUserAction < 5000) {
+          console.log('Opening MetaMask deep link:', link)
+          window.open(link, '_self')
+        } else {
+          console.log('Ignoring deep link - no recent user action')
+        }
       }
     },
     dappMetadata: {

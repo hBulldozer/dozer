@@ -31,6 +31,12 @@ export const MetaMaskConnect: FC<MetaMaskConnectProps> = ({
 
   const connect = async () => {
     setError('')
+    
+    // Track user action for deep link handling
+    if (typeof window !== 'undefined') {
+      (window as any).lastUserAction = Date.now()
+    }
+    
     try {
       const accounts = await sdk?.connect()
       if (accounts && accounts.length > 0 && onConnect) {

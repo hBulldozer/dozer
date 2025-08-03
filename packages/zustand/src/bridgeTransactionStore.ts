@@ -69,6 +69,12 @@ export interface BridgeTransactionActions {
 
 const initialSteps: BridgeStep[] = [
   {
+    id: 'processing',
+    title: 'Processing Request',
+    description: 'Preparing transaction and opening MetaMask...',
+    status: 'pending'
+  },
+  {
     id: 'approval',
     title: 'Token Approval',
     description: 'Approve token spending in MetaMask',
@@ -87,9 +93,9 @@ const initialSteps: BridgeStep[] = [
     status: 'pending'
   },
   {
-    id: 'evm-confirmed',
-    title: 'EVM Confirmed',
-    description: 'Bridge transaction confirmed on Ethereum network',
+    id: 'evm-confirming',
+    title: 'EVM Confirming',
+    description: 'Waiting for block confirmations on Ethereum network',
     status: 'pending'
   },
   {

@@ -116,7 +116,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
             setIsProcessing(false)
 
             // Update stepper - EVM confirmation complete, now checking Hathor
-            updateStep('evm-confirmed', 'completed', txHash)
+            updateStep('evm-confirming', 'completed', txHash)
             updateStep('hathor-received', 'active')
             setEvmConfirmationTime(Math.floor(Date.now() / 1000))
 
@@ -127,7 +127,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           // Transaction failed
           console.error('EVM transaction failed:', receipt)
           if (isMounted.current) {
-            updateStep('evm-confirmed', 'failed', undefined, 'Transaction failed on blockchain')
+            updateStep('evm-confirming', 'failed', undefined, 'Transaction failed on blockchain')
             setIsProcessing(false)
             setErrorMessage('Transaction failed on blockchain')
             createErrorToast('Transaction failed on blockchain', false)
@@ -165,7 +165,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         clearInterval(interval)
         console.warn('EVM confirmation polling timed out after 10 minutes')
         if (isMounted.current) {
-          updateStep('evm-confirmed', 'failed', undefined, 'Transaction confirmation timed out')
+          updateStep('evm-confirming', 'failed', undefined, 'Transaction confirmation timed out')
           setErrorMessage('Transaction confirmation timed out. Please check your transaction manually.')
         }
       }, 10 * 60 * 1000)
@@ -216,7 +216,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       console.log('Bridge transaction sent:', event.detail)
       setBridgeTxHash(event.detail.txHash)
       updateStep('bridge-tx', 'completed', event.detail.txHash)
-      updateStep('evm-confirmed', 'active', event.detail.txHash)
+      updateStep('evm-confirming', 'active', event.detail.txHash)
 
       // Start EVM polling
       startEvmConfirmationPolling(event.detail.txHash)
@@ -333,7 +333,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       setShowStepper(true)
 
       // If we have a bridge transaction hash but EVM confirmation is still pending, resume polling
-      const evmStep = steps.find((step) => step.id === 'evm-confirmed')
+      const evmStep = steps.find((step) => step.id === 'evm-confirming')
       if (evmStep?.status === 'active' && evmStep.txHash) {
         startEvmConfirmationPolling(evmStep.txHash)
       }
@@ -380,6 +380,11 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   }, [steps, isBridgeActive, isDismissed, storedTokenSymbol, clearTransaction])
 
   const handleBridge = async () => {
+    // Track user action for deep link handling
+    if (typeof window !== 'undefined') {
+      (window as any).lastUserAction = Date.now()
+    }
+    
     // Reset state
     setErrorMessage('')
     setTransactionHash('')
@@ -394,6 +399,9 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       amount,
       hathorAddress,
     })
+
+    // Start with processing step
+    updateStep('processing', 'active')
 
     if (!selectedToken || !amount || !metaMaskAccount) {
       const msg = 'Please connect your wallet, select a token, and enter an amount'
@@ -494,7 +502,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           // Don't clear processing state, but update status message
           setTxStatus('approval')
 
-          // Update stepper - approval step is active
+          // Complete processing step and start approval
+          updateStep('processing', 'completed')
           updateStep('approval', 'active')
 
           // Note: Removed approval info toast - stepper provides visual feedback
@@ -507,11 +516,12 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           setTxStatus('confirming')
 
           // Update stepper - if we reach here directly, approval was already sufficient
-          // Mark approval steps as completed and update bridge transaction
+          // Mark processing and approval steps as completed and update bridge transaction
+          updateStep('processing', 'completed')
           updateStep('approval', 'completed')
           updateStep('approval-confirmed', 'completed')
           updateStep('bridge-tx', 'completed', txHash)
-          updateStep('evm-confirmed', 'active', txHash)
+          updateStep('evm-confirming', 'active', txHash)
           setBridgeTxHash(txHash)
 
           // Note: Removed intermediate info toast - stepper provides visual feedback
@@ -556,9 +566,11 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           if (txStatus === 'approval') {
             updateStep('approval', 'failed', undefined, errorMsg)
           } else if (txStatus === 'processing') {
-            updateStep('bridge-tx', 'failed', undefined, errorMsg)
+            updateStep('processing', 'failed', undefined, errorMsg)
+          } else if (txStatus === 'confirming') {
+            updateStep('evm-confirming', 'failed', undefined, errorMsg)
           } else {
-            updateStep('evm-confirmed', 'failed', undefined, errorMsg)
+            updateStep('bridge-tx', 'failed', undefined, errorMsg)
           }
         }
 
