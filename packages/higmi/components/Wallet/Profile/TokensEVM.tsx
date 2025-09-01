@@ -17,6 +17,7 @@ interface TokensEVMProps {
 }
 
 export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
+  const { session } = useWalletConnectClient()
   const { connected: metaMaskConnected, connecting, account: metaMaskAccount, sdk } = useSDK()
   const { loadBalances } = useBridge()
   const [isLoading, setIsLoading] = useState(false)

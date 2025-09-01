@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 import { parsePoolApiInfo, type PoolApiInfo } from '../utils/namedTupleParsers'
+import { formatPrice } from './constants'
 
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -13,12 +14,12 @@ if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
 
 // Get the bridged token UUIDs from environment
 const BRIDGED_TOKEN_UUIDS = process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS
-  ? process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS.split(',').map(uuid => uuid.trim())
+  ? process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS.split(',').map((uuid) => uuid.trim())
   : []
 
 // Get the bridged token original addresses from environment
 const BRIDGED_TOKEN_ADDRESSES = process.env.NEXT_PUBLIC_BRIDGED_TOKEN_ADDRESSES
-  ? process.env.NEXT_PUBLIC_BRIDGED_TOKEN_ADDRESSES.split(',').map(address => address.trim())
+  ? process.env.NEXT_PUBLIC_BRIDGED_TOKEN_ADDRESSES.split(',').map((address) => address.trim())
   : []
 
 // Helper function to check if a token is bridged
@@ -280,11 +281,20 @@ export const tokenRouter = createTRPCRouter({
         'get_signed_pools()',
       ])
 
-      const tokenPools: string[] = batchResponse.calls[`get_pools_for_token("${tokenUuid}")`].value || []
-      const tokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
-      const allPools: string[] = batchResponse.calls['get_signed_pools()'].value || []
+      const allTokenPools: string[] = batchResponse.calls[`get_pools_for_token("${tokenUuid}")`].value || []
+      const rawTokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      // Format token prices from contract units to USD (divide by PRICE_PRECISION)
+      const tokenPrices: Record<string, number> = Object.fromEntries(
+        Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
+      )
+      const allSignedPools: string[] = batchResponse.calls['get_signed_pools()'].value || []
 
-      console.log(`   📊 Found ${tokenPools.length} pools for token ${input.symbol}`)
+      // Filter to only include pools that are both token-related AND signed
+      const tokenPools = allTokenPools.filter((poolKey) => allSignedPools.includes(poolKey))
+
+      console.log(
+        `   📊 Found ${allTokenPools.length} total pools for token ${input.symbol}, ${tokenPools.length} signed pools`
+      )
 
       // Get detailed pool data for token's pools
       let totalLiquidityUSD = 0
@@ -311,7 +321,7 @@ export const tokenRouter = createTRPCRouter({
 
             // Parse pool key to get tokens and fee
             const [tokenA, tokenB, feeStr] = poolKey.split('/')
-            const swapFee = parseInt(feeStr || '0') / 1000 // Convert from basis points to percentage
+            const swapFee = parseInt(feeStr || '0') / 10 // Convert fee format to percentage (fee_numerator/fee_denominator*100 = x/1000*100 = x/10)
 
             // Get token metadata for both tokens
             const token0Info = await fetchTokenInfo(tokenA || '')

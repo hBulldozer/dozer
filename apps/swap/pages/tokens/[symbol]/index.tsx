@@ -1,4 +1,5 @@
 import { AppearOnMount, BreadcrumbLink, Button, Dialog, LoadingOverlay, Typography } from '@dozer/ui'
+import { formatUSD } from '@dozer/format'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { Fragment, useState } from 'react'
@@ -74,7 +75,7 @@ const Token = () => {
     { symbol: symbol?.toUpperCase() || '' },
     { enabled: !!symbol }
   )
-  const { data: prices = {}, isLoading: isLoadingPrices } = api.getTokens.prices.useQuery()
+  const { data: prices = {}, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery()
 
   const isLoading = isLoadingToken || isLoadingPrices
 
@@ -91,8 +92,8 @@ const Token = () => {
   const primaryPool = tokenData.pools.length > 0 ? tokenData.pools[0] : null
   const aggregatedPair = primaryPool
     ? {
-        id: `${tokenData.symbol.toLowerCase()}-aggregated`,
-        symbolId: `${tokenData.symbol.toLowerCase()}-aggregated`,
+        id: tokenData.symbol === 'HTR' ? 'native' : `${tokenData.symbol.toLowerCase()}-aggregated`,
+        symbolId: tokenData.symbol === 'HTR' ? 'native' : `${tokenData.symbol.toLowerCase()}-aggregated`,
         name: tokenData.name,
         liquidityUSD: tokenData.totalLiquidityUSD,
         volumeUSD: tokenData.totalVolumeUSD,
@@ -104,13 +105,26 @@ const Token = () => {
             : 0,
         token0:
           tokenData.symbol === 'HTR'
-            ? toToken(primaryPool.token0)
+            ? toToken({ uuid: '00', symbol: 'HTR', name: 'Hathor' })
             : toToken({ uuid: '00', symbol: 'HTR', name: 'Hathor' }),
-        token1: tokenData.symbol === 'HTR' ? toToken(primaryPool.token1) : toToken(tokenData),
-        reserve0: primaryPool.reserve0,
-        reserve1: primaryPool.reserve1,
+        token1:
+          tokenData.symbol === 'HTR'
+            ? toToken(primaryPool.token0.uuid === '00' ? primaryPool.token1 : primaryPool.token0)
+            : toToken(tokenData),
+        reserve0:
+          tokenData.symbol === 'HTR'
+            ? primaryPool.token0.uuid === '00'
+              ? primaryPool.reserve0
+              : primaryPool.reserve1
+            : primaryPool.reserve0,
+        reserve1:
+          tokenData.symbol === 'HTR'
+            ? primaryPool.token0.uuid === '00'
+              ? primaryPool.reserve1
+              : primaryPool.reserve0
+            : primaryPool.reserve1,
         chainId: primaryPool.chainId,
-        liquidity: tokenData.pools.reduce((sum, p) => sum + (p.liquidityUSD || 0), 0),
+        liquidity: tokenData.totalLiquidityUSD, // Use API aggregated value instead of re-calculating
         volume1d: tokenData.totalVolumeUSD,
         fees1d: tokenData.totalFeesUSD,
         hourSnapshots: [],
@@ -166,7 +180,7 @@ const Token = () => {
                           {pool.name}
                         </Typography>
                         <Typography variant="sm" className="text-stone-400">
-                          {(pool.swapFee / 100).toFixed(2)}% fee
+                          {pool.swapFee.toFixed(2)}% fee
                         </Typography>
                       </div>
                       <div className="flex gap-4 items-center">
@@ -175,11 +189,7 @@ const Token = () => {
                             TVL
                           </Typography>
                           <Typography weight={500} className="text-stone-50">
-                            $
-                            {(pool.liquidityUSD / 1000000).toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
+                            {formatUSD(pool.liquidityUSD)}
                           </Typography>
                         </div>
                         <Button as="a" href={`/pool/${pool.symbolId}`} size="sm" variant="outlined">
@@ -195,7 +205,16 @@ const Token = () => {
           <div className="hidden flex-col order-2 gap-4 lg:flex">
             <AppearOnMount>
               {primaryPoolForSwap ? (
-                <SwapWidget token0_idx={'00'} token1_idx={tokenData.uuid} />
+                <SwapWidget
+                  token0_idx={
+                    tokenData.symbol === 'HTR'
+                      ? process.env.NODE_ENV === 'production'
+                        ? '00003b17e8d656e4612926d5d2c5a4d5b3e4536e6bebc61c76cb71a65b81986f' // hUSDC mainnet
+                        : '000000005c3e8f7118140bcfbf2032a1a0abbca3b47205731880bba6b87cba8f' // hUSDC testnet
+                      : '00' // HTR for other tokens
+                  }
+                  token1_idx={tokenData.uuid}
+                />
               ) : (
                 <div className="p-6 text-center rounded-lg shadow-md bg-stone-800 shadow-black/20">
                   <Typography className="text-stone-400">No pools available for swapping</Typography>
@@ -230,7 +249,13 @@ const Token = () => {
                 as="a"
                 href={
                   primaryPoolForSwap
-                    ? `/swap?token0=00&token1=${tokenData.uuid}&chainId=${primaryPoolForSwap.chainId}`
+                    ? `/swap?token0=${
+                        tokenData.symbol === 'HTR'
+                          ? process.env.NODE_ENV === 'production'
+                            ? '00003b17e8d656e4612926d5d2c5a4d5b3e4536e6bebc61c76cb71a65b81986f' // hUSDC mainnet
+                            : '000000005c3e8f7118140bcfbf2032a1a0abbca3b47205731880bba6b87cba8f' // hUSDC testnet
+                          : '00' // HTR for other tokens
+                      }&token1=${tokenData.uuid}&chainId=${primaryPoolForSwap.chainId}`
                     : undefined
                 }
                 className={!primaryPoolForSwap ? 'opacity-50 cursor-not-allowed' : ''}

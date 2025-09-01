@@ -154,8 +154,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                           <Typography variant="sm" weight={500} className="text-stone-300 hover:text-stone-20">
                             {formatUSD(
                               (Number(token0Minimum?.toFixed(2)) * value0 +
-                                Number(token1Minimum?.toFixed(2)) * value1) *
-                                (+percentage / 100)
+                                Number(token1Minimum?.toFixed(2)) * value1)
                             )}
                           </Typography>
                         </AppearOnMount>
@@ -195,7 +194,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                               </span>
                             </Typography>
                             <Typography variant="xs" className="text-stone-400">
-                              {formatUSD(Number(token0Minimum?.toFixed(2)) * value0 * (+percentage / 100))}
+                              {formatUSD(Number(token0Minimum?.toFixed(2)) * value0)}
                             </Typography>
                           </div>
                           <div className="flex justify-between items-center">
@@ -206,7 +205,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                               </span>
                             </Typography>
                             <Typography variant="xs" className="text-stone-400">
-                              {formatUSD(Number(token1Minimum?.toFixed(2)) * value1 * (+percentage / 100))}
+                              {formatUSD(Number(token1Minimum?.toFixed(2)) * value1)}
                             </Typography>
                           </div>
                         </div>

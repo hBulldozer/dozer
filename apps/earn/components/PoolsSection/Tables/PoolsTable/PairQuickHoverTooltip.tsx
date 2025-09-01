@@ -47,7 +47,7 @@ export const PairQuickHoverTooltip: FC<PairQuickHoverTooltipProps> = ({ row }) =
                   : ''
               }
             />
-            Fee {row.swapFee / 100}%
+            Fee {row.swapFee.toFixed(2)}%
           </Typography> */}
         </div>
         <div className="flex flex-col gap-1">
@@ -84,7 +84,7 @@ export const PairQuickHoverTooltip: FC<PairQuickHoverTooltipProps> = ({ row }) =
         </>
       )} */}
       <div className="flex justify-end gap-2 mt-4 mb-2">
-        <Link.Internal href={`/${row.id}/add`} passHref={true}>
+        <Link.Internal href={`/${(row as any).symbolId || row.id}/add`} passHref={true}>
           <Button as="a" size="sm" fullWidth>
             Deposit
           </Button>

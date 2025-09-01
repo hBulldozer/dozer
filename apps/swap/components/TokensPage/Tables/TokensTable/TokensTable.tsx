@@ -103,19 +103,20 @@ export const TokensTable: FC = () => {
     const tokenEntries: ExtendedPair[] = []
 
     // Add HTR token entry first (special case)
-    const htrPool = allPools.find(pool => 
-      (pool.token0.uuid === '00' && pool.token1.symbol === 'hUSDC') ||
-      (pool.token1.uuid === '00' && pool.token0.symbol === 'hUSDC')
+    const htrPool = allPools.find(
+      (pool) =>
+        (pool.token0.uuid === '00' && pool.token1.symbol === 'hUSDC') ||
+        (pool.token1.uuid === '00' && pool.token0.symbol === 'hUSDC')
     )
-    
+
     if (htrPool) {
       tokenEntries.push({
         ...htrPool,
         id: `token-00`,
         name: 'HTR',
-        token0: normalizeToken({ 
-          uuid: '00', 
-          symbol: 'HTR', 
+        token0: normalizeToken({
+          uuid: '00',
+          symbol: 'HTR',
           name: 'Hathor',
           chainId: 1,
           decimals: 2,
@@ -124,7 +125,7 @@ export const TokensTable: FC = () => {
           originalAddress: '',
           sourceChain: '',
           targetChain: '',
-          rebase: { base: 1, elastic: 1 }
+          rebase: { base: 1, elastic: 1 },
         }),
         token1: normalizeToken(htrPool.token0.uuid === '00' ? htrPool.token1 : htrPool.token0),
         liquidityUSD: htrPool.liquidityUSD / 2,
@@ -169,15 +170,23 @@ export const TokensTable: FC = () => {
       }
     })
 
-    // Remove duplicates by token UUID and keep the one with highest liquidity
+    // Remove duplicates by token UUID, but prioritize HTR special entry
     const uniqueTokens = new Map<string, ExtendedPair>()
 
     tokenEntries.forEach((entry) => {
       const tokenUuid = entry.id.replace('token-', '')
       const existing = uniqueTokens.get(tokenUuid)
 
-      if (!existing || entry.liquidityUSD > existing.liquidityUSD) {
-        uniqueTokens.set(tokenUuid, entry)
+      // For HTR token, prioritize the specially created entry (token0 is always HTR)
+      if (tokenUuid === '00') {
+        if (!existing || (entry.token0.symbol === 'HTR' && existing.token0.symbol !== 'HTR')) {
+          uniqueTokens.set(tokenUuid, entry)
+        }
+      } else {
+        // For other tokens, keep the one with highest liquidity
+        if (!existing || entry.liquidityUSD > existing.liquidityUSD) {
+          uniqueTokens.set(tokenUuid, entry)
+        }
       }
     })
 

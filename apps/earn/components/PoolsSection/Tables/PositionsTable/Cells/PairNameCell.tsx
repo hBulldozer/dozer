@@ -1,5 +1,5 @@
 import { formatNumber } from '@dozer/format'
-import { classNames, Currency, NetworkIcon, Typography } from '@dozer/ui'
+import { classNames, Currency, NetworkIcon, Typography, Chip } from '@dozer/ui'
 import { FC } from 'react'
 
 import { ICON_SIZE } from '../../contants'
@@ -23,9 +23,7 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
       <div className="flex flex-col">
         <Typography variant="sm" weight={500} className="flex items-center gap-1 text-slate-50">
           {token0.symbol} <span className="text-slate-500">/</span> {token1.symbol}{' '}
-          {/* <div className={classNames('bg-slate-700 rounded-lg px-1 py-0.5 ml-1')}>
-            {formatNumber(row.feeUSD / 100)}%
-          </div> */}
+          <Chip color="gray" size="sm" label={`${row.swapFee.toFixed(2)}%`} className="ml-1" />
         </Typography>
         {/* <Typography variant="xxs" className="text-slate-400">
           {row.type === 'STABLE_POOL' && 'Stable'}

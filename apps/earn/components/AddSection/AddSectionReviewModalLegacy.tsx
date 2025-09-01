@@ -128,6 +128,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   const onClick = async () => {
     setSentTX(true)
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency && networkData) {
+      const fee = parseInt(pool.id.split('/')[2]);
       const response = await poolManager.addLiquidity(
         hathorRpc,
         address,
@@ -135,8 +136,8 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
         amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
         otherCurrency.uuid,
         outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
-        5
-      )
+        fee
+      );
       addTempTx(
         pool.id,
         address,

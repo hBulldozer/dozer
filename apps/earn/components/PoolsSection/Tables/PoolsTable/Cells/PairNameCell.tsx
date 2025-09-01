@@ -1,6 +1,6 @@
 import { formatNumber } from '@dozer/format'
 import { useInViewport } from '@dozer/hooks'
-import { classNames, Currency, NetworkIcon, Typography } from '@dozer/ui'
+import { classNames, Currency, NetworkIcon, Typography, Chip } from '@dozer/ui'
 import { FC, useRef } from 'react'
 
 import { useTokensFromPair } from '@dozer/api'
@@ -26,6 +26,7 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
       <div className="flex flex-col">
         <Typography variant="sm" weight={500} className="flex items-center gap-1 text-stone-50">
           {token0.symbol} <span className="text-stone-500">/</span> {token1.symbol}{' '}
+          <Chip color="gray" size="sm" label={`${row.swapFee.toFixed(2)}%`} className="ml-1" />
           {row.token1.imageUrl && (
             <>
               <div className={classNames('bg-stone-700 hidden sm:flex rounded-lg px-1 py-0.5 ml-1 text-xs')}>

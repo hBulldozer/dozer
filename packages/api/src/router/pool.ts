@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
+import { formatPrice } from './constants'
 import {
   parsePoolApiInfo,
   parsePoolInfo,
@@ -169,9 +170,9 @@ export const poolRouter = createTRPCRouter({
 
       const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
       const rawTokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
-      // Convert token prices from contract units to USD (divide by 1,000,000)
+      // Convert token prices from contract units to USD (divide by PRICE_PRECISION)
       const tokenPrices: Record<string, number> = Object.fromEntries(
-        Object.entries(rawTokenPrices).map(([k, v]) => [k, (v as number) / 1_000000])
+        Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
       )
 
       if (poolKeys.length === 0) {
@@ -214,7 +215,7 @@ export const poolRouter = createTRPCRouter({
 
           // Parse pool key to get tokens and fee
           const [tokenA, tokenB, feeStr] = poolKey.split('/')
-          const swapFee = parseInt(feeStr || '0') / 1000 // Convert from basis points to percentage
+          const swapFee = parseInt(feeStr || '0') / 10 // Convert fee format to percentage (fee_numerator/fee_denominator*100 = x/1000*100 = x/10)
 
           // Get token metadata
           const token0Info = tokenMetadata.get(tokenA || '') || { symbol: 'UNK', name: 'Unknown' }
@@ -405,9 +406,9 @@ export const poolRouter = createTRPCRouter({
 
       const poolDataArray = batchResponseData.calls[`front_end_api_pool("${matchingPoolKey}")`]?.value
       const rawTokenPrices = batchResponseData.calls['get_all_token_prices_in_usd()'].value || {}
-      // Convert token prices from contract units to USD (divide by 1,000,000)
+      // Convert token prices from contract units to USD (divide by PRICE_PRECISION)
       const tokenPrices: Record<string, number> = Object.fromEntries(
-        Object.entries(rawTokenPrices).map(([k, v]) => [k, (v as number) / 1_000000])
+        Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
       )
 
       if (!poolDataArray) {
@@ -420,7 +421,7 @@ export const poolRouter = createTRPCRouter({
       // Parse pool key
       const [tokenA, tokenB, feeStrSecond] = matchingPoolKey.split('/')
       const fee = parseInt(feeStrSecond || '0') / 1000
-      const swapFee = parseInt(feeStrSecond || '0') / 1000 // Convert from basis points to percentage
+      const swapFee = parseInt(feeStrSecond || '0') / 10 // Convert fee format to percentage (fee_numerator/fee_denominator*100 = x/1000*100 = x/10)
 
       // Get token metadata
       const token0Info = await fetchTokenInfo(tokenA || '')

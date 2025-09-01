@@ -59,10 +59,10 @@ export const PoolPositionProvider: FC<{
   }, [isLoadingPoolInfo])
 
   const _max_withdraw_a: Amount<Type> | undefined = token0Amount
-    ? Amount.fromFractionalAmount(token0, token0Amount * 100, 100)
+    ? Amount.fromRawAmount(token0, token0Amount)
     : undefined
   const _max_withdraw_b: Amount<Type> | undefined = token1Amount
-    ? Amount.fromFractionalAmount(token1, token1Amount * 100, 100)
+    ? Amount.fromRawAmount(token1, token1Amount)
     : undefined
 
   // const _user_deposited_a: Amount<Type> | undefined = user_deposited_a
@@ -73,10 +73,10 @@ export const PoolPositionProvider: FC<{
   //   : undefined
 
   const value0 = useMemo(() => {
-    return (prices[token0.uuid] * (token0Amount || 0))
+    return (prices[token0.uuid] * ((token0Amount || 0) / 100))
   }, [prices, token0, token0Amount])
   const value1 = useMemo(() => {
-    return (prices[token1.uuid] * (token1Amount || 0))
+    return (prices[token1.uuid] * ((token1Amount || 0) / 100))
   }, [prices, token1, token1Amount])
 
   // const depositedUSD0 = useMemo(() => {

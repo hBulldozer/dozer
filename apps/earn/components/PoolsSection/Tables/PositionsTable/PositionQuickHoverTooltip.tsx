@@ -86,7 +86,7 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
                   : ''
               }
             /> */}
-            Fee {row.swapFee}%
+            Fee {row.swapFee.toFixed(2)}%
           </Typography>
         </div>
         <div className="flex flex-col gap-1">
@@ -183,12 +183,12 @@ const _PositionQuickHoverTooltip: FC<PositionQuickHoverTooltipProps> = ({ row })
         </div>
       )} */}
       <div className="flex justify-end gap-2 mt-8 mb-2">
-        <Link.Internal href={`/${row.id}/remove`} passHref={true}>
+        <Link.Internal href={`/${(row as any).symbolId || row.id}/remove`} passHref={true}>
           <Button as="a" size="sm" variant="outlined" fullWidth>
             Withdraw
           </Button>
         </Link.Internal>
-        <Link.Internal href={`/${row.id}/add`} passHref={true}>
+        <Link.Internal href={`/${(row as any).symbolId || row.id}/add`} passHref={true}>
           <Button as="a" size="sm" fullWidth>
             Deposit
           </Button>

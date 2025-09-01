@@ -4,7 +4,7 @@ import { Price } from '@dozer/currency'
 import { formatPercent, formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
 import { Pair } from '@dozer/api'
-import { AppearOnMount, CopyHelper, Currency, Dots, IconButton, Link, NetworkIcon, Typography } from '@dozer/ui'
+import { AppearOnMount, CopyHelper, Currency, Dots, IconButton, Link, NetworkIcon, Typography, Chip } from '@dozer/ui'
 import { FC, useMemo } from 'react'
 
 // import { useTokensFromPair } from '../../lib/hooks'
@@ -46,10 +46,11 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices, isLoading }) => {
                 <div className="flex items-center gap-2">
                   <Typography
                     variant="lg"
-                    className="flex items-center gap-1 text-stone-50 group-hover:text-yellow-400"
+                    className="flex items-center gap-2 text-stone-50 group-hover:text-yellow-400"
                     weight={600}
                   >
                     {token0.symbol}/{token1.symbol}
+                    <Chip color="gray" size="sm" label={`${pair.swapFee.toFixed(2)}%`} className="text-xs" />
                     <ArrowTopRightOnSquareIcon
                       width={20}
                       height={20}
@@ -58,8 +59,7 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices, isLoading }) => {
                   </Typography>
                 </div>
                 <Typography variant="xs" className="text-stone-300">
-                  {/* Fee: 1% */}
-                  Fee: {pair.swapFee}%
+                  {/* Fee tag moved above as chip */}
                 </Typography>
               </Link.External>
               <CopyHelper toCopy={pair.id} hideIcon={true}>
