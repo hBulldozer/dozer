@@ -1,6 +1,3 @@
-// import { getAddress } from '@ethersproject/address'
-
-//* TODO: implement hathor address take ethers from reference
 export function getUuid(uuid: string): string {
   let result = null
 

@@ -144,9 +144,22 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
 
     // Priority 2: Props (if no URL params)
     if (!selectedToken0) {
+      // For HTR page, we want hUSDC as input token
+      let token0FromProp: any = undefined
+
+      // Check if this is the hUSDC token by looking for bridged hUSDC
+      const husdcToken = tokens.find((token) => token.symbol === 'hUSDC' && token.bridged)
+      if (husdcToken && token0_idx === husdcToken.uuid) {
+        // This is hUSDC UUID, use the found token
+        token0FromProp = husdcToken
+      } else {
+        // For other tokens, use UUID lookup
+        token0FromProp = tokens.find((token) => token.uuid === token0_idx)
+      }
+
       const htrFromTokens = tokens.find((token) => token.uuid === '00')
-      const token0FromProp = tokens.find((token) => token.uuid === token0_idx)
-      selectedToken0 = toToken(htrFromTokens || token0FromProp)
+
+      selectedToken0 = toToken(token0FromProp || htrFromTokens)
     }
 
     if (!selectedToken1) {
@@ -157,14 +170,16 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
 
     setInitialToken0(selectedToken0)
     setInitialToken1(selectedToken1)
-  }, [tokens, token0_idx, token1_idx, router.query, router.query.isReady])
+  }, [tokens, token0_idx, token1_idx, router.isReady])
 
   useEffect(() => {
-    setTokens([initialToken0, initialToken1])
-  }, [network, initialToken0, initialToken1])
+    if (initialToken0 && initialToken1) {
+      setTokens([initialToken0, initialToken1])
+    }
+  }, [initialToken0, initialToken1])
 
   const [input0, setInput0] = useState<string>('')
-  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([initialToken0, initialToken1])
+  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([undefined, undefined])
   const [input1, setInput1] = useState<string>('')
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
   const [selectedPool, setSelectedPool] = useState<Pair>()

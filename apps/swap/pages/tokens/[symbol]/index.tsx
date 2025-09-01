@@ -1,4 +1,4 @@
-import { AppearOnMount, BreadcrumbLink, Button, Dialog, LoadingOverlay, Typography } from '@dozer/ui'
+import { AppearOnMount, BreadcrumbLink, Button, Dialog, LoadingOverlay, Typography, Currency, Chip } from '@dozer/ui'
 import { formatUSD } from '@dozer/format'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
@@ -7,7 +7,6 @@ import { Layout } from 'components/Layout'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../utils/api'
 import { SwapWidget } from 'pages'
-import { TokenChart } from '../../../components/TokenPage/TokenChart'
 import { TokenStats } from 'components/TokenPage/TokenStats'
 import ReadMore from '@dozer/ui/readmore/ReadMore'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
@@ -170,34 +169,41 @@ const Token = () => {
                   Available Pools
                 </Typography>
                 <div className="space-y-3">
-                  {tokenData.pools.map((pool) => (
-                    <div
-                      key={pool.id}
-                      className="flex justify-between items-center p-4 rounded-lg shadow-md bg-stone-800 shadow-black/20"
-                    >
-                      <div className="flex gap-3 items-center">
-                        <Typography weight={500} className="text-stone-50">
-                          {pool.name}
-                        </Typography>
-                        <Typography variant="sm" className="text-stone-400">
-                          {pool.swapFee.toFixed(2)}% fee
-                        </Typography>
-                      </div>
-                      <div className="flex gap-4 items-center">
-                        <div className="text-right">
-                          <Typography variant="sm" className="text-stone-400">
-                            TVL
-                          </Typography>
-                          <Typography weight={500} className="text-stone-50">
-                            {formatUSD(pool.liquidityUSD)}
-                          </Typography>
+                  {tokenData.pools.map((pool) => {
+                    // Get the paired token (not the current token)
+                    const pairedToken = pool.token0.uuid === tokenData.uuid ? pool.token1 : pool.token0
+                    const currentTokenPool = pool.token0.uuid === tokenData.uuid ? pool.token0 : pool.token1
+
+                    return (
+                      <div
+                        key={pool.id}
+                        className="flex justify-between items-center p-4 rounded-lg shadow-md bg-stone-800 shadow-black/20"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Currency.IconList iconWidth={26} iconHeight={26}>
+                            <Currency.Icon currency={toToken(currentTokenPool)} />
+                            <Currency.Icon currency={toToken(pairedToken)} />
+                          </Currency.IconList>
+                          <div className="flex flex-col">
+                            <Typography variant="sm" weight={500} className="flex items-center gap-1 text-stone-50">
+                              {currentTokenPool.symbol} <span className="text-stone-500">/</span> {pairedToken.symbol}
+                              <Chip color="gray" size="sm" label={`${pool.swapFee.toFixed(2)}%`} className="ml-1" />
+                            </Typography>
+                          </div>
                         </div>
-                        <Button as="a" href={`/pool/${pool.symbolId}`} size="sm" variant="outlined">
-                          View Pool
-                        </Button>
+                        <div className="flex gap-4 items-center">
+                          <div className="text-center">
+                            <Typography weight={500} className="text-stone-50">
+                              {formatUSD(pool.liquidityUSD)}
+                            </Typography>
+                          </div>
+                          <Button as="a" href={`/pool/${pool.symbolId}`} size="sm" variant="outlined">
+                            View Pool
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -208,9 +214,13 @@ const Token = () => {
                 <SwapWidget
                   token0_idx={
                     tokenData.symbol === 'HTR'
-                      ? process.env.NODE_ENV === 'production'
-                        ? '00003b17e8d656e4612926d5d2c5a4d5b3e4536e6bebc61c76cb71a65b81986f' // hUSDC mainnet
-                        : '000000005c3e8f7118140bcfbf2032a1a0abbca3b47205731880bba6b87cba8f' // hUSDC testnet
+                      ? (() => {
+                          // Find hUSDC token dynamically by symbol
+                          const husdcToken = tokenData.pools
+                            .flatMap((pool) => [pool.token0, pool.token1])
+                            .find((token) => token.symbol === 'hUSDC')
+                          return husdcToken?.uuid || '00'
+                        })()
                       : '00' // HTR for other tokens
                   }
                   token1_idx={tokenData.uuid}
@@ -251,9 +261,13 @@ const Token = () => {
                   primaryPoolForSwap
                     ? `/swap?token0=${
                         tokenData.symbol === 'HTR'
-                          ? process.env.NODE_ENV === 'production'
-                            ? '00003b17e8d656e4612926d5d2c5a4d5b3e4536e6bebc61c76cb71a65b81986f' // hUSDC mainnet
-                            : '000000005c3e8f7118140bcfbf2032a1a0abbca3b47205731880bba6b87cba8f' // hUSDC testnet
+                          ? (() => {
+                              // Find hUSDC token dynamically by symbol
+                              const husdcToken = tokenData.pools
+                                .flatMap((pool) => [pool.token0, pool.token1])
+                                .find((token) => token.symbol === 'hUSDC')
+                              return husdcToken?.uuid || '00'
+                            })()
                           : '00' // HTR for other tokens
                       }&token1=${tokenData.uuid}&chainId=${primaryPoolForSwap.chainId}`
                     : undefined
