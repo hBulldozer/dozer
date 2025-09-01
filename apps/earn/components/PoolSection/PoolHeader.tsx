@@ -58,9 +58,6 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices, isLoading }) => {
                     />
                   </Typography>
                 </div>
-                <Typography variant="xs" className="text-stone-300">
-                  {/* Fee tag moved above as chip */}
-                </Typography>
               </Link.External>
               <CopyHelper toCopy={pair.id} hideIcon={true}>
                 {(isCopied) => (

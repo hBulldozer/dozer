@@ -10,6 +10,7 @@ import Web3 from 'web3'
 import { useSDK } from '@metamask/sdk-react'
 import Image from 'next/image'
 import bridgeConfig, { IS_TESTNET } from '../../../config/bridge'
+import { useWalletConnectClient } from '../../contexts'
 
 interface TokensEVMProps {
   setView: Dispatch<SetStateAction<ProfileView>>
