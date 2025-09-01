@@ -17,6 +17,7 @@ import Head from 'next/head'
 import { api } from '../utils/api'
 import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 import { usePathname } from 'next/navigation'
+import { isFeatureEnabled } from '../config/features'
 
 // const queryClient = new QueryClient()
 
@@ -30,7 +31,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
         <title>
           {pathname.includes('create_token')
             ? 'Dozer - Create Token 🧪'
-            : pathname.includes('oasis')
+            : pathname.includes('oasis') && isFeatureEnabled('OASIS_ENABLED')
             ? 'Dozer - Oasis 🏝️'
             : 'Dozer Finance - Pools 💦'}
         </title>
