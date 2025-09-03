@@ -13,6 +13,7 @@ import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 import { toToken } from '@dozer/api'
 import { TokenHeader } from 'components/TokenPage/TokenHeader'
 import Image from 'next/image'
+import { customAbouts } from '../../../data/tokens'
 
 export const config = {
   maxDuration: 60,
@@ -148,20 +149,28 @@ const Token = () => {
                 Stats
               </Typography>
               {aggregatedPair && <TokenStats pair={aggregatedPair} prices={prices} />}
-              <Typography weight={500} className="flex flex-col" variant="h2">
-                About
-              </Typography>
-              <ReadMore
-                text={
-                  tokenData.bridged
-                    ? `${
-                        tokenData.symbol
-                      } is a token on the Hathor network with a total supply of ${tokenData.totalSupply.toLocaleString()} tokens. It is available for trading in ${
-                        tokenData.poolCount
-                      } liquidity pools.`
-                    : `${tokenData.symbol} is the native token of the Hathor network. It can be staked, used for transaction fees, and traded in ${tokenData.poolCount} liquidity pools.`
-                }
-              />
+              {(() => {
+                const customAbout = customAbouts[tokenData.symbol.toUpperCase()]
+                const poolText = tokenData.poolCount === 1 ? 'pool' : 'pools';
+                const aboutText = customAbout
+                  ? `${customAbout} It can be traded in ${tokenData.poolCount} liquidity ${poolText}.`
+                  : tokenData.bridged
+                  ? `${
+                      tokenData.symbol
+                    } is a token on the Hathor network with a total supply of ${tokenData.totalSupply.toLocaleString()} tokens. It is available for trading in ${
+                      tokenData.poolCount
+                    } liquidity ${poolText}.`
+                  : `${tokenData.symbol} is the native token of the Hathor network. It can be staked, used for transaction fees, and traded in ${tokenData.poolCount} liquidity ${poolText}.`
+
+                return (
+                  <>
+                    <Typography weight={500} className="flex flex-col" variant="h2">
+                      About
+                    </Typography>
+                                        <ReadMore text={aboutText} />
+                  </>
+                )
+              })()}
             </div>
             {tokenData.pools.length > 0 && (
               <div className="flex flex-col gap-4">
