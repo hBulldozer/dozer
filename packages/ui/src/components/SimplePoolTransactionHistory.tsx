@@ -11,6 +11,8 @@ const getExplorerUrls = () => {
       baseUrl: process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL,
       getTransactionUrl: (txHash: string) => `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/transaction/${txHash}`,
       getAccountUrl: (address: string) => `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/address/${address}`,
+      getNanoContractUrl: (nanoContractId: string) =>
+        `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/nano_contract/detail/${nanoContractId}`,
     }
   }
 
@@ -23,6 +25,7 @@ const getExplorerUrls = () => {
     baseUrl,
     getTransactionUrl: (txHash: string) => `${baseUrl}/transaction/${txHash}`,
     getAccountUrl: (address: string) => `${baseUrl}/address/${address}`,
+    getNanoContractUrl: (nanoContractId: string) => `${baseUrl}/nano_contract/detail/${nanoContractId}`,
   }
 }
 
@@ -205,12 +208,11 @@ export interface SimplePoolTransactionHistoryProps {
 }
 
 export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistoryProps> = ({
+  poolKey,
   transactions,
   loading = false,
   error,
   onRefresh,
-  token0Symbol,
-  token1Symbol,
 }) => {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'time', desc: true }])
 
@@ -273,12 +275,11 @@ export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistory
 
   // Show only the first 10 transactions
   const displayTransactions = transactions.slice(0, 10)
-  const hasMore = transactions.length > 10
 
   return (
     <div className="bg-stone-900 rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-stone-700">
+      <div className="p-6 border-b border-stone-700">
         <div>
           <Typography variant="lg" weight={600} className="text-stone-100">
             Recent Transactions
@@ -286,22 +287,6 @@ export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistory
           <Typography variant="sm" className="text-stone-400 mt-1">
             Latest activity for this pool
           </Typography>
-        </div>
-        <div className="flex items-center gap-2">
-          {loading ? (
-            <Chip color="yellow" size="sm" label="Loading..." />
-          ) : (
-            <Chip color="blue" size="sm" label={`${displayTransactions.length} transactions`} />
-          )}
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              disabled={loading}
-              className="px-3 py-1 bg-stone-700 hover:bg-stone-600 disabled:opacity-50 disabled:cursor-not-allowed text-stone-200 rounded-md transition-colors text-sm"
-            >
-              {loading ? 'Loading...' : 'Refresh'}
-            </button>
-          )}
         </div>
       </div>
 
@@ -314,17 +299,13 @@ export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistory
                 headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className={`px-3 py-3 text-left text-xs font-medium text-stone-400 uppercase tracking-wider cursor-pointer hover:text-stone-300 ${
+                    className={`px-3 py-3 text-left text-xs font-medium text-stone-400 uppercase tracking-wider ${
                       header.column.columnDef.meta?.className || ''
                     }`}
-                    onClick={header.column.getToggleSortingHandler()}
                   >
                     {header.isPlaceholder ? null : (
-                      <div className="flex items-center gap-1">
+                      <div>
                         {typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : null}
-                        {header.column.getIsSorted() && (
-                          <span className="text-stone-500">{header.column.getIsSorted() === 'desc' ? '↓' : '↑'}</span>
-                        )}
                       </div>
                     )}
                   </th>
@@ -406,18 +387,18 @@ export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistory
         </table>
       </div>
 
-      {/* Footer with pagination info */}
+      {/* Footer with nanocontract explorer link */}
       {displayTransactions.length > 0 && (
         <div className="p-4 border-t border-stone-700 bg-stone-900">
-          <div className="flex items-center justify-between">
-            <Typography variant="xs" className="text-stone-500">
-              Showing {displayTransactions.length} of {transactions.length} transactions
-            </Typography>
-            {hasMore && (
-              <Typography variant="xs" className="text-stone-400">
-                More transactions available - showing latest 10
-              </Typography>
-            )}
+          <div className="flex items-center justify-center">
+            <a
+              href={getExplorerUrls().getNanoContractUrl(poolKey)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 transition-colors text-sm"
+            >
+              View all transactions on Explorer
+            </a>
           </div>
         </div>
       )}

@@ -1,14 +1,27 @@
 import { SimpleTransaction } from '../components/SimplePoolTransactionHistory'
 
-// Helper function to format time
+// Helper function to format time with proper singular/plural forms
 export function formatTimeAgo(timestamp: number): string {
   const now = Date.now() / 1000
   const diff = now - timestamp
 
-  if (diff < 60) return `${Math.floor(diff)} seconds`
-  if (diff < 3600) return `${Math.floor(diff / 60)} minutes`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hours`
-  return `${Math.floor(diff / 86400)} days`
+  if (diff < 60) {
+    const seconds = Math.floor(diff)
+    return seconds === 1 ? '1 second' : `${seconds} seconds`
+  }
+
+  if (diff < 3600) {
+    const minutes = Math.floor(diff / 60)
+    return minutes === 1 ? '1 minute' : `${minutes} minutes`
+  }
+
+  if (diff < 86400) {
+    const hours = Math.floor(diff / 3600)
+    return hours === 1 ? '1 hour' : `${hours} hours`
+  }
+
+  const days = Math.floor(diff / 86400)
+  return days === 1 ? '1 day' : `${days} days`
 }
 
 // Helper function to truncate address
@@ -51,14 +64,28 @@ interface ComplexTransaction {
   }
 }
 
+// Helper function to format USD amounts with proper formatting for large numbers
+const formatUSD = (amount: number): string => {
+  if (amount >= 1000000) {
+    // For millions and above, show in millions with 2 decimal places
+    return `$${(amount / 1000000).toFixed(2)}M`
+  } else if (amount >= 1000) {
+    // For thousands and above, show with commas
+    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  } else {
+    // For smaller amounts, show with 2 decimal places
+    return `$${amount.toFixed(2)}`
+  }
+}
+
 // Transform complex transaction to simple format
 export function transformToSimpleTransaction(
   complexTx: ComplexTransaction,
   pricesUSD?: Record<string, number>
-): SimpleTransaction {
+): SimpleTransaction | null {
   // Extract wallet address - different logic for different transaction types
   let senderAddress = 'Unknown'
-  
+
   if (complexTx.method.includes('remove_liquidity')) {
     // For remove liquidity, the address is where the output tokens are being sent
     const firstOutput = complexTx.debug?.fullTx?.outputs?.[0]?.decoded?.address
@@ -75,7 +102,13 @@ export function transformToSimpleTransaction(
   if (complexTx.method.includes('add_liquidity')) type = 'Add'
   else if (complexTx.method.includes('remove_liquidity')) type = 'Remove'
   else if (complexTx.method.includes('create_pool')) type = 'Create'
-  else if (complexTx.method.includes('swap')) type = 'Swap'
+  else if (complexTx.method.includes('swap_exact_tokens_for_tokens_through_path')) {
+    // Filter out multi-hop swaps as they are complex to parse and involve multiple pools
+    return null
+  } else if (complexTx.method.includes('swap_tokens_for_exact_tokens_through_path')) {
+    // Filter out multi-hop swaps as they are complex to parse and involve multiple pools
+    return null
+  } else if (complexTx.method.includes('swap')) type = 'Swap'
 
   // Extract token information
   const tokenSymbols = complexTx.tokenSymbols || []
@@ -96,21 +129,21 @@ export function transformToSimpleTransaction(
     // Determine correct token0/token1 order based on pool structure
     // Pool keys in Dozer follow the format: token0_uuid/token1_uuid/fee
     // We need to respect this order for correct Buy/Sell classification
-    
+
     // Try to find pool information from transaction to get correct token order
     let poolKey = ''
     if (complexTx.poolsInvolved && complexTx.poolsInvolved.length > 0) {
       poolKey = complexTx.poolsInvolved[0]
     }
-    
+
     if (poolKey) {
       // Extract token UUIDs from pool key: token0/token1/fee
       const [poolToken0, poolToken1] = poolKey.split('/')
-      
+
       // Find token symbols based on correct pool order
-      const token0Info = tokenSymbols.find(t => t.uuid === poolToken0)
-      const token1Info = tokenSymbols.find(t => t.uuid === poolToken1)
-      
+      const token0Info = tokenSymbols.find((t) => t.uuid === poolToken0)
+      const token1Info = tokenSymbols.find((t) => t.uuid === poolToken1)
+
       if (token0Info && token1Info) {
         token0Symbol = token0Info.symbol
         token1Symbol = token1Info.symbol
@@ -219,12 +252,12 @@ export function transformToSimpleTransaction(
         // Simplified HTR-based Buy/Sell logic
         const HTR_UUID = '00'
         const bridgedTokenUuids = process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS?.split(',') || []
-        
+
         // Check if this pool involves a bridged token
-        const hasBridgedToken = bridgedTokenUuids.some(bridgedUuid => 
-          spentToken === bridgedUuid || receivedToken === bridgedUuid
+        const hasBridgedToken = bridgedTokenUuids.some(
+          (bridgedUuid) => spentToken === bridgedUuid || receivedToken === bridgedUuid
         )
-        
+
         if (hasBridgedToken) {
           // For bridged tokens (hUSDC, etc.): HTR is the asset being bought/sold
           // Sending HTR = Sell HTR, Receiving HTR = Buy HTR
@@ -274,12 +307,21 @@ export function transformToSimpleTransaction(
       const token = output.token || '00'
       const outputAddress = output.decoded?.address
 
-      if (outputAddress === senderAddress) {
-        // This is change back to the sender
-        changeOutputsByToken[token] = (changeOutputsByToken[token] || 0) + output.value
+      if (type === 'Remove') {
+        // For Remove transactions, outputs to sender are the actual liquidity removal outputs
+        if (outputAddress === senderAddress) {
+          outputsByToken[token] = (outputsByToken[token] || 0) + output.value
+        } else {
+          // Any outputs to other addresses are considered change/fees
+          changeOutputsByToken[token] = (changeOutputsByToken[token] || 0) + output.value
+        }
       } else {
-        // This is actual output (not change)
-        outputsByToken[token] = (outputsByToken[token] || 0) + output.value
+        // For Add transactions, outputs to sender are change
+        if (outputAddress === senderAddress) {
+          changeOutputsByToken[token] = (changeOutputsByToken[token] || 0) + output.value
+        } else {
+          outputsByToken[token] = (outputsByToken[token] || 0) + output.value
+        }
       }
     })
 
@@ -336,67 +378,96 @@ export function transformToSimpleTransaction(
       side = 'Add'
       totalValueUSD = totalUSD
     } else if (type === 'Remove') {
-      // For remove liquidity, show net amounts (outputs - change)
+      // For remove liquidity, show the actual outputs received
       const amounts_list: string[] = []
       let totalUSD = 0
 
-      // Calculate net amounts for each token
-      const allTokens = new Set([...Object.keys(outputsByToken), ...Object.keys(changeOutputsByToken)])
-      allTokens.forEach((token) => {
-        const outputAmount = outputsByToken[token] || 0
-        const changeAmount = changeOutputsByToken[token] || 0
-        const netAmount = (outputAmount - changeAmount) / 100
+      // Show actual outputs for each token
+      Object.keys(outputsByToken).forEach((token) => {
+        const outputAmount = outputsByToken[token] / 100
 
-        if (netAmount > 0) {
+        if (outputAmount > 0) {
           const symbol =
             tokenSymbols.find((t) => t.uuid === token)?.symbol ||
             (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
-          amounts_list.push(`${netAmount.toFixed(2)} ${symbol}`)
+          amounts_list.push(`${outputAmount.toFixed(2)} ${symbol}`)
 
           if (pricesUSD && pricesUSD[token]) {
-            totalUSD += netAmount * pricesUSD[token]
+            totalUSD += outputAmount * pricesUSD[token]
           }
         }
       })
 
       amounts = amounts_list.join(' + ')
 
-      // For display, calculate net amounts for token0/token1
+      // For display, set token0/token1 amounts from actual outputs
       if (token0Symbol && token1Symbol) {
-        let a0 = 0,
-          a1 = 0
-
         // Token 0
         const token0Uuid = tokenSymbols[0]?.uuid || ''
-        if (token0Uuid) {
-          const outputAmount = outputsByToken[token0Uuid] || 0
-          const changeAmount = changeOutputsByToken[token0Uuid] || 0
-          a0 = (outputAmount - changeAmount) / 100
+        if (token0Uuid && outputsByToken[token0Uuid]) {
+          token0Amount = outputsByToken[token0Uuid] / 100
         }
 
         // Token 1
         const token1Uuid = tokenSymbols[1]?.uuid || ''
-        if (token1Uuid) {
-          const outputAmount = outputsByToken[token1Uuid] || 0
-          const changeAmount = changeOutputsByToken[token1Uuid] || 0
-          a1 = (outputAmount - changeAmount) / 100
+        if (token1Uuid && outputsByToken[token1Uuid]) {
+          token1Amount = outputsByToken[token1Uuid] / 100
         }
-
-        token0Amount = a0 > 0 ? a0 : null
-        token1Amount = a1 > 0 ? a1 : null
       }
       side = 'Remove'
       totalValueUSD = totalUSD
     }
   }
 
-  // For create pool transactions, show pool creation info
+  // For create pool transactions, show the tokens that were added during pool creation
   if (type === 'Create') {
     if (tokenSymbols.length >= 2) {
-      amounts = `Pool: ${tokenSymbols[0].symbol}/${tokenSymbols[1].symbol}`
       token0Symbol = tokenSymbols[0].symbol
       token1Symbol = tokenSymbols[1].symbol
+
+      // Calculate amounts from inputs (tokens added during pool creation)
+      const amounts_list: string[] = []
+      let totalUSD = 0
+
+      // Process inputs to get the tokens added during pool creation
+      inputs.forEach((input) => {
+        const token = input.token || '00'
+        const amount = input.value / 100
+
+        if (amount > 0) {
+          const symbol =
+            tokenSymbols.find((t) => t.uuid === token)?.symbol ||
+            (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
+          amounts_list.push(`${amount.toFixed(2)} ${symbol}`)
+
+          if (pricesUSD && pricesUSD[token]) {
+            totalUSD += amount * pricesUSD[token]
+          }
+        }
+      })
+
+      amounts = amounts_list.length > 0 ? amounts_list.join(' + ') : `Pool: ${token0Symbol}/${token1Symbol}`
+
+      // Set token amounts for table display
+      const token0Uuid = tokenSymbols[0]?.uuid || ''
+      const token1Uuid = tokenSymbols[1]?.uuid || ''
+
+      if (token0Uuid) {
+        const token0Input = inputs.find((input) => (input.token || '00') === token0Uuid)
+        if (token0Input) {
+          token0Amount = token0Input.value / 100
+        }
+      }
+
+      if (token1Uuid) {
+        const token1Input = inputs.find((input) => (input.token || '00') === token1Uuid)
+        if (token1Input) {
+          token1Amount = token1Input.value / 100
+        }
+      }
+
       side = 'Create'
+      totalValueUSD = totalUSD
     } else {
       amounts = 'Pool created'
     }
@@ -415,7 +486,7 @@ export function transformToSimpleTransaction(
     token0Amount,
     token1Amount,
     side,
-    totalValue: totalValueUSD > 0 ? `$${totalValueUSD.toFixed(2)}` : undefined,
+    totalValue: totalValueUSD > 0 ? formatUSD(totalValueUSD) : undefined,
     account: senderAddress,
     success: complexTx.success,
     explorerUrl: `https://explorer.hathor.network/transaction/${complexTx.tx_id}`,
@@ -427,5 +498,7 @@ export function transformTransactions(
   complexTransactions: ComplexTransaction[],
   pricesUSD?: Record<string, number>
 ): SimpleTransaction[] {
-  return complexTransactions.map((tx) => transformToSimpleTransaction(tx, pricesUSD))
+  return complexTransactions
+    .map((tx) => transformToSimpleTransaction(tx, pricesUSD))
+    .filter((tx): tx is SimpleTransaction => tx !== null)
 }
