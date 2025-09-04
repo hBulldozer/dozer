@@ -1,9 +1,30 @@
 import { useState } from 'react'
-import { Layout } from '../components/Layout'
+import { Layout } from '../../components/Layout'
 import { Button, Widget, Typography } from '@dozer/ui'
 import { api } from 'utils/api'
 
 const TestRoutesPage = () => {
+  // Only render in development
+  if (process.env.NODE_ENV !== 'development') {
+    return (
+      <Layout>
+        <div className="flex flex-col justify-center items-center min-h-[80vh] max-w-2xl mx-auto">
+          <Widget id="dev-only" maxWidth={600}>
+            <Widget.Content>
+              <div className="p-6 text-center">
+                <Typography variant="h2" className="mb-4 text-red-400">
+                  🚫 Development Only
+                </Typography>
+                <Typography variant="lg" className="text-gray-400">
+                  This debug page is only available in development mode.
+                </Typography>
+              </div>
+            </Widget.Content>
+          </Widget>
+        </div>
+      </Layout>
+    )
+  }
   const [testResult, setTestResult] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
 

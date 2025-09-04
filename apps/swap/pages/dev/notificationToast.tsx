@@ -1,5 +1,5 @@
 import { Button, NotificationData, createFailedToast, createInfoToast } from '@dozer/ui'
-import { Layout } from 'components/Layout'
+import { Layout } from '../../components/Layout'
 import React from 'react'
 import { createErrorToast, createSuccessToast, createInlineToast, createToast } from '@dozer/ui'
 
@@ -67,6 +67,20 @@ const generateRandomDummyData = (): Omit<NotificationData, 'promise'> => {
 }
 
 const test = () => {
+  // Only render in development
+  if (process.env.NODE_ENV !== 'development') {
+    return (
+      <Layout>
+        <div className="flex flex-col justify-center items-center min-h-[80vh] max-w-2xl mx-auto">
+          <div className="p-6 text-center">
+            <h1 className="mb-4 text-2xl font-bold text-red-400">🚫 Development Only</h1>
+            <p className="text-gray-400">This debug page is only available in development mode.</p>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
+
   return (
     <Layout>
       <div className="grid grid-flow-col gap-5 min-h-[400px]">

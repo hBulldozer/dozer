@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from 'utils/api'
 import { Token } from '@dozer/currency'
-import { Layout } from '../components/Layout'
+import { Layout } from '../../components/Layout'
 
 // Convert database token to Token model
 const toToken = (token: any): Token | undefined => {
@@ -32,6 +32,20 @@ interface RouteResult {
 }
 
 export default function RoutingDebugPage() {
+  // Only render in development
+  if (process.env.NODE_ENV !== 'development') {
+    return (
+      <Layout>
+        <div className="container px-4 py-8 mx-auto">
+          <div className="mx-auto max-w-6xl">
+            <h1 className="mb-6 text-3xl font-bold text-red-400">🚫 Development Only</h1>
+            <p className="text-gray-400">This debug page is only available in development mode.</p>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
+
   const { data: tokensData } = api.getTokens.all.useQuery()
   const utils = api.useUtils()
   const [routeResults, setRouteResults] = useState<RouteResult[]>([])

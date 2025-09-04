@@ -2,6 +2,17 @@ import { Typography } from '@dozer/ui'
 import { api } from 'utils/api'
 
 const sql = () => {
+  // Only render in development
+  if (process.env.NODE_ENV !== 'development') {
+    return (
+      <>
+        <Typography variant="h1" className="text-red-400">🚫 Development Only</Typography>
+        <Typography variant="lg" className="text-gray-400">
+          This debug page is only available in development mode.
+        </Typography>
+      </>
+    )
+  }
   const { data: test } = api.getPools.all.useQuery()
   // const {data:test3} = api.getPools.contractState.useQuery({})
   const interval = 30 * 60 * 1000

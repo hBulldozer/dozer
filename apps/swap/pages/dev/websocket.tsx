@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Layout } from 'components/Layout'
+import { Layout } from '../../components/Layout'
 import React from 'react'
 
 const WS_URL = 'ws://192.168.0.103:8080/v1a/event_ws'
@@ -86,6 +86,22 @@ interface SpentOutput {
   index: number
 }
 const EventsPage = () => {
+  // Only render in development
+  if (process.env.NODE_ENV !== 'development') {
+    return (
+      <Layout>
+        <div className="flex flex-col justify-center items-center min-h-[80vh] max-w-2xl mx-auto">
+          <div className="p-6 text-center">
+            <h1 className="mb-4 text-2xl font-bold text-red-400">🚫 Development Only</h1>
+            <p className="text-gray-400">
+              This debug page is only available in development mode.
+            </p>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
+
   const [messages, setMessages] = useState<Event[]>([])
   const [socket, setSocket] = useState<WebSocket | null>(null)
 
