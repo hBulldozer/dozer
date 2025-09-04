@@ -56,6 +56,13 @@ export {
   type SimpleTransaction,
   type SimplePoolTransactionHistoryProps,
 } from './src/components/SimplePoolTransactionHistory'
+
+// Token trading history components
+export { TokenTradingHistory, type TokenTradingHistoryProps } from './src/components/TokenTradingHistory'
+
+export { TokenTradingHistorySection } from './src/components/TokenTradingHistorySection'
+
+export { AvailablePoolsWidget } from './src/components/AvailablePoolsWidget'
 export {
   transformToSimpleTransaction,
   transformTransactions,

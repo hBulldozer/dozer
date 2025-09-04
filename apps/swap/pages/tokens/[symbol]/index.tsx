@@ -1,4 +1,15 @@
-import { AppearOnMount, BreadcrumbLink, Button, Dialog, LoadingOverlay, Typography, Currency, Chip } from '@dozer/ui'
+import {
+  AppearOnMount,
+  BreadcrumbLink,
+  Button,
+  Dialog,
+  LoadingOverlay,
+  Typography,
+  Currency,
+  Chip,
+  TokenTradingHistorySection,
+  AvailablePoolsWidget,
+} from '@dozer/ui'
 import { formatUSD } from '@dozer/format'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
@@ -77,6 +88,23 @@ const Token = () => {
   )
   const { data: prices = {}, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery()
 
+  // Fetch transaction history for trading history (filter client-side)
+  const {
+    data: transactionData,
+    isLoading: isLoadingTransactions,
+    error: transactionError,
+  } = api.getPools.getAllTransactionHistory.useQuery(
+    {
+      count: 200, // Get more to filter client-side
+      // Remove tokenFilter - we'll filter client-side for better results
+    },
+    {
+      enabled: !!tokenData?.uuid,
+      staleTime: 30000, // Cache for 30 seconds
+      refetchOnWindowFocus: false,
+    }
+  )
+
   const isLoading = isLoadingToken || isLoadingPrices
 
   if (!symbol) return <div>Invalid token symbol</div>
@@ -151,7 +179,7 @@ const Token = () => {
               {aggregatedPair && <TokenStats pair={aggregatedPair} prices={prices} />}
               {(() => {
                 const customAbout = customAbouts[tokenData.symbol.toUpperCase()]
-                const poolText = tokenData.poolCount === 1 ? 'pool' : 'pools';
+                const poolText = tokenData.poolCount === 1 ? 'pool' : 'pools'
                 const aboutText = customAbout
                   ? `${customAbout} It can be traded in ${tokenData.poolCount} liquidity ${poolText}.`
                   : tokenData.bridged
@@ -167,55 +195,19 @@ const Token = () => {
                     <Typography weight={500} className="flex flex-col" variant="h2">
                       About
                     </Typography>
-                                        <ReadMore text={aboutText} />
+                    <ReadMore text={aboutText} />
                   </>
                 )
               })()}
             </div>
-            {tokenData.pools.length > 0 && (
-              <div className="flex flex-col gap-4">
-                <Typography weight={500} variant="h2">
-                  Available Pools
-                </Typography>
-                <div className="space-y-3">
-                  {tokenData.pools.map((pool) => {
-                    // Get the paired token (not the current token)
-                    const pairedToken = pool.token0.uuid === tokenData.uuid ? pool.token1 : pool.token0
-                    const currentTokenPool = pool.token0.uuid === tokenData.uuid ? pool.token0 : pool.token1
-
-                    return (
-                      <div
-                        key={pool.id}
-                        className="flex justify-between items-center p-4 rounded-lg shadow-md bg-stone-800 shadow-black/20"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Currency.IconList iconWidth={26} iconHeight={26}>
-                            <Currency.Icon currency={toToken(currentTokenPool)} />
-                            <Currency.Icon currency={toToken(pairedToken)} />
-                          </Currency.IconList>
-                          <div className="flex flex-col">
-                            <Typography variant="sm" weight={500} className="flex items-center gap-1 text-stone-50">
-                              {currentTokenPool.symbol} <span className="text-stone-500">/</span> {pairedToken.symbol}
-                              <Chip color="gray" size="sm" label={`${pool.swapFee.toFixed(2)}%`} className="ml-1" />
-                            </Typography>
-                          </div>
-                        </div>
-                        <div className="flex gap-4 items-center">
-                          <div className="text-center">
-                            <Typography weight={500} className="text-stone-50">
-                              {formatUSD(pool.liquidityUSD)}
-                            </Typography>
-                          </div>
-                          <Button as="a" href={`/pool/${pool.symbolId}`} size="sm" variant="outlined">
-                            View Pool
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
+            <TokenTradingHistorySection
+              tokenUuid={tokenData.uuid}
+              tokenSymbol={tokenData.symbol}
+              transactions={transactionData?.transactions || []}
+              pricesUSD={prices}
+              loading={isLoadingTransactions}
+              error={transactionError?.message}
+            />
           </div>
           <div className="hidden flex-col order-2 gap-4 lg:flex">
             <AppearOnMount>
@@ -240,6 +232,7 @@ const Token = () => {
                 </div>
               )}
             </AppearOnMount>
+            <AvailablePoolsWidget pools={tokenData.pools} currentToken={tokenData} />
           </div>
         </div>
         {currentToken && (

@@ -3,7 +3,7 @@ import { GenericTable } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { APR_COLUMN, NAME_COLUMN, NETWORK_COLUMN, VALUE_COLUMN } from './Cells/columns'
+import { APR_COLUMN, NAME_COLUMN, VALUE_COLUMN } from './Cells/columns'
 import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
 import { PAGE_SIZE } from '../contants'
@@ -15,7 +15,7 @@ import { Token } from '@dozer/currency'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, VALUE_COLUMN, APR_COLUMN]
+const COLUMNS = [NAME_COLUMN, VALUE_COLUMN, APR_COLUMN]
 // VOLUME_COLUMN
 
 export interface PositionPair extends Pair {
@@ -42,14 +42,16 @@ export const PositionsTable: FC = () => {
 
   const { data: pools, isLoading } = api.getPools.all.useQuery()
   const { data: prices, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery()
-  const { data: userPositions, isLoading: isLoadingPositions } = api.getProfile.userPositions.useQuery({ address: address })
+  const { data: userPositions, isLoading: isLoadingPositions } = api.getProfile.userPositions.useQuery({
+    address: address,
+  })
 
   const _pairs_array: PositionPair[] = useMemo(() => {
     const array: PositionPair[] = []
     if (pools && prices && userPositions && !isLoadingPrices && !isLoadingPositions && !isLoading) {
       // Create a map of pool keys to user positions for quick lookup
-      const positionMap = new Map(userPositions.map(pos => [pos.poolKey, pos]))
-      
+      const positionMap = new Map(userPositions.map((pos) => [pos.poolKey, pos]))
+
       pools.map((pool) => {
         const userPosition = positionMap.get(pool.id)
 
@@ -122,7 +124,6 @@ export const PositionsTable: FC = () => {
     if (isSm && !isMd) {
       setColumnVisibility({
         volume: false,
-        network: false,
         rewards: false,
         fees: false,
       })
@@ -131,7 +132,6 @@ export const PositionsTable: FC = () => {
     } else {
       setColumnVisibility({
         volume: false,
-        network: false,
         rewards: false,
         liquidityUSD: false,
         fees: false,
