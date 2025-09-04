@@ -35,7 +35,7 @@
     "node": ">=16.x",
     "pnpm": ">=8.x"
   },
-  "packageManager": "pnpm@10.12.4",
+  "packageManager": "pnpm@10.15.1",
   "pnpm": {
     "overrides": {
       "typescript": "^5.3.3"

@@ -1,9 +1,15 @@
-import { AppearOnMount, BreadcrumbLink, LoadingOverlay } from '@dozer/ui'
+import {
+  AppearOnMount,
+  BreadcrumbLink,
+  LoadingOverlay,
+  SimplePoolTransactionHistory,
+  transformTransactions,
+} from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { Pair } from '@dozer/api'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
-import TransactionHistory from '../../components/TransactionHistory/TransactionHistory'
+// Remove old transaction history import
 
 import {
   Layout,
@@ -23,7 +29,7 @@ import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../../utils/api'
 import { useAccount } from '@dozer/zustand'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
-import { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { Token } from '@dozer/currency'
 
 export const config = {
@@ -79,7 +85,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   await ssg.getPools.all.prefetch()
   await ssg.getPrices.allUSD.prefetch()
-  await ssg.getPools.transactionHistory.prefetch({ poolKey: pool.id })
+  await ssg.getPools.getAllTransactionHistory.prefetch({ count: 20, poolFilter: pool.id })
 
   return {
     props: {
@@ -95,6 +101,81 @@ const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
     label: `${pair.name}`,
   },
 ]
+
+// Component to handle simplified pool transaction history
+const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pair: Pair }) => {
+  // Fetch all transaction history (since pool filtering isn't working properly)
+  const {
+    data: transactionData,
+    isLoading,
+    error,
+    refetch,
+  } = api.getPools.getAllTransactionHistory.useQuery(
+    {
+      count: 100, // Get more to filter client-side
+    },
+    {
+      enabled: !!poolKey,
+      staleTime: 30000, // Cache for 30 seconds
+      refetchOnWindowFocus: false,
+    }
+  )
+
+  // Fetch USD prices for value calculation
+  const { data: pricesData } = api.getPrices.allUSD.useQuery(undefined, {
+    staleTime: 60000, // Cache prices for 1 minute
+    refetchOnWindowFocus: false,
+  })
+
+  const handleRefresh = () => {
+    refetch()
+  }
+
+  const allTransactions = transactionData?.transactions || []
+  const errorMessage = error ? error.message : undefined
+  const prices = pricesData || {}
+
+  // Filter transactions for this specific pool
+  const poolToken0 = pair.token0.uuid
+  const poolToken1 = pair.token1.uuid
+
+  const poolSpecificTransactions = allTransactions.filter((tx) => {
+    // Filter out failed transactions (voided_by)
+    if (
+      tx.debug?.fullTx?.voided_by &&
+      Array.isArray(tx.debug.fullTx.voided_by) &&
+      tx.debug.fullTx.voided_by.length > 0
+    ) {
+      return false
+    }
+
+    // Filter out multi-hop transactions
+    if (tx.isMultiHop) {
+      return false
+    }
+
+    // Check if transaction involves both tokens of this pool
+    const tokensInvolved = tx.tokensInvolved || []
+    const hasToken0 = tokensInvolved.includes(poolToken0)
+    const hasToken1 = tokensInvolved.includes(poolToken1)
+
+    // For this pool, we need both tokens to be involved
+    return hasToken0 && hasToken1
+  })
+
+  // Transform filtered transactions to simple format
+  const simpleTransactions = transformTransactions(poolSpecificTransactions, prices)
+
+  return (
+    <SimplePoolTransactionHistory
+      poolKey={poolKey}
+      transactions={simpleTransactions}
+      loading={isLoading}
+      error={errorMessage}
+      onRefresh={handleRefresh}
+    />
+  )
+}
 
 const Pool = () => {
   const router = useRouter()
@@ -206,10 +287,9 @@ const Pool = () => {
                 <PoolStats pair={memoizedPair as Pair} prices={prices} />
               </AppearOnMount>
 
-              {/* TODO: Re-enable once history data access is refined */}
-              {/* <AppearOnMount>
-                <TransactionHistory pair={pair} />
-              </AppearOnMount> */}
+              <AppearOnMount>
+                <PoolTransactionHistorySection poolKey={(memoizedPair as Pair).id} pair={memoizedPair as Pair} />
+              </AppearOnMount>
             </div>
 
             <div className="flex flex-col order-2 gap-4">

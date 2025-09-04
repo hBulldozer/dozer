@@ -18,6 +18,102 @@ import {
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
 
+// Helper function to calculate 24-hour transaction count for a pool
+// This uses the same logic as the transaction history endpoint to ensure consistency
+async function calculate24hTransactionCount(poolKey: string): Promise<number> {
+  try {
+    const now = Math.floor(Date.now() / 1000)
+    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
+
+    // Use the same endpoint and logic as getAllTransactionHistory
+    const endpoint = 'nano_contract/history'
+    const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`]
+
+    const response = await fetchNodeData(endpoint, queryParams)
+    const allTransactions = response.history || []
+
+    // Parse pool key to get tokens
+    const [tokenA, tokenB] = poolKey.split('/')
+
+    // Filter transactions using the same logic as the transaction history
+    const poolTransactions24h = allTransactions.filter((tx: any) => {
+      // Check if transaction is within 24 hours
+      if (tx.timestamp < oneDayAgo) return false
+
+      // Filter out failed transactions (voided_by)
+      if (
+        tx.debug?.fullTx?.voided_by &&
+        Array.isArray(tx.debug.fullTx.voided_by) &&
+        tx.debug.fullTx.voided_by.length > 0
+      ) {
+        return false
+      }
+
+      // Filter out multi-hop transactions
+      const isMultiHop =
+        tx.nc_args && tx.nc_args.path && typeof tx.nc_args.path === 'string' && tx.nc_args.path.includes(',')
+      if (isMultiHop) {
+        return false
+      }
+
+      // Extract tokens using the same logic as getAllTransactionHistory
+      const tokensFromOutputs = new Set<string>()
+      if (tx.outputs && Array.isArray(tx.outputs)) {
+        tx.outputs.forEach((output: any) => {
+          if (output.token_data !== undefined) {
+            const tokenIndex = output.token_data & 0b01111111 // Lower 7 bits
+            const isAuthority = (output.token_data & 0b10000000) !== 0 // Highest bit
+
+            // Skip authority outputs for token extraction
+            if (!isAuthority) {
+              if (tokenIndex === 0) {
+                // Index 0 is always HTR
+                tokensFromOutputs.add('00')
+              } else if (tx.tokens && tx.tokens[tokenIndex - 1]) {
+                // Other tokens map to tokens array (index - 1)
+                tokensFromOutputs.add(tx.tokens[tokenIndex - 1])
+              }
+            }
+          }
+        })
+      }
+
+      // Extract tokens from arguments
+      const tokensFromArgs = new Set<string>()
+      if (tx.nc_args) {
+        if (tx.nc_args.token_in) {
+          tokensFromArgs.add(tx.nc_args.token_in)
+        }
+        if (tx.nc_args.token_out) {
+          tokensFromArgs.add(tx.nc_args.token_out)
+        }
+        if (tx.nc_args.token_a) {
+          tokensFromArgs.add(tx.nc_args.token_a)
+        }
+        if (tx.nc_args.token_b) {
+          tokensFromArgs.add(tx.nc_args.token_b)
+        }
+      }
+
+      // Combine tokens from outputs and arguments
+      const allTokens = new Set([...tokensFromOutputs, ...tokensFromArgs])
+      const tokensInvolved = Array.from(allTokens)
+
+      // Check if transaction involves both tokens of this pool
+      const hasTokenA = tokensInvolved.includes(tokenA)
+      const hasTokenB = tokensInvolved.includes(tokenB)
+
+      // For this pool, we need both tokens to be involved
+      return hasTokenA && hasTokenB
+    })
+
+    return poolTransactions24h.length
+  } catch (error) {
+    console.error(`Error calculating 24h transaction count for pool ${poolKey}:`, error)
+    return 0
+  }
+}
+
 if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
   console.warn('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
 }
@@ -201,96 +297,98 @@ export const poolRouter = createTRPCRouter({
       const tokenMetadata = new Map(tokenMetadataResults as [string, { symbol: string; name: string }][])
 
       // Process each pool
-      const poolsData = poolKeys.map((poolKey) => {
-        try {
-          const poolDataArray = poolDataResponse.calls[`front_end_api_pool("${poolKey}")`]?.value
+      const poolsData = await Promise.all(
+        poolKeys.map(async (poolKey) => {
+          try {
+            const poolDataArray = poolDataResponse.calls[`front_end_api_pool("${poolKey}")`]?.value
 
-          if (!poolDataArray) {
-            console.warn(`⚠️  [GET_POOLS_ALL] No data found for pool ${poolKey}`)
+            if (!poolDataArray) {
+              console.warn(`⚠️  [GET_POOLS_ALL] No data found for pool ${poolKey}`)
+              return null
+            }
+
+            // Parse the NamedTuple array to an object with proper property names
+            const poolData = parsePoolApiInfo(poolDataArray)
+
+            // Parse pool key to get tokens and fee
+            const [tokenA, tokenB, feeStr] = poolKey.split('/')
+            const swapFee = parseInt(feeStr || '0') / 10 // Convert fee format to percentage (fee_numerator/fee_denominator*100 = x/1000*100 = x/10)
+
+            // Get token metadata
+            const token0Info = tokenMetadata.get(tokenA || '') || { symbol: 'UNK', name: 'Unknown' }
+            const token1Info = tokenMetadata.get(tokenB || '') || { symbol: 'UNK', name: 'Unknown' }
+
+            // Calculate reserves (convert from cents to full units)
+            const reserve0 = (poolData.reserve0 || 0) / 100
+            const reserve1 = (poolData.reserve1 || 0) / 100
+
+            // Get token prices
+            const token0PriceUSD = tokenPrices[tokenA || ''] || 0
+            const token1PriceUSD = tokenPrices[tokenB || ''] || 0
+
+            // Calculate USD values
+            const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
+
+            // Calculate volume and fees
+            const volume1d = (poolData.volume || 0) / 100
+            const volumeUSD = volume1d * token0PriceUSD // Approximate volume USD
+
+            const fee0 = (poolData.fee0 || 0) / 100
+            const fee1 = (poolData.fee1 || 0) / 100
+            const feeUSD = fee0 * token0PriceUSD + fee1 * token1PriceUSD
+
+            // Calculate APR (annualized based on daily fees)
+            const apr = liquidityUSD > 0 ? ((feeUSD * 365) / liquidityUSD) * 100 : 0
+
+            // Generate symbol-based identifier for URL-friendly access
+            const feeBasisPoints = parseInt(feeStr || '0')
+            const feeForId = feeBasisPoints / 10 // Convert from basis points to identifier format
+            const symbolId = `${token0Info.symbol}-${token1Info.symbol}-${feeForId}`
+
+            return {
+              id: poolKey,
+              symbolId,
+              name: `${token0Info.symbol}-${token1Info.symbol}`,
+              liquidityUSD,
+              volume0: reserve0,
+              volume1: reserve1,
+              volumeUSD,
+              feeUSD,
+              swapFee,
+              apr: apr / 100, // Convert back to decimal for consistency
+              token0: {
+                uuid: tokenA,
+                symbol: token0Info.symbol,
+                name: token0Info.name,
+                decimals: 2,
+                chainId: 1,
+              },
+              token1: {
+                uuid: tokenB,
+                symbol: token1Info.symbol,
+                name: token1Info.name,
+                decimals: 2,
+                chainId: 1,
+              },
+              reserve0,
+              reserve1,
+              chainId: 1,
+              liquidity: reserve0 * 2,
+              volume1d,
+              fee0,
+              fee1,
+              fees1d: feeUSD,
+              txCount: poolData.transactions || 0,
+              txCount1d: await calculate24hTransactionCount(poolKey),
+              daySnapshots: [],
+              hourSnapshots: [],
+            }
+          } catch (error) {
+            console.error(`❌ [GET_POOLS_ALL] Error processing pool ${poolKey}:`, error)
             return null
           }
-
-          // Parse the NamedTuple array to an object with proper property names
-          const poolData = parsePoolApiInfo(poolDataArray)
-
-          // Parse pool key to get tokens and fee
-          const [tokenA, tokenB, feeStr] = poolKey.split('/')
-          const swapFee = parseInt(feeStr || '0') / 10 // Convert fee format to percentage (fee_numerator/fee_denominator*100 = x/1000*100 = x/10)
-
-          // Get token metadata
-          const token0Info = tokenMetadata.get(tokenA || '') || { symbol: 'UNK', name: 'Unknown' }
-          const token1Info = tokenMetadata.get(tokenB || '') || { symbol: 'UNK', name: 'Unknown' }
-
-          // Calculate reserves (convert from cents to full units)
-          const reserve0 = (poolData.reserve0 || 0) / 100
-          const reserve1 = (poolData.reserve1 || 0) / 100
-
-          // Get token prices
-          const token0PriceUSD = tokenPrices[tokenA || ''] || 0
-          const token1PriceUSD = tokenPrices[tokenB || ''] || 0
-
-          // Calculate USD values
-          const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
-
-          // Calculate volume and fees
-          const volume1d = (poolData.volume || 0) / 100
-          const volumeUSD = volume1d * token0PriceUSD // Approximate volume USD
-
-          const fee0 = (poolData.fee0 || 0) / 100
-          const fee1 = (poolData.fee1 || 0) / 100
-          const feeUSD = fee0 * token0PriceUSD + fee1 * token1PriceUSD
-
-          // Calculate APR (annualized based on daily fees)
-          const apr = liquidityUSD > 0 ? ((feeUSD * 365) / liquidityUSD) * 100 : 0
-
-          // Generate symbol-based identifier for URL-friendly access
-          const feeBasisPoints = parseInt(feeStr || '0')
-          const feeForId = feeBasisPoints / 10 // Convert from basis points to identifier format
-          const symbolId = `${token0Info.symbol}-${token1Info.symbol}-${feeForId}`
-
-          return {
-            id: poolKey,
-            symbolId,
-            name: `${token0Info.symbol}-${token1Info.symbol}`,
-            liquidityUSD,
-            volume0: reserve0,
-            volume1: reserve1,
-            volumeUSD,
-            feeUSD,
-            swapFee,
-            apr: apr / 100, // Convert back to decimal for consistency
-            token0: {
-              uuid: tokenA,
-              symbol: token0Info.symbol,
-              name: token0Info.name,
-              decimals: 2,
-              chainId: 1,
-            },
-            token1: {
-              uuid: tokenB,
-              symbol: token1Info.symbol,
-              name: token1Info.name,
-              decimals: 2,
-              chainId: 1,
-            },
-            reserve0,
-            reserve1,
-            chainId: 1,
-            liquidity: reserve0 * 2,
-            volume1d,
-            fee0,
-            fee1,
-            fees1d: feeUSD,
-            txCount: poolData.transactions || 0,
-            txCount1d: poolData.transactions || 0,
-            daySnapshots: [],
-            hourSnapshots: [],
-          }
-        } catch (error) {
-          console.error(`❌ [GET_POOLS_ALL] Error processing pool ${poolKey}:`, error)
-          return null
-        }
-      })
+        })
+      )
 
       const validPools = poolsData.filter((pool) => pool !== null)
 
@@ -483,7 +581,7 @@ export const poolRouter = createTRPCRouter({
         fee1,
         fees1d: feeUSD,
         txCount: poolData.transactions || 0,
-        txCount1d: poolData.transactions || 0,
+        txCount1d: await calculate24hTransactionCount(matchingPoolKey),
         daySnapshots: [],
         hourSnapshots: [],
       }
@@ -1213,6 +1311,238 @@ export const poolRouter = createTRPCRouter({
       } catch (error) {
         console.error(`Error in front_quote_add_liquidity_out for ${input.id}:`, error)
         throw new Error(`Failed to get liquidity quote: ${error}`)
+      }
+    }),
+
+  // Get transaction history for a specific pool
+  poolTransactionHistory: procedure
+    .input(
+      z.object({
+        poolKey: z.string(),
+        count: z.number().min(1).max(200).optional().default(50),
+        after: z.string().optional(),
+        before: z.string().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        // Build query parameters for nano contract history API
+        const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, `count=${input.count * 3}`] // Get more to filter
+
+        if (input.after) queryParams.push(`after=${input.after}`)
+        if (input.before) queryParams.push(`before=${input.before}`)
+
+        const endpoint = 'nano_contract/history'
+        const response = await fetchNodeData(endpoint, queryParams)
+
+        if (!response || !response.success || !response.history) {
+          return {
+            transactions: [],
+            hasMore: false,
+            pagination: { after: null, before: null },
+          }
+        }
+
+        // Filter transactions specific to this pool
+        const poolSpecificTransactions = response.history.filter((tx: any) => {
+          // Check if transaction involves this specific pool
+          if (tx.nc_args) {
+            const args = tx.nc_args
+
+            // For swap transactions with path, check if pool is in the path
+            if (args.path && typeof args.path === 'string') {
+              // Multi-hop path format: token/token/fee,token/token/fee
+              // Or single path format: token/token/fee
+              const pathPools = args.path.split(',')
+              return pathPools.some((pathSegment: string) => {
+                // Parse each path segment as: token/token/fee
+                const parts = pathSegment.split('/')
+                if (parts.length >= 3) {
+                  const reconstructedPool = `${parts[0]}/${parts[1]}/${parts[2]}`
+                  return reconstructedPool === input.poolKey
+                }
+                return false
+              })
+            }
+
+            // For liquidity transactions, check pool_key
+            if (args.pool_key === input.poolKey) {
+              return true
+            }
+
+            // For pool creation, check if tokens and fee match
+            if (tx.nc_method === 'create_pool' && args.token_a && args.token_b && args.fee !== undefined) {
+              const constructedPoolKey = `${args.token_a}/${args.token_b}/${args.fee}`
+              return constructedPoolKey === input.poolKey
+            }
+          }
+
+          return false
+        })
+
+        // Limit to requested count
+        const limitedTransactions = poolSpecificTransactions.slice(0, input.count)
+
+        // Parse and enrich transaction data
+        const transactions = await Promise.all(
+          limitedTransactions.map(async (tx: any) => {
+            // Determine transaction type and extract relevant info
+            const txType = tx.nc_method
+            let action = 'Unknown'
+            let tokenAmounts: {
+              tokenIn?: { uuid: string; amount: number }
+              tokenOut?: { uuid: string; amount: number }
+            } = {}
+
+            // Parse transaction based on method type
+            if (txType && txType.includes('swap')) {
+              action = txType.includes('multi_hop') || txType.includes('through_path') ? 'Multi-hop Swap' : 'Swap'
+
+              // Extract token amounts from transaction
+              if (tx.nc_args) {
+                // For swaps, amount_in and amount_out are in args
+                if (tx.nc_args.amount_in && tx.nc_args.token_in) {
+                  tokenAmounts.tokenIn = {
+                    uuid: tx.nc_args.token_in,
+                    amount: tx.nc_args.amount_in / 100, // Convert from cents
+                  }
+                }
+                if (tx.nc_args.amount_out && tx.nc_args.token_out) {
+                  tokenAmounts.tokenOut = {
+                    uuid: tx.nc_args.token_out,
+                    amount: tx.nc_args.amount_out / 100, // Convert from cents
+                  }
+                }
+              }
+            } else if (txType && txType.includes('add_liquidity')) {
+              action = 'Add Liquidity'
+
+              // Extract liquidity amounts from transaction outputs
+              if (tx.outputs && Array.isArray(tx.outputs)) {
+                const liquidityAmounts = tx.outputs
+                  .filter((output: any) => output.value > 0)
+                  .map((output: any) => {
+                    let tokenUuid = '00' // Default to HTR
+                    if (output.token_data !== undefined) {
+                      const tokenIndex = output.token_data & 0b01111111
+                      if (tokenIndex > 0 && tx.tokens && tx.tokens[tokenIndex - 1]) {
+                        tokenUuid = tx.tokens[tokenIndex - 1]
+                      }
+                    }
+                    return {
+                      uuid: tokenUuid,
+                      amount: output.value / 100, // Convert from cents
+                    }
+                  })
+
+                // Set token amounts for display
+                if (liquidityAmounts.length >= 2) {
+                  tokenAmounts.tokenIn = liquidityAmounts[0]
+                  tokenAmounts.tokenOut = liquidityAmounts[1]
+                }
+              }
+            } else if (txType && txType.includes('remove_liquidity')) {
+              action = 'Remove Liquidity'
+
+              // Similar to add_liquidity but for withdrawal
+              if (tx.outputs && Array.isArray(tx.outputs)) {
+                const liquidityAmounts = tx.outputs
+                  .filter((output: any) => output.value > 0)
+                  .map((output: any) => {
+                    let tokenUuid = '00'
+                    if (output.token_data !== undefined) {
+                      const tokenIndex = output.token_data & 0b01111111
+                      if (tokenIndex > 0 && tx.tokens && tx.tokens[tokenIndex - 1]) {
+                        tokenUuid = tx.tokens[tokenIndex - 1]
+                      }
+                    }
+                    return {
+                      uuid: tokenUuid,
+                      amount: output.value / 100,
+                    }
+                  })
+
+                if (liquidityAmounts.length >= 2) {
+                  tokenAmounts.tokenIn = liquidityAmounts[0]
+                  tokenAmounts.tokenOut = liquidityAmounts[1]
+                }
+              }
+            } else if (txType === 'create_pool') {
+              action = 'Create Pool'
+            }
+
+            // Get token symbols for display
+            const tokenSymbols = new Map()
+            const tokensToFetch = []
+            if (tokenAmounts.tokenIn) tokensToFetch.push(tokenAmounts.tokenIn.uuid)
+            if (tokenAmounts.tokenOut) tokensToFetch.push(tokenAmounts.tokenOut.uuid)
+
+            for (const tokenUuid of tokensToFetch) {
+              try {
+                const tokenInfo = await fetchTokenInfo(tokenUuid)
+                tokenSymbols.set(tokenUuid, tokenInfo)
+              } catch (error) {
+                tokenSymbols.set(tokenUuid, {
+                  symbol: tokenUuid === '00' ? 'HTR' : tokenUuid.substring(0, 8).toUpperCase(),
+                  name: tokenUuid === '00' ? 'Hathor' : `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
+                })
+              }
+            }
+
+            return {
+              id: tx.tx_id,
+              hash: tx.tx_id,
+              timestamp: tx.timestamp,
+              action,
+              method: tx.nc_method,
+              tokenIn: tokenAmounts.tokenIn
+                ? {
+                    ...tokenAmounts.tokenIn,
+                    symbol: tokenSymbols.get(tokenAmounts.tokenIn.uuid)?.symbol || 'UNK',
+                    name: tokenSymbols.get(tokenAmounts.tokenIn.uuid)?.name || 'Unknown',
+                  }
+                : null,
+              tokenOut: tokenAmounts.tokenOut
+                ? {
+                    ...tokenAmounts.tokenOut,
+                    symbol: tokenSymbols.get(tokenAmounts.tokenOut.uuid)?.symbol || 'UNK',
+                    name: tokenSymbols.get(tokenAmounts.tokenOut.uuid)?.name || 'Unknown',
+                  }
+                : null,
+              success: Array.isArray(tx.voided_by) ? tx.voided_by.length === 0 : !tx.voided_by,
+              weight: tx.weight || 0,
+              // Include raw args for debugging
+              args: tx.nc_args,
+            }
+          })
+        )
+
+        return {
+          transactions,
+          hasMore: poolSpecificTransactions.length > input.count,
+          pagination: {
+            after: response.after || null,
+            before: response.before || null,
+          },
+        }
+      } catch (error) {
+        console.error(
+          `❌ [POOL_TRANSACTION_HISTORY] Error fetching pool transaction history for ${input.poolKey}:`,
+          error
+        )
+
+        // Log additional context for debugging
+        console.error(`   Pool Key: ${input.poolKey}`)
+        console.error(`   Count: ${input.count}`)
+        console.error(`   After: ${input.after || 'none'}`)
+        console.error(`   Before: ${input.before || 'none'}`)
+        console.error(`   Contract ID: ${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID || 'not set'}`)
+
+        return {
+          transactions: [],
+          hasMore: false,
+          pagination: { after: null, before: null },
+        }
       }
     }),
 

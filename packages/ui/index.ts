@@ -45,5 +45,23 @@ export * from './typography'
 export * from './widget'
 export * from './config'
 
+// Pool transaction history components
+export {
+  PoolTransactionHistory,
+  type PoolTransaction,
+  type PoolTransactionHistoryProps,
+} from './src/components/PoolTransactionHistory'
+export {
+  SimplePoolTransactionHistory,
+  type SimpleTransaction,
+  type SimplePoolTransactionHistoryProps,
+} from './src/components/SimplePoolTransactionHistory'
+export {
+  transformToSimpleTransaction,
+  transformTransactions,
+  formatTimeAgo,
+  truncateAddress,
+} from './src/utils/transactionUtils'
+
 // Re-export classnames for convenience
 export { default as classNames } from 'classnames'

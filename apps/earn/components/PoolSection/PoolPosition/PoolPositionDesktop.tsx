@@ -28,16 +28,16 @@ function daysAgoFormatted(last_tx: number) {
     if (hours > 0) {
       return `${hours},${Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
         .toString()
-        .padStart(2, '0')} hours ago`
+        .padStart(2, '0')} hours`
     } else if (timeDiff >= 60000) {
       // At least 1 minute passed
-      return `${Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))} minutes ago`
+      return `${Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))} minutes`
     } else {
       return 'Just now'
     }
   }
 
-  return `${days},${hours.toString().padStart(2, '0')} days ago`
+  return `${days},${hours.toString().padStart(2, '0')} days`
 }
 
 export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
