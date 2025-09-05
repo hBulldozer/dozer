@@ -11,6 +11,9 @@ importers:
 
   .:
     dependencies:
+      '@dozer/snap-utils':
+        specifier: workspace:*
+        version: link:packages/snap-utils
       '@metamask/sdk-react':
         specifier: ^0.32.1
         version: 0.32.1(bufferutil@4.0.8)(react-dom@18.3.1(react@18.3.1))(react-native@0.73.1(@babel/core@7.25.2)(@babel/preset-env@7.23.7(@babel/core@7.25.2))(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)(utf-8-validate@5.0.10)
@@ -522,13 +525,6 @@ importers:
         version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   config/prettier:
-    optionalDependencies:
-      prettier-plugin-solidity:
-        specifier: '*'
-        version: 1.3.1(prettier@3.3.3)
-      prettier-plugin-tailwindcss:
-        specifier: '*'
-        version: 0.2.1(prettier@3.3.3)
     devDependencies:
       '@dozer/typescript-config':
         specifier: workspace:*
@@ -545,6 +541,13 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.5.3
+    optionalDependencies:
+      prettier-plugin-solidity:
+        specifier: '*'
+        version: 1.3.1(prettier@3.3.3)
+      prettier-plugin-tailwindcss:
+        specifier: '*'
+        version: 0.2.1(prettier@3.3.3)
 
   config/tailwindcss:
     dependencies:
@@ -831,10 +834,6 @@ importers:
       web3:
         specifier: ^4.16.0
         version: 4.16.0(bufferutil@4.0.8)(typescript@5.5.3)(utf-8-validate@5.0.10)(zod@3.23.8)
-    optionalDependencies:
-      next:
-        specifier: 14.2.5
-        version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@dozer/eslint-config':
         specifier: workspace:*
@@ -869,6 +868,10 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.5.3
+    optionalDependencies:
+      next:
+        specifier: 14.2.5
+        version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   packages/hooks:
     dependencies:
@@ -986,6 +989,40 @@ importers:
       tsx:
         specifier: ^4.7.2
         version: 4.7.2
+      typescript:
+        specifier: ^5.3.3
+        version: 5.5.3
+
+  packages/snap-utils:
+    dependencies:
+      '@metamask/providers':
+        specifier: 16.1.0
+        version: 16.1.0
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+    devDependencies:
+      '@dozer/eslint-config':
+        specifier: workspace:*
+        version: link:../../config/eslint
+      '@dozer/prettier-config':
+        specifier: workspace:*
+        version: link:../../config/prettier
+      '@types/node':
+        specifier: 22.9.0
+        version: 22.9.0
+      '@types/react':
+        specifier: 18.3.23
+        version: 18.3.23
+      '@types/react-dom':
+        specifier: 18.3.7
+        version: 18.3.7(@types/react@18.3.23)
+      eslint:
+        specifier: '*'
+        version: 8.56.0
+      prettier:
+        specifier: '*'
+        version: 3.3.3
       typescript:
         specifier: ^5.3.3
         version: 5.5.3
@@ -1130,13 +1167,6 @@ importers:
       use-resize-observer:
         specifier: ^9.1.0
         version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    optionalDependencies:
-      next:
-        specifier: 14.2.5
-        version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      wagmi:
-        specifier: 1.4.12
-        version: 1.4.12(@types/react@18.2.46)(bufferutil@4.0.8)(react-dom@18.3.1(react@18.3.1))(react-native@0.73.1(@babel/core@7.25.2)(@babel/preset-env@7.23.7(@babel/core@7.25.2))(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.5.3)(utf-8-validate@5.0.10)(viem@2.0.0(bufferutil@4.0.8)(typescript@5.5.3)(utf-8-validate@5.0.10)(zod@3.23.8))(zod@3.23.8)
     devDependencies:
       '@dozer/eslint-config':
         specifier: workspace:*
@@ -1189,6 +1219,13 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.5.3
+    optionalDependencies:
+      next:
+        specifier: 14.2.5
+        version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      wagmi:
+        specifier: 1.4.12
+        version: 1.4.12(@types/react@18.2.46)(bufferutil@4.0.8)(react-dom@18.3.1(react@18.3.1))(react-native@0.73.1(@babel/core@7.25.2)(@babel/preset-env@7.23.7(@babel/core@7.25.2))(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.5.3)(utf-8-validate@5.0.10)(viem@2.0.0(bufferutil@4.0.8)(typescript@5.5.3)(utf-8-validate@5.0.10)(zod@3.23.8))(zod@3.23.8)
 
   packages/zustand:
     dependencies:
@@ -4447,6 +4484,11 @@ packages:
   '@types/react-dom@18.2.18':
     resolution: {integrity: sha512-TJxDm6OfAX2KJWJdMEVTwWke5Sc/E/RlnPGvGfS0W7+6ocy2xhDVQVh/KvC2Uf7kACs+gDytdusDSdWfWkaNzw==}
 
+  '@types/react-dom@18.3.7':
+    resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
+    peerDependencies:
+      '@types/react': ^18.0.0
+
   '@types/react-reconciler@0.26.7':
     resolution: {integrity: sha512-mBDYl8x+oyPX/VBb3E638N0B7xG+SPk/EAMcVPeexqus/5aTpTphQi0curhhshOqRrc9t6OPoJfEUkbymse/lQ==}
 
@@ -4462,8 +4504,8 @@ packages:
   '@types/react@18.2.46':
     resolution: {integrity: sha512-nNCvVBcZlvX4NU1nRRNV/mFl1nNRuTuslAJglQsq+8ldXe5Xv0Wd2f7WTE3jOxhLH2BFfiZGC6GCp+kHQbgG+w==}
 
-  '@types/react@18.3.3':
-    resolution: {integrity: sha512-hti/R0pS0q1/xx+TsI73XIqk26eBsISZ2R0wUijXIngRK9R/e7Xw/cXVxQK7R5JjW+SV4zGcn5hXjudkN/pLIw==}
+  '@types/react@18.3.23':
+    resolution: {integrity: sha512-/LDXMQh55EzZQ0uVAZmKKhfENivEvWz6E+EYzh+/MCjMhNsotd+ZHhBGIjFDTi6+fz0OhQQQLbTgdQIxxCsC0w==}
 
   '@types/scheduler@0.16.8':
     resolution: {integrity: sha512-WZLiwShhwLRmeV6zH+GkbOFT6Z6VklCItrDioxUnv+u4Ll+8vKeFySoFyK/0ctcRpOmwAicELfmys1sDc/Rw+A==}
@@ -12146,7 +12188,7 @@ snapshots:
     dependencies:
       '@ethereumjs/tx': 4.2.0
       '@metamask/superstruct': 3.2.1
-      '@noble/hashes': 1.4.0
+      '@noble/hashes': 1.7.1
       '@scure/base': 1.1.9
       '@types/debug': 4.1.12
       debug: 4.3.7
@@ -12160,7 +12202,7 @@ snapshots:
     dependencies:
       '@ethereumjs/tx': 4.2.0
       '@metamask/superstruct': 3.2.1
-      '@noble/hashes': 1.4.0
+      '@noble/hashes': 1.7.1
       '@scure/base': 1.1.9
       '@types/debug': 4.1.12
       debug: 4.3.7
@@ -13834,7 +13876,7 @@ snapshots:
   '@types/react-datepicker@6.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@floating-ui/react': 0.26.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@types/react': 18.3.3
+      '@types/react': 18.3.23
       date-fns: 3.6.0
     transitivePeerDependencies:
       - react
@@ -13844,21 +13886,25 @@ snapshots:
     dependencies:
       '@types/react': 18.2.46
 
+  '@types/react-dom@18.3.7(@types/react@18.3.23)':
+    dependencies:
+      '@types/react': 18.3.23
+
   '@types/react-reconciler@0.26.7':
     dependencies:
-      '@types/react': 18.3.3
+      '@types/react': 18.3.23
 
   '@types/react-reconciler@0.28.8':
     dependencies:
-      '@types/react': 18.3.3
+      '@types/react': 18.3.23
 
   '@types/react-virtualized-auto-sizer@1.0.4':
     dependencies:
-      '@types/react': 18.3.3
+      '@types/react': 18.3.23
 
   '@types/react-window@1.8.8':
     dependencies:
-      '@types/react': 18.3.3
+      '@types/react': 18.3.23
 
   '@types/react@18.2.46':
     dependencies:
@@ -13866,7 +13912,7 @@ snapshots:
       '@types/scheduler': 0.16.8
       csstype: 3.1.3
 
-  '@types/react@18.3.3':
+  '@types/react@18.3.23':
     dependencies:
       '@types/prop-types': 15.7.12
       csstype: 3.1.3

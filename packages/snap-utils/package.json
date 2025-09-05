@@ -1,0 +1,36 @@
+{
+  "name": "@dozer/snap-utils",
+  "version": "0.1.0",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "lint": "eslint . --cache --ext js,ts,tsx",
+    "lint:fix": "eslint . --cache --ext js,ts,tsx --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@metamask/providers": "16.1.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@dozer/eslint-config": "workspace:*",
+    "@dozer/prettier-config": "workspace:*",
+    "@types/node": "22.9.0",
+    "@types/react": "18.3.23",
+    "@types/react-dom": "18.3.7",
+    "eslint": "*",
+    "prettier": "*",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=16.x"
+  }
+}

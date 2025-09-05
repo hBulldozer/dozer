@@ -84,6 +84,7 @@
     "version-packages": "dotenv -- turbo run build --filter=./packages/* && changeset version"
   },
   "dependencies": {
+    "@dozer/snap-utils": "workspace:*",
     "@metamask/sdk-react": "^0.32.1"
   }
 }
