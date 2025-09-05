@@ -31,9 +31,149 @@ function isBridgedToken(uuid: string): boolean {
 function getBridgedTokenOriginalAddress(uuid: string): string | null {
   const index = BRIDGED_TOKEN_UUIDS.indexOf(uuid)
   if (index !== -1 && index < BRIDGED_TOKEN_ADDRESSES.length) {
-    return BRIDGED_TOKEN_ADDRESSES[index]
+    return BRIDGED_TOKEN_ADDRESSES[index] || null
   }
   return null
+}
+
+// Helper function to calculate 24h volume using delta approach
+async function calculate24hVolume(poolKey: string): Promise<{ volume24h: number; volume24hUSD: number }> {
+  try {
+    const now = Math.floor(Date.now() / 1000)
+    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
+
+    // Get current pool data
+    const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
+    const currentPoolDataArray = currentResponse.calls[`front_end_api_pool("${poolKey}")`]?.value
+
+    if (!currentPoolDataArray) {
+      console.warn(`⚠️  No current data found for pool ${poolKey}`)
+      return { volume24h: 0, volume24hUSD: 0 }
+    }
+
+    const currentPoolData = parsePoolApiInfo(currentPoolDataArray)
+    const currentVolume = (currentPoolData.volume || 0) / 100 // Convert from cents
+
+    // Get historical pool data from 24 hours ago
+    let historicalVolume = 0
+    try {
+      const historicalResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`], oneDayAgo)
+      const historicalPoolDataArray = historicalResponse.calls[`front_end_api_pool("${poolKey}")`]?.value
+
+      if (historicalPoolDataArray) {
+        const historicalPoolData = parsePoolApiInfo(historicalPoolDataArray)
+        historicalVolume = (historicalPoolData.volume || 0) / 100 // Convert from cents
+      }
+    } catch (error) {
+      // If historical data is not available (common in development), assume 0
+      console.warn(`Historical data unavailable for pool ${poolKey} at ${oneDayAgo}, assuming 0 historical volume`)
+      historicalVolume = 0
+    }
+
+    // Calculate 24h volume delta
+    const volume24h = Math.max(0, currentVolume - historicalVolume)
+
+    // Get token prices for USD calculation
+    const [tokenA, tokenB] = poolKey.split('/')
+    if (!tokenA) {
+      console.warn(`⚠️  Invalid pool key format: ${poolKey}`)
+      return { volume24h: 0, volume24hUSD: 0 }
+    }
+
+    const tokenPricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
+    const rawTokenPrices: Record<string, number> =
+      tokenPricesResponse.calls['get_all_token_prices_in_usd()'].value || {}
+    const tokenPrices: Record<string, number> = Object.fromEntries(
+      Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
+    )
+
+    const token0PriceUSD = tokenPrices[tokenA] || 0
+    const volume24hUSD = volume24h * token0PriceUSD
+
+    return { volume24h, volume24hUSD }
+  } catch (error) {
+    console.error(`Error calculating 24h volume for pool ${poolKey}:`, error)
+    return { volume24h: 0, volume24hUSD: 0 }
+  }
+}
+
+// Helper function to calculate 24h fees using volume * fee rate
+async function calculate24hFees(
+  poolKey: string,
+  volume24hUSD: number
+): Promise<{ fees24h: number; fees24hUSD: number }> {
+  try {
+    // Get current pool data to get the fee rate
+    const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
+    const currentPoolDataArray = currentResponse.calls[`front_end_api_pool("${poolKey}")`]?.value
+
+    if (!currentPoolDataArray) {
+      console.warn(`⚠️  No current data found for pool ${poolKey}`)
+      return { fees24h: 0, fees24hUSD: 0 }
+    }
+
+    const currentPoolData = parsePoolApiInfo(currentPoolDataArray)
+
+    // Fee rate is in basis points, convert to decimal (e.g., 5 basis points = 0.0005)
+    const feeRate = (currentPoolData.fee || 0) / 10000
+
+    // Calculate fees: volume * fee rate
+    const fees24hUSD = volume24hUSD * feeRate
+
+    // For raw fees, we can approximate using the same ratio
+    const fees24h = volume24hUSD > 0 ? fees24hUSD : 0
+
+    return { fees24h, fees24hUSD }
+  } catch (error) {
+    console.error(`Error calculating 24h fees for pool ${poolKey}:`, error)
+    return { fees24h: 0, fees24hUSD: 0 }
+  }
+}
+
+// Helper function to calculate 24h transaction count using delta approach
+async function calculate24hTransactionCount(poolKey: string): Promise<number> {
+  try {
+    const now = Math.floor(Date.now() / 1000)
+    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
+
+    // Get current pool data
+    const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
+    const currentPoolDataArray = currentResponse.calls[`front_end_api_pool("${poolKey}")`]?.value
+
+    if (!currentPoolDataArray) {
+      console.warn(`⚠️  No current data found for pool ${poolKey}`)
+      return 0
+    }
+
+    const currentPoolData = parsePoolApiInfo(currentPoolDataArray)
+    const currentTransactions = currentPoolData.transactions || 0
+
+    // Get historical pool data from 24 hours ago
+    let historicalTransactions = 0
+    try {
+      const historicalResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`], oneDayAgo)
+      const historicalPoolDataArray = historicalResponse.calls[`front_end_api_pool("${poolKey}")`]?.value
+
+      if (historicalPoolDataArray) {
+        const historicalPoolData = parsePoolApiInfo(historicalPoolDataArray)
+        historicalTransactions = historicalPoolData.transactions || 0
+      }
+    } catch (error) {
+      // If historical data is not available (common in development), assume 0
+      console.warn(
+        `Historical data unavailable for pool ${poolKey} at ${oneDayAgo}, assuming 0 historical transactions`
+      )
+      historicalTransactions = 0
+    }
+
+    // Calculate 24h transaction delta
+    const transactions24h = Math.max(0, currentTransactions - historicalTransactions)
+
+    return transactions24h
+  } catch (error) {
+    console.error(`Error calculating 24h transaction count for pool ${poolKey}:`, error)
+    return 0
+  }
 }
 
 // Helper function to fetch data from the pool manager contract
@@ -338,16 +478,25 @@ export const tokenRouter = createTRPCRouter({
             // Calculate USD values
             const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
 
-            // Calculate volume and fees
-            const volume1d = (poolData.volume || 0) / 100
-            const volumeUSD = volume1d * token0PriceUSD // Approximate volume USD
+            // Calculate 24h volume using delta approach
+            const { volume24h, volume24hUSD } = await calculate24hVolume(poolKey)
+            const volume1d = volume24h
+            const volumeUSD = volume24hUSD
 
+            // Calculate 24h fees using volume * fee rate
+            const { fees24h, fees24hUSD } = await calculate24hFees(poolKey, volume24hUSD)
+            const feeUSD = fees24hUSD
+
+            // Calculate 24h transaction count using delta approach
+            const txCount1d = await calculate24hTransactionCount(poolKey)
+
+            // Keep the old fee calculation for APR (using accumulated fees)
             const fee0 = (poolData.fee0 || 0) / 100
             const fee1 = (poolData.fee1 || 0) / 100
-            const feeUSD = fee0 * token0PriceUSD + fee1 * token1PriceUSD
+            const accumulatedFeeUSD = fee0 * token0PriceUSD + fee1 * token1PriceUSD
 
-            // Calculate APR (annualized based on daily fees)
-            const apr = liquidityUSD > 0 ? ((feeUSD * 365) / liquidityUSD) * 100 : 0
+            // Calculate APR (annualized based on accumulated fees)
+            const apr = liquidityUSD > 0 ? ((accumulatedFeeUSD * 365) / liquidityUSD) * 100 : 0
 
             // Generate symbol-based identifier for URL-friendly access
             const feeBasisPoints = parseInt(feeStr || '0')
@@ -361,6 +510,7 @@ export const tokenRouter = createTRPCRouter({
               liquidityUSD,
               volumeUSD,
               feeUSD,
+              txCount1d,
               swapFee,
               apr: apr / 100, // Convert back to decimal for consistency
               token0: {

@@ -64,7 +64,7 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices, isLoad
               <Table.td>
                 <Link.External
                   style={{ textDecoration: 'none' }}
-                  href={`../../../swap/tokens/${token0.chainId}/${token0.uuid}`}
+                  href={`../../../swap/tokens/${token0.symbol.toLowerCase()}`}
                 >
                   <div className="flex items-center gap-3">
                     <Currency.Icon currency={token0} width={24} height={24} />
@@ -101,7 +101,7 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices, isLoad
               <Table.td>
                 <Link.External
                   style={{ textDecoration: 'none' }}
-                  href={`../../../swap/tokens/${token1.chainId}/${token1.uuid}`}
+                  href={`../../../swap/tokens/${token1.symbol.toLowerCase()}`}
                 >
                   <div className="flex items-center gap-3">
                     <Currency.Icon currency={token1} width={24} height={24} />
