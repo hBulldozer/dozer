@@ -1,19 +1,20 @@
-import { App, AppType, BuyCrypto } from '@dozer/ui'
-import { NetworkSelector, useWalletConnectClient } from '@dozer/higmi'
+import { App, AppType } from '@dozer/ui'
+import { useWalletConnectClient } from '@dozer/higmi'
 import { Profile } from '@dozer/higmi/components/Wallet/Profile'
-import React, { FC, useState } from 'react'
-// import { useAccount } from 'wagmi'
+import React, { FC } from 'react'
 import { api } from '../utils/api'
-import { SUPPORTED_CHAIN_IDS } from '../config'
 import { useAccount } from '@dozer/zustand'
 import { isFeatureEnabled } from '../config/features'
-// import { useNotifications } from '../lib/state/storage'
 
 export const Header: FC = () => {
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
-  // const [notifications, { clearNotifications }] = useNotifications(address)
-  const [open, setOpen] = useState(false)
+  const { walletType, hathorAddress } = useAccount()
+  
+  // Get the appropriate address based on wallet type (kept for potential future use)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
 
   return (
     <App.Header

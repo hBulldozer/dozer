@@ -7,9 +7,13 @@ import { CheckerButton } from './types'
 
 export const Connected: FC<CheckerButton> = ({ children, className, variant, fullWidth, size, name, onBlur, as }) => {
   const isMounted = useIsMounted()
-  // const { address } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  const { walletType, hathorAddress } = useAccount()
+  
+  // Get the appropriate address based on wallet type
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
 
   if (isMounted && !address)
     return (

@@ -2,6 +2,8 @@ import { Layout } from '../../components/Layout'
 import { Button, Widget, Typography } from '@dozer/ui'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { MetaMaskProvider, useMetaMaskContext, useRequest, useRequestSnap, useInvokeSnap } from '@dozer/snap-utils'
+import { useJsonRpc } from '@dozer/higmi'
+import { sendNanoContractTxRpcRequest } from '@hathor/hathor-rpc-handler'
 import { api } from '../../utils/api'
 
 // Demo component that uses all the snap-utils hooks
@@ -10,6 +12,7 @@ const SnapUtilsDemo = () => {
   const request = useRequest()
   const requestSnap = useRequestSnap()
   const invokeSnap = useInvokeSnap()
+  const { hathorRpc, isRpcRequestPending, rpcResult } = useJsonRpc()
   const faucetMutation = api.getFaucet.sendHTR.useMutation()
 
   const [logs, setLogs] = useState<string[]>([])
@@ -347,7 +350,7 @@ const SnapUtilsDemo = () => {
       }
 
       // Extract the address from the parsed response
-      const address = parsedResult?.response?.address || parsedResult?.address
+      const address = (parsedResult as any)?.response?.address || (parsedResult as any)?.address
       if (address) {
         setHathorAddress(address)
         addLog(`✅ Hathor address: ${address}`)
@@ -396,8 +399,8 @@ const SnapUtilsDemo = () => {
           name: 'Test Token',
           symbol: 'TST',
           amount: '100',
-          address: hathorAddress || 'WR5kCGJFvqaonCCTZDPDVMpu8fRnFXN51N',
-          change_address: hathorAddress || 'WdcPHo2NwjSkGtcVUDbrE1SQrUzGdPgLvK',
+          // address: hathorAddress || 'WR5kCGJFvqaonCCTZDPDVMpu8fRnFXN51N',
+          // change_address: hathorAddress || 'WdcPHo2NwjSkGtcVUDbrE1SQrUzGdPgLvK',
           create_mint: true,
           mint_authority_address: hathorAddress || 'WR5kCGJFvqaonCCTZDPDVMpu8fRnFXN51N',
           allow_external_mint_authority_address: true,
@@ -556,6 +559,12 @@ const SnapUtilsDemo = () => {
 
   // Dozer-specific operations
   const dozerTestSwap = async () => {
+    addLog('🔍 DIRECT SNAP CALL - Debug Info:')
+    addLog(`🔍 installedSnap: ${JSON.stringify(installedSnap)}`)
+    addLog(`🔍 installedSnap.id: ${installedSnap?.id}`)
+    addLog(`🔍 invokeSnap available: ${!!invokeSnap}`)
+    addLog(`🔍 hathorAddress: ${hathorAddress}`)
+
     if (!installedSnap) {
       addLog('❌ No snap installed')
       return
@@ -583,7 +592,7 @@ const SnapUtilsDemo = () => {
       addLog(`💰 Swapping ${amountIn / 100} HTR for DZR (fee: ${fee / 100}%)`)
       addLog(`📄 Pool Manager: ${poolManagerId}`)
 
-      const result = await invokeSnap({
+      const snapCallParams = {
         snapId: installedSnap.id,
         method: 'htr_sendNanoContractTx',
         params: {
@@ -607,7 +616,13 @@ const SnapUtilsDemo = () => {
           ],
           args: [fee],
         },
-      })
+      }
+
+      addLog(`🔍 DIRECT SNAP CALL - Calling invokeSnap with: ${JSON.stringify(snapCallParams, null, 2)}`)
+
+      const result = await invokeSnap(snapCallParams)
+
+      addLog(`🔍 DIRECT SNAP CALL - Raw result: ${JSON.stringify(result, null, 2)}`)
       addLog(`✅ Dozer swap transaction sent: ${JSON.stringify(result)}`)
     } catch (err) {
       addLog(`❌ Dozer swap failed: ${err}`)
@@ -782,6 +797,90 @@ const SnapUtilsDemo = () => {
       }
     } catch (err) {
       addLog(`❌ Get pool state failed: ${err}`)
+    }
+  }
+
+  const dozerTestSwapViaJsonRpc = async () => {
+    addLog('🔍 JSONRPC CALL - Debug Info:')
+    addLog(`🔍 hathorRpc available: ${!!hathorRpc}`)
+    addLog(`🔍 isRpcRequestPending: ${isRpcRequestPending}`)
+    addLog(`🔍 rpcResult: ${JSON.stringify(rpcResult)}`)
+    addLog(`🔍 hathorAddress: ${hathorAddress}`)
+    addLog(`🔍 installedSnap: ${JSON.stringify(installedSnap)}`)
+    addLog(`🔍 installedSnap.id: ${installedSnap?.id}`)
+    addLog(`🔍 invokeSnap available: ${!!invokeSnap}`)
+
+    if (!hathorRpc) {
+      addLog('❌ No RPC available. Make sure wallet is connected.')
+      return
+    }
+
+    if (!hathorAddress) {
+      addLog('❌ No Hathor address available. Get address first.')
+      return
+    }
+
+    try {
+      addLog('🔄 Testing Dozer swap via JsonRpcContext (MetaMask Snap)...')
+      addLog(`⏳ RPC Status: ${isRpcRequestPending ? 'Pending' : 'Ready'}`)
+
+      // Test values for HTR/DZR swap
+      const poolManagerId =
+        process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID ||
+        '00003274b072d50f82a62d75277f8dcff83c6e35c4a8314c207f8a2cc24fa4bc'
+      const htrToken = '00' // HTR token UUID
+      const dzrToken =
+        process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS?.split(',')[0] ||
+        '000000006c82966f45145fdc6caef7676ecbbbe7a0e7fc3025b9b69e217db7d8'
+      const amountIn = 1000 // 10.00 HTR (in cents)
+      const fee = 100 // 1% fee (in basis points)
+
+      addLog(`💰 Swapping ${amountIn / 100} HTR for DZR (fee: ${fee / 100}%)`)
+      addLog(`📄 Pool Manager: ${poolManagerId}`)
+
+      const ncTxRpcReq = sendNanoContractTxRpcRequest(
+        'swap_exact_tokens_for_tokens',
+        poolManagerId,
+        [
+          {
+            type: 'deposit',
+            token: htrToken,
+            amount: amountIn,
+            address: hathorAddress,
+            changeAddress: hathorAddress,
+          },
+          {
+            type: 'withdrawal',
+            token: dzrToken,
+            amount: 900, // Minimum 9.00 DZR out
+            address: hathorAddress,
+            changeAddress: hathorAddress,
+          },
+        ],
+        [fee],
+        false, // isBlueprint
+        null // ncId
+      )
+
+      addLog(`🔍 JSONRPC CALL - RPC Request: ${JSON.stringify(ncTxRpcReq, null, 2)}`)
+      addLog(`📤 Sending nano contract transaction via JsonRpcContext...`)
+
+      const result = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+
+      addLog(`🔍 JSONRPC CALL - Raw result: ${JSON.stringify(result, null, 2)}`)
+      addLog(`✅ Dozer swap transaction sent via JsonRpcContext: ${JSON.stringify(result)}`)
+
+      // Log RPC result if available
+      if (rpcResult) {
+        addLog(`📊 RPC Result: ${JSON.stringify(rpcResult)}`)
+      }
+    } catch (err) {
+      addLog(`❌ Dozer swap via JsonRpcContext failed: ${err}`)
+
+      // Log RPC result if available (might contain error details)
+      if (rpcResult) {
+        addLog(`📊 RPC Error Result: ${JSON.stringify(rpcResult)}`)
+      }
     }
   }
 
@@ -1149,6 +1248,14 @@ const SnapUtilsDemo = () => {
                     disabled={!isConnected || !installedSnap || !hathorAddress}
                   >
                     Test Swap (HTR→DZR)
+                  </Button>
+                  <Button
+                    onClick={dozerTestSwapViaJsonRpc}
+                    variant="filled"
+                    className="px-3 h-[44px] text-sm font-semibold bg-cyan-600 hover:bg-cyan-700"
+                    disabled={!isConnected || !installedSnap || !hathorAddress || !hathorRpc}
+                  >
+                    Test Swap via JsonRpc
                   </Button>
                   <Button
                     onClick={dozerAddLiquidity}

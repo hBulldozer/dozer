@@ -2,14 +2,40 @@ import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 
 const { hUSDC_UUID } = process.env
+
+export type WalletType = 'walletconnect' | 'metamask-snap' | null
+
 export interface TokenBalance {
   token_uuid: string
   token_symbol: string
   token_balance: number
 }
-export interface AccountState {
+
+export interface WalletConnection {
+  walletType: WalletType
+  // For WalletConnect: this is the Hathor address
+  // For MetaMask: this is the ETH address from MetaMask
+  address: string
+  // For MetaMask Snap: this is the Hathor address from the snap
+  // For WalletConnect: this is the same as address
+  hathorAddress: string
+  // MetaMask Snap specific fields
+  isSnapInstalled: boolean
+  snapId: string | null
+  // Network state
+  selectedNetwork: 'mainnet' | 'testnet'
+}
+
+export interface AccountState extends WalletConnection {
+  // Legacy address field for backward compatibility
   address: string
   setAddress: (address: string) => void
+  
+  // New wallet connection methods
+  setWalletConnection: (connection: Partial<WalletConnection>) => void
+  disconnectWallet: () => void
+  
+  // Balance and notifications (unchanged)
   balance: TokenBalance[]
   setBalance: (balance: TokenBalance[]) => void
   notifications: Record<number, string[]>
@@ -25,8 +51,50 @@ export interface AccountState {
 export const useAccount = create<AccountState>()(
   persist(
     (set) => ({
+      // Wallet connection state
+      walletType: null,
       address: '',
-      setAddress: (address) => set((state) => ({ address: address })),
+      hathorAddress: '',
+      isSnapInstalled: false,
+      snapId: null,
+      selectedNetwork: 'testnet',
+      
+      // Legacy setAddress method for backward compatibility
+      setAddress: (address) => set((state) => ({ 
+        address: address,
+        hathorAddress: state.walletType === 'walletconnect' ? address : state.hathorAddress
+      })),
+      
+      // New wallet connection methods
+      setWalletConnection: (connection) => set((state) => ({
+        ...state,
+        ...connection,
+        // Update legacy address field for backward compatibility
+        address: connection.address || state.address,
+      })),
+      
+      disconnectWallet: () => set((state) => ({
+        walletType: null,
+        address: '',
+        hathorAddress: '',
+        isSnapInstalled: false,
+        snapId: null,
+        selectedNetwork: 'testnet',
+        balance: [
+          {
+            token_uuid: '00',
+            token_symbol: 'HTR',
+            token_balance: 0,
+          },
+          {
+            token_uuid: hUSDC_UUID ? hUSDC_UUID : '',
+            token_symbol: 'hUSDC',
+            token_balance: 0,
+          },
+        ],
+      })),
+      
+      // Balance and notifications (unchanged from original)
       balance: [
         {
           token_uuid: '00',
