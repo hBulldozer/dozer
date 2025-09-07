@@ -78,6 +78,28 @@ export const Button = <C extends React.ElementType>({
     }
   }, [session, modal])
 
+  // Update Zustand store when WalletConnect session is established
+  useEffect(() => {
+    if (session && accounts.length > 0) {
+      const hathorAddress = accounts[0].split(':')[2]
+      
+      // Only update if the wallet type is not already set to walletconnect
+      if (walletType !== 'walletconnect') {
+        walletService.setWalletConnection({
+          walletType: 'walletconnect',
+          address: hathorAddress,
+          hathorAddress: hathorAddress,
+          isSnapInstalled: false,
+          snapId: null,
+          selectedNetwork: 'testnet',
+        })
+      }
+    } else if (!session && walletType === 'walletconnect') {
+      // Session disconnected, clear wallet state
+      walletService.disconnectWallet()
+    }
+  }, [session, accounts, walletType, walletService])
+
   // Handle WalletConnect connection via modal
   const handleWalletConnectConnection = async () => {
     if (typeof client === 'undefined') {

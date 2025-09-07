@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Dialog, Typography } from '@dozer/ui'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { useMetaMaskContext, useRequest, useRequestSnap, useInvokeSnap } from '@dozer/snap-utils'
 import Image from 'next/image'
 import { WalletConnectIcon } from '@dozer/ui/icons'
+import { useWalletConnectClient } from '../contexts'
+import { WalletConnectionService } from '../../services/walletConnectionService'
 
 interface WalletSelectionModalProps {
   isOpen: boolean
@@ -22,16 +24,23 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
   const request = useRequest()
   const requestSnap = useRequestSnap()
   const invokeSnap = useInvokeSnap()
+  const { session, accounts } = useWalletConnectClient()
+  const walletService = WalletConnectionService.getInstance()
 
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectionStep, setConnectionStep] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [walletConnectTimeoutId, setWalletConnectTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setIsConnecting(false)
     setConnectionStep('')
     setError(null)
-  }
+    if (walletConnectTimeoutId) {
+      clearTimeout(walletConnectTimeoutId)
+      setWalletConnectTimeoutId(null)
+    }
+  }, [walletConnectTimeoutId])
 
   useEffect(() => {
     if (isOpen) {
@@ -39,16 +48,52 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
     }
   }, [isOpen])
 
+  // Monitor WalletConnect session state
+  useEffect(() => {
+    // If we're connecting via WalletConnect and a session gets established
+    if (isConnecting && connectionStep.includes('Hathor wallet') && session && accounts.length > 0) {
+      const hathorAddress = accounts[0].split(':')[2]
+      
+      // Update the Zustand store with the wallet connection
+      walletService.setWalletConnection({
+        walletType: 'walletconnect',
+        address: hathorAddress,
+        hathorAddress: hathorAddress,
+        isSnapInstalled: false,
+        snapId: null,
+        selectedNetwork: 'testnet',
+      })
+      
+      // Connection was successful, close modal
+      resetState()
+      onClose()
+    }
+  }, [session, accounts, isConnecting, connectionStep, onClose, resetState, walletService])
+
   const handleWalletConnectSelection = () => {
     setIsConnecting(true)
     setConnectionStep('Connecting to Hathor wallet...')
     setError(null)
+
+    // Set a timeout for the connection attempt (60 seconds)
+    const timeoutId = setTimeout(() => {
+      setError('Connection timeout. Please ensure your Hathor wallet is ready and try again.')
+      setIsConnecting(false)
+      setConnectionStep('')
+      setWalletConnectTimeoutId(null)
+    }, 60000)
+    
+    setWalletConnectTimeoutId(timeoutId)
 
     try {
       onWalletConnect()
     } catch {
       setError('Failed to connect to Hathor wallet')
       setIsConnecting(false)
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+        setWalletConnectTimeoutId(null)
+      }
     }
   }
 
