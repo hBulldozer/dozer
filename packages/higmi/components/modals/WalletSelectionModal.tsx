@@ -3,9 +3,10 @@ import { Dialog, Typography } from '@dozer/ui'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { useMetaMaskContext, useRequest, useRequestSnap, useInvokeSnap } from '@dozer/snap-utils'
 import Image from 'next/image'
-import { WalletConnectIcon } from '@dozer/ui/icons'
+import { WalletIcon } from '@dozer/ui/icons'
 import { useWalletConnectClient } from '../contexts'
 import { WalletConnectionService } from '../../services/walletConnectionService'
+import { useAccount } from '@dozer/zustand'
 
 interface WalletSelectionModalProps {
   isOpen: boolean
@@ -20,12 +21,13 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
   onWalletConnect,
   onMetaMaskConnect,
 }) => {
-  const { provider, setInstalledSnap, installedSnap } = useMetaMaskContext()
+  const { provider } = useMetaMaskContext()
   const request = useRequest()
   const requestSnap = useRequestSnap()
   const invokeSnap = useInvokeSnap()
-  const { session, accounts } = useWalletConnectClient()
+  const { session, accounts, isWaitingApproval } = useWalletConnectClient()
   const walletService = WalletConnectionService.getInstance()
+  const { targetNetwork } = useAccount()
 
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectionStep, setConnectionStep] = useState('')
@@ -46,14 +48,14 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
     if (isOpen) {
       resetState()
     }
-  }, [isOpen])
+  }, [isOpen, resetState])
 
   // Monitor WalletConnect session state
   useEffect(() => {
     // If we're connecting via WalletConnect and a session gets established
     if (isConnecting && connectionStep.includes('Hathor wallet') && session && accounts.length > 0) {
       const hathorAddress = accounts[0].split(':')[2]
-      
+
       // Update the Zustand store with the wallet connection
       walletService.setWalletConnection({
         walletType: 'walletconnect',
@@ -63,12 +65,29 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
         snapId: null,
         selectedNetwork: 'testnet',
       })
-      
+
       // Connection was successful, close modal
       resetState()
       onClose()
     }
   }, [session, accounts, isConnecting, connectionStep, onClose, resetState, walletService])
+
+  // Monitor WalletConnect waiting state - reset if user cancels
+  useEffect(() => {
+    // If we were connecting via WalletConnect but it's no longer waiting for approval
+    // and we don't have a session, the user likely canceled
+    if (isConnecting && connectionStep.includes('Hathor wallet') && !isWaitingApproval && !session) {
+      setIsConnecting(false)
+      setConnectionStep('')
+      setError('Connection cancelled')
+
+      // Clear timeout if exists
+      if (walletConnectTimeoutId) {
+        clearTimeout(walletConnectTimeoutId)
+        setWalletConnectTimeoutId(null)
+      }
+    }
+  }, [isConnecting, connectionStep, isWaitingApproval, session, walletConnectTimeoutId])
 
   const handleWalletConnectSelection = () => {
     setIsConnecting(true)
@@ -82,7 +101,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
       setConnectionStep('')
       setWalletConnectTimeoutId(null)
     }, 60000)
-    
+
     setWalletConnectTimeoutId(timeoutId)
 
     try {
@@ -107,63 +126,44 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
     setError(null)
 
     try {
-      // Step 1: Connect to MetaMask
-      setConnectionStep('Connecting to MetaMask...')
-      const accounts = (await request({ method: 'eth_requestAccounts' })) as string[]
+      // Use the enhanced connection service with detailed feedback
+      const result = await walletService.connectMetaMaskSnapEnhanced(
+        request, 
+        requestSnap, 
+        invokeSnap, 
+        setConnectionStep // Pass setConnectionStep as status callback
+      )
 
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No MetaMask accounts found')
+      if (result.success) {
+        setConnectionStep('Connection successful!')
+
+        // Success - notify parent component
+        onMetaMaskConnect(result.hathorAddress)
+
+        // Brief delay to show success message
+        setTimeout(() => {
+          onClose()
+        }, 1500)
+      } else {
+        throw new Error(result.error || 'Connection failed')
       }
-
-      // Step 2: Install Hathor snap
-      setConnectionStep('Installing Hathor snap...')
-      const snap = await requestSnap('local:http://localhost:8089')
-      setInstalledSnap(snap)
-
-      // Step 3: Switch to testnet network
-      setConnectionStep('Switching to testnet...')
-      await invokeSnap({
-        snapId: snap.id,
-        method: 'htr_changeNetwork',
-        params: { newNetwork: 'testnet' },
-      })
-
-      // Step 4: Get Hathor address
-      setConnectionStep('Getting Hathor address...')
-      const result = await invokeSnap({
-        snapId: snap.id,
-        method: 'htr_getAddress',
-        params: { type: 'index', index: 0 },
-      })
-
-      // Parse address response with proper error handling
-      let hathorAddress = result
-      if (typeof result === 'string') {
-        try {
-          const parsed = JSON.parse(result)
-          hathorAddress = parsed?.response?.address || parsed?.address
-        } catch {
-          // If parsing fails, assume the string itself is the address
-          hathorAddress = result
-        }
-      } else if (typeof result === 'object' && result !== null) {
-        const resultObj = result as { response?: { address?: string }; address?: string }
-        hathorAddress = resultObj?.response?.address || resultObj?.address
-      }
-
-      if (!hathorAddress) {
-        throw new Error('Unable to retrieve Hathor address from snap')
-      }
-
-      // Success - notify parent component
-      onMetaMaskConnect(hathorAddress as string)
-      onClose()
     } catch (err) {
       console.error('MetaMask connection failed:', err)
 
       if (err instanceof Error) {
-        if (err.message.includes('User rejected')) {
-          setError('Connection cancelled by user')
+        // Handle user cancellation gracefully - don't show error message
+        if (
+          err.message.includes('User rejected') ||
+          err.message.includes('User denied') ||
+          err.message.includes('cancelled') ||
+          err.message.includes('snap is null') ||
+          err.message.includes('can\'t access property "id"') ||
+          err.message.includes('User cancelled snap installation')
+        ) {
+          // User cancelled - just reset state without showing error
+          setIsConnecting(false)
+          setConnectionStep('')
+          return
         } else if (err.message.includes('No MetaMask accounts')) {
           setError('No MetaMask accounts found. Please create or unlock your MetaMask wallet.')
         } else if (err.message.includes('Snap not found')) {
@@ -174,14 +174,13 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
       } else {
         setError('An unexpected error occurred during connection')
       }
-    } finally {
       setIsConnecting(false)
       setConnectionStep('')
     }
   }
 
   const handleClose = () => {
-    if (isConnecting) return // Prevent closing during connection
+    // Allow closing and reset state even when connecting (user cancellation)
     resetState()
     onClose()
   }
@@ -227,7 +226,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
             >
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0 w-12 h-12 bg-amber-400/20 rounded-lg flex items-center justify-center">
-                  <WalletConnectIcon width={24} height={24} className="text-amber-400" />
+                  <WalletIcon width={24} height={24} className="text-amber-400" />
                 </div>
                 <div className="flex-1 text-left">
                   <Typography variant="base" className="font-semibold text-white group-hover:text-amber-100">
@@ -296,7 +295,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
 
           <div className="pt-4 border-t border-gray-700">
             <Typography variant="xs" className="text-gray-500 text-center">
-              Both options provide secure access to Hathor network functionality
+              Both options provide secure access to Hathor network.
             </Typography>
           </div>
         </div>

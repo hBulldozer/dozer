@@ -35,6 +35,12 @@ export interface AccountState extends WalletConnection {
   setWalletConnection: (connection: Partial<WalletConnection>) => void
   disconnectWallet: () => void
   
+  // Network management
+  targetNetwork: 'mainnet' | 'testnet'
+  currentNetwork: 'mainnet' | 'testnet' | null
+  setCurrentNetwork: (network: 'mainnet' | 'testnet') => void
+  isNetworkMismatch: () => boolean
+  
   // Balance and notifications (unchanged)
   balance: TokenBalance[]
   setBalance: (balance: TokenBalance[]) => void
@@ -59,6 +65,15 @@ export const useAccount = create<AccountState>()(
       snapId: null,
       selectedNetwork: 'testnet',
       
+      // Network management
+      targetNetwork: 'testnet',
+      currentNetwork: null,
+      setCurrentNetwork: (network) => set(() => ({ currentNetwork: network })),
+      isNetworkMismatch: () => {
+        const state = useAccount.getState()
+        return state.currentNetwork !== null && state.currentNetwork !== state.targetNetwork
+      },
+      
       // Legacy setAddress method for backward compatibility
       setAddress: (address) => set((state) => ({ 
         address: address,
@@ -80,6 +95,7 @@ export const useAccount = create<AccountState>()(
         isSnapInstalled: false,
         snapId: null,
         selectedNetwork: 'testnet',
+        currentNetwork: null,
         balance: [
           {
             token_uuid: '00',

@@ -32,6 +32,12 @@ interface RouteResult {
 }
 
 export default function RoutingDebugPage() {
+  // Hooks must be called at the top level, before any conditional returns
+  const { data: tokensData } = api.getTokens.all.useQuery()
+  const utils = api.useUtils()
+  const [routeResults, setRouteResults] = useState<RouteResult[]>([])
+  const [loading, setLoading] = useState(false)
+
   // Only render in development
   if (process.env.NODE_ENV !== 'development') {
     return (
@@ -45,11 +51,6 @@ export default function RoutingDebugPage() {
       </Layout>
     )
   }
-
-  const { data: tokensData } = api.getTokens.all.useQuery()
-  const utils = api.useUtils()
-  const [routeResults, setRouteResults] = useState<RouteResult[]>([])
-  const [loading, setLoading] = useState(false)
 
   // Test amounts for different tokens
   const testAmounts = {

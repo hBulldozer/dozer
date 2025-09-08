@@ -5,31 +5,82 @@ import { MetaMaskProvider, useMetaMaskContext, useRequest, useRequestSnap, useIn
 import { useJsonRpc } from '@dozer/higmi'
 import { sendNanoContractTxRpcRequest } from '@hathor/hathor-rpc-handler'
 import { api } from '../../utils/api'
+import { useAccount } from '@dozer/zustand'
 
 // Demo component that uses all the snap-utils hooks
 const SnapUtilsDemo = () => {
-  const { provider, installedSnap, error, setInstalledSnap } = useMetaMaskContext()
+  const { provider, error } = useMetaMaskContext()
   const request = useRequest()
   const requestSnap = useRequestSnap()
   const invokeSnap = useInvokeSnap()
   const { hathorRpc, isRpcRequestPending, rpcResult } = useJsonRpc()
   const faucetMutation = api.getFaucet.sendHTR.useMutation()
 
+  // Use unified wallet state from Zustand store
+  const {
+    walletType,
+    hathorAddress,
+    isSnapInstalled,
+    snapId,
+    targetNetwork,
+    currentNetwork,
+    setCurrentNetwork,
+    isNetworkMismatch,
+    setWalletConnection,
+    disconnectWallet: globalDisconnectWallet,
+  } = useAccount()
+
+  // Local state for the demo (separate from global wallet state)
+  const [account, setAccount] = useState<string | null>(null)
+  const [localSnapId, setLocalSnapId] = useState(snapId || 'local:http://localhost:8089')
+
   const [logs, setLogs] = useState<string[]>([])
   const [isConnected, setIsConnected] = useState(false)
-  const [account, setAccount] = useState<string | null>(null)
-  const [snapId, setSnapId] = useState('local:http://localhost:8089')
   const [debugInfo, setDebugInfo] = useState<string>('')
   const [isCheckingConnection, setIsCheckingConnection] = useState(false)
-  const [hathorAddress, setHathorAddress] = useState<string | null>(null)
   const [isLoadingFaucet, setIsLoadingFaucet] = useState(false)
-  const [selectedNetwork, setSelectedNetwork] = useState<'mainnet' | 'testnet'>('testnet')
   const hasCheckedConnection = useRef(false)
 
   const addLog = useCallback((message: string) => {
     const timestamp = new Date().toLocaleTimeString()
     setLogs((prev) => [`[${timestamp}] ${message}`, ...prev.slice(0, 9)])
   }, [])
+
+  // Helper function to check snap installation directly from MetaMask
+  const checkSnapInstallation = useCallback(async (): Promise<{ id: string } | null> => {
+    try {
+      const snaps = await request({ method: 'wallet_getSnaps' }) as Record<string, any>
+      const snapIds = [localSnapId || 'local:http://localhost:8089', 'npm:@hathor/snap']
+      
+      for (const snapId of snapIds) {
+        if (snaps && snaps[snapId]) {
+          return { id: snapId }
+        }
+      }
+      return null
+    } catch (error) {
+      addLog(`⚠️ Failed to check snap installation: ${error}`)
+      return null
+    }
+  }, [request, localSnapId, addLog])
+
+  // Helper function to execute snap operations with dynamic snap check
+  const executeSnapOperation = useCallback(async (
+    operation: string,
+    snapMethod: (snapId: string) => Promise<void>
+  ) => {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus) {
+      addLog(`❌ No snap installed for ${operation}`)
+      return
+    }
+
+    try {
+      await snapMethod(snapStatus.id)
+    } catch (err) {
+      addLog(`❌ ${operation} failed: ${err}`)
+    }
+  }, [checkSnapInstallation, addLog])
 
   const checkConnection = useCallback(async () => {
     if (isCheckingConnection) return // Prevent multiple simultaneous checks
@@ -39,11 +90,24 @@ const SnapUtilsDemo = () => {
       const accounts = await request({ method: 'eth_accounts' })
       if (accounts && Array.isArray(accounts) && accounts.length > 0) {
         setIsConnected(true)
-        setAccount(accounts[0] as string)
         addLog(`✅ Connected to account: ${accounts[0]}`)
+
+        // Also log current wallet state from Zustand
+        if (walletType) {
+          addLog(`📱 Wallet type: ${walletType}`)
+          if (hathorAddress) {
+            addLog(`🏛️ Hathor address: ${hathorAddress}`)
+          }
+          if (currentNetwork) {
+            addLog(`🌐 Current network: ${currentNetwork}`)
+          }
+          addLog(`🎯 Target network: ${targetNetwork}`)
+          if (isNetworkMismatch()) {
+            addLog(`⚠️ Network mismatch detected!`)
+          }
+        }
       } else {
         setIsConnected(false)
-        setAccount(null)
         addLog('❌ No accounts connected')
       }
     } catch (err) {
@@ -51,7 +115,16 @@ const SnapUtilsDemo = () => {
     } finally {
       setIsCheckingConnection(false)
     }
-  }, [request, addLog, isCheckingConnection])
+  }, [
+    request,
+    addLog,
+    isCheckingConnection,
+    walletType,
+    hathorAddress,
+    currentNetwork,
+    targetNetwork,
+    isNetworkMismatch,
+  ])
 
   // Check connection status on mount
   useEffect(() => {
@@ -78,6 +151,8 @@ const SnapUtilsDemo = () => {
       if (accounts && Array.isArray(accounts) && accounts.length > 0) {
         setIsConnected(true)
         setAccount(accounts[0] as string)
+        // Also update global wallet state for consistency
+        setWalletConnection({ address: accounts[0] as string })
         addLog(`✅ Connected to account: ${accounts[0]}`)
       }
     } catch (err) {
@@ -95,8 +170,9 @@ const SnapUtilsDemo = () => {
   const disconnectWallet = async () => {
     try {
       addLog('🔄 Disconnecting wallet...')
-      // Note: MetaMask doesn't have a direct disconnect method
-      // This is a conceptual disconnect
+      // Use global disconnect function
+      globalDisconnectWallet()
+      // Also clear local demo state
       setIsConnected(false)
       setAccount(null)
       addLog('✅ Wallet disconnected')
@@ -165,18 +241,19 @@ const SnapUtilsDemo = () => {
 
   const installSnap = async () => {
     try {
-      addLog(`🔄 Installing Hathor snap: ${snapId}`)
+      addLog(`🔄 Installing Hathor snap: ${localSnapId}`)
       // For local snaps, don't provide a version - MetaMask expects empty object
-      const result = await requestSnap(snapId)
-      setInstalledSnap(result)
+      const result = await requestSnap(localSnapId || 'local:http://localhost:8089')
       addLog(`✅ Hathor snap installed: ${result?.id}`)
+      // Don't store local state - always check with MetaMask directly
     } catch (err) {
       addLog(`❌ Snap installation failed: ${err}`)
     }
   }
 
   const invokeSnapMethod = async () => {
-    if (!installedSnap) {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus) {
       addLog('❌ No snap installed')
       return
     }
@@ -184,7 +261,7 @@ const SnapUtilsDemo = () => {
     try {
       addLog('🔄 Invoking Hathor snap method...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId: snapStatus.id,
         method: 'htr_getAddress',
         params: { type: 'index', index: 0 },
       })
@@ -249,83 +326,56 @@ const SnapUtilsDemo = () => {
 
   // Hathor-specific methods
   const getHathorBalance = async () => {
-    if (!installedSnap) {
-      addLog('❌ No snap installed')
-      return
-    }
-
-    try {
+    await executeSnapOperation('Getting Hathor balance', async (snapId) => {
       addLog('🔄 Getting Hathor balance...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId,
         method: 'htr_getBalance',
         params: { tokens: ['00', '00000337f9db18c355a376697f64fd6e36945fc984d6569b4b0d86e2af185945'] },
       })
       addLog(`✅ Hathor balance: ${JSON.stringify(result)}`)
-    } catch (err) {
-      addLog(`❌ Get balance failed: ${err}`)
-    }
+    })
   }
 
   const getHathorNetwork = async () => {
-    if (!installedSnap) {
-      addLog('❌ No snap installed')
-      return
-    }
-
-    try {
+    await executeSnapOperation('Getting Hathor network', async (snapId) => {
       addLog('🔄 Getting Hathor network...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId,
         method: 'htr_getConnectedNetwork',
         params: {},
       })
       addLog(`✅ Hathor network: ${JSON.stringify(result)}`)
-    } catch (err) {
-      addLog(`❌ Get network failed: ${err}`)
-    }
+    })
   }
 
   const getHathorUtxos = async () => {
-    if (!installedSnap) {
-      addLog('❌ No snap installed')
-      return
-    }
-
-    try {
+    await executeSnapOperation('Getting Hathor UTXOs', async (snapId) => {
       addLog('🔄 Getting Hathor UTXOs...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId,
         method: 'htr_getUtxos',
         params: {},
       })
       addLog(`✅ Hathor UTXOs: ${JSON.stringify(result)}`)
-    } catch (err) {
-      addLog(`❌ Get UTXOs failed: ${err}`)
-    }
+    })
   }
 
   const signHathorMessage = async () => {
-    if (!installedSnap) {
-      addLog('❌ No snap installed')
-      return
-    }
-
-    try {
+    await executeSnapOperation('Signing Hathor message', async (snapId) => {
       addLog('🔄 Signing Hathor message...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId,
         method: 'htr_signWithAddress',
         params: { message: 'test message', addressIndex: 0 },
       })
       addLog(`✅ Hathor signature: ${JSON.stringify(result)}`)
-    } catch (err) {
-      addLog(`❌ Sign message failed: ${err}`)
-    }
+    })
   }
 
   const getHathorAddress = async () => {
-    if (!installedSnap) {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus) {
       addLog('❌ No snap installed')
       return
     }
@@ -333,7 +383,7 @@ const SnapUtilsDemo = () => {
     try {
       addLog('🔄 Getting Hathor address...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId: snapStatus.id,
         method: 'htr_getAddress',
         params: { type: 'index', index: 0 },
       })
@@ -350,9 +400,14 @@ const SnapUtilsDemo = () => {
       }
 
       // Extract the address from the parsed response
-      const address = (parsedResult as any)?.response?.address || (parsedResult as any)?.address
+      interface SnapResponse {
+        response?: { address?: string }
+        address?: string
+      }
+      const address = (parsedResult as SnapResponse)?.response?.address || (parsedResult as SnapResponse)?.address
       if (address) {
-        setHathorAddress(address)
+        // Update global wallet state with Hathor address
+        setWalletConnection({ hathorAddress: address })
         addLog(`✅ Hathor address: ${address}`)
         addLog(`📋 Full response: ${JSON.stringify(parsedResult)}`)
       } else {
@@ -364,7 +419,8 @@ const SnapUtilsDemo = () => {
   }
 
   const sendHathorTransaction = async () => {
-    if (!installedSnap) {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus) {
       addLog('❌ No snap installed')
       return
     }
@@ -372,7 +428,7 @@ const SnapUtilsDemo = () => {
     try {
       addLog('🔄 Sending Hathor transaction...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId: snapStatus.id,
         method: 'htr_sendTransaction',
         params: {
           outputs: [{ address: 'WafpWYepbV13FVM9Qp9brmBTXgjrn3dnfx', value: '10' }, { data: 'test data' }],
@@ -385,7 +441,8 @@ const SnapUtilsDemo = () => {
   }
 
   const createHathorToken = async () => {
-    if (!installedSnap) {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus) {
       addLog('❌ No snap installed')
       return
     }
@@ -393,7 +450,7 @@ const SnapUtilsDemo = () => {
     try {
       addLog('🔄 Creating Hathor token...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId: snapStatus.id,
         method: 'htr_createToken',
         params: {
           name: 'Test Token',
@@ -415,7 +472,8 @@ const SnapUtilsDemo = () => {
   }
 
   const sendNanoContractTx = async () => {
-    if (!installedSnap) {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus) {
       addLog('❌ No snap installed')
       return
     }
@@ -423,7 +481,7 @@ const SnapUtilsDemo = () => {
     try {
       addLog('🔄 Sending nano contract transaction...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId: snapStatus.id,
         method: 'htr_sendNanoContractTx',
         params: {
           method: 'initialize',
@@ -441,7 +499,8 @@ const SnapUtilsDemo = () => {
   }
 
   const signOracleData = async () => {
-    if (!installedSnap) {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus) {
       addLog('❌ No snap installed')
       return
     }
@@ -449,7 +508,7 @@ const SnapUtilsDemo = () => {
     try {
       addLog('🔄 Signing oracle data...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId: snapStatus.id,
         method: 'htr_signOracleData',
         params: {
           nc_id: '00000d69f91f375fb76095010963579018b4a9c68549dc7466b09cf97305b490',
@@ -464,24 +523,32 @@ const SnapUtilsDemo = () => {
   }
 
   const switchHathorNetwork = async (network: 'mainnet' | 'testnet') => {
-    if (!installedSnap) {
+    if (!snapId) {
       addLog('❌ No snap installed')
       return
     }
 
     try {
       addLog(`🔄 Switching Hathor network to ${network}...`)
+
+      // First check current network
+      // const currentNet = await walletService.getCurrentNetwork(invokeSnap, snapId)
+      // if (currentNet === network) {
+      //   addLog(`✅ Already on ${network} network`)
+      //   setCurrentNetwork(network)
+      //   return
+      // }
+
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId: snapId,
         method: 'htr_changeNetwork',
         params: { newNetwork: network },
       })
-      setSelectedNetwork(network)
-      addLog(`✅ Network switched to ${network}: ${JSON.stringify(result)}`)
 
-      // Clear the Hathor address since it may change with network
-      setHathorAddress(null)
-      addLog('ℹ️ Hathor address cleared - get new address for the network')
+      // Update the unified state
+      setCurrentNetwork(network)
+      addLog(`✅ Network switched to ${network}: ${JSON.stringify(result)}`)
+      addLog('ℹ️ Address may have changed - get new address for the network')
     } catch (err) {
       addLog(`❌ Switch network failed: ${err}`)
       addLog(`ℹ️ Make sure your snap supports the htr_changeNetwork method`)
@@ -489,15 +556,10 @@ const SnapUtilsDemo = () => {
   }
 
   const createNanoContractCreateTokenTx = async () => {
-    if (!installedSnap) {
-      addLog('❌ No snap installed')
-      return
-    }
-
-    try {
+    await executeSnapOperation('Creating nano contract create token transaction', async (snapId) => {
       addLog('🔄 Creating nano contract create token transaction...')
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId,
         method: 'htr_createNanoContractCreateTokenTx',
         params: {
           method: 'initialize',
@@ -522,9 +584,7 @@ const SnapUtilsDemo = () => {
         },
       })
       addLog(`✅ Nano contract create token transaction: ${JSON.stringify(result)}`)
-    } catch (err) {
-      addLog(`❌ Create nano contract create token failed: ${err}`)
-    }
+    })
   }
 
   const requestFaucet = async () => {
@@ -533,14 +593,17 @@ const SnapUtilsDemo = () => {
       return
     }
 
-    if (selectedNetwork !== 'testnet') {
+    // Use current network from unified state
+    const networkToCheck = currentNetwork || targetNetwork
+    if (networkToCheck !== 'testnet') {
       addLog('⚠️ Faucet is only available on testnet. Please switch to testnet first.')
+      addLog(`🔄 Current network: ${networkToCheck}, Target: ${targetNetwork}`)
       return
     }
 
     setIsLoadingFaucet(true)
     try {
-      addLog(`🔄 Requesting faucet for ${selectedNetwork} address: ${hathorAddress}`)
+      addLog(`🔄 Requesting faucet for ${networkToCheck} address: ${hathorAddress}`)
       const data = await faucetMutation.mutateAsync({ address: hathorAddress })
 
       if (data.success) {
@@ -560,12 +623,13 @@ const SnapUtilsDemo = () => {
   // Dozer-specific operations
   const dozerTestSwap = async () => {
     addLog('🔍 DIRECT SNAP CALL - Debug Info:')
-    addLog(`🔍 installedSnap: ${JSON.stringify(installedSnap)}`)
-    addLog(`🔍 installedSnap.id: ${installedSnap?.id}`)
+    const snapStatus = await checkSnapInstallation()
+    addLog(`🔍 snapStatus: ${JSON.stringify(snapStatus)}`)
+    addLog(`🔍 snapStatus.id: ${snapStatus?.id}`)
     addLog(`🔍 invokeSnap available: ${!!invokeSnap}`)
     addLog(`🔍 hathorAddress: ${hathorAddress}`)
 
-    if (!installedSnap) {
+    if (!snapStatus) {
       addLog('❌ No snap installed')
       return
     }
@@ -593,7 +657,7 @@ const SnapUtilsDemo = () => {
       addLog(`📄 Pool Manager: ${poolManagerId}`)
 
       const snapCallParams = {
-        snapId: installedSnap.id,
+        snapId: snapStatus.id,
         method: 'htr_sendNanoContractTx',
         params: {
           nc_id: poolManagerId,
@@ -630,7 +694,8 @@ const SnapUtilsDemo = () => {
   }
 
   const dozerAddLiquidity = async () => {
-    if (!installedSnap) {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus) {
       addLog('❌ No snap installed')
       return
     }
@@ -658,7 +723,7 @@ const SnapUtilsDemo = () => {
       addLog(`📄 Pool Manager: ${poolManagerId}`)
 
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId: snapStatus.id,
         method: 'htr_sendNanoContractTx',
         params: {
           nc_id: poolManagerId,
@@ -689,7 +754,8 @@ const SnapUtilsDemo = () => {
   }
 
   const dozerRemoveLiquidity = async () => {
-    if (!installedSnap) {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus) {
       addLog('❌ No snap installed')
       return
     }
@@ -718,7 +784,7 @@ const SnapUtilsDemo = () => {
       addLog(`⚠️ Note: This requires LP tokens - will fail if you don't have any`)
 
       const result = await invokeSnap({
-        snapId: installedSnap.id,
+        snapId: snapStatus.id,
         method: 'htr_sendNanoContractTx',
         params: {
           nc_id: poolManagerId,
@@ -748,56 +814,317 @@ const SnapUtilsDemo = () => {
     }
   }
 
+  // Enhanced Dozer operations using real APIs
   const dozerGetPoolState = async () => {
-    if (!installedSnap) {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus) {
       addLog('❌ No snap installed')
       return
     }
 
     try {
-      addLog('🔄 Getting Dozer pool state via API...')
+      addLog('🔄 Getting Dozer pool state via tRPC API...')
 
-      // Fetch pool data from the API (proper way)
-      try {
-        const response = await fetch('/api/trpc/getPools.all')
-        const result = await response.json()
-        const pools = result?.result?.data || []
+      // Use the proper tRPC API
+      const pools = await utils.getPools.all.fetch()
+      const tokens = await utils.getTokens.all.fetch()
 
-        if (pools.length > 0) {
-          addLog(`📊 Found ${pools.length} pools:`)
-          pools.forEach((pool: any, index: number) => {
-            addLog(
-              `${index + 1}. ${pool.token0Symbol}/${pool.token1Symbol} - Fee: ${pool.fee}% - TVL: $${
-                pool.totalValueLockedUSD || 'N/A'
-              }`
-            )
-          })
-
-          const htrDzrPool = pools.find(
-            (pool: any) =>
-              (pool.token0Symbol === 'HTR' && pool.token1Symbol === 'DZR') ||
-              (pool.token0Symbol === 'DZR' && pool.token1Symbol === 'HTR')
+      if (pools && pools.length > 0) {
+        addLog(`📊 Found ${pools.length} pools:`)
+        pools.slice(0, 5).forEach((pool, index) => {
+          addLog(
+            `${index + 1}. ${pool.token0Symbol}/${pool.token1Symbol} - Fee: ${pool.fee}% - TVL: $${
+              pool.totalValueLockedUSD || 'N/A'
+            }`
           )
+        })
 
-          if (htrDzrPool) {
-            addLog(`🎯 HTR/DZR Pool Details:`)
-            addLog(`   - Token0: ${htrDzrPool.token0Symbol} (${htrDzrPool.token0Uuid})`)
-            addLog(`   - Token1: ${htrDzrPool.token1Symbol} (${htrDzrPool.token1Uuid})`)
-            addLog(`   - Fee: ${htrDzrPool.fee}%`)
-            addLog(`   - Volume 24h: $${htrDzrPool.volume24hUSD || 'N/A'}`)
-          } else {
-            addLog(`⚠️ HTR/DZR pool not found`)
-          }
-        } else {
-          addLog('❌ No pools found')
+        // Find specific pools for debugging
+        const htrDzrPool = pools.find(
+          (pool) =>
+            (pool.token0Symbol === 'HTR' && pool.token1Symbol === 'DZR') ||
+            (pool.token0Symbol === 'DZR' && pool.token1Symbol === 'HTR')
+        )
+
+        const hUSDCPool = pools.find(
+          (pool) =>
+            pool.token0Symbol === 'hUSDC' || pool.token1Symbol === 'hUSDC'
+        )
+
+        if (htrDzrPool) {
+          addLog(`🎯 HTR/DZR Pool:`)
+          addLog(`   - Tokens: ${htrDzrPool.token0Symbol}/${htrDzrPool.token1Symbol}`)
+          addLog(`   - Fee: ${htrDzrPool.fee}% - TVL: $${htrDzrPool.totalValueLockedUSD || 'N/A'}`)
         }
-      } catch (apiError) {
-        addLog(`❌ API call failed: ${apiError}`)
-        addLog(`ℹ️ Make sure the tRPC server is running`)
+
+        if (hUSDCPool) {
+          addLog(`💰 hUSDC Pool:`)
+          addLog(`   - Tokens: ${hUSDCPool.token0Symbol}/${hUSDCPool.token1Symbol}`)
+          addLog(`   - Fee: ${hUSDCPool.fee}% - TVL: $${hUSDCPool.totalValueLockedUSD || 'N/A'}`)
+        }
+
+        // Show token information
+        const hUSDCToken = tokens?.find(token => token.symbol === 'hUSDC')
+        if (hUSDCToken) {
+          addLog(`🏦 hUSDC Token: ${hUSDCToken.uuid}`)
+        }
+      } else {
+        addLog('❌ No pools found')
       }
     } catch (err) {
       addLog(`❌ Get pool state failed: ${err}`)
     }
+  }
+
+  const dozerGetSwapQuote = async (fromToken: string, toToken: string, amount: number) => {
+    try {
+      addLog(`🔍 Getting swap quote: ${amount} ${fromToken} → ${toToken}`)
+      
+      // Get tokens to find UUIDs
+      const tokens = await utils.getTokens.all.fetch()
+      const fromTokenData = tokens?.find(t => t.symbol === fromToken)
+      const toTokenData = tokens?.find(t => t.symbol === toToken)
+
+      if (!fromTokenData || !toTokenData) {
+        addLog(`❌ Token not found: ${fromToken} or ${toToken}`)
+        return null
+      }
+
+      const quote = await utils.getPools.quote.fetch({
+        amountIn: amount,
+        tokenIn: fromTokenData.uuid,
+        tokenOut: toTokenData.uuid,
+        maxHops: 3
+      })
+
+      if (quote) {
+        addLog(`💹 Quote Result:`)
+        addLog(`   - Amount In: ${amount} ${fromToken}`)
+        addLog(`   - Amount Out: ${quote.amountOut} ${toToken}`)
+        addLog(`   - Price Impact: ${quote.priceImpact}%`)
+        addLog(`   - Path: ${quote.path}`)
+        return quote
+      } else {
+        addLog(`❌ No quote available`)
+        return null
+      }
+    } catch (err) {
+      addLog(`❌ Get quote failed: ${err}`)
+      return null
+    }
+  }
+
+  const dozerSwapWithRealQuote = async (fromToken: string, toToken: string, amount: number) => {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus || !hathorAddress) {
+      addLog('❌ Wallet not connected')
+      return
+    }
+
+    try {
+      addLog(`🔄 Executing real swap: ${amount} ${fromToken} → ${toToken}`)
+      
+      // Get the quote first
+      const quote = await dozerGetSwapQuote(fromToken, toToken, amount)
+      if (!quote) {
+        addLog('❌ Cannot get quote for swap')
+        return
+      }
+
+      // Get tokens for UUIDs
+      const tokens = await utils.getTokens.all.fetch()
+      const fromTokenData = tokens?.find(t => t.symbol === fromToken)
+      const toTokenData = tokens?.find(t => t.symbol === toToken)
+
+      if (!fromTokenData || !toTokenData) {
+        addLog(`❌ Token data not found`)
+        return
+      }
+
+      // Calculate minimum amount out (5% slippage)
+      const minAmountOut = quote.amountOut * 0.95
+
+      addLog(`📋 Swap Details:`)
+      addLog(`   - From: ${amount} ${fromToken} (${fromTokenData.uuid})`)
+      addLog(`   - To: ${quote.amountOut} ${toToken} (${toTokenData.uuid})`)
+      addLog(`   - Min Out: ${minAmountOut} ${toToken}`)
+      addLog(`   - Path: ${quote.path}`)
+
+      const result = await invokeSnap({
+        snapId: snapStatus.id,
+        method: 'htr_sendTransaction',
+        params: {
+          version: 2,
+          weight: 1,
+          parents: [],
+          inputs: [
+            {
+              type: 'withdrawal',
+              token: fromTokenData.uuid,
+              amount: Math.round(amount * 100), // Convert to cents
+              address: hathorAddress,
+              changeAddress: hathorAddress,
+            },
+          ],
+          outputs: [
+            {
+              type: 'withdrawal',
+              token: toTokenData.uuid,
+              amount: Math.round(minAmountOut * 100), // Convert to cents
+              address: hathorAddress,
+              changeAddress: hathorAddress,
+            },
+          ],
+          nanoContractData: {
+            ncId: process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID,
+            method: 'swap_exact_tokens_for_tokens',
+            args: [
+              Math.round(amount * 100), // amountIn in cents
+              Math.round(minAmountOut * 100), // minAmountOut in cents
+              quote.path, // path from quote
+              hathorAddress, // to address
+            ],
+          },
+        },
+      })
+
+      addLog(`✅ Swap transaction sent: ${JSON.stringify(result)}`)
+    } catch (err) {
+      addLog(`❌ Swap failed: ${err}`)
+    }
+  }
+
+  // hUSDC specific operations for debugging
+  const dozerSwapHTRToHUSDC = async () => {
+    addLog('💰 Testing HTR → hUSDC swap with real quote...')
+    await dozerSwapWithRealQuote('HTR', 'hUSDC', 100) // 100 HTR to hUSDC
+  }
+
+  const dozerSwapHUSDCToHTR = async () => {
+    addLog('💰 Testing hUSDC → HTR swap with real quote...')
+    await dozerSwapWithRealQuote('hUSDC', 'HTR', 50) // 50 hUSDC to HTR
+  }
+
+  const dozerSwapHUSDCToDZR = async () => {
+    addLog('💰 Testing hUSDC → DZR swap with real quote...')
+    await dozerSwapWithRealQuote('hUSDC', 'DZR', 25) // 25 hUSDC to DZR
+  }
+
+  const dozerAddLiquidityHTRHUSDC = async () => {
+    const snapStatus = await checkSnapInstallation()
+    if (!snapStatus || !hathorAddress) {
+      addLog('❌ Wallet not connected')
+      return
+    }
+
+    try {
+      addLog('🔄 Adding HTR/hUSDC liquidity with real quote...')
+      
+      // Get tokens and pool data
+      const tokens = await utils.getTokens.all.fetch()
+      const pools = await utils.getPools.all.fetch()
+      
+      const htrToken = tokens?.find(t => t.symbol === 'HTR')
+      const hUSDCToken = tokens?.find(t => t.symbol === 'hUSDC')
+      
+      if (!htrToken || !hUSDCToken) {
+        addLog('❌ HTR or hUSDC token not found')
+        return
+      }
+
+      // Find HTR/hUSDC pool
+      const htrHUSDCPool = pools?.find(
+        (pool) =>
+          (pool.token0Symbol === 'HTR' && pool.token1Symbol === 'hUSDC') ||
+          (pool.token0Symbol === 'hUSDC' && pool.token1Symbol === 'HTR')
+      )
+
+      if (!htrHUSDCPool) {
+        addLog('❌ HTR/hUSDC pool not found')
+        return
+      }
+
+      const poolKey = `${htrHUSDCPool.token0Uuid}/${htrHUSDCPool.token1Uuid}/${Math.round(htrHUSDCPool.fee * 100)}`
+      const amountHTR = 50 // 50 HTR
+      
+      addLog(`📋 Pool Key: ${poolKey}`)
+
+      // Get liquidity quote
+      const quote = await utils.getPools.front_quote_add_liquidity_in.fetch({
+        id: poolKey,
+        amount_in: amountHTR,
+        token_in: htrToken.uuid
+      })
+
+      if (!quote) {
+        addLog('❌ Cannot get liquidity quote')
+        return
+      }
+
+      addLog(`💹 Liquidity Quote:`)
+      addLog(`   - HTR In: ${amountHTR}`)
+      addLog(`   - hUSDC Required: ${quote.amount_out}`)
+      addLog(`   - LP Tokens: ${quote.lp_tokens_out}`)
+
+      // Execute add liquidity transaction
+      const result = await invokeSnap({
+        snapId: snapStatus.id,
+        method: 'htr_sendTransaction',
+        params: {
+          version: 2,
+          weight: 1,
+          parents: [],
+          inputs: [
+            {
+              type: 'withdrawal',
+              token: htrToken.uuid,
+              amount: Math.round(amountHTR * 100),
+              address: hathorAddress,
+              changeAddress: hathorAddress,
+            },
+            {
+              type: 'withdrawal',
+              token: hUSDCToken.uuid,
+              amount: Math.round(quote.amount_out * 100),
+              address: hathorAddress,
+              changeAddress: hathorAddress,
+            },
+          ],
+          outputs: [],
+          nanoContractData: {
+            ncId: process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID,
+            method: 'add_liquidity',
+            args: [
+              poolKey, // pool key
+              Math.round(amountHTR * 100), // amount0Desired in cents
+              Math.round(quote.amount_out * 100), // amount1Desired in cents
+              Math.round(amountHTR * 0.95 * 100), // amount0Min (5% slippage)
+              Math.round(quote.amount_out * 0.95 * 100), // amount1Min (5% slippage)
+              hathorAddress, // to address
+            ],
+          },
+        },
+      })
+
+      addLog(`✅ Add HTR/hUSDC liquidity transaction sent: ${JSON.stringify(result)}`)
+    } catch (err) {
+      addLog(`❌ Add HTR/hUSDC liquidity failed: ${err}`)
+    }
+  }
+
+  const dozerTestAllHUSDCOperations = async () => {
+    addLog('🚀 Running comprehensive hUSDC test suite...')
+    
+    // First get pool state to see what's available
+    await dozerGetPoolState()
+    
+    // Test quotes for different hUSDC pairs
+    await dozerGetSwapQuote('HTR', 'hUSDC', 100)
+    await dozerGetSwapQuote('hUSDC', 'HTR', 50)
+    await dozerGetSwapQuote('hUSDC', 'DZR', 25)
+    await dozerGetSwapQuote('DZR', 'hUSDC', 1000)
+    
+    addLog('📊 hUSDC test suite completed - check quotes above')
   }
 
   const dozerTestSwapViaJsonRpc = async () => {
@@ -806,8 +1133,9 @@ const SnapUtilsDemo = () => {
     addLog(`🔍 isRpcRequestPending: ${isRpcRequestPending}`)
     addLog(`🔍 rpcResult: ${JSON.stringify(rpcResult)}`)
     addLog(`🔍 hathorAddress: ${hathorAddress}`)
-    addLog(`🔍 installedSnap: ${JSON.stringify(installedSnap)}`)
-    addLog(`🔍 installedSnap.id: ${installedSnap?.id}`)
+    const snapStatus = await checkSnapInstallation()
+    addLog(`🔍 snapStatus: ${JSON.stringify(snapStatus)}`)
+    addLog(`🔍 snapStatus.id: ${snapStatus?.id}`)
     addLog(`🔍 invokeSnap available: ${!!invokeSnap}`)
 
     if (!hathorRpc) {
@@ -914,31 +1242,31 @@ const SnapUtilsDemo = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                  <Typography variant="sm">Status: {isConnected ? 'Connected' : 'Disconnected'}</Typography>
+                  <span className={`w-3 h-3 rounded-full ${walletType ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                  <Typography variant="sm">Status: {walletType ? `Connected (${walletType})` : 'Disconnected'}</Typography>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`w-3 h-3 rounded-full ${provider ? 'bg-green-500' : 'bg-red-500'}`}></span>
                   <Typography variant="sm">Provider: {provider ? 'Available' : 'Not Found'}</Typography>
                 </div>
-                {account && (
+                {(account || hathorAddress) && (
                   <Typography variant="sm" className="text-gray-400 font-mono">
-                    Account: {account.slice(0, 6)}...{account.slice(-4)}
+                    Account: {account ? `${account.slice(0, 6)}...${account.slice(-4)}` : hathorAddress ? `${hathorAddress.slice(0, 6)}...${hathorAddress.slice(-4)}` : 'N/A'}
                   </Typography>
                 )}
-                {installedSnap && (
+                {isSnapInstalled && (
                   <Typography variant="sm" className="text-blue-400">
-                    Snap: {installedSnap.id}
+                    Snap: {snapId || 'Installed'}
                   </Typography>
                 )}
               </div>
               <div className="space-y-2">
                 <Button
-                  onClick={isConnected ? disconnectWallet : connectWallet}
-                  variant={isConnected ? 'empty' : 'filled'}
+                  onClick={walletType ? disconnectWallet : connectWallet}
+                  variant={walletType ? 'empty' : 'filled'}
                   className="w-full"
                 >
-                  {isConnected ? 'Disconnect' : 'Connect Wallet'}
+                  {walletType ? 'Disconnect' : 'Connect Wallet'}
                 </Button>
                 <Button onClick={checkConnection} variant="outlined" className="w-full" disabled={isCheckingConnection}>
                   {isCheckingConnection ? 'Checking...' : 'Refresh Status'}
@@ -967,11 +1295,11 @@ const SnapUtilsDemo = () => {
                 <div className="flex items-center gap-2">
                   <span
                     className={`w-3 h-3 rounded-full ${
-                      selectedNetwork === 'testnet' ? 'bg-yellow-500' : 'bg-blue-500'
+                      (currentNetwork || targetNetwork) === 'testnet' ? 'bg-yellow-500' : 'bg-blue-500'
                     }`}
                   ></span>
                   <Typography variant="sm" className="font-semibold capitalize">
-                    {selectedNetwork}
+                    {currentNetwork || targetNetwork} {currentNetwork !== targetNetwork ? '(mismatch!)' : ''}
                   </Typography>
                 </div>
               </div>
@@ -979,16 +1307,16 @@ const SnapUtilsDemo = () => {
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   onClick={() => switchHathorNetwork('testnet')}
-                  variant={selectedNetwork === 'testnet' ? 'filled' : 'outlined'}
-                  disabled={!installedSnap}
+                  variant={(currentNetwork || targetNetwork) === 'testnet' ? 'filled' : 'outlined'}
+                  disabled={!isSnapInstalled || !snapId}
                   className="h-[44px]"
                 >
                   Switch to Testnet
                 </Button>
                 <Button
                   onClick={() => switchHathorNetwork('mainnet')}
-                  variant={selectedNetwork === 'mainnet' ? 'filled' : 'outlined'}
-                  disabled={!installedSnap}
+                  variant={(currentNetwork || targetNetwork) === 'mainnet' ? 'filled' : 'outlined'}
+                  disabled={!isSnapInstalled || !snapId}
                   className="h-[44px]"
                 >
                   Switch to Mainnet
@@ -1041,24 +1369,31 @@ const SnapUtilsDemo = () => {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={snapId}
-                  onChange={(e) => setSnapId(e.target.value)}
+                  value={localSnapId || ''}
+                  onChange={(e) => setLocalSnapId(e.target.value)}
                   className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-sm"
                   placeholder="Snap ID (e.g., local:http://localhost:8089)"
                 />
-                <Button onClick={installSnap} disabled={!isConnected}>
-                  Install Snap
+                <Button onClick={installSnap} disabled={!walletType}>
+                  Install/Reinstall Snap
                 </Button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                <Button onClick={invokeSnapMethod} disabled={!installedSnap}>
+                <Button onClick={invokeSnapMethod} disabled={!isSnapInstalled || !localSnapId}>
                   Invoke Snap Method
                 </Button>
                 <Button onClick={getSnaps} disabled={!isConnected}>
                   Get All Snaps
                 </Button>
-                <Button onClick={() => setInstalledSnap(null)} disabled={!installedSnap} variant="empty">
-                  Clear Snap
+                <Button onClick={async () => {
+                  const snapStatus = await checkSnapInstallation()
+                  if (snapStatus) {
+                    addLog(`🔄 Snap found: ${snapStatus.id}`)
+                  } else {
+                    addLog('❌ No snap currently installed')
+                  }
+                }} variant="outlined">
+                  Check Snap Status
                 </Button>
               </div>
             </div>
@@ -1083,14 +1418,14 @@ const SnapUtilsDemo = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Typography variant="sm" className="font-semibold text-blue-300">
-                      Hathor Address ({selectedNetwork}):{' '}
+                      Hathor Address ({currentNetwork || targetNetwork}):{' '}
                       {hathorAddress ? `${hathorAddress.slice(0, 8)}...${hathorAddress.slice(-8)}` : 'Not set'}
                     </Typography>
                     <Button
                       onClick={getHathorAddress}
                       variant="outlined"
                       className="px-3 h-[36px] text-xs font-semibold"
-                      disabled={!isConnected || !installedSnap}
+                      disabled={!walletType || !isSnapInstalled || !snapId}
                     >
                       Get Address
                     </Button>
@@ -1101,22 +1436,23 @@ const SnapUtilsDemo = () => {
                       <div className="flex items-center gap-2">
                         <span
                           className={`w-2 h-2 rounded-full ${
-                            selectedNetwork === 'testnet' ? 'bg-green-500' : 'bg-red-500'
+                            (currentNetwork || targetNetwork) === 'testnet' ? 'bg-green-500' : 'bg-red-500'
                           }`}
                         ></span>
                         <Typography variant="xs" className="text-gray-400">
-                          Faucet {selectedNetwork === 'testnet' ? 'available' : 'unavailable'} on {selectedNetwork}
+                          Faucet {(currentNetwork || targetNetwork) === 'testnet' ? 'available' : 'unavailable'} on{' '}
+                          {currentNetwork || targetNetwork}
                         </Typography>
                       </div>
                       <Button
                         onClick={requestFaucet}
                         variant="filled"
+                        disabled={!hathorAddress || (currentNetwork || targetNetwork) !== 'testnet' || isLoadingFaucet}
                         className="px-3 h-[36px] text-xs font-semibold"
-                        disabled={!isConnected || !installedSnap || isLoadingFaucet || selectedNetwork !== 'testnet'}
                       >
                         {isLoadingFaucet
                           ? 'Requesting...'
-                          : selectedNetwork === 'testnet'
+                          : (currentNetwork || targetNetwork) === 'testnet'
                           ? 'Request Faucet'
                           : 'Testnet Required'}
                       </Button>
@@ -1135,7 +1471,7 @@ const SnapUtilsDemo = () => {
                     onClick={getHathorAddress}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Get Address
                   </Button>
@@ -1143,7 +1479,7 @@ const SnapUtilsDemo = () => {
                     onClick={getHathorBalance}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Get Balance
                   </Button>
@@ -1151,7 +1487,7 @@ const SnapUtilsDemo = () => {
                     onClick={getHathorNetwork}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Get Network
                   </Button>
@@ -1159,7 +1495,7 @@ const SnapUtilsDemo = () => {
                     onClick={getHathorUtxos}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Get UTXOs
                   </Button>
@@ -1176,7 +1512,7 @@ const SnapUtilsDemo = () => {
                     onClick={signHathorMessage}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Sign Message
                   </Button>
@@ -1184,7 +1520,7 @@ const SnapUtilsDemo = () => {
                     onClick={sendHathorTransaction}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Send Transaction
                   </Button>
@@ -1192,7 +1528,7 @@ const SnapUtilsDemo = () => {
                     onClick={createHathorToken}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Create Token
                   </Button>
@@ -1209,7 +1545,7 @@ const SnapUtilsDemo = () => {
                     onClick={sendNanoContractTx}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Send Nano Contract
                   </Button>
@@ -1217,7 +1553,7 @@ const SnapUtilsDemo = () => {
                     onClick={signOracleData}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Sign Oracle Data
                   </Button>
@@ -1225,7 +1561,7 @@ const SnapUtilsDemo = () => {
                     onClick={createNanoContractCreateTokenTx}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Create Token + Contract
                   </Button>
@@ -1245,7 +1581,7 @@ const SnapUtilsDemo = () => {
                     onClick={dozerTestSwap}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold bg-blue-600 hover:bg-blue-700"
-                    disabled={!isConnected || !installedSnap || !hathorAddress}
+                    disabled={!walletType || !isSnapInstalled || !hathorAddress}
                   >
                     Test Swap (HTR→DZR)
                   </Button>
@@ -1253,7 +1589,7 @@ const SnapUtilsDemo = () => {
                     onClick={dozerTestSwapViaJsonRpc}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold bg-cyan-600 hover:bg-cyan-700"
-                    disabled={!isConnected || !installedSnap || !hathorAddress || !hathorRpc}
+                    disabled={!walletType || !isSnapInstalled || !hathorAddress || !hathorRpc}
                   >
                     Test Swap via JsonRpc
                   </Button>
@@ -1261,7 +1597,7 @@ const SnapUtilsDemo = () => {
                     onClick={dozerAddLiquidity}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold bg-green-600 hover:bg-green-700"
-                    disabled={!isConnected || !installedSnap || !hathorAddress}
+                    disabled={!walletType || !isSnapInstalled || !hathorAddress}
                   >
                     Add Liquidity
                   </Button>
@@ -1269,7 +1605,7 @@ const SnapUtilsDemo = () => {
                     onClick={dozerRemoveLiquidity}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold bg-red-600 hover:bg-red-700"
-                    disabled={!isConnected || !installedSnap || !hathorAddress}
+                    disabled={!walletType || !isSnapInstalled || !hathorAddress}
                   >
                     Remove Liquidity
                   </Button>
@@ -1277,7 +1613,7 @@ const SnapUtilsDemo = () => {
                     onClick={dozerGetPoolState}
                     variant="filled"
                     className="px-3 h-[44px] text-sm font-semibold bg-purple-600 hover:bg-purple-700"
-                    disabled={!isConnected || !installedSnap}
+                    disabled={!walletType || !isSnapInstalled}
                   >
                     Get Pool State
                   </Button>
