@@ -140,12 +140,8 @@ const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pai
   const poolToken1 = pair.token1.uuid
 
   const poolSpecificTransactions = allTransactions.filter((tx) => {
-    // Filter out failed transactions (voided_by)
-    if (
-      tx.debug?.fullTx?.voided_by &&
-      Array.isArray(tx.debug.fullTx.voided_by) &&
-      tx.debug.fullTx.voided_by.length > 0
-    ) {
+    // Filter out failed transactions using the success field from API
+    if (tx.success === false) {
       return false
     }
 

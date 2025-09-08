@@ -283,6 +283,7 @@ export function transformTokenTradingTransactions(
   pricesUSD?: Record<string, number>
 ): TokenTradingTransaction[] {
   return complexTransactions
+    .filter((tx) => tx.success !== false) // Filter out failed transactions
     .map((tx) => transformToTokenTradingTransaction(tx, targetTokenUuid, targetTokenSymbol, pricesUSD))
     .filter((tx): tx is TokenTradingTransaction => tx !== null)
     .sort((a, b) => b.timestamp - a.timestamp) // Sort by newest first
