@@ -18,6 +18,43 @@ import {
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
 
+// Get the DozerTools Contract ID from environment
+const NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID = process.env.NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID
+const NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL = process.env.NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL
+
+// Helper function to fetch DozerTools image URL for a token
+async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> {
+  try {
+    // Skip if DozerTools integration is not configured
+    if (!NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID || !NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL) {
+      return null
+    }
+
+    // Fetch project info from DozerTools contract
+    const endpoint = 'nano_contract/state'
+    const queryParams = [`id=${NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID}`, `calls[]=get_project_info("${tokenUuid}")`]
+
+    const response = await fetchNodeData(endpoint, queryParams)
+    const projectInfo = response.calls[`get_project_info("${tokenUuid}")`]?.value
+
+    if (projectInfo && projectInfo.logo_url) {
+      // Check if it's a valid Vercel Blob URL format
+      if (projectInfo.logo_url.startsWith('http')) {
+        return projectInfo.logo_url
+      } else {
+        // Construct URL using Vercel Blob base URL
+        return `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/${projectInfo.logo_url}`
+      }
+    }
+
+    return null
+  } catch (error) {
+    // Silently fail for DozerTools integration - it's optional
+    console.debug(`DozerTools image lookup failed for token ${tokenUuid}:`, error)
+    return null
+  }
+}
+
 // Helper function to calculate 24h transaction count using delta approach
 async function calculate24hTransactionCount(poolKey: string): Promise<number> {
   try {
@@ -412,6 +449,7 @@ export const poolRouter = createTRPCRouter({
                 name: token0Info.name,
                 decimals: 2,
                 chainId: 1,
+                imageUrl: (await getDozerToolsImageUrl(tokenA || '')) || undefined,
               },
               token1: {
                 uuid: tokenB,
@@ -419,6 +457,7 @@ export const poolRouter = createTRPCRouter({
                 name: token1Info.name,
                 decimals: 2,
                 chainId: 1,
+                imageUrl: (await getDozerToolsImageUrl(tokenB || '')) || undefined,
               },
               reserve0,
               reserve1,
@@ -476,6 +515,7 @@ export const poolRouter = createTRPCRouter({
           name: await getTokenName(tokenA || ''),
           decimals: 2,
           chainId: 1,
+          imageUrl: (await getDozerToolsImageUrl(tokenA || '')) || undefined,
         },
         token1: {
           uuid: tokenB,
@@ -483,6 +523,7 @@ export const poolRouter = createTRPCRouter({
           name: await getTokenName(tokenB || ''),
           decimals: 2,
           chainId: 1,
+          imageUrl: (await getDozerToolsImageUrl(tokenB || '')) || undefined,
         },
         reserve0: (poolInfo.reserve_a || 0) / 100,
         reserve1: (poolInfo.reserve_b || 0) / 100,
@@ -510,18 +551,14 @@ export const poolRouter = createTRPCRouter({
       const feePercent = feeValue / 100 // Convert to percentage (e.g., 5 -> 0.05)
       const feeBasisPoints = Math.round(feeValue * 10) // Convert to basis points (e.g., 5 -> 50)
 
-      // Get all signed pools to find the matching one
+      // Try to find the pool in signed pools first
       const batchResponse = await fetchFromPoolManager(['get_signed_pools()'])
-      const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
+      const signedPoolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
 
-      if (poolKeys.length === 0) {
-        throw new Error('No signed pools found')
-      }
-
-      // Find the pool that matches the symbol and fee criteria
+      // Find the pool that matches the symbol and fee criteria in signed pools first
       let matchingPoolKey: string | null = null
 
-      for (const poolKey of poolKeys) {
+      for (const poolKey of signedPoolKeys) {
         const [tokenA, tokenB, feeStr] = poolKey.split('/')
         const poolFeeBasisPoints = parseInt(feeStr || '0')
 
@@ -538,6 +575,36 @@ export const poolRouter = createTRPCRouter({
           ) {
             matchingPoolKey = poolKey
             break
+          }
+        }
+      }
+
+      // If not found in signed pools, try all pools (including unsigned ones)
+      if (!matchingPoolKey) {
+        const allPoolsResponse = await fetchFromPoolManager(['get_all_pools()'])
+        const allPoolKeys: string[] = allPoolsResponse.calls['get_all_pools()'].value || []
+
+        for (const poolKey of allPoolKeys) {
+          // Skip if we already checked this pool in signed pools
+          if (signedPoolKeys.includes(poolKey)) continue
+
+          const [tokenA, tokenB, feeStr] = poolKey.split('/')
+          const poolFeeBasisPoints = parseInt(feeStr || '0')
+
+          // Check if fee matches
+          if (poolFeeBasisPoints === feeBasisPoints) {
+            // Get token symbols for comparison
+            const tokenASymbol = await getTokenSymbol(tokenA || '')
+            const tokenBSymbol = await getTokenSymbol(tokenB || '')
+
+            // Check if symbols match (in either order)
+            if (
+              (tokenASymbol === symbol0 && tokenBSymbol === symbol1) ||
+              (tokenASymbol === symbol1 && tokenBSymbol === symbol0)
+            ) {
+              matchingPoolKey = poolKey
+              break
+            }
           }
         }
       }
@@ -620,6 +687,7 @@ export const poolRouter = createTRPCRouter({
           name: token0Info.name,
           decimals: 2,
           chainId: 1,
+          imageUrl: (await getDozerToolsImageUrl(tokenA || '')) || undefined,
         },
         token1: {
           uuid: tokenB,
@@ -627,6 +695,7 @@ export const poolRouter = createTRPCRouter({
           name: token1Info.name,
           decimals: 2,
           chainId: 1,
+          imageUrl: (await getDozerToolsImageUrl(tokenB || '')) || undefined,
         },
         reserve0,
         reserve1,

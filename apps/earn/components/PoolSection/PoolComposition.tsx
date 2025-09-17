@@ -18,8 +18,8 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices, isLoad
   const { token0, token1, reserve1, reserve0 } = useTokensFromPair(pair)
 
   return (
-    <div className="flex flex-col w-full gap-4">
-      <div className="flex items-center justify-between px-2">
+    <div className="flex flex-col gap-4 w-full">
+      <div className="flex justify-between items-center px-2">
         <Typography weight={600} className="text-stone-50">
           Pool Composition
         </Typography>
@@ -64,9 +64,9 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices, isLoad
               <Table.td>
                 <Link.External
                   style={{ textDecoration: 'none' }}
-                  href={`../../../swap/tokens/${token0.symbol.toLowerCase()}`}
+                  href={`../../../swap/tokens/${token0.symbol?.toLowerCase()}`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex gap-3 items-center">
                     <Currency.Icon currency={token0} width={24} height={24} />
                     <Typography weight={600} variant="sm" className="text-stone-50">
                       {token0.symbol}
@@ -101,9 +101,9 @@ export const PoolComposition: FC<PoolCompositionProps> = ({ pair, prices, isLoad
               <Table.td>
                 <Link.External
                   style={{ textDecoration: 'none' }}
-                  href={`../../../swap/tokens/${token1.symbol.toLowerCase()}`}
+                  href={`../../../swap/tokens/${token1.symbol?.toLowerCase()}`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex gap-3 items-center">
                     <Currency.Icon currency={token1} width={24} height={24} />
                     <Typography weight={600} variant="sm" className="text-stone-50">
                       {token1.symbol}

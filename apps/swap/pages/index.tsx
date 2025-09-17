@@ -110,6 +110,20 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const balances = useAccount((state) => state.balance)
   const router = useRouter()
 
+  // Check if URL contains token parameters for direct access to unsigned pool tokens
+  const hasUrlTokens = router.query?.token0 && router.query?.token1
+
+  // Fetch individual tokens when URL parameters are provided (for unsigned pools)
+  const { data: urlToken0 } = api.getTokens.byUuidAny.useQuery(
+    { uuid: router.query.token0 as string },
+    { enabled: !!router.query.token0 && !!hasUrlTokens }
+  )
+
+  const { data: urlToken1 } = api.getTokens.byUuidAny.useQuery(
+    { uuid: router.query.token1 as string },
+    { enabled: !!router.query.token1 && !!hasUrlTokens }
+  )
+
   // Find HTR and hUSDC tokens for defaults
   const htrToken = tokens?.find((token) => token.uuid === '00') // HTR token
   const usdcToken = tokens?.find((token) => token.symbol === 'hUSDC') // hUSDC token
@@ -129,15 +143,23 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
 
     // Priority 1: URL parameters (if present)
     if (params?.token0 && params?.chainId) {
-      const urlToken0 = tokens.find((token) => params.token0 == token.uuid)
-      if (urlToken0) {
+      // First try to find in regular tokens list (signed pools)
+      const regularToken0 = tokens.find((token) => params.token0 == token.uuid)
+      if (regularToken0) {
+        selectedToken0 = toToken(regularToken0)
+      } else if (urlToken0) {
+        // If not found in regular tokens, use the individually fetched token (unsigned pools)
         selectedToken0 = toToken(urlToken0)
       }
     }
 
     if (params?.token1 && params?.chainId) {
-      const urlToken1 = tokens.find((token) => params.token1 == token.uuid)
-      if (urlToken1) {
+      // First try to find in regular tokens list (signed pools)
+      const regularToken1 = tokens.find((token) => params.token1 == token.uuid)
+      if (regularToken1) {
+        selectedToken1 = toToken(regularToken1)
+      } else if (urlToken1) {
+        // If not found in regular tokens, use the individually fetched token (unsigned pools)
         selectedToken1 = toToken(urlToken1)
       }
     }
@@ -170,7 +192,7 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
 
     setInitialToken0(selectedToken0)
     setInitialToken1(selectedToken1)
-  }, [tokens, token0_idx, token1_idx, router.isReady])
+  }, [tokens, token0_idx, token1_idx, router.isReady, urlToken0, urlToken1])
 
   useEffect(() => {
     if (initialToken0 && initialToken1) {

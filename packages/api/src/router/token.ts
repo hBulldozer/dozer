@@ -5,6 +5,10 @@ import { createTRPCRouter, procedure } from '../trpc'
 import { parsePoolApiInfo, type PoolApiInfo } from '../utils/namedTupleParsers'
 import { formatPrice } from './constants'
 
+// Get the DozerTools Contract ID from environment
+const NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID = process.env.NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID
+const NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL = process.env.NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL
+
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
 
@@ -266,6 +270,39 @@ async function getTokenName(tokenUuid: string): Promise<string> {
   return tokenInfo.name
 }
 
+// Helper function to fetch DozerTools image URL for a token
+async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> {
+  try {
+    // Skip if DozerTools integration is not configured
+    if (!NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID || !NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL) {
+      return null
+    }
+
+    // Fetch project info from DozerTools contract
+    const endpoint = 'nano_contract/state'
+    const queryParams = [`id=${NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID}`, `calls[]=get_project_info("${tokenUuid}")`]
+
+    const response = await fetchNodeData(endpoint, queryParams)
+    const projectInfo = response.calls[`get_project_info("${tokenUuid}")`]?.value
+
+    if (projectInfo && projectInfo.logo_url) {
+      // Check if it's a valid Vercel Blob URL format
+      if (projectInfo.logo_url.startsWith('http')) {
+        return projectInfo.logo_url
+      } else {
+        // Construct URL using Vercel Blob base URL
+        return `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/${projectInfo.logo_url}`
+      }
+    }
+
+    return null
+  } catch (error) {
+    // Silently fail for DozerTools integration - it's optional
+    console.debug(`DozerTools image lookup failed for token ${tokenUuid}:`, error)
+    return null
+  }
+}
+
 export const tokenRouter = createTRPCRouter({
   // Get all tokens that have signed pools
   all: procedure.query(async ({ ctx }) => {
@@ -286,7 +323,7 @@ export const tokenRouter = createTRPCRouter({
         decimals: 2,
         chainId: 1,
         custom: false,
-        imageUrl: null, // Will be null until added to contract
+        imageUrl: await getDozerToolsImageUrl(uuid), // Fetch from DozerTools if available
         about: null, // Will be null until added to contract
         telegram: null, // Will be null until added to contract
         twitter: null, // Will be null until added to contract
@@ -345,7 +382,7 @@ export const tokenRouter = createTRPCRouter({
     }
   }),
 
-  // Get token by UUID
+  // Get token by UUID (only from signed pools)
   byUuid: procedure.input(z.object({ uuid: z.string() })).query(async ({ input }) => {
     try {
       // Check if this token exists in any signed pool
@@ -365,7 +402,67 @@ export const tokenRouter = createTRPCRouter({
         decimals: 2,
         chainId: 1,
         custom: false,
-        imageUrl: null,
+        imageUrl: await getDozerToolsImageUrl(input.uuid),
+        about: null,
+        telegram: null,
+        twitter: null,
+        website: null,
+        createdBy: null,
+        bridged: isBridgedToken(input.uuid),
+        sourceChain: isBridgedToken(input.uuid) ? 'unknown' : null,
+        targetChain: isBridgedToken(input.uuid) ? 'hathor' : null,
+        originalAddress: getBridgedTokenOriginalAddress(input.uuid),
+      }
+    } catch (error) {
+      console.error(`Error fetching token by UUID ${input.uuid}:`, error)
+      return null
+    }
+  }),
+
+  // Get any token by UUID (including from unsigned pools) - for direct URL access
+  byUuidAny: procedure.input(z.object({ uuid: z.string() })).query(async ({ input }) => {
+    try {
+      // For HTR, return immediately
+      if (input.uuid === '00') {
+        return {
+          id: '00',
+          uuid: '00',
+          symbol: 'HTR',
+          name: 'Hathor',
+          decimals: 2,
+          chainId: 1,
+          custom: false,
+          imageUrl: null,
+          about: null,
+          telegram: null,
+          twitter: null,
+          website: null,
+          createdBy: null,
+          bridged: false,
+          sourceChain: null,
+          targetChain: null,
+          originalAddress: null,
+        }
+      }
+
+      // Check if token exists in any pool (signed or unsigned)
+      const allPoolsResponse = await fetchFromPoolManager(['get_all_pools()'])
+      const allPoolKeys: string[] = allPoolsResponse.calls['get_all_pools()'].value || []
+      const allTokenUuids = extractTokensFromPools(allPoolKeys)
+
+      if (!allTokenUuids.includes(input.uuid)) {
+        return null
+      }
+
+      return {
+        id: input.uuid,
+        uuid: input.uuid,
+        symbol: await getTokenSymbol(input.uuid),
+        name: await getTokenName(input.uuid),
+        decimals: 2,
+        chainId: 1,
+        custom: false,
+        imageUrl: await getDozerToolsImageUrl(input.uuid),
         about: null,
         telegram: null,
         twitter: null,
@@ -385,8 +482,6 @@ export const tokenRouter = createTRPCRouter({
   // Get comprehensive token data by symbol (for token detail page)
   bySymbolDetailed: procedure.input(z.object({ symbol: z.string().max(8).min(1) })).query(async ({ input }) => {
     try {
-      console.log(`🔍 [TOKEN_BY_SYMBOL_DETAILED] Looking for token with symbol: ${input.symbol}`)
-
       // Find token UUID by symbol
       let tokenUuid: string | undefined
       if (input.symbol.toLowerCase() === 'htr') {

@@ -124,4 +124,5 @@ export class Token extends Currency {
   public logoURI(): string {
     return `/logos/${this.symbol?.toUpperCase()}.svg`
   }
+
 }
