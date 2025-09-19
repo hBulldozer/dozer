@@ -9,10 +9,16 @@ import {
   parseSwapPathInfo,
   parseSwapPathExactOutputInfo,
   parseUserPositions,
+  parseUserProfitInfo,
+  parseQuoteSingleTokenResult,
+  parseQuoteRemoveSingleTokenResult,
   type PoolApiInfo,
   type PoolInfo,
   type SwapPathInfo,
   type SwapPathExactOutputInfo,
+  type UserProfitInfo,
+  type QuoteSingleTokenResult,
+  type QuoteRemoveSingleTokenResult,
 } from '../utils/namedTupleParsers'
 
 // Get the Pool Manager Contract ID from environment
@@ -50,7 +56,7 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
     return null
   } catch (error) {
     // Silently fail for DozerTools integration - it's optional
-    console.debug(`DozerTools image lookup failed for token ${tokenUuid}:`, error)
+    console.debug(`DozerTools image lookup failed for token ${tokenUuid}`)
     return null
   }
 }
@@ -59,7 +65,7 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
 async function calculate24hTransactionCount(poolKey: string): Promise<number> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
+    const oneDayAgo = now - 24 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -112,7 +118,7 @@ const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
 async function calculate24hVolume(poolKey: string): Promise<{ volume24h: number; volume24hUSD: number }> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
+    const oneDayAgo = now - 24 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -1670,6 +1676,203 @@ export const poolRouter = createTRPCRouter({
         }
       }
     }),
+
+  // Get user profit info for a specific pool
+  getUserProfitInfo: procedure
+    .input(
+      z.object({
+        address: z.string(),
+        poolKey: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const response = await fetchFromPoolManager([`get_user_profit_info("${input.address}", "${input.poolKey}")`])
+        const profitInfoArray = response.calls[`get_user_profit_info("${input.address}", "${input.poolKey}")`].value
+
+        if (!profitInfoArray) {
+          return {
+            current_value_usd: 0,
+            initial_value_usd: 0,
+            profit_amount_usd: 0,
+            profit_percentage: 0,
+            last_action_timestamp: 0,
+          }
+        }
+
+        // Parse the NamedTuple array to an object with proper property names
+        const profitInfo = parseUserProfitInfo(profitInfoArray)
+
+        return {
+          current_value_usd: profitInfo.current_value_usd / 100, // Convert from cents
+          initial_value_usd: profitInfo.initial_value_usd / 100, // Convert from cents
+          profit_amount_usd: profitInfo.profit_amount_usd / 100, // Convert from cents
+          profit_percentage: profitInfo.profit_percentage / 100, // Convert from percentage with 2 decimal places
+          last_action_timestamp: profitInfo.last_action_timestamp,
+        }
+      } catch (error) {
+        console.error(`Error fetching profit info for ${input.address} in pool ${input.poolKey}:`, error)
+        throw new Error('Failed to fetch user profit information')
+      }
+    }),
+
+  // Quote for adding liquidity with single token
+  quoteSingleTokenLiquidity: procedure
+    .input(
+      z.object({
+        tokenIn: z.string(),
+        amountIn: z.number(),
+        tokenOut: z.string(),
+        fee: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const amountInCents = Math.round(input.amountIn * 100)
+        const response = await fetchFromPoolManager([
+          `quote_add_liquidity_single_token("${input.tokenIn}", ${amountInCents}, "${input.tokenOut}", ${
+            input.fee * 10
+          })`,
+        ])
+        const quoteArray =
+          response.calls[
+            `quote_add_liquidity_single_token("${input.tokenIn}", ${amountInCents}, "${input.tokenOut}", ${
+              input.fee * 10
+            })`
+          ].value
+
+        if (!quoteArray) {
+          throw new Error('Failed to get single token liquidity quote')
+        }
+
+        // Parse the NamedTuple array to an object with proper property names
+        const quote = parseQuoteSingleTokenResult(quoteArray)
+
+        return {
+          liquidity_amount: quote.liquidity_amount,
+          token_a_used: quote.token_a_used / 100, // Convert from cents
+          token_b_used: quote.token_b_used / 100, // Convert from cents
+          excess_token: quote.excess_token,
+          excess_amount: quote.excess_amount / 100, // Convert from cents
+          swap_amount: quote.swap_amount / 100, // Convert from cents
+          swap_output: quote.swap_output / 100, // Convert from cents
+        }
+      } catch (error) {
+        console.error(`Error getting single token liquidity quote:`, error)
+        throw new Error('Failed to get single token liquidity quote')
+      }
+    }),
+
+  // Quote for removing liquidity to receive single token
+  quoteSingleTokenRemoval: procedure
+    .input(
+      z.object({
+        address: z.string(),
+        tokenOut: z.string(),
+        fee: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const response = await fetchFromPoolManager([
+          `quote_remove_liquidity_single_token("${input.address}", "${input.tokenOut}", ${input.fee})`,
+        ])
+        const quoteArray =
+          response.calls[`quote_remove_liquidity_single_token("${input.address}", "${input.tokenOut}", ${input.fee})`]
+            .value
+
+        if (!quoteArray) {
+          throw new Error('Failed to get single token removal quote')
+        }
+
+        // Parse the NamedTuple array to an object with proper property names
+        const quote = parseQuoteRemoveSingleTokenResult(quoteArray)
+
+        return {
+          amount_out: quote.amount_out / 100, // Convert from cents
+          token_a_withdrawn: quote.token_a_withdrawn / 100, // Convert from cents
+          token_b_withdrawn: quote.token_b_withdrawn / 100, // Convert from cents
+          swap_amount: quote.swap_amount / 100, // Convert from cents
+          swap_output: quote.swap_output / 100, // Convert from cents
+          user_liquidity: quote.user_liquidity,
+        }
+      } catch (error) {
+        console.error(`Error getting single token removal quote:`, error)
+        throw new Error('Failed to get single token removal quote')
+      }
+    }),
+
+  // Get enhanced user positions with profit tracking
+  getUserPositionsDetailed: procedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
+    try {
+      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
+      const positionsArrays = response.calls[`get_user_positions("${input.address}")`].value
+
+      if (!positionsArrays) {
+        return []
+      }
+
+      // Parse the user positions object
+      const positions = parseUserPositions(positionsArrays)
+
+      const positionPromises = []
+      for (const [poolKey, position] of Object.entries(positions)) {
+        if (typeof position === 'object' && position !== null) {
+          const [tokenA, tokenB, feeStr] = poolKey.split('/')
+          positionPromises.push(
+            (async () => {
+              // Also get profit info for this position
+              let profitInfo = null
+              try {
+                const profitResponse = await fetchFromPoolManager([
+                  `get_user_profit_info("${input.address}", "${poolKey}")`,
+                ])
+                const profitArray = profitResponse.calls[`get_user_profit_info("${input.address}", "${poolKey}")`].value
+                if (profitArray) {
+                  const parsedProfit = parseUserProfitInfo(profitArray)
+                  profitInfo = {
+                    current_value_usd: parsedProfit.current_value_usd / 100,
+                    initial_value_usd: parsedProfit.initial_value_usd / 100,
+                    profit_amount_usd: parsedProfit.profit_amount_usd / 100,
+                    profit_percentage: parsedProfit.profit_percentage / 100,
+                    last_action_timestamp: parsedProfit.last_action_timestamp,
+                  }
+                }
+              } catch (error) {
+                console.warn(`Could not fetch profit info for pool ${poolKey}:`, error)
+              }
+
+              return {
+                poolKey,
+                poolName: `${await getTokenSymbol(tokenA || '')}-${await getTokenSymbol(tokenB || '')}`,
+                liquidity: position.liquidity || 0,
+                token0Amount: (position.token0Amount || 0) / 100,
+                token1Amount: (position.token1Amount || 0) / 100,
+                share: (position.share || 0) / 100, // Convert from percentage
+                token0: {
+                  uuid: tokenA,
+                  symbol: await getTokenSymbol(tokenA || ''),
+                  name: await getTokenName(tokenA || ''),
+                },
+                token1: {
+                  uuid: tokenB,
+                  symbol: await getTokenSymbol(tokenB || ''),
+                  name: await getTokenName(tokenB || ''),
+                },
+                profit: profitInfo,
+              }
+            })()
+          )
+        }
+      }
+
+      const positionData = await Promise.all(positionPromises)
+      return positionData
+    } catch (error) {
+      console.error(`Error fetching detailed user positions for ${input.address}:`, error)
+      throw new Error('Failed to fetch detailed user positions')
+    }
+  }),
 
   // Get all transaction history for debugging and analysis
   getAllTransactionHistory: procedure

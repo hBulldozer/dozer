@@ -55,6 +55,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
     // changeUSD0,
     // changeUSD1,
     last_tx,
+    profit,
     isLoading,
     isError,
   } = usePoolPosition()
@@ -119,16 +120,25 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
               </Typography>
             </div>
             <div className="flex flex-row">
-              {/* <Typography variant="xs" weight={500} className="text-stone-400">
-                {formatPercentChange(positionChange)}{' '}
-              </Typography>
-              <ArrowIcon
-                type={positionChange < 0 ? 'down' : 'up'}
-                className={positionChange < 0 ? 'text-red-400' : 'text-green-400'}
-              /> */}
-              <Typography variant="xs" weight={500} className="text-stone-400">
-                Coming soon
-              </Typography>
+              {profit ? (
+                <>
+                  <Typography
+                    variant="xs"
+                    weight={500}
+                    className={`${profit.profit_amount_usd >= 0 ? 'text-green-400' : 'text-red-400'}`}
+                  >
+                    {formatUSD(profit.profit_amount_usd)} ({formatPercentChange(profit.profit_percentage)})
+                  </Typography>
+                  <ArrowIcon
+                    type={profit.profit_amount_usd < 0 ? 'down' : 'up'}
+                    className={profit.profit_amount_usd < 0 ? 'text-red-400' : 'text-green-400'}
+                  />
+                </>
+              ) : (
+                <Typography variant="xs" weight={500} className="text-stone-400">
+                  No data
+                </Typography>
+              )}
             </div>
           </div>
           <div className="flex items-center justify-between">

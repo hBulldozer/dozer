@@ -3,24 +3,25 @@ import { GenericTable } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { APR_COLUMN, NAME_COLUMN, VALUE_COLUMN } from './Cells/columns'
+import { APR_COLUMN, NAME_COLUMN, VALUE_COLUMN, PROFIT_COLUMN } from './Cells/columns'
 import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
 import { PAGE_SIZE } from '../contants'
 import { ChainId } from '@dozer/chain'
-import { Pair } from '@dozer/api'
+import { Pair, UserProfitInfo } from '@dozer/api'
 import { api } from '../../../../utils/api'
 import { useWalletConnectClient } from '@dozer/higmi'
 import { Token } from '@dozer/currency'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const COLUMNS = [NAME_COLUMN, VALUE_COLUMN, APR_COLUMN]
+const COLUMNS = [NAME_COLUMN, VALUE_COLUMN, APR_COLUMN, PROFIT_COLUMN]
 // VOLUME_COLUMN
 
 export interface PositionPair extends Pair {
   value0?: number
   value1?: number
+  profit?: UserProfitInfo
 }
 
 export const PositionsTable: FC = () => {
@@ -42,21 +43,26 @@ export const PositionsTable: FC = () => {
 
   const { data: pools, isLoading } = api.getPools.all.useQuery()
   const { data: prices, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery()
-  const { data: userPositions, isLoading: isLoadingPositions } = api.getProfile.userPositions.useQuery({
-    address: address,
-  })
+  const { data: userPositions, isLoading: isLoadingPositions } = api.getPools.getUserPositionsDetailed.useQuery(
+    {
+      address: address,
+    },
+    {
+      enabled: !!address,
+    }
+  )
 
   const _pairs_array: PositionPair[] = useMemo(() => {
     const array: PositionPair[] = []
     if (pools && prices && userPositions && !isLoadingPrices && !isLoadingPositions && !isLoading) {
-      // Create a map of pool keys to user positions for quick lookup
-      const positionMap = new Map(userPositions.map((pos) => [pos.poolKey, pos]))
+      // Create a map of pool keys to pools for quick lookup
+      const poolMap = new Map(pools.map((pool) => [pool.id, pool]))
 
-      pools.map((pool) => {
-        const userPosition = positionMap.get(pool.id)
+      userPositions.map((userPosition) => {
+        const pool = poolMap.get(userPosition.poolKey)
 
         if (
-          userPosition &&
+          pool &&
           userPosition.token0Amount > 0 &&
           userPosition.token1Amount > 0 &&
           prices &&
@@ -71,6 +77,7 @@ export const PositionsTable: FC = () => {
           // userPosition.token0Amount and token1Amount are already in decimal format
           pair.value0 = userPosition.token0Amount * prices[pool.token0.uuid]
           pair.value1 = userPosition.token1Amount * prices[pool.token1.uuid]
+          pair.profit = userPosition.profit
           array.push(pair)
         }
       })

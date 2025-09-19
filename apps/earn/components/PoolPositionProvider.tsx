@@ -1,6 +1,6 @@
 import { Amount, Type } from '@dozer/currency'
 import { createContext, FC, ReactNode, useContext, useMemo } from 'react'
-import { Pair, toToken } from '@dozer/api'
+import { Pair, toToken, UserProfitInfo } from '@dozer/api'
 import { api } from '../utils/api'
 import { useWalletConnectClient } from '@dozer/higmi'
 
@@ -17,6 +17,7 @@ interface PoolPositionContext {
   // changeUSD0: number
   // changeUSD1: number
   liquidity: number | undefined
+  profit: UserProfitInfo | null
   isLoading: boolean
   isError: boolean
 }
@@ -41,6 +42,11 @@ export const PoolPositionProvider: FC<{
     isError,
   } = api.getProfile.userPositionByPool.useQuery({ address: address, poolKey: pair.id })
 
+  const { data: profitInfo, isLoading: isLoadingProfitInfo } = api.getPools.getUserProfitInfo.useQuery(
+    { address: address, poolKey: pair.id },
+    { enabled: !!address && !!pair.id }
+  )
+
   const {
     liquidity,
     token0Amount,
@@ -55,8 +61,8 @@ export const PoolPositionProvider: FC<{
   }
 
   const isLoading = useMemo(() => {
-    return isLoadingPoolInfo
-  }, [isLoadingPoolInfo])
+    return isLoadingPoolInfo || isLoadingProfitInfo
+  }, [isLoadingPoolInfo, isLoadingProfitInfo])
 
   const _max_withdraw_a: Amount<Type> | undefined = token0Amount
     ? Amount.fromRawAmount(token0, token0Amount)
@@ -73,10 +79,10 @@ export const PoolPositionProvider: FC<{
   //   : undefined
 
   const value0 = useMemo(() => {
-    return (prices[token0.uuid] * ((token0Amount || 0) / 100))
+    return prices[token0.uuid] * ((token0Amount || 0) / 100)
   }, [prices, token0, token0Amount])
   const value1 = useMemo(() => {
-    return (prices[token1.uuid] * ((token1Amount || 0) / 100))
+    return prices[token1.uuid] * ((token1Amount || 0) / 100)
   }, [prices, token1, token1Amount])
 
   // const depositedUSD0 = useMemo(() => {
@@ -106,11 +112,12 @@ export const PoolPositionProvider: FC<{
           max_withdraw_b: _max_withdraw_b,
           // user_deposited_a: _user_deposited_a,
           // user_deposited_b: _user_deposited_b,
-          last_tx: 0,
+          last_tx: profitInfo?.last_action_timestamp || 0,
           // changeUSD0,
           // changeUSD1,
           // depositedUSD0,
           // depositedUSD1,
+          profit: profitInfo || null,
           isLoading,
           isError,
         }),
@@ -130,6 +137,7 @@ export const PoolPositionProvider: FC<{
           value1,
           token0Amount,
           token1Amount,
+          profitInfo,
         ]
       )}
     >

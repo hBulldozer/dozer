@@ -24,7 +24,20 @@ export type TokenSelectorProps = {
 }
 
 export const TokenSelector: FC<TokenSelectorProps> = memo(
-  ({ id, variant, chainId, onSelect, open, includeNative, tokens, pricesMap, customTokensOnly = false, showUnsignedTokens = false, searchTerm = '', ...props }) => {
+  ({
+    id,
+    variant,
+    chainId,
+    onSelect,
+    open,
+    includeNative,
+    tokens,
+    pricesMap,
+    customTokensOnly = false,
+    showUnsignedTokens = false,
+    searchTerm = '',
+    ...props
+  }) => {
     const { accounts } = useWalletConnectClient()
     const address = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
     const isMounted = useIsMounted()
@@ -117,7 +130,22 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
           {...props}
         />
       )
-    }, [address, balances, chainId, isMounted, handleSelect, open, pricesMap, props, variant, _tokens, showUnsignedTokens, searchTerm, id, includeNative])
+    }, [
+      address,
+      balances,
+      chainId,
+      isMounted,
+      handleSelect,
+      open,
+      pricesMap,
+      props,
+      variant,
+      _tokens,
+      showUnsignedTokens,
+      searchTerm,
+      id,
+      includeNative,
+    ])
   },
   (prevProps, nextProps) => {
     return (

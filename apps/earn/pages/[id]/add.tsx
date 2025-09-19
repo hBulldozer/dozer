@@ -5,7 +5,8 @@ import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@doz
 import { GetStaticPaths, GetStaticProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
 
-import { AddSectionLegacy, AddSectionMyPosition, Layout } from '../../components'
+import { AddSectionMyPosition, Layout } from '../../components'
+import { AddSectionCombined } from '../../components/AddSection/AddSectionCombined'
 
 import { RouterOutputs, api } from '../../utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
@@ -69,7 +70,7 @@ const Add: NextPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
           <div className="hidden md:block" />
           <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-            <AddSectionLegacy pool={memoizedPair as Pair} prices={prices} />
+            <AddSectionCombined pool={memoizedPair as Pair} prices={prices} />
             {/* <AddSectionStake poolAddress={pair.id} /> */}
             <Container className="flex justify-center">
               <Link.External

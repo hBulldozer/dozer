@@ -70,6 +70,33 @@ export interface SwapPathExactOutputInfo {
   price_impact: number
 }
 
+export interface UserProfitInfo {
+  current_value_usd: number
+  initial_value_usd: number
+  profit_amount_usd: number
+  profit_percentage: number
+  last_action_timestamp: number
+}
+
+export interface QuoteSingleTokenResult {
+  liquidity_amount: number
+  token_a_used: number
+  token_b_used: number
+  excess_token: string
+  excess_amount: number
+  swap_amount: number
+  swap_output: number
+}
+
+export interface QuoteRemoveSingleTokenResult {
+  amount_out: number
+  token_a_withdrawn: number
+  token_b_withdrawn: number
+  swap_amount: number
+  swap_output: number
+  user_liquidity: number
+}
+
 /**
  * Parse PoolApiInfo NamedTuple array to object
  * Contract definition: [reserve0, reserve1, fee, volume, fee0, fee1, dzr_rewards, transactions, is_signed, signer]
@@ -302,7 +329,7 @@ export function parseOasisQuoteInfo(array: any[]): OasisQuoteInfo {
   if (!Array.isArray(array) || array.length !== 7) {
     throw new Error('Invalid OasisQuoteInfo array format')
   }
-  
+
   return {
     bonus: array[0] || 0,
     htr_amount: array[1] || 0,
@@ -311,5 +338,62 @@ export function parseOasisQuoteInfo(array: any[]): OasisQuoteInfo {
     fee_amount: array[4] || 0,
     deposit_amount: array[5] || 0,
     protocol_fee: array[6] || 0,
+  }
+}
+
+/**
+ * Parse UserProfitInfo NamedTuple array to object
+ * Contract definition: [current_value_usd, initial_value_usd, profit_amount_usd, profit_percentage, last_action_timestamp]
+ */
+export function parseUserProfitInfo(array: any[]): UserProfitInfo {
+  if (!Array.isArray(array) || array.length !== 5) {
+    throw new Error('Invalid UserProfitInfo array format')
+  }
+
+  return {
+    current_value_usd: array[0] || 0,
+    initial_value_usd: array[1] || 0,
+    profit_amount_usd: array[2] || 0,
+    profit_percentage: array[3] || 0,
+    last_action_timestamp: array[4] || 0,
+  }
+}
+
+/**
+ * Parse QuoteSingleTokenResult NamedTuple array to object
+ * Contract definition: [liquidity_amount, token_a_used, token_b_used, excess_token, excess_amount, swap_amount, swap_output]
+ */
+export function parseQuoteSingleTokenResult(array: any[]): QuoteSingleTokenResult {
+  if (!Array.isArray(array) || array.length !== 7) {
+    throw new Error('Invalid QuoteSingleTokenResult array format')
+  }
+
+  return {
+    liquidity_amount: array[0] || 0,
+    token_a_used: array[1] || 0,
+    token_b_used: array[2] || 0,
+    excess_token: array[3] || '',
+    excess_amount: array[4] || 0,
+    swap_amount: array[5] || 0,
+    swap_output: array[6] || 0,
+  }
+}
+
+/**
+ * Parse QuoteRemoveSingleTokenResult NamedTuple array to object
+ * Contract definition: [amount_out, token_a_withdrawn, token_b_withdrawn, swap_amount, swap_output, user_liquidity]
+ */
+export function parseQuoteRemoveSingleTokenResult(array: any[]): QuoteRemoveSingleTokenResult {
+  if (!Array.isArray(array) || array.length !== 6) {
+    throw new Error('Invalid QuoteRemoveSingleTokenResult array format')
+  }
+
+  return {
+    amount_out: array[0] || 0,
+    token_a_withdrawn: array[1] || 0,
+    token_b_withdrawn: array[2] || 0,
+    swap_amount: array[3] || 0,
+    swap_output: array[4] || 0,
+    user_liquidity: array[5] || 0,
   }
 }

@@ -267,6 +267,106 @@ export class PoolManager extends NanoContract {
     const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
     return rpcResponse
   }
+
+  /**
+   * Add liquidity to a pool using only one token
+   */
+  public async addLiquiditySingleToken(
+    hathorRpc: IHathorRpc,
+    address: string,
+    tokenIn: string,
+    amountIn: number,
+    tokenOut: string,
+    fee: number
+  ): Promise<SendNanoContractTxResponse> {
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'add_liquidity_single_token',
+      this.poolManagerBlueprintId,
+      [
+        // @ts-ignore
+        {
+          type: NanoContractActionType.DEPOSIT,
+          token: tokenIn,
+          amount: Math.floor(amountIn * 100).toString(),
+          address: address,
+          changeAddress: address,
+        },
+      ],
+      [tokenOut, fee], // token_out and fee as arguments
+      true,
+      this.poolManagerContractId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    return rpcResponse
+  }
+
+  /**
+   * Remove liquidity from a pool and receive only one token
+   */
+  public async removeLiquiditySingleToken(
+    hathorRpc: IHathorRpc,
+    address: string,
+    tokenOut: string,
+    fee: number
+  ): Promise<SendNanoContractTxResponse> {
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'remove_liquidity_single_token',
+      this.poolManagerBlueprintId,
+      [],
+      [tokenOut, fee], // token_out and fee as arguments
+      true,
+      this.poolManagerContractId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    return rpcResponse
+  }
+
+  /**
+   * Withdraw cashback from a pool
+   */
+  public async withdrawCashback(
+    hathorRpc: IHathorRpc,
+    address: string,
+    tokenA: string,
+    amountA: number,
+    tokenB: string,
+    amountB: number,
+    fee: number
+  ): Promise<SendNanoContractTxResponse> {
+    const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
+      'withdraw_cashback',
+      this.poolManagerBlueprintId,
+      [
+        // @ts-ignore
+        {
+          type: NanoContractActionType.WITHDRAWAL,
+          token: tokenA,
+          amount: Math.ceil(amountA * 100).toString(),
+          address: address,
+          changeAddress: address,
+        },
+        // @ts-ignore
+        {
+          type: NanoContractActionType.WITHDRAWAL,
+          token: tokenB,
+          amount: Math.ceil(amountB * 100).toString(),
+          address: address,
+          changeAddress: address,
+        } as any,
+      ],
+      [fee],
+      true,
+      this.poolManagerContractId
+    )
+
+    console.log('Will send rpc req: ', ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    return rpcResponse
+  }
 }
 
 /**

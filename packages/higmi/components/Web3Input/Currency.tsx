@@ -64,7 +64,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   return useMemo(
     () => (
       <div className={className} onClick={focusInput}>
-        <div className="relative flex items-center gap-1">
+        <div className="flex relative gap-1 items-center">
           {loading && isMounted ? (
             <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
               <Skeleton.Box variant="fast" className="w-[120px] h-[22px] rounded-full" />
