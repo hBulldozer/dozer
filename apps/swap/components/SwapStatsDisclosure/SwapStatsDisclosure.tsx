@@ -76,20 +76,42 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices, loading = false }) 
     // Helper function to get token by UUID
     const getTokenByUuid = (uuid: string): Token | undefined => {
       if (!tokens) return undefined
-      const dbToken = tokens.find((t) => t.uuid === uuid)
-      if (!dbToken) return undefined
 
+      // First try to find in the regular tokens list (signed pools)
+      const dbToken = tokens.find((t) => t.uuid === uuid)
+      if (dbToken) {
+        return new Token({
+          chainId: dbToken.chainId,
+          uuid: dbToken.uuid,
+          decimals: dbToken.decimals,
+          name: dbToken.name,
+          symbol: dbToken.symbol,
+          imageUrl: dbToken.imageUrl || undefined,
+          bridged: !!dbToken.bridged,
+          originalAddress: dbToken.originalAddress || undefined,
+          sourceChain: dbToken.sourceChain || undefined,
+          targetChain: dbToken.targetChain || undefined,
+        })
+      }
+
+      // If not found in signed pools, check if it's one of the main currencies (unsigned tokens)
+      // This handles the case where we're dealing with unsigned tokens
+      if (uuid === mainCurrency?.uuid) {
+        return mainCurrency
+      }
+      if (uuid === otherCurrency?.uuid) {
+        return otherCurrency
+      }
+
+      // For other unsigned tokens, create a basic token object with minimal info
+      // This is a fallback to prevent the RouteDisplay from breaking
       return new Token({
-        chainId: dbToken.chainId,
-        uuid: dbToken.uuid,
-        decimals: dbToken.decimals,
-        name: dbToken.name,
-        symbol: dbToken.symbol,
-        imageUrl: dbToken.imageUrl || undefined,
-        bridged: !!dbToken.bridged,
-        originalAddress: dbToken.originalAddress || undefined,
-        sourceChain: dbToken.sourceChain || undefined,
-        targetChain: dbToken.targetChain || undefined,
+        chainId: 1, // Default chainId
+        uuid: uuid,
+        decimals: 2, // Standard Hathor decimals
+        name: uuid === '00' ? 'Hathor' : `Token ${uuid.substring(0, 8)}`,
+        symbol: uuid === '00' ? 'HTR' : uuid.substring(0, 8).toUpperCase(),
+        imageUrl: undefined,
       })
     }
 
