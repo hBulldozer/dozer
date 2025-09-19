@@ -1809,6 +1809,51 @@ export const poolRouter = createTRPCRouter({
       }
     }),
 
+  // Quote for removing liquidity to receive single token (percentage-based)
+  quoteSingleTokenRemovalPercentage: procedure
+    .input(
+      z.object({
+        address: z.string(),
+        poolKey: z.string(),
+        tokenOut: z.string(),
+        percentage: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        // Convert percentage to basis points (percentage * 100)
+        const percentageBasisPoints = Math.round(input.percentage * 100)
+
+        const response = await fetchFromPoolManager([
+          `quote_remove_liquidity_single_token_percentage("${input.address}", "${input.poolKey}", "${input.tokenOut}", ${percentageBasisPoints})`,
+        ])
+
+        const quoteArray =
+          response.calls[
+            `quote_remove_liquidity_single_token_percentage("${input.address}", "${input.poolKey}", "${input.tokenOut}", ${percentageBasisPoints})`
+          ].value
+
+        if (!quoteArray) {
+          throw new Error('Failed to get single token removal quote')
+        }
+
+        // Parse the NamedTuple array to an object with proper property names
+        const quote = parseQuoteRemoveSingleTokenResult(quoteArray)
+
+        return {
+          amount_out: quote.amount_out / 100, // Convert from cents
+          token_a_withdrawn: quote.token_a_withdrawn / 100, // Convert from cents
+          token_b_withdrawn: quote.token_b_withdrawn / 100, // Convert from cents
+          swap_amount: quote.swap_amount / 100, // Convert from cents
+          swap_output: quote.swap_output / 100, // Convert from cents
+          user_liquidity: quote.user_liquidity,
+        }
+      } catch (error) {
+        console.error(`Error getting single token removal quote:`, error)
+        throw new Error('Failed to get single token removal quote')
+      }
+    }),
+
   // Get enhanced user positions with profit tracking
   getUserPositionsDetailed: procedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
     try {

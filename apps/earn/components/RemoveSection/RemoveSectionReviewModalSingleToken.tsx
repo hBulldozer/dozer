@@ -14,6 +14,8 @@ interface RemoveSectionReviewModalSingleTokenProps {
   selectedToken: Type | undefined
   fee: number
   userAddress?: string
+  percentage: string
+  poolKey: string
   children: ({ setOpen }: { setOpen: (open: boolean) => void }) => ReactNode
 }
 
@@ -24,6 +26,8 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
   selectedToken,
   fee,
   userAddress,
+  percentage,
+  poolKey,
   children,
 }) => {
   const [open, setOpen] = useState(false)
@@ -37,16 +41,15 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
   const { data: networkData } = api.getNetwork.getBestBlock.useQuery()
 
   // Fetch quote for the modal
-  const { data: quoteData } = api.getPools.quoteSingleTokenRemoval.useQuery(
+  const { data: quoteData } = api.getPools.quoteSingleTokenRemovalPercentage.useQuery(
     {
       address: userAddress || address,
-      tokenA: token0?.uuid || '',
-      tokenB: token1?.uuid || '',
+      poolKey: poolKey,
       tokenOut: selectedToken?.uuid || '',
-      fee: fee,
+      percentage: parseFloat(percentage) || 100,
     },
     {
-      enabled: !!userAddress && !!selectedToken && !!token0 && !!token1 && open,
+      enabled: !!userAddress && !!selectedToken && !!poolKey && !!percentage && open,
       refetchInterval: 5000,
     }
   )
@@ -63,8 +66,10 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
       const response = await poolManager.removeLiquiditySingleToken(
         hathorRpc,
         address,
+        poolKey,
         selectedToken.uuid,
-        fee * 10 // Convert fee to basis points
+        quoteData.amount_out, // The amount user wants to receive
+        parseFloat(percentage) || 100 // Percentage of liquidity to remove
       )
 
       if (response.response && typeof response.response === 'object' && 'hash' in response.response) {

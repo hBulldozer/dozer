@@ -46,17 +46,24 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
     user_liquidity: number
   } | null>(null)
 
-  // Fetch single token removal quote
-  const { data: quote, isLoading: quoteIsLoading } = api.getPools.quoteSingleTokenRemoval.useQuery(
+  // Create pool key for the new API
+  const poolKey = useMemo(() => {
+    if (!token0 || !token1) return ''
+    // Ensure tokens are ordered (same as contract)
+    const [tokenA, tokenB] = token0.uuid > token1.uuid ? [token1, token0] : [token0, token1]
+    return `${tokenA.uuid}/${tokenB.uuid}/${fee * 10}` // Convert fee to basis points
+  }, [token0, token1, fee])
+
+  // Fetch single token removal quote using percentage-based method
+  const { data: quote, isLoading: quoteIsLoading } = api.getPools.quoteSingleTokenRemovalPercentage.useQuery(
     {
       address: userAddress || '',
-      tokenA: token0?.uuid || '',
-      tokenB: token1?.uuid || '',
+      poolKey: poolKey,
       tokenOut: selectedToken?.uuid || '',
-      fee: fee,
+      percentage: parseFloat(percentage) || 100,
     },
     {
-      enabled: !!userAddress && !!selectedToken && !!token0 && !!token1,
+      enabled: !!userAddress && !!selectedToken && !!poolKey && !!percentage,
       refetchInterval: 5000, // Refresh quote every 5 seconds
     }
   )
@@ -87,18 +94,8 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
   // Check if user has liquidity
   const hasLiquidity = quoteData && quoteData.user_liquidity > 0
 
-  // Calculate percentage-based amounts
-  const percentageDecimal = parseFloat(percentage) / 100
+  // Use quote data directly (already calculated with percentage on the backend)
   const adjustedQuoteData = quoteData
-    ? {
-        amount_out: quoteData.amount_out * percentageDecimal,
-        token_a_withdrawn: quoteData.token_a_withdrawn * percentageDecimal,
-        token_b_withdrawn: quoteData.token_b_withdrawn * percentageDecimal,
-        swap_amount: quoteData.swap_amount * percentageDecimal,
-        swap_output: quoteData.swap_output * percentageDecimal,
-        user_liquidity: quoteData.user_liquidity, // This stays the same to show total
-      }
-    : null
 
   // Calculate USD values
   const selectedTokenPrice = selectedToken?.uuid && prices ? prices[selectedToken.uuid] : 0
@@ -112,6 +109,8 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
       selectedToken={selectedToken}
       fee={fee}
       userAddress={userAddress}
+      percentage={percentage}
+      poolKey={poolKey}
     >
       {({ setOpen }) => (
         <div className="relative" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>

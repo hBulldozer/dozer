@@ -895,6 +895,114 @@ class DozerPoolManager(Blueprint):
         )
 
     @view
+    def quote_remove_liquidity_single_token_percentage(
+        self, user_address: CallerId, pool_key: str, token_out: TokenUid, percentage: Amount
+    ) -> SingleTokenRemovalQuote:
+        """Quote liquidity removal to receive a single token based on percentage.
+
+        Args:
+            user_address: The user's address
+            pool_key: The pool key (format: token_a/token_b/fee)
+            token_out: The token to receive (must be either token_a or token_b)
+            percentage: Percentage of liquidity to remove (in basis points, 10000 = 100%)
+
+        Returns:
+            SingleTokenRemovalQuote containing:
+            - amount_out: Total amount of output tokens that will be received
+            - token_a_withdrawn: Amount of token A that will be withdrawn from LP
+            - token_b_withdrawn: Amount of token B that will be withdrawn from LP
+            - swap_amount: Amount that will be swapped
+            - swap_output: Output from the internal swap
+            - user_liquidity: User's current liquidity amount
+
+        Raises:
+            PoolNotFound: If the pool does not exist
+            InvalidTokens: If token_out is not one of the pool tokens
+            InvalidAction: If user has no liquidity or invalid percentage
+        """
+        self._validate_pool_exists(pool_key)
+
+        # Validate percentage
+        if percentage <= 0 or percentage > 10000:
+            raise InvalidAction("Invalid percentage")
+
+        # Validate token_out
+        token_a = self.pool_token_a[pool_key]
+        token_b = self.pool_token_b[pool_key]
+
+        if token_out != token_a and token_out != token_b:
+            raise InvalidTokens("token_out must be either token_a or token_b")
+
+        # Check if user has liquidity
+        user_liquidity = self.pool_user_liquidity.get(pool_key, {}).get(user_address, 0)
+        if user_liquidity == 0:
+            raise InvalidAction("No liquidity to remove")
+
+        # Calculate liquidity to remove based on percentage
+        liquidity_to_remove = (user_liquidity * percentage) // 10000
+
+        # Calculate withdrawal amounts based on percentage
+        total_liquidity = self.pool_total_liquidity[pool_key]
+        reserve_a = self.pool_reserve_a[pool_key]
+        reserve_b = self.pool_reserve_b[pool_key]
+
+        amount_a = (reserve_a * liquidity_to_remove) // total_liquidity
+        amount_b = (reserve_b * liquidity_to_remove) // total_liquidity
+
+        # Calculate swap and final output
+        if token_out == token_a:
+            # Want token A, will swap token B for token A
+            if amount_b > 0:
+                # Calculate reserves after liquidity removal
+                new_reserve_a = reserve_a - amount_a
+                new_reserve_b = reserve_b - amount_b
+
+                extra_a = self.get_amount_out(
+                    amount_b,
+                    new_reserve_b + amount_b,  # Reserve after adding back token B
+                    new_reserve_a - amount_a,  # Reserve before taking out extra token A
+                    self.pool_fee_numerator[pool_key],
+                    self.pool_fee_denominator[pool_key],
+                )
+                total_amount_out = amount_a + extra_a
+                swap_amount = amount_b
+                swap_output = extra_a
+            else:
+                total_amount_out = amount_a
+                swap_amount = Amount(0)
+                swap_output = Amount(0)
+        else:
+            # Want token B, will swap token A for token B
+            if amount_a > 0:
+                # Calculate reserves after liquidity removal
+                new_reserve_a = reserve_a - amount_a
+                new_reserve_b = reserve_b - amount_b
+
+                extra_b = self.get_amount_out(
+                    amount_a,
+                    new_reserve_a + amount_a,  # Reserve after adding back token A
+                    new_reserve_b - amount_b,  # Reserve before taking out extra token B
+                    self.pool_fee_numerator[pool_key],
+                    self.pool_fee_denominator[pool_key],
+                )
+                total_amount_out = amount_b + extra_b
+                swap_amount = amount_a
+                swap_output = extra_b
+            else:
+                total_amount_out = amount_b
+                swap_amount = Amount(0)
+                swap_output = Amount(0)
+
+        return SingleTokenRemovalQuote(
+            amount_out=total_amount_out,
+            token_a_withdrawn=amount_a,
+            token_b_withdrawn=amount_b,
+            swap_amount=swap_amount,
+            swap_output=swap_output,
+            user_liquidity=user_liquidity,
+        )
+
+    @view
     def front_quote_add_liquidity_out(
         self, amount_out: Amount, token_in: TokenUid, pool_key: str
     ) -> Amount:
@@ -1503,19 +1611,19 @@ class DozerPoolManager(Blueprint):
     def remove_liquidity_single_token(
         self,
         ctx: Context,
-        token_out: TokenUid,
-        fee: Amount,
+        pool_key: str,
+        percentage: Amount,
     ) -> Amount:
         """Remove liquidity from a pool and receive only one token.
 
-        This method allows users to remove liquidity and receive only one token.
-        The liquidity is removed to get both tokens, then one token is swapped
-        for the desired output token.
+        This method allows users to remove a percentage of their liquidity
+        and receive only one token. The liquidity is partially removed to get
+        both tokens, then one token is swapped for the desired output token.
 
         Args:
-            ctx: The transaction context (should contain withdrawal of LP tokens)
-            token_out: The token to receive
-            fee: Fee for the pool
+            ctx: The transaction context (should contain withdrawal of desired token)
+            pool_key: The pool key (format: token_a/token_b/fee)
+            percentage: Percentage of liquidity to remove (in basis points, 10000 = 100%)
 
         Returns:
             The amount of output tokens received
@@ -1524,57 +1632,62 @@ class DozerPoolManager(Blueprint):
             PoolNotFound: If the pool does not exist
             InvalidAction: If the actions are invalid
         """
-        # We need to find the other token in the pool
-        # For this, we'll check all existing pools to find the pair with token_out
-        target_pool_key = None
-        token_a = None
-        token_b = None
-
-        for pool_key in self.all_pools:
-            if pool_key.endswith(f"/{fee}"):
-                pool_token_a = self.pool_token_a[pool_key]
-                pool_token_b = self.pool_token_b[pool_key]
-                if token_out == pool_token_a or token_out == pool_token_b:
-                    target_pool_key = pool_key
-                    token_a = pool_token_a
-                    token_b = pool_token_b
-                    break
-
-        if target_pool_key is None:
-            raise PoolNotFound("No pool found containing the specified token")
-
-        pool_key = target_pool_key
+        self._validate_pool_exists(pool_key)
         user_address = ctx.caller_id
+
+        # Validate percentage
+        if percentage <= 0 or percentage > 10000:
+            raise InvalidAction("Invalid percentage")
+
+        # Get the withdrawal action to determine desired token
+        if len(ctx.actions) != 1:
+            raise InvalidAction("Must provide exactly one token withdrawal")
+
+        withdrawal_action = list(ctx.actions.values())[0][0]
+        if not isinstance(withdrawal_action, NCWithdrawalAction):
+            raise InvalidAction("Must provide a withdrawal action")
+
+        token_out = withdrawal_action.token_uid
+        withdrawal_amount = withdrawal_action.amount
+
+        # Validate token_out is part of the pool
+        token_a = self.pool_token_a[pool_key]
+        token_b = self.pool_token_b[pool_key]
+
+        if token_out != token_a and token_out != token_b:
+            raise InvalidTokens("token_out must be either token_a or token_b")
 
         # Check if user has liquidity
         user_liquidity = self.pool_user_liquidity.get(pool_key, {}).get(user_address, 0)
         if user_liquidity == 0:
             raise InvalidAction("No liquidity to remove")
 
-        # For simplicity, remove all user's liquidity
+        # Calculate liquidity to remove based on percentage
+        liquidity_to_remove = (user_liquidity * percentage) // 10000
+
+        # Calculate withdrawal amounts based on percentage
         total_liquidity = self.pool_total_liquidity[pool_key]
         reserve_a = self.pool_reserve_a[pool_key]
         reserve_b = self.pool_reserve_b[pool_key]
 
-        # Calculate amounts to withdraw
-        amount_a = (reserve_a * user_liquidity) // total_liquidity
-        amount_b = (reserve_b * user_liquidity) // total_liquidity
+        amount_a = (reserve_a * liquidity_to_remove) // total_liquidity
+        amount_b = (reserve_b * liquidity_to_remove) // total_liquidity
 
         # Update user liquidity
         partial = self.pool_user_liquidity.get(pool_key, {})
-        partial[user_address] = Amount(0)
+        partial[user_address] = Amount(user_liquidity - liquidity_to_remove)
         self.pool_user_liquidity[pool_key] = partial
 
         # Update total liquidity
-        self.pool_total_liquidity[pool_key] = Amount(total_liquidity - user_liquidity)
+        self.pool_total_liquidity[pool_key] = Amount(total_liquidity - liquidity_to_remove)
 
         # Update reserves
         self.pool_reserve_a[pool_key] = Amount(reserve_a - amount_a)
         self.pool_reserve_b[pool_key] = Amount(reserve_b - amount_b)
 
-        # Now swap the unwanted token for the desired token
+        # Calculate total output after swapping
         if token_out == token_a:
-            # Want token A, swap all of token B for token A
+            # Want token A, swap token B for token A
             if amount_b > 0:
                 extra_a = self.get_amount_out(
                     amount_b,
@@ -1590,7 +1703,7 @@ class DozerPoolManager(Blueprint):
             else:
                 total_amount_out = amount_a
         else:
-            # Want token B, swap all of token A for token B
+            # Want token B, swap token A for token B
             if amount_a > 0:
                 extra_b = self.get_amount_out(
                     amount_a,
@@ -1605,6 +1718,14 @@ class DozerPoolManager(Blueprint):
                 total_amount_out = amount_b + extra_b
             else:
                 total_amount_out = amount_b
+
+        # Handle slippage - if user requested less than calculated, store excess
+        if withdrawal_amount < total_amount_out:
+            excess = total_amount_out - withdrawal_amount
+            self._update_balance(user_address, excess, token_out, pool_key)
+            total_amount_out = withdrawal_amount
+        elif withdrawal_amount > total_amount_out:
+            raise InvalidAction("Insufficient output amount")
 
         # Update profit tracking
         self._update_user_profit_tracking(user_address, pool_key, ctx)

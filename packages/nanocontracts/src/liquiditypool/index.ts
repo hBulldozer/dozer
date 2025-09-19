@@ -308,14 +308,27 @@ export class PoolManager extends NanoContract {
   public async removeLiquiditySingleToken(
     hathorRpc: IHathorRpc,
     address: string,
+    poolKey: string,
     tokenOut: string,
-    fee: number
+    withdrawalAmount: number,
+    percentage: number
   ): Promise<SendNanoContractTxResponse> {
+    // Convert percentage to basis points (percentage * 100)
+    const percentageBasisPoints = Math.round(percentage * 100)
+
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'remove_liquidity_single_token',
       this.poolManagerBlueprintId,
-      [],
-      [tokenOut, fee], // token_out and fee as arguments
+      [
+        // @ts-ignore
+        {
+          type: NanoContractActionType.WITHDRAWAL,
+          token: tokenOut,
+          amount: Math.floor(withdrawalAmount * 100).toString(), // Convert to cents
+          address: address,
+        },
+      ],
+      [poolKey, percentageBasisPoints], // pool_key and percentage as arguments
       true,
       this.poolManagerContractId
     )
