@@ -347,6 +347,49 @@ export const tokenRouter = createTRPCRouter({
     }
   }),
 
+  // Get all tokens including those from unsigned pools
+  allWithUnsigned: procedure.query(async ({ ctx }) => {
+    try {
+      // Fetch all pools (signed and unsigned) from the contract
+      const response = await fetchFromPoolManager(['get_all_pools()'])
+      const poolKeys: string[] = response.calls['get_all_pools()'].value || []
+
+      // Extract unique tokens from pool keys
+      const tokenUuids = extractTokensFromPools(poolKeys)
+
+      // Build token data for each token
+      const tokenPromises = tokenUuids.map(async (uuid) => ({
+        id: uuid,
+        uuid: uuid,
+        symbol: await getTokenSymbol(uuid),
+        name: await getTokenName(uuid),
+        decimals: 2,
+        chainId: 1,
+        custom: false,
+        imageUrl: await getDozerToolsImageUrl(uuid), // Fetch from DozerTools if available
+        about: null, // Will be null until added to contract
+        telegram: null, // Will be null until added to contract
+        twitter: null, // Will be null until added to contract
+        website: null, // Will be null until added to contract
+        createdBy: null, // Will be null until added to contract
+        bridged: isBridgedToken(uuid),
+        sourceChain: isBridgedToken(uuid) ? 'unknown' : null,
+        targetChain: isBridgedToken(uuid) ? 'hathor' : null,
+        originalAddress: getBridgedTokenOriginalAddress(uuid),
+        // Add pool information for each token
+        pools0: [], // Will be populated by frontend if needed
+        pools1: [], // Will be populated by frontend if needed
+      }))
+
+      const tokens = await Promise.all(tokenPromises)
+
+      return tokens
+    } catch (error) {
+      console.error('Error fetching tokens with unsigned pools:', error)
+      throw new Error('Failed to fetch tokens from contract')
+    }
+  }),
+
   // Get token by symbol
   bySymbol: procedure.input(z.object({ symbol: z.string().max(8).min(1) })).query(async ({ input }) => {
     try {

@@ -6,7 +6,6 @@ import { TokenSelectorDialog } from './TokenSelectorDialog'
 import { ChainId } from '@dozer/chain'
 import { api } from '../../utils/api'
 import { useWalletConnectClient } from '../contexts'
-import { useRouter } from 'next/router'
 
 export type TokenSelectorProps = {
   id?: string
@@ -20,14 +19,15 @@ export type TokenSelectorProps = {
   tokens?: any[]
   pricesMap?: { [key: string]: number }
   customTokensOnly?: boolean
+  showUnsignedTokens?: boolean
+  searchTerm?: string
 }
 
 export const TokenSelector: FC<TokenSelectorProps> = memo(
-  ({ id, variant, chainId, onSelect, open, includeNative, tokens, pricesMap, customTokensOnly = false, ...props }) => {
+  ({ id, variant, chainId, onSelect, open, includeNative, tokens, pricesMap, customTokensOnly = false, showUnsignedTokens = false, searchTerm = '', ...props }) => {
     const { accounts } = useWalletConnectClient()
     const address = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
     const isMounted = useIsMounted()
-    const router = useRouter()
 
     const { balance: balances } = useAccount()
     const _tokens = useMemo(() => {
@@ -112,10 +112,12 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
           onSelect={handleSelect}
           includeNative={includeNative}
           tokens={_tokens}
+          showUnsignedTokens={showUnsignedTokens}
+          searchTerm={searchTerm}
           {...props}
         />
       )
-    }, [address, balances, chainId, isMounted, handleSelect, open, pricesMap, props, variant, _tokens])
+    }, [address, balances, chainId, isMounted, handleSelect, open, pricesMap, props, variant, _tokens, showUnsignedTokens, searchTerm, id, includeNative])
   },
   (prevProps, nextProps) => {
     return (

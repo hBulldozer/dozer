@@ -15,8 +15,9 @@ export const DefaultTokenIcon: FC<DefaultTokenIconProps> = ({ symbol, ...rest })
       style={{
         width: rest.width,
         height: rest.height,
-        fontSize: `${rest.height || 24 * 0.4}px`,
+        fontSize: `${((rest.height as number) || 24) * 0.4}px`,
       }}
+      title={symbol}
     >
       {letters}
     </div>

@@ -29,7 +29,7 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
         <NextImage
           {...rest}
           src={iconUrl}
-          alt={`${currency.symbol} icon`}
+          alt={currency.symbol || 'Token'}
           width={width}
           height={height}
           className="object-contain w-full h-full"
@@ -67,7 +67,7 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
       <div className="overflow-hidden relative rounded-full bg-stone-800">
         <NextImage
           src={logoURI}
-          alt={`${currency.symbol} icon`}
+          alt={currency.symbol || 'Token'}
           width={width}
           height={height}
           className="object-contain"
@@ -84,7 +84,7 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
         <NextImage
           {...rest}
           src={logoURI}
-          alt={`${currency.symbol} icon`}
+          alt={currency.symbol || 'Token'}
           width={width}
           height={height}
           className="object-contain w-full h-full"
@@ -102,7 +102,7 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
   }
 
   // Final fallback: default icon
-  return <DefaultTokenIcon alt={`${currency.symbol} icon`} symbol={currency.symbol || 'TK'} {...rest} />
+  return <DefaultTokenIcon alt={`${currency.symbol}`} symbol={currency.symbol || 'TK'} {...rest} />
 })
 
 Icon.displayName = 'CurrencyIcon'
