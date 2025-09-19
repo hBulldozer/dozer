@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react'
+import { FC, useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import { Pair } from '@dozer/api'
 import { AddSectionLegacy } from './AddSectionLegacy'
@@ -7,6 +7,7 @@ import { Typography, classNames } from '@dozer/ui'
 import { ChainId } from '@dozer/chain'
 import { toToken } from '@dozer/api'
 import { Switch } from '@headlessui/react'
+import { Type } from '@dozer/currency'
 
 interface AddSectionCombinedProps {
   pool: Pair
@@ -17,14 +18,23 @@ export const AddSectionCombined: FC<AddSectionCombinedProps> = ({ pool, prices }
   const router = useRouter()
   const [useSingleToken, setUseSingleToken] = useState(false)
   const [input, setInput] = useState('')
-  const [selectedToken, setSelectedToken] = useState(toToken(pool.token0))
 
-  const token0 = toToken(pool.token0)
-  const token1 = toToken(pool.token1)
+  // Memoize tokens to prevent infinite re-renders
+  const token0 = useMemo(() => toToken(pool.token0), [pool.token0])
+  const token1 = useMemo(() => toToken(pool.token1), [pool.token1])
+
+  const [selectedToken, setSelectedToken] = useState<Type | null>(null)
+
+  // Initialize selectedToken
+  useEffect(() => {
+    if (!selectedToken && token0) {
+      setSelectedToken(token0)
+    }
+  }, [token0, selectedToken])
 
   // Handle singleToken query parameter
   useEffect(() => {
-    const { singleToken } = router.query
+    const singleToken = router.query.singleToken
     if (singleToken && typeof singleToken === 'string') {
       setUseSingleToken(true)
 
@@ -37,7 +47,7 @@ export const AddSectionCombined: FC<AddSectionCombinedProps> = ({ pool, prices }
         setSelectedToken(targetToken)
       }
     }
-  }, [router.query, token0, token1])
+  }, [router.query.singleToken, token0, token1])
 
   const ModeToggle = () => (
     <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200/5">
@@ -63,7 +73,7 @@ export const AddSectionCombined: FC<AddSectionCombinedProps> = ({ pool, prices }
     </div>
   )
 
-  if (useSingleToken) {
+  if (useSingleToken && selectedToken) {
     return (
       <div className="space-y-0">
         <ModeToggle />

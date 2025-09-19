@@ -59,8 +59,8 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
   } = useAccount()
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
-  const value0 = token0?.uuid ? prices[token0.uuid] : undefined
-  const value1 = token1?.uuid ? prices[token1.uuid] : undefined
+  const value0 = (token0?.uuid && prices) ? prices[token0.uuid] : 0
+  const value1 = (token1?.uuid && prices) ? prices[token1.uuid] : 0
 
   const { network } = useNetwork()
 
@@ -153,8 +153,8 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                         <AppearOnMount show={Boolean(balance)}>
                           <Typography variant="sm" weight={500} className="text-stone-300 hover:text-stone-20">
                             {formatUSD(
-                              (Number(token0Minimum?.toFixed(2)) * (value0 || 0) +
-                                Number(token1Minimum?.toFixed(2)) * (value1 || 0))
+                              (Number(token0Minimum?.toFixed(2) || 0) * value0 +
+                                Number(token1Minimum?.toFixed(2) || 0) * value1)
                             )}
                           </Typography>
                         </AppearOnMount>

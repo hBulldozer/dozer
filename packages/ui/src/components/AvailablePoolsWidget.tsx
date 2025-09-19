@@ -47,7 +47,7 @@ export const AvailablePoolsWidget: React.FC<AvailablePoolsWidgetProps> = ({ pool
         <Widget.Header title="Earn" />
         <Widget.Content>
           <div className="p-6 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-700/50 flex items-center justify-center">
+            <div className="flex justify-center items-center mx-auto mb-4 w-16 h-16 rounded-full bg-stone-700/50">
               <svg className="w-8 h-8 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -57,7 +57,7 @@ export const AvailablePoolsWidget: React.FC<AvailablePoolsWidgetProps> = ({ pool
                 />
               </svg>
             </div>
-            <Typography variant="base" weight={500} className="text-stone-300 mb-2">
+            <Typography variant="base" weight={500} className="mb-2 text-stone-300">
               No liquidity pools available
             </Typography>
             <Typography variant="sm" className="text-stone-500">
@@ -103,11 +103,11 @@ export const AvailablePoolsWidget: React.FC<AvailablePoolsWidgetProps> = ({ pool
             return (
               <div
                 key={pool.id}
-                className="group relative p-4 rounded-xl bg-stone-700/30 hover:bg-stone-700/50 border border-stone-600/30 hover:border-stone-500/50 transition-all duration-200 hover:shadow-lg hover:shadow-stone-900/20"
+                className="relative p-4 rounded-xl border transition-all duration-200 group bg-stone-700/30 hover:bg-stone-700/50 border-stone-600/30 hover:border-stone-500/50 hover:shadow-lg hover:shadow-stone-900/20"
               >
                 {/* Pool Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex gap-3 items-center">
                     <div className="relative">
                       <Currency.IconList iconWidth={32} iconHeight={32}>
                         <Currency.Icon currency={toToken(currentToken)} />
@@ -118,7 +118,7 @@ export const AvailablePoolsWidget: React.FC<AvailablePoolsWidgetProps> = ({ pool
                       <Typography
                         variant="base"
                         weight={600}
-                        className="text-stone-100 group-hover:text-white transition-colors"
+                        className="transition-colors text-stone-100 group-hover:text-white"
                       >
                         {currentToken.symbol} / {pairedToken.symbol}
                       </Typography>
@@ -138,8 +138,8 @@ export const AvailablePoolsWidget: React.FC<AvailablePoolsWidgetProps> = ({ pool
                 </div>
 
                 {/* Pool Stats Row */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4 text-xs text-stone-400">
+                <div className="flex justify-between items-center">
+                  <div className="flex gap-4 items-center text-xs text-stone-400">
                     <span>24h Volume: {formatUSD(pool.volumeUSD)}</span>
                     <span>•</span>
                     <span>Fee: {pool.swapFee.toFixed(2)}%</span>
@@ -148,17 +148,17 @@ export const AvailablePoolsWidget: React.FC<AvailablePoolsWidgetProps> = ({ pool
                   {/* Action Button */}
                   <Button
                     as="a"
-                    href={`/pool/${pool.symbolId}`}
+                    href={`/pool/${pool.symbolId}/add?singleToken=${currentToken.symbol}`}
                     size="sm"
                     variant="filled"
-                    className="bg-yellow-500 hover:bg-yellow-400 text-stone-900 font-semibold px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-md"
+                    className="px-4 py-2 font-semibold bg-yellow-500 rounded-lg transition-all duration-200 hover:bg-yellow-400 text-stone-900 hover:scale-105 hover:shadow-md"
                   >
                     Deposit
                   </Button>
                 </div>
 
                 {/* Subtle hover indicator */}
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-r to-transparent rounded-xl opacity-0 transition-opacity duration-200 pointer-events-none from-yellow-500/5 group-hover:opacity-100" />
               </div>
             )
           })}

@@ -1,3 +1,4 @@
+import logging
 from typing import NamedTuple
 
 from hathor.nanocontracts.blueprint import Blueprint
@@ -20,6 +21,8 @@ from hathor.nanocontracts.types import (
 
 PRECISION = Amount(10**20)
 HTR_UID = b'\x00'
+
+logger = logging.getLogger(__name__)
 
 
 # Custom error classes
@@ -165,8 +168,8 @@ class UserProfitInfo(NamedTuple):
 
     current_value_usd: Amount
     initial_value_usd: Amount
-    profit_amount_usd: Amount
-    profit_percentage: Amount  # With 2 decimal places (e.g., 341 = 3.41%)
+    profit_amount_usd: int
+    profit_percentage: int  # With 2 decimal places (e.g., 341 = 3.41%)
     last_action_timestamp: int
 
 
@@ -523,14 +526,14 @@ class DozerPoolManager(Blueprint):
         current_usd_value = self._calculate_user_position_usd_value(user_address, pool_key)
 
         # Update the stored USD price
-        if pool_key not in self.pool_user_deposit_price_usd:
-            self.pool_user_deposit_price_usd[pool_key] = {}
-        self.pool_user_deposit_price_usd[pool_key][user_address] = current_usd_value
+        partial_deposit_price = self.pool_user_deposit_price_usd.get(pool_key, {})
+        partial_deposit_price.update({user_address: current_usd_value})
+        self.pool_user_deposit_price_usd[pool_key] = partial_deposit_price
 
         # Update timestamp
-        if pool_key not in self.pool_user_last_action_timestamp:
-            self.pool_user_last_action_timestamp[pool_key] = {}
-        self.pool_user_last_action_timestamp[pool_key][user_address] = int(ctx.timestamp)
+        partial_timestamp = self.pool_user_last_action_timestamp.get(pool_key, {})
+        partial_timestamp.update({user_address: int(ctx.timestamp)})
+        self.pool_user_last_action_timestamp[pool_key] = partial_timestamp
 
     def _calculate_user_position_usd_value(
         self, user_address: CallerId, pool_key: str
@@ -571,7 +574,9 @@ class DozerPoolManager(Blueprint):
         value_a_usd = (user_token_a_amount * token_a_price_usd) // 100_000000
         value_b_usd = (user_token_b_amount * token_b_price_usd) // 100_000000
 
-        return Amount(value_a_usd + value_b_usd)
+        total_value = value_a_usd + value_b_usd
+
+        return Amount(total_value)
 
     @view
     def quote(self, amount_a: Amount, reserve_a: Amount, reserve_b: Amount) -> Amount:
@@ -790,46 +795,38 @@ class DozerPoolManager(Blueprint):
 
     @view
     def quote_remove_liquidity_single_token(
-        self, user_address: CallerId, token_out: TokenUid, fee: Amount
+        self, user_address: CallerId, token_a: TokenUid, token_b: TokenUid, token_out: TokenUid, fee: Amount
     ) -> SingleTokenRemovalQuote:
         """Quote liquidity removal to receive a single token.
 
         Args:
             user_address: The user's address
-            token_out: The token to receive
+            token_a: The first token of the pool pair
+            token_b: The second token of the pool pair
+            token_out: The token to receive (must be either token_a or token_b)
             fee: Pool fee
 
         Returns:
-            Dictionary containing:
+            SingleTokenRemovalQuote containing:
             - amount_out: Total amount of output tokens that will be received
             - token_a_withdrawn: Amount of token A that will be withdrawn from LP
             - token_b_withdrawn: Amount of token B that will be withdrawn from LP
             - swap_amount: Amount that will be swapped
             - swap_output: Output from the internal swap
+            - user_liquidity: User's current liquidity amount
 
         Raises:
             PoolNotFound: If the pool does not exist
+            InvalidTokens: If token_out is not one of the pool tokens
             InvalidAction: If user has no liquidity
         """
-        # Find the pool containing token_out
-        target_pool_key = None
-        token_a = None
-        token_b = None
+        # Validate that token_out is one of the pool tokens
+        if token_out != token_a and token_out != token_b:
+            raise InvalidTokens("token_out must be either token_a or token_b")
 
-        for pool_key in self.all_pools:
-            if pool_key.endswith(f"/{fee}"):
-                pool_token_a = self.pool_token_a[pool_key]
-                pool_token_b = self.pool_token_b[pool_key]
-                if token_out == pool_token_a or token_out == pool_token_b:
-                    target_pool_key = pool_key
-                    token_a = pool_token_a
-                    token_b = pool_token_b
-                    break
-
-        if target_pool_key is None:
-            raise PoolNotFound("No pool found containing the specified token")
-
-        pool_key = target_pool_key
+        # Construct pool key directly
+        pool_key = self._get_pool_key(token_a, token_b, fee)
+        self._validate_pool_exists(pool_key)
 
         # Check if user has liquidity
         user_liquidity = self.pool_user_liquidity.get(pool_key, {}).get(user_address, 0)
@@ -1044,16 +1041,19 @@ class DozerPoolManager(Blueprint):
         self.pool_total_liquidity[pool_key] = Amount(initial_liquidity)
 
         # Initialize user liquidity for this pool
-        if pool_key not in self.pool_user_liquidity:
-            self.pool_user_liquidity[pool_key] = {}
-        self.pool_user_liquidity[pool_key][ctx.caller_id] = Amount(
-            initial_liquidity
-        )
+        partial_user_liquidity = self.pool_user_liquidity.get(pool_key, {})
+        partial_user_liquidity.update({
+            ctx.caller_id: Amount(initial_liquidity)
+        })
+        self.pool_user_liquidity[pool_key] = partial_user_liquidity
 
         # Initialize statistics
-        self.pool_accumulated_fee[pool_key] = {}
-        self.pool_accumulated_fee[pool_key][token_a] = Amount(0)
-        self.pool_accumulated_fee[pool_key][token_b] = Amount(0)
+        partial_accumulated_fee = self.pool_accumulated_fee.get(pool_key, {})
+        partial_accumulated_fee.update({
+            token_a: Amount(0),
+            token_b: Amount(0)
+        })
+        self.pool_accumulated_fee[pool_key] = partial_accumulated_fee
         self.pool_transactions[pool_key] = Amount(0)
         self.pool_volume_a[pool_key] = Amount(0)
         self.pool_volume_b[pool_key] = Amount(0)
@@ -2715,21 +2715,19 @@ class DozerPoolManager(Blueprint):
             raise InvalidAction("Not enough cashback for token B")
 
         # Update user balances
-        if pool_key not in self.pool_balance_a:
-            self.pool_balance_a[pool_key] = {}
-        if user_address not in self.pool_balance_a[pool_key]:
-            self.pool_balance_a[pool_key][user_address] = Amount(0)
-        self.pool_balance_a[pool_key][user_address] = Amount(
-            self.pool_balance_a[pool_key][user_address] - action_a_amount
-        )
+        partial_balance_a = self.pool_balance_a.get(pool_key, {})
+        current_balance_a = partial_balance_a.get(user_address, Amount(0))
+        partial_balance_a.update({
+            user_address: Amount(current_balance_a - action_a_amount)
+        })
+        self.pool_balance_a[pool_key] = partial_balance_a
 
-        if pool_key not in self.pool_balance_b:
-            self.pool_balance_b[pool_key] = {}
-        if user_address not in self.pool_balance_b[pool_key]:
-            self.pool_balance_b[pool_key][user_address] = Amount(0)
-        self.pool_balance_b[pool_key][user_address] = Amount(
-            self.pool_balance_b[pool_key][user_address] - action_b_amount
-        )
+        partial_balance_b = self.pool_balance_b.get(pool_key, {})
+        current_balance_b = partial_balance_b.get(user_address, Amount(0))
+        partial_balance_b.update({
+            user_address: Amount(current_balance_b - action_b_amount)
+        })
+        self.pool_balance_b[pool_key] = partial_balance_b
 
         # Update total balances
         if pool_key not in self.pool_total_balance_a:
@@ -2744,25 +2742,6 @@ class DozerPoolManager(Blueprint):
             self.pool_total_balance_b[pool_key] - action_b_amount
         )
 
-    @public
-    def change_default_fee(self, ctx: Context, new_fee: Amount) -> None:
-        """Set the default fee for new pools.
-
-        Args:
-            ctx: The transaction context
-            new_fee: The new default fee
-
-        Raises:
-            Unauthorized: If the caller is not the owner
-            InvalidFee: If the fee is invalid
-        """
-        if Address(ctx.caller_id) != self.owner:
-            raise Unauthorized("Only owner can set default fee")
-
-        if new_fee > 50:
-            raise InvalidFee("Fee too high")
-        if new_fee < 0:
-            raise InvalidFee("Invalid fee")
 
     @public
     def change_protocol_fee(self, ctx: Context, new_fee: Amount) -> None:
@@ -3117,7 +3096,7 @@ class DozerPoolManager(Blueprint):
         current_token = token  # Start from TOKEN_A
         
         # Iterate through pools in reverse order (TOKEN_A → USD direction)
-        for pool_key in reversed(pool_keys):
+        for i, pool_key in enumerate(reversed(pool_keys)):
             # Determine which token is the input and output for this hop
             if self.pool_token_a[pool_key] == current_token:
                 reserve_in = self.pool_reserve_a[pool_key]
@@ -3144,7 +3123,8 @@ class DozerPoolManager(Blueprint):
             current_token = next_token
         
         # Convert final price to integer with 8 decimal places
-        return Amount(int(final_price * 100_000000))
+        result = Amount(int(final_price * 100_000000))
+        return result
 
     @view
     def get_all_token_prices_in_usd(self) -> dict[str, Amount]:
@@ -3489,7 +3469,7 @@ class DozerPoolManager(Blueprint):
                 profit_percentage=Amount(0),
                 last_action_timestamp=0,
             )
-
+        
         # Get current USD value of position
         current_value_usd = self._calculate_user_position_usd_value(address, pool_key)
 
@@ -3504,9 +3484,9 @@ class DozerPoolManager(Blueprint):
             profit_amount_usd = Amount(0)
             profit_percentage = Amount(0)
         else:
-            profit_amount_usd = Amount(current_value_usd - initial_value_usd)
+            profit_amount_usd = (current_value_usd - initial_value_usd)
             # Calculate percentage with 2 decimal places (e.g., 341 = 3.41%)
-            profit_percentage = Amount((profit_amount_usd * 10000) // initial_value_usd)
+            profit_percentage = ((profit_amount_usd * 10000) // initial_value_usd)
 
         return UserProfitInfo(
             current_value_usd=current_value_usd,
