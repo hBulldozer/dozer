@@ -40,11 +40,13 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
   const { data: quoteData } = api.getPools.quoteSingleTokenRemoval.useQuery(
     {
       address: userAddress || address,
+      tokenA: token0?.uuid || '',
+      tokenB: token1?.uuid || '',
       tokenOut: selectedToken?.uuid || '',
       fee: fee,
     },
     {
-      enabled: !!userAddress && !!selectedToken && open,
+      enabled: !!userAddress && !!selectedToken && !!token0 && !!token1 && open,
       refetchInterval: 5000,
     }
   )
@@ -71,13 +73,15 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
           chainId: chainId,
           summary: {
             pending: `Removing liquidity and receiving ${selectedToken.symbol}...`,
-            completed: `Successfully removed liquidity and received ${formatAmount(quoteData.amount_out)} ${selectedToken.symbol}`,
+            completed: `Successfully removed liquidity and received ${formatAmount(quoteData.amount_out)} ${
+              selectedToken.symbol
+            }`,
             failed: 'Failed to remove liquidity',
           },
           status: 'completed',
           txHash: response.response.hash || '',
           timestamp: Math.floor(Date.now() / 1000),
-          groupTimestamp: Math.floor(Date.now() / 1000)
+          groupTimestamp: Math.floor(Date.now() / 1000),
         })
 
         // Add to temp transactions for UI feedback
@@ -106,7 +110,7 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
     <>
       {children({ setOpen })}
       <Dialog open={open} onClose={() => setOpen(false)}>
-        <Dialog.Content className="max-w-md mx-auto">
+        <Dialog.Content className="mx-auto max-w-md">
           <Dialog.Header onClose={() => setOpen(false)} title="Confirm Remove Liquidity" />
 
           {quoteData && (
@@ -114,19 +118,17 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
               {/* Transaction Details */}
               <div className="space-y-3">
                 <div className="text-sm text-stone-400">You will receive:</div>
-                <div className="flex items-center justify-between p-3 bg-stone-800/50 rounded-lg">
+                <div className="flex justify-between items-center p-3 rounded-lg bg-stone-800/50">
                   <div className="flex items-center space-x-2">
-                    <div className="text-lg font-medium text-stone-200">
-                      {formatAmount(quoteData.amount_out)}
-                    </div>
+                    <div className="text-lg font-medium text-stone-200">{formatAmount(quoteData.amount_out)}</div>
                     <div className="text-stone-400">{selectedToken?.symbol}</div>
                   </div>
                 </div>
               </div>
 
               {/* Quote Details */}
-              <div className="space-y-2 p-3 bg-stone-800/50 rounded-lg text-xs">
-                <div className="text-stone-400 mb-2">Transaction breakdown:</div>
+              <div className="p-3 space-y-2 text-xs rounded-lg bg-stone-800/50">
+                <div className="mb-2 text-stone-400">Transaction breakdown:</div>
                 <div className="flex justify-between">
                   <span className="text-stone-500">{token0?.symbol} withdrawn:</span>
                   <span className="text-green-300">{formatAmount(quoteData.token_a_withdrawn)}</span>
@@ -143,12 +145,6 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between pt-2 border-t border-stone-700">
-                  <span className="text-stone-400">Your liquidity:</span>
-                  <span className="text-stone-200">
-                    {quoteData.user_liquidity.toLocaleString()} LP tokens
-                  </span>
-                </div>
               </div>
 
               {/* Action Button */}

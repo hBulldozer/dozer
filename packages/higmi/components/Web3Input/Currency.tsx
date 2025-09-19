@@ -23,6 +23,7 @@ export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' 
   prices?: { [key: string]: number }
   tokens?: any[]
   hidePercentageButtons?: boolean
+  showUnsignedSwitchInDialog?: boolean
 }
 
 export const CurrencyInput: FC<CurrencyInputProps> = ({
@@ -46,6 +47,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   prices,
   tokens,
   hidePercentageButtons = false,
+  showUnsignedSwitchInDialog = true,
 }) => {
   const isMounted = useIsMounted()
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
@@ -165,6 +167,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             // customTokenMap={customTokenMap}
             includeNative={includeNative}
             tokens={tokens}
+            showUnsignedSwitchInDialog={showUnsignedSwitchInDialog}
           />
         )}
       </div>
@@ -190,6 +193,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
       usdPctChange,
       value,
       hidePercentageButtons,
+      showUnsignedSwitchInDialog,
     ]
   )
 }

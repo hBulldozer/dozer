@@ -1688,7 +1688,6 @@ export const poolRouter = createTRPCRouter({
     .query(async ({ input }) => {
       try {
         const response = await fetchFromPoolManager([`get_user_profit_info("${input.address}", "${input.poolKey}")`])
-        console.log('Response:', response)
         const profitInfoArray = response.calls[`get_user_profit_info("${input.address}", "${input.poolKey}")`].value
 
         if (!profitInfoArray) {
@@ -1769,6 +1768,8 @@ export const poolRouter = createTRPCRouter({
     .input(
       z.object({
         address: z.string(),
+        tokenA: z.string(),
+        tokenB: z.string(),
         tokenOut: z.string(),
         fee: z.number(),
       })
@@ -1776,12 +1777,15 @@ export const poolRouter = createTRPCRouter({
     .query(async ({ input }) => {
       try {
         const response = await fetchFromPoolManager([
-          `quote_remove_liquidity_single_token("${input.address}", "${input.tokenOut}", ${input.fee * 10})`,
+          `quote_remove_liquidity_single_token("${input.address}", "${input.tokenA}", "${input.tokenB}", "${
+            input.tokenOut
+          }", ${input.fee * 10})`,
         ])
-        console.log('Response:', response)
         const quoteArray =
           response.calls[
-            `quote_remove_liquidity_single_token("${input.address}", "${input.tokenOut}", ${input.fee * 10})`
+            `quote_remove_liquidity_single_token("${input.address}", "${input.tokenA}", "${input.tokenB}", "${
+              input.tokenOut
+            }", ${input.fee * 10})`
           ].value
 
         if (!quoteArray) {

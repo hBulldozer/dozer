@@ -19,6 +19,7 @@ type TokenSelectorDialog = {
   onSelect(currency: Token): void
   showUnsignedTokens?: boolean
   searchTerm?: string
+  showUnsignedSwitchInDialog?: boolean
 }
 
 export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
@@ -34,6 +35,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
   tokens,
   showUnsignedTokens: initialShowUnsigned = false,
   searchTerm: initialSearchTerm = '',
+  showUnsignedSwitchInDialog = true,
 }) => {
   // Local state for search and unsigned tokens toggle
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
@@ -119,12 +121,14 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                 </div>
 
                 {/* Unsigned tokens switch */}
-                <div className="flex flex-shrink-0 items-center space-x-2">
-                  <Switch checked={showUnsignedTokens} onChange={setShowUnsignedTokens} size="sm" />
-                  <Typography variant="sm" weight={500} className="whitespace-nowrap text-stone-200">
-                    Include unsigned
-                  </Typography>
-                </div>
+                {showUnsignedSwitchInDialog && (
+                  <div className="flex flex-shrink-0 items-center space-x-2">
+                    <Switch checked={showUnsignedTokens} onChange={setShowUnsignedTokens} size="sm" />
+                    <Typography variant="sm" weight={500} className="whitespace-nowrap text-stone-200">
+                      Include unsigned
+                    </Typography>
+                  </div>
+                )}
               </div>
 
               {/* Mobile layout: stacked */}
@@ -145,12 +149,14 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                 </div>
 
                 {/* Unsigned tokens switch */}
-                <div className="flex items-center space-x-2">
-                  <Switch checked={showUnsignedTokens} onChange={setShowUnsignedTokens} size="sm" />
-                  <Typography variant="sm" weight={500} className="text-stone-200">
-                    Include unsigned tokens
-                  </Typography>
-                </div>
+                {showUnsignedSwitchInDialog && (
+                  <div className="flex items-center space-x-2">
+                    <Switch checked={showUnsignedTokens} onChange={setShowUnsignedTokens} size="sm" />
+                    <Typography variant="sm" weight={500} className="text-stone-200">
+                      Include unsigned tokens
+                    </Typography>
+                  </div>
+                )}
               </div>
             </div>
 

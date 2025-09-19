@@ -10,9 +10,10 @@ import { Switch } from '@headlessui/react'
 
 interface RemoveSectionCombinedProps {
   pair: Pair
+  prices?: { [key: string]: number }
 }
 
-export const RemoveSectionCombined: FC<RemoveSectionCombinedProps> = ({ pair }) => {
+export const RemoveSectionCombined: FC<RemoveSectionCombinedProps> = ({ pair, prices = {} }) => {
   const [useSingleToken, setUseSingleToken] = useState(false)
   const { accounts } = useWalletConnectClient()
   const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
@@ -54,6 +55,7 @@ export const RemoveSectionCombined: FC<RemoveSectionCombinedProps> = ({ pair }) 
           token1={token1}
           userAddress={address}
           fee={pair.swapFee}
+          prices={prices}
         />
       </div>
     )
@@ -62,7 +64,7 @@ export const RemoveSectionCombined: FC<RemoveSectionCombinedProps> = ({ pair }) 
   return (
     <div className="space-y-0">
       <ModeToggle />
-      <RemoveSectionLegacy pair={pair} />
+      <RemoveSectionLegacy pair={pair} prices={prices} />
     </div>
   )
 }
