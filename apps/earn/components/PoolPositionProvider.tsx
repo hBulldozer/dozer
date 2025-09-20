@@ -65,10 +65,10 @@ export const PoolPositionProvider: FC<{
   }, [isLoadingPoolInfo, isLoadingProfitInfo])
 
   const _max_withdraw_a: Amount<Type> | undefined = token0Amount
-    ? Amount.fromRawAmount(token0, token0Amount)
+    ? Amount.fromRawAmount(token0, Math.floor(token0Amount))  // Ensure integer for Amount.fromRawAmount
     : undefined
   const _max_withdraw_b: Amount<Type> | undefined = token1Amount
-    ? Amount.fromRawAmount(token1, token1Amount)
+    ? Amount.fromRawAmount(token1, Math.floor(token1Amount))  // Ensure integer for Amount.fromRawAmount
     : undefined
 
   // const _user_deposited_a: Amount<Type> | undefined = user_deposited_a
@@ -79,10 +79,16 @@ export const PoolPositionProvider: FC<{
   //   : undefined
 
   const value0 = useMemo(() => {
-    return prices[token0.uuid] * ((token0Amount || 0) / 100)
+    // token0Amount is already in the correct format from the contract (in cents),
+    // so we need to divide by 100 to get the actual token amount
+    const actualToken0Amount = (token0Amount || 0) / 100
+    return prices[token0.uuid] * actualToken0Amount
   }, [prices, token0, token0Amount])
   const value1 = useMemo(() => {
-    return prices[token1.uuid] * ((token1Amount || 0) / 100)
+    // token1Amount is already in the correct format from the contract (in cents),
+    // so we need to divide by 100 to get the actual token amount
+    const actualToken1Amount = (token1Amount || 0) / 100
+    return prices[token1.uuid] * actualToken1Amount
   }, [prices, token1, token1Amount])
 
   // const depositedUSD0 = useMemo(() => {

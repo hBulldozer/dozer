@@ -111,6 +111,7 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
       userAddress={userAddress}
       percentage={percentage}
       poolKey={poolKey}
+      prices={prices}
     >
       {({ setOpen }) => (
         <div className="relative" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
@@ -167,8 +168,8 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                 Receive Token:
                               </Typography>
                             </div>
-                            <div className="flex gap-4 items-center">
-                              <div className="flex flex-grow justify-between items-center">
+                            <div className="flex gap-3 items-center">
+                              <div className="flex-1 min-w-0">
                                 <Input.Percent
                                   onUserInput={(val) => setPercentage(val ? Math.min(+val, 100).toString() : '')}
                                   value={percentage}
@@ -177,7 +178,7 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                   className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-2xl')}
                                 />
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 flex-shrink-0">
                                 <Button size="xs" onClick={() => setPercentage('25')}>
                                   25%
                                 </Button>
@@ -191,31 +192,31 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                   MAX
                                 </Button>
                               </div>
-                              <div className="w-32">
+                              <div className="w-36 flex-shrink-0">
                                 <button
                                   onClick={() => setTokenSelectorOpen(true)}
                                   className={classNames(
                                     'shadow-md hover:ring-2 bg-white bg-opacity-[0.12] ring-stone-500',
-                                    'h-[36px] text-stone-200 hover:text-stone-100 transition-all flex flex-row items-center gap-1 text-xl font-semibold rounded-full px-2 py-1 w-full justify-center'
+                                    'h-[36px] text-stone-200 hover:text-stone-100 transition-all flex flex-row items-center gap-1 text-sm font-semibold rounded-full px-3 py-1 w-full justify-center'
                                   )}
                                 >
                                   {selectedToken ? (
                                     <>
-                                      <div className="w-5 h-5">
+                                      <div className="w-4 h-4 flex-shrink-0">
                                         <Currency.Icon
                                           currency={selectedToken}
-                                          width={20}
-                                          height={20}
+                                          width={16}
+                                          height={16}
                                           priority
                                         />
                                       </div>
-                                      <div className="ml-0.5 -mr-0.5">{selectedToken.symbol}</div>
+                                      <div className="truncate text-xs">{selectedToken.symbol}</div>
                                     </>
                                   ) : (
-                                    <div className="ml-0.5 -mr-0.5 pl-1">Select</div>
+                                    <div className="text-xs">Select</div>
                                   )}
-                                  <div className="w-5 h-5">
-                                    <ChevronDownIcon width={20} height={20} />
+                                  <div className="w-4 h-4 flex-shrink-0">
+                                    <ChevronDownIcon width={16} height={16} />
                                   </div>
                                 </button>
                               </div>
@@ -224,49 +225,214 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                         </div>
 
                         {/* Single Token Mode Details */}
-                        {selectedToken && adjustedQuoteData && percentage && parseFloat(percentage) > 0 && (
-                          <div className="px-3 py-2 border-b bg-stone-800/50 border-stone-700">
-                            <div className="space-y-2">
-                              <div className="space-y-1 text-xs">
-                                <div className="flex justify-between">
-                                  <span className="text-stone-400">Total Received:</span>
-                                  <div className="text-right">
-                                    <div className="font-medium text-stone-200">
-                                      {formatAmount(adjustedQuoteData.amount_out)} {selectedToken.symbol}
+                        {selectedToken && percentage && parseFloat(percentage) > 0 && (
+                          <Transition
+                            show={Boolean(selectedToken && parseFloat(percentage) > 0)}
+                            unmount={false}
+                            className="transition-[max-height] overflow-hidden"
+                            enter="duration-300 ease-in-out"
+                            enterFrom="transform max-h-0"
+                            enterTo="transform max-h-[400px]"
+                            leave="transition-[max-height] duration-250 ease-in-out"
+                            leaveFrom="transform max-h-[400px]"
+                            leaveTo="transform max-h-0"
+                          >
+                            <div className="px-3 py-2 border-b bg-stone-800/50 border-stone-700">
+                              <Disclosure>
+                                {({ open }) => (
+                                  <>
+                                    <div className="flex justify-between items-center py-2">
+                                      <div className="flex items-center gap-2">
+                                        <Typography variant="sm" weight={500} className="text-stone-300">
+                                          Transaction Preview
+                                        </Typography>
+                                        {adjustedQuoteData && (
+                                          <Typography variant="xs" className="text-stone-400">
+                                            ({percentage}% of position)
+                                          </Typography>
+                                        )}
+                                      </div>
+                                      <Disclosure.Button>
+                                        <div className="flex gap-2 items-center cursor-pointer text-stone-400 hover:text-stone-100">
+                                          <Typography variant="sm" weight={500}>
+                                            {open ? 'Hide' : 'Details'}
+                                          </Typography>
+                                          <svg
+                                            className={`w-5 h-5 transition-transform ${open ? 'rotate-180' : 'rotate-0'}`}
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                          </svg>
+                                        </div>
+                                      </Disclosure.Button>
                                     </div>
-                                    {selectedTokenPrice > 0 && (
-                                      <div className="text-xs text-stone-400">{formatUSD(usdValue)}</div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
 
-                              <div className="pt-2 space-y-1 text-xs border-t border-stone-700">
-                                <div className="mb-1 text-stone-400">Breakdown ({percentage}% of position):</div>
-                                <div className="flex justify-between">
-                                  <span className="text-stone-500">{token0?.symbol} withdrawn:</span>
-                                  <span className="text-stone-300">
-                                    {formatAmount(adjustedQuoteData.token_a_withdrawn)}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-stone-500">{token1?.symbol} withdrawn:</span>
-                                  <span className="text-stone-300">
-                                    {formatAmount(adjustedQuoteData.token_b_withdrawn)}
-                                  </span>
-                                </div>
-                                {adjustedQuoteData.swap_amount > 0 && (
-                                  <div className="flex justify-between">
-                                    <span className="text-stone-500">Swap amount:</span>
-                                    <span className="text-blue-300">
-                                      {formatAmount(adjustedQuoteData.swap_amount)} →{' '}
-                                      {formatAmount(adjustedQuoteData.swap_output)}
-                                    </span>
-                                  </div>
+                                    {adjustedQuoteData && (
+                                      <div className="space-y-1 text-xs py-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-stone-400">You will receive:</span>
+                                          <div className="text-right">
+                                            <div className="font-medium text-stone-200">
+                                              {formatAmount(adjustedQuoteData.amount_out)} {selectedToken.symbol}
+                                            </div>
+                                            {selectedTokenPrice > 0 && (
+                                              <div className="text-xs text-green-300">{formatUSD(usdValue)}</div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <Transition
+                                      unmount={false}
+                                      show={open}
+                                      className="transition-[max-height] overflow-hidden"
+                                      enter="duration-300 ease-in-out"
+                                      enterFrom="transform max-h-0"
+                                      enterTo="transform max-h-[300px]"
+                                      leave="transition-[max-height] duration-250 ease-in-out"
+                                      leaveFrom="transform max-h-[300px]"
+                                      leaveTo="transform max-h-0"
+                                    >
+                                      <Disclosure.Panel className="pb-2">
+                                        {adjustedQuoteData && (
+                                          <>
+                                            {/* Visual Route Display */}
+                                            <div className="py-3 border-t border-stone-700">
+                                              <div className="flex justify-center items-center space-x-3">
+                                                {/* LP Position */}
+                                                <div className="flex flex-col items-center space-y-1">
+                                                  <Currency.IconList iconWidth={24} iconHeight={24}>
+                                                    <Currency.Icon currency={token0} width={24} height={24} />
+                                                    <Currency.Icon currency={token1} width={24} height={24} />
+                                                  </Currency.IconList>
+                                                  <Typography variant="xs" className="text-stone-300">
+                                                    LP Position
+                                                  </Typography>
+                                                  {prices && token0 && token1 && prices[token0.uuid] && prices[token1.uuid] && (
+                                                    <Typography variant="xs" className="text-stone-500">
+                                                      $
+                                                      {(
+                                                        adjustedQuoteData.token_a_withdrawn * prices[token0.uuid] +
+                                                        adjustedQuoteData.token_b_withdrawn * prices[token1.uuid]
+                                                      ).toFixed(2)}
+                                                    </Typography>
+                                                  )}
+                                                </div>
+
+                                                {/* Arrow to Withdrawal */}
+                                                <div className="flex flex-col items-center">
+                                                  <svg
+                                                    className="w-4 h-4 text-stone-400"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                  >
+                                                    <path
+                                                      strokeLinecap="round"
+                                                      strokeLinejoin="round"
+                                                      strokeWidth={2}
+                                                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                                                    />
+                                                  </svg>
+                                                  <Typography variant="xs" className="mt-1 text-stone-500">
+                                                    Withdraw
+                                                  </Typography>
+                                                </div>
+
+                                                {/* Withdrawn Tokens */}
+                                                <div className="flex flex-col items-center space-y-2">
+                                                  <div className="flex flex-col items-center space-y-2">
+                                                    <div className="flex flex-col items-center space-y-1">
+                                                      <Currency.Icon currency={token0} width={20} height={20} />
+                                                      <Typography variant="xs" className="text-green-300">
+                                                        {formatAmount(adjustedQuoteData.token_a_withdrawn)}
+                                                      </Typography>
+                                                    </div>
+                                                    <div className="flex flex-col items-center space-y-1">
+                                                      <Currency.Icon currency={token1} width={20} height={20} />
+                                                      <Typography variant="xs" className="text-green-300">
+                                                        {formatAmount(adjustedQuoteData.token_b_withdrawn)}
+                                                      </Typography>
+                                                    </div>
+                                                  </div>
+                                                </div>
+
+                                                {adjustedQuoteData.swap_amount > 0 && (
+                                                  <>
+                                                    {/* Arrow to Swap */}
+                                                    <div className="flex flex-col items-center">
+                                                      <svg
+                                                        className="w-4 h-4 text-stone-400"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                      >
+                                                        <path
+                                                          strokeLinecap="round"
+                                                          strokeLinejoin="round"
+                                                          strokeWidth={2}
+                                                          d="M17 8l4 4m0 0l-4 4m4-4H3"
+                                                        />
+                                                      </svg>
+                                                      <Typography variant="xs" className="mt-1 text-stone-500">
+                                                        Swap
+                                                      </Typography>
+                                                    </div>
+                                                  </>
+                                                )}
+
+                                                {/* Final Token */}
+                                                <div className="flex flex-col items-center space-y-1">
+                                                  <Currency.Icon currency={selectedToken} width={24} height={24} />
+                                                  <Typography variant="xs" className="text-green-300">
+                                                    {formatAmount(adjustedQuoteData.amount_out)}
+                                                  </Typography>
+                                                  {selectedTokenPrice > 0 && (
+                                                    <Typography variant="xs" className="text-stone-500">
+                                                      {formatUSD(usdValue)}
+                                                    </Typography>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            {/* Summary */}
+                                            <div className="pt-2 space-y-1 text-xs border-t border-stone-700">
+                                              <div className="mb-1 text-stone-400">Breakdown:</div>
+                                              <div className="flex justify-between">
+                                                <span className="text-stone-500">{token0?.symbol} withdrawn:</span>
+                                                <span className="text-stone-300">
+                                                  {formatAmount(adjustedQuoteData.token_a_withdrawn)}
+                                                </span>
+                                              </div>
+                                              <div className="flex justify-between">
+                                                <span className="text-stone-500">{token1?.symbol} withdrawn:</span>
+                                                <span className="text-stone-300">
+                                                  {formatAmount(adjustedQuoteData.token_b_withdrawn)}
+                                                </span>
+                                              </div>
+                                              {adjustedQuoteData.swap_amount > 0 && (
+                                                <div className="flex justify-between">
+                                                  <span className="text-stone-500">Swap amount:</span>
+                                                  <span className="text-blue-300">
+                                                    {formatAmount(adjustedQuoteData.swap_amount)} →{' '}
+                                                    {formatAmount(adjustedQuoteData.swap_output)}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </>
+                                        )}
+                                      </Disclosure.Panel>
+                                    </Transition>
+                                  </>
                                 )}
-                              </div>
+                              </Disclosure>
                             </div>
-                          </div>
+                          </Transition>
                         )}
 
                         {/* Loading state for quote */}
