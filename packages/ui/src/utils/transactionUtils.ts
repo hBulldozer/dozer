@@ -83,6 +83,12 @@ export function transformToSimpleTransaction(
   complexTx: ComplexTransaction,
   pricesUSD?: Record<string, number>
 ): SimpleTransaction | null {
+
+  // Filter out administrative methods that shouldn't appear in transaction history
+  const excludedMethods = ['sign_pool', 'set_htr_usd_pool']
+  if (excludedMethods.includes(complexTx.method)) {
+    return null
+  }
   // Extract wallet address - different logic for different transaction types
   let senderAddress = 'Unknown'
 
@@ -97,9 +103,11 @@ export function transformToSimpleTransaction(
     senderAddress = complexTx.debug?.fullTx?.inputs?.[0]?.decoded?.address || 'Unknown'
   }
 
-  // Determine transaction type
+  // Determine transaction type with specific support for single token methods
   let type: 'Swap' | 'Add' | 'Remove' | 'Create' = 'Swap'
-  if (complexTx.method.includes('add_liquidity')) type = 'Add'
+  if (complexTx.method === 'add_liquidity_single_token') type = 'Add'
+  else if (complexTx.method === 'remove_liquidity_single_token') type = 'Remove'
+  else if (complexTx.method.includes('add_liquidity')) type = 'Add'
   else if (complexTx.method.includes('remove_liquidity')) type = 'Remove'
   else if (complexTx.method.includes('create_pool')) type = 'Create'
   else if (complexTx.method.includes('swap_exact_tokens_for_tokens_through_path')) {
@@ -109,6 +117,7 @@ export function transformToSimpleTransaction(
     // Filter out multi-hop swaps as they are complex to parse and involve multiple pools
     return null
   } else if (complexTx.method.includes('swap')) type = 'Swap'
+
 
   // Extract token information
   const tokenSymbols = complexTx.tokenSymbols || []
@@ -124,6 +133,7 @@ export function transformToSimpleTransaction(
   let token0Amount: number | null | undefined = null
   let token1Amount: number | null | undefined = null
   let side: 'Buy' | 'Sell' | 'Add' | 'Remove' | 'Create' | 'Unknown' = 'Unknown'
+
 
   if (tokenSymbols.length >= 2) {
     // Determine correct token0/token1 order based on pool structure
@@ -149,15 +159,39 @@ export function transformToSimpleTransaction(
         token1Symbol = token1Info.symbol
         tokenPair = `${token0Symbol}/${token1Symbol}`
       } else {
-        // Fallback to original logic if pool info not available
-        token0Symbol = tokenSymbols[0].symbol
-        token1Symbol = tokenSymbols[1].symbol
+        // For single token operations, we might not have both tokens in tokenSymbols
+        // Use pool token UUIDs to determine symbols, with fallback for missing tokens
+        token0Symbol = token0Info?.symbol || (poolToken0 === '00' ? 'HTR' : poolToken0.substring(0, 8).toUpperCase())
+        token1Symbol = token1Info?.symbol || (poolToken1 === '00' ? 'HTR' : poolToken1.substring(0, 8).toUpperCase())
         tokenPair = `${token0Symbol}/${token1Symbol}`
       }
     } else {
       // Fallback to original logic if no pool information
       token0Symbol = tokenSymbols[0].symbol
       token1Symbol = tokenSymbols[1].symbol
+      tokenPair = `${token0Symbol}/${token1Symbol}`
+    }
+  } else {
+    // Handle single token operations or transactions with insufficient token info
+
+    if (complexTx.poolsInvolved && complexTx.poolsInvolved.length > 0) {
+      const poolKey = complexTx.poolsInvolved[0]
+      const [poolToken0, poolToken1] = poolKey.split('/')
+
+
+      // For single token operations, determine symbols based on pool tokens
+      // even if we don't have all tokenSymbols
+      const token0Info = tokenSymbols.find((t) => t.uuid === poolToken0)
+      const token1Info = tokenSymbols.find((t) => t.uuid === poolToken1)
+
+      token0Symbol = token0Info?.symbol || (poolToken0 === '00' ? 'HTR' : 'HUSDC')
+      token1Symbol = token1Info?.symbol || (poolToken1 === '00' ? 'HTR' : 'HUSDC')
+      tokenPair = `${token0Symbol}/${token1Symbol}`
+
+    } else if (tokenSymbols.length >= 1) {
+      // Fallback for other cases with at least one token
+      token0Symbol = tokenSymbols[0]?.symbol
+      token1Symbol = tokenSymbols[1]?.symbol || 'Unknown'
       tokenPair = `${token0Symbol}/${token1Symbol}`
     }
   }
@@ -356,20 +390,39 @@ export function transformToSimpleTransaction(
         let a0 = 0,
           a1 = 0
 
-        // Token 0
-        const token0Uuid = tokenSymbols[0]?.uuid || ''
-        if (token0Uuid) {
-          const inputAmount = inputsByToken[token0Uuid] || 0
-          const changeAmount = changeOutputsByToken[token0Uuid] || 0
-          a0 = (inputAmount - changeAmount) / 100
-        }
+        // Use pool information if available for better matching
+        if (complexTx.poolsInvolved && complexTx.poolsInvolved.length > 0) {
+          const currentPoolKey = complexTx.poolsInvolved[0]
+          const [poolToken0, poolToken1] = currentPoolKey.split('/')
 
-        // Token 1
-        const token1Uuid = tokenSymbols[1]?.uuid || ''
-        if (token1Uuid) {
-          const inputAmount = inputsByToken[token1Uuid] || 0
-          const changeAmount = changeOutputsByToken[token1Uuid] || 0
-          a1 = (inputAmount - changeAmount) / 100
+          // Token 0
+          if (poolToken0) {
+            const inputAmount = inputsByToken[poolToken0] || 0
+            const changeAmount = changeOutputsByToken[poolToken0] || 0
+            a0 = (inputAmount - changeAmount) / 100
+          }
+
+          // Token 1
+          if (poolToken1) {
+            const inputAmount = inputsByToken[poolToken1] || 0
+            const changeAmount = changeOutputsByToken[poolToken1] || 0
+            a1 = (inputAmount - changeAmount) / 100
+          }
+        } else {
+          // Fallback: use tokenSymbols array
+          const token0Uuid = tokenSymbols[0]?.uuid || ''
+          if (token0Uuid) {
+            const inputAmount = inputsByToken[token0Uuid] || 0
+            const changeAmount = changeOutputsByToken[token0Uuid] || 0
+            a0 = (inputAmount - changeAmount) / 100
+          }
+
+          const token1Uuid = tokenSymbols[1]?.uuid || ''
+          if (token1Uuid) {
+            const inputAmount = inputsByToken[token1Uuid] || 0
+            const changeAmount = changeOutputsByToken[token1Uuid] || 0
+            a1 = (inputAmount - changeAmount) / 100
+          }
         }
 
         token0Amount = a0 > 0 ? a0 : null
@@ -401,21 +454,44 @@ export function transformToSimpleTransaction(
       amounts = amounts_list.join(' + ')
 
       // For display, set token0/token1 amounts from actual outputs
-      if (token0Symbol && token1Symbol) {
-        // Token 0
-        const token0Uuid = tokenSymbols[0]?.uuid || ''
-        if (token0Uuid && outputsByToken[token0Uuid]) {
-          token0Amount = outputsByToken[token0Uuid] / 100
-        }
 
-        // Token 1
-        const token1Uuid = tokenSymbols[1]?.uuid || ''
-        if (token1Uuid && outputsByToken[token1Uuid]) {
-          token1Amount = outputsByToken[token1Uuid] / 100
+      if (token0Symbol && token1Symbol) {
+
+        // Use pool information if available for better matching
+        if (complexTx.poolsInvolved && complexTx.poolsInvolved.length > 0) {
+          const currentPoolKey = complexTx.poolsInvolved[0]
+          const [poolToken0, poolToken1] = currentPoolKey.split('/')
+
+
+          // Match outputs to pool tokens by UUID
+          Object.keys(outputsByToken).forEach((tokenUuid) => {
+            const outputAmount = outputsByToken[tokenUuid] / 100
+
+            if (tokenUuid === poolToken0) {
+              token0Amount = outputAmount
+            } else if (tokenUuid === poolToken1) {
+              token1Amount = outputAmount
+            }
+          })
+        } else {
+          // Fallback: use tokenSymbols array
+          Object.keys(outputsByToken).forEach((tokenUuid) => {
+            const outputAmount = outputsByToken[tokenUuid] / 100
+
+            const tokenInfo = tokenSymbols.find((t) => t.uuid === tokenUuid)
+            if (tokenInfo) {
+              if (tokenInfo.symbol === token0Symbol) {
+                token0Amount = outputAmount
+              } else if (tokenInfo.symbol === token1Symbol) {
+                token1Amount = outputAmount
+              }
+            }
+          })
         }
       }
       side = 'Remove'
       totalValueUSD = totalUSD
+
     }
   }
 
@@ -479,6 +555,7 @@ export function transformToSimpleTransaction(
     timestamp: complexTx.timestamp,
     timeAgo: formatTimeAgo(complexTx.timestamp),
     type,
+    method: complexTx.method, // Pass through the original method name
     tokenPair,
     amounts,
     token0Symbol,

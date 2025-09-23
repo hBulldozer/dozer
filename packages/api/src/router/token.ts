@@ -298,7 +298,7 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
     return null
   } catch (error) {
     // Silently fail for DozerTools integration - it's optional
-    console.debug(`DozerTools image lookup failed for token ${tokenUuid}`)
+    // console.debug(`DozerTools image lookup failed for token ${tokenUuid}`)
     return null
   }
 }

@@ -178,7 +178,7 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                   className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-2xl')}
                                 />
                               </div>
-                              <div className="flex gap-2 flex-shrink-0">
+                              <div className="flex flex-shrink-0 gap-2">
                                 <Button size="xs" onClick={() => setPercentage('25')}>
                                   25%
                                 </Button>
@@ -192,7 +192,7 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                   MAX
                                 </Button>
                               </div>
-                              <div className="w-36 flex-shrink-0">
+                              <div className="flex-shrink-0 w-25">
                                 <button
                                   onClick={() => setTokenSelectorOpen(true)}
                                   className={classNames(
@@ -202,20 +202,15 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                 >
                                   {selectedToken ? (
                                     <>
-                                      <div className="w-4 h-4 flex-shrink-0">
-                                        <Currency.Icon
-                                          currency={selectedToken}
-                                          width={16}
-                                          height={16}
-                                          priority
-                                        />
+                                      <div className="flex-shrink-0 w-4 h-4">
+                                        <Currency.Icon currency={selectedToken} width={16} height={16} priority />
                                       </div>
-                                      <div className="truncate text-xs">{selectedToken.symbol}</div>
+                                      <div className="text-xs truncate">{selectedToken.symbol}</div>
                                     </>
                                   ) : (
                                     <div className="text-xs">Select</div>
                                   )}
-                                  <div className="w-4 h-4 flex-shrink-0">
+                                  <div className="flex-shrink-0 w-4 h-4">
                                     <ChevronDownIcon width={16} height={16} />
                                   </div>
                                 </button>
@@ -242,7 +237,7 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                 {({ open }) => (
                                   <>
                                     <div className="flex justify-between items-center py-2">
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex gap-2 items-center">
                                         <Typography variant="sm" weight={500} className="text-stone-300">
                                           Transaction Preview
                                         </Typography>
@@ -258,19 +253,26 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                             {open ? 'Hide' : 'Details'}
                                           </Typography>
                                           <svg
-                                            className={`w-5 h-5 transition-transform ${open ? 'rotate-180' : 'rotate-0'}`}
+                                            className={`w-5 h-5 transition-transform ${
+                                              open ? 'rotate-180' : 'rotate-0'
+                                            }`}
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
                                           >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M19 9l-7 7-7-7"
+                                            />
                                           </svg>
                                         </div>
                                       </Disclosure.Button>
                                     </div>
 
                                     {adjustedQuoteData && (
-                                      <div className="space-y-1 text-xs py-2">
+                                      <div className="py-2 space-y-1 text-xs">
                                         <div className="flex justify-between">
                                           <span className="text-stone-400">You will receive:</span>
                                           <div className="text-right">
@@ -311,15 +313,19 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                                   <Typography variant="xs" className="text-stone-300">
                                                     LP Position
                                                   </Typography>
-                                                  {prices && token0 && token1 && prices[token0.uuid] && prices[token1.uuid] && (
-                                                    <Typography variant="xs" className="text-stone-500">
-                                                      $
-                                                      {(
-                                                        adjustedQuoteData.token_a_withdrawn * prices[token0.uuid] +
-                                                        adjustedQuoteData.token_b_withdrawn * prices[token1.uuid]
-                                                      ).toFixed(2)}
-                                                    </Typography>
-                                                  )}
+                                                  {prices &&
+                                                    token0 &&
+                                                    token1 &&
+                                                    prices[token0.uuid] &&
+                                                    prices[token1.uuid] && (
+                                                      <Typography variant="xs" className="text-stone-500">
+                                                        $
+                                                        {(
+                                                          adjustedQuoteData.token_a_withdrawn * prices[token0.uuid] +
+                                                          adjustedQuoteData.token_b_withdrawn * prices[token1.uuid]
+                                                        ).toFixed(2)}
+                                                      </Typography>
+                                                    )}
                                                 </div>
 
                                                 {/* Arrow to Withdrawal */}

@@ -36,6 +36,7 @@ export interface SimpleTransaction {
   timestamp: number
   timeAgo: string // e.g., "13 days"
   type: 'Swap' | 'Add' | 'Remove' | 'Create'
+  method?: string // The actual method name from the contract (e.g., 'add_liquidity_single_token')
   tokenPair: string // e.g., "HTR/CTHOR"
   amounts: string // e.g., "296.14 HTR → 0.31 CTHOR"
   // Token-specific info for Uniswap-like columns
@@ -90,11 +91,19 @@ const TimeCell: React.FC<{ row: SimpleTransaction }> = ({ row }) => {
 }
 
 const TypeCell: React.FC<{ row: SimpleTransaction }> = ({ row }) => {
-  // Use side for Buy/Sell, otherwise use type
-  const typeForColor = row.side === 'Buy' || row.side === 'Sell' ? row.side : row.type
+  // Determine label based on method for more granular display
+  let label = row.type
+  let typeForColor = row.type
+
+  // Single token operations still use the standard Add/Remove labels
+  // The zeroed amount will indicate it was a single token operation
+  if (row.side === 'Buy' || row.side === 'Sell') {
+    // Use side for Buy/Sell
+    label = row.side
+    typeForColor = row.side as 'Swap' | 'Add' | 'Remove' | 'Create'
+  }
+
   const color = getTypeColor(typeForColor)
-  // Just show Buy/Sell without token name
-  const label = row.side === 'Buy' || row.side === 'Sell' ? row.side : row.type
   return <Chip color={color} size="default" label={label} className="font-semibold" />
 }
 
@@ -217,21 +226,25 @@ export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistory
   loading = false,
   error,
   onRefresh,
+  token0Symbol,
+  token1Symbol,
 }) => {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'time', desc: true }])
 
-  // Derive token column headers from first transaction (fallback to tokenPair)
+  // Use provided token symbols or derive from first transaction as fallback
   const token0Header = React.useMemo(() => {
+    if (token0Symbol) return token0Symbol
     const first = transactions[0]
     if (!first) return undefined
     return first.token0Symbol || first.tokenPair.split('/')[0]
-  }, [transactions])
+  }, [token0Symbol, transactions])
 
   const token1Header = React.useMemo(() => {
+    if (token1Symbol) return token1Symbol
     const first = transactions[0]
     if (!first) return undefined
     return first.token1Symbol || first.tokenPair.split('/')[1]
-  }, [transactions])
+  }, [token1Symbol, transactions])
 
   const columns = React.useMemo(() => createColumns(token0Header, token1Header), [token0Header, token1Header])
 
