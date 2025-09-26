@@ -1,7 +1,6 @@
-import { FC, useState } from 'react'
+import { FC, useState, useEffect } from 'react'
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
-import { useRouter } from 'next/router'
 import { Typography, Button, Widget, classNames } from '@dozer/ui'
 import { useWalletConnectClient } from '@dozer/higmi'
 import { api } from '../utils/api'
@@ -10,6 +9,7 @@ import { Layout } from '../components/Layout'
 import { useAccount } from '@dozer/zustand'
 import { motion } from 'framer-motion'
 import { CheckIcon, SparklesIcon } from '@heroicons/react/24/solid'
+import Link from 'next/link'
 
 interface OnboardingPageProps {
   userAddress?: string
@@ -18,7 +18,6 @@ interface OnboardingPageProps {
 type OnboardingStep = 'welcome' | 'complete'
 
 const OnboardingPage: FC<OnboardingPageProps> = () => {
-  const router = useRouter()
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome')
   const { hathorAddress, walletType } = useAccount()
   const { accounts } = useWalletConnectClient()
@@ -31,6 +30,12 @@ const OnboardingPage: FC<OnboardingPageProps> = () => {
         : ''
       : hathorAddress || ''
 
+  // Check enrollment status
+  const { data: enrollmentData, isLoading: enrollmentLoading } = api.getPoints.checkEnrollment.useQuery(
+    { userAddress: walletAddress },
+    { enabled: !!walletAddress }
+  )
+
   // Create user points record mutation using dedicated enrollment endpoint
   const enrollUserMutation = api.getPoints.enrollUser.useMutation({
     onSuccess: () => {
@@ -38,11 +43,30 @@ const OnboardingPage: FC<OnboardingPageProps> = () => {
     },
   })
 
-  // Progress indicator
+  // Auto-redirect if already enrolled
+  useEffect(() => {
+    if (walletAddress && enrollmentData?.isEnrolled && !enrollmentLoading) {
+      setCurrentStep('complete')
+    }
+  }, [walletAddress, enrollmentData, enrollmentLoading])
+
+  // Progress indicator - more reactive to wallet and enrollment state
   const progressSteps = [
-    { id: 'connect', label: 'Connect Wallet', completed: !!walletAddress },
-    { id: 'join', label: 'Join Campaign', completed: currentStep === 'complete' },
-    { id: 'start', label: 'Start Trading', completed: false },
+    {
+      id: 'connect',
+      label: 'Connect Wallet',
+      completed: !!walletAddress,
+    },
+    {
+      id: 'join',
+      label: 'Join Campaign',
+      completed: currentStep === 'complete' || enrollmentData?.isEnrolled || false,
+    },
+    {
+      id: 'start',
+      label: 'Start Trading',
+      completed: false,
+    },
   ]
 
   const handleJoinCampaign = async () => {
@@ -58,13 +82,6 @@ const OnboardingPage: FC<OnboardingPageProps> = () => {
     }
   }
 
-  const handleStartTrading = () => {
-    router.push('/swap')
-  }
-
-  const handleViewPoints = () => {
-    router.push('/points')
-  }
 
   if (!walletAddress) {
     return (
@@ -261,26 +278,28 @@ const OnboardingPage: FC<OnboardingPageProps> = () => {
               className="flex flex-col sm:flex-row gap-6 justify-center"
             >
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  onClick={handleStartTrading}
-                  variant="filled"
-                  color="yellow"
-                  className="text-stone-800 px-8 py-4 text-lg font-semibold"
-                >
-                  <SparklesIcon className="w-5 h-5 mr-2" />
-                  Start Trading
-                </Button>
+                <Link href="/swap">
+                  <Button
+                    variant="filled"
+                    color="yellow"
+                    className="text-stone-800 px-8 py-4 text-lg font-semibold cursor-pointer"
+                  >
+                    <SparklesIcon className="w-5 h-5 mr-2" />
+                    Start Trading
+                  </Button>
+                </Link>
               </motion.div>
 
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  onClick={handleViewPoints}
-                  variant="filled"
-                  color="gray"
-                  className="px-8 py-4 text-lg font-semibold"
-                >
-                  View My Points
-                </Button>
+                <Link href="/points">
+                  <Button
+                    variant="filled"
+                    color="gray"
+                    className="px-8 py-4 text-lg font-semibold cursor-pointer"
+                  >
+                    View My Points
+                  </Button>
+                </Link>
               </motion.div>
             </motion.div>
 
@@ -466,12 +485,12 @@ const OnboardingPage: FC<OnboardingPageProps> = () => {
             </div>
           </motion.div>
 
-          {/* Animated Join Campaign Button */}
+          {/* Animated Join Campaign Button - Positioned Bottom Right */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 1.6 }}
-            className="text-center"
+            className="flex justify-end"
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
@@ -479,7 +498,7 @@ const OnboardingPage: FC<OnboardingPageProps> = () => {
                 variant="filled"
                 color="yellow"
                 className="text-stone-800 px-12 py-4 text-lg font-semibold"
-                disabled={enrollUserMutation.isLoading}
+                disabled={enrollUserMutation.isLoading || enrollmentData?.isEnrolled}
               >
                 {enrollUserMutation.isLoading ? (
                   <motion.div
@@ -492,7 +511,11 @@ const OnboardingPage: FC<OnboardingPageProps> = () => {
                 ) : (
                   <SparklesIcon className="w-5 h-5 mr-2" />
                 )}
-                {enrollUserMutation.isLoading ? 'Joining Campaign...' : 'Join XP Points Campaign'}
+                {enrollUserMutation.isLoading
+                  ? 'Joining Campaign...'
+                  : enrollmentData?.isEnrolled
+                  ? 'Already Enrolled'
+                  : 'Join XP Points Campaign'}
               </Button>
             </motion.div>
           </motion.div>

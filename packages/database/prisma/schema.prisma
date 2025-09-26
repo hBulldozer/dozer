@@ -169,3 +169,30 @@ model Oasis {
   poolId      String
   tokenId      String
 }
+
+model CampaignEnrollment {
+  id            String   @id @default(uuid())
+  userAddress   String   @unique @map("user_address")
+  campaignId    String   @default("xp-points-v1") @map("campaign_id")
+  enrolledAt    DateTime @default(now()) @map("enrolled_at")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Future expansion fields (to be added incrementally)
+  // totalPoints      Int      @default(0) @map("total_points")
+  // weeklyPoints     Int      @default(0) @map("weekly_points")
+  // volumePoints     Int      @default(0) @map("volume_points")
+  // liquidityPoints  Int      @default(0) @map("liquidity_points")
+  // bridgePoints     Int      @default(0) @map("bridge_points")
+  // multiplier       Decimal  @default(1.00) @db.Decimal(3,2)
+  // streakDays       Int      @default(0) @map("streak_days")
+  // lastActivityAt   DateTime? @map("last_activity_at")
+  // currentRank      Int? @map("current_rank")
+  // weeklyRank       Int? @map("weekly_rank")
+
+  @@index([userAddress])
+  @@index([campaignId])
+  @@index([enrolledAt])
+  @@map("campaign_enrollments")
+}

@@ -10,7 +10,7 @@ import type { AppContext, AppProps } from 'next/app'
 import { useRouter } from 'next/router'
 // import { DefaultSeo } from 'next-seo'
 import React, { FC, useEffect } from 'react'
-
+import { MetaMaskProvider } from '@dozer/snap-utils'
 import type { AppType } from 'next/app'
 import { api } from 'utils/api'
 import { Header } from '../components'
@@ -76,16 +76,18 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
       <ThemeProvider>
         <App.Shell>
           <ClientContextProvider>
-            <JsonRpcContextProvider>
-              <BridgeProvider>
-                <Header />
-                <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
-                  <Component {...pageProps} />
-                </MotionConfig>
-                <App.Footer />
-                <ToastContainer className="mt-[50px]" />
-              </BridgeProvider>
-            </JsonRpcContextProvider>
+            <MetaMaskProvider>
+              <JsonRpcContextProvider>
+                <BridgeProvider>
+                  <Header />
+                  <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
+                    <Component {...pageProps} />
+                  </MotionConfig>
+                  <App.Footer />
+                  <ToastContainer className="mt-[50px]" />
+                </BridgeProvider>
+              </JsonRpcContextProvider>
+            </MetaMaskProvider>
           </ClientContextProvider>
         </App.Shell>
       </ThemeProvider>

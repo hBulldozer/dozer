@@ -8,6 +8,7 @@ interface PointsCardProps {
   color?: 'blue' | 'green' | 'purple' | 'yellow'
   subtitle?: string
   isLoading?: boolean
+  cachedPoints?: number // Show cached data while loading
 }
 
 const colorClasses = {
@@ -31,6 +32,7 @@ export const PointsCard: FC<PointsCardProps> = ({
   color = 'blue',
   subtitle,
   isLoading = false,
+  cachedPoints,
 }) => {
   return (
     <div
@@ -48,16 +50,29 @@ export const PointsCard: FC<PointsCardProps> = ({
             </Typography>
           </div>
 
-          {isLoading ? (
+          {isLoading && cachedPoints === undefined ? (
             <div className="animate-pulse">
               <div className="h-8 w-24 bg-gray-600 rounded mb-1"></div>
               {subtitle && <div className="h-4 w-16 bg-gray-600 rounded"></div>}
             </div>
           ) : (
             <>
-              <Typography variant="h2" className="text-white font-bold mb-1">
-                {points.toLocaleString()}
-              </Typography>
+              <div className="relative">
+                <Typography
+                  variant="h2"
+                  className={classNames(
+                    "font-bold mb-1 transition-opacity duration-300",
+                    isLoading && cachedPoints !== undefined ? "text-gray-400" : "text-white"
+                  )}
+                >
+                  {isLoading && cachedPoints !== undefined ? cachedPoints.toLocaleString() : points.toLocaleString()}
+                </Typography>
+                {isLoading && cachedPoints !== undefined && (
+                  <div className="absolute top-0 right-0">
+                    <div className="w-4 h-4 border-2 border-gray-500 border-t-blue-500 rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </div>
               {subtitle && (
                 <Typography variant="xs" className="text-gray-400">
                   {subtitle}

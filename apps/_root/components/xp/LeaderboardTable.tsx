@@ -198,9 +198,51 @@ export const LeaderboardTable: FC<LeaderboardTableProps> = ({
     },
   })
 
+  // Show skeleton rows when loading and no data
+  if (isLoading && data.length === 0) {
+    const skeletonRows = Array.from({ length: 5 }, (_, i) => ({
+      id: `skeleton-${i}`,
+      rank: i + 1,
+      userAddress: 'H' + '0'.repeat(33),
+      totalPoints: 0,
+      volumePoints: 0,
+      liquidityPoints: 0,
+      multiplier: 1.0,
+      updatedAt: new Date(),
+    }))
+
+    return (
+      <div className="space-y-4">
+        <div className="animate-pulse">
+          {skeletonRows.map((_, index) => (
+            <div
+              key={`skeleton-${index}`}
+              className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30 border border-gray-700/50"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gray-600/50 rounded-full"></div>
+                <div className="w-10 h-10 bg-gray-600/50 rounded-full"></div>
+                <div className="space-y-2">
+                  <div className="h-4 w-24 bg-gray-600/50 rounded"></div>
+                  <div className="h-3 w-16 bg-gray-600/50 rounded"></div>
+                </div>
+              </div>
+              <div className="flex gap-6">
+                <div className="h-4 w-16 bg-gray-600/50 rounded"></div>
+                <div className="h-4 w-12 bg-gray-600/50 rounded"></div>
+                <div className="h-4 w-12 bg-gray-600/50 rounded"></div>
+                <div className="h-4 w-8 bg-gray-600/50 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      <GenericTable table={table} loading={isLoading} pageSize={25} placeholder="No leaderboard data available" />
+      <GenericTable table={table} loading={false} pageSize={5} placeholder="No leaderboard data available" />
 
       {hasMore && !isLoading && (
         <div className="flex justify-center pt-4">
@@ -210,6 +252,15 @@ export const LeaderboardTable: FC<LeaderboardTableProps> = ({
           >
             Load More
           </button>
+        </div>
+      )}
+
+      {isLoading && data.length > 0 && (
+        <div className="flex justify-center pt-4">
+          <div className="inline-flex items-center px-4 py-2 text-sm text-gray-400">
+            <div className="animate-spin -ml-1 mr-3 h-4 w-4 border-2 border-gray-600 border-t-blue-500 rounded-full"></div>
+            Loading more...
+          </div>
         </div>
       )}
     </div>

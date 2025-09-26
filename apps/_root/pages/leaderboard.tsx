@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react'
+import { FC, useState, useEffect, useMemo, useCallback } from 'react'
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -35,10 +35,17 @@ const LeaderboardPage: FC<LeaderboardPageProps> = () => {
   const { accounts } = useWalletConnectClient()
 
   // Get the appropriate address based on wallet type
-  const userAddress =
-    walletType === 'walletconnect' ? (accounts && accounts.length > 0 ? accounts[0].split(':')[2] : '') : hathorAddress || ''
+  const userAddress = useMemo(
+    () =>
+      walletType === 'walletconnect'
+        ? accounts && accounts.length > 0
+          ? accounts[0].split(':')[2]
+          : ''
+        : hathorAddress || '',
+    [walletType, accounts, hathorAddress]
+  )
 
-  const limit = 25
+  const limit = 5
 
   // Check enrollment status
   const { data: enrollmentData, isLoading: enrollmentLoading } = api.getPoints.checkEnrollment.useQuery(
@@ -75,15 +82,15 @@ const LeaderboardPage: FC<LeaderboardPageProps> = () => {
   // Fetch user's rank if address is provided
   const { data: userRankData } = api.getPoints.getUserRank.useQuery({ userAddress }, { enabled: !!userAddress })
 
-  const handlePeriodChange = (period: Period) => {
+  const handlePeriodChange = useCallback((period: Period) => {
     setSelectedPeriod(period)
     setOffset(0)
     setAllData([])
-  }
+  }, [])
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     setOffset((prev) => prev + limit)
-  }
+  }, [limit])
 
   const periodLabels = {
     weekly: 'Last 7 Days',
@@ -91,12 +98,16 @@ const LeaderboardPage: FC<LeaderboardPageProps> = () => {
   }
 
   // Add id field to data for table compatibility
-  const processedData = allData.map((item) => ({
-    ...item,
-    id: `leaderboard-${item.rank}-${item.userAddress}`,
-  }))
+  const processedData = useMemo(
+    () =>
+      allData.map((item) => ({
+        ...item,
+        id: `leaderboard-${item.rank}-${item.userAddress}`,
+      })),
+    [allData]
+  )
 
-  const topThree = processedData.slice(0, 3)
+  const topThree = useMemo(() => processedData.slice(0, 3), [processedData])
 
   return (
     <>
@@ -114,20 +125,12 @@ const LeaderboardPage: FC<LeaderboardPageProps> = () => {
             transition={{ duration: 0.8 }}
             className="text-center space-y-4"
           >
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
+            <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ duration: 0.6, delay: 0.2 }}>
               <Typography variant="h1" className="text-white font-bold">
                 XP Points Leaderboard
               </Typography>
             </motion.div>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }}>
               <Typography variant="lg" className="text-gray-400">
                 See how you rank against other traders and liquidity providers
               </Typography>
@@ -163,57 +166,39 @@ const LeaderboardPage: FC<LeaderboardPageProps> = () => {
             ))}
           </motion.div>
 
-          {/* Animated User's Rank Card (if logged in) */}
-          {userAddress && userRankData && (
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.0 }}
-            >
-              <Widget id="user-rank" maxWidth="full">
-                <Widget.Header title="Your Ranking" />
-                <Widget.Content>
-                  <div className="py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center border border-blue-500/30"
-                        >
-                          <Typography variant="lg" className="text-blue-300 font-bold">
-                            #{userRankData.rank}
-                          </Typography>
-                        </motion.div>
-                        <div>
-                          <Typography variant="base" className="text-white font-semibold">
-                            Your Address
-                          </Typography>
-                          <Typography variant="sm" className="text-gray-400 font-mono">
-                            {userAddress.slice(0, 8)}...{userAddress.slice(-8)}
-                          </Typography>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <PointsCounter value={userRankData.totalPoints || 0} size="lg" className="text-blue-400" />
-                        <Typography variant="sm" className="text-gray-400">
-                          Total Points
-                        </Typography>
-                      </div>
-                    </div>
-                  </div>
-                </Widget.Content>
-              </Widget>
-            </motion.div>
-          )}
+          {/* Full Leaderboard Table - Moved to top */}
+          <Widget id="full-leaderboard" maxWidth="full">
+            <Widget.Header title="">
+              <div className="!text-left !justify-start !items-start flex flex-col w-full">
+                <div className="flex items-baseline gap-4 mb-1 !justify-start w-full">
+                  <Typography variant="h2" className="text-white font-bold !text-left">
+                    Full Leaderboard
+                  </Typography>
+                  {userAddress && userRankData && enrollmentData?.isEnrolled && (
+                    <span className="text-gray-400 text-sm">
+                      Your Rank: <span className="text-blue-400 font-bold">#{userRankData.rank}</span> <PointsCounter value={userRankData.totalPoints || 0} size="sm" className="text-blue-400 inline" />
+                    </span>
+                  )}
+                </div>
+                <Typography variant="sm" className="text-gray-400 !text-left">
+                  {periodLabels[selectedPeriod]} Rankings
+                </Typography>
+              </div>
+            </Widget.Header>
+            <Widget.Content>
+              <LeaderboardTable
+                data={allData}
+                isLoading={isLoading}
+                currentUserAddress={userAddress}
+                onLoadMore={handleLoadMore}
+                hasMore={leaderboardData?.hasMore || false}
+              />
+            </Widget.Content>
+          </Widget>
 
-          {/* Animated Top 3 Podium */}
+          {/* Top 3 Podium */}
           {topThree.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.2 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6"
-            >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Second Place */}
               {topThree[1] && (
                 <div className="order-1 md:order-1">
@@ -222,9 +207,9 @@ const LeaderboardPage: FC<LeaderboardPageProps> = () => {
                       <div className="text-center py-8">
                         <div className="space-y-4">
                           <div className="text-4xl">🥈</div>
-                          <Typography variant="h3" className="text-gray-300 font-bold">
+                          {/* <Typography variant="h3" className="text-gray-300 font-bold">
                             #{topThree[1].rank}
-                          </Typography>
+                          </Typography> */}
                           <div className="w-16 h-16 mx-auto bg-gray-400/20 rounded-full flex items-center justify-center border border-gray-400/30">
                             <Typography variant="lg" className="text-gray-300 font-bold">
                               {topThree[1].userAddress.slice(0, 2).toUpperCase()}
@@ -249,9 +234,9 @@ const LeaderboardPage: FC<LeaderboardPageProps> = () => {
                       <div className="text-center py-8">
                         <div className="space-y-4">
                           <div className="text-5xl">🥇</div>
-                          <Typography variant="h3" className="text-yellow-300 font-bold">
+                          {/* <Typography variant="h3" className="text-yellow-300 font-bold">
                             #{topThree[0].rank}
-                          </Typography>
+                          </Typography> */}
                           <div className="w-20 h-20 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center border-2 border-yellow-500/30">
                             <Typography variant="h3" className="text-yellow-300 font-bold">
                               {topThree[0].userAddress.slice(0, 2).toUpperCase()}
@@ -279,9 +264,9 @@ const LeaderboardPage: FC<LeaderboardPageProps> = () => {
                       <div className="text-center py-8">
                         <div className="space-y-4">
                           <div className="text-4xl">🥉</div>
-                          <Typography variant="h3" className="text-amber-600 font-bold">
+                          {/* <Typography variant="h3" className="text-amber-600 font-bold">
                             #{topThree[2].rank}
-                          </Typography>
+                          </Typography> */}
                           <div className="w-16 h-16 mx-auto bg-amber-600/20 rounded-full flex items-center justify-center border border-amber-600/30">
                             <Typography variant="lg" className="text-amber-600 font-bold">
                               {topThree[2].userAddress.slice(0, 2).toUpperCase()}
@@ -297,28 +282,9 @@ const LeaderboardPage: FC<LeaderboardPageProps> = () => {
                   </Widget>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
 
-          {/* Animated Full Leaderboard Table */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.4 }}
-          >
-            <Widget id="full-leaderboard" maxWidth="full">
-              <Widget.Header title={`Full Leaderboard - ${periodLabels[selectedPeriod]}`} />
-              <Widget.Content>
-                <LeaderboardTable
-                  data={allData}
-                  isLoading={isLoading}
-                  currentUserAddress={userAddress}
-                  onLoadMore={handleLoadMore}
-                  hasMore={leaderboardData?.hasMore || false}
-                />
-              </Widget.Content>
-            </Widget>
-          </motion.div>
 
           {/* How to Earn Points Section */}
           <motion.div

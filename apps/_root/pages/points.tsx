@@ -2,7 +2,7 @@ import { FC, useState, useEffect } from 'react'
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import { Typography, Button, Widget } from '@dozer/ui'
+import { Typography, Button, Widget, classNames } from '@dozer/ui'
 import { useWalletConnectClient } from '@dozer/higmi'
 import { api } from '../utils/api'
 import { PointsCard, PointsCounter } from '../components/xp'
@@ -10,6 +10,7 @@ import { Layout } from '../components/Layout'
 import { useAccount } from '@dozer/zustand'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TrophyIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/solid'
+import { useRealtimePoints } from '../hooks/useRealtimePoints'
 
 interface PointsPageProps {
   userAddress?: string
@@ -20,6 +21,7 @@ const PointsPage: FC<PointsPageProps> = () => {
   const { hathorAddress, walletType } = useAccount()
   const { accounts } = useWalletConnectClient()
   const [showCelebration, setShowCelebration] = useState(false)
+  const [cachedPointsData, setCachedPointsData] = useState<any>(null)
 
   // Get the appropriate address based on wallet type
   const userAddress =
@@ -38,8 +40,16 @@ const PointsPage: FC<PointsPageProps> = () => {
   // Fetch user points data
   const { data: pointsData, isLoading: pointsLoading } = api.getPoints.getUserPoints.useQuery(
     { userAddress },
-    { enabled: !!userAddress && enrollmentData?.isEnrolled }
+    {
+      enabled: !!userAddress && enrollmentData?.isEnrolled,
+      onSuccess: (data) => {
+        setCachedPointsData(data)
+      },
+    }
   )
+
+  // Use cached data if available while loading
+  const displayPointsData = pointsLoading ? cachedPointsData : pointsData
 
   // Fetch user rank
   const { data: rankData } = api.getPoints.getUserRank.useQuery(
@@ -51,8 +61,8 @@ const PointsPage: FC<PointsPageProps> = () => {
   const { triggerManualRefresh } = useRealtimePoints(userAddress)
 
   const calculateTotalPoints = () => {
-    if (!pointsData) return 0
-    return (pointsData.volumePoints + pointsData.liquidityPoints) * pointsData.multiplier // Removed referralPoints
+    if (!displayPointsData) return 0
+    return (displayPointsData.volumePoints + displayPointsData.liquidityPoints) * displayPointsData.multiplier // Removed referralPoints
   }
 
   const totalPoints = calculateTotalPoints()
@@ -173,8 +183,21 @@ const PointsPage: FC<PointsPageProps> = () => {
                           <motion.div
                             animate={showCelebration ? { scale: [1, 1.1, 1] } : {}}
                             transition={{ duration: 0.5 }}
+                            className="relative"
                           >
-                            <PointsCounter value={totalPoints} size="xl" className="text-yellow-400" />
+                            <PointsCounter
+                              value={totalPoints}
+                              size="xl"
+                              className={classNames(
+                                "transition-opacity duration-300",
+                                pointsLoading && cachedPointsData ? "text-gray-400" : "text-yellow-400"
+                              )}
+                            />
+                            {pointsLoading && cachedPointsData && (
+                              <div className="absolute top-2 right-2">
+                                <div className="w-6 h-6 border-2 border-gray-500 border-t-yellow-400 rounded-full animate-spin"></div>
+                              </div>
+                            )}
                           </motion.div>
                           <Typography variant="lg" className="text-gray-400">
                             Total Points Earned
@@ -217,6 +240,7 @@ const PointsPage: FC<PointsPageProps> = () => {
                       color="blue"
                       subtitle="From trading volume"
                       isLoading={pointsLoading}
+                      cachedPoints={cachedPointsData?.volumePoints}
                     />
                   </motion.div>
 
@@ -228,6 +252,7 @@ const PointsPage: FC<PointsPageProps> = () => {
                       color="green"
                       subtitle="From providing liquidity"
                       isLoading={pointsLoading}
+                      cachedPoints={cachedPointsData?.liquidityPoints}
                     />
                   </motion.div>
                 </motion.div>
@@ -262,11 +287,23 @@ const PointsPage: FC<PointsPageProps> = () => {
                         Current Multiplier
                       </Typography>
                       <motion.div
-                        className="text-4xl font-bold text-yellow-400"
+                        className="relative"
                         animate={showCelebration ? { scale: [1, 1.2, 1] } : {}}
                         transition={{ duration: 0.5 }}
                       >
-                        {pointsData?.multiplier || 1.0}x
+                        <div
+                          className={classNames(
+                            "text-4xl font-bold transition-opacity duration-300",
+                            pointsLoading && cachedPointsData ? "text-gray-400" : "text-yellow-400"
+                          )}
+                        >
+                          {(pointsLoading && cachedPointsData ? cachedPointsData?.multiplier : pointsData?.multiplier) || 1.0}x
+                        </div>
+                        {pointsLoading && cachedPointsData && (
+                          <div className="absolute top-1 right-1">
+                            <div className="w-4 h-4 border-2 border-gray-500 border-t-yellow-400 rounded-full animate-spin"></div>
+                          </div>
+                        )}
                       </motion.div>
                       <Typography variant="sm" className="text-gray-400">
                         Base multiplier for all points
