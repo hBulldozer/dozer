@@ -12,12 +12,11 @@ import { isFeatureEnabled } from 'config/features'
 export const Header: FC = () => {
   const { accounts } = useWalletConnectClient()
   const { walletType, hathorAddress } = useAccount()
-  
+
   // Get the appropriate address based on wallet type (kept for potential future use)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const address = walletType === 'walletconnect' 
-    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
-    : hathorAddress || ''
+  const address =
+    walletType === 'walletconnect' ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') : hathorAddress || ''
 
   // const [notifications, { clearNotifications }] = useNotifications(address)
 
@@ -40,6 +39,19 @@ export const Header: FC = () => {
               <App.NavItem key="swap" href="/" label="Swap" />,
               <App.NavItem key="tokens" href="/tokens" label="Tokens" />,
               <App.NavItem key="pools" href={`${process.env.NEXT_PUBLIC_SITE_URL}/pool`} label="Pools" />,
+              // XP Points Campaign Links
+              <App.NavItem
+                key="points"
+                href={`${process.env.NEXT_PUBLIC_SITE_URL}/points`}
+                label="XP Points"
+                className="text-yellow-400 hover:text-yellow-300"
+              />,
+              <App.NavItem
+                key="leaderboard"
+                href={`${process.env.NEXT_PUBLIC_SITE_URL}/leaderboard`}
+                label="Leaderboard"
+                className="text-yellow-400 hover:text-yellow-300"
+              />,
             ].filter(Boolean) as React.ReactElement[]
           }
         </App.NavItemList>

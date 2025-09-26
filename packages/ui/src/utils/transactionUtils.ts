@@ -78,6 +78,14 @@ const formatUSD = (amount: number): string => {
   }
 }
 
+// Helper function to format amounts that might be dashes
+const formatAmount = (amount: number | string): string => {
+  if (typeof amount === 'string') {
+    return amount // Return dash as-is
+  }
+  return amount.toFixed(2)
+}
+
 // Transform complex transaction to simple format
 export function transformToSimpleTransaction(
   complexTx: ComplexTransaction,
@@ -103,11 +111,11 @@ export function transformToSimpleTransaction(
   else if (complexTx.method.includes('remove_liquidity')) type = 'Remove'
   else if (complexTx.method.includes('create_pool')) type = 'Create'
   else if (complexTx.method.includes('swap_exact_tokens_for_tokens_through_path')) {
-    // Filter out multi-hop swaps as they are complex to parse and involve multiple pools
-    return null
+    // Multi-hop swaps are now handled with dashes for unknown amounts
+    type = 'Swap'
   } else if (complexTx.method.includes('swap_tokens_for_exact_tokens_through_path')) {
-    // Filter out multi-hop swaps as they are complex to parse and involve multiple pools
-    return null
+    // Multi-hop swaps are now handled with dashes for unknown amounts
+    type = 'Swap'
   } else if (complexTx.method.includes('swap')) type = 'Swap'
 
   // Extract token information
@@ -239,7 +247,7 @@ export function transformToSimpleTransaction(
       (receivedToken === '00' ? 'HTR' : receivedToken.substring(0, 8).toUpperCase())
 
     if (spentAmount > 0 && receivedAmount > 0) {
-      amounts = `${spentAmount.toFixed(2)} ${spentSymbol} → ${receivedAmount.toFixed(2)} ${receivedSymbol}`
+      amounts = `${formatAmount(spentAmount)} ${spentSymbol} → ${formatAmount(receivedAmount)} ${receivedSymbol}`
       // map amounts to token0/token1 for table
       if (token0Symbol && token1Symbol) {
         if (spentSymbol === token0Symbol) {
@@ -341,7 +349,7 @@ export function transformToSimpleTransaction(
           const symbol =
             tokenSymbols.find((t) => t.uuid === token)?.symbol ||
             (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
-          amounts_list.push(`${netAmount.toFixed(2)} ${symbol}`)
+          amounts_list.push(`${formatAmount(netAmount)} ${symbol}`)
 
           if (pricesUSD && pricesUSD[token]) {
             totalUSD += netAmount * pricesUSD[token]
@@ -390,7 +398,7 @@ export function transformToSimpleTransaction(
           const symbol =
             tokenSymbols.find((t) => t.uuid === token)?.symbol ||
             (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
-          amounts_list.push(`${outputAmount.toFixed(2)} ${symbol}`)
+          amounts_list.push(`${formatAmount(outputAmount)} ${symbol}`)
 
           if (pricesUSD && pricesUSD[token]) {
             totalUSD += outputAmount * pricesUSD[token]
@@ -438,7 +446,7 @@ export function transformToSimpleTransaction(
           const symbol =
             tokenSymbols.find((t) => t.uuid === token)?.symbol ||
             (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
-          amounts_list.push(`${amount.toFixed(2)} ${symbol}`)
+          amounts_list.push(`${formatAmount(amount)} ${symbol}`)
 
           if (pricesUSD && pricesUSD[token]) {
             totalUSD += amount * pricesUSD[token]

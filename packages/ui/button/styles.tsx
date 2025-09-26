@@ -13,12 +13,14 @@ export const BUTTON_CLASSES: Record<string, string> = {
   'btn-outlined-gradient':
     'bg-gradient-to-r hover:ring-4 ring-stone-600 ring-amber/30 from-yellow to-yellow focus:border-yellow-700',
   'btn-outlined-gray': 'border-stone-700 ring-stone-700 text-stone-400',
+  'btn-outlined-blue': 'border-blue-600 ring-blue-700 text-blue-600',
   'btn-filled-red': 'bg-red ring-red-700',
   'btn-filled-yellow': '!text-stone-800 bg-yellow ring-yellow-500 hover:bg-yellow-600 focus:bg-yellow-600',
   'btn-filled-amber': 'bg-amber ring-amber-700',
   'btn-filled-gradient':
     'bg-gradient-to-r hover:ring-4 !ring-yellow/20 from-yellow-600 to-yellow-600 focus:border-yellow-700',
   'btn-filled-gray': 'bg-stone-700 ring-stone-600',
+  'btn-filled-blue': 'bg-blue-600 ring-blue-700',
   'btn-xs': 'px-2 h-[28px] text-xs',
   'btn-sm': 'px-3 h-[36px] text-sm font-semibold',
   'btn-default': 'px-3 h-[44px] text-sm font-semibold',
@@ -28,6 +30,8 @@ export const BUTTON_CLASSES: Record<string, string> = {
   'btn-empty-yellow': 'text-yellow hover:text-yellow-300',
   'btn-empty-amber': 'text-amber hover:text-amber-300',
   'btn-empty-gray': 'text-stone-400 hover:text-stone-200',
+  'btn-empty-blue': 'text-blue-600 hover:text-blue-300',
+  'btn-empty-gradient': 'text-yellow hover:text-yellow-300',
 }
 
 export const BUTTON_STYLES: Record<ButtonVariant, Record<ButtonColor, string>> = {

@@ -15,6 +15,7 @@ const SnapUtilsDemo = () => {
   const invokeSnap = useInvokeSnap()
   const { hathorRpc, isRpcRequestPending, rpcResult } = useJsonRpc()
   const faucetMutation = api.getFaucet.sendHTR.useMutation()
+  const utils = api.useUtils()
 
   // Use unified wallet state from Zustand store
   const {
@@ -833,8 +834,8 @@ const SnapUtilsDemo = () => {
         addLog(`📊 Found ${pools.length} pools:`)
         pools.slice(0, 5).forEach((pool, index) => {
           addLog(
-            `${index + 1}. ${pool.token0Symbol}/${pool.token1Symbol} - Fee: ${pool.fee}% - TVL: $${
-              pool.totalValueLockedUSD || 'N/A'
+            `${index + 1}. ${pool.token0.symbol}/${pool.token1.symbol} - Fee: ${pool.swapFee}% - TVL: $${
+              pool.liquidityUSD || 'N/A'
             }`
           )
         })
@@ -842,25 +843,25 @@ const SnapUtilsDemo = () => {
         // Find specific pools for debugging
         const htrDzrPool = pools.find(
           (pool) =>
-            (pool.token0Symbol === 'HTR' && pool.token1Symbol === 'DZR') ||
-            (pool.token0Symbol === 'DZR' && pool.token1Symbol === 'HTR')
+            (pool.token0.symbol === 'HTR' && pool.token1.symbol === 'DZR') ||
+            (pool.token0.symbol === 'DZR' && pool.token1.symbol === 'HTR')
         )
 
         const hUSDCPool = pools.find(
           (pool) =>
-            pool.token0Symbol === 'hUSDC' || pool.token1Symbol === 'hUSDC'
+            pool.token0.symbol === 'hUSDC' || pool.token1.symbol === 'hUSDC'
         )
 
         if (htrDzrPool) {
           addLog(`🎯 HTR/DZR Pool:`)
-          addLog(`   - Tokens: ${htrDzrPool.token0Symbol}/${htrDzrPool.token1Symbol}`)
-          addLog(`   - Fee: ${htrDzrPool.fee}% - TVL: $${htrDzrPool.totalValueLockedUSD || 'N/A'}`)
+          addLog(`   - Tokens: ${htrDzrPool.token0.symbol}/${htrDzrPool.token1.symbol}`)
+          addLog(`   - Fee: ${htrDzrPool.swapFee}% - TVL: $${htrDzrPool.liquidityUSD || 'N/A'}`)
         }
 
         if (hUSDCPool) {
           addLog(`💰 hUSDC Pool:`)
-          addLog(`   - Tokens: ${hUSDCPool.token0Symbol}/${hUSDCPool.token1Symbol}`)
-          addLog(`   - Fee: ${hUSDCPool.fee}% - TVL: $${hUSDCPool.totalValueLockedUSD || 'N/A'}`)
+          addLog(`   - Tokens: ${hUSDCPool.token0.symbol}/${hUSDCPool.token1.symbol}`)
+          addLog(`   - Fee: ${hUSDCPool.swapFee}% - TVL: $${hUSDCPool.liquidityUSD || 'N/A'}`)
         }
 
         // Show token information
@@ -931,60 +932,61 @@ const SnapUtilsDemo = () => {
         return
       }
 
-      // Get tokens for UUIDs
-      const tokens = await utils.getTokens.all.fetch()
-      const fromTokenData = tokens?.find(t => t.symbol === fromToken)
-      const toTokenData = tokens?.find(t => t.symbol === toToken)
-
-      if (!fromTokenData || !toTokenData) {
-        addLog(`❌ Token data not found`)
-        return
-      }
+      // Use hardcoded token UUIDs like the working examples
+      const poolManagerId = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID || '00003274b072d50f82a62d75277f8dcff83c6e35c4a8314c207f8a2cc24fa4bc'
+      
+      let fromTokenUUID = '00' // HTR default
+      let toTokenUUID = '000000006c82966f45145fdc6caef7676ecbbbe7a0e7fc3025b9b69e217db7d8' // DZR default
+      
+      // Set token UUIDs based on symbols
+      if (fromToken === 'HTR') fromTokenUUID = '00'
+      if (fromToken === 'DZR') fromTokenUUID = '000000006c82966f45145fdc6caef7676ecbbbe7a0e7fc3025b9b69e217db7d8'
+      if (fromToken === 'hUSDC') fromTokenUUID = process.env.NEXT_PUBLIC_hUSDC_UUID || '000000006c82966f45145fdc6caef7676ecbbbe7a0e7fc3025b9b69e217db7d8'
+      
+      if (toToken === 'HTR') toTokenUUID = '00'
+      if (toToken === 'DZR') toTokenUUID = '000000006c82966f45145fdc6caef7676ecbbbe7a0e7fc3025b9b69e217db7d8'
+      if (toToken === 'hUSDC') toTokenUUID = process.env.NEXT_PUBLIC_hUSDC_UUID || '000000006c82966f45145fdc6caef7676ecbbbe7a0e7fc3025b9b69e217db7d8'
 
       // Calculate minimum amount out (5% slippage)
       const minAmountOut = quote.amountOut * 0.95
+      const amountInCents = Math.round(amount * 100)
+      const minAmountOutCents = Math.round(minAmountOut * 100)
 
       addLog(`📋 Swap Details:`)
-      addLog(`   - From: ${amount} ${fromToken} (${fromTokenData.uuid})`)
-      addLog(`   - To: ${quote.amountOut} ${toToken} (${toTokenData.uuid})`)
+      addLog(`   - From: ${amount} ${fromToken} (${fromTokenUUID})`)
+      addLog(`   - To: ${quote.amountOut} ${toToken} (${toTokenUUID})`)
       addLog(`   - Min Out: ${minAmountOut} ${toToken}`)
       addLog(`   - Path: ${quote.path}`)
 
+      // Copy the exact working pattern from existing dozerSwap function
       const result = await invokeSnap({
         snapId: snapStatus.id,
-        method: 'htr_sendTransaction',
+        method: 'htr_sendNanoContractTx',
         params: {
-          version: 2,
-          weight: 1,
-          parents: [],
-          inputs: [
+          nc_id: poolManagerId,
+          method: 'swap_exact_tokens_for_tokens',
+          actions: [
             {
               type: 'withdrawal',
-              token: fromTokenData.uuid,
-              amount: Math.round(amount * 100), // Convert to cents
+              token: fromTokenUUID,
+              amount: amountInCents,
+              address: hathorAddress,
+              changeAddress: hathorAddress,
+            },
+            {
+              type: 'withdrawal', 
+              token: toTokenUUID,
+              amount: minAmountOutCents,
               address: hathorAddress,
               changeAddress: hathorAddress,
             },
           ],
-          outputs: [
-            {
-              type: 'withdrawal',
-              token: toTokenData.uuid,
-              amount: Math.round(minAmountOut * 100), // Convert to cents
-              address: hathorAddress,
-              changeAddress: hathorAddress,
-            },
+          args: [
+            amountInCents, // amountIn in cents
+            minAmountOutCents, // minAmountOut in cents
+            quote.path || `${fromTokenUUID}/${toTokenUUID}/100`, // path from quote or constructed
+            hathorAddress, // to address
           ],
-          nanoContractData: {
-            ncId: process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID,
-            method: 'swap_exact_tokens_for_tokens',
-            args: [
-              Math.round(amount * 100), // amountIn in cents
-              Math.round(minAmountOut * 100), // minAmountOut in cents
-              quote.path, // path from quote
-              hathorAddress, // to address
-            ],
-          },
         },
       })
 
@@ -1018,95 +1020,48 @@ const SnapUtilsDemo = () => {
     }
 
     try {
-      addLog('🔄 Adding HTR/hUSDC liquidity with real quote...')
+      addLog('🔄 Adding HTR/hUSDC liquidity...')
       
-      // Get tokens and pool data
-      const tokens = await utils.getTokens.all.fetch()
-      const pools = await utils.getPools.all.fetch()
-      
-      const htrToken = tokens?.find(t => t.symbol === 'HTR')
-      const hUSDCToken = tokens?.find(t => t.symbol === 'hUSDC')
-      
-      if (!htrToken || !hUSDCToken) {
-        addLog('❌ HTR or hUSDC token not found')
-        return
-      }
+      // Use the same pattern as the working add liquidity function
+      const poolManagerId = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID || '00003274b072d50f82a62d75277f8dcff83c6e35c4a8314c207f8a2cc24fa4bc'
+      const htrToken = '00' // HTR token UUID
+      const hUSDCToken = process.env.NEXT_PUBLIC_hUSDC_UUID || '000000006c82966f45145fdc6caef7676ecbbbe7a0e7fc3025b9b69e217db7d8'
+      const amountHTR = 5000 // 50.00 HTR (in cents)
+      const amountHUSDC = 2500 // 25.00 hUSDC (in cents)
+      const fee = 100 // 1% fee (in basis points)
 
-      // Find HTR/hUSDC pool
-      const htrHUSDCPool = pools?.find(
-        (pool) =>
-          (pool.token0Symbol === 'HTR' && pool.token1Symbol === 'hUSDC') ||
-          (pool.token0Symbol === 'hUSDC' && pool.token1Symbol === 'HTR')
-      )
+      addLog(`💰 Adding ${amountHTR / 100} HTR + ${amountHUSDC / 100} hUSDC liquidity (fee: ${fee / 100}%)`)
+      addLog(`📄 Pool Manager: ${poolManagerId}`)
+      addLog(`🏦 hUSDC Token: ${hUSDCToken}`)
 
-      if (!htrHUSDCPool) {
-        addLog('❌ HTR/hUSDC pool not found')
-        return
-      }
-
-      const poolKey = `${htrHUSDCPool.token0Uuid}/${htrHUSDCPool.token1Uuid}/${Math.round(htrHUSDCPool.fee * 100)}`
-      const amountHTR = 50 // 50 HTR
-      
-      addLog(`📋 Pool Key: ${poolKey}`)
-
-      // Get liquidity quote
-      const quote = await utils.getPools.front_quote_add_liquidity_in.fetch({
-        id: poolKey,
-        amount_in: amountHTR,
-        token_in: htrToken.uuid
-      })
-
-      if (!quote) {
-        addLog('❌ Cannot get liquidity quote')
-        return
-      }
-
-      addLog(`💹 Liquidity Quote:`)
-      addLog(`   - HTR In: ${amountHTR}`)
-      addLog(`   - hUSDC Required: ${quote.amount_out}`)
-      addLog(`   - LP Tokens: ${quote.lp_tokens_out}`)
-
-      // Execute add liquidity transaction
+      // Copy the exact working pattern from dozerAddLiquidity
       const result = await invokeSnap({
         snapId: snapStatus.id,
-        method: 'htr_sendTransaction',
+        method: 'htr_sendNanoContractTx',
         params: {
-          version: 2,
-          weight: 1,
-          parents: [],
-          inputs: [
+          nc_id: poolManagerId,
+          method: 'add_liquidity',
+          actions: [
             {
-              type: 'withdrawal',
-              token: htrToken.uuid,
-              amount: Math.round(amountHTR * 100),
+              type: 'deposit',
+              token: htrToken,
+              amount: amountHTR,
               address: hathorAddress,
               changeAddress: hathorAddress,
             },
             {
-              type: 'withdrawal',
-              token: hUSDCToken.uuid,
-              amount: Math.round(quote.amount_out * 100),
+              type: 'deposit',
+              token: hUSDCToken,
+              amount: amountHUSDC,
               address: hathorAddress,
               changeAddress: hathorAddress,
             },
           ],
-          outputs: [],
-          nanoContractData: {
-            ncId: process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID,
-            method: 'add_liquidity',
-            args: [
-              poolKey, // pool key
-              Math.round(amountHTR * 100), // amount0Desired in cents
-              Math.round(quote.amount_out * 100), // amount1Desired in cents
-              Math.round(amountHTR * 0.95 * 100), // amount0Min (5% slippage)
-              Math.round(quote.amount_out * 0.95 * 100), // amount1Min (5% slippage)
-              hathorAddress, // to address
-            ],
-          },
+          args: [fee],
         },
       })
 
-      addLog(`✅ Add HTR/hUSDC liquidity transaction sent: ${JSON.stringify(result)}`)
+      addLog(`✅ HTR/hUSDC liquidity transaction sent: ${JSON.stringify(result)}`)
     } catch (err) {
       addLog(`❌ Add HTR/hUSDC liquidity failed: ${err}`)
     }
@@ -1615,8 +1570,60 @@ const SnapUtilsDemo = () => {
                     className="px-3 h-[44px] text-sm font-semibold bg-purple-600 hover:bg-purple-700"
                     disabled={!walletType || !isSnapInstalled}
                   >
-                    Get Pool State
+                    Get Pool State (Enhanced)
                   </Button>
+                </div>
+
+                {/* hUSDC Testing Section */}
+                <div className="border-t border-gray-700 pt-4 mt-4">
+                  <Typography variant="sm" className="font-semibold mb-2 text-gray-300">
+                    🏦 hUSDC Operations
+                  </Typography>
+                  <Typography variant="xs" className="text-gray-400 mb-3">
+                    Test hUSDC token operations with real quotes and transactions
+                  </Typography>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Button
+                      onClick={dozerTestAllHUSDCOperations}
+                      variant="filled"
+                      className="px-3 h-[44px] text-sm font-semibold bg-indigo-600 hover:bg-indigo-700"
+                      disabled={!walletType || !isSnapInstalled}
+                    >
+                      Test All hUSDC Quotes
+                    </Button>
+                    <Button
+                      onClick={dozerSwapHTRToHUSDC}
+                      variant="filled"
+                      className="px-3 h-[44px] text-sm font-semibold bg-cyan-600 hover:bg-cyan-700"
+                      disabled={!walletType || !isSnapInstalled || !hathorAddress}
+                    >
+                      Swap HTR → hUSDC
+                    </Button>
+                    <Button
+                      onClick={dozerSwapHUSDCToHTR}
+                      variant="filled"
+                      className="px-3 h-[44px] text-sm font-semibold bg-teal-600 hover:bg-teal-700"
+                      disabled={!walletType || !isSnapInstalled || !hathorAddress}
+                    >
+                      Swap hUSDC → HTR
+                    </Button>
+                    <Button
+                      onClick={dozerSwapHUSDCToDZR}
+                      variant="filled"
+                      className="px-3 h-[44px] text-sm font-semibold bg-emerald-600 hover:bg-emerald-700"
+                      disabled={!walletType || !isSnapInstalled || !hathorAddress}
+                    >
+                      Swap hUSDC → DZR
+                    </Button>
+                    <Button
+                      onClick={dozerAddLiquidityHTRHUSDC}
+                      variant="filled"
+                      className="px-3 h-[44px] text-sm font-semibold bg-pink-600 hover:bg-pink-700"
+                      disabled={!walletType || !isSnapInstalled || !hathorAddress}
+                    >
+                      Add HTR/hUSDC Liquidity
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
