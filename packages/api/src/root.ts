@@ -1,3 +1,4 @@
+import { chartsRouter } from './router/charts'
 import { dozerToolsRouter } from './router/dozerTools'
 import { faucetRouter } from './router/faucet'
 import { headlessRouter } from './router/headless'
@@ -17,6 +18,7 @@ export const appRouter = createTRPCRouter({
   getTokens: tokenRouter,
   getProfile: profileRouter,
   getPrices: pricesRouter,
+  getCharts: chartsRouter,
   getNanoState: NanoStateRouter,
   getHeadless: headlessRouter,
   getNetwork: networkRouter,

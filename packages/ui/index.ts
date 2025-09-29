@@ -70,5 +70,8 @@ export {
   truncateAddress,
 } from './src/utils/transactionUtils'
 
+// Chart components
+export * from './src/components/charts'
+
 // Re-export classnames for convenience
 export { default as classNames } from 'classnames'

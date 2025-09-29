@@ -8,7 +8,7 @@ import {
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { Pair } from '@dozer/api'
-import { PoolChart } from '../../components/PoolSection/PoolChart'
+import { NewPoolChart } from '../../components/PoolSection/NewPoolChart'
 // Remove old transaction history import
 
 import {
@@ -17,19 +17,15 @@ import {
   PoolButtons,
   PoolComposition,
   PoolHeader,
-  PoolMyRewards,
   PoolPosition,
   PoolPositionProvider,
-  PoolRewards,
   PoolStats,
 } from '../../components'
 
-import { formatPercent } from '@dozer/format'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
-import { RouterOutputs, api } from '../../utils/api'
-import { useAccount } from '@dozer/zustand'
+import { api } from '../../utils/api'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo } from 'react'
 import { Token } from '@dozer/currency'
 
 export const config = {
@@ -281,8 +277,7 @@ const Pool = () => {
             <div className="flex flex-col order-1 gap-9">
               <PoolHeader pair={memoizedPair as Pair} prices={prices} isLoading={isLoading} />
               <hr className="my-3 border-t border-stone-200/5" />
-              {/* TODO: Re-enable once history data access is refined */}
-              {/* <PoolChart pair={pair} /> */}
+              <NewPoolChart pair={memoizedPair as Pair} />
               <AppearOnMount>
                 <PoolStats pair={memoizedPair as Pair} prices={prices} />
               </AppearOnMount>
