@@ -30,7 +30,7 @@ export const NewPoolChart: React.FC<NewPoolChartProps> = ({ pair }) => {
     {
       enabled: chartType === 'volume' && !!poolKey,
       staleTime: 60000, // Cache for 1 minute
-      refetchInterval: 300000, // Refetch every 5 minutes
+      refetchInterval: 120000, // Refetch every 2 minutes (reduced from 5 minutes)
       refetchOnWindowFocus: false,
     }
   )
@@ -48,7 +48,7 @@ export const NewPoolChart: React.FC<NewPoolChartProps> = ({ pair }) => {
     {
       enabled: chartType === 'tvl' && !!poolKey,
       staleTime: 60000, // Cache for 1 minute
-      refetchInterval: 300000, // Refetch every 5 minutes
+      refetchInterval: 120000, // Refetch every 2 minutes (reduced from 5 minutes)
       refetchOnWindowFocus: false,
     }
   )

@@ -34,8 +34,8 @@ export const NewTokenChart: React.FC<NewTokenChartProps> = ({ pair, setIsDialogO
     },
     {
       enabled: !!tokenUid,
-      staleTime: 30000, // Cache for 30 seconds
-      refetchInterval: 60000, // Refetch every minute
+      staleTime: 60000, // Cache for 1 minute (increased from 30s)
+      refetchInterval: 120000, // Refetch every 2 minutes (increased from 1 minute)
       refetchOnWindowFocus: false,
     }
   )
@@ -49,8 +49,8 @@ export const NewTokenChart: React.FC<NewTokenChartProps> = ({ pair, setIsDialogO
     },
     {
       enabled: !!tokenUid,
-      staleTime: 30000, // Cache for 30 seconds
-      refetchInterval: 30000, // Refetch every 30 seconds
+      staleTime: 60000, // Cache for 1 minute (increased from 30s)
+      refetchInterval: 120000, // Refetch every 2 minutes (increased from 30s)
       refetchOnWindowFocus: false,
     }
   )

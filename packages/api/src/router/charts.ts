@@ -11,21 +11,21 @@ const ChartPeriodSchema = z.enum(['1h', '4h', '1d', '1w', '1m', '3m', '6m', '1y'
 function getIntervalAndLimit(period: string): { interval: string; limit: number } {
   switch (period) {
     case '1h':
-      return { interval: '1m', limit: 60 }
+      return { interval: '5m', limit: 12 }    // 12 x 5min = 1 hour
     case '4h':
-      return { interval: '5m', limit: 48 }
+      return { interval: '15m', limit: 16 }   // 16 x 15min = 4 hours
     case '1d':
-      return { interval: '15m', limit: 96 }
+      return { interval: '1h', limit: 24 }    // 24 x 1hour = 1 day
     case '1w':
-      return { interval: '1h', limit: 168 }
+      return { interval: '4h', limit: 42 }    // 42 x 4hour = 1 week
     case '1m':
-      return { interval: '4h', limit: 180 }
+      return { interval: '1d', limit: 30 }    // 30 x 1day = 1 month
     case '3m':
-      return { interval: '1d', limit: 90 }
+      return { interval: '1d', limit: 90 }    // 90 x 1day = 3 months
     case '6m':
-      return { interval: '1d', limit: 180 }
+      return { interval: '1d', limit: 180 }   // 180 x 1day = 6 months
     case '1y':
-      return { interval: '1w', limit: 52 }
+      return { interval: '1w', limit: 52 }    // 52 x 1week = 1 year
     default:
       return { interval: '1h', limit: 24 }
   }
