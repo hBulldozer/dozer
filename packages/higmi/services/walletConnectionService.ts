@@ -166,7 +166,7 @@ export class WalletConnectionService {
       } else {
         // Install snap
         onStatusUpdate?.('Installing Hathor snap...')
-        const defaultSnapId = 'local:http://localhost:8089'
+        const defaultSnapId = 'npm:@hathor/snap'
         const snap = await requestSnapFn(defaultSnapId)
 
         // Check if snap installation was cancelled
