@@ -9,11 +9,18 @@ import {
   parseSwapPathInfo,
   parseSwapPathExactOutputInfo,
   parseUserPositions,
+  parseUserProfitInfo,
+  parseQuoteSingleTokenResult,
+  parseQuoteRemoveSingleTokenResult,
   type PoolApiInfo,
   type PoolInfo,
   type SwapPathInfo,
   type SwapPathExactOutputInfo,
+  type UserProfitInfo,
+  type QuoteSingleTokenResult,
+  type QuoteRemoveSingleTokenResult,
 } from '../utils/namedTupleParsers'
+import { parseNanoContractArgs } from '../utils/ncArgsParser'
 
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -50,7 +57,7 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
     return null
   } catch (error) {
     // Silently fail for DozerTools integration - it's optional
-    console.debug(`DozerTools image lookup failed for token ${tokenUuid}:`, error)
+    // console.debug(`DozerTools image lookup failed for token ${tokenUuid}`)
     return null
   }
 }
@@ -59,7 +66,7 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
 async function calculate24hTransactionCount(poolKey: string): Promise<number> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
+    const oneDayAgo = now - 24 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -112,7 +119,7 @@ const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
 async function calculate24hVolume(poolKey: string): Promise<{ volume24h: number; volume24hUSD: number }> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
+    const oneDayAgo = now - 24 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -1439,237 +1446,257 @@ export const poolRouter = createTRPCRouter({
       }
     }),
 
-  // Get transaction history for a specific pool
-  poolTransactionHistory: procedure
+  // Removed poolTransactionHistory - consolidated into getAllTransactionHistory with better filtering
+  // Use getAllTransactionHistory with poolFilter parameter instead
+
+  // Get user profit info for a specific pool
+  getUserProfitInfo: procedure
     .input(
       z.object({
+        address: z.string(),
         poolKey: z.string(),
-        count: z.number().min(1).max(200).optional().default(50),
-        after: z.string().optional(),
-        before: z.string().optional(),
       })
     )
     .query(async ({ input }) => {
       try {
-        // Build query parameters for nano contract history API
-        const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, `count=${input.count * 3}`] // Get more to filter
+        const response = await fetchFromPoolManager([`get_user_profit_info("${input.address}", "${input.poolKey}")`])
+        const profitInfoArray = response.calls[`get_user_profit_info("${input.address}", "${input.poolKey}")`].value
 
-        if (input.after) queryParams.push(`after=${input.after}`)
-        if (input.before) queryParams.push(`before=${input.before}`)
-
-        const endpoint = 'nano_contract/history'
-        const response = await fetchNodeData(endpoint, queryParams)
-
-        if (!response || !response.success || !response.history) {
+        if (!profitInfoArray) {
           return {
-            transactions: [],
-            hasMore: false,
-            pagination: { after: null, before: null },
+            current_value_usd: 0,
+            initial_value_usd: 0,
+            profit_amount_usd: 0,
+            profit_percentage: 0,
+            last_action_timestamp: 0,
           }
         }
 
-        // Filter transactions specific to this pool
-        const poolSpecificTransactions = response.history.filter((tx: any) => {
-          // Check if transaction involves this specific pool
-          if (tx.nc_args) {
-            const args = tx.nc_args
-
-            // For swap transactions with path, check if pool is in the path
-            if (args.path && typeof args.path === 'string') {
-              // Multi-hop path format: token/token/fee,token/token/fee
-              // Or single path format: token/token/fee
-              const pathPools = args.path.split(',')
-              return pathPools.some((pathSegment: string) => {
-                // Parse each path segment as: token/token/fee
-                const parts = pathSegment.split('/')
-                if (parts.length >= 3) {
-                  const reconstructedPool = `${parts[0]}/${parts[1]}/${parts[2]}`
-                  return reconstructedPool === input.poolKey
-                }
-                return false
-              })
-            }
-
-            // For liquidity transactions, check pool_key
-            if (args.pool_key === input.poolKey) {
-              return true
-            }
-
-            // For pool creation, check if tokens and fee match
-            if (tx.nc_method === 'create_pool' && args.token_a && args.token_b && args.fee !== undefined) {
-              const constructedPoolKey = `${args.token_a}/${args.token_b}/${args.fee}`
-              return constructedPoolKey === input.poolKey
-            }
-          }
-
-          return false
-        })
-
-        // Limit to requested count
-        const limitedTransactions = poolSpecificTransactions.slice(0, input.count)
-
-        // Parse and enrich transaction data
-        const transactions = await Promise.all(
-          limitedTransactions.map(async (tx: any) => {
-            // Determine transaction type and extract relevant info
-            const txType = tx.nc_method
-            let action = 'Unknown'
-            const tokenAmounts: {
-              tokenIn?: { uuid: string; amount: number }
-              tokenOut?: { uuid: string; amount: number }
-            } = {}
-
-            // Parse transaction based on method type
-            if (txType && txType.includes('swap')) {
-              action = txType.includes('multi_hop') || txType.includes('through_path') ? 'Multi-hop Swap' : 'Swap'
-
-              // Extract token amounts from transaction
-              if (tx.nc_args) {
-                // For swaps, amount_in and amount_out are in args
-                if (tx.nc_args.amount_in && tx.nc_args.token_in) {
-                  tokenAmounts.tokenIn = {
-                    uuid: tx.nc_args.token_in,
-                    amount: tx.nc_args.amount_in / 100, // Convert from cents
-                  }
-                }
-                if (tx.nc_args.amount_out && tx.nc_args.token_out) {
-                  tokenAmounts.tokenOut = {
-                    uuid: tx.nc_args.token_out,
-                    amount: tx.nc_args.amount_out / 100, // Convert from cents
-                  }
-                }
-              }
-            } else if (txType && txType.includes('add_liquidity')) {
-              action = 'Add Liquidity'
-
-              // Extract liquidity amounts from transaction outputs
-              if (tx.outputs && Array.isArray(tx.outputs)) {
-                const liquidityAmounts = tx.outputs
-                  .filter((output: any) => output.value > 0)
-                  .map((output: any) => {
-                    let tokenUuid = '00' // Default to HTR
-                    if (output.token_data !== undefined) {
-                      const tokenIndex = output.token_data & 0b01111111
-                      if (tokenIndex > 0 && tx.tokens && tx.tokens[tokenIndex - 1]) {
-                        tokenUuid = tx.tokens[tokenIndex - 1]
-                      }
-                    }
-                    return {
-                      uuid: tokenUuid,
-                      amount: output.value / 100, // Convert from cents
-                    }
-                  })
-
-                // Set token amounts for display
-                if (liquidityAmounts.length >= 2) {
-                  tokenAmounts.tokenIn = liquidityAmounts[0]
-                  tokenAmounts.tokenOut = liquidityAmounts[1]
-                }
-              }
-            } else if (txType && txType.includes('remove_liquidity')) {
-              action = 'Remove Liquidity'
-
-              // Similar to add_liquidity but for withdrawal
-              if (tx.outputs && Array.isArray(tx.outputs)) {
-                const liquidityAmounts = tx.outputs
-                  .filter((output: any) => output.value > 0)
-                  .map((output: any) => {
-                    let tokenUuid = '00'
-                    if (output.token_data !== undefined) {
-                      const tokenIndex = output.token_data & 0b01111111
-                      if (tokenIndex > 0 && tx.tokens && tx.tokens[tokenIndex - 1]) {
-                        tokenUuid = tx.tokens[tokenIndex - 1]
-                      }
-                    }
-                    return {
-                      uuid: tokenUuid,
-                      amount: output.value / 100,
-                    }
-                  })
-
-                if (liquidityAmounts.length >= 2) {
-                  tokenAmounts.tokenIn = liquidityAmounts[0]
-                  tokenAmounts.tokenOut = liquidityAmounts[1]
-                }
-              }
-            } else if (txType === 'create_pool') {
-              action = 'Create Pool'
-            }
-
-            // Get token symbols for display
-            const tokenSymbols = new Map()
-            const tokensToFetch = []
-            if (tokenAmounts.tokenIn) tokensToFetch.push(tokenAmounts.tokenIn.uuid)
-            if (tokenAmounts.tokenOut) tokensToFetch.push(tokenAmounts.tokenOut.uuid)
-
-            for (const tokenUuid of tokensToFetch) {
-              try {
-                const tokenInfo = await fetchTokenInfo(tokenUuid)
-                tokenSymbols.set(tokenUuid, tokenInfo)
-              } catch (error) {
-                tokenSymbols.set(tokenUuid, {
-                  symbol: tokenUuid === '00' ? 'HTR' : tokenUuid.substring(0, 8).toUpperCase(),
-                  name: tokenUuid === '00' ? 'Hathor' : `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
-                })
-              }
-            }
-
-            return {
-              id: tx.tx_id,
-              hash: tx.tx_id,
-              timestamp: tx.timestamp,
-              action,
-              method: tx.nc_method,
-              tokenIn: tokenAmounts.tokenIn
-                ? {
-                    ...tokenAmounts.tokenIn,
-                    symbol: tokenSymbols.get(tokenAmounts.tokenIn.uuid)?.symbol || 'UNK',
-                    name: tokenSymbols.get(tokenAmounts.tokenIn.uuid)?.name || 'Unknown',
-                  }
-                : null,
-              tokenOut: tokenAmounts.tokenOut
-                ? {
-                    ...tokenAmounts.tokenOut,
-                    symbol: tokenSymbols.get(tokenAmounts.tokenOut.uuid)?.symbol || 'UNK',
-                    name: tokenSymbols.get(tokenAmounts.tokenOut.uuid)?.name || 'Unknown',
-                  }
-                : null,
-              success: Array.isArray(tx.voided_by) ? tx.voided_by.length === 0 : !tx.voided_by,
-              weight: tx.weight || 0,
-              // Include raw args for debugging
-              args: tx.nc_args,
-            }
-          })
-        )
+        // Parse the NamedTuple array to an object with proper property names
+        const profitInfo = parseUserProfitInfo(profitInfoArray)
 
         return {
-          transactions,
-          hasMore: poolSpecificTransactions.length > input.count,
-          pagination: {
-            after: response.after || null,
-            before: response.before || null,
-          },
+          current_value_usd: profitInfo.current_value_usd / 100, // Convert from cents
+          initial_value_usd: profitInfo.initial_value_usd / 100, // Convert from cents
+          profit_amount_usd: profitInfo.profit_amount_usd / 100, // Convert from cents
+          profit_percentage: profitInfo.profit_percentage / 100, // Convert from percentage with 2 decimal places
+          last_action_timestamp: profitInfo.last_action_timestamp,
         }
       } catch (error) {
-        console.error(
-          `❌ [POOL_TRANSACTION_HISTORY] Error fetching pool transaction history for ${input.poolKey}:`,
-          error
-        )
-
-        // Log additional context for debugging
-        console.error(`   Pool Key: ${input.poolKey}`)
-        console.error(`   Count: ${input.count}`)
-        console.error(`   After: ${input.after || 'none'}`)
-        console.error(`   Before: ${input.before || 'none'}`)
-        console.error(`   Contract ID: ${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID || 'not set'}`)
-
-        return {
-          transactions: [],
-          hasMore: false,
-          pagination: { after: null, before: null },
-        }
+        console.error(`Error fetching profit info for ${input.address} in pool ${input.poolKey}:`, error)
+        throw new Error('Failed to fetch user profit information')
       }
     }),
+
+  // Quote for adding liquidity with single token
+  quoteSingleTokenLiquidity: procedure
+    .input(
+      z.object({
+        tokenIn: z.string(),
+        amountIn: z.number(),
+        tokenOut: z.string(),
+        fee: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const amountInCents = Math.round(input.amountIn * 100)
+        const response = await fetchFromPoolManager([
+          `quote_add_liquidity_single_token("${input.tokenIn}", ${amountInCents}, "${input.tokenOut}", ${
+            input.fee * 10
+          })`,
+        ])
+        const quoteArray =
+          response.calls[
+            `quote_add_liquidity_single_token("${input.tokenIn}", ${amountInCents}, "${input.tokenOut}", ${
+              input.fee * 10
+            })`
+          ].value
+
+        if (!quoteArray) {
+          throw new Error('Failed to get single token liquidity quote')
+        }
+
+        // Parse the NamedTuple array to an object with proper property names
+        const quote = parseQuoteSingleTokenResult(quoteArray)
+
+        return {
+          liquidity_amount: quote.liquidity_amount,
+          token_a_used: quote.token_a_used / 100, // Convert from cents
+          token_b_used: quote.token_b_used / 100, // Convert from cents
+          excess_token: quote.excess_token,
+          excess_amount: quote.excess_amount / 100, // Convert from cents
+          swap_amount: quote.swap_amount / 100, // Convert from cents
+          swap_output: quote.swap_output / 100, // Convert from cents
+        }
+      } catch (error) {
+        console.error(`Error getting single token liquidity quote:`, error)
+        throw new Error('Failed to get single token liquidity quote')
+      }
+    }),
+
+  // Quote for removing liquidity to receive single token
+  quoteSingleTokenRemoval: procedure
+    .input(
+      z.object({
+        address: z.string(),
+        tokenA: z.string(),
+        tokenB: z.string(),
+        tokenOut: z.string(),
+        fee: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const response = await fetchFromPoolManager([
+          `quote_remove_liquidity_single_token("${input.address}", "${input.tokenA}", "${input.tokenB}", "${
+            input.tokenOut
+          }", ${input.fee * 10})`,
+        ])
+        const quoteArray =
+          response.calls[
+            `quote_remove_liquidity_single_token("${input.address}", "${input.tokenA}", "${input.tokenB}", "${
+              input.tokenOut
+            }", ${input.fee * 10})`
+          ].value
+
+        if (!quoteArray) {
+          throw new Error('Failed to get single token removal quote')
+        }
+
+        // Parse the NamedTuple array to an object with proper property names
+        const quote = parseQuoteRemoveSingleTokenResult(quoteArray)
+
+        return {
+          amount_out: quote.amount_out / 100, // Convert from cents
+          token_a_withdrawn: quote.token_a_withdrawn / 100, // Convert from cents
+          token_b_withdrawn: quote.token_b_withdrawn / 100, // Convert from cents
+          swap_amount: quote.swap_amount / 100, // Convert from cents
+          swap_output: quote.swap_output / 100, // Convert from cents
+          user_liquidity: quote.user_liquidity,
+        }
+      } catch (error) {
+        console.error(`Error getting single token removal quote:`, error)
+        throw new Error('Failed to get single token removal quote')
+      }
+    }),
+
+  // Quote for removing liquidity to receive single token (percentage-based)
+  quoteSingleTokenRemovalPercentage: procedure
+    .input(
+      z.object({
+        address: z.string(),
+        poolKey: z.string(),
+        tokenOut: z.string(),
+        percentage: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        // Convert percentage to basis points (percentage * 100)
+        const percentageBasisPoints = Math.round(input.percentage * 100)
+
+        const response = await fetchFromPoolManager([
+          `quote_remove_liquidity_single_token_percentage("${input.address}", "${input.poolKey}", "${input.tokenOut}", ${percentageBasisPoints})`,
+        ])
+
+        const quoteArray =
+          response.calls[
+            `quote_remove_liquidity_single_token_percentage("${input.address}", "${input.poolKey}", "${input.tokenOut}", ${percentageBasisPoints})`
+          ].value
+
+        if (!quoteArray) {
+          throw new Error('Failed to get single token removal quote')
+        }
+
+        // Parse the NamedTuple array to an object with proper property names
+        const quote = parseQuoteRemoveSingleTokenResult(quoteArray)
+
+        return {
+          amount_out: quote.amount_out / 100, // Convert from cents
+          token_a_withdrawn: quote.token_a_withdrawn / 100, // Convert from cents
+          token_b_withdrawn: quote.token_b_withdrawn / 100, // Convert from cents
+          swap_amount: quote.swap_amount / 100, // Convert from cents
+          swap_output: quote.swap_output / 100, // Convert from cents
+          user_liquidity: quote.user_liquidity,
+        }
+      } catch (error) {
+        console.error(`Error getting single token removal quote:`, error)
+        throw new Error('Failed to get single token removal quote')
+      }
+    }),
+
+  // Get enhanced user positions with profit tracking
+  getUserPositionsDetailed: procedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
+    try {
+      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
+      const positionsArrays = response.calls[`get_user_positions("${input.address}")`].value
+
+      if (!positionsArrays) {
+        return []
+      }
+
+      // Parse the user positions object
+      const positions = parseUserPositions(positionsArrays)
+
+      const positionPromises = []
+      for (const [poolKey, position] of Object.entries(positions)) {
+        if (typeof position === 'object' && position !== null) {
+          const [tokenA, tokenB, feeStr] = poolKey.split('/')
+          positionPromises.push(
+            (async () => {
+              // Also get profit info for this position
+              let profitInfo = null
+              try {
+                const profitResponse = await fetchFromPoolManager([
+                  `get_user_profit_info("${input.address}", "${poolKey}")`,
+                ])
+                const profitArray = profitResponse.calls[`get_user_profit_info("${input.address}", "${poolKey}")`].value
+                if (profitArray) {
+                  const parsedProfit = parseUserProfitInfo(profitArray)
+                  profitInfo = {
+                    current_value_usd: parsedProfit.current_value_usd / 100,
+                    initial_value_usd: parsedProfit.initial_value_usd / 100,
+                    profit_amount_usd: parsedProfit.profit_amount_usd / 100,
+                    profit_percentage: parsedProfit.profit_percentage / 100,
+                    last_action_timestamp: parsedProfit.last_action_timestamp,
+                  }
+                }
+              } catch (error) {
+                console.warn(`Could not fetch profit info for pool ${poolKey}:`, error)
+              }
+
+              return {
+                poolKey,
+                poolName: `${await getTokenSymbol(tokenA || '')}-${await getTokenSymbol(tokenB || '')}`,
+                liquidity: position.liquidity || 0,
+                token0Amount: (position.token0Amount || 0) / 100,
+                token1Amount: (position.token1Amount || 0) / 100,
+                share: (position.share || 0) / 100, // Convert from percentage
+                token0: {
+                  uuid: tokenA,
+                  symbol: await getTokenSymbol(tokenA || ''),
+                  name: await getTokenName(tokenA || ''),
+                },
+                token1: {
+                  uuid: tokenB,
+                  symbol: await getTokenSymbol(tokenB || ''),
+                  name: await getTokenName(tokenB || ''),
+                },
+                profit: profitInfo,
+              }
+            })()
+          )
+        }
+      }
+
+      const positionData = await Promise.all(positionPromises)
+      return positionData
+    } catch (error) {
+      console.error(`Error fetching detailed user positions for ${input.address}:`, error)
+      throw new Error('Failed to fetch detailed user positions')
+    }
+  }),
 
   // Get all transaction history for debugging and analysis
   getAllTransactionHistory: procedure
@@ -1702,27 +1729,62 @@ export const poolRouter = createTRPCRouter({
           }
         }
 
-        // Filter transactions first
-        const filteredTransactions = response.history.filter((tx: any) => {
-          // Apply filters
+        // Parse and filter transactions properly
+        const filteredTransactions = []
+        for (const tx of response.history) {
+          // Apply method filter first (simple check)
           if (input.methodFilter && tx.nc_method !== input.methodFilter) {
-            return false
+            continue
           }
-          if (input.poolFilter && (!tx.nc_args || !JSON.stringify(tx.nc_args).includes(input.poolFilter))) {
-            return false
+
+          // For pool filtering, we'll defer to the full transaction parsing
+          // and apply the same logic that was working on the client side
+          // This will be done after tokensInvolved is populated
+
+          // Token filter (check if transaction involves the token)
+          if (input.tokenFilter) {
+            const involvesToken =
+              (tx.tokens && tx.tokens.includes(input.tokenFilter)) ||
+              (tx.outputs && tx.outputs.some((output: any) =>
+                (output.token === input.tokenFilter) ||
+                (output.token_data === 0 && input.tokenFilter === '00')
+              )) ||
+              (tx.inputs && tx.inputs.some((input: any) =>
+                (input.token === input.tokenFilter) ||
+                (input.token_data === 0 && input.tokenFilter === '00')
+              ))
+
+            if (!involvesToken) {
+              continue
+            }
           }
-          if (input.tokenFilter && (!tx.nc_args || !JSON.stringify(tx.nc_args).includes(input.tokenFilter))) {
-            return false
-          }
-          return true
-        })
+
+          filteredTransactions.push(tx)
+        }
 
         // Parse and enrich transaction data with async processing
-        const transactions = await Promise.all(
+        const allTransactions = await Promise.all(
           filteredTransactions.map(async (tx: any) => {
+            // Try to parse NC args properly (hex string to object)
+            let parsedArgs = null
+            if (tx.nc_args && typeof tx.nc_args === 'string' && tx.nc_method) {
+              try {
+                parsedArgs = await parseNanoContractArgs(
+                  process.env.NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID || '',
+                  tx.nc_method,
+                  tx.address || '',
+                  tx.nc_args
+                )
+              } catch (error) {
+                console.warn(`Failed to parse NC args for tx ${tx.tx_id}:`, error)
+              }
+            }
+
+            // Use parsed args if available, otherwise fallback to treating nc_args as object
+            const args = parsedArgs || (typeof tx.nc_args === 'object' ? tx.nc_args : {})
+
             // Analyze transaction for multi-hop routing
-            const isMultiHop =
-              tx.nc_args && tx.nc_args.path && typeof tx.nc_args.path === 'string' && tx.nc_args.path.includes(',')
+            const isMultiHop = args.path_str && typeof args.path_str === 'string' && args.path_str.includes(',')
 
             // Extract pool information from transaction args
             let poolsInvolved: string[] = []
@@ -1751,48 +1813,43 @@ export const poolRouter = createTRPCRouter({
               })
             }
 
-            // For multi-hop swaps, also extract tokens from the routing path in nc_args
+            // For multi-hop swaps, also extract tokens from the routing path in args
             const tokensFromArgs = new Set<string>()
-            if (tx.nc_args) {
+            if (args) {
               // Extract tokens from pool path for multi-hop swaps
-              // Format is: {uuid}/{uuid}/{fee}/{uuid}/{uuid}/{fee}/{uuid}/{uuid}/{fee}
-              if (tx.nc_args.path && typeof tx.nc_args.path === 'string') {
-                console.log('Processing multi-hop path:', tx.nc_args.path)
-                const pathParts = tx.nc_args.path.split('/')
-                console.log('Path parts array:', pathParts)
-                console.log('Path parts length:', pathParts.length)
+              // Format: pool1,pool2,pool3 where each pool is {uuid}/{uuid}/{fee}
+              const pathStr = args.path_str || args.path // Support both parsed and legacy formats
+              if (pathStr && typeof pathStr === 'string') {
+                const pools = pathStr.split(',')
 
-                // Every group of 3 is a pool: tokenA/tokenB/fee
-                for (let i = 0; i < pathParts.length; i += 3) {
-                  const tokenA = pathParts[i]
-                  const tokenB = pathParts[i + 1]
-                  const fee = pathParts[i + 2]
-                  console.log(`Group ${i / 3}: tokenA='${tokenA}', tokenB='${tokenB}', fee='${fee}'`)
+                pools.forEach((poolKey) => {
+                  const pathParts = poolKey.split('/')
+                  if (pathParts.length >= 3) {
+                    const tokenA = pathParts[0]
+                    const tokenB = pathParts[1]
 
-                  if (tokenA && tokenA.trim()) {
-                    console.log('Adding tokenA:', tokenA)
-                    tokensFromArgs.add(tokenA)
+                    if (tokenA && tokenA.trim()) {
+                      tokensFromArgs.add(tokenA)
+                    }
+                    if (tokenB && tokenB.trim()) {
+                      tokensFromArgs.add(tokenB)
+                    }
                   }
-                  if (tokenB && tokenB.trim()) {
-                    console.log('Adding tokenB:', tokenB)
-                    tokensFromArgs.add(tokenB)
-                  }
-                }
-                console.log('Final tokensFromArgs:', Array.from(tokensFromArgs))
+                })
               }
 
               // Also check for direct token arguments
-              if (tx.nc_args.token_in) {
-                tokensFromArgs.add(tx.nc_args.token_in)
+              if (args.token_in) {
+                tokensFromArgs.add(args.token_in)
               }
-              if (tx.nc_args.token_out) {
-                tokensFromArgs.add(tx.nc_args.token_out)
+              if (args.token_out) {
+                tokensFromArgs.add(args.token_out)
               }
-              if (tx.nc_args.token_a) {
-                tokensFromArgs.add(tx.nc_args.token_a)
+              if (args.token_a) {
+                tokensFromArgs.add(args.token_a)
               }
-              if (tx.nc_args.token_b) {
-                tokensFromArgs.add(tx.nc_args.token_b)
+              if (args.token_b) {
+                tokensFromArgs.add(args.token_b)
               }
             }
 
@@ -1809,7 +1866,7 @@ export const poolRouter = createTRPCRouter({
                   symbol: tokenInfo.symbol,
                   name: tokenInfo.name,
                 }
-              } catch (error) {
+              } catch {
                 // Fallback for failed token info fetch
                 return {
                   uuid: tokenUuid,
@@ -1821,25 +1878,13 @@ export const poolRouter = createTRPCRouter({
 
             const tokenSymbols = await Promise.all(tokenSymbolPromises)
 
-            // Try to extract pool information from nc_args if available
-            if (tx.nc_args) {
-              const args = tx.nc_args
-
+            // Extract pool information from parsed args
+            if (args && Object.keys(args).length > 0) {
               // For swap transactions, check for path (multi-hop)
-              if (tx.nc_method && tx.nc_method.includes('swap') && args.path && typeof args.path === 'string') {
-                // Parse the path format: {uuid}/{uuid}/{fee}/{uuid}/{uuid}/{fee}...
-                const pathParts = args.path.split('/')
-                const pools = []
-                // Every group of 3 is a pool: tokenA/tokenB/fee
-                for (let i = 0; i < pathParts.length; i += 3) {
-                  const tokenA = pathParts[i]
-                  const tokenB = pathParts[i + 1]
-                  const fee = pathParts[i + 2]
-                  if (tokenA && tokenB && fee) {
-                    pools.push(`${tokenA}/${tokenB}/${fee}`)
-                  }
-                }
-                poolsInvolved = pools
+              const pathStr = args.path_str || args.path // Support both parsed and legacy formats
+              if (tx.nc_method && tx.nc_method.includes('swap') && pathStr && typeof pathStr === 'string') {
+                // Parse the path format: pool1,pool2,pool3 (comma-separated)
+                poolsInvolved = pathStr.split(',').filter((pool) => pool.trim())
               }
 
               // For liquidity transactions, extract single pool
@@ -1865,7 +1910,8 @@ export const poolRouter = createTRPCRouter({
               tx_id: tx.tx_id,
               timestamp: tx.timestamp,
               method: tx.nc_method,
-              args: tx.nc_args,
+              args: args, // Use parsed args instead of raw nc_args
+              rawArgs: tx.nc_args, // Keep original for debugging
               poolsInvolved,
               tokensInvolved,
               tokenSymbols, // Include resolved token symbols
@@ -1878,19 +1924,50 @@ export const poolRouter = createTRPCRouter({
                 inputs: tx.inputs,
                 outputs: tx.outputs,
                 parents: tx.parents,
-                // Add debug info for token extraction only for multi-hop with string path
-                ...(isMultiHop && tx.nc_args?.path && typeof tx.nc_args.path === 'string'
+                parsedArgs: parsedArgs,
+                // Add debug info for token extraction only for multi-hop
+                ...(isMultiHop && args.path_str
                   ? {
                       tokensFromOutputs: Array.from(tokensFromOutputs),
                       tokensFromArgs: Array.from(tokensFromArgs),
-                      pathString: tx.nc_args.path,
-                      pathParts: tx.nc_args.path.split('/'),
+                      pathString: args.path_str,
+                      pathPools: args.path_str.split(','),
                     }
                   : {}),
               },
             }
           })
         )
+
+        // Apply pool filtering using the same logic that was working on the client side
+        let transactions = allTransactions
+        if (input.poolFilter) {
+          // Extract pool tokens from pool key (format: tokenA/tokenB/fee)
+          const poolParts = input.poolFilter.split('/')
+          if (poolParts.length >= 2) {
+            const poolToken0 = poolParts[0]
+            const poolToken1 = poolParts[1]
+
+            transactions = allTransactions.filter((tx) => {
+              const tokensInvolved = tx.tokensInvolved || []
+              const hasToken0 = poolToken0 ? tokensInvolved.includes(poolToken0) : false
+              const hasToken1 = poolToken1 ? tokensInvolved.includes(poolToken1) : false
+
+              // For regular operations, we need both tokens to be involved
+              // For single token operations, we only need one token to be involved
+              const isSingleTokenOperation =
+                tx.method === 'add_liquidity_single_token' || tx.method === 'remove_liquidity_single_token'
+
+              if (isSingleTokenOperation) {
+                // Single token operations only need one of the pool's tokens
+                return hasToken0 || hasToken1
+              } else {
+                // Regular operations need both tokens
+                return hasToken0 && hasToken1
+              }
+            })
+          }
+        }
 
         return {
           transactions,

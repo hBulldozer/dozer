@@ -23,6 +23,7 @@ export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' 
   prices?: { [key: string]: number }
   tokens?: any[]
   hidePercentageButtons?: boolean
+  showUnsignedSwitchInDialog?: boolean
 }
 
 export const CurrencyInput: FC<CurrencyInputProps> = ({
@@ -46,6 +47,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   prices,
   tokens,
   hidePercentageButtons = false,
+  showUnsignedSwitchInDialog = true,
 }) => {
   const isMounted = useIsMounted()
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
@@ -64,7 +66,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   return useMemo(
     () => (
       <div className={className} onClick={focusInput}>
-        <div className="relative flex items-center gap-1">
+        <div className="flex relative gap-1 items-center">
           {loading && isMounted ? (
             <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
               <Skeleton.Box variant="fast" className="w-[120px] h-[22px] rounded-full" />
@@ -165,6 +167,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             // customTokenMap={customTokenMap}
             includeNative={includeNative}
             tokens={tokens}
+            showUnsignedSwitchInDialog={showUnsignedSwitchInDialog}
           />
         )}
       </div>
@@ -190,6 +193,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
       usdPctChange,
       value,
       hidePercentageButtons,
+      showUnsignedSwitchInDialog,
     ]
   )
 }

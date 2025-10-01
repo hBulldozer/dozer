@@ -55,6 +55,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
     // changeUSD0,
     // changeUSD1,
     last_tx,
+    profit,
     isLoading,
     isError,
   } = usePoolPosition()
@@ -88,7 +89,11 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
             <div className="flex items-center gap-2">
               <Currency.Icon currency={token0} width={20} height={20} />
               <Typography variant="sm" weight={600} className="text-stone-300">
-                {Number(max_withdraw_a?.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) || '0'}
+                {max_withdraw_a ?
+                  Number((max_withdraw_a.toFixed() / 100).toFixed(6)).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 6
+                  }) : '0'}
                 {' ' + token0.symbol}
               </Typography>
             </div>
@@ -100,7 +105,11 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
             <div className="flex items-center gap-2">
               <Currency.Icon currency={token1} width={20} height={20} />
               <Typography variant="sm" weight={600} className="text-stone-300">
-                {Number(max_withdraw_b?.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) || '0'}
+                {max_withdraw_b ?
+                  Number((max_withdraw_b.toFixed() / 100).toFixed(6)).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 6
+                  }) : '0'}
                 {' ' + token1.symbol}
               </Typography>
             </div>
@@ -119,16 +128,25 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
               </Typography>
             </div>
             <div className="flex flex-row">
-              {/* <Typography variant="xs" weight={500} className="text-stone-400">
-                {formatPercentChange(positionChange)}{' '}
-              </Typography>
-              <ArrowIcon
-                type={positionChange < 0 ? 'down' : 'up'}
-                className={positionChange < 0 ? 'text-red-400' : 'text-green-400'}
-              /> */}
-              <Typography variant="xs" weight={500} className="text-stone-400">
-                Coming soon
-              </Typography>
+              {profit ? (
+                <>
+                  <Typography
+                    variant="xs"
+                    weight={500}
+                    className={`${profit.profit_amount_usd >= 0 ? 'text-green-400' : 'text-red-400'}`}
+                  >
+                    {formatUSD(profit.profit_amount_usd)} ({formatPercentChange(profit.profit_percentage)})
+                  </Typography>
+                  <ArrowIcon
+                    type={profit.profit_amount_usd < 0 ? 'down' : 'up'}
+                    className={profit.profit_amount_usd < 0 ? 'text-red-400' : 'text-green-400'}
+                  />
+                </>
+              ) : (
+                <Typography variant="xs" weight={500} className="text-stone-400">
+                  No data
+                </Typography>
+              )}
             </div>
           </div>
           <div className="flex items-center justify-between">

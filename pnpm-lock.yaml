@@ -602,6 +602,9 @@ importers:
       '@dozer/nanocontracts':
         specifier: workspace:*
         version: link:../nanocontracts
+      '@hathor/wallet-lib':
+        specifier: ^2.6.0
+        version: 2.6.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@trpc/client':
         specifier: ^10.45.0
         version: 10.45.0(@trpc/server@10.45.0)

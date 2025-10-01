@@ -112,7 +112,8 @@ const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pai
     refetch,
   } = api.getPools.getAllTransactionHistory.useQuery(
     {
-      count: 100, // Get more to filter client-side
+      count: 50, // Reduced since we're filtering server-side
+      poolFilter: poolKey, // Use server-side pool filtering
     },
     {
       enabled: !!poolKey,
@@ -135,10 +136,7 @@ const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pai
   const errorMessage = error ? error.message : undefined
   const prices = pricesData || {}
 
-  // Filter transactions for this specific pool
-  const poolToken0 = pair.token0.uuid
-  const poolToken1 = pair.token1.uuid
-
+  // Filter transactions for basic validation (server-side pool filtering already applied)
   const poolSpecificTransactions = allTransactions.filter((tx) => {
     // Filter out failed transactions using the success field from API
     if (tx.success === false) {
@@ -150,13 +148,9 @@ const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pai
       return false
     }
 
-    // Check if transaction involves both tokens of this pool
-    const tokensInvolved = tx.tokensInvolved || []
-    const hasToken0 = tokensInvolved.includes(poolToken0)
-    const hasToken1 = tokensInvolved.includes(poolToken1)
-
-    // For this pool, we need both tokens to be involved
-    return hasToken0 && hasToken1
+    // Server-side filtering already handled pool-specific filtering via poolFilter parameter
+    // No need for additional token involvement checks since the server parsed the NC args properly
+    return true
   })
 
   // Transform filtered transactions to simple format
@@ -169,6 +163,8 @@ const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pai
       loading={isLoading}
       error={errorMessage}
       onRefresh={handleRefresh}
+      token0Symbol={pair.token0.symbol}
+      token1Symbol={pair.token1.symbol}
     />
   )
 }
