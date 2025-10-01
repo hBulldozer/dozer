@@ -306,10 +306,12 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                               <div className="flex justify-center items-center space-x-3">
                                                 {/* LP Position */}
                                                 <div className="flex flex-col items-center space-y-1">
-                                                  <Currency.IconList iconWidth={24} iconHeight={24}>
-                                                    <Currency.Icon currency={token0} width={24} height={24} />
-                                                    <Currency.Icon currency={token1} width={24} height={24} />
-                                                  </Currency.IconList>
+                                                  {token0 && token1 && (
+                                                    <Currency.IconList iconWidth={24} iconHeight={24}>
+                                                      <Currency.Icon currency={token0} width={24} height={24} />
+                                                      <Currency.Icon currency={token1} width={24} height={24} />
+                                                    </Currency.IconList>
+                                                  )}
                                                   <Typography variant="xs" className="text-stone-300">
                                                     LP Position
                                                   </Typography>
@@ -351,18 +353,22 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                                 {/* Withdrawn Tokens */}
                                                 <div className="flex flex-col items-center space-y-2">
                                                   <div className="flex flex-col items-center space-y-2">
-                                                    <div className="flex flex-col items-center space-y-1">
-                                                      <Currency.Icon currency={token0} width={20} height={20} />
-                                                      <Typography variant="xs" className="text-green-300">
-                                                        {formatAmount(adjustedQuoteData.token_a_withdrawn)}
-                                                      </Typography>
-                                                    </div>
-                                                    <div className="flex flex-col items-center space-y-1">
-                                                      <Currency.Icon currency={token1} width={20} height={20} />
-                                                      <Typography variant="xs" className="text-green-300">
-                                                        {formatAmount(adjustedQuoteData.token_b_withdrawn)}
-                                                      </Typography>
-                                                    </div>
+                                                    {token0 && (
+                                                      <div className="flex flex-col items-center space-y-1">
+                                                        <Currency.Icon currency={token0} width={20} height={20} />
+                                                        <Typography variant="xs" className="text-green-300">
+                                                          {formatAmount(adjustedQuoteData.token_a_withdrawn)}
+                                                        </Typography>
+                                                      </div>
+                                                    )}
+                                                    {token1 && (
+                                                      <div className="flex flex-col items-center space-y-1">
+                                                        <Currency.Icon currency={token1} width={20} height={20} />
+                                                        <Typography variant="xs" className="text-green-300">
+                                                          {formatAmount(adjustedQuoteData.token_b_withdrawn)}
+                                                        </Typography>
+                                                      </div>
+                                                    )}
                                                   </div>
                                                 </div>
 

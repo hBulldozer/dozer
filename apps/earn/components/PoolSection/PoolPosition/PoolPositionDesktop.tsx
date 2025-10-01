@@ -1,15 +1,11 @@
 import { formatPercentChange, formatUSD } from '@dozer/format'
-// import { Pair } from '@dozer/graph-client'
 import { Pair } from '@dozer/api'
 import { ArrowIcon, CalendarIcon, Currency, Typography } from '@dozer/ui'
-import { FC, useEffect, useMemo, useState } from 'react'
+import { FC } from 'react'
 
-// import { useTokensFromPair } from '../../../lib/hooks'
 import { useTokensFromPair } from '@dozer/api'
-import { Amount, Token } from '@dozer/currency'
 import { usePoolPosition } from '../../PoolPositionProvider'
 import { ChartBarSquareIcon } from '@heroicons/react/24/outline'
-// import { usePoolPosition } from '../../PoolPositionProvider'
 
 interface PoolPositionProps {
   pair: Pair
@@ -46,14 +42,6 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
   const {
     max_withdraw_a,
     max_withdraw_b,
-    // user_deposited_a,
-    // user_deposited_b,
-    // depositedUSD0,
-    // depositedUSD1,
-    value1,
-    value0,
-    // changeUSD0,
-    // changeUSD1,
     last_tx,
     profit,
     isLoading,
@@ -90,7 +78,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
               <Currency.Icon currency={token0} width={20} height={20} />
               <Typography variant="sm" weight={600} className="text-stone-300">
                 {max_withdraw_a ?
-                  Number((max_withdraw_a.toFixed() / 100).toFixed(6)).toLocaleString(undefined, {
+                  Number((Number(max_withdraw_a.toFixed()) / 100).toFixed(6)).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 6
                   }) : '0'}
@@ -106,7 +94,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
               <Currency.Icon currency={token1} width={20} height={20} />
               <Typography variant="sm" weight={600} className="text-stone-300">
                 {max_withdraw_b ?
-                  Number((max_withdraw_b.toFixed() / 100).toFixed(6)).toLocaleString(undefined, {
+                  Number((Number(max_withdraw_b.toFixed()) / 100).toFixed(6)).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 6
                   }) : '0'}

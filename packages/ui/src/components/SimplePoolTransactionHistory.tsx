@@ -92,15 +92,15 @@ const TimeCell: React.FC<{ row: SimpleTransaction }> = ({ row }) => {
 
 const TypeCell: React.FC<{ row: SimpleTransaction }> = ({ row }) => {
   // Determine label based on method for more granular display
-  let label = row.type
-  let typeForColor = row.type
+  let label: string = row.type
+  let typeForColor: string = row.type
 
   // Single token operations still use the standard Add/Remove labels
   // The zeroed amount will indicate it was a single token operation
   if (row.side === 'Buy' || row.side === 'Sell') {
     // Use side for Buy/Sell
     label = row.side
-    typeForColor = row.side as 'Swap' | 'Add' | 'Remove' | 'Create'
+    typeForColor = row.side
   }
 
   const color = getTypeColor(typeForColor)

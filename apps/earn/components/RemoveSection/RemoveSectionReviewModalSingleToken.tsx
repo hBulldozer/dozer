@@ -22,7 +22,6 @@ interface RemoveSectionReviewModalSingleTokenProps {
 }
 
 export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSingleTokenProps> = ({
-  chainId,
   token0,
   token1,
   selectedToken,
@@ -34,7 +33,6 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
   children,
 }) => {
   const [open, setOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [sentTX, setSentTX] = useState(false)
   const { network } = useNetwork()
   const { accounts } = useWalletConnectClient()
@@ -64,7 +62,7 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
   }
 
   const handleRemoveLiquidity = async () => {
-    if (!quoteData || !selectedToken || !networkData || !address) return
+    if (!quoteData || !selectedToken || !networkData?.number || !address) return
 
     setSentTX(true)
     await poolManager.removeLiquiditySingleToken(
@@ -80,7 +78,7 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result && sentTX) {
       console.log(rpcResult)
-      if (quoteData && selectedToken) {
+      if (quoteData && selectedToken && networkData) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
           const notificationData: NotificationData = {
@@ -125,7 +123,7 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
         }
       }
     }
-  }, [rpcResult])
+  }, [rpcResult, sentTX, quoteData, selectedToken, networkData, network, percentage, address, token0?.uuid, token1?.uuid, fee, addTempTx, addNotification])
 
   return (
     <>

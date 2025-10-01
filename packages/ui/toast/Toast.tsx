@@ -45,6 +45,10 @@ export interface NotificationData {
     | 'createMultipleStream'
     | 'createVesting'
     | 'createMultipleVesting'
+    | 'add_liquidity_single_token'
+    | 'add_liquidity'
+    | 'remove_liquidity'
+    | 'remove_liquidity_single_token'
   // chainId: ChainId
   summary: {
     pending: ReactNode | Array<ReactNode>

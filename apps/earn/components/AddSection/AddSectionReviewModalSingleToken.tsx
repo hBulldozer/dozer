@@ -19,7 +19,6 @@ interface AddSectionReviewModalSingleTokenProps {
 }
 
 export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTokenProps> = ({
-  chainId,
   token,
   otherToken,
   input,
@@ -28,7 +27,6 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
   children,
 }) => {
   const [open, setOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [sentTX, setSentTX] = useState(false)
   const { network } = useNetwork()
   const { accounts } = useWalletConnectClient()
@@ -58,7 +56,7 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
   }
 
   const handleAddLiquidity = async () => {
-    if (!quoteData || !token || !otherToken || !networkData || !address) return
+    if (!quoteData || !token || !otherToken || !networkData?.number || !address) return
 
     setSentTX(true)
     await poolManager.addLiquiditySingleToken(
@@ -74,7 +72,7 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result && sentTX) {
       console.log(rpcResult)
-      if (quoteData && token && otherToken) {
+      if (quoteData && token && otherToken && networkData) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
           const notificationData: NotificationData = {
@@ -119,7 +117,7 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
         }
       }
     }
-  }, [rpcResult])
+  }, [rpcResult, sentTX, quoteData, token, otherToken, networkData, network, input, address, fee, addTempTx, addNotification])
 
   return (
     <>

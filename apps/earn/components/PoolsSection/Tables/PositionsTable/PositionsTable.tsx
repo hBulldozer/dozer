@@ -6,7 +6,6 @@ import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { APR_COLUMN, NAME_COLUMN, VALUE_COLUMN, PROFIT_COLUMN } from './Cells/columns'
 import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
 import { useNetwork } from '@dozer/zustand'
-import { PAGE_SIZE } from '../contants'
 import { ChainId } from '@dozer/chain'
 import { Pair, UserProfitInfo } from '@dozer/api'
 import { api } from '../../../../utils/api'
@@ -77,7 +76,7 @@ export const PositionsTable: FC = () => {
           // userPosition.token0Amount and token1Amount are already in decimal format
           pair.value0 = userPosition.token0Amount * prices[pool.token0.uuid]
           pair.value1 = userPosition.token1Amount * prices[pool.token1.uuid]
-          pair.profit = userPosition.profit
+          pair.profit = userPosition.profit ?? undefined
           array.push(pair)
         }
       })
@@ -147,7 +146,7 @@ export const PositionsTable: FC = () => {
   }, [isMd, isSm])
 
   const rowLink = useCallback((row: Pair) => {
-    return `/${(row as any).symbolId || row.id}`
+    return `/${(row as PositionPair & { symbolId?: string }).symbolId || row.id}`
   }, [])
 
   return (
