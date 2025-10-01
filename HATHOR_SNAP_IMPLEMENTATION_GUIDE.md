@@ -1,6 +1,6 @@
 # Hathor Snap Implementation Guide
 
-This guide explains how to implement Hathor network snap integration using the `@dozer/snap-utils` package in your Dozer Protocol applications.
+This guide explains how to implement Hathor network snap integration using the `@hathor/snap-utils` package in your Dozer Protocol applications.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ This guide explains how to implement Hathor network snap integration using the `
 
 ## Overview
 
-The `@dozer/snap-utils` package provides production-ready React hooks and utilities for integrating Hathor network snaps into your Dozer Protocol applications. It handles wallet connection, snap installation, network switching, and Hathor-specific blockchain operations with comprehensive error handling and state management.
+The `@hathor/snap-utils` package provides production-ready React hooks and utilities for integrating Hathor network snaps into your Dozer Protocol applications. It handles wallet connection, snap installation, network switching, and Hathor-specific blockchain operations with comprehensive error handling and state management.
 
 ### Key Features
 
@@ -45,7 +45,7 @@ pnpm install
 ### 1. Wrap your app with MetaMaskProvider
 
 ```tsx
-import { MetaMaskProvider } from '@dozer/snap-utils'
+import { MetaMaskProvider } from '@hathor/snap-utils'
 
 function App() {
   return (
@@ -60,7 +60,7 @@ function App() {
 
 ```tsx
 import React, { useState, useCallback, useEffect } from 'react'
-import { useMetaMaskContext, useRequest, useRequestSnap, useInvokeSnap } from '@dozer/snap-utils'
+import { useMetaMaskContext, useRequest, useRequestSnap, useInvokeSnap } from '@hathor/snap-utils'
 
 function HathorWallet() {
   const { provider, installedSnap, error, setInstalledSnap } = useMetaMaskContext()
@@ -231,7 +231,7 @@ const result = await invokeSnap({
 
 ```tsx
 import React, { useState, useEffect } from 'react'
-import { useMetaMaskContext, useRequest, useRequestSnap, useInvokeSnap } from '@dozer/snap-utils'
+import { useMetaMaskContext, useRequest, useRequestSnap, useInvokeSnap } from '@hathor/snap-utils'
 
 function HathorConnection() {
   const { provider, installedSnap, setInstalledSnap } = useMetaMaskContext()
@@ -319,7 +319,7 @@ function HathorConnection() {
 
 ```tsx
 import React, { useState } from 'react'
-import { useInvokeSnap } from '@dozer/snap-utils'
+import { useInvokeSnap } from '@hathor/snap-utils'
 
 function NetworkManager({ installedSnap, onNetworkChange }) {
   const invokeSnap = useInvokeSnap()
@@ -377,7 +377,7 @@ function NetworkManager({ installedSnap, onNetworkChange }) {
 
 ```tsx
 import React, { useState } from 'react'
-import { useInvokeSnap } from '@dozer/snap-utils'
+import { useInvokeSnap } from '@hathor/snap-utils'
 
 function DozerSwap({ installedSnap, hathorAddress }) {
   const invokeSnap = useInvokeSnap()
@@ -441,7 +441,7 @@ function DozerSwap({ installedSnap, hathorAddress }) {
 
 ```tsx
 import React, { useState } from 'react'
-import { useInvokeSnap } from '@dozer/snap-utils'
+import { useInvokeSnap } from '@hathor/snap-utils'
 
 function DozerAddLiquidity({ installedSnap, hathorAddress }) {
   const invokeSnap = useInvokeSnap()
@@ -554,7 +554,7 @@ function HathorFaucet({ hathorAddress, selectedNetwork }) {
 
 ```tsx
 import { useState, useEffect, useCallback } from 'react'
-import { useMetaMaskContext, useRequest, useRequestSnap, useInvokeSnap } from '@dozer/snap-utils'
+import { useMetaMaskContext, useRequest, useRequestSnap, useInvokeSnap } from '@hathor/snap-utils'
 
 interface HathorWalletState {
   isConnected: boolean
@@ -910,7 +910,7 @@ Before reporting issues, verify:
    - [ ] Correct network selected (testnet for faucet)
 
 2. **Code Implementation**:
-   - [ ] Using latest @dozer/snap-utils package
+   - [ ] Using latest @hathor/snap-utils package
    - [ ] Proper error handling in place
    - [ ] Address parsing with fallback logic
    - [ ] Network switching using `newNetwork` parameter
@@ -1014,13 +1014,13 @@ To integrate Hathor snap into your Dozer app:
 1. **Install Dependencies**:
    
    ```bash
-   pnpm add @dozer/snap-utils
+   pnpm add @hathor/snap-utils
    ```
 
 2. **Setup MetaMask Context**:
    
    ```tsx
-   import { MetaMaskProvider } from '@dozer/snap-utils'
+   import { MetaMaskProvider } from '@hathor/snap-utils'
    
    function App() {
      return (
@@ -1034,7 +1034,7 @@ To integrate Hathor snap into your Dozer app:
 3. **Use the Hook**:
    
    ```tsx
-   import { useHathorWallet } from '@dozer/snap-utils'
+   import { useHathorWallet } from '@hathor/snap-utils'
    
    function WalletComponent() {
      const { 

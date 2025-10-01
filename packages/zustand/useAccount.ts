@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { devtools, persist } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 
 const { hUSDC_UUID } = process.env
 
@@ -58,37 +58,37 @@ export const useAccount = create<AccountState>()(
   persist(
     (set) => ({
       // Wallet connection state
-      walletType: null,
+      walletType: null as WalletType,
       address: '',
       hathorAddress: '',
       isSnapInstalled: false,
-      snapId: null,
-      selectedNetwork: 'testnet',
+      snapId: null as string | null,
+      selectedNetwork: 'testnet' as 'mainnet' | 'testnet',
       
       // Network management
-      targetNetwork: 'testnet',
-      currentNetwork: null,
+      targetNetwork: 'testnet' as 'mainnet' | 'testnet',
+      currentNetwork: null as 'mainnet' | 'testnet' | null,
       setCurrentNetwork: (network) => set(() => ({ currentNetwork: network })),
-      isNetworkMismatch: () => {
-        const state = useAccount.getState()
+      isNetworkMismatch: (): boolean => {
+        const state: AccountState = useAccount.getState()
         return state.currentNetwork !== null && state.currentNetwork !== state.targetNetwork
       },
       
       // Legacy setAddress method for backward compatibility
-      setAddress: (address) => set((state) => ({ 
+      setAddress: (address: string) => set((state) => ({
         address: address,
         hathorAddress: state.walletType === 'walletconnect' ? address : state.hathorAddress
       })),
       
       // New wallet connection methods
-      setWalletConnection: (connection) => set((state) => ({
+      setWalletConnection: (connection: Partial<WalletConnection>) => set((state) => ({
         ...state,
         ...connection,
         // Update legacy address field for backward compatibility
         address: connection.address || state.address,
       })),
       
-      disconnectWallet: () => set((state) => ({
+      disconnectWallet: () => set(() => ({
         walletType: null,
         address: '',
         hathorAddress: '',
@@ -123,18 +123,18 @@ export const useAccount = create<AccountState>()(
           token_balance: 100,
         },
       ],
-      setBalance: (balance) => set((state) => ({ balance: balance })),
+      setBalance: (balance: TokenBalance[]) => set(() => ({ balance: balance })),
 
-      notifications: [],
-      setNotifications: (notifications) => set((state) => ({ notifications: notifications })),
-      clearNotifications: () => set((state) => ({ notifications: [] })),
+      notifications: {} as Record<number, string[]>,
+      setNotifications: (notifications: Record<number, string[]>) => set(() => ({ notifications: notifications })),
+      clearNotifications: () => set(() => ({ notifications: {} })),
       updateNotificationLastState: (txHash: string, last_status: string, last_message: string) =>
         set((state) => {
           const updatedNotifications = { ...state.notifications }
 
           for (const notificationId in updatedNotifications) {
             const notificationString = updatedNotifications[notificationId]
-            const notification: any = JSON.parse(notificationString[0])
+            const notification = JSON.parse(notificationString[0]) as { txHash: string; last_status?: string; last_message?: string }
 
             if (notification.txHash === txHash) {
               updatedNotifications[notificationId][0] = JSON.stringify({
@@ -154,7 +154,7 @@ export const useAccount = create<AccountState>()(
 
           for (const notificationId in updatedNotifications) {
             const notificationString = updatedNotifications[notificationId]
-            const notification: any = JSON.parse(notificationString[0])
+            const notification = JSON.parse(notificationString[0]) as { txHash: string; status?: string; last_message?: string }
 
             if (notification.txHash === txHash) {
               updatedNotifications[notificationId][0] = JSON.stringify({
@@ -176,7 +176,7 @@ export const useAccount = create<AccountState>()(
           },
         })),
       zealyIdentity: '',
-      setZealyIdentity: (identity) => set((state) => ({ zealyIdentity: identity })),
+      setZealyIdentity: (identity: string) => set(() => ({ zealyIdentity: identity })),
     }),
     {
       name: 'account-storage',

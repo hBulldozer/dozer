@@ -11,9 +11,9 @@ importers:
 
   .:
     dependencies:
-      '@dozer/snap-utils':
-        specifier: workspace:*
-        version: link:packages/snap-utils
+      '@hathor/snap-utils':
+        specifier: 0.1.0
+        version: 0.1.0(react@18.3.1)
       '@metamask/sdk-react':
         specifier: ^0.32.1
         version: 0.32.1(bufferutil@4.0.8)(react-dom@18.3.1(react@18.3.1))(react-native@0.73.1(@babel/core@7.25.2)(@babel/preset-env@7.23.7(@babel/core@7.25.2))(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)(utf-8-validate@5.0.10)
@@ -989,40 +989,6 @@ importers:
       tsx:
         specifier: ^4.7.2
         version: 4.7.2
-      typescript:
-        specifier: ^5.3.3
-        version: 5.5.3
-
-  packages/snap-utils:
-    dependencies:
-      '@metamask/providers':
-        specifier: 16.1.0
-        version: 16.1.0
-      react:
-        specifier: ^18.2.0
-        version: 18.3.1
-    devDependencies:
-      '@dozer/eslint-config':
-        specifier: workspace:*
-        version: link:../../config/eslint
-      '@dozer/prettier-config':
-        specifier: workspace:*
-        version: link:../../config/prettier
-      '@types/node':
-        specifier: 22.9.0
-        version: 22.9.0
-      '@types/react':
-        specifier: 18.3.23
-        version: 18.3.23
-      '@types/react-dom':
-        specifier: 18.3.7
-        version: 18.3.7(@types/react@18.3.23)
-      eslint:
-        specifier: '*'
-        version: 8.56.0
-      prettier:
-        specifier: '*'
-        version: 3.3.3
       typescript:
         specifier: ^5.3.3
         version: 5.5.3
@@ -2684,6 +2650,12 @@ packages:
   '@hathor/hathor-rpc-handler@2.2.0':
     resolution: {integrity: sha512-3wNGqWQQdTWogJCnrhok7+6vL/FMVc2C8T4SfRJIyd/qeeG2ezaPRhONLwpUwuSyprn+jaCIwgyP5p6x4YvvmA==}
     engines: {node: '>=20'}
+
+  '@hathor/snap-utils@0.1.0':
+    resolution: {integrity: sha512-o0r1KXSGk5+I57ZGdhjxG18AOn5cxb3yZE4zXElARRoIuTZ+k4EL2nRysxA5N6tQrRu9FlUrS6CYEd21tKhArw==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      react: ^18.2.0
 
   '@hathor/wallet-lib@2.5.1':
     resolution: {integrity: sha512-miTBgVRSWpM7pE52sFi+epVAucWdhs1rHboSKrB3C8LLKIpPmM0p+eIWpYRa+eojDjQpT0765oeSSHnJjojMgA==}
@@ -4483,11 +4455,6 @@ packages:
 
   '@types/react-dom@18.2.18':
     resolution: {integrity: sha512-TJxDm6OfAX2KJWJdMEVTwWke5Sc/E/RlnPGvGfS0W7+6ocy2xhDVQVh/KvC2Uf7kACs+gDytdusDSdWfWkaNzw==}
-
-  '@types/react-dom@18.3.7':
-    resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
-    peerDependencies:
-      '@types/react': ^18.0.0
 
   '@types/react-reconciler@0.26.7':
     resolution: {integrity: sha512-mBDYl8x+oyPX/VBb3E638N0B7xG+SPk/EAMcVPeexqus/5aTpTphQi0curhhshOqRrc9t6OPoJfEUkbymse/lQ==}
@@ -11621,6 +11588,13 @@ snapshots:
       - debug
       - utf-8-validate
 
+  '@hathor/snap-utils@0.1.0(react@18.3.1)':
+    dependencies:
+      '@metamask/providers': 16.1.0
+      react: 18.3.1
+    transitivePeerDependencies:
+      - supports-color
+
   '@hathor/wallet-lib@2.5.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       axios: 1.7.7
@@ -13885,10 +13859,6 @@ snapshots:
   '@types/react-dom@18.2.18':
     dependencies:
       '@types/react': 18.2.46
-
-  '@types/react-dom@18.3.7(@types/react@18.3.23)':
-    dependencies:
-      '@types/react': 18.3.23
 
   '@types/react-reconciler@0.26.7':
     dependencies:

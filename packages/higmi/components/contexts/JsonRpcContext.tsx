@@ -12,7 +12,8 @@ import {
   RpcResponseTypes,
 } from '@hathor/hathor-rpc-handler'
 import { IHathorRpc } from '@dozer/nanocontracts/src/types'
-import { useInvokeSnap } from '@dozer/snap-utils'
+// @ts-expect-error - Hathor Snap Utils is not typed
+import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
 
 // Use the centralized configuration for Hathor chain
@@ -30,7 +31,7 @@ export interface IFormattedRpcResponse<T> {
 
 export interface IContext {
   ping: () => Promise<void>
-  hathorRpc: IHathorRpc | null
+  hathorRpc: IHathorRpc
   rpcResult?: IFormattedRpcResponse<
     SignOracleDataResponse | SendNanoContractTxResponse | CreateTokenResponse | string | null | undefined
   > | null
@@ -214,9 +215,9 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
   }, [client, session])
 
   // Create MetaMask Snap RPC implementation with memoization
-  const metamaskSnapRpc: IHathorRpc | null = useMemo(() => {
+  const metamaskSnapRpc: IHathorRpc = useMemo(() => {
     if (walletType !== 'metamask-snap' || !invokeSnap || !snapId) {
-      return null
+      return walletConnectRpc
     }
 
     const handleSnapResponse = (result: unknown): { response: Record<string, unknown> } => {
@@ -390,14 +391,14 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
   }, [walletType, invokeSnap, snapId])
 
   // Create unified RPC based on wallet type
-  const unifiedRpc: IHathorRpc | null = useMemo(() => {
+  const unifiedRpc: IHathorRpc = useMemo(() => {
     switch (walletType) {
       case 'walletconnect':
         return walletConnectRpc
       case 'metamask-snap':
         return metamaskSnapRpc
       default:
-        return null
+        return walletConnectRpc
     }
   }, [walletType, walletConnectRpc, metamaskSnapRpc, address, snapId, invokeSnap])
 

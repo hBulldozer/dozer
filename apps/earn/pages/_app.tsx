@@ -18,7 +18,8 @@ import { api } from '../utils/api'
 import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 import { usePathname } from 'next/navigation'
 import { isFeatureEnabled } from '../config/features'
-import { MetaMaskProvider } from '@dozer/snap-utils'
+// @ts-expect-error - Hathor Snap Utils is not typed
+import { MetaMaskProvider } from '@hathor/snap-utils'
 
 // const queryClient = new QueryClient()
 

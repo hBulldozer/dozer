@@ -231,7 +231,6 @@ export class WalletConnectionService {
         isSnapInstalled: true,
         snapId: snapId,
         selectedNetwork: targetNetwork,
-        currentNetwork: targetNetwork,
       })
 
       return {

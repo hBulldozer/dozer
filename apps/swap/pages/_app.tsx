@@ -9,7 +9,8 @@ import { api } from 'utils/api'
 import { Header } from '../components'
 import Head from 'next/head'
 import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
-import { MetaMaskProvider } from '@dozer/snap-utils'
+// @ts-expect-error - Hathor Snap Utils is not typed
+import { MetaMaskProvider } from '@hathor/snap-utils'
 import { config } from '@hathor/wallet-lib'
 
 config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
