@@ -6,15 +6,6 @@ import { createTRPCRouter, procedure } from '../trpc'
 export const faucetRouter = createTRPCRouter({
   sendHTR: procedure.input(z.object({ address: z.string() })).mutation(async ({ ctx, input }) => {
     console.log(`Sending HTR to ${input.address}`)
-    const transactions = await ctx.prisma.faucet.findMany()
-    for (const transaction of transactions) {
-      if (transaction.address == input.address)
-        return {
-          success: false,
-          message: `You already have a faucet transaction on ${transaction.date}`,
-          hash: transaction.hash,
-        }
-    }
     console.log(`Trying to start wallet`)
     try {
       const start = await fetch(`${process.env.LOCAL_WALLET_MASTER_URL}/start`, {
@@ -35,7 +26,7 @@ export const faucetRouter = createTRPCRouter({
         },
         body: JSON.stringify({
           address: input.address,
-          value: 50_000_00,
+          value: 50_00,
           token: '00',
           change_address: process.env.LOCAL_WALLET_MASTER_ADDRESS || '',
         }),
@@ -50,18 +41,14 @@ export const faucetRouter = createTRPCRouter({
         throw new Error('Failed to create token on blockchain')
       }
 
-      const database_save = await ctx.prisma.faucet.create({
-        data: {
-          address: input.address,
-          amount: 5_000_00,
-          date: new Date(),
-          hash: data.hash,
-        },
-      })
-
-      if (!database_save) {
-        throw new Error('Failed to create token on blockchain')
-      }
+      // await ctx.prisma.faucet.create({
+      //   data: {
+      //     address: input.address,
+      //     amount: 50_000_00,
+      //     date: new Date(),
+      //     hash: data.hash,
+      //   },
+      // })
       return { success: true, message: 'Faucet transaction created', hash: data.hash }
     } catch (e) {
       console.log(e)

@@ -18,6 +18,8 @@ import { api } from '../utils/api'
 import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 import { usePathname } from 'next/navigation'
 import { isFeatureEnabled } from '../config/features'
+// @ts-expect-error - Hathor Snap Utils is not typed
+import { MetaMaskProvider } from '@hathor/snap-utils'
 
 // const queryClient = new QueryClient()
 
@@ -46,15 +48,17 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
         <App.Shell>
           {/* <DefaultSeo {...SEO} /> */}
           <ClientContextProvider>
-            <JsonRpcContextProvider>
-              <BridgeProvider>
-                <Header />
-                {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
-                <Component {...pageProps} />
-                <App.Footer />
-                <ToastContainer className="mt-[50px]" />
-              </BridgeProvider>
-            </JsonRpcContextProvider>
+            <MetaMaskProvider>
+              <JsonRpcContextProvider>
+                <BridgeProvider>
+                  <Header />
+                  {/* <TokenListsUpdaters chainIds={SUPPORTED_CHAIN_IDS} /> */}
+                  <Component {...pageProps} />
+                  <App.Footer />
+                  <ToastContainer className="mt-[50px]" />
+                </BridgeProvider>
+              </JsonRpcContextProvider>
+            </MetaMaskProvider>
           </ClientContextProvider>
         </App.Shell>
       </ThemeProvider>

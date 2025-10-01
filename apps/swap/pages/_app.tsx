@@ -9,8 +9,9 @@ import { api } from 'utils/api'
 import { Header } from '../components'
 import Head from 'next/head'
 import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
+// @ts-expect-error - Hathor Snap Utils is not typed
+import { MetaMaskProvider } from '@hathor/snap-utils'
 import { config } from '@hathor/wallet-lib'
-import { MetaMaskProvider } from '../components/MetaMaskProvider'
 
 config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
 config.setNetwork('testnet')
@@ -36,16 +37,16 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
       <ThemeProvider>
         <App.Shell>
           <ClientContextProvider>
-            <JsonRpcContextProvider>
-              <BridgeProvider>
-                <MetaMaskProvider>
+            <MetaMaskProvider>
+              <JsonRpcContextProvider>
+                <BridgeProvider>
                   <Header />
                   <Component {...pageProps} />
                   <App.Footer />
                   <ToastContainer className="mt-[50px]" />
-                </MetaMaskProvider>
-              </BridgeProvider>
-            </JsonRpcContextProvider>
+                </BridgeProvider>
+              </JsonRpcContextProvider>
+            </MetaMaskProvider>
           </ClientContextProvider>
         </App.Shell>
       </ThemeProvider>

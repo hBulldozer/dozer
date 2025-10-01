@@ -61,7 +61,13 @@ const BalancePanel: FC<BalancePanelProps> = ({
   const balance = useAccount((state) => state.balance)
   const [tokenBalance, setTokenBalance] = useState(0)
   const { accounts } = useWalletConnectClient()
-  const address = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  const { walletType, hathorAddress } = useAccount()
+  
+  // Get the appropriate address based on wallet type
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
+  
   const { isSm } = useBreakpoint('sm')
 
   // Bridge context for token balances

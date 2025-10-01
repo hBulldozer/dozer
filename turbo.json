@@ -75,7 +75,6 @@
         "NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS",
         "NEXT_PUBLIC_OASIS_BLUEPRINT_ID",
         "SNAP_ORIGIN",
-        "NEXT_PUBLIC_OASIS_BLUEPRINT_ID",
         "NEXT_PUBLIC_BRIDGED_TOKEN_ADDRESSES",
         "NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID",
         "NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL"
@@ -100,6 +99,13 @@
       "inputs": []
     },
     "//#build-packages": {
+      "dependsOn": [],
+      "outputs": [
+        "dist/**/*"
+      ],
+      "inputs": []
+    },
+    "//#build-snap-utils": {
       "dependsOn": [],
       "outputs": [
         "dist/**/*"

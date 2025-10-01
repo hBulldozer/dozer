@@ -1871,7 +1871,7 @@ export const poolRouter = createTRPCRouter({
               tokenSymbols, // Include resolved token symbols
               isMultiHop,
               weight: tx.weight,
-              success: Array.isArray(tx.voided_by) ? tx.voided_by.length === 0 : !tx.voided_by,
+              success: !tx.is_voided,
               // Include full transaction data for debugging
               debug: {
                 fullTx: tx,
