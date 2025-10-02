@@ -84,12 +84,12 @@ export class WalletConnectionService {
    * Check if Hathor snap is already installed
    */
   public async checkSnapInstallation(
-    requestFn: (request: { method: string; params?: any[] }) => Promise<any>
+    requestFn: (request: { method: string; params?: any }) => Promise<any>
   ): Promise<{ installed: boolean; snapId: string | null }> {
     try {
-      const snaps = await requestFn({ method: 'wallet_getSnaps' }) as Record<string, any>
-      const possibleSnapIds = ['local:http://localhost:8089', 'npm:@hathor/snap']
-      
+      const snaps = (await requestFn({ method: 'wallet_getSnaps' })) as Record<string, any>
+      const possibleSnapIds = ['local:http://localhost:8080', 'npm:@hathor/snap']
+
       for (const snapId of possibleSnapIds) {
         if (snaps && snaps[snapId]) {
           return { installed: true, snapId }
@@ -114,14 +114,14 @@ export class WalletConnectionService {
         method: 'htr_getConnectedNetwork',
         params: {},
       })
-      
+
       // Parse network response
       if (typeof result === 'string') {
         return result.includes('testnet') ? 'testnet' : 'mainnet'
       } else if (typeof result === 'object' && result?.network) {
         return result.network.includes('testnet') ? 'testnet' : 'mainnet'
       }
-      
+
       return null
     } catch (error) {
       return null
@@ -132,8 +132,7 @@ export class WalletConnectionService {
    * Enhanced MetaMask Snap connection with smart detection
    */
   public async connectMetaMaskSnapEnhanced(
-    requestFn: (request: { method: string; params?: any[] }) => Promise<any>,
-    requestSnapFn: (snapId: string) => Promise<{ id: string }>,
+    requestFn: (request: { method: string; params?: any }) => Promise<any>,
     invokeSnapFn: (params: { snapId: string; method: string; params: any }) => Promise<any>,
     onStatusUpdate?: (status: string) => void
   ): Promise<WalletConnectionResult> {
@@ -167,10 +166,17 @@ export class WalletConnectionService {
         // Install snap
         onStatusUpdate?.('Installing Hathor snap...')
         const defaultSnapId = 'npm:@hathor/snap'
-        const snap = await requestSnapFn(defaultSnapId)
 
-        // Check if snap installation was cancelled
-        if (!snap || !snap.id) {
+        // Use request directly to get the snap object
+        const snaps = await requestFn({
+          method: 'wallet_requestSnaps',
+          params: {
+            [defaultSnapId]: {},
+          },
+        })
+
+        // Check if snap installation was cancelled or failed
+        if (!snaps || !snaps[defaultSnapId]) {
           return {
             success: false,
             walletType: 'metamask-snap',
@@ -179,8 +185,8 @@ export class WalletConnectionService {
             error: 'User cancelled snap installation',
           }
         }
-        
-        snapId = snap.id
+
+        snapId = defaultSnapId
         onStatusUpdate?.('Hathor snap installed! Configuring...')
       }
 
@@ -242,9 +248,11 @@ export class WalletConnectionService {
     } catch (error) {
       let errorMessage = 'Connection failed'
       if (error instanceof Error) {
-        if (error.message.includes('User rejected') || 
-            error.message.includes('User denied') ||
-            error.message.includes('cancelled')) {
+        if (
+          error.message.includes('User rejected') ||
+          error.message.includes('User denied') ||
+          error.message.includes('cancelled')
+        ) {
           errorMessage = 'User cancelled snap installation'
         } else if (error.message.includes('Snap not found')) {
           errorMessage = 'Hathor snap not available. Please ensure the snap is running on localhost:8089.'
@@ -267,12 +275,11 @@ export class WalletConnectionService {
    * Connect using MetaMask Snap (legacy method for backward compatibility)
    */
   public async connectMetaMaskSnap(
-    requestFn: (request: { method: string; params?: any[] }) => Promise<any>,
-    requestSnapFn: (snapId: string) => Promise<{ id: string }>,
+    requestFn: (request: { method: string; params?: any }) => Promise<any>,
     invokeSnapFn: (params: { snapId: string; method: string; params: any }) => Promise<any>
   ): Promise<WalletConnectionResult> {
     // Use the enhanced method
-    return this.connectMetaMaskSnapEnhanced(requestFn, requestSnapFn, invokeSnapFn)
+    return this.connectMetaMaskSnapEnhanced(requestFn, invokeSnapFn)
   }
 
   /**

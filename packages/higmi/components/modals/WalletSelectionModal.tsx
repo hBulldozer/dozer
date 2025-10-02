@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Dialog, Typography } from '@dozer/ui'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 // @ts-expect-error - Hathor Snap Utils is not typed
-import { useMetaMaskContext, useRequest, useRequestSnap, useInvokeSnap } from '@hathor/snap-utils'
+import { useMetaMaskContext, useRequest, useInvokeSnap } from '@hathor/snap-utils'
 import Image from 'next/image'
 import { WalletIcon } from '@dozer/ui/icons'
 import { useWalletConnectClient } from '../contexts'
@@ -24,8 +24,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
 }) => {
   const { provider } = useMetaMaskContext()
   const request = useRequest()
-  const requestSnap = useRequestSnap('npm:@hathor/snap') // Explicitly set snap ID to avoid localhost:8080 default
-  const invokeSnap = useInvokeSnap()
+  const invokeSnap = useInvokeSnap('npm:@hathor/snap')
   const { session, accounts, isWaitingApproval } = useWalletConnectClient()
   const walletService = WalletConnectionService.getInstance()
   const { targetNetwork } = useAccount()
@@ -129,9 +128,8 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
     try {
       // Use the enhanced connection service with detailed feedback
       const result = await walletService.connectMetaMaskSnapEnhanced(
-        request, 
-        requestSnap, 
-        invokeSnap, 
+        request,
+        invokeSnap,
         setConnectionStep // Pass setConnectionStep as status callback
       )
 
