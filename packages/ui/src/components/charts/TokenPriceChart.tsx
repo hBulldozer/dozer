@@ -33,8 +33,11 @@ export interface TokenPriceChartProps {
   height?: number
   onPeriodChange?: (period: string) => void
   onCurrencyChange?: (currency: 'USD' | 'HTR') => void
+  onRefresh?: () => void
   currentPrice?: number
   priceChange?: number
+  hidePriceDisplay?: boolean
+  hideTradingViewAttribution?: boolean
 }
 
 const CHART_PERIODS = [
@@ -59,13 +62,17 @@ export const TokenPriceChart: React.FC<TokenPriceChartProps> = ({
   height = 400,
   onPeriodChange,
   onCurrencyChange,
+  onRefresh,
   currentPrice,
   priceChange,
+  hidePriceDisplay = false,
+  hideTradingViewAttribution = false,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Candlestick' | 'Line' | 'Area'> | null>(null)
   const [isLoading, setIsLoading] = useState(loading)
+  const [hasData, setHasData] = useState(false) // Track if we've ever had data
 
   // Chart configuration
   const chartOptions = useMemo(
@@ -81,14 +88,14 @@ export const TokenPriceChart: React.FC<TokenPriceChartProps> = ({
       crosshair: {
         mode: 1,
         vertLine: {
-          color: '#eab308', // yellow-500
+          color: '#78716c', // stone-500 (gray)
           width: 1 as const,
           style: 2 as const,
           visible: true,
           labelVisible: true,
         },
         horzLine: {
-          color: '#eab308', // yellow-500
+          color: '#78716c', // stone-500 (gray)
           width: 1 as const,
           style: 2 as const,
           visible: true,
@@ -98,29 +105,102 @@ export const TokenPriceChart: React.FC<TokenPriceChartProps> = ({
       rightPriceScale: {
         borderColor: '#57534e', // stone-600
         textColor: '#d6d3d1', // stone-300
+        // Increase decimal precision for better price visibility
+        minimumWidth: 80, // Wider scale to fit more digits
       },
       timeScale: {
         borderColor: '#57534e', // stone-600
         textColor: '#d6d3d1', // stone-300
         timeVisible: true,
         secondsVisible: false,
+        // Custom formatter for x-axis tick marks (converts UTC to local time)
+        tickMarkFormatter: (time: number) => {
+          const date = new Date(time * 1000) // Convert Unix seconds to milliseconds
+          const needsDate = ['1w', '1m', '3m', '6m', '1y'].includes(period)
+
+          if (needsDate) {
+            // For longer periods, show date
+            return date.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            })
+          }
+
+          // For shorter periods, show time in local timezone
+          return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })
+        },
+      },
+      localization: {
+        // Format timestamps to user's local timezone
+        // Backend sends UTC, we convert to local time for display
+        locale: 'en-US',
+        timeFormatter: (timestamp: number) => {
+          // timestamp is Unix seconds (UTC)
+          const date = new Date(timestamp * 1000) // Convert to milliseconds
+
+          // Check if we need to show date (for longer periods)
+          const needsDate = ['1w', '1m', '3m', '6m', '1y'].includes(period)
+
+          if (needsDate) {
+            // For weekly/monthly/yearly views, show date + time
+            const dateStr = date.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+            })
+            const timeStr = date.toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            })
+            return `${dateStr} ${timeStr}`
+          }
+
+          // For hourly/daily views, show only time
+          return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })
+        },
+        // Custom price formatter for y-axis to show more decimal places
+        priceFormatter: (price: number) => {
+          // For very small prices (< 0.01), show up to 8 decimals
+          if (price < 0.01) {
+            return price.toFixed(8)
+          }
+          // For small prices (< 1), show up to 6 decimals
+          if (price < 1) {
+            return price.toFixed(6)
+          }
+          // For larger prices, show up to 4 decimals
+          if (price < 100) {
+            return price.toFixed(4)
+          }
+          // For very large prices, show 2 decimals
+          return price.toFixed(2)
+        },
       },
       watermark: {
         visible: false,
       },
       handleScroll: {
-        mouseWheel: true,
-        pressedMouseMove: true,
-        horzTouchDrag: true,
-        vertTouchDrag: true,
+        mouseWheel: false,
+        pressedMouseMove: false,
+        horzTouchDrag: false,
+        vertTouchDrag: false,
       },
       handleScale: {
-        axisPressedMouseMove: true,
-        mouseWheel: true,
-        pinch: true,
+        axisPressedMouseMove: false,
+        mouseWheel: false,
+        pinch: false,
       },
     }),
-    []
+    [period]
   )
 
   // Initialize chart and create series
@@ -186,6 +266,7 @@ export const TokenPriceChart: React.FC<TokenPriceChartProps> = ({
     if (!seriesRef.current || !data.length) return
 
     setIsLoading(false)
+    setHasData(true) // Mark that we now have data
 
     try {
       if (chartType === 'candlestick') {
@@ -211,6 +292,15 @@ export const TokenPriceChart: React.FC<TokenPriceChartProps> = ({
       console.error('Error updating chart data:', error)
     }
   }, [data, chartType])
+
+  // Update chart options when period changes (for timezone formatter)
+  useEffect(() => {
+    if (chartRef.current) {
+      chartRef.current.applyOptions({
+        localization: chartOptions.localization,
+      })
+    }
+  }, [period, chartOptions.localization])
 
   // Handle resize
   useEffect(() => {
@@ -271,12 +361,12 @@ export const TokenPriceChart: React.FC<TokenPriceChartProps> = ({
   }
 
   return (
-    <div className={classNames('flex flex-col', className)}>
+    <div className={classNames('flex flex-col w-full', className)}>
       {/* Header with price info and controls */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-4">
-          {/* Current price and change */}
-          {currentPrice !== undefined && (
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          {/* Current price and change - only show if not hidden */}
+          {!hidePriceDisplay && currentPrice !== undefined && (
             <div className="flex items-center space-x-3">
               <Typography variant="xl" weight={600} className="text-stone-50">
                 {formatPrice(currentPrice)}
@@ -324,28 +414,54 @@ export const TokenPriceChart: React.FC<TokenPriceChartProps> = ({
           )}
         </div>
 
-        {/* Period selector */}
-        {onPeriodChange && (
-          <div className="flex space-x-1">
-            {CHART_PERIODS.map((p) => (
-              <button
-                key={p.value}
-                onClick={() => onPeriodChange(p.value)}
-                className={classNames(
-                  'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
-                  period === p.value ? 'bg-yellow-500 text-stone-900' : 'text-stone-400 hover:text-stone-200'
-                )}
+        {/* Period selector and refresh button */}
+        <div className="flex items-center gap-2">
+          {onPeriodChange && (
+            <div className="flex gap-2">
+              {CHART_PERIODS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => onPeriodChange(p.value)}
+                  className={classNames(
+                    'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                    period === p.value ? 'bg-yellow-500 text-stone-900' : 'text-stone-400 hover:text-stone-200'
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Manual refresh button */}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={loading}
+              className="p-1.5 rounded-md text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refresh chart data"
+            >
+              <svg
+                className={classNames('w-5 h-5', loading && 'animate-spin')}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        )}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Chart container */}
-      <div className="relative">
-        {isLoading && (
+      <div className="relative w-full">
+        {/* Only show loading overlay if we don't have data yet (initial load) */}
+        {isLoading && !hasData && (
           <div className="absolute inset-0 flex items-center justify-center bg-stone-900/50 backdrop-blur-sm rounded-lg z-10">
             <div className="flex items-center space-x-2 text-stone-400">
               <div className="w-5 h-5 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
@@ -357,21 +473,23 @@ export const TokenPriceChart: React.FC<TokenPriceChartProps> = ({
         <div
           ref={chartContainerRef}
           className="w-full rounded-lg overflow-hidden border border-stone-700"
-          style={{ height }}
+          style={{ height, minHeight: height }}
         />
 
-        {/* TradingView attribution */}
-        <div className="mt-2 text-xs text-stone-500 text-right">
-          <span>Powered by </span>
-          <a
-            href="https://www.tradingview.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-yellow-500 hover:text-yellow-400 underline"
-          >
-            TradingView
-          </a>
-        </div>
+        {/* TradingView attribution - only show if not hidden */}
+        {!hideTradingViewAttribution && (
+          <div className="mt-2 text-xs text-stone-500 text-right">
+            <span>Powered by </span>
+            <a
+              href="https://www.tradingview.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-yellow-500 hover:text-yellow-400 underline"
+            >
+              TradingView
+            </a>
+          </div>
+        )}
       </div>
     </div>
   )

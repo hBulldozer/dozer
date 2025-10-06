@@ -1,6 +1,7 @@
 const MAX_RETRIES = 3
 const INITIAL_TIMEOUT = 5000 // 5 seconds
 const BACKOFF_FACTOR = 2
+const SUMMARY_TIMEOUT = 10000 // 10 seconds for summary endpoint (can have more data)
 
 // Get Price Service URL from environment variables
 const PRICE_SERVICE_URL = process.env.PRICE_SERVICE_URL || 'http://localhost:8000'
@@ -26,28 +27,68 @@ export interface TokenPriceResponse {
   last_updated: string
 }
 
-export interface PoolVolumeHistoryResponse {
+// Pool volume data point - matches FastAPI PoolVolumeData model
+export interface PoolVolumeDataPoint {
   pool_key: string
+  timestamp: string // ISO datetime string from API
+  volume_a: number
+  volume_b: number
+  volume_usd: number
+  volume_htr: number
+  transactions: number
   interval: string
-  data: Array<{
-    timestamp: number
-    volume_usd: number
-    volume_token_a: number
-    volume_token_b: number
-    transactions: number
-  }>
 }
 
+// The API returns List[PoolVolumeData] directly, not wrapped
+export type PoolVolumeHistoryResponse = PoolVolumeDataPoint[]
+
+// Pool TVL data point - matches FastAPI PoolTVLData model
+export interface PoolTVLDataPoint {
+  pool_key: string
+  timestamp: string // ISO datetime string from API
+  reserve_a: number
+  reserve_b: number
+  tvl_usd: number
+  tvl_htr: number
+  price_a_usd: number
+  price_b_usd: number
+  interval: string
+}
+
+// The TVL endpoint returns wrapped response
 export interface PoolTVLHistoryResponse {
   pool_key: string
   interval: string
-  data: Array<{
-    timestamp: number
-    tvl_usd: number
-    reserve_a: number
-    reserve_b: number
-  }>
+  data: PoolTVLDataPoint[]
+  total: number
 }
+
+// Pool APR data point - matches FastAPI APR endpoint response
+export interface PoolAPRDataPoint {
+  pool_key: string
+  timestamp: string // ISO datetime string from API
+  apr: number
+  tvl_usd: number
+  daily_volume_usd: number
+  fee_rate: number
+  interval: string
+}
+
+// The APR endpoint returns wrapped response
+export interface PoolAPRHistoryResponse {
+  pool_key: string
+  interval: string
+  data: PoolAPRDataPoint[]
+  total: number
+}
+
+export interface TokenSummaryData {
+  current_price: number
+  change_24h: number
+  mini_chart: Array<{ timestamp: string; price: number }>
+}
+
+export type TokensSummaryResponse = Record<string, TokenSummaryData>
 
 class PriceServiceError extends Error {
   constructor(message: string, public status?: number, public endpoint?: string) {
@@ -149,7 +190,8 @@ export class PriceServiceClient {
   }
 
   /**
-   * Get pool volume history (if supported by price service)
+   * Get pool volume history
+   * Returns array of volume data points directly from API
    */
   async getPoolVolumeHistory(
     poolKey: string,
@@ -162,34 +204,65 @@ export class PriceServiceClient {
   ): Promise<PoolVolumeHistoryResponse> {
     const queryParams = new URLSearchParams()
 
+    // Pool key is now a query parameter (not URL encoded path parameter)
+    queryParams.set('pool_key', poolKey)
     if (params.interval) queryParams.set('interval', params.interval)
     if (params.from_time) queryParams.set('from_time', params.from_time)
     if (params.to_time) queryParams.set('to_time', params.to_time)
     if (params.limit) queryParams.set('limit', params.limit.toString())
 
     const queryString = queryParams.toString()
-    const encodedPoolKey = encodeURIComponent(poolKey)
-    const url = `${this.baseUrl}/pools/${encodedPoolKey}/volume${queryString ? `?${queryString}` : ''}`
+    const url = `${this.baseUrl}/pools/volume?${queryString}`
 
     return (await fetchWithRetry(url, MAX_RETRIES, INITIAL_TIMEOUT)) as PoolVolumeHistoryResponse
   }
 
   /**
-   * Get pool TVL history (not supported by price service yet)
-   * This endpoint doesn't exist in the current price service API
+   * Get pool TVL history
+   * Returns wrapped response with pool_key, interval, data array, and total
    */
   async getPoolTVLHistory(
-    _poolKey: string,
-    _params: {
+    poolKey: string,
+    params: {
       interval?: '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w'
-      from_time?: string
-      to_time?: string
       limit?: number
     } = {}
   ): Promise<PoolTVLHistoryResponse> {
-    // TVL history is not available in the current price service
-    // Return empty data structure to indicate this feature is not available
-    throw new PriceServiceError('Pool TVL history is not available in the current price service version')
+    const queryParams = new URLSearchParams()
+
+    // Pool key is a query parameter
+    queryParams.set('pool_key', poolKey)
+    if (params.interval) queryParams.set('interval', params.interval)
+    if (params.limit) queryParams.set('limit', params.limit.toString())
+
+    const queryString = queryParams.toString()
+    const url = `${this.baseUrl}/pools/tvl?${queryString}`
+
+    return (await fetchWithRetry(url, MAX_RETRIES, INITIAL_TIMEOUT)) as PoolTVLHistoryResponse
+  }
+
+  /**
+   * Get pool APR history
+   * Returns wrapped response with pool_key, interval, data array, and total
+   */
+  async getPoolAPRHistory(
+    poolKey: string,
+    params: {
+      interval?: '1h' | '4h' | '1d'
+      limit?: number
+    } = {}
+  ): Promise<PoolAPRHistoryResponse> {
+    const queryParams = new URLSearchParams()
+
+    // Pool key is a query parameter
+    queryParams.set('pool_key', poolKey)
+    if (params.interval) queryParams.set('interval', params.interval)
+    if (params.limit) queryParams.set('limit', params.limit.toString())
+
+    const queryString = queryParams.toString()
+    const url = `${this.baseUrl}/pools/apr?${queryString}`
+
+    return (await fetchWithRetry(url, MAX_RETRIES, INITIAL_TIMEOUT)) as PoolAPRHistoryResponse
   }
 
   /**
@@ -211,6 +284,28 @@ export class PriceServiceClient {
   async getStats(): Promise<unknown> {
     const url = `${this.baseUrl}/stats`
     return (await fetchWithRetry(url, MAX_RETRIES, INITIAL_TIMEOUT)) as unknown
+  }
+
+  /**
+   * Get tokens summary with price, 24h change, and mini charts
+   */
+  async getTokensSummary(
+    params: {
+      currency?: 'USD' | 'HTR'
+      mini_chart_points?: number
+    } = {}
+  ): Promise<TokensSummaryResponse> {
+    const queryParams = new URLSearchParams()
+
+    if (params.currency) queryParams.set('currency', params.currency)
+    if (params.mini_chart_points) queryParams.set('mini_chart_points', params.mini_chart_points.toString())
+
+    const queryString = queryParams.toString()
+    const url = `${this.baseUrl}/swap/tokens/summary${queryString ? `?${queryString}` : ''}`
+
+    // Use longer timeout for summary endpoint (has more data to process)
+    // Only retry once to fail faster if service is down
+    return (await fetchWithRetry(url, 1, SUMMARY_TIMEOUT)) as TokensSummaryResponse
   }
 }
 

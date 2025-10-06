@@ -52,14 +52,22 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const symbol = params?.symbol as string
   if (!symbol) return { notFound: true }
   const ssg = generateSSGHelper()
+
+  // Skip heavy prefetches in development to avoid socket hang ups
+  // In production, prefetch data for optimal ISG performance
+  const isDevelopment = process.env.NODE_ENV === 'development'
+
   try {
-    await ssg.getTokens.bySymbolDetailed.prefetch({ symbol: symbol.toUpperCase() })
-    await ssg.getTokens.prices.prefetch()
+    if (!isDevelopment) {
+      await ssg.getTokens.bySymbolDetailed.prefetch({ symbol: symbol.toUpperCase() })
+      await ssg.getTokens.prices.prefetch()
+    }
+
     return {
       props: {
         trpcState: ssg.dehydrate(),
       },
-      revalidate: 3600,
+      revalidate: isDevelopment ? false : 3600, // Disable revalidation in dev, 1 hour in production
     }
   } catch (error) {
     console.error(`Error fetching data for token ${symbol}:`, error)
@@ -80,6 +88,7 @@ const LINKS = ({ symbol, name }: { symbol: string; name: string }): BreadcrumbLi
 
 const Token = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [priceData, setPriceData] = useState<{ price: number; change: number; currency: 'USD' | 'HTR' } | undefined>()
   const router = useRouter()
   const symbol = router.query.symbol as string
 
@@ -171,8 +180,10 @@ const Token = () => {
         <BlockTracker client={api} />
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-6">
-            {aggregatedPair && <NewTokenChart pair={aggregatedPair} setIsDialogOpen={setIsDialogOpen} />}
-            {aggregatedPair && <TokenHeader pair={aggregatedPair} prices={prices} />}
+            {aggregatedPair && <TokenHeader pair={aggregatedPair} prices={prices} priceData={priceData} />}
+            {aggregatedPair && (
+              <NewTokenChart pair={aggregatedPair} setIsDialogOpen={setIsDialogOpen} onPriceDataChange={setPriceData} />
+            )}
             <div className="flex flex-col gap-4">
               <Typography weight={500} variant="h1">
                 Stats

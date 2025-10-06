@@ -31,7 +31,14 @@ export const api = createTRPCNext<AppRouter>({
             staleTime: 30 * 1000,
             cacheTime: 5 * 60 * 1000,
             refetchOnWindowFocus: false,
-            retry: 3,
+            retry: (failureCount, error: any) => {
+              // Retry on timeout or 5xx errors, up to 2 times
+              if (failureCount >= 2) return false
+              if (error?.message?.includes('timeout') || error?.message?.includes('ETIMEDOUT')) return true
+              if (error?.data?.httpStatus >= 500) return true
+              return false
+            },
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
           },
         },
       },

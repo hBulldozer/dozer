@@ -11,66 +11,28 @@ const ChartPeriodSchema = z.enum(['1h', '4h', '1d', '1w', '1m', '3m', '6m', '1y'
 function getIntervalAndLimit(period: string): { interval: string; limit: number } {
   switch (period) {
     case '1h':
-      return { interval: '5m', limit: 12 }    // 12 x 5min = 1 hour
+      return { interval: '5m', limit: 60 }    // Request more points to ensure we get 1 hour of data
     case '4h':
-      return { interval: '15m', limit: 16 }   // 16 x 15min = 4 hours
+      return { interval: '15m', limit: 48 }   // Request more points for better coverage
     case '1d':
-      return { interval: '1h', limit: 24 }    // 24 x 1hour = 1 day
+      return { interval: '1h', limit: 48 }    // Request 48 hours worth to ensure 24 hours
     case '1w':
-      return { interval: '4h', limit: 42 }    // 42 x 4hour = 1 week
+      return { interval: '4h', limit: 84 }    // 2 weeks worth to ensure 1 week coverage
     case '1m':
-      return { interval: '1d', limit: 30 }    // 30 x 1day = 1 month
+      return { interval: '1d', limit: 60 }    // 2 months worth to ensure 1 month coverage
     case '3m':
-      return { interval: '1d', limit: 90 }    // 90 x 1day = 3 months
+      return { interval: '1d', limit: 120 }   // 4 months worth to ensure 3 months coverage
     case '6m':
-      return { interval: '1d', limit: 180 }   // 180 x 1day = 6 months
+      return { interval: '1d', limit: 240 }   // 8 months worth to ensure 6 months coverage
     case '1y':
-      return { interval: '1w', limit: 52 }    // 52 x 1week = 1 year
+      return { interval: '1w', limit: 104 }   // 2 years worth to ensure 1 year coverage
     default:
-      return { interval: '1h', limit: 24 }
+      return { interval: '1h', limit: 48 }
   }
 }
 
-// Helper function to calculate time range
-function getTimeRange(period: string): { from_time: string; to_time: string } {
-  const now = new Date()
-  const to_time = now.toISOString()
-  let from_time: Date
-
-  switch (period) {
-    case '1h':
-      from_time = new Date(now.getTime() - 1 * 60 * 60 * 1000)
-      break
-    case '4h':
-      from_time = new Date(now.getTime() - 4 * 60 * 60 * 1000)
-      break
-    case '1d':
-      from_time = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-      break
-    case '1w':
-      from_time = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      break
-    case '1m':
-      from_time = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      break
-    case '3m':
-      from_time = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-      break
-    case '6m':
-      from_time = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)
-      break
-    case '1y':
-      from_time = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
-      break
-    default:
-      from_time = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-  }
-
-  return {
-    from_time: from_time.toISOString(),
-    to_time,
-  }
-}
+// Note: getTimeRange removed - using "latest N candles" approach instead
+// This provides better caching and always includes the current/live candle
 
 // Helper function to convert price service OHLC to TradingView format
 function formatOHLCForTradingView(data: OHLCDataPoint[]): Array<{
@@ -114,14 +76,10 @@ export const chartsRouter = createTRPCRouter({
             ? { interval: input.interval, limit: input.limit }
             : getIntervalAndLimit(input.period)
 
-        // Get time range for the period
-        const { from_time, to_time } = getTimeRange(input.period)
-
-        // Fetch OHLC data from price service
+        // Simplified approach: Request latest N candles without time range
+        // This provides better caching and always includes the live candle
         const priceHistoryData = await priceServiceClient.getTokenPriceHistory(input.tokenUid, {
           interval: interval as any,
-          from_time,
-          to_time,
           limit,
         })
 
@@ -139,8 +97,6 @@ export const chartsRouter = createTRPCRouter({
           interval: dataInterval,
           data: formattedData,
           dataPoints: formattedData.length,
-          from_time,
-          to_time,
         }
       } catch (error) {
         console.error(`Error fetching token price history for ${input.tokenUid}:`, error)
@@ -153,8 +109,6 @@ export const chartsRouter = createTRPCRouter({
           interval: '1h',
           data: [],
           dataPoints: 0,
-          from_time: new Date().toISOString(),
-          to_time: new Date().toISOString(),
           error: error instanceof PriceServiceError ? error.message : 'Failed to fetch price data',
         }
       }
@@ -245,39 +199,39 @@ export const chartsRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       try {
-        // For now, fallback to existing database queries since pool history
-        // might not be available in price service yet
-        // TODO: Implement proper pool volume history from price service
-
         const { interval, limit } =
           input.interval && input.limit
             ? { interval: input.interval, limit: input.limit }
             : getIntervalAndLimit(input.period)
 
-        const { from_time, to_time } = getTimeRange(input.period)
-
         try {
-          const volumeHistory = await priceServiceClient.getPoolVolumeHistory(input.poolKey, {
+          // Simplified approach: Request latest N volume records without time range
+          // This provides better caching and always includes the current volume data
+          const volumeDataPoints = await priceServiceClient.getPoolVolumeHistory(input.poolKey, {
             interval: interval as any,
-            from_time,
-            to_time,
             limit,
           })
+
+          // Transform to chart format - timestamp is ISO string, need to convert to Unix
+          // Sort by timestamp ascending (oldest first) for proper chart display
+          const sortedData = [...volumeDataPoints].sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          )
+
+          const chartData = sortedData.map((point) => ({
+            time: Math.floor(new Date(point.timestamp).getTime() / 1000), // Convert ISO to Unix seconds
+            value: point.volume_usd,
+            volume_a: point.volume_a,
+            volume_b: point.volume_b,
+            transactions: point.transactions,
+          }))
 
           return {
             poolKey: input.poolKey,
             period: input.period,
-            interval: volumeHistory.interval,
-            data: volumeHistory.data.map((point) => ({
-              time: point.timestamp,
-              value: point.volume_usd,
-              volume_token_a: point.volume_token_a,
-              volume_token_b: point.volume_token_b,
-              transactions: point.transactions,
-            })),
-            dataPoints: volumeHistory.data.length,
-            from_time,
-            to_time,
+            interval: volumeDataPoints[0]?.interval || interval,
+            data: chartData,
+            dataPoints: chartData.length,
           }
         } catch (priceServiceError) {
           // Fallback to returning empty data for now
@@ -289,8 +243,6 @@ export const chartsRouter = createTRPCRouter({
             interval,
             data: [],
             dataPoints: 0,
-            from_time,
-            to_time,
             fallback: true,
           }
         }
@@ -303,8 +255,6 @@ export const chartsRouter = createTRPCRouter({
           interval: '1h',
           data: [],
           dataPoints: 0,
-          from_time: new Date().toISOString(),
-          to_time: new Date().toISOString(),
           error: error instanceof Error ? error.message : 'Failed to fetch pool data',
         }
       }
@@ -322,23 +272,53 @@ export const chartsRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       try {
-        const { interval } = input.interval ? { interval: input.interval } : getIntervalAndLimit(input.period)
+        const { interval, limit } =
+          input.interval && input.limit
+            ? { interval: input.interval, limit: input.limit }
+            : getIntervalAndLimit(input.period)
 
-        const { from_time, to_time } = getTimeRange(input.period)
+        try {
+          // Fetch TVL data from price service
+          const tvlResponse = await priceServiceClient.getPoolTVLHistory(input.poolKey, {
+            interval: interval as any,
+            limit,
+          })
 
-        // TVL history is not available in the current price service
-        // Return empty data structure to indicate this feature is not available
-        console.warn(`Pool TVL history is not available in the current price service version`)
+          // Transform to chart format - sort by timestamp ascending (oldest first)
+          const sortedData = [...tvlResponse.data].sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          )
 
-        return {
-          poolKey: input.poolKey,
-          period: input.period,
-          interval,
-          data: [],
-          dataPoints: 0,
-          from_time,
-          to_time,
-          fallback: true,
+          const chartData = sortedData.map((point) => ({
+            time: Math.floor(new Date(point.timestamp).getTime() / 1000), // Convert ISO to Unix seconds
+            value: point.tvl_usd,
+            tvl_usd: point.tvl_usd,
+            tvl_htr: point.tvl_htr,
+            reserve_a: point.reserve_a,
+            reserve_b: point.reserve_b,
+            price_a_usd: point.price_a_usd,
+            price_b_usd: point.price_b_usd,
+          }))
+
+          return {
+            poolKey: input.poolKey,
+            period: input.period,
+            interval: tvlResponse.interval,
+            data: chartData,
+            dataPoints: chartData.length,
+          }
+        } catch (priceServiceError) {
+          // Fallback to returning empty data
+          console.warn(`Pool TVL history not available from price service: ${priceServiceError}`)
+
+          return {
+            poolKey: input.poolKey,
+            period: input.period,
+            interval,
+            data: [],
+            dataPoints: 0,
+            fallback: true,
+          }
         }
       } catch (error) {
         console.error(`Error fetching pool TVL history for ${input.poolKey}:`, error)
@@ -349,8 +329,102 @@ export const chartsRouter = createTRPCRouter({
           interval: '1h',
           data: [],
           dataPoints: 0,
-          from_time: new Date().toISOString(),
-          to_time: new Date().toISOString(),
+          error: error instanceof Error ? error.message : 'Failed to fetch pool data',
+        }
+      }
+    }),
+
+  // Pool APR history
+  poolAPRHistory: procedure
+    .input(
+      z.object({
+        poolKey: z.string(),
+        period: ChartPeriodSchema.default('1w'),
+        interval: z.enum(['1h', '4h', '1d']).optional(),
+        limit: z.number().min(10).max(1000).optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const { interval, limit } =
+          input.interval && input.limit
+            ? { interval: input.interval, limit: input.limit }
+            : getIntervalAndLimit(input.period)
+
+        // Ensure interval is valid for APR (only 1h, 4h, 1d supported)
+        const aprInterval = interval === '5m' || interval === '15m' || interval === '30m' ? '1h' : interval === '1w' ? '1d' : interval
+
+        // Adjust limit based on period to get the correct time range
+        // For APR, we want to show exactly the period requested
+        let aprLimit = limit
+        if (input.period === '1h') {
+          aprLimit = 12 // 12 points at 5m intervals (but APR uses 1h, so ~1 point)
+        } else if (input.period === '4h') {
+          aprLimit = 4 // 4 points at 1h intervals = 4 hours
+        } else if (input.period === '1d') {
+          aprLimit = 24 // 24 points at 1h intervals = 24 hours
+        } else if (input.period === '1w') {
+          aprLimit = 42 // 42 points at 4h intervals = 7 days
+        } else if (input.period === '1m') {
+          aprLimit = 30 // 30 points at 1d intervals = 30 days
+        } else if (input.period === '3m') {
+          aprLimit = 90 // 90 points at 1d intervals = 90 days
+        } else if (input.period === '6m') {
+          aprLimit = 180 // 180 points at 1d intervals = 180 days
+        } else if (input.period === '1y') {
+          aprLimit = 52 // 52 points at 1w intervals = 52 weeks
+        }
+
+        try {
+          // Fetch APR data from price service
+          const aprResponse = await priceServiceClient.getPoolAPRHistory(input.poolKey, {
+            interval: aprInterval as any,
+            limit: aprLimit,
+          })
+
+          // Transform to chart format - sort by timestamp ascending (oldest first)
+          const sortedData = [...aprResponse.data].sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          )
+
+          const chartData = sortedData.map((point) => ({
+            time: Math.floor(new Date(point.timestamp).getTime() / 1000), // Convert ISO to Unix seconds
+            value: point.apr,
+            apr: point.apr,
+            tvl_usd: point.tvl_usd,
+            daily_volume_usd: point.daily_volume_usd,
+            fee_rate: point.fee_rate,
+          }))
+
+          return {
+            poolKey: input.poolKey,
+            period: input.period,
+            interval: aprResponse.interval,
+            data: chartData,
+            dataPoints: chartData.length,
+          }
+        } catch (priceServiceError) {
+          // Fallback to returning empty data
+          console.warn(`Pool APR history not available from price service: ${priceServiceError}`)
+
+          return {
+            poolKey: input.poolKey,
+            period: input.period,
+            interval: aprInterval,
+            data: [],
+            dataPoints: 0,
+            fallback: true,
+          }
+        }
+      } catch (error) {
+        console.error(`Error fetching pool APR history for ${input.poolKey}:`, error)
+
+        return {
+          poolKey: input.poolKey,
+          period: input.period,
+          interval: '1d',
+          data: [],
+          dataPoints: 0,
           error: error instanceof Error ? error.message : 'Failed to fetch pool data',
         }
       }

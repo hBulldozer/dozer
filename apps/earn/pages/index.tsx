@@ -10,15 +10,22 @@ import { api } from '../utils/api'
 
 export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
-  await ssg.getPools.all.prefetch()
-  await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.allUSD.prefetch()
-  await ssg.getNetwork.getBestBlock.prefetch()
+
+  // Skip heavy prefetches in development to avoid socket hang ups
+  const isDevelopment = process.env.NODE_ENV === 'development'
+
+  if (!isDevelopment) {
+    await ssg.getPools.all.prefetch()
+    await ssg.getTokens.all.prefetch()
+    await ssg.getPrices.allUSD.prefetch()
+    await ssg.getNetwork.getBestBlock.prefetch()
+  }
+
   return {
     props: {
       trpcState: ssg.dehydrate(),
     },
-    revalidate: 30,
+    revalidate: isDevelopment ? false : 60,
   }
 }
 

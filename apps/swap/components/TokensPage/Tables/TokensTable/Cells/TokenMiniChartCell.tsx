@@ -1,8 +1,8 @@
-import { FC } from 'react'
+import { FC, useContext } from 'react'
 
 import { CellProps } from './types'
-import { api } from 'utils/api'
 import { Skeleton, Typography } from '@dozer/ui'
+import { TokensSummaryContext } from './TokensSummaryContext'
 
 interface Point {
   x: number
@@ -69,20 +69,14 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   // Extract token UUID from row ID
   const tokenUuid = row.id.replace('token-', '')
 
-  // Fetch chart data using improved prices API with automatic environment detection
-  const { data: chartData, isLoading } = api.getPrices.chartData.useQuery(
-    { 
-      tokenUid: tokenUuid,
-      currency: 'USD',
-      // No timeframe needed - automatically uses 5min for dev, 24h for production
-      points: 10, // Use 10 points for smooth chart
-    },
-    {
-      enabled: !!tokenUuid && !row.id.includes('husdc'), // Don't fetch for hUSDC as it's stable
-      staleTime: 60000, // Cache for 1 minute
-      refetchInterval: 120000, // Refresh every 2 minutes (less frequent than change data)
-    }
-  )
+  // Get chart data from summary context (no individual API call!)
+  const tokensSummary = useContext(TokensSummaryContext)
+  const summaryData = tokensSummary?.[tokenUuid]
+  const chartData = summaryData?.mini_chart?.map(point => ({
+    timestamp: new Date(point.timestamp).getTime(),
+    price: point.price,
+  })) || []
+  const isLoading = !tokensSummary
 
   // Handle loading state
   if (isLoading && !row.id.includes('husdc')) {
@@ -106,9 +100,11 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
 
   // Process chart data and create SVG
   if (chartData && chartData.length > 1) {
-    // Convert chart data to points - chartData has format {timestamp, price, date}
-    const prices = chartData.map(point => point.price).filter(price => price > 0)
-    
+    // Convert chart data to points - chartData has format {timestamp, price}
+    // Sort by timestamp to ensure chronological order (oldest first, newest last)
+    const sortedChartData = [...chartData].sort((a, b) => a.timestamp - b.timestamp)
+    const prices = sortedChartData.map(point => point.price).filter(price => price > 0)
+
     // Check if all prices are the same (flat line)
     const minPrice = Math.min(...prices)
     const maxPrice = Math.max(...prices)

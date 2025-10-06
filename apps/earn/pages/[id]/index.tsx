@@ -54,6 +54,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
   const ssg = generateSSGHelper()
 
+  // Skip heavy prefetches in development to avoid socket hang ups
+  const isDevelopment = process.env.NODE_ENV === 'development'
+
   // Try to determine if this is a symbol-based ID (contains hyphens) or a pool key (contains slashes)
   const isSymbolId = id.includes('-') && !id.includes('/')
 
@@ -79,15 +82,21 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     }
   }
 
-  await ssg.getPools.all.prefetch()
-  await ssg.getPrices.allUSD.prefetch()
-  await ssg.getPools.getAllTransactionHistory.prefetch({ count: 20, poolFilter: pool.id })
+  // Skip prefetching in development to avoid socket hang up issues
+  if (!isDevelopment) {
+    await Promise.all([
+      ssg.getPools.all.prefetch(),
+      ssg.getPrices.allUSD.prefetch(),
+    ])
+    // Prefetch transaction history separately to avoid overloading
+    await ssg.getPools.getAllTransactionHistory.prefetch({ count: 20, poolFilter: pool.id })
+  }
 
   return {
     props: {
       trpcState: ssg.dehydrate(),
     },
-    revalidate: 3600,
+    revalidate: isDevelopment ? false : 3600,
   }
 }
 

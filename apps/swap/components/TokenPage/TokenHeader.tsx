@@ -1,4 +1,4 @@
-import { formatPercent, formatUSD } from '@dozer/format'
+import { formatUSD } from '@dozer/format'
 import { Pair, toToken } from '@dozer/api'
 import {
   AppearOnMount,
@@ -20,14 +20,23 @@ import { hathorLib } from '@dozer/nanocontracts'
 interface TokenHeader {
   pair: Pair
   prices?: Record<string, number>
+  priceData?: {
+    price: number
+    change: number
+    currency: 'USD' | 'HTR'
+  }
 }
 
-export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
+export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {}, priceData }) => {
   const token0 = pair.token0
   const token1 = pair.token1
   const token = pair.id.includes('native') ? token0 : token1
-  // Get price from getPrices router - prices are already formatted by API
-  const price = prices[token.uuid] || 0
+
+  // Format price change percentage
+  const formatPriceChange = (change: number) => {
+    const percentage = (change * 100).toFixed(2)
+    return `${change >= 0 ? '+' : ''}${percentage}%`
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -41,27 +50,6 @@ export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
               <Typography variant="lg" weight={600}>
                 {token.name}
               </Typography>
-            </div>
-          </div>
-        </div>
-      </AppearOnMount>
-      <AppearOnMount>
-        <div className="flex flex-col gap-4 justify-between md:flex-row">
-          <div className="flex flex-col">
-            <Typography variant="xl" weight={600} className="text-white">
-              {formatUSD(price)}
-            </Typography>
-            <div className="flex gap-2 items-center">
-              <Typography variant="sm" className="text-green-400">
-                {formatPercent(0.05)}
-              </Typography>
-              <Typography variant="sm" className="text-stone-400">
-                24H
-              </Typography>
-            </div>
-          </div>
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-4 justify-between items-center md:justify-end">
               <div className="flex gap-4 items-center">
                 <CopyHelper
                   toCopy={
@@ -90,6 +78,45 @@ export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
                 </CopyHelper>
               </div>
             </div>
+          </div>
+        </div>
+      </AppearOnMount>
+      <AppearOnMount>
+        <div className="flex flex-col gap-4 justify-between md:flex-row md:items-center">
+          {/* Price and Change Display from Price Service */}
+          {priceData && (
+            <div className="flex items-center gap-4">
+              <Typography variant="xl" weight={700} className="text-white text-3xl">
+                {priceData.currency === 'USD'
+                  ? formatUSD(priceData.price)
+                  : `${priceData.price.toFixed(8)} HTR`}
+              </Typography>
+              {priceData.change !== undefined && (
+                <div
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-base font-semibold ${
+                    priceData.change >= 0
+                      ? 'bg-green-900/50 text-green-400'
+                      : 'bg-red-900/50 text-red-400'
+                  }`}
+                >
+                  <span>{formatPriceChange(priceData.change)}</span>
+                  <svg
+                    className={`w-4 h-4 ${priceData.change >= 0 ? 'rotate-0' : 'rotate-180'}`}
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 6.414 6.707 9.707a1 1 0 01-1.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-4 justify-between items-center md:justify-end"></div>
           </div>
         </div>
       </AppearOnMount>

@@ -19,6 +19,7 @@ import {
 import { ChainId } from '@dozer/chain'
 import { useNetwork } from '@dozer/zustand'
 import { api } from '../../../../utils/api'
+import { TokensSummaryContext } from './Cells/TokensSummaryContext'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -92,6 +93,26 @@ export const TokensTable: FC = () => {
   const { data: tokens, isLoading: isLoadingTokens } = api.getTokens.all.useQuery(undefined, {
     enabled: mounted,
   })
+
+  // Fetch tokens summary data (price, change, mini chart) in a single optimized call
+  const { data: tokensSummary, isLoading: isLoadingSummary, error: summaryError } = api.getPrices.tokensSummary.useQuery(
+    { currency: 'USD', miniChartPoints: 10 },
+    {
+      enabled: mounted,
+      staleTime: 30000, // Consider data stale after 30s to match backend real-time updates
+      refetchInterval: 30000, // Refetch every 30 seconds to match backend update frequency
+      retry: false, // Don't retry to fail faster
+      refetchOnMount: false, // Don't refetch on component mount
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+    }
+  )
+
+  // Log summary error for debugging
+  React.useEffect(() => {
+    if (summaryError) {
+      console.warn('Tokens summary failed to load, using fallback data:', summaryError)
+    }
+  }, [summaryError])
 
   // Simplified approach: Just show the pools as tokens
   const _pairs_array: ExtendedPair[] = useMemo(() => {
@@ -291,6 +312,7 @@ export const TokensTable: FC = () => {
     )
   }
 
+  // Don't block on summary loading - let the table render with fallback data
   const isLoading = isLoadingPools || isLoadingPrices || isLoadingTokens
 
   return (
@@ -303,13 +325,15 @@ export const TokensTable: FC = () => {
           </Typography>
         )}
       </div>
-      <GenericTable<ExtendedPair>
-        table={table}
-        loading={isLoading}
-        placeholder={'No tokens found'}
-        pageSize={PAGE_SIZE}
-        linkFormatter={rowLink}
-      />
+      <TokensSummaryContext.Provider value={tokensSummary || null}>
+        <GenericTable<ExtendedPair>
+          table={table}
+          loading={isLoading}
+          placeholder={'No tokens found'}
+          pageSize={PAGE_SIZE}
+          linkFormatter={rowLink}
+        />
+      </TokensSummaryContext.Provider>
     </>
   )
 }

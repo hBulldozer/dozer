@@ -29,9 +29,10 @@ export const NewPoolChart: React.FC<NewPoolChartProps> = ({ pair }) => {
     },
     {
       enabled: chartType === 'volume' && !!poolKey,
-      staleTime: 60000, // Cache for 1 minute
-      refetchInterval: 120000, // Refetch every 2 minutes (reduced from 5 minutes)
+      staleTime: 30000, // Consider data stale after 30s to match backend real-time updates
+      refetchInterval: 30000, // Refetch every 30 seconds to match backend update frequency
       refetchOnWindowFocus: false,
+      refetchOnMount: false, // Don't refetch on mount if data is cached
     }
   )
 
@@ -47,41 +48,31 @@ export const NewPoolChart: React.FC<NewPoolChartProps> = ({ pair }) => {
     },
     {
       enabled: chartType === 'tvl' && !!poolKey,
-      staleTime: 60000, // Cache for 1 minute
-      refetchInterval: 120000, // Refetch every 2 minutes (reduced from 5 minutes)
+      staleTime: 30000, // Consider data stale after 30s to match backend real-time updates
+      refetchInterval: 30000, // Refetch every 30 seconds to match backend update frequency
       refetchOnWindowFocus: false,
+      refetchOnMount: false, // Don't refetch on mount if data is cached
     }
   )
 
-  // For APR, we'll generate mock data based on current APR since it's not available from price service yet
-  // In a real implementation, this would come from the price service
-  const aprData = useMemo(() => {
-    if (chartType !== 'apr') return { data: [], dataPoints: 0 }
-
-    // Generate mock APR data based on current pair APR
-    const now = Math.floor(Date.now() / 1000)
-    const dataPoints = 20
-    const baseApr = pair.apr || 0
-
-    const mockData = Array.from({ length: dataPoints }, (_, i) => {
-      const timeOffset = (dataPoints - 1 - i) * (period.includes('h') ? 3600 : 86400) * (period.includes('1') ? 1 : 7)
-      const time = now - timeOffset
-
-      // Add some realistic variation to APR (±20%)
-      const variation = (Math.random() - 0.5) * 0.4 * baseApr
-      const value = Math.max(0, baseApr + variation)
-
-      return {
-        time,
-        value,
-      }
-    })
-
-    return {
-      data: mockData,
-      dataPoints: mockData.length,
+  // Fetch APR data
+  const {
+    data: aprData,
+    isLoading: isLoadingAPR,
+    error: aprError,
+  } = api.getCharts.poolAPRHistory.useQuery(
+    {
+      poolKey,
+      period,
+    },
+    {
+      enabled: chartType === 'apr' && !!poolKey,
+      staleTime: 30000, // Consider data stale after 30s to match backend real-time updates
+      refetchInterval: 30000, // Refetch every 30 seconds to match backend update frequency
+      refetchOnWindowFocus: false,
+      refetchOnMount: false, // Don't refetch on mount if data is cached
     }
-  }, [chartType, pair.apr, period])
+  )
 
   // Transform data based on chart type
   const chartData: PoolAnalyticsChartData[] = useMemo(() => {
@@ -91,7 +82,7 @@ export const NewPoolChart: React.FC<NewPoolChartProps> = ({ pair }) => {
       case 'tvl':
         return tvlData?.data || []
       case 'apr':
-        return aprData.data
+        return aprData?.data || []
       default:
         return []
     }
@@ -108,13 +99,53 @@ export const NewPoolChart: React.FC<NewPoolChartProps> = ({ pair }) => {
   }, [])
 
   // Determine loading state and errors
-  const isLoading = (chartType === 'volume' && isLoadingVolume) || (chartType === 'tvl' && isLoadingTVL)
+  const isLoading =
+    (chartType === 'volume' && isLoadingVolume) ||
+    (chartType === 'tvl' && isLoadingTVL) ||
+    (chartType === 'apr' && isLoadingAPR)
 
-  const error =
-    (chartType === 'volume' && volumeError?.message) ||
-    (chartType === 'tvl' && tvlError?.message) ||
-    (chartType === 'volume' && volumeData?.error ? 'Volume data error' : undefined) ||
-    (chartType === 'tvl' && tvlData?.error ? 'TVL data error' : undefined)
+  // Enhanced error handling with user-friendly messages
+  const getErrorMessage = () => {
+    if (chartType === 'volume') {
+      if (volumeError) {
+        const errorMessage = (volumeError as any)?.message || ''
+        if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+          return 'Loading historical data, please wait...'
+        }
+        return 'Failed to load volume data'
+      }
+      if (volumeData?.error) {
+        return volumeData.error
+      }
+    }
+    if (chartType === 'tvl') {
+      if (tvlError) {
+        const errorMessage = (tvlError as any)?.message || ''
+        if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+          return 'Loading historical data, please wait...'
+        }
+        return 'Failed to load TVL data'
+      }
+      if (tvlData?.error) {
+        return tvlData.error
+      }
+    }
+    if (chartType === 'apr') {
+      if (aprError) {
+        const errorMessage = (aprError as any)?.message || ''
+        if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+          return 'Loading historical data, please wait...'
+        }
+        return 'Failed to load APR data'
+      }
+      if (aprData?.error) {
+        return aprData.error
+      }
+    }
+    return undefined
+  }
+
+  const error = getErrorMessage()
 
   // Get current value for display
   const getCurrentValue = () => {
@@ -134,7 +165,9 @@ export const NewPoolChart: React.FC<NewPoolChartProps> = ({ pair }) => {
 
   // Show fallback message for price service unavailability
   const showFallback =
-    (chartType === 'volume' && volumeData?.error) || (chartType === 'tvl' && (tvlData?.error || tvlData?.fallback))
+    (chartType === 'volume' && volumeData?.error) ||
+    (chartType === 'tvl' && (tvlData?.error || tvlData?.fallback)) ||
+    (chartType === 'apr' && (aprData?.error || aprData?.fallback))
 
   return (
     <div className="flex flex-col space-y-4">
@@ -152,22 +185,17 @@ export const NewPoolChart: React.FC<NewPoolChartProps> = ({ pair }) => {
         className="p-6 rounded-xl border bg-stone-900 border-stone-700"
       />
 
-      {/* Fallback message if price service is not available */}
-      {showFallback && (
+      {/* Fallback message with specific error states */}
+      {showFallback && !isLoading && (
         <div className="p-4 text-center rounded-lg bg-stone-800">
           <p className="text-sm text-stone-400">
             {chartType === 'tvl'
-              ? 'TVL historical data is not available in the current price service version. Please use Volume chart instead.'
-              : `Historical ${chartType.toUpperCase()} data is temporarily unavailable from the price service.`}
-          </p>
-        </div>
-      )}
-
-      {/* APR notice */}
-      {chartType === 'apr' && (
-        <div className="p-3 text-center rounded-lg border bg-yellow-900/20 border-yellow-500/30">
-          <p className="text-sm text-yellow-200">
-            APR data is estimated based on current pool performance. Historical APR tracking will be available soon.
+              ? 'TVL historical data is not available yet. Please check back later.'
+              : chartType === 'apr'
+              ? 'APR historical data is not available yet. Please check back later.'
+              : error?.includes('timeout') || error?.includes('Generating')
+              ? 'Generating historical data, please wait...'
+              : 'Chart data temporarily unavailable'}
           </p>
         </div>
       )}

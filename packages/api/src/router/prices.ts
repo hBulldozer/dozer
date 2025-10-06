@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 import { PRICE_PRECISION, formatPrice } from './constants'
+import { priceServiceClient } from '../clients/priceService'
 
 // Legacy helper functions removed - now using DozerPoolManager contract methods
 const htrKline = async (input: { period: number; size: number; prisma: PrismaClient }) => {
@@ -779,4 +780,29 @@ export const pricesRouter = createTRPCRouter({
       }
     }
   }),
+
+  // Get tokens summary with price, 24h change, and mini charts (optimized for tokens table)
+  tokensSummary: procedure
+    .input(
+      z.object({
+        currency: z.enum(['USD', 'HTR']).default('USD'),
+        miniChartPoints: z.number().default(10),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const summary = await priceServiceClient.getTokensSummary({
+          currency: input.currency,
+          mini_chart_points: input.miniChartPoints,
+        })
+        return summary
+      } catch (error) {
+        console.error('Error fetching tokens summary:', error)
+
+        // Return empty object instead of throwing - this allows the UI to continue with fallback behavior
+        // Individual cells will fall back to their row data or show loading states
+        console.warn('Tokens summary unavailable, UI will use fallback data')
+        return {}
+      }
+    }),
 })

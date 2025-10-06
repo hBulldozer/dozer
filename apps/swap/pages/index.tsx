@@ -47,15 +47,22 @@ const toPair = (pool: any): Pair => {
 
 export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
-  await ssg.getPools.all.prefetch()
-  await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.all.prefetch()
-  await ssg.getNetwork.getBestBlock.prefetch()
+
+  // Skip heavy prefetches in development to avoid socket hang ups
+  const isDevelopment = process.env.NODE_ENV === 'development'
+
+  if (!isDevelopment) {
+    await ssg.getPools.all.prefetch()
+    await ssg.getTokens.all.prefetch()
+    await ssg.getPrices.all.prefetch()
+    await ssg.getNetwork.getBestBlock.prefetch()
+  }
+
   return {
     props: {
       trpcState: ssg.dehydrate(),
     },
-    // revalidate: 3600,
+    revalidate: isDevelopment ? false : 3600,
   }
 }
 
