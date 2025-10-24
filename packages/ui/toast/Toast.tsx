@@ -10,6 +10,7 @@ import { ToastFailed } from './ToastFailed'
 import { ToastInfo } from './ToastInfo'
 import { ToastInline } from './ToastInline'
 import { ToastPending } from './ToastPending'
+import { ToastBridgePending } from './ToastBridgePending'
 import { ChainId } from '@dozer/chain'
 
 export const TOAST_OPTIONS: ToastOptions = {
@@ -49,6 +50,7 @@ export interface NotificationData {
     | 'add_liquidity'
     | 'remove_liquidity'
     | 'remove_liquidity_single_token'
+    | 'bridge' // Bridge transaction from EVM to Hathor
   // chainId: ChainId
   summary: {
     pending: ReactNode | Array<ReactNode>
@@ -67,6 +69,13 @@ export interface NotificationData {
   status?: string
   account?: string
   title?: string
+  // Bridge-specific metadata
+  bridgeMetadata?: {
+    tokenUuid: string
+    tokenSymbol: string
+    evmConfirmationTime: number
+    isTestnet: boolean
+  }
 }
 
 export const createInlineToast = (props: NotificationData) => {
@@ -176,4 +185,49 @@ export const createInfoToast = (props: Omit<NotificationData, 'promise'>) => {
     toastId,
     autoClose: 5000,
   })
+}
+
+export interface BridgeToastConfig {
+  hathorAddress: string
+  tokenUuid: string
+  tokenSymbol: string
+  evmConfirmationTime: number
+  isTestnet: boolean
+  bridgeTxHash: string
+  evmExplorerUrl: string
+}
+
+export const createBridgeToast = (config: BridgeToastConfig) => {
+  const toastId = `bridge-pending:${config.bridgeTxHash}`
+
+  toast(
+    <ToastBridgePending
+      type="send"
+      summary={{
+        pending: `Waiting for ${config.tokenSymbol} to arrive on Hathor network`,
+        completed: `Bridge complete! ${config.tokenSymbol} received on Hathor network.`,
+        failed: '',
+      }}
+      txHash={config.bridgeTxHash}
+      href={config.evmExplorerUrl}
+      groupTimestamp={Date.now()}
+      timestamp={Date.now()}
+      pollingConfig={{
+        hathorAddress: config.hathorAddress,
+        tokenUuid: config.tokenUuid,
+        evmConfirmationTime: config.evmConfirmationTime,
+        isTestnet: config.isTestnet,
+        toastId,
+        bridgeTxHash: config.bridgeTxHash,
+      }}
+      onDismiss={() => toast.dismiss(toastId)}
+    />,
+    {
+      ...TOAST_OPTIONS,
+      toastId,
+      autoClose: false, // Don't auto-close, let polling complete it
+    }
+  )
+
+  return toastId
 }

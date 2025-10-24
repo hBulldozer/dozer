@@ -84,8 +84,8 @@ export const seedConfig: SeedConfig = {
     },
     {
       tokenSymbol: 'hUSDC',
-      htrQuantity: 25000000, // 25M HTR worth $500k (at $0.02/HTR)
-      tokenQuantity: 500000, // 500k USDC worth $500k (at $1.00/USDC) - balanced pool
+      htrQuantity: 25_000_000, // 25M HTR worth $500k (at $0.02/HTR)
+      tokenQuantity: 500_000, // 500k USDC worth $500k (at $1.00/USDC) - balanced pool
       fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },

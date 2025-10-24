@@ -197,7 +197,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
           </div>
 
           {error && (
-            <div className="flex gap-3 items-center p-4 rounded-lg border bg-red-900/20 border-red-500/30">
+            <div className="flex items-center gap-3 p-4 border rounded-lg bg-red-900/20 border-red-500/30">
               <ExclamationTriangleIcon className="flex-shrink-0 w-5 h-5 text-red-400" />
               <Typography variant="sm" className="text-red-300">
                 {error}
@@ -206,8 +206,8 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
           )}
 
           {isConnecting && (
-            <div className="flex gap-3 items-center p-4 rounded-lg border bg-blue-900/20 border-blue-500/30">
-              <div className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-blue-400 animate-spin border-t-transparent" />
+            <div className="flex items-center gap-3 p-4 border rounded-lg bg-blue-900/20 border-blue-500/30">
+              <div className="flex-shrink-0 w-5 h-5 border-2 border-blue-400 rounded-full animate-spin border-t-transparent" />
               <Typography variant="sm" className="text-blue-300">
                 {connectionStep || 'Connecting...'}
               </Typography>
@@ -219,10 +219,10 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
             <button
               onClick={handleWalletConnectSelection}
               disabled={isConnecting}
-              className="p-4 w-full bg-gradient-to-r rounded-xl border transition-all duration-200 from-amber-200/10 via-yellow-400/10 to-amber-300/10 border-amber-300/20 hover:border-amber-300/40 group disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full p-4 transition-all duration-200 border bg-gradient-to-r rounded-xl from-amber-200/10 via-yellow-400/10 to-amber-300/10 border-amber-300/20 hover:border-amber-300/40 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="flex gap-4 items-center">
-                <div className="flex flex-shrink-0 justify-center items-center w-12 h-12 rounded-lg bg-amber-400/20">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-lg bg-amber-400/20">
                   <WalletIcon width={24} height={24} className="text-amber-400" />
                 </div>
                 <div className="flex-1 text-left">
@@ -234,7 +234,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
                   </Typography>
                 </div>
                 <div className="flex-shrink-0">
-                  <div className="w-2 h-2 bg-amber-400 rounded-full" />
+                  <div className="w-2 h-2 rounded-full bg-amber-400" />
                 </div>
               </div>
             </button>
@@ -242,11 +242,12 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
             {/* MetaMask Snap Option */}
             <button
               onClick={handleMetaMaskSelection}
-              disabled={isConnecting}
-              className="p-4 w-full bg-gradient-to-r rounded-xl border transition-all duration-200 from-orange-200/10 via-orange-400/10 to-orange-300/10 border-orange-300/20 hover:border-orange-300/40 group disabled:opacity-50 disabled:cursor-not-allowed"
+              // disabled={isConnecting}
+              disabled // waiting for update of hathor snap
+              className="w-full p-4 transition-all duration-200 border bg-gradient-to-r rounded-xl from-orange-200/10 via-orange-400/10 to-orange-300/10 border-orange-300/20 hover:border-orange-300/40 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="flex gap-4 items-center">
-                <div className="flex flex-shrink-0 justify-center items-center w-12 h-12 rounded-lg bg-orange-400/20">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-lg bg-orange-400/20">
                   <Image
                     src="/images/MetaMask-icon-fox.svg"
                     width={24}
@@ -271,7 +272,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
           </div>
 
           {!provider && (
-            <div className="flex gap-2 items-center p-3 rounded-lg border bg-yellow-900/20 border-yellow-500/30">
+            <div className="flex items-center gap-2 p-3 border rounded-lg bg-yellow-900/20 border-yellow-500/30">
               <ExclamationTriangleIcon className="flex-shrink-0 w-4 h-4 text-yellow-400" />
               <Typography variant="xs" className="text-yellow-300">
                 MetaMask not detected.{' '}
