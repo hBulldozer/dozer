@@ -36,13 +36,13 @@ export interface SeedConfig {
 
 export const seedConfig: SeedConfig = {
   tokens: [
-    {
-      name: 'Dozer',
-      symbol: 'DZR',
-      totalSupply: 14_000_000_00,
-      about:
-        'DZR is the native utility token of Dozer Finance, a decentralized finance (DeFi) platform built on the Hathor Network.',
-    },
+    // {
+    //   name: 'Dozer',
+    //   symbol: 'DZR',
+    //   totalSupply: 14_000_000_00,
+    //   about:
+    //     'DZR is the native utility token of Dozer Finance, a decentralized finance (DeFi) platform built on the Hathor Network.',
+    // },
     {
       name: 'USDC',
       symbol: 'hUSDC',
@@ -81,13 +81,13 @@ export const seedConfig: SeedConfig = {
     },
   ],
   pools: [
-    {
-      tokenSymbol: 'DZR',
-      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
-      tokenQuantity: 2_000, // DZR = 0.5 HTR, so 2,000 DZR
-      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
-      protocolFee: 0.01,
-    },
+    // {
+    //   tokenSymbol: 'DZR',
+    //   htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
+    //   tokenQuantity: 2_000, // DZR = 0.5 HTR, so 2,000 DZR
+    //   fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
+    //   protocolFee: 0.01,
+    // },
     {
       tokenSymbol: 'hUSDC',
       htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
@@ -117,16 +117,16 @@ export const seedConfig: SeedConfig = {
       protocolFee: 0.01,
     },
     // Non-HTR pool for multi-hop testing: DZR/hUSDC
-    {
-      tokenSymbol: 'hUSDC', // will be paired with DZR (instead of HTR)
-      htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
-      tokenQuantity: 100, // Minimal liquidity: 100 USDC
-      dzrQuantity: 5_882, // DZR = 0.5 HTR = $0.017, USDC = $1, so 100 / 0.017 = 5,882 DZR
-      fee: 0.001, // 0.1% -> converts to 3 basis points
-      protocolFee: 0.01,
-      isNonHTRPool: true, // Flag to identify this as a non-HTR pool
-      pairTokenSymbol: 'DZR', // The other token in the pair
-    },
+    // {
+    //   tokenSymbol: 'hUSDC', // will be paired with DZR (instead of HTR)
+    //   htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
+    //   tokenQuantity: 100, // Minimal liquidity: 100 USDC
+    //   dzrQuantity: 5_882, // DZR = 0.5 HTR = $0.017, USDC = $1, so 100 / 0.017 = 5,882 DZR
+    //   fee: 0.001, // 0.1% -> converts to 3 basis points
+    //   protocolFee: 0.01,
+    //   isNonHTRPool: true, // Flag to identify this as a non-HTR pool
+    //   pairTokenSymbol: 'DZR', // The other token in the pair
+    // },
   ],
   oasis: [
     {
