@@ -17,7 +17,6 @@ import Head from 'next/head'
 import { api } from '../utils/api'
 import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
 import { usePathname } from 'next/navigation'
-import { isFeatureEnabled } from '../config/features'
 // @ts-expect-error - Hathor Snap Utils is not typed
 import { MetaMaskProvider } from '@hathor/snap-utils'
 
@@ -33,7 +32,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
         <title>
           {pathname.includes('create_token')
             ? 'Dozer - Create Token 🧪'
-            : pathname.includes('oasis') && isFeatureEnabled('OASIS_ENABLED')
+            : pathname.includes('oasis')
             ? 'Dozer - Oasis 🏝️'
             : 'Dozer Finance - Pools 💦'}
         </title>

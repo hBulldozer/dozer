@@ -43,7 +43,6 @@ export * from './tooltip'
 export * from './types'
 export * from './typography'
 export * from './widget'
-export * from './config'
 
 // Pool transaction history components
 export {

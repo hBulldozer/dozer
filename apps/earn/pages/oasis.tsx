@@ -40,8 +40,6 @@ import { toToken } from '@dozer/api'
 import UserOasisPosition, { OasisInterface } from '../components/OasisUserPosition'
 import { editOasisBonusOnWithdraw, editOasisOnWithdraw, editOasisOnAdd, editOasisOnClose } from '../utils'
 import { PRICE_PRECISION } from '@dozer/api/src/router/constants'
-import { isFeatureEnabled } from '../config/features'
-import { useRouter } from 'next/router'
 
 const TokenOption = ({ token, disabled }: { token: { symbol: string; uuid: string }; disabled?: boolean }) => {
   return (
@@ -1233,52 +1231,4 @@ const OasisProgram = () => {
   )
 }
 
-// Feature flag wrapper component
-const OasisPage = () => {
-  const router = useRouter()
-
-  // Check if Oasis feature is enabled
-  if (!isFeatureEnabled('OASIS_ENABLED')) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-900">
-        <div className="max-w-md mx-auto text-center p-8">
-          <div className="mb-8">
-            <div className="w-20 h-20 mx-auto mb-4 bg-stone-800 rounded-full flex items-center justify-center">
-              <span className="text-2xl">🚧</span>
-            </div>
-            <Typography variant="h1" className="text-stone-50 mb-4">
-              Feature Temporarily Unavailable
-            </Typography>
-            <Typography variant="lg" className="text-stone-400 mb-6">
-              The feature you're looking for is currently undergoing maintenance. Please check back later.
-            </Typography>
-          </div>
-          <div className="space-y-3">
-            <Button
-              as="a"
-              href="/"
-              size="md"
-              variant="filled"
-              className="w-full"
-            >
-              Go to Pools
-            </Button>
-            <Button
-              as="a"
-              href={`${process.env.NEXT_PUBLIC_SITE_URL}/swap`}
-              size="md"
-              variant="outlined"
-              className="w-full"
-            >
-              Go to Swap
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return <OasisProgram />
-}
-
-export default OasisPage
+export default OasisProgram
