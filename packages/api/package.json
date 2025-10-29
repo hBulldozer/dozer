@@ -7,7 +7,7 @@
     "@dozer/database": "workspace:*",
     "@dozer/math": "workspace:*",
     "@dozer/nanocontracts": "workspace:*",
-    "@hathor/wallet-lib": "^2.6.0",
+    "@hathor/wallet-lib": "^2.9.1",
     "@trpc/client": "^10.45.0",
     "@trpc/next": "^10.45.0",
     "@trpc/react-query": "^10.45.0",
