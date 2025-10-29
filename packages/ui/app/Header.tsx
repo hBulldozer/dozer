@@ -17,7 +17,6 @@ import {
   App,
   OzerText,
 } from '..'
-import { isFeatureEnabled } from '../config/features'
 
 export enum AppType {
   Root = 'Explore',
@@ -190,23 +189,20 @@ export function Header({
                       </Typography>
                     </Select.Option>
 
-                    {/* Oasis feature is currently hidden via feature flag */}
-                    {isFeatureEnabled('OASIS_ENABLED') && (
-                      <Select.Option
-                        as="a"
-                        href="/pool/oasis"
-                        key={AppType.Oasis}
-                        value={AppType.Oasis}
-                        className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
-                      >
-                        <div className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500 !hover:text-transparent">
-                          Oasis
-                        </div>
-                        <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
-                          The liquidity incentive program
-                        </Typography>
-                      </Select.Option>
-                    )}
+                    <Select.Option
+                      as="a"
+                      href="/pool/oasis"
+                      key={AppType.Oasis}
+                      value={AppType.Oasis}
+                      className="!border-stone-700 !cursor-pointer px-2 flex flex-col gap-0 !items-start group"
+                    >
+                      <div className=" bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-amber-100 to-yellow-500 !hover:text-transparent">
+                        Oasis
+                      </div>
+                      <Typography variant="xs" className="text-stone-400 group-hover:text-yellow-100">
+                        The liquidity incentive program
+                      </Typography>
+                    </Select.Option>
                   </div>
                   {/* <div>
                     <Typography

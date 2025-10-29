@@ -19,6 +19,7 @@ type TokenSelectorDialog = {
   onSelect(currency: Token): void
   showUnsignedTokens?: boolean
   searchTerm?: string
+  showUnsignedSwitchInDialog?: boolean
 }
 
 export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
@@ -34,6 +35,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
   tokens,
   showUnsignedTokens: initialShowUnsigned = false,
   searchTerm: initialSearchTerm = '',
+  showUnsignedSwitchInDialog = true,
 }) => {
   // Local state for search and unsigned tokens toggle
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
@@ -49,16 +51,19 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
 
     // If unsigned tokens are enabled and we have unsigned token data, use it
     if (showUnsignedTokens && unsignedTokens) {
-      tokenSet = unsignedTokens.map((token) => new Token({
-        chainId: token.chainId,
-        uuid: token.uuid,
-        decimals: token.decimals,
-        name: token.name || 'Unknown Token',
-        symbol: token.symbol || token.uuid?.substring(0, 6)?.toUpperCase() || 'TK',
-        imageUrl: token.imageUrl || undefined,
-        bridged: token.bridged || false,
-        originalAddress: token.originalAddress || undefined,
-      }))
+      tokenSet = unsignedTokens.map(
+        (token) =>
+          new Token({
+            chainId: token.chainId,
+            uuid: token.uuid,
+            decimals: token.decimals,
+            name: token.name || 'Unknown Token',
+            symbol: token.symbol || token.uuid?.substring(0, 6)?.toUpperCase() || 'TK',
+            imageUrl: token.imageUrl || undefined,
+            bridged: token.bridged || false,
+            originalAddress: token.originalAddress || undefined,
+          })
+      )
     }
 
     return tokenSet || getTokens(chainId)
@@ -73,15 +78,14 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
     // Apply search filter
     if (searchTerm.trim()) {
       const lowerSearchTerm = searchTerm.toLowerCase().trim()
-      filtered = filtered.filter((token) =>
-        token.symbol?.toLowerCase().includes(lowerSearchTerm) ||
-        token.name?.toLowerCase().includes(lowerSearchTerm)
+      filtered = filtered.filter(
+        (token) =>
+          token.symbol?.toLowerCase().includes(lowerSearchTerm) || token.name?.toLowerCase().includes(lowerSearchTerm)
       )
     }
 
     return filtered
   }, [allTokens, chainId, searchTerm])
-
 
   const handleSelect = useCallback(
     (currency: Token) => {
@@ -100,11 +104,11 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
             {/* Search and filters section */}
             <div className="px-6 py-4 border-b border-stone-700">
               {/* Desktop layout: single row */}
-              <div className="hidden sm:flex items-center space-x-4">
+              <div className="hidden items-center space-x-4 sm:flex">
                 {/* Search input */}
                 <div className="relative flex-1">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MagnifyingGlassIcon className="h-5 w-5 text-stone-400" />
+                  <div className="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
+                    <MagnifyingGlassIcon className="w-5 h-5 text-stone-400" />
                   </div>
                   <Input.TextGeneric
                     id={`${id}-search`}
@@ -117,24 +121,22 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                 </div>
 
                 {/* Unsigned tokens switch */}
-                <div className="flex items-center space-x-2 flex-shrink-0">
-                  <Switch
-                    checked={showUnsignedTokens}
-                    onChange={setShowUnsignedTokens}
-                    size="sm"
-                  />
-                  <Typography variant="sm" weight={500} className="text-stone-200 whitespace-nowrap">
-                    Include unsigned
-                  </Typography>
-                </div>
+                {showUnsignedSwitchInDialog && (
+                  <div className="flex flex-shrink-0 items-center space-x-2">
+                    <Switch checked={showUnsignedTokens} onChange={setShowUnsignedTokens} size="sm" />
+                    <Typography variant="sm" weight={500} className="whitespace-nowrap text-stone-200">
+                      Include unsigned
+                    </Typography>
+                  </div>
+                )}
               </div>
 
               {/* Mobile layout: stacked */}
-              <div className="sm:hidden space-y-3">
+              <div className="space-y-3 sm:hidden">
                 {/* Search input */}
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MagnifyingGlassIcon className="h-5 w-5 text-stone-400" />
+                  <div className="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
+                    <MagnifyingGlassIcon className="w-5 h-5 text-stone-400" />
                   </div>
                   <Input.TextGeneric
                     id={`${id}-search-mobile`}
@@ -147,16 +149,14 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                 </div>
 
                 {/* Unsigned tokens switch */}
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={showUnsignedTokens}
-                    onChange={setShowUnsignedTokens}
-                    size="sm"
-                  />
-                  <Typography variant="sm" weight={500} className="text-stone-200">
-                    Include unsigned tokens
-                  </Typography>
-                </div>
+                {showUnsignedSwitchInDialog && (
+                  <div className="flex items-center space-x-2">
+                    <Switch checked={showUnsignedTokens} onChange={setShowUnsignedTokens} size="sm" />
+                    <Typography variant="sm" weight={500} className="text-stone-200">
+                      Include unsigned tokens
+                    </Typography>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -167,14 +167,14 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                 <div className="px-6 py-4 space-y-3">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="flex items-center space-x-3">
-                      <Skeleton.Circle radius={28} className="h-7 w-7" />
+                      <Skeleton.Circle radius={28} className="w-7 h-7" />
                       <div className="flex-1 space-y-1">
-                        <Skeleton.Box className="h-4 w-16" />
-                        <Skeleton.Box className="h-3 w-24" />
+                        <Skeleton.Box className="w-16 h-4" />
+                        <Skeleton.Box className="w-24 h-3" />
                       </div>
-                      <div className="text-right space-y-1">
-                        <Skeleton.Box className="h-3 w-12" />
-                        <Skeleton.Box className="h-3 w-8" />
+                      <div className="space-y-1 text-right">
+                        <Skeleton.Box className="w-12 h-3" />
+                        <Skeleton.Box className="w-8 h-3" />
                       </div>
                     </div>
                   ))}
@@ -210,11 +210,11 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
 
                   {/* No results message */}
                   {currencies.length === 0 && searchTerm.trim() && !isLoadingUnsigned && (
-                    <div className="flex flex-col items-center justify-center py-8 px-6">
-                      <Typography variant="sm" className="text-stone-400 text-center">
+                    <div className="flex flex-col justify-center items-center px-6 py-8">
+                      <Typography variant="sm" className="text-center text-stone-400">
                         No tokens found matching "{searchTerm}"
                       </Typography>
-                      <Typography variant="xs" className="text-stone-500 text-center mt-1">
+                      <Typography variant="xs" className="mt-1 text-center text-stone-500">
                         Try adjusting your search or enabling unsigned tokens
                       </Typography>
                     </div>
@@ -222,7 +222,6 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                 </>
               )}
             </div>
-
           </div>
         </SlideIn>
       </Dialog.Content>

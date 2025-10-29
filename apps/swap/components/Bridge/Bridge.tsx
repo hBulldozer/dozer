@@ -33,7 +33,11 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   const { data: tokens } = api.getTokens.all.useQuery()
   const { data: prices } = api.getPrices.all.useQuery()
   const { accounts } = useWalletConnectClient() // Get accounts from WalletConnect
-  const { connected: metaMaskConnected, account: metaMaskAccount } = useSDK()
+  const { connected: metaMaskConnected, account: metaMaskAccount, sdk } = useSDK()
+
+  // Get wallet connection info from Zustand store - this has the unified Hathor address
+  // for both WalletConnect and MetaMask Snap connections
+  const { walletType, isSnapInstalled, hathorAddress: hathorAddressFromStore, addNotification } = useAccount()
 
   const [selectedToken, setSelectedToken] = useState<Token | undefined>(initialToken)
   const [amount, setAmount] = useState<string>('')
@@ -66,15 +70,30 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
   // Use a ref to track mounted state to avoid state updates after unmount
   const isMounted = useRef(true)
-  
+
   // Store timeout and interval refs to clear them when needed
   const evmTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const evmIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Track if we've already created the bridge notification to avoid duplicates
+  const bridgeNotificationCreated = useRef(false)
+
   const { bridgeTokenToHathor } = useBridge()
 
-  // Get hathorAddress from WalletConnect accounts
-  const hathorAddress = accounts && accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Use the unified Hathor address from Zustand store
+  // This works for both WalletConnect and MetaMask Snap connections
+  const hathorAddress = hathorAddressFromStore || ''
+
+  // Debug logging to help verify connection state
+  useEffect(() => {
+    console.log('Bridge Connection State:', {
+      walletType,
+      hathorAddress,
+      metaMaskConnected,
+      metaMaskAccount,
+      isSnapInstalled,
+    })
+  }, [walletType, hathorAddress, metaMaskConnected, metaMaskAccount, isSnapInstalled])
 
   // Function to poll for EVM transaction confirmation
   const startEvmConfirmationPolling = async (txHash: string) => {
@@ -119,6 +138,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           if (isMounted.current) {
             setIsProcessing(false)
 
+            const confirmationTime = Math.floor(Date.now() / 1000)
+
             // Update stepper - EVM confirmation complete, now checking Hathor
             // Ensure all previous steps are completed before moving to final step
             updateStep('processing', 'completed')
@@ -126,8 +147,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
             updateStep('approval-confirmed', 'completed')
             updateStep('bridge-tx', 'completed')
             updateStep('evm-confirming', 'completed', txHash)
-            updateStep('hathor-received', 'active')
-            setEvmConfirmationTime(Math.floor(Date.now() / 1000))
+            updateStep('hathor-received', 'completed') // Mark as completed immediately
+            setEvmConfirmationTime(confirmationTime)
 
             // Clear timeout since we're done
             if (evmTimeoutRef.current) {
@@ -135,7 +156,56 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
               evmTimeoutRef.current = null
             }
 
-            // Note: Removed intermediate success toast - only showing final completion toast
+            // Create a notification toast that will poll for Hathor receipt in the background
+            // Only create once to avoid duplicates
+            if (!bridgeNotificationCreated.current) {
+              bridgeNotificationCreated.current = true
+
+              const bridgeConfig = (await import('@dozer/higmi/config/bridge')).default
+
+              // Create notification data for the notification center
+              const notificationData = {
+                type: 'bridge' as const,
+                summary: {
+                  pending: `Waiting for ${selectedToken?.symbol || 'tokens'} to arrive on Hathor network`,
+                  completed: `Bridge complete! ${selectedToken?.symbol || 'Tokens'} received on Hathor network.`,
+                  failed: 'Bridge transaction failed',
+                },
+                txHash: txHash,
+                groupTimestamp: Math.floor(Date.now() / 1000),
+                timestamp: Math.floor(Date.now() / 1000),
+                promise: new Promise((resolve) => setTimeout(resolve, 500)),
+                account: hathorAddress,
+                href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
+                // Add bridge-specific metadata for status checking
+                bridgeMetadata: {
+                  tokenUuid: selectedToken?.uuid || '',
+                  tokenSymbol: selectedToken?.symbol || '',
+                  evmConfirmationTime: confirmationTime,
+                  isTestnet: bridgeConfig.isTestnet,
+                },
+              }
+
+              // Add to notification center (will poll for Hathor confirmation)
+              const notificationGroup: string[] = []
+              notificationGroup.push(JSON.stringify(notificationData))
+              addNotification(notificationGroup)
+
+              // Show simple success toast for EVM confirmation
+              // The notification center will handle polling for Hathor confirmation
+              createSuccessToast({
+                type: 'bridge',
+                summary: {
+                  pending: '',
+                  completed: `Bridge transaction confirmed on Arbitrum! Check the notification center for Hathor confirmation status.`,
+                  failed: '',
+                },
+                txHash: nanoid(),
+                groupTimestamp: Date.now(),
+                timestamp: Date.now(),
+                href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
+              })
+            }
           }
           return true // Stop polling
         } else if (receipt && !receipt.status) {
@@ -358,6 +428,24 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     }
   }, [initialToken, bridgedTokens, selectedToken])
 
+  // Auto-connect MetaMask EVM when user has connected via MetaMask Snap
+  useEffect(() => {
+    const autoConnectMetaMask = async () => {
+      // If user connected via MetaMask Snap (for Hathor) but not connected to EVM network
+      if (walletType === 'metamask-snap' && isSnapInstalled && !metaMaskConnected && sdk) {
+        try {
+          console.log('Auto-connecting MetaMask EVM for Snap user...')
+          await sdk.connect()
+        } catch (error) {
+          console.log('Auto-connect failed (user may have rejected):', error)
+          // Don't show error - this is an automatic attempt
+        }
+      }
+    }
+
+    autoConnectMetaMask()
+  }, [walletType, isSnapInstalled, metaMaskConnected, sdk])
+
   // Effect to restore persisted bridge transaction on page load
   useEffect(() => {
     if (isBridgeActive && !isDismissed) {
@@ -371,13 +459,12 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     }
   }, [isBridgeActive, isDismissed, steps])
 
-  // Effect to show completion notification when all steps are finished
+  // Effect to auto-close stepper when all steps are finished
   useEffect(() => {
     if (isBridgeActive && !isDismissed && steps.length > 0) {
       const allCompleted = steps.every((step) => step.status === 'completed')
-      const hasAnyCompleted = steps.some((step) => step.status === 'completed')
 
-      if (allCompleted && hasAnyCompleted) {
+      if (allCompleted) {
         // Clear any remaining EVM polling timers
         if (evmIntervalRef.current) {
           clearInterval(evmIntervalRef.current)
@@ -387,47 +474,29 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           clearTimeout(evmTimeoutRef.current)
           evmTimeoutRef.current = null
         }
-        
-        // Show simple completion toast without adding to transaction list
-        const hathorTxHash = steps.find((step) => step.id === 'hathor-received')?.txHash
-        const explorerUrl = hathorTxHash
-          ? `https://explorer.${
-              bridgeConfig.isTestnet ? 'bravo.nano-testnet.' : ''
-            }hathor.network/transaction/${hathorTxHash}`
-          : undefined
 
-        // Create a simple completion toast that won't add to transaction list
-        createSuccessToast({
-          type: 'send',
-          summary: {
-            pending: '',
-            completed: `🎉 Bridge Complete! Your ${
-              storedTokenSymbol || 'tokens'
-            } have been successfully transferred to your Hathor wallet.`,
-            failed: '',
-          },
-          txHash: nanoid(), // Use random ID to avoid transaction tracking
-          groupTimestamp: Date.now(),
-          timestamp: Date.now(),
-          href: explorerUrl,
-        })
-
-        // Don't automatically clear completed transactions - let user close manually
-        // This prevents the gray icons issue where steps are reset while still visible
+        // Auto-close the stepper after a short delay
+        setTimeout(() => {
+          if (isMounted.current) {
+            setShowStepper(false)
+            clearTransaction()
+          }
+        }, 2000)
       }
     }
-  }, [steps, isBridgeActive, isDismissed, storedTokenSymbol, clearTransaction])
+  }, [steps, isBridgeActive, isDismissed, clearTransaction])
 
   const handleBridge = async () => {
     // Track user action for deep link handling
     if (typeof window !== 'undefined') {
       (window as any).lastUserAction = Date.now()
     }
-    
+
     // Reset state
     setErrorMessage('')
     setTransactionHash('')
     setTxStatus('processing')
+    bridgeNotificationCreated.current = false // Reset notification flag for new transaction
 
     // Initialize stepper with Zustand store
     setShowStepper(true)
@@ -442,7 +511,9 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     // Start with processing step
     updateStep('processing', 'active')
 
-    if (!selectedToken || !amount || !metaMaskAccount) {
+    // Check if MetaMask is connected (either via SDK or Snap)
+    const isMetaMaskReady = metaMaskConnected && metaMaskAccount
+    if (!selectedToken || !amount || !isMetaMaskReady) {
       const msg = 'Please connect your wallet, select a token, and enter an amount'
       setErrorMessage(msg)
       createErrorToast(msg, false)
@@ -708,8 +779,13 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           )}
 
           <div className="mt-5">
+            {/*
+              Show Bridge Button when MetaMask is connected to EVM network
+              This works for both:
+              1. Users who connected directly via MetaMask for bridge
+              2. Users who connected via MetaMask Snap (for Hathor) - auto-connect will handle EVM connection
+            */}
             {metaMaskConnected ? (
-              // Show Bridge Button when connected
               <Button
                 fullWidth
                 size="lg"
@@ -731,15 +807,60 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                     : 'Bridge in Progress...'
                   : 'Bridge Token'}
               </Button>
+            ) : walletType === 'metamask-snap' && isSnapInstalled ? (
+              // User has MetaMask Snap but EVM not connected - show loading/connect state
+              <Button
+                fullWidth
+                size="lg"
+                color="blue"
+                onClick={async () => {
+                  // Track user action for deep link handling
+                  if (typeof window !== 'undefined') {
+                    (window as any).lastUserAction = Date.now()
+                  }
+
+                  if (sdk) {
+                    try {
+                      console.log('Manually connecting MetaMask to EVM network...')
+                      const accounts = await sdk.connect()
+                      console.log('Connected to EVM accounts:', accounts)
+                      if (accounts && accounts.length > 0) {
+                        createSuccessToast({
+                          type: 'approval',
+                          summary: {
+                            pending: '',
+                            completed: 'Connected to Arbitrum network',
+                            failed: '',
+                          },
+                          txHash: nanoid(),
+                          groupTimestamp: Date.now(),
+                          timestamp: Date.now(),
+                        })
+                      }
+                    } catch (error: any) {
+                      console.error('Failed to connect MetaMask EVM:', error)
+                      const errorMsg = error?.message || 'Failed to connect to Arbitrum network'
+                      setErrorMessage(errorMsg)
+                      createErrorToast(errorMsg, false)
+                    }
+                  } else {
+                    const msg = 'MetaMask SDK not initialized. Please refresh the page.'
+                    setErrorMessage(msg)
+                    createErrorToast(msg, false)
+                  }
+                }}
+                disabled={false}
+              >
+                Connect MetaMask to Arbitrum
+              </Button>
             ) : (
-              // Show MetaMask Connect button when not connected
+              // No MetaMask connection at all - show MetaMask Connect button
               <MetaMaskConnect
                 onConnect={handleMetaMaskConnect}
                 onDisconnect={handleMetaMaskDisconnect}
                 buttonProps={{
                   fullWidth: true,
                   size: 'lg',
-                  // removed custom color to use default blue from MetaMaskConnect
                 }}
                 hideText={false}
               />
@@ -752,14 +873,23 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
               </Button>
             )}
 
-            {/* Add a small status indicator for MetaMask when connected */}
-            {metaMaskConnected && (
+            {/* Show connection status for MetaMask EVM network */}
+            {metaMaskConnected && metaMaskAccount && (
               <div className="flex gap-1 justify-center items-center mt-3">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 <span className="text-xs text-green-400">
-                  MetaMask Connected:{' '}
-                  {metaMaskAccount &&
-                    `${metaMaskAccount.substring(0, 6)}...${metaMaskAccount.substring(metaMaskAccount.length - 4)}`}
+                  Arbitrum Connected:{' '}
+                  {`${metaMaskAccount.substring(0, 6)}...${metaMaskAccount.substring(metaMaskAccount.length - 4)}`}
+                </span>
+              </div>
+            )}
+
+            {/* Show helpful message if user has Snap but not EVM connected */}
+            {walletType === 'metamask-snap' && isSnapInstalled && !metaMaskConnected && (
+              <div className="flex gap-1 justify-center items-center mt-3">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-yellow-400">
+                  Connect MetaMask to Arbitrum network to bridge tokens
                 </span>
               </div>
             )}

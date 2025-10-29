@@ -36,13 +36,13 @@ export interface SeedConfig {
 
 export const seedConfig: SeedConfig = {
   tokens: [
-    {
-      name: 'Dozer',
-      symbol: 'DZR',
-      totalSupply: 14_000_000_00,
-      about:
-        'DZR is the native utility token of Dozer Finance, a decentralized finance (DeFi) platform built on the Hathor Network.',
-    },
+    // {
+    //   name: 'Dozer',
+    //   symbol: 'DZR',
+    //   totalSupply: 14_000_000_00,
+    //   about:
+    //     'DZR is the native utility token of Dozer Finance, a decentralized finance (DeFi) platform built on the Hathor Network.',
+    // },
     {
       name: 'USDC',
       symbol: 'hUSDC',
@@ -73,70 +73,83 @@ export const seedConfig: SeedConfig = {
       targetChain: 'Hathor',
       originalAddress: '0x1234567890abcdef1234567890abcdef12345678',
     },
+    {
+      name: 'Kelbcoin',
+      symbol: 'KELB',
+      totalSupply: 30_420_00,
+      about: 'Kelbcoin ($KELB) is a meme coin with utility on the Hathor network.',
+    },
   ],
   pools: [
-    {
-      tokenSymbol: 'DZR',
-      htrQuantity: 25_000_000, // 25M HTR worth $500k (at $0.02/HTR)
-      tokenQuantity: 1_000_000, // 1M DZR worth $500k (at $0.50/DZR) - balanced pool
-      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
-      protocolFee: 0.01,
-    },
+    // {
+    //   tokenSymbol: 'DZR',
+    //   htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
+    //   tokenQuantity: 2_000, // DZR = 0.5 HTR, so 2,000 DZR
+    //   fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
+    //   protocolFee: 0.01,
+    // },
     {
       tokenSymbol: 'hUSDC',
-      htrQuantity: 25000000, // 25M HTR worth $500k (at $0.02/HTR)
-      tokenQuantity: 500000, // 500k USDC worth $500k (at $1.00/USDC) - balanced pool
+      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
+      tokenQuantity: 34, // hUSDC = 1 USD, HTR = $0.034, so 1000 * 0.034 = 34 USDC
       fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     {
       tokenSymbol: 'NST',
-      htrQuantity: 3_000_000, // 3M HTR worth $300k (at $0.02/HTR)
-      tokenQuantity: 40_000, // 40k NST worth $300k (at $1.50/NST) - balanced pool
+      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
+      tokenQuantity: 1_587, // NST = 0.63 HTR, so 1000 / 0.63 = 1,587.3 NST
       fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     {
       tokenSymbol: 'CTHOR',
-      htrQuantity: 2_000_000, // 2M HTR worth $400k (at $0.02/HTR)
-      tokenQuantity: 8_000, // 8k CTHOR worth $400k (at $5.00/CTHOR) - balanced pool
+      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
+      tokenQuantity: 12, // CTHOR = 82.6 HTR, so 1000 / 82.6 = 12.11 CTHOR
+      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
+      protocolFee: 0.01,
+    },
+    {
+      tokenSymbol: 'KELB',
+      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
+      tokenQuantity: 35, // KELB = 28.79 HTR, so 1000 / 28.79 = 34.74 KELB
       fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     // Non-HTR pool for multi-hop testing: DZR/hUSDC
-    {
-      tokenSymbol: 'hUSDC', // will be paired with DZR (instead of HTR)
-      htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
-      tokenQuantity: 250_000, // 250k USDC worth $250k (increased liquidity)
-      dzrQuantity: 500_000, // 500k DZR worth $250k (at $0.50/DZR) - balanced pool
-      fee: 0.001, // 0.1% -> converts to 3 basis points
-      protocolFee: 0.01,
-      isNonHTRPool: true, // Flag to identify this as a non-HTR pool
-      pairTokenSymbol: 'DZR', // The other token in the pair
-    },
+    // {
+    //   tokenSymbol: 'hUSDC', // will be paired with DZR (instead of HTR)
+    //   htrQuantity: 0, // No HTR in this pool - this will be handled specially in seed script
+    //   tokenQuantity: 100, // Minimal liquidity: 100 USDC
+    //   dzrQuantity: 5_882, // DZR = 0.5 HTR = $0.017, USDC = $1, so 100 / 0.017 = 5,882 DZR
+    //   fee: 0.001, // 0.1% -> converts to 3 basis points
+    //   protocolFee: 0.01,
+    //   isNonHTRPool: true, // Flag to identify this as a non-HTR pool
+    //   pairTokenSymbol: 'DZR', // The other token in the pair
+    // },
   ],
   oasis: [
     {
       tokenSymbol: 'hUSDC',
-      htrQuantity: 10_000_000,
+      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
       poolFee: 5, // 0.5% pool fee (matches the pool fee)
       protocolFee: 1, // 0.1% protocol fee
     },
     // {
     //   tokenSymbol: 'DZR',
-    //   htrQuantity: 15_000_000,
+    //   htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
     //   poolFee: 5, // 0.5% pool fee (matches the pool fee)
     //   protocolFee: 50, // 5% protocol fee
     // },
     // {
     //   tokenSymbol: 'NST',
-    //   htrQuantity: 12_000_000,
+    //   htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
     //   poolFee: 5, // 0.5% pool fee (matches the pool fee)
     //   protocolFee: 50, // 5% protocol fee
     // },
     // {
     //   tokenSymbol: 'CTHOR',
-    //   htrQuantity: 8_000_000,
+    //   htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
     //   poolFee: 5, // 0.5% pool fee (matches the pool fee)
     //   protocolFee: 50, // 5% protocol fee
     // },

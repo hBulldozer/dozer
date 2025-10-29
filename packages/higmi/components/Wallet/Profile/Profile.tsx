@@ -36,15 +36,14 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   const { isSm } = useBreakpoint('sm')
   const [view, setView] = useState<ProfileView>(ProfileView.Default)
   const { network } = useNetwork()
-  // const accountAddress = useAccount((state) => state.address)
-  // const utils = api.useContext()
-  // const htr = utils.getTokens.all.getData()
-  // console.log(htr)
-  // const [address, setAddress] = useState('')
   const chainId = network
-  // const { data, isLoading, isError, error } = useBalance(accountAddress)
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  const { walletType, hathorAddress } = useAccount()
+  
+  // Get the appropriate address based on wallet type
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
   const { data, isLoading, isError, error, refetch } = client.getProfile.balance.useQuery(
     { address: address },
     {
@@ -205,7 +204,7 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
   }, [view, address])
 
   if (!address) {
-    return <Wallet.Button size="sm" className="border-none shadow-md whitespace-nowrap" showMetaMask={isBridgePage} />
+    return <Wallet.Button size="sm" className="border-none shadow-md whitespace-nowrap" />
   }
 
   if (address) {

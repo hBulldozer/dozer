@@ -56,6 +56,12 @@ const DevIndexPage = () => {
       path: '/dev/routing',
       icon: '🛣️',
     },
+    {
+      name: 'Snap Utils Demo',
+      description: 'MetaMask snaps integration and wallet connection testing',
+      path: '/dev/snap-utils',
+      icon: '🧩',
+    },
   ]
 
   return (

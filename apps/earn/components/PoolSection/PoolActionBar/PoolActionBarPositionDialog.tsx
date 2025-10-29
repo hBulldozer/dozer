@@ -55,7 +55,6 @@ export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> =
               <div className="flex flex-col">
                 <Typography variant="xs" weight={500} className="text-right text-stone-100">
                   {formatUSD(value0 + value1)}
-                  {/* {100} */}
                 </Typography>
               </div>
             </div>
@@ -63,26 +62,23 @@ export const PoolActionBarPositionDialog: FC<PoolActionBarPositionDialogProps> =
               <div className="flex items-center gap-2">
                 <Currency.Icon currency={token0} width={20} height={20} />
                 <Typography variant="sm" weight={500} className="text-stone-300">
-                  {Number(max_withdraw_a?.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) || '0'}{' '}
-                  {/* {1000} */}
+                  {(Number(max_withdraw_a?.toFixed(2)) * 100).toLocaleString(undefined, { maximumFractionDigits: 2 }) ||
+                    '0'}{' '}
                 </Typography>
               </div>
               <Typography variant="xs" weight={500} className="text-stone-400">
                 {formatUSD(value0)}
-                {/* {2000} */}
               </Typography>
             </div>
             <div className="flex justify-between px-2 py-1">
               <div className="flex items-center gap-2">
                 <Currency.Icon currency={token1} width={20} height={20} />
                 <Typography variant="sm" weight={500} className="text-stone-300">
-                  {/* {1000} */}
-                  {Number(max_withdraw_b?.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) ||
+                  {(Number(max_withdraw_b?.toFixed(2)) * 100).toLocaleString(undefined, { maximumFractionDigits: 2 }) ||
                     '0'}{' '}
                 </Typography>
               </div>
               <Typography variant="xs" weight={500} className="text-stone-400">
-                {/* {3000} */}
                 {formatUSD(value1)}
               </Typography>
             </div>

@@ -4,12 +4,15 @@ import React, { ReactNode, useMemo, useState } from 'react'
 import { useEffect } from 'react'
 import { useSDK } from '@metamask/sdk-react'
 import Image from 'next/image'
+import { useAccount } from '@dozer/zustand'
 
 import SignClient from '@walletconnect/sign-client'
 import { Web3Modal } from '@web3modal/standalone'
 import { useJsonRpc, useWalletConnectClient } from '../contexts'
 import PairingModal from '../modals/PairingModal'
 import RequestModal from '../modals/RequestModal'
+import { WalletSelectionModal } from '../modals/WalletSelectionModal'
+import { WalletConnectionService } from '../../services/walletConnectionService'
 
 export interface AccountAction {
   method: string
@@ -38,11 +41,16 @@ export const Button = <C extends React.ElementType>({
   ...rest
 }: Props<C>) => {
   const [modal, setModal] = useState('')
+  const [showWalletSelection, setShowWalletSelection] = useState(false)
   const { connected, connecting, account, sdk } = useSDK()
+  const { walletType, hathorAddress } = useAccount()
+  const walletService = WalletConnectionService.getInstance()
 
   const closeModal = () => setModal('')
   const openPairingModal = () => setModal('pairing')
   const openRequestModal = () => setModal('request')
+  const openWalletSelection = () => setShowWalletSelection(true)
+  const closeWalletSelection = () => setShowWalletSelection(false)
 
   // Initialize the WalletConnect client.
   const {
@@ -70,17 +78,71 @@ export const Button = <C extends React.ElementType>({
     }
   }, [session, modal])
 
-  const onConnect = () => {
+  // Update Zustand store when WalletConnect session is established
+  useEffect(() => {
+    if (session && accounts.length > 0) {
+      const hathorAddress = accounts[0].split(':')[2]
+      
+      // Only update if the wallet type is not already set to walletconnect
+      if (walletType !== 'walletconnect') {
+        walletService.setWalletConnection({
+          walletType: 'walletconnect',
+          address: hathorAddress,
+          hathorAddress: hathorAddress,
+          isSnapInstalled: false,
+          snapId: null,
+          selectedNetwork: 'testnet',
+        })
+      }
+    } else if (!session && walletType === 'walletconnect') {
+      // Session disconnected, clear wallet state
+      walletService.disconnectWallet()
+    }
+  }, [session, accounts, walletType, walletService])
+
+  // Handle WalletConnect connection via modal
+  const handleWalletConnectConnection = async () => {
     if (typeof client === 'undefined') {
       throw new Error('WalletConnect is not initialized')
     }
-    // Suggest existing pairings (if any).
-    if (pairings.length) {
-      openPairingModal()
-    } else {
-      // If no existing pairings are available, trigger `WalletConnectClient.connect`.
-      connect()
+
+    try {
+      // Suggest existing pairings (if any).
+      if (pairings.length) {
+        openPairingModal()
+      } else {
+        // If no existing pairings are available, trigger `WalletConnectClient.connect`.
+        await connect()
+      }
+
+      // Note: The actual connection success will be handled by existing WalletConnect logic
+      // and will update the useAccount state via the Profile component
+    } catch (error) {
+      console.error('WalletConnect connection failed:', error)
     }
+  }
+
+  // Handle MetaMask Snap connection via modal
+  const handleMetaMaskConnection = async (hathorAddress: string) => {
+    // Update the unified wallet state in Zustand store
+    try {
+      await walletService.setWalletConnection({
+        walletType: 'metamask-snap',
+        address: hathorAddress,
+        hathorAddress: hathorAddress,
+        isSnapInstalled: true,
+        snapId: 'npm:@hathor/snap',
+        selectedNetwork: 'testnet',
+      })
+    } catch (error) {
+      console.error('Failed to update wallet state after MetaMask connection:', error)
+    }
+  }
+
+  const onConnect = () => {
+    // Always show wallet selection modal for better UX
+    // Users can choose between Hathor Wallet (WalletConnect) and MetaMask Snap
+    openWalletSelection()
   }
 
   const connectMetaMask = async () => {
@@ -117,71 +179,35 @@ export const Button = <C extends React.ElementType>({
     }
   }
 
-  // Show both WalletConnect and MetaMask options
+  // Check if any wallet is connected
+  const isWalletConnected =
+    walletType === 'walletconnect' ? accounts.length > 0 : walletType === 'metamask-snap' && hathorAddress
+
+  // Show unified connect button (always show connect button, regardless of connection state)
   return (
     <>
       <Menu
         className={rest.fullWidth ? 'w-full' : ''}
         button={
-          showMetaMask ? (
-            <div className="flex gap-2">
-              {/* WalletConnect Button */}
-              <Menu.Button
-                {...rest}
-                as="div"
-                id="wallet_connect"
-                onClick={onConnect}
-                disabled={isInitializing}
-                className="bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-300"
-              >
-                <div className="flex flex-row items-center gap-1 px-1 py-1 bg-opacity-5 bg-stone-500 rounded-xl">
-                  {Icons['WalletConnect']}
-                  <span className="text-xs">Hathor</span>
-                </div>
-              </Menu.Button>
-
-              {/* MetaMask Button */}
-              {connected ? (
-                <button
-                  onClick={disconnectMetaMask}
-                  className="flex items-center gap-1 px-2 py-1 transition-colors border border-green-700 bg-green-800/30 hover:bg-green-700/30 rounded-xl"
-                >
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  {Icons['MetaMask']}
-                  <span className="text-xs text-green-300">
-                    {account ? `${account.substring(0, 4)}...${account.substring(account.length - 4)}` : 'Connected'}
-                  </span>
-                </button>
-              ) : (
-                <button
-                  onClick={connectMetaMask}
-                  disabled={connecting}
-                  className="flex items-center gap-1 px-2 py-1 transition-colors border bg-stone-800/50 border-stone-700 hover:bg-stone-700/30 rounded-xl"
-                >
-                  {Icons['MetaMask']}
-                  <span className="text-xs text-stone-300">{connecting ? 'Connecting...' : 'MetaMask'}</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <Menu.Button
-              {...rest}
-              as="div"
-              id="wallet_connect"
-              onClick={onConnect}
-              disabled={isInitializing}
-              className="bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-300"
-            >
-              <div className="flex flex-row items-center gap-3 px-1 py-1 bg-opacity-5 bg-stone-500 rounded-xl">
-                {Icons['WalletConnect'] && Icons['WalletConnect']}
-              </div>{' '}
-              Connect
-            </Menu.Button>
-          )
+          <Menu.Button
+            {...rest}
+            as="div"
+            id="wallet_connect"
+            onClick={onConnect}
+            disabled={isInitializing}
+            className="bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-300"
+          >
+            <div className="flex flex-row gap-3 items-center px-1 py-1 bg-opacity-5 rounded-xl bg-stone-500">
+              {Icons['WalletConnect'] && Icons['WalletConnect']}
+            </div>{' '}
+            Connect Wallet
+          </Menu.Button>
         }
       >
         <div key="menu"></div>
       </Menu>
+
+      {/* WalletConnect modals */}
       <Dialog open={!!modal} onClose={closeModal}>
         <Dialog.Content className="max-w-sm !pb-4">
           <Dialog.Header
@@ -192,6 +218,14 @@ export const Button = <C extends React.ElementType>({
           {renderModal()}
         </Dialog.Content>
       </Dialog>
+
+      {/* Wallet Selection Modal */}
+      <WalletSelectionModal
+        isOpen={showWalletSelection}
+        onClose={closeWalletSelection}
+        onWalletConnect={handleWalletConnectConnection}
+        onMetaMaskConnect={handleMetaMaskConnection}
+      />
     </>
   )
 }

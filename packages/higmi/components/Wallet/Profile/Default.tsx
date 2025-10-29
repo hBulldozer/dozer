@@ -30,6 +30,7 @@ import { client, toToken } from '@dozer/api'
 import { Token } from '@dozer/currency'
 import { useInViewport } from '@dozer/hooks'
 import { useJsonRpc, useWalletConnectClient } from '../../contexts'
+import { WalletConnectionService } from '../../../services/walletConnectionService'
 
 interface DefaultProps {
   chainId: ChainId
@@ -95,10 +96,24 @@ export const Default: FC<DefaultProps> = ({
   //   [_balance, chainId]
   // )
 
-  function logout() {
-    // setAddress('')
+  const { walletType } = useAccount()
+  const walletService = WalletConnectionService.getInstance()
+
+  async function logout() {
+    // Clear balance first
     setBalance([])
-    if (accounts.length > 0) disconnect()
+
+    try {
+      // Use unified wallet service to disconnect
+      await walletService.disconnectWallet()
+
+      // For WalletConnect, also disconnect the session
+      if (walletType === 'walletconnect' && accounts.length > 0) {
+        await disconnect()
+      }
+    } catch (error) {
+      console.error('Error during wallet disconnect:', error)
+    }
   }
   // useDisconnect()
 

@@ -3,7 +3,8 @@ import { formatPercent } from '@dozer/format'
 import { Pair } from '@dozer/api'
 import { AppearOnMount, BreadcrumbLink, Container, Link, Typography } from '@dozer/ui'
 
-import { AddSectionMyPosition, Layout, RemoveSectionLegacy } from '../../components'
+import { AddSectionMyPosition, Layout } from '../../components'
+import { RemoveSectionCombined } from '../../components/RemoveSection/RemoveSectionCombined'
 
 import { GetStaticPaths, GetStaticProps, NextPage } from 'next'
 import { useRouter } from 'next/router'
@@ -69,7 +70,7 @@ const Remove: NextPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-[340px_auto] md:grid-cols-[auto_396px_264px] gap-10">
           <div className="hidden md:block" />
           <div className="flex flex-col order-3 gap-3 pb-40 sm:order-2">
-            <RemoveSectionLegacy pair={memoizedPair as Pair} prices={prices} />
+            <RemoveSectionCombined pair={memoizedPair as Pair} prices={prices} />
             <Container className="flex justify-center">
               <Link.External
                 href="https://docs.dozer.finance/products/dex-liquidity-pools"

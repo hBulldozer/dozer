@@ -13,8 +13,14 @@ export declare class NCTokenBalance {
   balance: number
 }
 
+export type SendNanoContractRpcRequestCustom = Omit<SendNanoContractRpcRequest, 'params'> & {
+  params: SendNanoContractRpcRequest['params'] & {
+    network: string
+  }
+}
+
 export interface IHathorRpc {
-  sendNanoContractTx: (ncTxRpcReq: SendNanoContractRpcRequest) => Promise<SendNanoContractTxResponse>
+  sendNanoContractTx: (ncTxRpcReq: SendNanoContractRpcRequestCustom) => Promise<SendNanoContractTxResponse>
   signOracleData: (signOracleDataReq: SignOracleDataRpcRequest) => Promise<SignOracleDataResponse>
   createToken: (createTokenReq: CreateTokenRpcRequest) => Promise<CreateTokenResponse>
 }

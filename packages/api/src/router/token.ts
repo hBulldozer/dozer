@@ -44,7 +44,7 @@ function getBridgedTokenOriginalAddress(uuid: string): string | null {
 async function calculate24hVolume(poolKey: string): Promise<{ volume24h: number; volume24hUSD: number }> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
+    const oneDayAgo = now - 24 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -138,7 +138,7 @@ async function calculate24hFees(
 async function calculate24hTransactionCount(poolKey: string): Promise<number> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
+    const oneDayAgo = now - 24 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -298,7 +298,7 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
     return null
   } catch (error) {
     // Silently fail for DozerTools integration - it's optional
-    console.debug(`DozerTools image lookup failed for token ${tokenUuid}:`, error)
+    // console.debug(`DozerTools image lookup failed for token ${tokenUuid}`)
     return null
   }
 }

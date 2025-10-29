@@ -7,7 +7,7 @@ import { NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/ty
 
 import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
-import { IHathorRpc } from '../types'
+import { IHathorRpc, SendNanoContractRpcRequestCustom } from '../types'
 
 export class Oasis extends NanoContract {
   public token: string
@@ -66,9 +66,16 @@ export class Oasis extends NanoContract {
       true,
       null
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
     console.log('Will send rpc req: ', ncTxRpcReq)
 
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
 
     return rpcResponse
   }
@@ -91,10 +98,17 @@ export class Oasis extends NanoContract {
       true,
       ncId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
-    console.log('Will send rpc req: ', ncTxRpcReq)
+    console.log('Will send rpc req: ', ncTxRpcReqCustom)
 
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
 
     return rpcResponse
   }
@@ -108,10 +122,17 @@ export class Oasis extends NanoContract {
       true,
       ncId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
-    console.log('Will send rpc req: ', ncTxRpcReq)
+    console.log('Will send rpc req: ', ncTxRpcReqCustom)
 
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
 
     return rpcResponse
   }
@@ -144,10 +165,17 @@ export class Oasis extends NanoContract {
       true,
       ncId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
-    console.log('Will send rpc req: ', ncTxRpcReq)
+    console.log('Will send rpc req: ', ncTxRpcReqCustom)
 
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
 
     return rpcResponse
   }
@@ -170,10 +198,17 @@ export class Oasis extends NanoContract {
       true,
       ncId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
-    console.log('Will send rpc req: ', ncTxRpcReq)
+    console.log('Will send rpc req: ', ncTxRpcReqCustom)
 
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
 
     return rpcResponse
   }

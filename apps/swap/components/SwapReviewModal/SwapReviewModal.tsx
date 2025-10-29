@@ -7,7 +7,6 @@ import { XMarkIcon } from '@heroicons/react/24/solid'
 import { api } from 'utils/api'
 import { TokenBalance } from '@dozer/zustand'
 import { PoolManager } from '@dozer/nanocontracts'
-import { main } from '@dozer/database/dist/seed_db'
 import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { get } from 'lodash'
 
@@ -20,14 +19,9 @@ interface SwapReviewModalLegacy {
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
   const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency, routeInfo } = useTrade()
   const [sentTX, setSentTX] = useState(false)
-  const {
-    // address,
-    addNotification,
-    setBalance,
-    balance,
-  } = useAccount()
+  const { addNotification, setBalance, balance, walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  const wcAddress = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { network } = useNetwork()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
@@ -35,7 +29,11 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
 
   const poolManager = new PoolManager()
 
-  const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
+  // Use unified RPC context that handles both WalletConnect and MetaMask Snap
+  const { hathorRpc, rpcResult, isRpcRequestPending, reset, isWalletConnected } = useJsonRpc()
+
+  // Get the appropriate address based on wallet type
+  const address = hathorAddress || wcAddress
 
   const onCloseCard = useCallback(() => {
     onSuccess()
@@ -71,37 +69,61 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
 
   const onClick = async () => {
     setSentTX(true)
+
+    // if (!isWalletConnected) {
+    //   console.error('Wallet not connected')
+    //   createErrorToast('Wallet not connected properly', true)
+    //   setSentTX(false)
+    //   return
+    // }
+
+    if (!hathorRpc) {
+      createErrorToast('Unable to connect to wallet', true)
+      setSentTX(false)
+      return
+    }
+
+    if (!address) {
+      createErrorToast('No wallet address available', true)
+      setSentTX(false)
+      return
+    }
+
     if (amountSpecified && outputAmount && mainCurrency && otherCurrency && routeInfo) {
-      // Use poolPath from routeInfo, fallback to constructing from path if needed
-      const swapPath = routeInfo.poolPath || routeInfo.path.join(',')
-      
-      if (tradeType === TradeType.EXACT_INPUT) {
-        await poolManager.swapExactTokensForTokens(
-          hathorRpc,
-          address,
-          mainCurrency.uuid,
-          amountSpecified,
-          otherCurrency.uuid,
-          outputAmount * (1 - slippageTolerance),
-          swapPath
-        )
-      } else {
-        await poolManager.swapTokensForExactTokens(
-          hathorRpc,
-          address,
-          mainCurrency.uuid,
-          amountSpecified * (1 + slippageTolerance),
-          otherCurrency.uuid,
-          outputAmount,
-          swapPath
-        )
+      try {
+        // Use poolPath from routeInfo, fallback to constructing from path if needed
+        const swapPath = routeInfo.poolPath || routeInfo.path.join(',')
+
+        if (tradeType === TradeType.EXACT_INPUT) {
+          await poolManager.swapExactTokensForTokens(
+            hathorRpc,
+            address,
+            mainCurrency.uuid,
+            amountSpecified,
+            otherCurrency.uuid,
+            outputAmount * (1 - slippageTolerance),
+            swapPath
+          )
+        } else {
+          await poolManager.swapTokensForExactTokens(
+            hathorRpc,
+            address,
+            mainCurrency.uuid,
+            amountSpecified * (1 + slippageTolerance),
+            otherCurrency.uuid,
+            outputAmount,
+            swapPath
+          )
+        }
+      } catch (error) {
+        createErrorToast(error instanceof Error ? error.message : 'Swap failed', true)
+        setSentTX(false)
       }
     }
   }
 
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result && sentTX) {
-      console.log(rpcResult)
       if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
