@@ -603,8 +603,8 @@ importers:
         specifier: workspace:*
         version: link:../nanocontracts
       '@hathor/wallet-lib':
-        specifier: ^2.6.0
-        version: 2.6.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: ^2.9.1
+        version: 2.9.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@trpc/client':
         specifier: ^10.45.0
         version: 10.45.0(@trpc/server@10.45.0)
@@ -802,8 +802,8 @@ importers:
         specifier: workspace:*
         version: link:../zustand
       '@hathor/hathor-rpc-handler':
-        specifier: 2.2.0
-        version: 2.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: 3.4.1
+        version: 3.4.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@headlessui/react':
         specifier: ^1.7.3
         version: 1.7.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -974,11 +974,11 @@ importers:
         specifier: workspace:*
         version: link:../database
       '@hathor/hathor-rpc-handler':
-        specifier: 2.2.0
-        version: 2.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: 3.4.1
+        version: 3.4.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@hathor/wallet-lib':
-        specifier: ^2.6.0
-        version: 2.6.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: ^2.9.1
+        version: 2.9.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       zod:
         specifier: ^3.22.4
         version: 3.22.4
@@ -2650,8 +2650,8 @@ packages:
   '@hapi/topo@5.1.0':
     resolution: {integrity: sha512-foQZKJig7Ob0BMAYBfcJk8d77QtOe7Wo4ox7ff1lQYoNNAb6jwcY1ncdoy2e9wQZzvNy7ODZCYJkK8kzmcAnAg==}
 
-  '@hathor/hathor-rpc-handler@2.2.0':
-    resolution: {integrity: sha512-3wNGqWQQdTWogJCnrhok7+6vL/FMVc2C8T4SfRJIyd/qeeG2ezaPRhONLwpUwuSyprn+jaCIwgyP5p6x4YvvmA==}
+  '@hathor/hathor-rpc-handler@3.4.1':
+    resolution: {integrity: sha512-fNekSG3fCdth9tAgdJEHegxSntCJtrTgXe+jyC9vKDmvGF6ePaWDFLUnFelW5n1yPN9ENeNRv90Jz0PPQ8Kzcw==}
     engines: {node: '>=20'}
 
   '@hathor/snap-utils@0.1.0':
@@ -2660,12 +2660,12 @@ packages:
     peerDependencies:
       react: ^18.2.0
 
-  '@hathor/wallet-lib@2.5.1':
-    resolution: {integrity: sha512-miTBgVRSWpM7pE52sFi+epVAucWdhs1rHboSKrB3C8LLKIpPmM0p+eIWpYRa+eojDjQpT0765oeSSHnJjojMgA==}
+  '@hathor/wallet-lib@2.9.0':
+    resolution: {integrity: sha512-/AbAJB06XyTxlTLyh8GIAqmLCam4B0iaPR1pqnhsylztYgpvhz6QkXRqJCpH5n7BMnkCk0rhidX8VsoRoKRxDg==}
     engines: {node: '>=22.0.0', npm: '>=10.0.0'}
 
-  '@hathor/wallet-lib@2.6.0':
-    resolution: {integrity: sha512-7gyazq+SLTJNJSCHrrxVTyosd6MMu5rjc2nx5yEKWk61/HYvk2txmBQl8oAaqHnJ/3OyW9Zm4u6TdCMypo9mhg==}
+  '@hathor/wallet-lib@2.9.1':
+    resolution: {integrity: sha512-HFINZC5KOuMCFRKQU2RsgNwhQC+6QT4d196PxQE/bE7ubSZtiQriul9FiSlxxfNCI5DtYvYPZuvBSTSO1vLHXg==}
     engines: {node: '>=22.0.0', npm: '>=10.0.0'}
 
   '@headlessui/react@1.7.3':
@@ -11582,9 +11582,9 @@ snapshots:
     dependencies:
       '@hapi/hoek': 9.3.0
 
-  '@hathor/hathor-rpc-handler@2.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@hathor/hathor-rpc-handler@3.4.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@hathor/wallet-lib': 2.5.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@hathor/wallet-lib': 2.9.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       zod: 3.23.8
     transitivePeerDependencies:
       - bufferutil
@@ -11598,7 +11598,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@hathor/wallet-lib@2.5.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@hathor/wallet-lib@2.9.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       axios: 1.7.7
       bitcore-lib: 8.25.10
@@ -11615,7 +11615,7 @@ snapshots:
       - debug
       - utf-8-validate
 
-  '@hathor/wallet-lib@2.6.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@hathor/wallet-lib@2.9.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       axios: 1.7.7
       bitcore-lib: 8.25.10
