@@ -63,8 +63,15 @@ export class PoolManager extends NanoContract {
       true,
       this.poolManagerContractId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
     return rpcResponse
   }
 
@@ -118,8 +125,15 @@ export class PoolManager extends NanoContract {
       true,
       this.poolManagerContractId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
     return rpcResponse
   }
 
@@ -174,8 +188,15 @@ export class PoolManager extends NanoContract {
       true,
       this.poolManagerContractId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
     return rpcResponse
   }
 
@@ -216,8 +237,15 @@ export class PoolManager extends NanoContract {
       true,
       this.poolManagerContractId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
     return rpcResponse
   }
 
@@ -258,8 +286,15 @@ export class PoolManager extends NanoContract {
       true,
       this.poolManagerContractId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
     return rpcResponse
   }
 
@@ -334,9 +369,16 @@ export class PoolManager extends NanoContract {
       true,
       this.poolManagerContractId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
     console.log('Will send rpc req: ', ncTxRpcReq)
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
     return rpcResponse
   }
 
@@ -377,9 +419,16 @@ export class PoolManager extends NanoContract {
       true,
       this.poolManagerContractId
     )
+    const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
+      ...ncTxRpcReq,
+      params: {
+        ...ncTxRpcReq.params,
+        network: 'testnet',
+      },
+    }
 
     console.log('Will send rpc req: ', ncTxRpcReq)
-    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReq)
+    const rpcResponse: SendNanoContractTxResponse = await hathorRpc.sendNanoContractTx(ncTxRpcReqCustom)
     return rpcResponse
   }
 }
