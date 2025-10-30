@@ -78,8 +78,9 @@ export const chartsRouter = createTRPCRouter({
 
         // Simplified approach: Request latest N candles without time range
         // This provides better caching and always includes the live candle
+        // NOTE: interval is now required in the new price service architecture
         const priceHistoryData = await priceServiceClient.getTokenPriceHistory(input.tokenUid, {
-          interval: interval as any,
+          interval: interval as '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w',
           limit,
         })
 
@@ -145,7 +146,7 @@ export const chartsRouter = createTRPCRouter({
 
         try {
           const history = await priceServiceClient.getTokenPriceHistory(input.tokenUid, {
-            interval: changeInterval as any,
+            interval: changeInterval as '5m' | '1h' | '1d',
             from_time: historicalTime.toISOString(),
             limit: 1,
           })
@@ -207,8 +208,9 @@ export const chartsRouter = createTRPCRouter({
         try {
           // Simplified approach: Request latest N volume records without time range
           // This provides better caching and always includes the current volume data
+          // NOTE: interval is now required in the new price service architecture
           const volumeDataPoints = await priceServiceClient.getPoolVolumeHistory(input.poolKey, {
-            interval: interval as any,
+            interval: interval as '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w',
             limit,
           })
 
@@ -279,8 +281,9 @@ export const chartsRouter = createTRPCRouter({
 
         try {
           // Fetch TVL data from price service
+          // NOTE: interval is now required in the new price service architecture
           const tvlResponse = await priceServiceClient.getPoolTVLHistory(input.poolKey, {
-            interval: interval as any,
+            interval: interval as '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w',
             limit,
           })
 
@@ -377,8 +380,9 @@ export const chartsRouter = createTRPCRouter({
 
         try {
           // Fetch APR data from price service
+          // NOTE: interval is now required in the new price service architecture
           const aprResponse = await priceServiceClient.getPoolAPRHistory(input.poolKey, {
-            interval: aprInterval as any,
+            interval: aprInterval as '1h' | '4h' | '1d',
             limit: aprLimit,
           })
 

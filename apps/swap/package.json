@@ -12,6 +12,7 @@
     "@dozer/math": "workspace:*",
     "@dozer/ui": "workspace:*",
     "@dozer/zustand": "workspace:*",
+    "@hathor/wallet-lib": "^2.9.1",
     "@headlessui/react": "^1.7.3",
     "@heroicons/react": "^2.1.5",
     "@socialgouv/matomo-next": "^1.9.1",

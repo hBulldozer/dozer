@@ -166,25 +166,33 @@ export class PriceServiceClient {
 
   /**
    * Get OHLC price history for a token
+   *
+   * NOTE: New price service architecture uses "latest N candles" approach.
+   * - interval is REQUIRED
+   * - from_time and to_time are OPTIONAL (omit them for better caching)
+   * - When omitted, returns latest N candles based on limit
    */
   async getTokenPriceHistory(
     tokenUid: string,
     params: {
-      interval?: '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w'
-      from_time?: string // ISO format
-      to_time?: string // ISO format
+      interval: '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w' // Now required
+      from_time?: string // ISO format - OPTIONAL
+      to_time?: string // ISO format - OPTIONAL
       limit?: number
-    } = {}
+    }
   ): Promise<PriceHistoryResponse> {
     const queryParams = new URLSearchParams()
 
-    if (params.interval) queryParams.set('interval', params.interval)
+    // interval is required in new architecture
+    queryParams.set('interval', params.interval)
+
+    // from_time and to_time are optional - omit for "latest N candles" approach
     if (params.from_time) queryParams.set('from_time', params.from_time)
     if (params.to_time) queryParams.set('to_time', params.to_time)
     if (params.limit) queryParams.set('limit', params.limit.toString())
 
     const queryString = queryParams.toString()
-    const url = `${this.baseUrl}/prices/${tokenUid}/history${queryString ? `?${queryString}` : ''}`
+    const url = `${this.baseUrl}/prices/${tokenUid}/history?${queryString}`
 
     return (await fetchWithRetry(url, MAX_RETRIES, INITIAL_TIMEOUT)) as PriceHistoryResponse
   }
@@ -192,21 +200,29 @@ export class PriceServiceClient {
   /**
    * Get pool volume history
    * Returns array of volume data points directly from API
+   *
+   * NOTE: New price service architecture uses "latest N candles" approach.
+   * - interval is REQUIRED
+   * - from_time and to_time are OPTIONAL (omit them for better caching)
+   * - When omitted, returns latest N volume records based on limit
    */
   async getPoolVolumeHistory(
     poolKey: string,
     params: {
-      interval?: '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w'
-      from_time?: string
-      to_time?: string
+      interval: '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w' // Now required
+      from_time?: string // OPTIONAL
+      to_time?: string // OPTIONAL
       limit?: number
-    } = {}
+    }
   ): Promise<PoolVolumeHistoryResponse> {
     const queryParams = new URLSearchParams()
 
-    // Pool key is now a query parameter (not URL encoded path parameter)
+    // Pool key is a query parameter (not URL encoded path parameter)
     queryParams.set('pool_key', poolKey)
-    if (params.interval) queryParams.set('interval', params.interval)
+    // interval is required in new architecture
+    queryParams.set('interval', params.interval)
+
+    // from_time and to_time are optional - omit for "latest N records" approach
     if (params.from_time) queryParams.set('from_time', params.from_time)
     if (params.to_time) queryParams.set('to_time', params.to_time)
     if (params.limit) queryParams.set('limit', params.limit.toString())
@@ -220,19 +236,22 @@ export class PriceServiceClient {
   /**
    * Get pool TVL history
    * Returns wrapped response with pool_key, interval, data array, and total
+   *
+   * NOTE: interval is now REQUIRED in the new architecture
    */
   async getPoolTVLHistory(
     poolKey: string,
     params: {
-      interval?: '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w'
+      interval: '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w' // Now required
       limit?: number
-    } = {}
+    }
   ): Promise<PoolTVLHistoryResponse> {
     const queryParams = new URLSearchParams()
 
     // Pool key is a query parameter
     queryParams.set('pool_key', poolKey)
-    if (params.interval) queryParams.set('interval', params.interval)
+    // interval is required in new architecture
+    queryParams.set('interval', params.interval)
     if (params.limit) queryParams.set('limit', params.limit.toString())
 
     const queryString = queryParams.toString()
@@ -244,19 +263,22 @@ export class PriceServiceClient {
   /**
    * Get pool APR history
    * Returns wrapped response with pool_key, interval, data array, and total
+   *
+   * NOTE: interval is now REQUIRED in the new architecture
    */
   async getPoolAPRHistory(
     poolKey: string,
     params: {
-      interval?: '1h' | '4h' | '1d'
+      interval: '1h' | '4h' | '1d' // Now required
       limit?: number
-    } = {}
+    }
   ): Promise<PoolAPRHistoryResponse> {
     const queryParams = new URLSearchParams()
 
     // Pool key is a query parameter
     queryParams.set('pool_key', poolKey)
-    if (params.interval) queryParams.set('interval', params.interval)
+    // interval is required in new architecture
+    queryParams.set('interval', params.interval)
     if (params.limit) queryParams.set('limit', params.limit.toString())
 
     const queryString = queryParams.toString()
