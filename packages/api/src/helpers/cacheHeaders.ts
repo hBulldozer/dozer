@@ -26,6 +26,32 @@ export const CACHE_DURATIONS = {
 } as const
 
 /**
+ * Hathor network average block time in seconds.
+ * Used for cache normalization to align with blockchain state updates.
+ */
+export const HATHOR_BLOCK_TIME = 30 // seconds
+
+/**
+ * Normalize a timestamp to align with Hathor block times for better caching.
+ * Rounds down to the nearest 30-second interval (average block time).
+ *
+ * This ensures that queries made within the same block period use the same
+ * timestamp, dramatically improving cache hit rates.
+ *
+ * @param timestamp - Unix timestamp in seconds
+ * @returns Normalized timestamp aligned to block intervals
+ *
+ * @example
+ * ```ts
+ * normalizeTimestamp(1699999999) // Returns 1699999980 (rounded to last 30s block)
+ * normalizeTimestamp(1700000010) // Returns 1700000010 (already aligned)
+ * ```
+ */
+export function normalizeTimestamp(timestamp: number): number {
+  return Math.floor(timestamp / HATHOR_BLOCK_TIME) * HATHOR_BLOCK_TIME
+}
+
+/**
  * Set cache headers for immutable historical data.
  * Used for data points that are > 1 hour old and will never change.
  *
@@ -240,24 +266,26 @@ export function getTimeRange(
   end_timestamp: number
   resolution: Resolution
 } {
-  const now = Math.floor(Date.now() / 1000)
+  // Normalize to block time for better caching - all requests within same ~30s block
+  // will use the same timestamp, dramatically improving cache hit rates
+  const now = normalizeTimestamp(Math.floor(Date.now() / 1000))
   let start_timestamp: number
 
   switch (period) {
     case '1D':
-      start_timestamp = now - 86400
+      start_timestamp = normalizeTimestamp(now - 86400)
       break
     case '1W':
-      start_timestamp = now - 604800
+      start_timestamp = normalizeTimestamp(now - 604800)
       break
     case '1M':
-      start_timestamp = now - 2629746
+      start_timestamp = normalizeTimestamp(now - 2629746)
       break
     case '1Y':
-      start_timestamp = now - 31556952
+      start_timestamp = normalizeTimestamp(now - 31556952)
       break
     case 'ALL':
-      start_timestamp = contractDeployTimestamp || now - 31556952
+      start_timestamp = normalizeTimestamp(contractDeployTimestamp || now - 31556952)
       break
   }
 

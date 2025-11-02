@@ -19,6 +19,7 @@ import { Square2StackIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24
 import chains from '@dozer/chain'
 import { hathorLib } from '@dozer/nanocontracts'
 import { api } from 'utils/api'
+import { getHistoryQueryConfig } from '@dozer/api/src/helpers/queryConfig'
 
 interface TokenChartProps {
   pair: {
@@ -55,12 +56,18 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const { token0, token1 } = pair
   const token = pair.id.includes('native') ? token0 : token1
 
-  // Fetch historical data from new history API
-  const { data: historicalData, isLoading: isHistoryLoading } = api.getHistory.getTokenHistory.useQuery({
-    tokenId: token.uuid,
-    poolId: pair.id,
-    period: chartPeriod,
-  })
+  // Fetch historical data from new history API with optimized config
+  const { data: historicalData, isLoading: isHistoryLoading } = api.getHistory.getTokenHistory.useQuery(
+    {
+      tokenId: token.uuid,
+      poolId: pair.id,
+      period: chartPeriod,
+    },
+    getHistoryQueryConfig({
+      // Allow refetch when user changes period
+      refetchOnMount: 'always',
+    })
+  )
 
   // Fetch current HTR price for USD conversions
   const { data: priceHTRNow, isLoading: isPriceLoading } = api.getPrices.htr.useQuery()

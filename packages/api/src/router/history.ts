@@ -15,6 +15,7 @@ import {
   setAdaptiveCacheHeaders,
   setCurrentCacheHeaders,
   setComputedCacheHeaders,
+  normalizeTimestamp,
   type Resolution,
 } from '../helpers/cacheHeaders'
 import { parsePoolApiInfo } from '../utils/namedTupleParsers'
@@ -412,8 +413,9 @@ export const historyRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       const { poolId, tokenId } = input
 
-    const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 86400
+    // Normalize timestamps to 30-second block intervals for better caching
+    const now = normalizeTimestamp(Math.floor(Date.now() / 1000))
+    const oneDayAgo = normalizeTimestamp(now - 86400)
 
     const poolInfoCall = `front_end_api_pool("${poolId}")`
 

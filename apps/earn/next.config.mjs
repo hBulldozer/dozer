@@ -7,6 +7,8 @@ const nextConfig = {
   transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database', '@dozer/currency'],
   experimental: {
     swcPlugins: [['next-superjson-plugin', {}]],
+    // Enable ISR memory cache for better performance with historical data
+    isrMemoryCacheSize: 50 * 1024 * 1024, // 50MB cache for ISR
   },
   output: 'standalone',
   images: {

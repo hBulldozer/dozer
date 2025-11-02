@@ -3,6 +3,7 @@ import { FC } from 'react'
 import { CellProps } from './types'
 import { api } from 'utils/api'
 import { Skeleton, Typography } from '@dozer/ui'
+import { getHistoryQueryConfig } from '@dozer/api/src/helpers/queryConfig'
 
 interface Point {
   x: number
@@ -73,7 +74,7 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   // Construct pool ID (assuming fee tier of 5 basis points)
   const poolId = `00/${tokenUuid}/5`
 
-  // Fetch 24h history data from history API
+  // Fetch 24h history data from history API with optimized config
   const { data: historyData, isLoading } = api.getHistory.getTokenHistory.useQuery(
     {
       tokenId: tokenUuid,
@@ -82,8 +83,7 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
     },
     {
       enabled: !!tokenUuid && !row.id.includes('husdc'), // Don't fetch for hUSDC as it's stable
-      staleTime: 60000, // Cache for 1 minute
-      refetchInterval: 120000, // Refresh every 2 minutes (less frequent than change data)
+      ...getHistoryQueryConfig(), // Use environment-optimized settings
     }
   )
 

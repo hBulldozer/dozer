@@ -4,6 +4,7 @@ import { FC } from 'react'
 import { CellProps } from './types'
 import { formatPercentChange } from '@dozer/format'
 import { api } from 'utils/api'
+import { getMetricsQueryConfig } from '@dozer/api/src/helpers/queryConfig'
 
 export const TokenChangeCell: FC<CellProps> = ({ row }) => {
   // Extract token UUID - either from token1 (normal pairs) or token0 (if it's the non-HTR token)
@@ -13,13 +14,12 @@ export const TokenChangeCell: FC<CellProps> = ({ row }) => {
   // Construct pool ID (assuming fee tier of 5 basis points)
   const poolId = `00/${tokenUuid}/5`
 
-  // Fetch 24h metrics from history API
+  // Fetch 24h metrics from history API with optimized config
   const { data: metrics, isLoading } = api.getHistory.get24hMetrics.useQuery(
     { poolId, tokenId: tokenUuid },
     {
       enabled: !!tokenUuid && !row.id.includes('husdc'), // Don't fetch for hUSDC as it's stable
-      staleTime: 60000, // Cache for 1 minute
-      refetchInterval: 60000, // Refresh every minute
+      ...getMetricsQueryConfig(), // Use environment-optimized settings
     }
   )
 
