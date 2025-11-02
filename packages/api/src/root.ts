@@ -1,6 +1,7 @@
 import { dozerToolsRouter } from './router/dozerTools'
 import { faucetRouter } from './router/faucet'
 import { headlessRouter } from './router/headless'
+import { historyRouter } from './router/history'
 import { NanoStateRouter } from './router/nanostates'
 import { networkRouter } from './router/network'
 import { oasisRouter } from './router/oasis'
@@ -25,6 +26,7 @@ export const appRouter = createTRPCRouter({
   getOasis: oasisRouter,
   getStats: statsRouter,
   getDozerTools: dozerToolsRouter,
+  getHistory: historyRouter,
 })
 
 // export type definition of API

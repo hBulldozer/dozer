@@ -19,6 +19,7 @@ import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../utils/api'
 import { SwapWidget } from 'pages'
 import { TokenStats } from 'components/TokenPage/TokenStats'
+import { TokenChart } from 'components/TokenPage/TokenChart'
 import ReadMore from '@dozer/ui/readmore/ReadMore'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 import { toToken } from '@dozer/api'
@@ -120,7 +121,7 @@ const Token = () => {
   const primaryPool = tokenData.pools.length > 0 ? tokenData.pools[0] : null
   const aggregatedPair = primaryPool
     ? {
-        id: tokenData.symbol === 'HTR' ? 'native' : `${tokenData.symbol.toLowerCase()}-aggregated`,
+        id: primaryPool.id, // Use real pool ID for history API
         symbolId: tokenData.symbol === 'HTR' ? 'native' : `${tokenData.symbol.toLowerCase()}-aggregated`,
         name: tokenData.name,
         liquidityUSD: tokenData.totalLiquidityUSD,
@@ -170,7 +171,7 @@ const Token = () => {
         <BlockTracker client={api} />
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-6">
-            {aggregatedPair && <>{/* <TokenChart pair={aggregatedPair} setIsDialogOpen={setIsDialogOpen} /> */}</>}
+            {aggregatedPair && <TokenChart pair={aggregatedPair} />}
             {aggregatedPair && <TokenHeader pair={aggregatedPair} prices={prices} />}
             <div className="flex flex-col gap-4">
               <Typography weight={500} variant="h1">

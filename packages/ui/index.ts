@@ -69,5 +69,9 @@ export {
   truncateAddress,
 } from './src/utils/transactionUtils'
 
+// ChartV2 component
+export { ChartV2, default as ChartV2Default } from './src/components/ChartV2'
+export * from './src/components/ChartV2/types'
+
 // Re-export classnames for convenience
 export { default as classNames } from 'classnames'

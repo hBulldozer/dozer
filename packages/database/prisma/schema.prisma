@@ -63,12 +63,12 @@ model Token {
 }
 
 model Pool {
-  name          String 
+  name          String
   apr           Float
-  chainId       Int 
+  chainId       Int
   version       String
-  token0Id      String 
-  token1Id      String 
+  token0Id      String
+  token1Id      String
   swapFee       Float//
   feeUSD        Float//
   reserve0      String         @default("0")//
@@ -85,8 +85,6 @@ model Pool {
   token0        Token          @relation("token0", fields: [token0Id], references: [id])
   token1        Token          @relation("token1", fields: [token1Id], references: [id])
   tokenLP       Token          @relation("tokenLP", fields: [tokenLPId], references: [id])//
-  daySnapshots  daySnapshot[]
-  hourSnapshots hourSnapshot[]
   Incentive     Incentive[]//
   oasis         Oasis[]        @relation("pool")
 
@@ -97,50 +95,6 @@ model Pool {
   @@index([token1Id])
   @@index([generatedAt])
   @@index([tokenLPId])//
-}
-
-model daySnapshot {
-  id           Int      @id @default(autoincrement())
-  poolId       String
-  date         DateTime
-  volumeUSD    Float
-  liquidityUSD Float
-  apr          Float
-  priceHTR     Float    @default(0)
-  reserve0     Float    @default(0)
-  reserve1     Float    @default(0)
-  volume0     Float    @default(0)
-  volume1     Float    @default(0)
-  fee0     Float    @default(0)
-  fee1     Float    @default(0)
-  feeUSD    Float    @default(0)
-  txCount    Int      @default(0)
-  pool         Pool     @relation(fields: [poolId], references: [id])
-
-  @@index([poolId])
-}
-
-model hourSnapshot {
-  id           Int      @id @default(autoincrement())
-  poolId       String
-  date         DateTime
-  volumeUSD    Float
-  liquidityUSD Float
-  apr          Float
-  priceHTR     Float    @default(0)
-  reserve0     Float    @default(0)
-  reserve1     Float    @default(0)
-  volume0     Float    @default(0)
-  volume1     Float    @default(0)
-  fee0     Float    @default(0)
-  fee1     Float    @default(0)
-  feeUSD    Float    @default(0)
-  txCount    Int      @default(0)
-  pool         Pool     @relation(fields: [poolId], references: [id])
-
-  @@index([poolId])
-  @@index([date])
-  @@index([poolId, date]) // Composite index for queries that filter by both
 }
 
 model Incentive {//
