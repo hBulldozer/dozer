@@ -116,18 +116,26 @@ export const ChartV2: FC<ChartProps> = ({
       tooltip: {
         trigger: 'axis',
         axisPointer: {
-          type: 'cross',
+          type: 'line',
+          snap: true,
+          label: {
+            show: true,
+            formatter: (params: any) => {
+              if (params.axisDimension === 'x') {
+                // Format timestamp for x-axis
+                const date = new Date(Number(params.value) * 1000)
+                return format(date, 'MMM dd, HH:mm')
+              } else {
+                // Format price for y-axis - show the actual data value
+                return valueFormatter(params.value)
+              }
+            },
+          },
           lineStyle: {
             // @ts-ignore
             color: tailwind.theme.colors.stone['600'],
             width: 1,
             type: 'solid',
-          },
-          crossStyle: {
-            // @ts-ignore
-            color: tailwind.theme.colors.stone['600'],
-            width: 1,
-            type: 'dashed',
           },
         },
         // @ts-ignore
@@ -252,22 +260,17 @@ export const ChartV2: FC<ChartProps> = ({
     ]
   )
 
-  if (isLoading) {
-    return <Skeleton.Box className={classNames('h-96', className)} />
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className={classNames('flex items-center justify-center h-96 bg-stone-800 rounded', className)}>
-        <p className="text-stone-400">No data available</p>
-      </div>
-    )
-  }
-
   return (
     <div className={classNames('flex flex-col gap-4', className)}>
       {/* Current value and percentage change */}
-      {showCurrentValue && yData.length > 0 && (
+      {showCurrentValue && (
+        <>
+          {isLoading ? (
+            <div className="flex flex-col gap-1">
+              <Skeleton.Box className="h-9 w-32" />
+              {showPercentageChange && <Skeleton.Box className="h-5 w-24" />}
+            </div>
+          ) : yData.length > 0 ? (
         <div className="flex flex-col gap-1">
           <div className="text-3xl font-semibold text-stone-50">
             {valueFormatter(yData[yData.length - 1])}
@@ -297,21 +300,42 @@ export const ChartV2: FC<ChartProps> = ({
             </div>
           )}
         </div>
+          ) : null}
+        </>
       )}
 
       {/* Chart */}
-      <div onMouseLeave={onMouseLeave}>
-        <ReactECharts
-          option={chartOption}
+      {isLoading ? (
+        <div
+          className="flex items-center justify-center bg-stone-800/50 rounded relative"
           style={{ height: mergedConfig.height }}
-          opts={{ renderer: 'canvas' }}
-          onEvents={{
-            mouseover: handleMouseOver,
-          }}
-        />
-      </div>
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-stone-400 font-medium">Loading chart data...</p>
+          </div>
+        </div>
+      ) : !data || data.length === 0 ? (
+        <div
+          className="flex items-center justify-center bg-stone-800 rounded"
+          style={{ height: mergedConfig.height }}
+        >
+          <p className="text-stone-400">No data available</p>
+        </div>
+      ) : (
+        <div onMouseLeave={onMouseLeave}>
+          <ReactECharts
+            option={chartOption}
+            style={{ height: mergedConfig.height }}
+            opts={{ renderer: 'canvas' }}
+            onEvents={{
+              mouseover: handleMouseOver,
+            }}
+          />
+        </div>
+      )}
 
-      {/* Period selector */}
+      {/* Period selector - always visible */}
       {showPeriodSelector && onPeriodChange && (
         <div className="flex justify-center md:justify-end gap-4 px-4">
           {availablePeriods.map((p) => (

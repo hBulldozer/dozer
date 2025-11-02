@@ -71,8 +71,8 @@ export const historyRouter = createTRPCRouter({
       // Get time range and resolution
       const { start_timestamp, end_timestamp, resolution } = getTimeRange(period)
 
-      // Construct the pool info call
-      const poolInfoCall = `get_pool_info(${poolId})`
+      // Construct the pool info call (pool_key must be a quoted string)
+      const poolInfoCall = `front_end_api_pool("${poolId}")`
 
       try {
         // Fetch historical data
@@ -141,7 +141,7 @@ export const historyRouter = createTRPCRouter({
       // Determine optimal resolution if not provided
       const resolution = inputResolution || getOptimalResolution(startTimestamp, endTimestamp)
 
-      const poolInfoCall = `get_pool_info(${poolId})`
+      const poolInfoCall = `front_end_api_pool("${poolId}")`
 
       try {
         const response = await fetchHistoricalData(
@@ -207,7 +207,7 @@ export const historyRouter = createTRPCRouter({
 
       const { start_timestamp, end_timestamp, resolution } = getTimeRange(period)
 
-      const poolInfoCall = `get_pool_info(${poolId})`
+      const poolInfoCall = `front_end_api_pool("${poolId}")`
 
       try {
         const response = await fetchHistoricalData(
@@ -285,7 +285,7 @@ export const historyRouter = createTRPCRouter({
 
       const resolution = inputResolution || getOptimalResolution(startTimestamp, endTimestamp)
 
-      const poolInfoCall = `get_pool_info(${poolId})`
+      const poolInfoCall = `front_end_api_pool("${poolId}")`
 
       try {
         const response = await fetchHistoricalData(
@@ -354,7 +354,7 @@ export const historyRouter = createTRPCRouter({
     const now = Math.floor(Date.now() / 1000)
     const fiveMinutesAgo = now - 300
 
-    const poolInfoCall = `get_pool_info(${poolId})`
+    const poolInfoCall = `front_end_api_pool("${poolId}")`
 
     try {
       const response = await fetchHistoricalData(poolManagerId, fiveMinutesAgo, now, '5m', {
@@ -399,16 +399,23 @@ export const historyRouter = createTRPCRouter({
   }),
 
   /**
-   * Get 24h metrics (volume change, price change, etc.)
+   * Get 24h metrics (volume change, price change, min/max, etc.)
    * Uses computed cache headers since this is expensive to calculate.
    */
-  get24hMetrics: procedure.input(poolIdSchema).query(async ({ input, ctx }) => {
-    const { poolId } = input
+  get24hMetrics: procedure
+    .input(
+      z.object({
+        poolId: z.string(),
+        tokenId: z.string(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const { poolId, tokenId } = input
 
     const now = Math.floor(Date.now() / 1000)
     const oneDayAgo = now - 86400
 
-    const poolInfoCall = `get_pool_info(${poolId})`
+    const poolInfoCall = `front_end_api_pool("${poolId}")`
 
     try {
       // Fetch data with 1h resolution for last 24 hours
@@ -458,16 +465,41 @@ export const historyRouter = createTRPCRouter({
       const lastPrice = lastReserve1 > 0 ? lastReserve0 / lastReserve1 : 0
       const priceChange24h = firstPrice > 0 ? ((lastPrice - firstPrice) / firstPrice) * 100 : 0
 
+      // Calculate min/max prices from all data points
+      const isToken0 = poolId.startsWith(tokenId) || poolId.startsWith('00')
+      let minPrice = Infinity
+      let maxPrice = -Infinity
+
+      response.data_points.forEach((point) => {
+        const poolData = point.values[poolInfoCall]
+        if (!poolData) return
+
+        const parsedPool = parsePoolApiInfo(poolData)
+        const reserve0 = Number(parsedPool.reserve0)
+        const reserve1 = Number(parsedPool.reserve1)
+
+        const price = isToken0 && reserve1 > 0 ? reserve0 / reserve1 : reserve0 > 0 ? reserve1 / reserve0 : 0
+
+        if (price > 0) {
+          minPrice = Math.min(minPrice, price)
+          maxPrice = Math.max(maxPrice, price)
+        }
+      })
+
+      // If no valid prices found, set to 0
+      if (minPrice === Infinity) minPrice = 0
+      if (maxPrice === -Infinity) maxPrice = 0
+
       return {
         success: true,
         poolId,
-        metrics: {
-          volume24h,
-          fees24h,
-          transactions24h,
-          priceChange24h,
-          currentLiquidityUSD: lastPool.liquidityUSD,
-        },
+        minPrice,
+        maxPrice,
+        volume24h,
+        fees24h,
+        transactions24h,
+        priceChange24h,
+        currentLiquidityUSD: lastPool.liquidityUSD,
         timestamp: lastPoint.timestamp,
       }
     } catch (error: any) {

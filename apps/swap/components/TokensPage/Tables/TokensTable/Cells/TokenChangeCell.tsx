@@ -6,12 +6,16 @@ import { formatPercentChange } from '@dozer/format'
 import { api } from 'utils/api'
 
 export const TokenChangeCell: FC<CellProps> = ({ row }) => {
-  // Extract token UUID from row ID
-  const tokenUuid = row.id.replace('token-', '')
+  // Extract token UUID - either from token1 (normal pairs) or token0 (if it's the non-HTR token)
+  const token = row.token1.uuid !== '00' ? row.token1 : row.token0
+  const tokenUuid = token.uuid
 
-  // Fetch price change data with automatic environment detection
-  const { data: priceChangeData, isLoading } = api.getPrices.priceChange.useQuery(
-    { tokenUid: tokenUuid },
+  // Construct pool ID (assuming fee tier of 5 basis points)
+  const poolId = `00/${tokenUuid}/5`
+
+  // Fetch 24h metrics from history API
+  const { data: metrics, isLoading } = api.getHistory.get24hMetrics.useQuery(
+    { poolId, tokenId: tokenUuid },
     {
       enabled: !!tokenUuid && !row.id.includes('husdc'), // Don't fetch for hUSDC as it's stable
       staleTime: 60000, // Cache for 1 minute
@@ -19,8 +23,8 @@ export const TokenChangeCell: FC<CellProps> = ({ row }) => {
     }
   )
 
-  // Extract change from the response
-  const change = priceChangeData?.change ?? row.change ?? 0
+  // Extract price change from the response
+  const change = metrics?.priceChange24h ?? row.change ?? 0
 
   // Handle loading state
   if (isLoading && !row.id.includes('husdc')) {

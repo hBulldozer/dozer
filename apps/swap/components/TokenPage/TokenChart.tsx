@@ -69,15 +69,20 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
   const chartData: ChartDataPoint[] = useMemo(() => {
     if (!historicalData?.data) return []
 
+    // Get current HTR price for USD conversion
+    const htrPriceUSD = priceHTRNow || 0
+
     return historicalData.data.map((point) => ({
       timestamp: point.timestamp,
-      value: chartCurrency === TokenChartCurrency.HTR ? point.priceHTR : point.priceUSD,
+      // For USD, multiply HTR price by current HTR/USD rate
+      value:
+        chartCurrency === TokenChartCurrency.HTR ? point.priceHTR : point.priceHTR * htrPriceUSD,
       additionalValues: {
         volumeUSD: point.volumeUSD,
         liquidityUSD: point.liquidityUSD,
       },
     }))
-  }, [historicalData, chartCurrency])
+  }, [historicalData, chartCurrency, priceHTRNow])
 
   // Get current price
   const currentPrice = useMemo(() => {
@@ -107,64 +112,75 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Currency Selector - moved to top right */}
-      <div className="flex justify-end gap-4">
-        {!pair.id.includes('husdc') && (
-          <button
-            onClick={() => setChartCurrency(TokenChartCurrency.USD)}
-            className={classNames(
-              'font-semibold text-sm transition-colors',
-              chartCurrency === TokenChartCurrency.USD ? 'text-yellow-500' : 'text-stone-500 hover:text-stone-400'
-            )}
+      {/* Token Header with Currency Selector */}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2 items-center">
+          <Currency.Icon currency={toToken(token)} width={32} height={32} />
+          <Typography variant="lg" weight={600}>
+            {token.name}
+          </Typography>
+          <CopyHelper
+            toCopy={hathorLib.tokensUtils.getConfigurationString(token.uuid, token.name || '', token.symbol || '')}
+            hideIcon={true}
           >
-            USD
-          </button>
-        )}
-        {!pair.id.includes('native') && (
-          <button
-            onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
-            className={classNames(
-              'font-semibold text-sm transition-colors',
-              chartCurrency === TokenChartCurrency.HTR ? 'text-yellow-500' : 'text-stone-500 hover:text-stone-400'
+            {(isCopied) => (
+              <IconButton className="p-1 text-stone-400" description={isCopied ? 'Copied!' : 'Configuration String'}>
+                <Square2StackIcon width={20} height={20} />
+              </IconButton>
             )}
-          >
-            HTR
-          </button>
-        )}
+          </CopyHelper>
+        </div>
+        <div className="flex gap-4">
+          {!pair.id.includes('husdc') && (
+            <button
+              onClick={() => setChartCurrency(TokenChartCurrency.USD)}
+              className={classNames(
+                'font-semibold text-sm transition-colors',
+                chartCurrency === TokenChartCurrency.USD ? 'text-yellow-500' : 'text-stone-500 hover:text-stone-400'
+              )}
+            >
+              USD
+            </button>
+          )}
+          {!pair.id.includes('native') && (
+            <button
+              onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
+              className={classNames(
+                'font-semibold text-sm transition-colors',
+                chartCurrency === TokenChartCurrency.HTR ? 'text-yellow-500' : 'text-stone-500 hover:text-stone-400'
+              )}
+            >
+              HTR
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Chart Component */}
-      {isLoading ? (
-        <Skeleton.Box className="h-96" />
-      ) : chartData.length === 0 ? (
-        <div className="flex items-center justify-center h-96 bg-stone-800 rounded">
-          <p className="text-stone-400">No historical data available for this token</p>
-        </div>
-      ) : (
-        <ChartV2
-          data={chartData}
-          period={chartPeriod}
-          onPeriodChange={(period) => setChartPeriod(period)}
-          config={{
-            type: ChartType.AREA,
-            showGradient: true,
-            color: '#EAB308', // yellow-500
-            smooth: true,
-            height: 400,
-          }}
-          showCurrentValue={true}
-          showPercentageChange={true}
-          valueFormatter={valueFormatter}
-          showPeriodSelector={true}
-          availablePeriods={[
-            ChartPeriod.DAY,
-            ChartPeriod.WEEK,
-            ChartPeriod.MONTH,
-            ChartPeriod.YEAR,
-            ChartPeriod.ALL,
-          ]}
-        />
-      )}
+      <ChartV2
+        data={chartData}
+        period={chartPeriod}
+        onPeriodChange={(period) => setChartPeriod(period)}
+        config={{
+          type: ChartType.AREA,
+          showGradient: true,
+          color: '#EAB308', // yellow-500
+          smooth: true,
+          height: 400,
+        }}
+        showCurrentValue={true}
+        showPercentageChange={true}
+        valueFormatter={valueFormatter}
+        showPeriodSelector={true}
+        isLoading={isLoading}
+        availablePeriods={[
+          ChartPeriod.DAY,
+          ChartPeriod.WEEK,
+          ChartPeriod.MONTH,
+          ChartPeriod.YEAR,
+          ChartPeriod.ALL,
+        ]}
+      />
     </div>
   )
 }

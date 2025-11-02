@@ -47,19 +47,6 @@ export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
       </AppearOnMount>
       <AppearOnMount>
         <div className="flex flex-col gap-4 justify-between md:flex-row">
-          <div className="flex flex-col">
-            <Typography variant="xl" weight={600} className="text-white">
-              {formatUSD(price)}
-            </Typography>
-            <div className="flex gap-2 items-center">
-              <Typography variant="sm" className="text-green-400">
-                {formatPercent(0.05)}
-              </Typography>
-              <Typography variant="sm" className="text-stone-400">
-                24H
-              </Typography>
-            </div>
-          </div>
           <div className="flex flex-col gap-4">
             <div className="flex gap-4 justify-between items-center md:justify-end">
               <div className="flex gap-4 items-center">

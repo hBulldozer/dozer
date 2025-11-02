@@ -66,16 +66,19 @@ function generateHorizontalLineSvg(width: number, height: number, padding: numbe
 }
 
 export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
-  // Extract token UUID from row ID
-  const tokenUuid = row.id.replace('token-', '')
+  // Extract token UUID - either from token1 (normal pairs) or token0 (if it's the non-HTR token)
+  const token = row.token1.uuid !== '00' ? row.token1 : row.token0
+  const tokenUuid = token.uuid
 
-  // Fetch chart data using improved prices API with automatic environment detection
-  const { data: chartData, isLoading } = api.getPrices.chartData.useQuery(
-    { 
-      tokenUid: tokenUuid,
-      currency: 'USD',
-      // No timeframe needed - automatically uses 5min for dev, 24h for production
-      points: 10, // Use 10 points for smooth chart
+  // Construct pool ID (assuming fee tier of 5 basis points)
+  const poolId = `00/${tokenUuid}/5`
+
+  // Fetch 24h history data from history API
+  const { data: historyData, isLoading } = api.getHistory.getTokenHistory.useQuery(
+    {
+      tokenId: tokenUuid,
+      poolId: poolId,
+      period: '1D', // Last 24 hours
     },
     {
       enabled: !!tokenUuid && !row.id.includes('husdc'), // Don't fetch for hUSDC as it's stable
@@ -83,6 +86,16 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
       refetchInterval: 120000, // Refresh every 2 minutes (less frequent than change data)
     }
   )
+
+  // Convert history data to chart data format (sample 10 points evenly)
+  const chartData = historyData?.data ? historyData.data
+    .filter((_, index, arr) => index % Math.ceil(arr.length / 10) === 0) // Sample ~10 points
+    .slice(0, 10)
+    .map(point => ({
+      timestamp: point.timestamp,
+      price: point.priceHTR, // Use HTR price for consistency
+      date: new Date(point.timestamp * 1000)
+    })) : null
 
   // Handle loading state
   if (isLoading && !row.id.includes('husdc')) {
