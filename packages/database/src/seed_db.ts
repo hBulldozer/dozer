@@ -40,13 +40,9 @@ export interface NanoInfoType {
   [key: string]: string
 }
 
-export async function main(nano_info: NanoInfoType | undefined, snaps_period: number, seedConfig: SeedConfig) {
+export async function main(nano_info: NanoInfoType | undefined, seedConfig: SeedConfig) {
   const config = seedConfig
   console.log('*** Starting to seed DB... ***')
-  await prisma.hourSnapshot.deleteMany()
-  console.log('Deleted hourSnapshot Table')
-  await prisma.daySnapshot.deleteMany()
-  console.log('Deleted daySnapshot Table')
   await prisma.oasis.deleteMany()
   console.log('Deleted Oasis Table')
   await prisma.pool.deleteMany()
@@ -106,66 +102,7 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
   console.log('Created Tokens')
 
   // No pool creation in DB. Only tokens are stored.
-
-  // Historical data (snapshots) - use poolKeys from nano_info if present
-  if (snaps_period && nano_info && Array.isArray(nano_info.poolKeys)) {
-    console.log(`Creating snapshots for ${snaps_period} days...`)
-    const poolKeys: string[] = nano_info.poolKeys
-    const snapshots = []
-    for (const poolKey of poolKeys) {
-      // Use random or fixed values for reserves/liquidity for now
-      let prevReserve0 = 100000
-      let prevReserve1 = 70000
-      let prevLiquidityUSD = 2 * prevReserve0
-      for (let j = 0; j < snaps_period * 24 * 4; j++) {
-        const snapshotTime = Date.now() - j * 15 * 60 * 1000
-        const snapshotDate = new Date(snapshotTime)
-        // Calculate changes with continuity
-        const reserve0Change = (Math.random() - 0.5) * 1500
-        const reserve1Change = (reserve0Change * prevReserve1) / (prevReserve0 + reserve0Change)
-        prevReserve0 += reserve0Change
-        prevReserve1 -= reserve1Change
-        prevLiquidityUSD = 2 * prevReserve0
-        // Store poolKey in poolId field for compatibility
-        snapshots.push({
-          poolId: poolKey, // poolId now stores the poolKey string
-          apr: 0.1 + (Math.random() - 0.15) * 0.05,
-          date: snapshotDate,
-          liquidityUSD: prevLiquidityUSD,
-          volumeUSD: 0,
-          reserve0: prevReserve0,
-          reserve1: prevReserve1,
-          priceHTR: 0.04,
-        })
-        // Push data to daySnapshot if it's 9 PM
-        if (j % (24 * 4) == 0) {
-          await prisma.daySnapshot.create({
-            data: {
-              poolId: poolKey, // poolId now stores the poolKey string
-              apr: 0.1 + (Math.random() + 0.15) * 0.05,
-              date: snapshotDate,
-              liquidityUSD: prevLiquidityUSD,
-              volumeUSD: 0,
-              reserve0: prevReserve0,
-              reserve1: prevReserve1,
-              priceHTR: 0.04,
-            },
-          })
-        }
-      }
-    }
-    // Batch insert hourSnapshots
-    const chunkSize = 1000
-    for (let i = 0; i < snapshots.length; i += chunkSize) {
-      const chunk = snapshots.slice(i, i + chunkSize)
-      await prisma.hourSnapshot.createMany({
-        data: chunk,
-      })
-    }
-    console.log('Created snapshots')
-  } else {
-    console.log('Skipping snapshot creation (no poolKeys or snaps_period)')
-  }
+  // Historical data is now fetched directly from blockchain via history API
 
   // Update token UUIDs from nano_info
   if (nano_info) {
@@ -188,8 +125,8 @@ export async function main(nano_info: NanoInfoType | undefined, snaps_period: nu
   }
 }
 
-export async function seed_db(seedConfig: SeedConfig, nano_info?: NanoInfoType, snaps_period = 0) {
-  main(nano_info, snaps_period, seedConfig)
+export async function seed_db(seedConfig: SeedConfig, nano_info?: NanoInfoType) {
+  main(nano_info, seedConfig)
     .then(async () => {
       await prisma.$disconnect()
     })

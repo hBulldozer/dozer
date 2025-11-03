@@ -9,7 +9,7 @@ import {
   type ChartDataPoint,
 } from '@dozer/ui'
 import { FC, useState, useMemo } from 'react'
-import { api } from 'utils/api'
+import { api } from '../../utils/api'
 
 interface PoolChartProps {
   pair: Pair

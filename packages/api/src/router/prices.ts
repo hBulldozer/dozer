@@ -5,196 +5,8 @@ import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 import { PRICE_PRECISION, formatPrice } from './constants'
 
-// Legacy helper functions removed - now using DozerPoolManager contract methods
-const htrKline = async (input: { period: number; size: number; prisma: PrismaClient }) => {
-  // const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
-
-  // const now = Math.round(Date.now() / 1000)
-  // const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
-  // const start = (input.size + 1) * (input.period == 0 ? 15 : input.period == 1 ? 60 : 24 * 60) * 60 // in seconds
-  // const resp = await fetch(
-  //   `https://api.kucoin.com/api/v1/market/candles?type=${period}&symbol=HTR-hUSDC&startAt=${now - start}&endAt=${now}`
-  // )
-  // const data = await resp.json()
-  // return data.data
-  //   .sort((a: number[], b: number[]) => (a[0] && b[0] ? a[0] - b[0] : null))
-  //   .map((item: number[]) => {
-  //     return { price: Number(item[2]), date: Number(item[0]) }})
-
-  // Filter pools by token symbols
-  const pool = await prisma.pool.findFirst({
-    where: {
-      token0: { symbol: 'HTR' },
-      token1: { symbol: 'hUSDC' },
-    },
-  })
-  if (!pool) {
-    throw new Error('Pool with HTR-hUSDC pair not found')
-  }
-
-  const now = Math.round(Date.now() / 1000)
-  const start = (input.size + 1) * (input.period == 0 ? 15 : input.period == 1 ? 60 : 24 * 60) * 60 // in seconds
-
-  const snapshots = await prisma.hourSnapshot.findMany({
-    where: {
-      poolId: pool.id,
-      date: {
-        gte: new Date((now - start) * 1000), // convert to milliseconds
-        lte: new Date(now * 1000),
-      },
-    },
-    orderBy: { date: 'asc' }, // sort by date ascending
-  })
-  return snapshots.map((snapshot) => ({
-    price: parseFloat((snapshot.reserve1 / snapshot.reserve0).toFixed(6)),
-    date: snapshot.date.getTime(),
-  }))
-}
-const getPricesSince = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
-  let result
-  if (tokenUuid == '00') {
-    result = await prisma.hourSnapshot.findMany({
-      where: {
-        AND: [
-          { date: { gte: new Date(since) } },
-          {
-            pool: {
-              token0: {
-                uuid: '00',
-              },
-            },
-          },
-          {
-            pool: {
-              token1: {
-                symbol: 'hUSDC',
-              },
-            },
-          },
-        ],
-      },
-      select: {
-        date: true,
-        poolId: true,
-        reserve0: true,
-        reserve1: true,
-        priceHTR: true,
-      },
-    })
-  } else {
-    result = await prisma.hourSnapshot.findMany({
-      where: {
-        AND: [
-          { date: { gte: new Date(since) } },
-          {
-            pool: {
-              token0: {
-                uuid: '00',
-              },
-            },
-          },
-          {
-            pool: {
-              token1: {
-                uuid: tokenUuid,
-              },
-            },
-          },
-        ],
-      },
-      select: {
-        date: true,
-        poolId: true,
-        reserve0: true,
-        reserve1: true,
-        priceHTR: true,
-      },
-    })
-  }
-  return result
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .map((snap) => {
-      return { price: parseFloat((snap.reserve0 / snap.reserve1).toFixed(6)), priceHTR: snap.priceHTR }
-    })
-}
-
-const getPriceHTRAtTimestamp = async (tokenUuid: string, prisma: PrismaClient, since: number) => {
-  let result
-  try {
-    if (tokenUuid == '00') {
-      result = await prisma.hourSnapshot.findMany({
-        where: {
-          AND: [
-            { date: { gte: new Date(since) } },
-            {
-              pool: {
-                token0: {
-                  uuid: '00',
-                },
-              },
-            },
-            {
-              pool: {
-                token1: {
-                  symbol: 'hUSDC',
-                },
-              },
-            },
-          ],
-        },
-        select: {
-          date: true,
-          poolId: true,
-          reserve0: true,
-          reserve1: true,
-          priceHTR: true,
-        },
-        take: 1,
-      })
-    } else {
-      result = await prisma.hourSnapshot.findMany({
-        where: {
-          AND: [
-            { date: { gte: new Date(since) } },
-            {
-              pool: {
-                token0: {
-                  uuid: '00',
-                },
-              },
-            },
-            {
-              pool: {
-                token1: {
-                  uuid: tokenUuid,
-                },
-              },
-            },
-          ],
-        },
-        select: {
-          date: true,
-          poolId: true,
-          reserve0: true,
-          reserve1: true,
-          priceHTR: true,
-        },
-        take: 1,
-      })
-    }
-
-    return result
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .map((snap) => {
-        return { price: parseFloat((snap.reserve0 / snap.reserve1).toFixed(6)), priceHTR: snap.priceHTR }
-      })[0]
-  } catch (error) {
-    return {
-      price: 0,
-      priceHTR: 0,
-    }
-  }
-}
+// DEPRECATED: Legacy helper functions removed - these used database snapshots
+// Use history API instead: getHistory.getTokenHistory, getHistory.historicalUSD
 
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -326,141 +138,16 @@ export const pricesRouter = createTRPCRouter({
     return prices24hUSD
   }),
   all24h: procedure.query(async ({ ctx }) => {
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
-
-    // Combine queries to reduce connection time
-    const [htrHusdcPool, tokens] = await Promise.all([
-      ctx.prisma.pool.findFirst({
-        where: {
-          OR: [
-            {
-              token0: { symbol: 'HTR' },
-              token1: { symbol: 'hUSDC' },
-            },
-            {
-              token0: { symbol: 'hUSDC' },
-              token1: { symbol: 'HTR' },
-            },
-          ],
-        },
-        select: {
-          id: true,
-          token0: { select: { symbol: true } },
-          token1: { select: { symbol: true } },
-          hourSnapshots: {
-            where: { date: { gte: since } },
-            select: {
-              date: true,
-              reserve0: true,
-              reserve1: true,
-              priceHTR: true,
-            },
-            orderBy: { date: 'asc' },
-          },
-        },
-      }),
-
-      // Optimize token query to fetch only necessary data
-      ctx.prisma.token.findMany({
-        select: {
-          uuid: true,
-          symbol: true,
-          pools0: {
-            where: { token1: { symbol: 'HTR' } },
-            select: {
-              id: true,
-              hourSnapshots: {
-                where: { date: { gte: since } },
-                select: {
-                  date: true,
-                  reserve0: true,
-                  reserve1: true,
-                  priceHTR: true,
-                },
-                orderBy: { date: 'asc' },
-              },
-            },
-            take: 1, // Optimize by taking only the first pool
-          },
-          pools1: {
-            where: { token0: { symbol: 'HTR' } },
-            select: {
-              id: true,
-              hourSnapshots: {
-                where: { date: { gte: since } },
-                select: {
-                  date: true,
-                  reserve0: true,
-                  reserve1: true,
-                  priceHTR: true,
-                },
-                orderBy: { date: 'asc' },
-              },
-            },
-            take: 1, // Optimize by taking only the first pool
-          },
-        },
-      }),
-    ])
-
-    const prices24hUSD: { [key: string]: number[] } = {}
-
-    // Process tokens in parallel using Promise.all
-    await Promise.all(
-      tokens.map(async (token) => {
-        let token_prices24hUSD: number[] = []
-
-        if (token.symbol === 'hUSDC') {
-          token_prices24hUSD = Array(24).fill(1)
-        } else if (token.uuid === '00' && htrHusdcPool?.hourSnapshots.length) {
-          const isHtrToken0 = htrHusdcPool.token0.symbol === 'HTR'
-          token_prices24hUSD = htrHusdcPool.hourSnapshots.map((snap) =>
-            isHtrToken0 ? snap.reserve1 / snap.reserve0 : snap.reserve0 / snap.reserve1
-          )
-        } else {
-          const pool = token.pools0[0] || token.pools1[0]
-          if (pool?.hourSnapshots.length) {
-            const isTokenToken0 = token.pools0.length > 0
-            token_prices24hUSD = pool.hourSnapshots.map((snap) => {
-              const tokenPrice = isTokenToken0 ? snap.reserve1 / snap.reserve0 : snap.reserve0 / snap.reserve1
-              return tokenPrice * snap.priceHTR
-            })
-          }
-        }
-
-        prices24hUSD[token.uuid] = token_prices24hUSD.length ? token_prices24hUSD : [0]
-      })
-    )
-
-    return prices24hUSD
+    // DEPRECATED: This endpoint used database snapshots which have been removed.
+    // Use getHistory.get24hMetrics or getHistory.getTokenHistory instead.
+    // Returning empty object for backward compatibility
+    return {}
   }),
-  allAtTimestamp: procedure.input(z.object({ timestamp: z.number() })).query(async ({ ctx, input }) => {
-    const tokens = await ctx.prisma.token.findMany({
-      select: {
-        uuid: true,
-        symbol: true,
-        chainId: true,
-      },
-    })
-    if (!tokens) {
-      throw new Error(`Failed to fetch tokens, received ${tokens}`)
-    }
-    const prices: { [key: string]: number } = {}
-    await Promise.all(
-      tokens.map(async (token) => {
-        const price_old = await getPriceHTRAtTimestamp(token.uuid, ctx.prisma, input.timestamp) //from db snaps
-        if (!prices[token.uuid])
-          prices[token.uuid] =
-            price_old && price_old.price && price_old.priceHTR
-              ? token.uuid == '00'
-                ? price_old.priceHTR
-                : token.symbol == 'hUSDC'
-                ? 1
-                : price_old.price * price_old.priceHTR
-              : 0
-      })
-    )
-    return prices
+  allAtTimestamp: procedure.input(z.object({ timestamp: z.number() })).query(async () => {
+    // DEPRECATED: This endpoint used database snapshots which have been removed.
+    // Use getHistory.historicalUSD with timestamp parameter instead.
+    // Returning empty object for backward compatibility
+    return {}
   }),
 
   htr: procedure.output(z.number()).query(async () => {
@@ -475,9 +162,11 @@ export const pricesRouter = createTRPCRouter({
   htrKline: procedure
     .output(z.array(z.object({ price: z.number(), date: z.number() })))
     .input(z.object({ size: z.number(), period: z.number() }))
-    .query(async ({ ctx, input }) => {
-      const result = await htrKline({ ...input, prisma: ctx.prisma })
-      return result
+    .query(async () => {
+      // DEPRECATED: This endpoint used database snapshots which have been removed.
+      // Use getHistory.getTokenHistory with period parameter instead.
+      // Returning empty array for backward compatibility
+      return []
     }),
 
   // Get all token prices in USD

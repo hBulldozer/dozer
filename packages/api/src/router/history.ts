@@ -89,8 +89,10 @@ export const historyRouter = createTRPCRouter({
 
         // Set appropriate cache headers
         if (response.data_points.length > 0) {
-          const latestTimestamp = response.data_points[response.data_points.length - 1].timestamp
-          setAdaptiveCacheHeaders(ctx.res, latestTimestamp)
+          const latestTimestamp = response.data_points[response.data_points.length - 1]?.timestamp
+          if (latestTimestamp) {
+            setAdaptiveCacheHeaders(ctx.res, latestTimestamp)
+          }
         }
 
         // Parse and format the data
@@ -103,10 +105,10 @@ export const historyRouter = createTRPCRouter({
             blockHeight: point.block_height,
             reserve0: parsedPool?.reserve0 || '0',
             reserve1: parsedPool?.reserve1 || '0',
-            volumeUSD: parsedPool?.volumeUSD || 0,
-            liquidityUSD: parsedPool?.liquidityUSD || 0,
-            feeUSD: parsedPool?.feeUSD || 0,
-            transactionCount: parsedPool?.transactionCount || 0,
+            volumeUSD: parsedPool?.volume || 0,
+            liquidityUSD: ((parsedPool?.reserve0 || 0) + (parsedPool?.reserve1 || 0)),
+            feeUSD: ((parsedPool?.fee0 || 0) + (parsedPool?.fee1 || 0)),
+            transactionCount: parsedPool?.transactions || 0,
           }
         })
 
@@ -156,8 +158,10 @@ export const historyRouter = createTRPCRouter({
         )
 
         if (response.data_points.length > 0) {
-          const latestTimestamp = response.data_points[response.data_points.length - 1].timestamp
-          setAdaptiveCacheHeaders(ctx.res, latestTimestamp)
+          const latestTimestamp = response.data_points[response.data_points.length - 1]?.timestamp
+          if (latestTimestamp) {
+            setAdaptiveCacheHeaders(ctx.res, latestTimestamp)
+          }
         }
 
         const chartData = response.data_points.map((point) => {
@@ -169,10 +173,10 @@ export const historyRouter = createTRPCRouter({
             blockHeight: point.block_height,
             reserve0: parsedPool?.reserve0 || '0',
             reserve1: parsedPool?.reserve1 || '0',
-            volumeUSD: parsedPool?.volumeUSD || 0,
-            liquidityUSD: parsedPool?.liquidityUSD || 0,
-            feeUSD: parsedPool?.feeUSD || 0,
-            transactionCount: parsedPool?.transactionCount || 0,
+            volumeUSD: parsedPool?.volume || 0,
+            liquidityUSD: ((parsedPool?.reserve0 || 0) + (parsedPool?.reserve1 || 0)),
+            feeUSD: ((parsedPool?.fee0 || 0) + (parsedPool?.fee1 || 0)),
+            transactionCount: parsedPool?.transactions || 0,
           }
         })
 
@@ -222,8 +226,10 @@ export const historyRouter = createTRPCRouter({
         )
 
         if (response.data_points.length > 0) {
-          const latestTimestamp = response.data_points[response.data_points.length - 1].timestamp
-          setAdaptiveCacheHeaders(ctx.res, latestTimestamp)
+          const latestTimestamp = response.data_points[response.data_points.length - 1]?.timestamp
+          if (latestTimestamp) {
+            setAdaptiveCacheHeaders(ctx.res, latestTimestamp)
+          }
         }
 
         const chartData = response.data_points.map((point) => {
@@ -238,9 +244,10 @@ export const historyRouter = createTRPCRouter({
           const isToken0 = poolId.startsWith(tokenId) || poolId.startsWith('00')
           const priceInHTR = isToken0 && reserve1 > 0 ? reserve0 / reserve1 : reserve0 > 0 ? reserve1 / reserve0 : 0
 
-          // Get price in USD from pool data
-          const priceInUSD = parsedPool?.liquidityUSD && (reserve0 + reserve1) > 0
-            ? parsedPool.liquidityUSD / (reserve0 + reserve1)
+          // Calculate liquidity in USD (reserves + reserves for simplification)
+          const liquidityUSD = (reserve0 + reserve1)
+          const priceInUSD = liquidityUSD && (reserve0 + reserve1) > 0
+            ? liquidityUSD / (reserve0 + reserve1)
             : 0
 
           return {
@@ -248,8 +255,8 @@ export const historyRouter = createTRPCRouter({
             blockHeight: point.block_height,
             priceHTR: priceInHTR,
             priceUSD: priceInUSD,
-            volumeUSD: parsedPool?.volumeUSD || 0,
-            liquidityUSD: parsedPool?.liquidityUSD || 0,
+            volumeUSD: parsedPool?.volume || 0,
+            liquidityUSD,
           }
         })
 
@@ -300,8 +307,10 @@ export const historyRouter = createTRPCRouter({
         )
 
         if (response.data_points.length > 0) {
-          const latestTimestamp = response.data_points[response.data_points.length - 1].timestamp
-          setAdaptiveCacheHeaders(ctx.res, latestTimestamp)
+          const latestTimestamp = response.data_points[response.data_points.length - 1]?.timestamp
+          if (latestTimestamp) {
+            setAdaptiveCacheHeaders(ctx.res, latestTimestamp)
+          }
         }
 
         const chartData = response.data_points.map((point) => {
@@ -314,8 +323,9 @@ export const historyRouter = createTRPCRouter({
           const isToken0 = poolId.startsWith(tokenId) || poolId.startsWith('00')
           const priceInHTR = isToken0 && reserve1 > 0 ? reserve0 / reserve1 : reserve0 > 0 ? reserve1 / reserve0 : 0
 
-          const priceInUSD = parsedPool?.liquidityUSD && (reserve0 + reserve1) > 0
-            ? parsedPool.liquidityUSD / (reserve0 + reserve1)
+          const liquidityUSD = (reserve0 + reserve1)
+          const priceInUSD = liquidityUSD && (reserve0 + reserve1) > 0
+            ? liquidityUSD / (reserve0 + reserve1)
             : 0
 
           return {
@@ -323,8 +333,8 @@ export const historyRouter = createTRPCRouter({
             blockHeight: point.block_height,
             priceHTR: priceInHTR,
             priceUSD: priceInUSD,
-            volumeUSD: parsedPool?.volumeUSD || 0,
-            liquidityUSD: parsedPool?.liquidityUSD || 0,
+            volumeUSD: parsedPool?.volume || 0,
+            liquidityUSD,
           }
         })
 
@@ -374,6 +384,13 @@ export const historyRouter = createTRPCRouter({
 
       // Get the latest data point
       const latestPoint = response.data_points[response.data_points.length - 1]
+      if (!latestPoint) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No data points returned',
+        })
+      }
+
       const poolData = latestPoint.values[poolInfoCall]
       const parsedPool = poolData ? parsePoolApiInfo(poolData) : null
 
@@ -385,10 +402,10 @@ export const historyRouter = createTRPCRouter({
         data: {
           reserve0: parsedPool?.reserve0 || '0',
           reserve1: parsedPool?.reserve1 || '0',
-          volumeUSD: parsedPool?.volumeUSD || 0,
-          liquidityUSD: parsedPool?.liquidityUSD || 0,
-          feeUSD: parsedPool?.feeUSD || 0,
-          transactionCount: parsedPool?.transactionCount || 0,
+          volumeUSD: parsedPool?.volume || 0,
+          liquidityUSD: ((parsedPool?.reserve0 || 0) + (parsedPool?.reserve1 || 0)),
+          feeUSD: ((parsedPool?.fee0 || 0) + (parsedPool?.fee1 || 0)),
+          transactionCount: parsedPool?.transactions || 0,
         },
       }
     } catch (error: any) {
@@ -439,6 +456,14 @@ export const historyRouter = createTRPCRouter({
       const firstPoint = response.data_points[0]
       const lastPoint = response.data_points[response.data_points.length - 1]
 
+      if (!firstPoint || !lastPoint) {
+        return {
+          success: false,
+          poolId,
+          message: 'Missing data points',
+        }
+      }
+
       const firstPool = firstPoint.values[poolInfoCall]
         ? parsePoolApiInfo(firstPoint.values[poolInfoCall])
         : null
@@ -453,9 +478,9 @@ export const historyRouter = createTRPCRouter({
       }
 
       // Calculate 24h changes
-      const volume24h = lastPool.volumeUSD - firstPool.volumeUSD
-      const fees24h = lastPool.feeUSD - firstPool.feeUSD
-      const transactions24h = lastPool.transactionCount - firstPool.transactionCount
+      const volume24h = lastPool.volume - firstPool.volume
+      const fees24h = (lastPool.fee0 + lastPool.fee1) - (firstPool.fee0 + firstPool.fee1)
+      const transactions24h = lastPool.transactions - firstPool.transactions
 
       // Calculate price change
       const firstReserve0 = Number(firstPool.reserve0)
@@ -501,7 +526,7 @@ export const historyRouter = createTRPCRouter({
         fees24h,
         transactions24h,
         priceChange24h,
-        currentLiquidityUSD: lastPool.liquidityUSD,
+        currentLiquidityUSD: (lastPool.reserve0 + lastPool.reserve1),
         timestamp: lastPoint.timestamp,
       }
     } catch (error: any) {

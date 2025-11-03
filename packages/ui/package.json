@@ -56,7 +56,7 @@
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
     "@radix-ui/react-label": "^2.1.0",
-    "@types/react": "^18.0.0",
+    "@types/react": "18.2.46",
     "@types/react-datepicker": "6.2.0",
     "@types/react-dom": "^18.0.0",
     "@types/react-virtualized-auto-sizer": "^1.0.1",

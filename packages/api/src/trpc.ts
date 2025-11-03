@@ -47,13 +47,15 @@ import { ZodError } from 'zod'
  * process every request that goes through your tRPC endpoint
  * @link https://trpc.io/docs/context
  */
-export const createTRPCContext = async () => {
-  // const { req, res } = opts;
+export const createTRPCContext = async (opts: CreateNextContextOptions) => {
+  const { req, res } = opts
 
   // Get the session from the server using the unstable_getServerSession wrapper function
   // const session = await getServerSession({ req, res });
   return {
     prisma,
+    req,
+    res,
   }
   // return createInnerTRPCContext({
   //   session,
@@ -66,7 +68,9 @@ export const createTRPCContext = async () => {
  * This is where the trpc api is initialized, connecting the context and
  * transformer
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
+type Context = Awaited<ReturnType<typeof createTRPCContext>>
+
+const t = initTRPC.context<Context>().create({
   transformer: superjson,
   isServer: true,
   errorFormatter({ shape, error }) {

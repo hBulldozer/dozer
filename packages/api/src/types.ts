@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { RouterOutputs } from '..'
 import { ChainId } from '@dozer/chain'
-import { Pool, daySnapshot, hourSnapshot } from '@dozer/database'
+import { Pool } from '@dozer/database'
 import { Token } from '@dozer/currency'
 import { Prisma, Pool as _Pool, Token as _Token } from '@dozer/database'
 
@@ -80,9 +80,9 @@ export type Scalars = {
   deprecated_Bytes: any
 }
 
-export type PairHourSnapshot = hourSnapshot
-
-export type PairDaySnapshot = daySnapshot
+// DEPRECATED: Snapshot types removed - historical data now fetched from blockchain
+// export type PairHourSnapshot = hourSnapshot
+// export type PairDaySnapshot = daySnapshot
 
 export type Pair = {
   id: string
@@ -109,8 +109,9 @@ export type Pair = {
   fee1?: number
   txCount?: number
   txCount1d?: number
-  hourSnapshots: Array<PairHourSnapshot>
-  daySnapshots: Array<PairDaySnapshot>
+  // DEPRECATED: Snapshots now fetched from blockchain via history API
+  // hourSnapshots: Array<PairHourSnapshot>
+  // daySnapshots: Array<PairDaySnapshot>
 }
 // export type Pair = {
 //   /**  Pair address (contract address)  */

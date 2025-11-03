@@ -7,7 +7,10 @@
  * 3. Web Server Cache (Nginx/Cloudflare) - for node responses
  */
 
-import type { Response } from 'express'
+import type { NextApiResponse } from 'next'
+
+// Type for response object that can set headers
+type ResponseWithHeaders = { setHeader: (name: string, value: string) => void }
 
 /**
  * Cache duration constants in seconds
@@ -61,7 +64,7 @@ export function normalizeTimestamp(timestamp: number): number {
  * setHistoricalCacheHeaders(ctx.res)
  * ```
  */
-export function setHistoricalCacheHeaders(res: Response | undefined): void {
+export function setHistoricalCacheHeaders(res: ResponseWithHeaders | undefined): void {
   if (!res) return
 
   // Cache forever since historical data is immutable
@@ -78,7 +81,7 @@ export function setHistoricalCacheHeaders(res: Response | undefined): void {
  * setRecentCacheHeaders(ctx.res)
  * ```
  */
-export function setRecentCacheHeaders(res: Response | undefined): void {
+export function setRecentCacheHeaders(res: ResponseWithHeaders | undefined): void {
   if (!res) return
 
   res.setHeader(
@@ -97,7 +100,7 @@ export function setRecentCacheHeaders(res: Response | undefined): void {
  * setCurrentCacheHeaders(ctx.res)
  * ```
  */
-export function setCurrentCacheHeaders(res: Response | undefined): void {
+export function setCurrentCacheHeaders(res: ResponseWithHeaders | undefined): void {
   if (!res) return
 
   res.setHeader(
@@ -116,7 +119,7 @@ export function setCurrentCacheHeaders(res: Response | undefined): void {
  * setComputedCacheHeaders(ctx.res)
  * ```
  */
-export function setComputedCacheHeaders(res: Response | undefined): void {
+export function setComputedCacheHeaders(res: ResponseWithHeaders | undefined): void {
   if (!res) return
 
   res.setHeader(
@@ -140,7 +143,7 @@ export function setComputedCacheHeaders(res: Response | undefined): void {
  * ```
  */
 export function setAdaptiveCacheHeaders(
-  res: Response | undefined,
+  res: ResponseWithHeaders | undefined,
   dataTimestamp: number
 ): 'historical' | 'recent' {
   if (!res) return 'recent'

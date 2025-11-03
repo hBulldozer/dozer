@@ -12,7 +12,7 @@
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
     "@types/node": "20.14.10",
-    "@types/react": "^18.0.0",
+    "@types/react": "18.2.46",
     "eslint": "*",
     "react": "18.3.1",
     "typescript": "^5.3.3",

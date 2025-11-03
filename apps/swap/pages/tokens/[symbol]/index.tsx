@@ -132,14 +132,23 @@ const Token = () => {
           tokenData.pools.length > 0
             ? tokenData.pools.reduce((sum, pool) => sum + pool.apr, 0) / tokenData.pools.length
             : 0,
-        token0:
-          tokenData.symbol === 'HTR'
-            ? toToken({ uuid: '00', symbol: 'HTR', name: 'Hathor' })
-            : toToken({ uuid: '00', symbol: 'HTR', name: 'Hathor' }),
+        token0: {
+          uuid: '00',
+          name: 'Hathor' as string | null,
+          symbol: 'HTR' as string | null,
+        },
         token1:
           tokenData.symbol === 'HTR'
-            ? toToken(primaryPool.token0.uuid === '00' ? primaryPool.token1 : primaryPool.token0)
-            : toToken(tokenData),
+            ? {
+                uuid: (primaryPool.token0.uuid === '00' ? primaryPool.token1.uuid : primaryPool.token0.uuid),
+                name: (primaryPool.token0.uuid === '00' ? primaryPool.token1.name : primaryPool.token0.name),
+                symbol: (primaryPool.token0.uuid === '00' ? primaryPool.token1.symbol : primaryPool.token0.symbol),
+              }
+            : {
+                uuid: tokenData.uuid,
+                name: tokenData.name,
+                symbol: tokenData.symbol,
+              },
         reserve0:
           tokenData.symbol === 'HTR'
             ? primaryPool.token0.uuid === '00'
@@ -171,12 +180,12 @@ const Token = () => {
         <BlockTracker client={api} />
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-6">
-            {aggregatedPair && <TokenChart pair={aggregatedPair} />}
+            {aggregatedPair && <TokenChart pair={aggregatedPair as any} />}
             <div className="flex flex-col gap-4">
               <Typography weight={500} variant="h1">
                 Stats
               </Typography>
-              {aggregatedPair && <TokenStats pair={aggregatedPair} prices={prices} />}
+              {aggregatedPair && <TokenStats pair={aggregatedPair as any} prices={prices} />}
               {(() => {
                 const customAbout = customAbouts[tokenData.symbol.toUpperCase()]
                 const poolText = tokenData.poolCount === 1 ? 'pool' : 'pools'

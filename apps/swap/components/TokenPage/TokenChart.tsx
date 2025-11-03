@@ -63,10 +63,11 @@ export const TokenChart: FC<TokenChartProps> = ({ pair }) => {
       poolId: pair.id,
       period: chartPeriod,
     },
-    getHistoryQueryConfig({
+    {
+      ...getHistoryQueryConfig(),
       // Allow refetch when user changes period
-      refetchOnMount: 'always',
-    })
+      refetchOnMount: 'always' as const,
+    }
   )
 
   // Fetch current HTR price for USD conversions

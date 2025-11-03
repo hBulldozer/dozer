@@ -11,7 +11,7 @@
     "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
-    "@types/react": "^18.0.0",
+    "@types/react": "18.2.46",
     "eslint": "*",
     "jest": "29.7.0",
     "react": "18.3.1",
