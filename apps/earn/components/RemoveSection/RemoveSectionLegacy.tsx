@@ -84,19 +84,34 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
     [percentToRemove, token0, max_withdraw_a]
   )
 
-  const currencyBToRemove = useMemo(
-    () =>
-      token1
-        ? percentToRemove && percentToRemove.greaterThan('0') && max_withdraw_b
-          ? Amount.fromFractionalAmount(token1, percentToRemove.multiply(max_withdraw_b.quotient).quotient || '0', 100)
-          : Amount.fromRawAmount(token1, '0')
-        : undefined,
-    [percentToRemove, token1, max_withdraw_b]
-  )
+  // Calculate currencyBToRemove using the same ratio as the contract's quote function
+  // to avoid rounding mismatches. The contract uses: amount_b = (amount_a * reserve_b) // reserve_a
+  const currencyBToRemove = useMemo(() => {
+    if (!token1 || !percentToRemove || !percentToRemove.greaterThan('0') || !currencyAToRemove || !pair) {
+      return token1 ? Amount.fromRawAmount(token1, '0') : undefined
+    }
+
+    try {
+      // Get reserves from pair (these are in cents as integers)
+      const reserveA = BigInt(Math.floor(pair.reserve0 * 100))
+      const reserveB = BigInt(Math.floor(pair.reserve1 * 100))
+
+      // Use the contract's quote formula: amount_b = (amount_a * reserve_b) / reserve_a
+      // currencyAToRemove.quotient is a JSBI instance, convert to string first
+      const amountA = BigInt(currencyAToRemove.quotient.toString())
+      const amountB = (amountA * reserveB) / reserveA
+
+      // Return as Amount in cents
+      return Amount.fromRawAmount(token1, amountB.toString())
+    } catch (error) {
+      console.error('Error calculating currencyBToRemove:', error)
+      return token1 ? Amount.fromRawAmount(token1, '0') : undefined
+    }
+  }, [token1, percentToRemove, currencyAToRemove, pair])
 
   const [minAmount0, minAmount1] = useMemo(() => {
     return [
-      currencyAToRemove ? Number(currencyAToRemove.toFixed(2)) * (1 - slippageTolerance) : undefined,
+      currencyAToRemove ? Number(currencyAToRemove.toFixed(2))  : undefined,
       currencyBToRemove ? Number(currencyBToRemove.toFixed(2)) * (1 - slippageTolerance) : undefined,
     ]
   }, [currencyAToRemove, slippageTolerance, currencyBToRemove])
@@ -132,13 +147,19 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   const onClick = async () => {
     setSentTX(true)
     if (currencyAToRemove && currencyBToRemove && percentage) {
+      // Convert from cents (quotient) to decimal tokens by dividing by 100
+      // This avoids precision loss from toFixed(2)
+      // Note: quotient is a JSBI instance, convert to string first then to number
+      const amountADecimal = Number(currencyAToRemove.quotient.toString()) / 100
+      const amountBDecimal = Number(currencyBToRemove.quotient.toString()) / 100
+
       poolManager.removeLiquidity(
         hathorRpc,
         address,
         token0.uuid,
-        Number(currencyAToRemove?.toFixed(2) || 0),
+        amountADecimal,
         token1.uuid,
-        Number(currencyBToRemove?.toFixed(2) || 0),
+        amountBDecimal,
         fee
       )
     }

@@ -36,7 +36,7 @@ export class PoolManager extends NanoContract {
     tokenB: string,
     amountA: number,
     amountB: number,
-    fee: number
+    fee: number,
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'create_pool',
@@ -61,7 +61,7 @@ export class PoolManager extends NanoContract {
       ],
       [fee], // Only fee is needed as argument
       true,
-      this.poolManagerContractId
+      this.poolManagerContractId,
     )
     const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
       ...ncTxRpcReq,
@@ -87,7 +87,7 @@ export class PoolManager extends NanoContract {
     amountIn: number,
     tokenOut: string,
     amountOut: number,
-    path: string // Mandatory path (single pool_key for single-hop, comma-separated for multi-hop)
+    path: string, // Mandatory path (single pool_key for single-hop, comma-separated for multi-hop)
   ): Promise<SendNanoContractTxResponse> {
     // Parse path to determine if single-hop or multi-hop
     const pathSegments = path.split(',')
@@ -125,7 +125,7 @@ export class PoolManager extends NanoContract {
       ],
       args,
       true,
-      this.poolManagerContractId
+      this.poolManagerContractId,
     )
     const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
       ...ncTxRpcReq,
@@ -151,7 +151,7 @@ export class PoolManager extends NanoContract {
     amountIn: number,
     tokenOut: string,
     amountOut: number,
-    path: string // Mandatory path (single pool_key for single-hop, comma-separated for multi-hop)
+    path: string, // Mandatory path (single pool_key for single-hop, comma-separated for multi-hop)
   ): Promise<SendNanoContractTxResponse> {
     // Parse path to determine if single-hop or multi-hop
     const pathSegments = path.split(',')
@@ -190,7 +190,7 @@ export class PoolManager extends NanoContract {
       ],
       args,
       true,
-      this.poolManagerContractId
+      this.poolManagerContractId,
     )
     const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
       ...ncTxRpcReq,
@@ -216,7 +216,7 @@ export class PoolManager extends NanoContract {
     amountA: number,
     tokenB: string,
     amountB: number,
-    fee: number
+    fee: number,
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'add_liquidity',
@@ -228,7 +228,7 @@ export class PoolManager extends NanoContract {
           token: tokenA,
           amount: Math.floor(amountA * 100).toString(),
           // address: address,
-          // changeAddress: address,
+          changeAddress: address,
         },
         // @ts-ignore
         {
@@ -236,12 +236,12 @@ export class PoolManager extends NanoContract {
           token: tokenB,
           amount: Math.floor(amountB * 100).toString(),
           // address: address,
-          // changeAddress: address,
+          changeAddress: address,
         } as any,
       ],
       [fee],
       true,
-      this.poolManagerContractId
+      this.poolManagerContractId,
     )
     const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
       ...ncTxRpcReq,
@@ -267,7 +267,7 @@ export class PoolManager extends NanoContract {
     amountA: number,
     tokenB: string,
     amountB: number,
-    fee: number
+    fee: number,
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'remove_liquidity',
@@ -277,7 +277,7 @@ export class PoolManager extends NanoContract {
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenA,
-          amount: Math.ceil(amountA * 100).toString(),
+          amount: Math.floor(amountA * 100).toString(),
           address: address,
           // changeAddress: address,
         },
@@ -285,14 +285,14 @@ export class PoolManager extends NanoContract {
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenB,
-          amount: Math.ceil(amountB * 100).toString(),
+          amount: Math.floor(amountB * 100).toString(),
           address: address,
           // changeAddress: address,
         } as any,
       ],
       [fee],
       true,
-      this.poolManagerContractId
+      this.poolManagerContractId,
     )
     const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
       ...ncTxRpcReq,
@@ -317,7 +317,7 @@ export class PoolManager extends NanoContract {
     tokenIn: string,
     amountIn: number,
     tokenOut: string,
-    fee: number
+    fee: number,
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'add_liquidity_single_token',
@@ -334,7 +334,7 @@ export class PoolManager extends NanoContract {
       ],
       [tokenOut, fee], // token_out and fee as arguments
       true,
-      this.poolManagerContractId
+      this.poolManagerContractId,
     )
     const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
       ...ncTxRpcReq,
@@ -358,7 +358,7 @@ export class PoolManager extends NanoContract {
     poolKey: string,
     tokenOut: string,
     withdrawalAmount: number,
-    percentage: number
+    percentage: number,
   ): Promise<SendNanoContractTxResponse> {
     // Convert percentage to basis points (percentage * 100)
     const percentageBasisPoints = Math.round(percentage * 100)
@@ -377,7 +377,7 @@ export class PoolManager extends NanoContract {
       ],
       [poolKey, percentageBasisPoints], // pool_key and percentage as arguments
       true,
-      this.poolManagerContractId
+      this.poolManagerContractId,
     )
     const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
       ...ncTxRpcReq,
@@ -402,7 +402,7 @@ export class PoolManager extends NanoContract {
     amountA: number,
     tokenB: string,
     amountB: number,
-    fee: number
+    fee: number,
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'withdraw_cashback',
@@ -427,7 +427,7 @@ export class PoolManager extends NanoContract {
       ],
       [fee],
       true,
-      this.poolManagerContractId
+      this.poolManagerContractId,
     )
     const ncTxRpcReqCustom: SendNanoContractRpcRequestCustom = {
       ...ncTxRpcReq,
@@ -479,7 +479,7 @@ export class LiquidityPool extends PoolManager {
       this.token1,
       amount0,
       amount1,
-      this.fee
+      this.fee,
     )
   }
 
@@ -494,7 +494,7 @@ export class LiquidityPool extends PoolManager {
     amount0: number,
     amount1: number,
     fee: number,
-    protocol_fee: number
+    protocol_fee: number,
   ): Promise<SendNanoContractTxResponse> {
     console.warn('wc_initialize() is deprecated. Use PoolManager.createPool() instead.')
     return this.createPool(hathorRpc, address, token0, token1, amount0, amount1, fee)
@@ -510,7 +510,7 @@ export class LiquidityPool extends PoolManager {
     token_in: string,
     amount_in: number,
     token_out: string,
-    amount_out: number
+    amount_out: number,
   ): Promise<SendNanoContractTxResponse> {
     // Construct a single-hop path using the legacy fee (5 basis points)
     const path = `${token_in}/${token_out}/5`
@@ -527,7 +527,7 @@ export class LiquidityPool extends PoolManager {
     token_in: string,
     amount_in: number,
     token_out: string,
-    amount_out: number
+    amount_out: number,
   ): Promise<SendNanoContractTxResponse> {
     // Construct a single-hop path using the legacy fee (5 basis points)
     const path = `${token_in}/${token_out}/5`
@@ -544,7 +544,7 @@ export class LiquidityPool extends PoolManager {
     amount_a: number,
     token_b: string,
     amount_b: number,
-    address: string
+    address: string,
   ): Promise<SendNanoContractTxResponse> {
     // Default fee of 0.3% (3 basis points) for backward compatibility
     return this.addLiquidity(hathorRpc, address, token_a, amount_a, token_b, amount_b, 3)
@@ -560,7 +560,7 @@ export class LiquidityPool extends PoolManager {
     amount_a: number,
     token_b: string,
     amount_b: number,
-    address: string
+    address: string,
   ): Promise<SendNanoContractTxResponse> {
     // Default fee of 0.3% (3 basis points) for backward compatibility
     return this.removeLiquidity(hathorRpc, address, token_a, amount_a, token_b, amount_b, 3)
