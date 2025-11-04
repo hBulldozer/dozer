@@ -3,7 +3,7 @@ import random
 from hathor.crypto.util import decode_address
 from hathor.nanocontracts.blueprints.dozer_pool_manager import  DozerPoolManager
 from hathor.nanocontracts.blueprints.oasis import Oasis
-from hathor.nanocontracts.types import Address, NCAction, NCActionType, NCDepositAction, NCWithdrawalAction, Amount, TokenUid
+from hathor.nanocontracts.types import Address, CallerId, NCAction, NCActionType, NCDepositAction, NCWithdrawalAction, Amount, TokenUid
 from hathor.transaction.token_info import TokenVersion
 from hathor.util import not_none
 from hathor.conf import HathorSettings
@@ -54,12 +54,12 @@ class OasisTestCase(BlueprintTestCase):
         tx = [t for t in genesis if t.is_transaction][0]
         return tx
 
-    def _get_any_address(self) -> tuple[bytes, KeyPair]:
+    def _get_any_address(self) -> tuple[Address, KeyPair]:
         password = os.urandom(12)
         key = KeyPair.create(password)
         address_b58 = key.address
         address_bytes = decode_address(not_none(address_b58))
-        return address_bytes, key
+        return Address(address_bytes), key
 
     def get_current_timestamp(self):
         return int(self.clock.seconds())
@@ -112,10 +112,10 @@ class OasisTestCase(BlueprintTestCase):
             "user_lp_b": user_info.token1Amount,      # token_b amount
         }
 
-    def _user_info(self, address: bytes):
+    def _user_info(self, address: CallerId):
         return self.runner.call_view_method(self.oasis_id, "user_info", address)
 
-    def check_balances(self, users_addresses: list[bytes]) -> None:
+    def check_balances(self, users_addresses: list[CallerId]) -> None:
         oasis_balance_htr = self.oasis_storage.get_balance(HTR_UID)
         oasis_balance_b = self.oasis_storage.get_balance(self.token_b)
 
@@ -157,7 +157,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=actions,  # type: ignore
             vertex=self.tx,
-            caller_id=Address(self.dev_address),
+            caller_id=self.dev_address,
             timestamp=self.get_current_timestamp(),
         )
         self.runner.create_contract(
@@ -177,7 +177,7 @@ class OasisTestCase(BlueprintTestCase):
     def initialize_pool_manager(self) -> None:
         """Initialize the DozerPoolManager and set up HTR-USD reference pool"""
         # Create the DozerPoolManager contract
-        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(self.dev_address), timestamp=self.get_current_timestamp())
+        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=self.dev_address, timestamp=self.get_current_timestamp())
         self.runner.create_contract(
             self.dozer_manager_id,
             self.dozer_manager_blueprint_id,
@@ -202,7 +202,7 @@ class OasisTestCase(BlueprintTestCase):
         pool_ctx = self.create_context(
             actions=actions,  # type: ignore
             vertex=self.tx,
-            caller_id=Address(self.dev_address),
+            caller_id=self.dev_address,
             timestamp=self.get_current_timestamp()
         )
 
@@ -215,7 +215,7 @@ class OasisTestCase(BlueprintTestCase):
         )
 
         # Set this pool as the HTR-USD reference pool
-        set_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(self.dev_address), timestamp=self.get_current_timestamp())
+        set_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=self.dev_address, timestamp=self.get_current_timestamp())
         self.runner.call_public_method(
             self.dozer_manager_id,
             "set_htr_usd_pool",
@@ -238,7 +238,7 @@ class OasisTestCase(BlueprintTestCase):
             NCDepositAction(amount=amount_b, token_uid=self.token_b),
         ]
         pool_ctx = self.create_context(actions=actions, # type: ignore
-                            vertex=self.tx, caller_id=Address(self.dev_address), timestamp=self.get_current_timestamp())
+                            vertex=self.tx, caller_id=self.dev_address, timestamp=self.get_current_timestamp())
         self.runner.call_public_method(
             self.dozer_manager_id,
             "create_pool",
@@ -254,7 +254,7 @@ class OasisTestCase(BlueprintTestCase):
 
         # Update owner address to a different address
         new_owner_address = self._get_any_address()[0]
-        update_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(self.dev_address), timestamp=self.get_current_timestamp())
+        update_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=self.dev_address, timestamp=self.get_current_timestamp())
         self.runner.call_public_method(
             self.oasis_id, "update_owner_address", update_ctx, new_owner_address
         )
@@ -264,7 +264,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=owner_initial_deposit, token_uid=HTR_UID)], # type: ignore
             vertex=self.tx,
-            caller_id=Address(self.owner_address),
+            caller_id=self.owner_address,
             timestamp=self.get_current_timestamp(),
         )
         self.runner.call_public_method(self.oasis_id, "owner_deposit", ctx)
@@ -282,7 +282,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=dev_second_deposit, token_uid=HTR_UID)],  # type: ignore
             vertex=self.tx,
-            caller_id=Address(self.dev_address),
+            caller_id=self.dev_address,
             timestamp=self.get_current_timestamp(),
         )
         self.runner.call_public_method(self.oasis_id, "owner_deposit", ctx)
@@ -316,7 +316,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCWithdrawalAction(amount=withdraw_amount, token_uid=HTR_UID)],  # type: ignore
             vertex=self.tx,
-            caller_id=Address(self.dev_address),  # Use dev_address as owner
+            caller_id=self.dev_address,  # Use dev_address as owner
             timestamp=self.get_current_timestamp(),
         )
         self.runner.call_public_method(self.oasis_id, "owner_withdraw", ctx)
@@ -331,7 +331,7 @@ class OasisTestCase(BlueprintTestCase):
 
         # Update owner to a new address
         new_owner = self._get_any_address()[0]
-        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(self.dev_address), timestamp=self.get_current_timestamp())
+        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=self.dev_address, timestamp=self.get_current_timestamp())
         self.runner.call_public_method(
             self.oasis_id, "update_owner_address", ctx, new_owner
         )
@@ -340,7 +340,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCWithdrawalAction(amount=100_00, token_uid=HTR_UID)],  # type: ignore
             vertex=self.tx,
-            caller_id=Address(new_owner),
+            caller_id=new_owner,
             timestamp=self.get_current_timestamp(),
         )
         self.runner.call_public_method(self.oasis_id, "owner_withdraw", ctx)
@@ -349,7 +349,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCWithdrawalAction(amount=100_00, token_uid=HTR_UID)],  # type: ignore
             vertex=self.tx,
-            caller_id=Address(self.dev_address),
+            caller_id=self.dev_address,
             timestamp=self.get_current_timestamp(),
         )
         with self.assertRaises(NCFail):
@@ -367,7 +367,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds(),
         )
         self.runner.call_public_method(self.oasis_id, "user_deposit", ctx, 6)
@@ -379,7 +379,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCWithdrawalAction(amount=expected_fee, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(self.dev_address),
+            caller_id=self.dev_address,
             timestamp=self.get_current_timestamp(),
         )
         self.runner.call_public_method(self.oasis_id, "dev_withdraw_fee", ctx)
@@ -393,7 +393,7 @@ class OasisTestCase(BlueprintTestCase):
         # Test unauthorized withdrawal
         # Create a new owner different from dev
         new_owner = self._get_any_address()[0]
-        update_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(self.dev_address), timestamp=0)
+        update_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=self.dev_address, timestamp=0)
         self.runner.call_public_method(
             self.oasis_id, "update_owner_address", update_ctx, new_owner
         )
@@ -402,7 +402,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCWithdrawalAction(amount=100, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(new_owner),
+            caller_id=new_owner,
             timestamp=self.get_current_timestamp(),
         )
         with self.assertRaises(NCFail):
@@ -420,7 +420,7 @@ class OasisTestCase(BlueprintTestCase):
 
         # Test owner update by dev
         new_owner = self._get_any_address()[0]
-        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(self.dev_address), timestamp=self.get_current_timestamp())
+        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=self.dev_address, timestamp=self.get_current_timestamp())
         self.runner.call_public_method(
             self.oasis_id, "update_owner_address", ctx, new_owner
         )
@@ -432,7 +432,7 @@ class OasisTestCase(BlueprintTestCase):
 
         # Test owner update by current owner
         newer_owner = self._get_any_address()[0]
-        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(new_owner), timestamp=self.get_current_timestamp())
+        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=new_owner, timestamp=self.get_current_timestamp())
         self.runner.call_public_method(
             self.oasis_id, "update_owner_address", ctx, newer_owner
         )
@@ -444,7 +444,7 @@ class OasisTestCase(BlueprintTestCase):
 
         # Test unauthorized update
         random_address = self._get_any_address()[0]
-        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(random_address), timestamp=self.get_current_timestamp())
+        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=random_address, timestamp=self.get_current_timestamp())
         with self.assertRaises(NCFail):
             self.runner.call_public_method(
                 self.oasis_id, "update_owner_address", ctx, random_address
@@ -462,7 +462,7 @@ class OasisTestCase(BlueprintTestCase):
         # Verify owner is set to dev address
         self.assertEqual(oasis_contract.owner_address, self.dev_address)
 
-    def test_user_deposit(self, timelock=6) -> tuple[bytes, int, int, int]:
+    def test_user_deposit(self, timelock=6) -> tuple[Address, int, int, int]:
         dev_initial_deposit = 10_000_000_00
         self.initialize_pool()
         self.initialize_oasis(amount=dev_initial_deposit)
@@ -474,7 +474,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCDepositAction(amount=deposit_amount, token_uid=self.token_b),  # type: ignore
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=now,
         )
         self.runner.call_public_method(
@@ -521,7 +521,7 @@ class OasisTestCase(BlueprintTestCase):
                     NCDepositAction(amount=deposit_amount, token_uid=self.token_b),  # type: ignore
                 ],
                 vertex=self.tx,
-                caller_id=Address(user_address),
+                caller_id=user_address,
                 timestamp=now,
             )
             lp_amount_b = self._get_oasis_lp_amount_b()
@@ -554,7 +554,7 @@ class OasisTestCase(BlueprintTestCase):
             )
             self.assertEqual(user_info.total_liquidity, total_liquidity)
             self.assertEqual(user_info.oasis_htr_balance, oasis_htr_balance)
-        self.check_balances(user_addresses)
+        self.check_balances(user_addresses)  # type: ignore
 
     def test_multiple_user_deposit_with_repeat(self) -> None:
         dev_initial_deposit = 10_000_000_00
@@ -582,7 +582,7 @@ class OasisTestCase(BlueprintTestCase):
                     NCDepositAction(amount=deposit_amount, token_uid=self.token_b),  # type: ignore
                 ],
                 vertex=self.tx,
-                caller_id=Address(user_address),
+                caller_id=user_address,
                 timestamp=now,
             )
             lp_amount_b = self._get_oasis_lp_amount_b()
@@ -630,7 +630,7 @@ class OasisTestCase(BlueprintTestCase):
             self.assertEqual(user_info.user_liquidity, user_liquidity[i])
             self.assertEqual(user_info.user_withdrawal_time, user_withdrawal_time[i])
             self.assertEqual(user_info.total_liquidity, total_liquidity)
-        self.check_balances(user_addresses)
+        self.check_balances(user_addresses)  # type: ignore
 
     def test_user_withdraw_bonus(self):
         user_address, timelock, htr_amount, deposit_timestamp = self.test_user_deposit()
@@ -653,7 +653,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(amount=bonus, token_uid=HTR_UID),  # type: ignore
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=deposit_timestamp + 1,
         )
         self.runner.call_public_method(
@@ -670,7 +670,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(amount=bonus + 1, token_uid=HTR_UID),  # type: ignore
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=deposit_timestamp + 1,
         )
         with self.assertRaises(NCFail):
@@ -697,7 +697,7 @@ class OasisTestCase(BlueprintTestCase):
             ctx = self.create_context(
                 actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
                 vertex=self.tx,
-                caller_id=Address(user_address),
+                caller_id=user_address,
                 timestamp=self.clock.seconds(),
             )
 
@@ -740,7 +740,7 @@ class OasisTestCase(BlueprintTestCase):
             ctx = self.create_context(
                 actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
                 vertex=self.tx,
-                caller_id=Address(user_address),
+                caller_id=user_address,
                 timestamp=self.clock.seconds() + (i * 100),
             )
 
@@ -796,7 +796,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=deposit_time,
         )
 
@@ -815,7 +815,7 @@ class OasisTestCase(BlueprintTestCase):
             close_ctx = self.create_context(
                 actions=[],
                 vertex=self.tx,
-                caller_id=Address(user_address),
+                caller_id=user_address,
                 timestamp=deposit_time + time_delta,
             )
 
@@ -828,7 +828,7 @@ class OasisTestCase(BlueprintTestCase):
         close_ctx = self.create_context(
             actions=[],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=deposit_time + (MONTHS_IN_SECONDS * 12) + 1,
         )
 
@@ -852,7 +852,7 @@ class OasisTestCase(BlueprintTestCase):
                 ctx = self.create_context(
                     actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
                     vertex=self.tx,
-                    caller_id=Address(user_address),
+                    caller_id=user_address,
                     timestamp=self.clock.seconds(),
                 )
 
@@ -876,7 +876,7 @@ class OasisTestCase(BlueprintTestCase):
         deposit_ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=deposit_time,
         )
 
@@ -887,7 +887,7 @@ class OasisTestCase(BlueprintTestCase):
         # Try withdrawal exactly at expiry
         exact_expiry = deposit_time + (timelock * MONTHS_IN_SECONDS)
         # Close the position first
-        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=exact_expiry)
+        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=user_address, timestamp=exact_expiry)
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
         # Get balances after closing
@@ -902,7 +902,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(token_uid=TokenUid(HTR_UID), amount=closed_balance_a),
             ],  # type: ignore
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=exact_expiry,
         )
 
@@ -929,7 +929,7 @@ class OasisTestCase(BlueprintTestCase):
         deposit_1_ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_1_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=initial_time,
         )
         self.runner.call_public_method(
@@ -941,7 +941,7 @@ class OasisTestCase(BlueprintTestCase):
         deposit_2_ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_2_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=initial_time + (3 * MONTHS_IN_SECONDS),
         )
         self.runner.call_public_method(
@@ -976,7 +976,7 @@ class OasisTestCase(BlueprintTestCase):
         early_close_ctx = self.create_context(
             actions=[],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=expected_unlock_time-1,
         )
 
@@ -988,7 +988,7 @@ class OasisTestCase(BlueprintTestCase):
         # Withdrawal after weighted timelock should succeed
         # Close the position first
         close_ctx = self.create_context(
-            actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=expected_unlock_time + 1
+            actions=[], vertex=self.tx, caller_id=user_address, timestamp=expected_unlock_time + 1
         )
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
@@ -1004,7 +1004,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(token_uid=TokenUid(HTR_UID), amount=closed_balance_a),
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=expected_unlock_time + 1,
         )
 
@@ -1022,7 +1022,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds(),
         )
 
@@ -1053,7 +1053,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds(),
         )
 
@@ -1085,7 +1085,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds(),
         )
 
@@ -1126,7 +1126,7 @@ class OasisTestCase(BlueprintTestCase):
     #         ctx = Context(
     #             [NCDepositAction(amount=10_000_000_00, token_uid=HTR_UID)],  # type: ignore
     #             self.tx,
-    #             Address(self.dev_address),
+    #             self.dev_address,
     #             timestamp=self.get_current_timestamp(),
     #         )
 
@@ -1152,7 +1152,7 @@ class OasisTestCase(BlueprintTestCase):
     #             deposit_ctx = Context(
     #                 [NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
     #                 self.tx,
-    #                 Address(user_address),
+    #                 user_address,
     #                 timestamp=self.clock.seconds(),
     #             )
 
@@ -1203,7 +1203,7 @@ class OasisTestCase(BlueprintTestCase):
 
         # Test fee update
         new_fee = 750  # 0.75%
-        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(self.dev_address), timestamp=self.get_current_timestamp())
+        ctx = self.create_context(actions=[], vertex=self.tx, caller_id=self.dev_address, timestamp=self.get_current_timestamp())
         self.runner.call_public_method(
             self.oasis_id, "update_protocol_fee", ctx, new_fee
         )
@@ -1225,7 +1225,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds(),
         )
 
@@ -1249,7 +1249,7 @@ class OasisTestCase(BlueprintTestCase):
         self.assertEqual(dev_info.user_balance_b, expected_fee)
 
         # Test unauthorized fee update
-        non_admin_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=0)
+        non_admin_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=user_address, timestamp=0)
         with self.assertRaises(NCFail):
             self.runner.call_public_method(
                 self.oasis_id, "update_protocol_fee", non_admin_ctx, 500
@@ -1267,7 +1267,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds(),
         )
 
@@ -1294,7 +1294,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds(),
         )
 
@@ -1321,7 +1321,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds(),
         )
 
@@ -1349,7 +1349,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds(),
         )
 
@@ -1368,7 +1368,7 @@ class OasisTestCase(BlueprintTestCase):
         deposit_2_ctx = self.create_context(
             actions=[NCDepositAction(amount=second_deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds() + 100,
         )
 
@@ -1386,7 +1386,7 @@ class OasisTestCase(BlueprintTestCase):
         close_ctx = self.create_context(
             actions=[],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds() + (timelock * MONTHS_IN_SECONDS) + 1000,
         )
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
@@ -1403,7 +1403,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(token_uid=TokenUid(HTR_UID), amount=closed_balance_a),
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds() + (timelock * MONTHS_IN_SECONDS) + 1000,
         )
 
@@ -1429,7 +1429,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds(),
         )
 
@@ -1455,7 +1455,7 @@ class OasisTestCase(BlueprintTestCase):
         deposit_2_ctx = self.create_context(
             actions=[NCDepositAction(amount=second_deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds() + 100,
         )
 
@@ -1486,7 +1486,7 @@ class OasisTestCase(BlueprintTestCase):
         close_ctx = self.create_context(
             actions=[],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds() + (timelock * MONTHS_IN_SECONDS) + 1000,
         )
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
@@ -1503,7 +1503,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(token_uid=TokenUid(HTR_UID), amount=closed_balance_a),
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=self.clock.seconds() + (timelock * MONTHS_IN_SECONDS) + 1000,
         )
 
@@ -1531,7 +1531,7 @@ class OasisTestCase(BlueprintTestCase):
         unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
 
         # Close the position
-        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=unlock_time)
+        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=user_address, timestamp=unlock_time)
 
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
@@ -1568,7 +1568,7 @@ class OasisTestCase(BlueprintTestCase):
         close_ctx = self.create_context(
             actions=[],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=initial_timestamp + (6 * MONTHS_IN_SECONDS),
         )
 
@@ -1589,7 +1589,7 @@ class OasisTestCase(BlueprintTestCase):
         unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
 
         # Close the position
-        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=unlock_time)
+        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=user_address, timestamp=unlock_time)
 
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
@@ -1609,7 +1609,7 @@ class OasisTestCase(BlueprintTestCase):
         unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
 
         # Close the position
-        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=unlock_time)
+        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=user_address, timestamp=unlock_time)
 
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
@@ -1625,7 +1625,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(token_uid=TokenUid(HTR_UID), amount=closed_balance_a),
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=unlock_time,
         )
 
@@ -1651,7 +1651,7 @@ class OasisTestCase(BlueprintTestCase):
         unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
 
         # Close the position
-        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=unlock_time)
+        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=user_address, timestamp=unlock_time)
 
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
@@ -1667,7 +1667,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(amount=withdraw_amount_b, token_uid=self.token_b),
             ],  # type: ignore
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=unlock_time,
         )
 
@@ -1693,7 +1693,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(amount=closed_balance_a, token_uid=TokenUid(HTR_UID)),
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=unlock_time,
         )
 
@@ -1722,7 +1722,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(amount=deposit_amount, token_uid=self.token_b),
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=unlock_time,
         )
 
@@ -1743,7 +1743,7 @@ class OasisTestCase(BlueprintTestCase):
         unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
 
         # Close the position
-        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=unlock_time)
+        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=user_address, timestamp=unlock_time)
 
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
@@ -1758,7 +1758,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(amount=Amount(closed_balance_b + 100), token_uid=TokenUid(self.token_b)),
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=unlock_time,
         )
 
@@ -1772,7 +1772,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(amount=Amount(closed_balance_a + 100), token_uid=TokenUid(HTR_UID)),
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=unlock_time,
         )
 
@@ -1805,7 +1805,7 @@ class OasisTestCase(BlueprintTestCase):
         ctx = self.create_context(
             actions=[NCDepositAction(amount=deposit_amount, token_uid=self.token_b)],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=initial_timestamp,
         )
 
@@ -1877,7 +1877,7 @@ class OasisTestCase(BlueprintTestCase):
 
         # Close the position
         unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
-        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=unlock_time)
+        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=user_address, timestamp=unlock_time)
 
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
@@ -1918,7 +1918,7 @@ class OasisTestCase(BlueprintTestCase):
         unlock_time = initial_timestamp + (timelock * MONTHS_IN_SECONDS) + 1
 
         # Close the position with no price impact
-        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=unlock_time)
+        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=user_address, timestamp=unlock_time)
 
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
@@ -1947,7 +1947,7 @@ class OasisTestCase(BlueprintTestCase):
 
         # First close the position
         close_timestamp = deposit_timestamp + timelock * MONTHS_IN_SECONDS + 1
-        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=Address(user_address), timestamp=close_timestamp)
+        close_ctx = self.create_context(actions=[], vertex=self.tx, caller_id=user_address, timestamp=close_timestamp)
 
         self.runner.call_public_method(self.oasis_id, "close_position", close_ctx)
 
@@ -1965,7 +1965,7 @@ class OasisTestCase(BlueprintTestCase):
                 NCWithdrawalAction(amount=int(closed_balance_a), token_uid=TokenUid(HTR_UID)),
             ],
             vertex=self.tx,
-            caller_id=Address(user_address),
+            caller_id=user_address,
             timestamp=close_timestamp,
         )
 

@@ -5,6 +5,7 @@ from hathor import (
     BlueprintId,
     Blueprint,
     BlueprintId,
+    CallerId,
     NCFail,
     Address,
     Amount,
@@ -15,7 +16,6 @@ from hathor import (
     NCActionType,
     NCDepositAction,
     NCWithdrawalAction,
-
     export,
     public,
     view,
@@ -91,22 +91,22 @@ class Oasis(Blueprint):
     pool_fee: Amount
     protocol_fee: Amount
 
-    owner_address: bytes
-    dev_address: bytes
+    owner_address: CallerId
+    dev_address: CallerId
     oasis_htr_balance: Amount
     dev_deposit_amount: Amount
-    user_deposit_b: dict[bytes, Amount]
-    htr_price_in_deposit: dict[bytes, Amount]
-    token_price_in_htr_in_deposit: dict[bytes, Amount]
-    user_liquidity: dict[bytes, Amount]
+    user_deposit_b: dict[CallerId, Amount]
+    htr_price_in_deposit: dict[CallerId, Amount]
+    token_price_in_htr_in_deposit: dict[CallerId, Amount]
+    user_liquidity: dict[CallerId, Amount]
     total_liquidity: Amount
-    user_withdrawal_time: dict[bytes, int]
-    user_balances: dict[bytes, dict[TokenUid, Amount]]
+    user_withdrawal_time: dict[CallerId, int]
+    user_balances: dict[CallerId, dict[TokenUid, Amount]]
     token_b: TokenUid
     # Track if a user's position has been closed and is ready for withdrawal
-    user_position_closed: dict[bytes, bool]
+    user_position_closed: dict[CallerId, bool]
     # Track withdrawn balances separately from cashback/rewards
-    closed_position_balances: dict[bytes, dict[TokenUid, Amount]]
+    closed_position_balances: dict[CallerId, dict[TokenUid, Amount]]
 
     @public(allow_deposit=True)
     def initialize(
@@ -135,14 +135,14 @@ class Oasis(Blueprint):
         self.owner_address = Address(ctx.caller_id)
 
         # Initialize all dict fields
-        self.user_deposit_b: dict[bytes, Amount]= {}
-        self.htr_price_in_deposit: dict[bytes, Amount] = {}
-        self.token_price_in_htr_in_deposit: dict[bytes, Amount] = {}
-        self.user_liquidity: dict[bytes, Amount] = {}
-        self.user_withdrawal_time: dict[bytes, int] = {}
-        self.user_balances:dict[bytes, dict[TokenUid, Amount]] = {}
-        self.user_position_closed: dict[bytes, bool] = {}
-        self.closed_position_balances: dict[bytes, dict[TokenUid, Amount]] = {}
+        self.user_deposit_b: dict[CallerId, Amount]= {}
+        self.htr_price_in_deposit: dict[CallerId, Amount] = {}
+        self.token_price_in_htr_in_deposit: dict[CallerId, Amount] = {}
+        self.user_liquidity: dict[CallerId, Amount] = {}
+        self.user_withdrawal_time: dict[CallerId, int] = {}
+        self.user_balances:dict[CallerId, dict[TokenUid, Amount]] = {}
+        self.user_position_closed: dict[CallerId, bool] = {}
+        self.closed_position_balances: dict[CallerId, dict[TokenUid, Amount]] = {}
 
     def _get_pool_key(self) -> str:
         """Generate the pool key for the HTR/token_b pair."""
@@ -553,6 +553,7 @@ class Oasis(Blueprint):
         if action.amount > self.oasis_htr_balance:
             raise NCFail("Withdrawal amount too high")
         self.oasis_htr_balance = Amount(self.oasis_htr_balance - action.amount)
+        self.dev_deposit_amount = Amount(self.dev_deposit_amount - action.amount)
 
     @public(allow_withdrawal=True)
     def dev_withdraw_fee(self, ctx: Context) -> None:
@@ -580,7 +581,7 @@ class Oasis(Blueprint):
         self.user_balances[self.dev_address] = partial
 
     @public
-    def update_owner_address(self, ctx: Context, new_owner: bytes) -> None:
+    def update_owner_address(self, ctx: Context, new_owner: CallerId) -> None:
         """Updates the owner address. Can be called by dev or current owner.
 
         Args:

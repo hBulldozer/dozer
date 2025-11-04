@@ -66,7 +66,7 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
 async function calculate24hTransactionCount(poolKey: string): Promise<number> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 // 24 hours ago in seconds
+    const oneDayAgo = now - (24 * 60 * 60) // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -119,7 +119,7 @@ const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
 async function calculate24hVolume(poolKey: string): Promise<{ volume24h: number; volume24hUSD: number }> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 // 24 hours ago in seconds
+    const oneDayAgo = now - (24 * 60 * 60) // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
