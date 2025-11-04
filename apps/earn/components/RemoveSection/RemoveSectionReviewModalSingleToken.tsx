@@ -1,10 +1,11 @@
 import { ChainId } from '@dozer/chain'
 import { Type } from '@dozer/currency'
 import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData, Typography, Currency } from '@dozer/ui'
-import { FC, ReactNode, useEffect, useState } from 'react'
+import { FC, ReactNode, useEffect, useState, useMemo } from 'react'
 import { useNetwork, useTempTxStore, useAccount } from '@dozer/zustand'
 import { PoolManager } from '@dozer/nanocontracts'
 import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { warningSeverity } from '@dozer/math'
 import { api } from '../../utils/api'
 import { get } from 'lodash'
 
@@ -60,6 +61,19 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
   const formatAmount = (amount: number) => {
     return amount.toFixed(6).replace(/\\.?0+$/, '')
   }
+
+  // Calculate price impact severity and color
+  const priceImpactSeverity = useMemo(() => {
+    if (!quoteData) return 0
+    return warningSeverity(quoteData.price_impact)
+  }, [quoteData])
+
+  const priceImpactColor = useMemo(() => {
+    if (priceImpactSeverity === 0 || priceImpactSeverity === 1) return 'text-green-400'
+    if (priceImpactSeverity === 2) return 'text-yellow-400'
+    if (priceImpactSeverity === 3) return 'text-orange-400'
+    return 'text-red-400'
+  }, [priceImpactSeverity])
 
   const handleRemoveLiquidity = async () => {
     if (!quoteData || !selectedToken || !networkData?.number || !address) return
@@ -205,12 +219,22 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
                     <span className="text-green-300">{formatAmount(quoteData.token_b_withdrawn)}</span>
                   </div>
                   {quoteData.swap_amount > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-stone-500">Swap amount:</span>
-                      <span className="text-blue-300">
-                        {formatAmount(quoteData.swap_amount)} → {formatAmount(quoteData.swap_output)}
-                      </span>
-                    </div>
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Swap amount:</span>
+                        <span className="text-blue-300">
+                          {formatAmount(quoteData.swap_amount)} → {formatAmount(quoteData.swap_output)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Price Impact:</span>
+                        <span className={priceImpactColor}>
+                          {quoteData.price_impact < 0.01
+                            ? '< 0.01%'
+                            : `${quoteData.price_impact.toFixed(2)}%`}
+                        </span>
+                      </div>
+                    </>
                   )}
                 </div>
 

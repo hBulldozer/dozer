@@ -4,8 +4,9 @@ import { Type } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
 import { Widget, Currency, Typography, Button } from '@dozer/ui'
 import { Web3Input, Checker } from '@dozer/higmi'
-import { FC, useState, useEffect } from 'react'
+import { FC, useState, useEffect, useMemo } from 'react'
 import { useNetwork } from '@dozer/zustand'
+import { warningSeverity } from '@dozer/math'
 import { SettingsOverlay } from '../SettingsOverlay'
 import { api } from '../../utils/api'
 import { AddSectionReviewModalSingleToken } from './AddSectionReviewModalSingleToken'
@@ -43,6 +44,7 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
     excess_token: string
     swap_amount: number
     swap_output: number
+    price_impact: number
   } | null>(null)
 
   // Fetch single token quote when inputs change
@@ -68,6 +70,19 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
   const formatAmount = (amount: number) => {
     return amount.toFixed(6).replace(/\.?0+$/, '')
   }
+
+  // Calculate price impact severity and color
+  const priceImpactSeverity = useMemo(() => {
+    if (!quoteData) return 0
+    return warningSeverity(quoteData.price_impact)
+  }, [quoteData])
+
+  const priceImpactColor = useMemo(() => {
+    if (priceImpactSeverity === 0 || priceImpactSeverity === 1) return 'text-green-400'
+    if (priceImpactSeverity === 2) return 'text-yellow-400'
+    if (priceImpactSeverity === 3) return 'text-orange-400'
+    return 'text-red-400'
+  }, [priceImpactSeverity])
 
 
   return (
@@ -273,6 +288,14 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                             <span className="text-stone-500">Swap amount:</span>
                                             <span className="text-blue-300">
                                               {formatAmount(quoteData.swap_amount)} → {formatAmount(quoteData.swap_output)}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-stone-500">Price Impact:</span>
+                                            <span className={priceImpactColor}>
+                                              {quoteData.price_impact < 0.01
+                                                ? '< 0.01%'
+                                                : `${quoteData.price_impact.toFixed(2)}%`}
                                             </span>
                                           </div>
                                           {prices && token && prices[token.uuid] && (

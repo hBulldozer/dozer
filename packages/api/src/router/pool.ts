@@ -1528,6 +1528,7 @@ export const poolRouter = createTRPCRouter({
           excess_amount: quote.excess_amount / 100, // Convert from cents
           swap_amount: quote.swap_amount / 100, // Convert from cents
           swap_output: quote.swap_output / 100, // Convert from cents
+          price_impact: quote.price_impact / 100, // Convert from basis points to percentage
         }
       } catch (error) {
         console.error(`Error getting single token liquidity quote:`, error)
@@ -1573,6 +1574,7 @@ export const poolRouter = createTRPCRouter({
           token_b_withdrawn: quote.token_b_withdrawn / 100, // Convert from cents
           swap_amount: quote.swap_amount / 100, // Convert from cents
           swap_output: quote.swap_output / 100, // Convert from cents
+          price_impact: quote.price_impact / 100, // Convert from basis points to percentage
           user_liquidity: quote.user_liquidity,
         }
       } catch (error) {
@@ -1618,6 +1620,7 @@ export const poolRouter = createTRPCRouter({
           token_b_withdrawn: quote.token_b_withdrawn / 100, // Convert from cents
           swap_amount: quote.swap_amount / 100, // Convert from cents
           swap_output: quote.swap_output / 100, // Convert from cents
+          price_impact: quote.price_impact / 100, // Convert from basis points to percentage
           user_liquidity: quote.user_liquidity,
         }
       } catch (error) {

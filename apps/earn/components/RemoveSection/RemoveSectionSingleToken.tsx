@@ -9,6 +9,7 @@ import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { FC, useState, useEffect, Fragment, useMemo } from 'react'
 import { useNetwork } from '@dozer/zustand'
 import { formatUSD } from '@dozer/format'
+import { warningSeverity } from '@dozer/math'
 import { SettingsOverlay } from '../SettingsOverlay'
 import { api } from '../../utils/api'
 import { RemoveSectionReviewModalSingleToken } from './RemoveSectionReviewModalSingleToken'
@@ -43,6 +44,7 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
     token_b_withdrawn: number
     swap_amount: number
     swap_output: number
+    price_impact: number
     user_liquidity: number
   } | null>(null)
 
@@ -77,6 +79,19 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
   const formatAmount = (amount: number) => {
     return amount.toFixed(6).replace(/\.?0+$/, '')
   }
+
+  // Calculate price impact severity and color
+  const priceImpactSeverity = useMemo(() => {
+    if (!quoteData) return 0
+    return warningSeverity(quoteData.price_impact)
+  }, [quoteData])
+
+  const priceImpactColor = useMemo(() => {
+    if (priceImpactSeverity === 0 || priceImpactSeverity === 1) return 'text-green-400'
+    if (priceImpactSeverity === 2) return 'text-yellow-400'
+    if (priceImpactSeverity === 3) return 'text-orange-400'
+    return 'text-red-400'
+  }, [priceImpactSeverity])
 
   const handleTokenSelect = (token: Type) => {
     setSelectedToken(token)
@@ -427,13 +442,23 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                                 </span>
                                               </div>
                                               {adjustedQuoteData.swap_amount > 0 && (
-                                                <div className="flex justify-between">
-                                                  <span className="text-stone-500">Swap amount:</span>
-                                                  <span className="text-blue-300">
-                                                    {formatAmount(adjustedQuoteData.swap_amount)} →{' '}
-                                                    {formatAmount(adjustedQuoteData.swap_output)}
-                                                  </span>
-                                                </div>
+                                                <>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-stone-500">Swap amount:</span>
+                                                    <span className="text-blue-300">
+                                                      {formatAmount(adjustedQuoteData.swap_amount)} →{' '}
+                                                      {formatAmount(adjustedQuoteData.swap_output)}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-stone-500">Price Impact:</span>
+                                                    <span className={priceImpactColor}>
+                                                      {adjustedQuoteData.price_impact < 0.01
+                                                        ? '< 0.01%'
+                                                        : `${adjustedQuoteData.price_impact.toFixed(2)}%`}
+                                                    </span>
+                                                  </div>
+                                                </>
                                               )}
                                             </div>
                                           </>

@@ -86,6 +86,7 @@ export interface QuoteSingleTokenResult {
   excess_amount: number
   swap_amount: number
   swap_output: number
+  price_impact: number
 }
 
 export interface QuoteRemoveSingleTokenResult {
@@ -94,6 +95,7 @@ export interface QuoteRemoveSingleTokenResult {
   token_b_withdrawn: number
   swap_amount: number
   swap_output: number
+  price_impact: number
   user_liquidity: number
 }
 
@@ -361,10 +363,10 @@ export function parseUserProfitInfo(array: any[]): UserProfitInfo {
 
 /**
  * Parse QuoteSingleTokenResult NamedTuple array to object
- * Contract definition: [liquidity_amount, token_a_used, token_b_used, excess_token, excess_amount, swap_amount, swap_output]
+ * Contract definition: [liquidity_amount, token_a_used, token_b_used, excess_token, excess_amount, swap_amount, swap_output, price_impact]
  */
 export function parseQuoteSingleTokenResult(array: any[]): QuoteSingleTokenResult {
-  if (!Array.isArray(array) || array.length !== 7) {
+  if (!Array.isArray(array) || array.length !== 8) {
     throw new Error('Invalid QuoteSingleTokenResult array format')
   }
 
@@ -376,15 +378,16 @@ export function parseQuoteSingleTokenResult(array: any[]): QuoteSingleTokenResul
     excess_amount: array[4] || 0,
     swap_amount: array[5] || 0,
     swap_output: array[6] || 0,
+    price_impact: array[7] || 0,
   }
 }
 
 /**
  * Parse QuoteRemoveSingleTokenResult NamedTuple array to object
- * Contract definition: [amount_out, token_a_withdrawn, token_b_withdrawn, swap_amount, swap_output, user_liquidity]
+ * Contract definition: [amount_out, token_a_withdrawn, token_b_withdrawn, swap_amount, swap_output, price_impact, user_liquidity]
  */
 export function parseQuoteRemoveSingleTokenResult(array: any[]): QuoteRemoveSingleTokenResult {
-  if (!Array.isArray(array) || array.length !== 6) {
+  if (!Array.isArray(array) || array.length !== 7) {
     throw new Error('Invalid QuoteRemoveSingleTokenResult array format')
   }
 
@@ -394,6 +397,7 @@ export function parseQuoteRemoveSingleTokenResult(array: any[]): QuoteRemoveSing
     token_b_withdrawn: array[2] || 0,
     swap_amount: array[3] || 0,
     swap_output: array[4] || 0,
-    user_liquidity: array[5] || 0,
+    price_impact: array[5] || 0,
+    user_liquidity: array[6] || 0,
   }
 }

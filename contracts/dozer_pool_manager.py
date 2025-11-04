@@ -185,6 +185,7 @@ class SingleTokenLiquidityQuote(NamedTuple):
     excess_amount: Amount
     swap_amount: Amount
     swap_output: Amount
+    price_impact: Amount  # Price impact percentage in basis points (e.g., 100 = 1%)
 
 
 class SingleTokenRemovalQuote(NamedTuple):
@@ -195,6 +196,7 @@ class SingleTokenRemovalQuote(NamedTuple):
     token_b_withdrawn: Amount
     swap_amount: Amount
     swap_output: Amount
+    price_impact: Amount  # Price impact percentage in basis points (e.g., 100 = 1%)
     user_liquidity: Amount
 
 
@@ -820,6 +822,11 @@ class DozerPoolManager(Blueprint):
             excess_token = token_in
             excess_amount = Amount(0)
 
+        # Calculate price impact of the internal swap
+        price_impact = self._calculate_single_swap_price_impact(
+            optimal_swap_amount, swap_amount_out, reserve_in, reserve_out
+        )
+
         return SingleTokenLiquidityQuote(
             liquidity_amount=liquidity_increase,
             token_a_used=actual_a,
@@ -828,6 +835,7 @@ class DozerPoolManager(Blueprint):
             excess_amount=excess_amount,
             swap_amount=optimal_swap_amount,
             swap_output=swap_amount_out,
+            price_impact=price_impact,
         )
 
     @view
@@ -886,20 +894,30 @@ class DozerPoolManager(Blueprint):
                 new_reserve_a = Amount(reserve_a - amount_a)
                 new_reserve_b = Amount(reserve_b - amount_b)
 
+                # Reserves for the swap (after liquidity removal)
+                swap_reserve_in = Amount(new_reserve_b + amount_b)
+                swap_reserve_out = Amount(new_reserve_a - amount_a)
+
                 extra_a = self.get_amount_out(
                     amount_b,
-                    Amount(new_reserve_b + amount_b),  # Reserve after adding back token B
-                    Amount(new_reserve_a - amount_a),  # Reserve before taking out extra token A
+                    swap_reserve_in,
+                    swap_reserve_out,
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
                 total_amount_out = Amount(amount_a + extra_a)
                 swap_amount = amount_b
                 swap_output = extra_a
+
+                # Calculate price impact of the swap
+                price_impact = self._calculate_single_swap_price_impact(
+                    swap_amount, swap_output, new_reserve_b, new_reserve_a
+                )
             else:
                 total_amount_out = amount_a
                 swap_amount = Amount(0)
                 swap_output = Amount(0)
+                price_impact = Amount(0)
         else:
             # Want token B, will swap token A for token B
             if amount_a > 0:
@@ -907,20 +925,30 @@ class DozerPoolManager(Blueprint):
                 new_reserve_a = reserve_a - amount_a
                 new_reserve_b = reserve_b - amount_b
 
+                # Reserves for the swap (after liquidity removal)
+                swap_reserve_in = Amount(new_reserve_a + amount_a)
+                swap_reserve_out = Amount(new_reserve_b - amount_b)
+
                 extra_b = self.get_amount_out(
                     amount_a,
-                    Amount(new_reserve_a + amount_a),  # Reserve after adding back token A
-                    Amount(new_reserve_b - amount_b),  # Reserve before taking out extra token B
+                    swap_reserve_in,
+                    swap_reserve_out,
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
                 total_amount_out = Amount(amount_b + extra_b)
                 swap_amount = amount_a
                 swap_output = extra_b
+
+                # Calculate price impact of the swap
+                price_impact = self._calculate_single_swap_price_impact(
+                    swap_amount, swap_output, new_reserve_a, new_reserve_b
+                )
             else:
                 total_amount_out = amount_b
                 swap_amount = Amount(0)
                 swap_output = Amount(0)
+                price_impact = Amount(0)
 
         return SingleTokenRemovalQuote(
             amount_out=total_amount_out,
@@ -928,6 +956,7 @@ class DozerPoolManager(Blueprint):
             token_b_withdrawn=amount_b,
             swap_amount=swap_amount,
             swap_output=swap_output,
+            price_impact=price_impact,
             user_liquidity=user_liquidity,
         )
 
@@ -994,20 +1023,30 @@ class DozerPoolManager(Blueprint):
                 new_reserve_a = Amount(reserve_a - amount_a)
                 new_reserve_b = Amount(reserve_b - amount_b)
 
+                # Reserves for the swap (after liquidity removal)
+                swap_reserve_in = Amount(new_reserve_b + amount_b)
+                swap_reserve_out = Amount(new_reserve_a - amount_a)
+
                 extra_a = self.get_amount_out(
                     amount_b,
-                    Amount(new_reserve_b + amount_b),  # Reserve after adding back token B
-                    Amount(new_reserve_a - amount_a),  # Reserve before taking out extra token A
+                    swap_reserve_in,
+                    swap_reserve_out,
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
                 total_amount_out = amount_a + extra_a
                 swap_amount = amount_b
                 swap_output = extra_a
+
+                # Calculate price impact of the swap
+                price_impact = self._calculate_single_swap_price_impact(
+                    swap_amount, swap_output, new_reserve_b, new_reserve_a
+                )
             else:
                 total_amount_out = amount_a
                 swap_amount = Amount(0)
                 swap_output = Amount(0)
+                price_impact = Amount(0)
         else:
             # Want token B, will swap token A for token B
             if amount_a > 0:
@@ -1015,20 +1054,30 @@ class DozerPoolManager(Blueprint):
                 new_reserve_a = reserve_a - amount_a
                 new_reserve_b = reserve_b - amount_b
 
+                # Reserves for the swap (after liquidity removal)
+                swap_reserve_in = Amount(new_reserve_a + amount_a)
+                swap_reserve_out = Amount(new_reserve_b - amount_b)
+
                 extra_b = self.get_amount_out(
                     amount_a,
-                    Amount(new_reserve_a + amount_a),  # Reserve after adding back token A
-                    Amount(new_reserve_b - amount_b),  # Reserve before taking out extra token B
+                    swap_reserve_in,
+                    swap_reserve_out,
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
                 total_amount_out = amount_b + extra_b
                 swap_amount = amount_a
                 swap_output = extra_b
+
+                # Calculate price impact of the swap
+                price_impact = self._calculate_single_swap_price_impact(
+                    swap_amount, swap_output, new_reserve_a, new_reserve_b
+                )
             else:
                 total_amount_out = amount_b
                 swap_amount = Amount(0)
                 swap_output = Amount(0)
+                price_impact = Amount(0)
 
         return SingleTokenRemovalQuote(
             amount_out=Amount(total_amount_out),
@@ -1036,6 +1085,7 @@ class DozerPoolManager(Blueprint):
             token_b_withdrawn=amount_b,
             swap_amount=swap_amount,
             swap_output=swap_output,
+            price_impact=price_impact,
             user_liquidity=Amount(user_liquidity),
         )
 
@@ -1475,6 +1525,9 @@ class DozerPoolManager(Blueprint):
         Half of the input token is swapped to the other token, then liquidity is added
         using both tokens in the correct ratio.
 
+        The internal swap has a hard-coded maximum price impact of 15% (1500 basis points)
+        to protect users from excessive losses.
+
         Args:
             ctx: The transaction context (should contain deposit of one token)
             token_out: The other token in the pool (not the deposited one)
@@ -1485,7 +1538,7 @@ class DozerPoolManager(Blueprint):
 
         Raises:
             PoolNotFound: If the pool does not exist
-            InvalidAction: If the actions are invalid
+            InvalidAction: If the actions are invalid or price impact too high (>15%)
             InvalidTokens: If the tokens are invalid
         """
         # Get the single deposit action
@@ -1543,6 +1596,14 @@ class DozerPoolManager(Blueprint):
             self.pool_fee_numerator[pool_key],
             self.pool_fee_denominator[pool_key],
         )
+
+        # Validate price impact of internal swap (max 15% = 1500 basis points)
+        price_impact = self._calculate_single_swap_price_impact(
+            optimal_swap_amount, swap_amount_out, reserve_in, reserve_out
+        )
+        MAX_PRICE_IMPACT = Amount(1500)  # 15% in basis points
+        if price_impact > MAX_PRICE_IMPACT:
+            raise InvalidAction("Price impact too high - internal swap exceeds 15% impact")
 
         # Update reserves for the internal swap
         if token_in == token_a:
@@ -1646,6 +1707,52 @@ class DozerPoolManager(Blueprint):
 
         return Amount(swap_amount)
 
+    def _calculate_single_swap_price_impact(
+        self, amount_in: Amount, amount_out: Amount, reserve_in: Amount, reserve_out: Amount
+    ) -> Amount:
+        """Calculate price impact of a single swap (for internal swaps in single-token liquidity ops).
+
+        Price impact measures how much the swap price deviates from the spot price.
+        It compares the actual execution price to the spot price before the swap.
+
+        Args:
+            amount_in: Input amount
+            amount_out: Output amount received
+            reserve_in: Reserve of input token before swap
+            reserve_out: Reserve of output token before swap
+
+        Returns:
+            Price impact in basis points (e.g., 100 = 1%)
+        """
+        if amount_in == 0 or amount_out == 0 or reserve_in == 0 or reserve_out == 0:
+            return Amount(0)
+
+        # Spot price (before swap): reserve_out / reserve_in
+        # Execution price: amount_out / amount_in
+        # Price impact = (1 - execution_price / spot_price) * 100 * 100 (basis points)
+        # = (1 - (amount_out * reserve_in) / (amount_in * reserve_out)) * 10000
+
+        # Calculate execution_price / spot_price ratio
+        # = (amount_out / amount_in) / (reserve_out / reserve_in)
+        # = (amount_out * reserve_in) / (amount_in * reserve_out)
+
+        numerator = amount_out * reserve_in
+        denominator = amount_in * reserve_out
+
+        if denominator == 0:
+            return Amount(0)
+
+        # If numerator >= denominator, execution is better than spot (shouldn't happen in real AMM)
+        # We return 0 in this case
+        if numerator >= denominator:
+            return Amount(0)
+
+        # Price impact = (1 - ratio) * 10000
+        # = (denominator - numerator) / denominator * 10000
+        price_impact = ((denominator - numerator) * 10000) // denominator
+
+        return Amount(price_impact)
+
     @public(allow_withdrawal=True)
     def remove_liquidity_single_token(
         self,
@@ -1659,6 +1766,9 @@ class DozerPoolManager(Blueprint):
         and receive only one token. The liquidity is partially removed to get
         both tokens, then one token is swapped for the desired output token.
 
+        The internal swap has a hard-coded maximum price impact of 15% (1500 basis points)
+        to protect users from excessive losses.
+
         Args:
             ctx: The transaction context (should contain withdrawal of desired token)
             pool_key: The pool key (format: token_a/token_b/fee)
@@ -1669,7 +1779,7 @@ class DozerPoolManager(Blueprint):
 
         Raises:
             PoolNotFound: If the pool does not exist
-            InvalidAction: If the actions are invalid
+            InvalidAction: If the actions are invalid or price impact too high (>15%)
         """
         self._validate_pool_exists(pool_key)
         user_address = ctx.caller_id
@@ -1728,6 +1838,10 @@ class DozerPoolManager(Blueprint):
         if token_out == token_a:
             # Want token A, swap token B for token A
             if amount_b > 0:
+                # Store reserves before swap for price impact calculation
+                reserve_b_before_swap = Amount(reserve_b - amount_b)
+                reserve_a_before_swap = Amount(reserve_a - amount_a)
+
                 extra_a = self.get_amount_out(
                     amount_b,
                     self.pool_reserve_b[pool_key],
@@ -1735,6 +1849,15 @@ class DozerPoolManager(Blueprint):
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
+
+                # Validate price impact of internal swap (max 15%)
+                price_impact = self._calculate_single_swap_price_impact(
+                    amount_b, extra_a, reserve_b_before_swap, reserve_a_before_swap
+                )
+                MAX_PRICE_IMPACT = Amount(1500)  # 15% in basis points
+                if price_impact > MAX_PRICE_IMPACT:
+                    raise InvalidAction("Price impact too high - internal swap exceeds 15% impact")
+
                 # Update reserves for the swap
                 self.pool_reserve_b[pool_key] = Amount(self.pool_reserve_b[pool_key] + amount_b)
                 self.pool_reserve_a[pool_key] = Amount(self.pool_reserve_a[pool_key] - extra_a)
@@ -1744,6 +1867,10 @@ class DozerPoolManager(Blueprint):
         else:
             # Want token B, swap token A for token B
             if amount_a > 0:
+                # Store reserves before swap for price impact calculation
+                reserve_a_before_swap = Amount(reserve_a - amount_a)
+                reserve_b_before_swap = Amount(reserve_b - amount_b)
+
                 extra_b = self.get_amount_out(
                     amount_a,
                     self.pool_reserve_a[pool_key],
@@ -1751,6 +1878,15 @@ class DozerPoolManager(Blueprint):
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
+
+                # Validate price impact of internal swap (max 15%)
+                price_impact = self._calculate_single_swap_price_impact(
+                    amount_a, extra_b, reserve_a_before_swap, reserve_b_before_swap
+                )
+                MAX_PRICE_IMPACT = Amount(1500)  # 15% in basis points
+                if price_impact > MAX_PRICE_IMPACT:
+                    raise InvalidAction("Price impact too high - internal swap exceeds 15% impact")
+
                 # Update reserves for the swap
                 self.pool_reserve_a[pool_key] = Amount(self.pool_reserve_a[pool_key] + amount_a)
                 self.pool_reserve_b[pool_key] = Amount(self.pool_reserve_b[pool_key] - extra_b)
