@@ -193,9 +193,20 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
                     </div>
                   </div>
                   <Typography variant="sm" weight={500} className="text-stone-500">
-                    {prices && token && otherToken && prices[token.uuid] && prices[otherToken.uuid]
-                      ? `$${(quoteData.token_a_used * prices[token.uuid] + quoteData.token_b_used * prices[otherToken.uuid]).toFixed(2)}`
-                      : 'Liquidity Position'}
+                    {(() => {
+                      if (!prices || !token || !otherToken || !prices[token.uuid] || !prices[otherToken.uuid]) {
+                        return 'Liquidity Position'
+                      }
+
+                      // Contract returns token_a and token_b in alphabetical order
+                      // Need to map them to actual tokens to get correct prices
+                      const tokens = [token, otherToken].sort((a, b) => a.uuid.localeCompare(b.uuid))
+                      const tokenAPrice = prices[tokens[0].uuid]
+                      const tokenBPrice = prices[tokens[1].uuid]
+
+                      const totalValue = quoteData.token_a_used * tokenAPrice + quoteData.token_b_used * tokenBPrice
+                      return `$${totalValue.toFixed(2)}`
+                    })()}
                   </Typography>
                 </div>
               </div>

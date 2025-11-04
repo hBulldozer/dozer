@@ -268,10 +268,15 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                               {prices && token && otherToken && prices[token.uuid] && prices[otherToken.uuid] ? (
                                                 <span className="text-green-300">
                                                   $
-                                                  {(
-                                                    quoteData.token_a_used * prices[token.uuid] +
-                                                    quoteData.token_b_used * prices[otherToken.uuid]
-                                                  ).toFixed(2)}
+                                                  {(() => {
+                                                    // Contract returns token_a and token_b in alphabetical order
+                                                    // Need to map them to actual tokens to get correct prices
+                                                    const tokens = [token, otherToken].sort((a, b) => a.uuid.localeCompare(b.uuid))
+                                                    const tokenAPrice = prices[tokens[0].uuid]
+                                                    const tokenBPrice = prices[tokens[1].uuid]
+
+                                                    return (quoteData.token_a_used * tokenAPrice + quoteData.token_b_used * tokenBPrice).toFixed(2)
+                                                  })()}
                                                 </span>
                                               ) : (
                                                 'LP Position'
@@ -298,6 +303,29 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                                 : `${quoteData.price_impact.toFixed(2)}%`}
                                             </span>
                                           </div>
+                                          {quoteData.price_impact > 5 && (
+                                            <div className="pt-2 mt-2 border-t border-stone-700">
+                                              <div className={`text-xs p-2 rounded ${
+                                                quoteData.price_impact > 15
+                                                  ? 'bg-red-500/10 text-red-400'
+                                                  : 'bg-yellow-500/10 text-yellow-400'
+                                              }`}>
+                                                {quoteData.price_impact > 15 ? (
+                                                  <>
+                                                    <span className="font-semibold">⚠️ Price impact too high!</span>
+                                                    <br />
+                                                    This transaction is blocked. Try a smaller amount.
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <span className="font-semibold">⚠️ High price impact</span>
+                                                    <br />
+                                                    You will lose {quoteData.price_impact.toFixed(2)}% of your value due to the internal swap.
+                                                  </>
+                                                )}
+                                              </div>
+                                            </div>
+                                          )}
                                           {prices && token && prices[token.uuid] && (
                                             <div className="flex justify-between">
                                               <span className="text-stone-500">Value difference:</span>
@@ -305,10 +333,17 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                                 ${(parseFloat(input) * prices[token.uuid]).toFixed(2)} →{' '}
                                                 <span className="text-green-300">
                                                   $
-                                                  {prices[otherToken?.uuid] ? (
-                                                    quoteData.token_a_used * prices[token.uuid] +
-                                                    quoteData.token_b_used * prices[otherToken.uuid]
-                                                  ).toFixed(2) : '---'}
+                                                  {(() => {
+                                                    if (!otherToken || !prices[otherToken.uuid]) return '---'
+
+                                                    // Contract returns token_a and token_b in alphabetical order
+                                                    // Need to map them to actual tokens to get correct prices
+                                                    const tokens = [token, otherToken].sort((a, b) => a.uuid.localeCompare(b.uuid))
+                                                    const tokenAPrice = prices[tokens[0].uuid]
+                                                    const tokenBPrice = prices[tokens[1].uuid]
+
+                                                    return (quoteData.token_a_used * tokenAPrice + quoteData.token_b_used * tokenBPrice).toFixed(2)
+                                                  })()}
                                                 </span>
                                               </span>
                                             </div>
@@ -337,14 +372,25 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                       <div className="p-3">
                         <Checker.Connected fullWidth size="lg">
                           <Checker.Amounts fullWidth size="lg" amount={Number(input)} token={token}>
-                            <Button
-                              size="lg"
-                              className="w-full"
-                              disabled={!quoteData || parseFloat(input) <= 0}
-                              onClick={() => setOpen(true)}
-                            >
-                              {quoteData && parseFloat(input) > 0 ? 'Add Liquidity' : 'Enter an amount'}
-                            </Button>
+                            {quoteData && quoteData.price_impact > 15 ? (
+                              <Button
+                                size="lg"
+                                className="w-full"
+                                disabled={true}
+                                color="red"
+                              >
+                                Price Impact Too High ({quoteData.price_impact.toFixed(2)}%)
+                              </Button>
+                            ) : (
+                              <Button
+                                size="lg"
+                                className="w-full"
+                                disabled={!quoteData || parseFloat(input) <= 0}
+                                onClick={() => setOpen(true)}
+                              >
+                                {quoteData && parseFloat(input) > 0 ? 'Add Liquidity' : 'Enter an amount'}
+                              </Button>
+                            )}
                           </Checker.Amounts>
                         </Checker.Connected>
                       </div>

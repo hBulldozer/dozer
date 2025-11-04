@@ -581,7 +581,7 @@ class Oasis(Blueprint):
         self.user_balances[self.dev_address] = partial
 
     @public
-    def update_owner_address(self, ctx: Context, new_owner: CallerId) -> None:
+    def update_owner_address(self, ctx: Context, new_owner: Address) -> None:
         """Updates the owner address. Can be called by dev or current owner.
 
         Args:
