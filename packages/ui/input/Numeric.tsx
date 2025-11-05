@@ -6,7 +6,7 @@ import { escapeRegExp, inputRegex, formatCentsToDecimal } from './utils'
 
 const defaultClassName = 'w-0 p-0 text-2xl bg-transparent'
 
-export type NumericProps = Omit<React.HTMLProps<HTMLInputElement>, 'onChange' | 'as'> & {
+export type NumericProps = Omit<React.HTMLProps<HTMLInputElement>, 'onChange' | 'as' | 'value'> & {
   onUserInput?: (input: string) => void
   error?: boolean
   fontSize?: string
@@ -14,6 +14,7 @@ export type NumericProps = Omit<React.HTMLProps<HTMLInputElement>, 'onChange' | 
   variant?: 'default' | 'unstyled'
   autoDecimal?: boolean // New prop to enable automatic decimal formatting
   useLocaleFormat?: boolean // New prop to enable locale-based number formatting (thousands separators)
+  value?: string | number
 }
 
 export const Input = forwardRef<HTMLInputElement, NumericProps>(
@@ -42,11 +43,11 @@ export const Input = forwardRef<HTMLInputElement, NumericProps>(
     const [displayValue, setDisplayValue] = useState(value)
 
     // Format number with locale formatting (thousands separators)
-    const formatNumberWithLocale = (numString: string): string => {
+    const formatNumberWithLocale = (numString: string | number): string => {
       if (!numString || numString === '') return ''
 
       // Remove any existing thousands separators
-      const cleaned = numString.replace(/,/g, '')
+      const cleaned = String(numString).replace(/,/g, '')
 
       // Split into integer and decimal parts
       const parts = cleaned.split('.')
@@ -78,7 +79,8 @@ export const Input = forwardRef<HTMLInputElement, NumericProps>(
       if (autoDecimal) {
         // For auto-decimal mode, only allow digits and limit to reasonable length
         const digitsOnly = nextUserInput.replace(/\D/g, '')
-        if (digitsOnly.length <= 6) { // Max 6 digits (e.g., 123456 -> 1234.56)
+        if (digitsOnly.length <= 6) {
+          // Max 6 digits (e.g., 123456 -> 1234.56)
           const formattedValue = formatCentsToDecimal(digitsOnly)
           if (onUserInput) {
             onUserInput(formattedValue)
@@ -138,5 +140,7 @@ export const Input = forwardRef<HTMLInputElement, NumericProps>(
         {...rest}
       />
     )
+
+    Input.displayName = 'Input'
   }
 )

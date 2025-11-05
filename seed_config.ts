@@ -132,7 +132,7 @@ export const seedConfig: SeedConfig = {
     {
       tokenSymbol: 'hUSDC',
       htrQuantity: 100_000, // Minimal liquidity: 1,000 HTR
-      poolFee: 5, // 0.5% pool fee (matches the pool fee)
+      poolFee: 8, // 0.8% pool fee (matches the pool fee)
       protocolFee: 1, // 0.1% protocol fee
     },
     // {
