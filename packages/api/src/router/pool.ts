@@ -66,7 +66,7 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
 async function calculate24hTransactionCount(poolKey: string): Promise<number> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - (24 * 60 * 60) // 24 hours ago in seconds
+    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -119,7 +119,7 @@ const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
 async function calculate24hVolume(poolKey: string): Promise<{ volume24h: number; volume24hUSD: number }> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - (24 * 60 * 60) // 24 hours ago in seconds
+    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -1601,6 +1601,7 @@ export const poolRouter = createTRPCRouter({
         const response = await fetchFromPoolManager([
           `quote_remove_liquidity_single_token_percentage("${input.address}", "${input.poolKey}", "${input.tokenOut}", ${percentageBasisPoints})`,
         ])
+        console.log('------- response', response)
 
         const quoteArray =
           response.calls[
@@ -1748,14 +1749,16 @@ export const poolRouter = createTRPCRouter({
           if (input.tokenFilter) {
             const involvesToken =
               (tx.tokens && tx.tokens.includes(input.tokenFilter)) ||
-              (tx.outputs && tx.outputs.some((output: any) =>
-                (output.token === input.tokenFilter) ||
-                (output.token_data === 0 && input.tokenFilter === '00')
-              )) ||
-              (tx.inputs && tx.inputs.some((input: any) =>
-                (input.token === input.tokenFilter) ||
-                (input.token_data === 0 && input.tokenFilter === '00')
-              ))
+              (tx.outputs &&
+                tx.outputs.some(
+                  (output: any) =>
+                    output.token === input.tokenFilter || (output.token_data === 0 && input.tokenFilter === '00')
+                )) ||
+              (tx.inputs &&
+                tx.inputs.some(
+                  (input: any) =>
+                    input.token === input.tokenFilter || (input.token_data === 0 && input.tokenFilter === '00')
+                ))
 
             if (!involvesToken) {
               continue

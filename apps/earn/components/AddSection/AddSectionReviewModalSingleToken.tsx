@@ -1,6 +1,6 @@
 import { ChainId } from '@dozer/chain'
 import { Type } from '@dozer/currency'
-import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData, Typography, Currency } from '@dozer/ui'
+import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData, Typography, Currency, formatNumber, formatCurrency } from '@dozer/ui'
 import { FC, ReactNode, useEffect, useState, useMemo } from 'react'
 import { useNetwork, useTempTxStore, useAccount } from '@dozer/zustand'
 import { PoolManager } from '@dozer/nanocontracts'
@@ -16,7 +16,9 @@ interface AddSectionReviewModalSingleTokenProps {
   input: string
   fee: number
   prices?: { [key: string]: number }
-  children: ({ setOpen }: { setOpen: (open: boolean) => void }) => ReactNode
+  open: boolean
+  setOpen: (open: boolean) => void
+  children: () => ReactNode
 }
 
 export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTokenProps> = ({
@@ -25,9 +27,10 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
   input,
   fee,
   prices,
+  open,
+  setOpen,
   children,
 }) => {
-  const [open, setOpen] = useState(false)
   const [sentTX, setSentTX] = useState(false)
   const { network } = useNetwork()
   const { accounts } = useWalletConnectClient()
@@ -52,9 +55,6 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
     }
   )
 
-  const formatAmount = (amount: number) => {
-    return amount.toFixed(2).replace(/\\.?0+$/, '')
-  }
 
   // Calculate price impact severity and color
   const priceImpactSeverity = useMemo(() => {
@@ -93,10 +93,10 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
             type: 'add_liquidity_single_token',
             chainId: network,
             summary: {
-              pending: `Waiting for next block. Adding ${parseFloat(input).toFixed(2)} ${token.symbol} as single token liquidity.`,
-              completed: `Success! Added ${parseFloat(input).toFixed(2)} ${token.symbol} as single token liquidity.`,
+              pending: `Waiting for next block. Adding ${formatNumber(parseFloat(input))} ${token.symbol} as single token liquidity.`,
+              completed: `Success! Added ${formatNumber(parseFloat(input))} ${token.symbol} as single token liquidity.`,
               failed: 'Failed to add single token liquidity',
-              info: `Adding ${parseFloat(input).toFixed(2)} ${token.symbol} as single token liquidity.`,
+              info: `Adding ${formatNumber(parseFloat(input))} ${token.symbol} as single token liquidity.`,
             },
             status: 'pending',
             txHash: hash,
@@ -135,7 +135,7 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
 
   return (
     <>
-      {children({ setOpen })}
+      {children()}
       <Dialog open={open} onClose={() => setOpen(false)}>
         <Dialog.Content className="max-w-sm !pb-4">
           <Dialog.Header border={false} title="Confirm Add Liquidity" onClose={() => setOpen(false)} />
@@ -147,7 +147,7 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
                   <div className="flex gap-2 items-center">
                     <div className="flex gap-2 justify-between items-center w-full">
                       <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                        {parseFloat(input).toFixed(2)}
+                        {formatNumber(parseFloat(input))}
                       </Typography>
                       <div className="flex gap-2 justify-end items-center text-right">
                         {token && (
@@ -163,7 +163,7 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
                   </div>
                   <Typography variant="sm" weight={500} className="text-stone-500">
                     {prices && token && prices[token.uuid]
-                      ? `$${(parseFloat(input) * prices[token.uuid]).toFixed(2)}`
+                      ? formatCurrency(parseFloat(input) * prices[token.uuid])
                       : '-'}
                   </Typography>
                 </div>
@@ -205,7 +205,7 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
                       const tokenBPrice = prices[tokens[1].uuid]
 
                       const totalValue = quoteData.token_a_used * tokenAPrice + quoteData.token_b_used * tokenBPrice
-                      return `$${totalValue.toFixed(2)}`
+                      return formatCurrency(totalValue)
                     })()}
                   </Typography>
                 </div>
@@ -216,12 +216,6 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
                 <div className="p-3 space-y-2 text-xs rounded-lg bg-stone-800/20 border border-stone-200/5">
                   <div className="mb-2 text-stone-400">Transaction breakdown:</div>
                   <div className="flex justify-between">
-                    <span className="text-stone-500">Swap amount:</span>
-                    <span className="text-blue-300">
-                      {formatAmount(quoteData.swap_amount)} → {formatAmount(quoteData.swap_output)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-stone-500">Price Impact:</span>
                     <span className={priceImpactColor}>
                       {quoteData.price_impact < 0.01
@@ -231,11 +225,11 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-500">{token?.symbol} used:</span>
-                    <span className="text-green-300">{formatAmount(quoteData.token_a_used)}</span>
+                    <span className="text-green-300">{formatNumber(quoteData.token_a_used)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-500">{otherToken?.symbol} used:</span>
-                    <span className="text-green-300">{formatAmount(quoteData.token_b_used)}</span>
+                    <span className="text-green-300">{formatNumber(quoteData.token_b_used)}</span>
                   </div>
                 </div>
 

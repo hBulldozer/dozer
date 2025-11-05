@@ -6,13 +6,14 @@ import { classNames, Widget, Typography, Button, Input, DEFAULT_INPUT_UNSTYLED, 
 import { Checker } from '@dozer/higmi'
 import { TokenSelector } from '@dozer/higmi/components/TokenSelector'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
-import { FC, useState, useEffect, Fragment, useMemo } from 'react'
+import { FC, useState, useEffect, Fragment, useMemo, useCallback } from 'react'
 import { useNetwork } from '@dozer/zustand'
 import { formatUSD } from '@dozer/format'
 import { warningSeverity } from '@dozer/math'
 import { SettingsOverlay } from '../SettingsOverlay'
 import { api } from '../../utils/api'
 import { RemoveSectionReviewModalSingleToken } from './RemoveSectionReviewModalSingleToken'
+import { HighPriceImpactConfirmation } from '../HighPriceImpactConfirmation'
 
 interface RemoveSectionSingleTokenProps {
   chainId: ChainId
@@ -38,6 +39,8 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
   const [hover, setHover] = useState(false)
   const [percentage, setPercentage] = useState<string>('100')
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
+  const [showPriceImpactWarning, setShowPriceImpactWarning] = useState(false)
+  const [reviewModalOpen, setReviewModalOpen] = useState(false)
   const [quoteData, setQuoteData] = useState<{
     amount_out: number
     token_a_withdrawn: number
@@ -116,19 +119,44 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
   const selectedTokenPrice = selectedToken?.uuid && prices ? prices[selectedToken.uuid] : 0
   const usdValue = adjustedQuoteData ? adjustedQuoteData.amount_out * selectedTokenPrice : 0
 
+  const handleRemoveLiquidityClick = useCallback(() => {
+    if (!adjustedQuoteData) return
+
+    // Check for high price impact (5-15% range requires confirmation)
+    if (adjustedQuoteData.price_impact >= 5 && adjustedQuoteData.price_impact < 15) {
+      setShowPriceImpactWarning(true)
+    } else {
+      setReviewModalOpen(true)
+    }
+  }, [adjustedQuoteData])
+
+  const handleConfirmHighImpact = useCallback(() => {
+    setReviewModalOpen(true)
+  }, [])
+
   return (
-    <RemoveSectionReviewModalSingleToken
-      chainId={chainId}
-      token0={token0}
-      token1={token1}
-      selectedToken={selectedToken}
-      fee={fee}
-      userAddress={userAddress}
-      percentage={percentage}
-      poolKey={poolKey}
-      prices={prices}
-    >
-      {({ setOpen }) => (
+    <>
+      <HighPriceImpactConfirmation
+        isOpen={showPriceImpactWarning}
+        onClose={() => setShowPriceImpactWarning(false)}
+        onConfirm={handleConfirmHighImpact}
+        priceImpact={adjustedQuoteData?.price_impact || 0}
+        action="remove"
+      />
+      <RemoveSectionReviewModalSingleToken
+        chainId={chainId}
+        token0={token0}
+        token1={token1}
+        selectedToken={selectedToken}
+        fee={fee}
+        userAddress={userAddress}
+        percentage={percentage}
+        poolKey={poolKey}
+        prices={prices}
+        open={reviewModalOpen}
+        setOpen={setReviewModalOpen}
+      >
+        {() => (
         <div className="relative" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
           <Transition
             show={Boolean(hover && (!userAddress || !hasLiquidity))}
@@ -442,23 +470,14 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                                                 </span>
                                               </div>
                                               {adjustedQuoteData.swap_amount > 0 && (
-                                                <>
-                                                  <div className="flex justify-between">
-                                                    <span className="text-stone-500">Swap amount:</span>
-                                                    <span className="text-blue-300">
-                                                      {formatAmount(adjustedQuoteData.swap_amount)} →{' '}
-                                                      {formatAmount(adjustedQuoteData.swap_output)}
-                                                    </span>
-                                                  </div>
-                                                  <div className="flex justify-between">
-                                                    <span className="text-stone-500">Price Impact:</span>
-                                                    <span className={priceImpactColor}>
-                                                      {adjustedQuoteData.price_impact < 0.01
-                                                        ? '< 0.01%'
-                                                        : `${adjustedQuoteData.price_impact.toFixed(2)}%`}
-                                                    </span>
-                                                  </div>
-                                                </>
+                                                <div className="flex justify-between">
+                                                  <span className="text-stone-500">Price Impact:</span>
+                                                  <span className={priceImpactColor}>
+                                                    {adjustedQuoteData.price_impact < 0.01
+                                                      ? '< 0.01%'
+                                                      : `${adjustedQuoteData.price_impact.toFixed(2)}%`}
+                                                  </span>
+                                                </div>
                                               )}
                                             </div>
                                           </>
@@ -489,7 +508,7 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
                               size="lg"
                               className="w-full"
                               disabled={!quoteData || !selectedToken}
-                              onClick={() => setOpen(true)}
+                              onClick={handleRemoveLiquidityClick}
                             >
                               {quoteData && selectedToken ? 'Remove Liquidity' : 'Select token'}
                             </Button>
@@ -517,7 +536,8 @@ export const RemoveSectionSingleToken: FC<RemoveSectionSingleTokenProps> = ({
             showUnsignedSwitchInDialog={false}
           />
         </div>
-      )}
-    </RemoveSectionReviewModalSingleToken>
+        )}
+      </RemoveSectionReviewModalSingleToken>
+    </>
   )
 }

@@ -2,14 +2,15 @@ import { Disclosure, Transition } from '@headlessui/react'
 import { ChainId } from '@dozer/chain'
 import { Type } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
-import { Widget, Currency, Typography, Button } from '@dozer/ui'
+import { Widget, Currency, Typography, Button, formatNumber } from '@dozer/ui'
 import { Web3Input, Checker } from '@dozer/higmi'
-import { FC, useState, useEffect, useMemo } from 'react'
+import { FC, useState, useEffect, useMemo, useCallback } from 'react'
 import { useNetwork } from '@dozer/zustand'
 import { warningSeverity } from '@dozer/math'
 import { SettingsOverlay } from '../SettingsOverlay'
 import { api } from '../../utils/api'
 import { AddSectionReviewModalSingleToken } from './AddSectionReviewModalSingleToken'
+import { HighPriceImpactConfirmation } from '../HighPriceImpactConfirmation'
 
 interface AddSectionSingleTokenProps {
   chainId: ChainId
@@ -46,6 +47,8 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
     swap_output: number
     price_impact: number
   } | null>(null)
+  const [showPriceImpactWarning, setShowPriceImpactWarning] = useState(false)
+  const [reviewModalOpen, setReviewModalOpen] = useState(false)
 
   // Fetch single token quote when inputs change
   const { data: quote, isLoading: quoteIsLoading } = api.getPools.quoteSingleTokenLiquidity.useQuery(
@@ -68,7 +71,7 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
   }, [quote])
 
   const formatAmount = (amount: number) => {
-    return amount.toFixed(6).replace(/\.?0+$/, '')
+    return formatNumber(amount, 6)
   }
 
   // Calculate price impact severity and color
@@ -84,17 +87,42 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
     return 'text-red-400'
   }, [priceImpactSeverity])
 
+  const handleAddLiquidityClick = useCallback(() => {
+    if (!quoteData) return
+
+    // Check for high price impact (5-15% range requires confirmation)
+    if (quoteData.price_impact >= 5 && quoteData.price_impact < 15) {
+      setShowPriceImpactWarning(true)
+    } else {
+      setReviewModalOpen(true)
+    }
+  }, [quoteData])
+
+  const handleConfirmHighImpact = useCallback(() => {
+    setReviewModalOpen(true)
+  }, [])
+
 
   return (
-    <AddSectionReviewModalSingleToken
-      chainId={chainId}
-      token={token}
-      otherToken={otherToken}
-      input={input}
-      fee={fee}
-      prices={prices}
-    >
-      {({ setOpen }) => (
+    <>
+      <HighPriceImpactConfirmation
+        isOpen={showPriceImpactWarning}
+        onClose={() => setShowPriceImpactWarning(false)}
+        onConfirm={handleConfirmHighImpact}
+        priceImpact={quoteData?.price_impact || 0}
+        action="add"
+      />
+      <AddSectionReviewModalSingleToken
+        chainId={chainId}
+        token={token}
+        otherToken={otherToken}
+        input={input}
+        fee={fee}
+        prices={prices}
+        open={reviewModalOpen}
+        setOpen={setReviewModalOpen}
+      >
+        {() => (
         <Widget id="addLiquiditySingleToken" maxWidth={400}>
           <Widget.Content>
             <Disclosure defaultOpen={true}>
@@ -196,7 +224,7 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                           <div className="flex flex-col items-center space-y-1">
                                             <Currency.Icon currency={token} width={24} height={24} />
                                             <Typography variant="xs" className="text-stone-300">
-                                              {parseFloat(input).toFixed(2)}
+                                              {formatNumber(parseFloat(input))}
                                             </Typography>
                                           </div>
 
@@ -275,7 +303,7 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                                     const tokenAPrice = prices[tokens[0].uuid]
                                                     const tokenBPrice = prices[tokens[1].uuid]
 
-                                                    return (quoteData.token_a_used * tokenAPrice + quoteData.token_b_used * tokenBPrice).toFixed(2)
+                                                    return formatNumber(quoteData.token_a_used * tokenAPrice + quoteData.token_b_used * tokenBPrice, 2)
                                                   })()}
                                                 </span>
                                               ) : (
@@ -290,12 +318,6 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                       <div className="pt-2 border-t border-stone-700">
                                         <div className="space-y-1 text-xs">
                                           <div className="flex justify-between">
-                                            <span className="text-stone-500">Swap amount:</span>
-                                            <span className="text-blue-300">
-                                              {formatAmount(quoteData.swap_amount)} → {formatAmount(quoteData.swap_output)}
-                                            </span>
-                                          </div>
-                                          <div className="flex justify-between">
                                             <span className="text-stone-500">Price Impact:</span>
                                             <span className={priceImpactColor}>
                                               {quoteData.price_impact < 0.01
@@ -303,51 +325,6 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                                 : `${quoteData.price_impact.toFixed(2)}%`}
                                             </span>
                                           </div>
-                                          {quoteData.price_impact > 5 && (
-                                            <div className="pt-2 mt-2 border-t border-stone-700">
-                                              <div className={`text-xs p-2 rounded ${
-                                                quoteData.price_impact > 15
-                                                  ? 'bg-red-500/10 text-red-400'
-                                                  : 'bg-yellow-500/10 text-yellow-400'
-                                              }`}>
-                                                {quoteData.price_impact > 15 ? (
-                                                  <>
-                                                    <span className="font-semibold">⚠️ Price impact too high!</span>
-                                                    <br />
-                                                    This transaction is blocked. Try a smaller amount.
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    <span className="font-semibold">⚠️ High price impact</span>
-                                                    <br />
-                                                    You will lose {quoteData.price_impact.toFixed(2)}% of your value due to the internal swap.
-                                                  </>
-                                                )}
-                                              </div>
-                                            </div>
-                                          )}
-                                          {prices && token && prices[token.uuid] && (
-                                            <div className="flex justify-between">
-                                              <span className="text-stone-500">Value difference:</span>
-                                              <span className="text-stone-300">
-                                                ${(parseFloat(input) * prices[token.uuid]).toFixed(2)} →{' '}
-                                                <span className="text-green-300">
-                                                  $
-                                                  {(() => {
-                                                    if (!otherToken || !prices[otherToken.uuid]) return '---'
-
-                                                    // Contract returns token_a and token_b in alphabetical order
-                                                    // Need to map them to actual tokens to get correct prices
-                                                    const tokens = [token, otherToken].sort((a, b) => a.uuid.localeCompare(b.uuid))
-                                                    const tokenAPrice = prices[tokens[0].uuid]
-                                                    const tokenBPrice = prices[tokens[1].uuid]
-
-                                                    return (quoteData.token_a_used * tokenAPrice + quoteData.token_b_used * tokenBPrice).toFixed(2)
-                                                  })()}
-                                                </span>
-                                              </span>
-                                            </div>
-                                          )}
                                         </div>
                                       </div>
                                     </>
@@ -386,7 +363,7 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                 size="lg"
                                 className="w-full"
                                 disabled={!quoteData || parseFloat(input) <= 0}
-                                onClick={() => setOpen(true)}
+                                onClick={handleAddLiquidityClick}
                               >
                                 {quoteData && parseFloat(input) > 0 ? 'Add Liquidity' : 'Enter an amount'}
                               </Button>
@@ -401,7 +378,8 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
             </Disclosure>
           </Widget.Content>
         </Widget>
-      )}
-    </AddSectionReviewModalSingleToken>
+        )}
+      </AddSectionReviewModalSingleToken>
+    </>
   )
 }

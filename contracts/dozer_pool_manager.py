@@ -301,7 +301,7 @@ class DozerPoolManager(Blueprint):
         self.contract_version = "1.0.0"
         self.owner = Address(ctx.caller_id)
         self.default_fee = Amount(3)  # 0.3%
-        self.default_protocol_fee = Amount(10)  # 10% of fees
+        self.default_protocol_fee = Amount(40)  # 40% of fees
 
         # Initialize dictionaries and lists
         self.authorized_signers:dict[CallerId, bool] = {}
@@ -854,7 +854,7 @@ class DozerPoolManager(Blueprint):
                 new_reserve_b = Amount(reserve_b - amount_b)
 
                 swap_reserve_in = Amount(new_reserve_b + amount_b)
-                swap_reserve_out = Amount(new_reserve_a - amount_a)
+                swap_reserve_out = Amount(new_reserve_a)
 
                 extra_a = self.get_amount_out(
                     amount_b,
@@ -881,7 +881,7 @@ class DozerPoolManager(Blueprint):
                 new_reserve_b = reserve_b - amount_b
 
                 swap_reserve_in = Amount(new_reserve_a + amount_a)
-                swap_reserve_out = Amount(new_reserve_b - amount_b)
+                swap_reserve_out = Amount(new_reserve_b)
 
                 extra_b = self.get_amount_out(
                     amount_a,
@@ -948,7 +948,7 @@ class DozerPoolManager(Blueprint):
                 new_reserve_b = Amount(reserve_b - amount_b)
 
                 swap_reserve_in = Amount(new_reserve_b + amount_b)
-                swap_reserve_out = Amount(new_reserve_a - amount_a)
+                swap_reserve_out = Amount(new_reserve_a)
 
                 extra_a = self.get_amount_out(
                     amount_b,
@@ -975,7 +975,7 @@ class DozerPoolManager(Blueprint):
                 new_reserve_b = reserve_b - amount_b
 
                 swap_reserve_in = Amount(new_reserve_a + amount_a)
-                swap_reserve_out = Amount(new_reserve_b - amount_b)
+                swap_reserve_out = Amount(new_reserve_b)
 
                 extra_b = self.get_amount_out(
                     amount_a,
@@ -3051,7 +3051,7 @@ class DozerPoolManager(Blueprint):
             raise Unauthorized("Only the owner can change the protocol fee")
 
         if new_fee > 50:
-            raise InvalidFee("Protocol fee must be <= 5%")
+            raise InvalidFee("Protocol fee must be <= 50%")
 
         self.default_protocol_fee = new_fee
 
@@ -3535,13 +3535,8 @@ class DozerPoolManager(Blueprint):
         # Validate version is newer
         if not self._is_version_higher(new_version, self.contract_version):
             raise InvalidVersion(f"New version {new_version} must be higher than current {self.contract_version}")
-
         self.contract_version = new_version
-
-        # Initialize any new attributes before the upgrade
-        # Initialize paused attribute if it doesn't exist (added in newer versions)
-        self.paused = False
-
+        
         # Perform the upgrade
         self.syscall.change_blueprint(new_blueprint_id)
 

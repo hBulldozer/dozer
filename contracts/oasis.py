@@ -822,15 +822,12 @@ class Oasis(Blueprint):
         # Validate version is newer
         if not self._is_version_higher(new_version, self.contract_version):
             raise InvalidVersion(f"New version {new_version} must be higher than current {self.contract_version}")
+        self.contract_version = new_version
 
         # Perform the upgrade
-        contract_id = self.syscall.get_contract_id()
         self.syscall.change_blueprint(new_blueprint_id)
 
-        # Call post-upgrade initialization on the new blueprint (optional)
-        # The new blueprint can implement this method to handle migrations
-        # self.syscall.get_contract(contract_id, blueprint_id=None).public().post_upgrade_init(new_version)
-
+        
     def _is_version_higher(self, new_version: str, current_version: str) -> bool:
         """Compare semantic versions (e.g., "1.2.3").
 

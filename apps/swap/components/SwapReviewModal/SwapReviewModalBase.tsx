@@ -1,7 +1,7 @@
 import { ChevronDownIcon, Square2StackIcon } from '@heroicons/react/24/solid'
 import { Amount, Price, Type, getTokens } from '@dozer/currency'
 import { ZERO } from '@dozer/math'
-import { CopyHelper, Dialog, IconButton, Typography } from '@dozer/ui'
+import { CopyHelper, Dialog, IconButton, Typography, formatNumber, formatCurrency } from '@dozer/ui'
 import { Currency } from '@dozer/ui'
 import { FC, ReactNode, useMemo } from 'react'
 
@@ -148,7 +148,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
             <div className="flex gap-2 items-center">
               <div className="flex gap-2 justify-between items-center w-full">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {input0?.toFixed(2)}{' '}
+                  {formatNumber(input0)}{' '}
                 </Typography>
                 <div className="flex gap-2 justify-end items-center text-right">
                   {input0 && (
@@ -163,7 +163,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {value0 && input0 ? `$${(value0 * input0).toFixed(2)}` : '-'}
+              {value0 && input0 ? formatCurrency(value0 * input0) : '-'}
             </Typography>
           </div>
           <div className="flex items-center justify-center col-span-12 -mt-2.5 -mb-2.5">
@@ -175,7 +175,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
             <div className="flex gap-2 items-center">
               <div className="flex gap-2 justify-between items-center w-full">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {input1?.toFixed(2)}{' '}
+                  {formatNumber(input1)}{' '}
                 </Typography>
                 <div className="flex gap-2 justify-end items-center text-right">
                   {input1 && (
@@ -190,7 +190,7 @@ export const SwapReviewModalBase: FC<SwapReviewModalBase> = ({ chainId, children
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {value1 && input1 ? `$${(value1 * input1).toFixed(2)}` : ''}
+              {value1 && input1 ? formatCurrency(value1 * input1) : ''}
             </Typography>
           </div>
         </div>

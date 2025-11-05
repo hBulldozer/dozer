@@ -1,6 +1,6 @@
 import { ChainId } from '@dozer/chain'
 import { Type } from '@dozer/currency'
-import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData, Typography, Currency } from '@dozer/ui'
+import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData, Typography, Currency, formatNumber, formatCurrency } from '@dozer/ui'
 import { FC, ReactNode, useEffect, useState, useMemo } from 'react'
 import { useNetwork, useTempTxStore, useAccount } from '@dozer/zustand'
 import { PoolManager } from '@dozer/nanocontracts'
@@ -19,7 +19,9 @@ interface RemoveSectionReviewModalSingleTokenProps {
   percentage: string
   poolKey: string
   prices?: { [key: string]: number }
-  children: ({ setOpen }: { setOpen: (open: boolean) => void }) => ReactNode
+  open: boolean
+  setOpen: (open: boolean) => void
+  children: () => ReactNode
 }
 
 export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSingleTokenProps> = ({
@@ -31,9 +33,10 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
   percentage,
   poolKey,
   prices,
+  open,
+  setOpen,
   children,
 }) => {
-  const [open, setOpen] = useState(false)
   const [sentTX, setSentTX] = useState(false)
   const { network } = useNetwork()
   const { accounts } = useWalletConnectClient()
@@ -57,10 +60,6 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
       refetchInterval: 5000,
     }
   )
-
-  const formatAmount = (amount: number) => {
-    return amount.toFixed(6).replace(/\\.?0+$/, '')
-  }
 
   // Calculate price impact severity and color
   const priceImpactSeverity = useMemo(() => {
@@ -100,7 +99,7 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
             chainId: network,
             summary: {
               pending: `Waiting for next block. Removing ${percentage}% liquidity to receive ${selectedToken.symbol}.`,
-              completed: `Success! Removed liquidity and received ${formatAmount(quoteData.amount_out)} ${selectedToken.symbol}.`,
+              completed: `Success! Removed liquidity and received ${formatNumber(quoteData.amount_out)} ${selectedToken.symbol}.`,
               failed: 'Failed to remove single token liquidity',
               info: `Removing ${percentage}% liquidity to receive ${selectedToken.symbol}.`,
             },
@@ -141,7 +140,7 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
 
   return (
     <>
-      {children({ setOpen })}
+      {children()}
       <Dialog open={open} onClose={() => setOpen(false)}>
         <Dialog.Content className="max-w-sm !pb-4">
           <Dialog.Header border={false} title="Confirm Remove Liquidity" onClose={() => setOpen(false)} />
@@ -182,7 +181,7 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
                   <div className="flex gap-2 items-center">
                     <div className="flex gap-2 justify-between items-center w-full">
                       <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                        {formatAmount(quoteData.amount_out)}
+                        {formatNumber(quoteData.amount_out)}
                       </Typography>
                       <div className="flex gap-2 justify-end items-center text-right">
                         {selectedToken && (
@@ -200,7 +199,7 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
                     {(() => {
                       const selectedTokenPrice = selectedToken?.uuid && prices ? prices[selectedToken.uuid] : 0
                       const usdValue = quoteData.amount_out * selectedTokenPrice
-                      return selectedTokenPrice > 0 ? `$${usdValue.toFixed(2)}` : '-'
+                      return selectedTokenPrice > 0 ? formatCurrency(usdValue) : '-'
                     })()}
                   </Typography>
                 </div>
@@ -212,29 +211,21 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
                   <div className="mb-2 text-stone-400">Transaction breakdown:</div>
                   <div className="flex justify-between">
                     <span className="text-stone-500">{token0?.symbol} withdrawn:</span>
-                    <span className="text-green-300">{formatAmount(quoteData.token_a_withdrawn)}</span>
+                    <span className="text-green-300">{formatNumber(quoteData.token_a_withdrawn)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-500">{token1?.symbol} withdrawn:</span>
-                    <span className="text-green-300">{formatAmount(quoteData.token_b_withdrawn)}</span>
+                    <span className="text-green-300">{formatNumber(quoteData.token_b_withdrawn)}</span>
                   </div>
                   {quoteData.swap_amount > 0 && (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-stone-500">Swap amount:</span>
-                        <span className="text-blue-300">
-                          {formatAmount(quoteData.swap_amount)} → {formatAmount(quoteData.swap_output)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-stone-500">Price Impact:</span>
-                        <span className={priceImpactColor}>
-                          {quoteData.price_impact < 0.01
-                            ? '< 0.01%'
-                            : `${quoteData.price_impact.toFixed(2)}%`}
-                        </span>
-                      </div>
-                    </>
+                    <div className="flex justify-between">
+                      <span className="text-stone-500">Price Impact:</span>
+                      <span className={priceImpactColor}>
+                        {quoteData.price_impact < 0.01
+                          ? '< 0.01%'
+                          : `${quoteData.price_impact.toFixed(2)}%`}
+                      </span>
+                    </div>
                   )}
                 </div>
 

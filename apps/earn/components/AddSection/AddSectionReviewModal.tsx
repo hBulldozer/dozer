@@ -1,7 +1,7 @@
 import { PlusIcon, Square2StackIcon } from '@heroicons/react/24/solid'
 import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
-import { CopyHelper, Currency, Dialog, IconButton, Typography } from '@dozer/ui'
+import { CopyHelper, Currency, Dialog, IconButton, Typography, formatNumber, formatCurrency } from '@dozer/ui'
 import { FC, ReactNode, useMemo } from 'react'
 
 // import { useTokenAmountDollarValues } from '../../lib/hooks'
@@ -62,7 +62,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {_input0}{' '}
+                  {formatNumber(_input0)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input0 && (
@@ -77,7 +77,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {price0 && input0 ? `$${(price0 * _input0).toFixed(2)}` : '-'}
+              {price0 && input0 ? formatCurrency(price0 * _input0) : '-'}
             </Typography>
           </div>
           <div className="flex items-center justify-center col-span-12 -mt-2.5 -mb-2.5">
@@ -89,7 +89,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {_input1}{' '}
+                  {formatNumber(_input1)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input1 && (
@@ -104,7 +104,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {price1 && input1 ? `$${(price1 * _input1).toFixed(2)}` : '-'}
+              {price1 && input1 ? formatCurrency(price1 * _input1) : '-'}
             </Typography>
           </div>
         </div>

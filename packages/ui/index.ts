@@ -69,5 +69,7 @@ export {
   truncateAddress,
 } from './src/utils/transactionUtils'
 
+export { formatNumber, formatNumberWithLocale, formatCurrency } from './src/utils/formatNumber'
+
 // Re-export classnames for convenience
 export { default as classNames } from 'classnames'

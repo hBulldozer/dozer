@@ -91,29 +91,29 @@ export const seedConfig: SeedConfig = {
     {
       tokenSymbol: 'hUSDC',
       htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
-      tokenQuantity: 34, // hUSDC = 1 USD, HTR = $0.034, so 1000 * 0.034 = 34 USDC
-      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
+      tokenQuantity: 20, // hUSDC = 1 USD, HTR = $0.02, so 1000 * 0.02 = 20 USDC
+      fee: 0.008, // 0.8% -> converts to 8 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     {
       tokenSymbol: 'NST',
       htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
-      tokenQuantity: 1_587, // NST = 0.63 HTR, so 1000 / 0.63 = 1,587.3 NST
-      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
+      tokenQuantity: 1_764, // NST = 0.567 HTR (10% discount from 0.63), so 1000 / 0.567 = 1,764 NST
+      fee: 0.008, // 0.8% -> converts to 8 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     {
       tokenSymbol: 'CTHOR',
       htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
-      tokenQuantity: 12, // CTHOR = 82.6 HTR, so 1000 / 82.6 = 12.11 CTHOR
-      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
+      tokenQuantity: 13, // CTHOR = 74.34 HTR (10% discount from 82.6), so 1000 / 74.34 = 13.45 CTHOR
+      fee: 0.008, // 0.8% -> converts to 8 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     {
       tokenSymbol: 'KELB',
       htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
-      tokenQuantity: 35, // KELB = 28.79 HTR, so 1000 / 28.79 = 34.74 KELB
-      fee: 0.005, // 0.5% -> converts to 5 basis points (matches contract pathfinding)
+      tokenQuantity: 39, // KELB = 25.91 HTR (10% discount from 28.79), so 1000 / 25.91 = 38.6 KELB
+      fee: 0.008, // 0.8% -> converts to 8 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     // Non-HTR pool for multi-hop testing: DZR/hUSDC
@@ -131,7 +131,7 @@ export const seedConfig: SeedConfig = {
   oasis: [
     {
       tokenSymbol: 'hUSDC',
-      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
+      htrQuantity: 100_000, // Minimal liquidity: 1,000 HTR
       poolFee: 5, // 0.5% pool fee (matches the pool fee)
       protocolFee: 1, // 0.1% protocol fee
     },

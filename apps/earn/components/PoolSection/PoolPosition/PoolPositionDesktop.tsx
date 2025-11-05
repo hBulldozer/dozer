@@ -123,7 +123,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
                     weight={500}
                     className={`${profit.profit_amount_usd >= 0 ? 'text-green-400' : 'text-red-400'}`}
                   >
-                    {formatUSD(profit.profit_amount_usd)} ({formatPercentChange(profit.profit_percentage/100)})
+                    {formatUSD(profit.profit_amount_usd)} ({formatPercentChange(Math.round(profit.profit_percentage) / 100)})
                   </Typography>
                   <ArrowIcon
                     type={profit.profit_amount_usd < 0 ? 'down' : 'up'}

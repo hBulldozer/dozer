@@ -3,7 +3,7 @@ import { useBreakpoint, useIsMounted } from '@dozer/hooks'
 import { useAccount } from '@dozer/zustand'
 import { useWalletConnectClient } from '../contexts'
 import { useBridge } from '../contexts/BridgeContext'
-import { Typography } from '@dozer/ui'
+import { Typography, formatNumber } from '@dozer/ui'
 
 interface PercentageButtonsProps {
   onSelect: (percentage: number) => void
@@ -101,7 +101,7 @@ const BalancePanel: FC<BalancePanelProps> = ({
           className="px-2 py-2 text-xs transition-colors rounded-lg text-stone-400 hover:text-stone-300 hover:bg-stone-800"
           disabled={disableMaxButton}
         >
-          {isMounted && balance ? `Balance: ${tokenBalance.toFixed(2)}` : 'Balance: 0'}
+          {isMounted && balance ? `Balance: ${formatNumber(tokenBalance)}` : 'Balance: 0'}
         </button>
       </div>
     </div>
