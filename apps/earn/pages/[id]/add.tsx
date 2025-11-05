@@ -77,18 +77,18 @@ const Add: NextPage = () => {
                 href="https://docs.dozer.finance/products/dex-liquidity-pools"
                 className="flex justify-center px-6 py-4 decoration-stone-500 hover:bg-opacity-[0.06] cursor-pointer rounded-2xl"
               >
-                <Typography variant="xs" weight={500} className="flex gap-1 items-center text-stone-500">
+                <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-500">
                   Learn more about liquidity and yield farming
                   <ArrowTopRightOnSquareIcon width={16} height={16} className="text-stone-500" />
                 </Typography>
               </Link.External>
             </Container>
           </div>
-          <div className="order-1 sm:order-3">
+          {/* <div className="order-1 sm:order-3">
             <AppearOnMount>
               <AddSectionMyPosition pair={memoizedPair as Pair} />
             </AppearOnMount>
-          </div>
+          </div> */}
         </div>
         {/* <div className="z-[-1] bg-gradient-radial fixed inset-0 bg-scroll bg-clip-border transform pointer-events-none" /> */}
       </Layout>

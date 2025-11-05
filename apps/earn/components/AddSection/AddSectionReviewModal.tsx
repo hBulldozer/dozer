@@ -108,36 +108,20 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             </Typography>
           </div>
         </div>
-        <div className="flex items-center justify-between gap-2 py-6 pl-4 ">
-          <div className="flex-1">
-            <Rate token1={input0?.currency} token2={input1?.currency}>
-              {({ toggleInvert, content, usdPrice }) => (
-                <Typography
-                  as="button"
-                  onClick={() => toggleInvert()}
-                  // variant="sm"
-                  weight={600}
-                  className="flex items-center gap-1 text-stone-100"
-                >
-                  {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
-                </Typography>
-              )}
-            </Rate>
-          </div>
-          <div className="flex-1 text-right ">
-            <CopyHelper className="" toCopy={pool?.id || ''} hideIcon={true}>
-              {(isCopied) => (
-                <IconButton className="px-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy contract ID'}>
-                  <div className="flex flex-row justify-center gap-1">
-                    <Square2StackIcon width={20} height={20} color="stone-500" />
-                    <Typography variant="sm" className="text-stone-100">
-                      Register Contract
-                    </Typography>
-                  </div>
-                </IconButton>
-              )}
-            </CopyHelper>
-          </div>
+        <div className="flex items-center justify-center py-6">
+          <Rate token1={input0?.currency} token2={input1?.currency}>
+            {({ toggleInvert, content, usdPrice }) => (
+              <Typography
+                as="button"
+                onClick={() => toggleInvert()}
+                // variant="sm"
+                weight={600}
+                className="flex items-center gap-1 text-stone-100"
+              >
+                {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
+              </Typography>
+            )}
+          </Rate>
         </div>
         {children}
       </Dialog.Content>

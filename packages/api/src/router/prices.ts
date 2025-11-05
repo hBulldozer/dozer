@@ -611,18 +611,6 @@ export const pricesRouter = createTRPCRouter({
           }
         }
 
-        // Debug logging for troubleshooting
-        console.log(`Price change debug for ${input.tokenUid}:`, {
-          currentPriceRaw,
-          historicalPriceRaw,
-          currentPrice,
-          historicalPrice,
-          change,
-          timeRange,
-          timestamp: now,
-          historicalTimestamp,
-        })
-
         return {
           currentPrice,
           historicalPrice,
