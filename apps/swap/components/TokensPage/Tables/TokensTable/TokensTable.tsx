@@ -28,6 +28,7 @@ export interface ExtendedPair extends Pair {
   priceHtr?: number
   price?: number
   marketCap?: number
+  totalSupply?: number
   change?: number // Will be calculated by TokenChangeCell component, not set here
 }
 
@@ -93,28 +94,99 @@ export const TokensTable: FC = () => {
     enabled: mounted,
   })
 
+  const { data: totalSupplies, isLoading: isLoadingTotalSupplies } = api.getTokens.allTotalSupply.useQuery(undefined, {
+    enabled: mounted,
+    staleTime: 30000,
+    cacheTime: 1000 * 60 * 5,
+  })
+
   // Simplified approach: Just show the pools as tokens
   const _pairs_array: ExtendedPair[] = useMemo(() => {
-    if (!mounted || !allPools || !currentPrices) {
+    if (!mounted || !allPools || !currentPrices || !totalSupplies) {
       return []
     }
 
-    // Convert pools to token-like entries (show each pool as representing its tokens)
+    // Build a map to aggregate TVL for each token across all pools
+    const tokenMap = new Map<string, {
+      tvl: number,
+      price: number,
+      totalSupply: number,
+      symbol: string,
+      name: string,
+      primaryPool: any,
+      token: any
+    }>()
+
+    // Iterate through all pools and calculate each token's TVL contribution
+    allPools.forEach((pool) => {
+      // Process token0
+      const token0Uuid = pool.token0.uuid
+      const token0Price = currentPrices[token0Uuid] || 0
+      const token0TotalSupply = totalSupplies[token0Uuid] || 0
+      const token0TVL = pool.liquidityUSD / 2 // Token0's side of the pool
+
+      if (!tokenMap.has(token0Uuid)) {
+        tokenMap.set(token0Uuid, {
+          tvl: token0TVL,
+          price: token0Price,
+          totalSupply: token0TotalSupply,
+          symbol: pool.token0.symbol,
+          name: pool.token0.name || pool.token0.symbol,
+          primaryPool: pool,
+          token: pool.token0
+        })
+      } else {
+        const existing = tokenMap.get(token0Uuid)!
+        existing.tvl += token0TVL
+        // Keep the pool with higher liquidity as primary
+        if (pool.liquidityUSD > existing.primaryPool.liquidityUSD) {
+          existing.primaryPool = pool
+        }
+      }
+
+      // Process token1
+      const token1Uuid = pool.token1.uuid
+      const token1Price = currentPrices[token1Uuid] || 0
+      const token1TotalSupply = totalSupplies[token1Uuid] || 0
+      const token1TVL = pool.liquidityUSD / 2 // Token1's side of the pool
+
+      if (!tokenMap.has(token1Uuid)) {
+        tokenMap.set(token1Uuid, {
+          tvl: token1TVL,
+          price: token1Price,
+          totalSupply: token1TotalSupply,
+          symbol: pool.token1.symbol,
+          name: pool.token1.name || pool.token1.symbol,
+          primaryPool: pool,
+          token: pool.token1
+        })
+      } else {
+        const existing = tokenMap.get(token1Uuid)!
+        existing.tvl += token1TVL
+        // Keep the pool with higher liquidity as primary
+        if (pool.liquidityUSD > existing.primaryPool.liquidityUSD) {
+          existing.primaryPool = pool
+        }
+      }
+    })
+
+    // Convert the map to an array of ExtendedPair entries
     const tokenEntries: ExtendedPair[] = []
 
-    // Add HTR token entry first (special case)
-    const htrPool = allPools.find(
-      (pool) =>
-        (pool.token0.uuid === '00' && pool.token1.symbol === 'hUSDC') ||
-        (pool.token1.uuid === '00' && pool.token0.symbol === 'hUSDC')
-    )
+    tokenMap.forEach((tokenData, tokenUuid) => {
+      const pool = tokenData.primaryPool
+      const isToken0 = pool.token0.uuid === tokenUuid
+      const token = isToken0 ? pool.token0 : pool.token1
+      const otherToken = isToken0 ? pool.token1 : pool.token0
 
-    if (htrPool) {
+      // Special handling for HTR to ensure proper display
+      const isHTR = tokenUuid === '00'
+
       tokenEntries.push({
-        ...htrPool,
-        id: `token-00`,
-        name: 'HTR',
-        token0: normalizeToken({
+        ...pool,
+        id: `token-${tokenUuid}`,
+        name: tokenData.symbol,
+        token0: isHTR ? normalizeToken({
           uuid: '00',
           symbol: 'HTR',
           name: 'Hathor',
@@ -126,74 +198,22 @@ export const TokensTable: FC = () => {
           sourceChain: '',
           targetChain: '',
           rebase: { base: 1, elastic: 1 },
-        }),
-        token1: normalizeToken(htrPool.token0.uuid === '00' ? htrPool.token1 : htrPool.token0),
-        liquidityUSD: htrPool.liquidityUSD / 2,
-        price: currentPrices['00'] || 0,
-        marketCap: 0,
+        }) : normalizeToken(token),
+        token1: normalizeToken(otherToken),
+        liquidityUSD: tokenData.tvl, // Use aggregated TVL
+        price: tokenData.price,
+        marketCap: tokenData.totalSupply * tokenData.price,
+        totalSupply: tokenData.totalSupply,
         change: undefined,
         priceHtr: currentPrices['00'] || 0,
       } as ExtendedPair)
-    }
-
-    allPools.forEach((pool) => {
-      // Add entry for token0 if not HTR
-      if (pool.token0.uuid !== '00') {
-        tokenEntries.push({
-          ...pool,
-          id: `token-${pool.token0.uuid}`,
-          name: pool.token0.symbol,
-          token0: normalizeToken(pool.token0),
-          token1: normalizeToken(pool.token1),
-          liquidityUSD: pool.liquidityUSD / 2, // Split liquidity between token pair
-          price: currentPrices[pool.token0.uuid] || 0,
-          marketCap: 0, // TODO: Calculate when we have total supply data
-          change: undefined, // Will be calculated by TokenChangeCell component
-          priceHtr: currentPrices['00'] || 0,
-        } as ExtendedPair)
-      }
-
-      // Add entry for token1 if not HTR and different from token0
-      if (pool.token1.uuid !== '00' && pool.token1.uuid !== pool.token0.uuid) {
-        tokenEntries.push({
-          ...pool,
-          id: `token-${pool.token1.uuid}`,
-          name: pool.token1.symbol,
-          token0: normalizeToken(pool.token0),
-          token1: normalizeToken(pool.token1),
-          liquidityUSD: pool.liquidityUSD / 2, // Split liquidity between token pair
-          price: currentPrices[pool.token1.uuid] || 0,
-          marketCap: 0, // TODO: Calculate when we have total supply data
-          change: undefined, // Will be calculated by TokenChangeCell component
-          priceHtr: currentPrices['00'] || 0,
-        } as ExtendedPair)
-      }
     })
 
-    // Remove duplicates by token UUID, but prioritize HTR special entry
-    const uniqueTokens = new Map<string, ExtendedPair>()
-
-    tokenEntries.forEach((entry) => {
-      const tokenUuid = entry.id.replace('token-', '')
-      const existing = uniqueTokens.get(tokenUuid)
-
-      // For HTR token, prioritize the specially created entry (token0 is always HTR)
-      if (tokenUuid === '00') {
-        if (!existing || (entry.token0.symbol === 'HTR' && existing.token0.symbol !== 'HTR')) {
-          uniqueTokens.set(tokenUuid, entry)
-        }
-      } else {
-        // For other tokens, keep the one with highest liquidity
-        if (!existing || entry.liquidityUSD > existing.liquidityUSD) {
-          uniqueTokens.set(tokenUuid, entry)
-        }
-      }
-    })
-
-    return Array.from(uniqueTokens.values())
+    // Filter and sort the entries
+    return tokenEntries
       .filter((pair) => pair.liquidityUSD > 0)
       .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
-  }, [allPools, currentPrices, mounted])
+  }, [allPools, currentPrices, totalSupplies, mounted])
 
   const pairs_array = useMemo(() => {
     if (!mounted || !_pairs_array.length) {
@@ -291,7 +311,7 @@ export const TokensTable: FC = () => {
     )
   }
 
-  const isLoading = isLoadingPools || isLoadingPrices || isLoadingTokens
+  const isLoading = isLoadingPools || isLoadingPrices || isLoadingTokens || isLoadingTotalSupplies
 
   return (
     <>

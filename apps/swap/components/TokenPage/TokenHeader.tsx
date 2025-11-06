@@ -11,11 +11,14 @@ import {
   Button,
   TwitterIcon,
   TelegramIcon,
+  ArrowIcon,
 } from '@dozer/ui'
 import { FC, useMemo } from 'react'
 import { ArrowTopRightOnSquareIcon, Square2StackIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 import chains from '@dozer/chain'
 import { hathorLib } from '@dozer/nanocontracts'
+import { formatPercentChange } from '@dozer/format'
+import { api } from '../../utils/api'
 
 interface TokenHeader {
   pair: Pair
@@ -28,6 +31,18 @@ export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
   const token = pair.id.includes('native') ? token0 : token1
   // Get price from getPrices router - prices are already formatted by API
   const price = prices[token.uuid] || 0
+
+  // Fetch 24h price change
+  const { data: priceChangeData } = api.getPrices.priceChange.useQuery(
+    { tokenUid: token.uuid },
+    {
+      enabled: !!token.uuid,
+      staleTime: 60000, // Cache for 1 minute
+      refetchInterval: 60000, // Refresh every minute
+    }
+  )
+
+  const change = priceChangeData?.change ?? 0
 
   return (
     <div className="flex flex-col gap-4">
@@ -52,8 +67,9 @@ export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
               {formatUSD(price)}
             </Typography>
             <div className="flex gap-2 items-center">
-              <Typography variant="sm" className="text-green-400">
-                {formatPercent(0.05)}
+              <ArrowIcon type={change < 0 ? 'down' : 'up'} className={change < 0 ? 'text-red-400' : 'text-green-400'} />
+              <Typography variant="sm" className={change < 0 ? 'text-red-400' : 'text-green-400'}>
+                {formatPercentChange(change)}
               </Typography>
               <Typography variant="sm" className="text-stone-400">
                 24H

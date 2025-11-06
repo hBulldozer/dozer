@@ -93,7 +93,7 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
             type: 'add_liquidity_single_token',
             chainId: network,
             summary: {
-              pending: `Waiting for next block. Adding ${formatNumber(parseFloat(input))} ${token.symbol} as single token liquidity.`,
+              pending: `Adding ${formatNumber(parseFloat(input))} ${token.symbol} as single token liquidity.`,
               completed: `Success! Added ${formatNumber(parseFloat(input))} ${token.symbol} as single token liquidity.`,
               failed: 'Failed to add single token liquidity',
               info: `Adding ${formatNumber(parseFloat(input))} ${token.symbol} as single token liquidity.`,

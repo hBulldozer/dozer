@@ -174,14 +174,14 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
             type: 'swap',
             chainId: network,
             summary: {
-              pending: `Waiting for next block. Remove liquidity from ${pair.name}.`,
-              completed: `Success! Removed ${currencyAToRemove?.toFixed(2)} ${
+              pending: `Removing liquidity from ${pair.name}.`,
+              completed: `Success! Removed ${Number(currencyAToRemove?.toFixed(2) || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${
                 token0.symbol
-              } and ${currencyBToRemove?.toFixed(2)} ${token1.symbol} from ${pair.name} pool.`,
+              } and ${Number(currencyBToRemove?.toFixed(2) || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${token1.symbol} from ${pair.name} pool.`,
               failed: 'Failed summary',
-              info: `Removing Liquidity from ${pair.name} pool: ${currencyAToRemove?.toFixed(2)} ${
+              info: `Removing Liquidity from ${pair.name} pool: ${Number(currencyAToRemove?.toFixed(2) || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${
                 token0.symbol
-              } and ${currencyBToRemove?.toFixed(2)} ${token1.symbol}.`,
+              } and ${Number(currencyBToRemove?.toFixed(2) || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${token1.symbol}.`,
             },
             status: 'pending',
             txHash: hash,

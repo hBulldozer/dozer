@@ -98,7 +98,7 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
             type: 'remove_liquidity_single_token',
             chainId: network,
             summary: {
-              pending: `Waiting for next block. Removing ${percentage}% liquidity to receive ${selectedToken.symbol}.`,
+              pending: `Removing ${percentage}% liquidity to receive ${selectedToken.symbol}.`,
               completed: `Success! Removed liquidity and received ${formatNumber(quoteData.amount_out)} ${selectedToken.symbol}.`,
               failed: 'Failed to remove single token liquidity',
               info: `Removing ${percentage}% liquidity to receive ${selectedToken.symbol}.`,

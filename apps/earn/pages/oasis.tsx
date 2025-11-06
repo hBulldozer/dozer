@@ -244,10 +244,10 @@ const OasisProgram = () => {
               type: 'swap',
               chainId: network,
               summary: {
-                pending: `Waiting for next block. ${txType} in ${oasisName} Oasis pool.`,
+                pending: `${txType} in ${oasisName} Oasis pool.`,
                 completed: `${txType} in ${oasisName} Oasis pool.`,
                 failed: 'Failed summary',
-                info: `${txType} in ${oasisName} Oasis pool: ${amount} ${token}.`,
+                info: `${txType} in ${oasisName} Oasis pool: ${parseFloat(amount).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${token}.`,
               },
               status: 'pending',
               txHash: hash,
@@ -364,7 +364,7 @@ const OasisProgram = () => {
               type: 'swap',
               chainId: network,
               summary: {
-                pending: `Waiting for next block. Withdrawing bonus from ${oasisName} Oasis pool.`,
+                pending: `Withdrawing bonus from ${oasisName} Oasis pool.`,
                 completed: `Successfully withdrew bonus from ${oasisName} Oasis pool.`,
                 failed: 'Failed to withdraw bonus.',
                 info: `Withdrew bonus from ${oasisName} Oasis pool.`,
@@ -439,7 +439,7 @@ const OasisProgram = () => {
               type: 'swap',
               chainId: network,
               summary: {
-                pending: `Waiting for next block. Withdrawing position from ${oasisName} Oasis pool.`,
+                pending: `Withdrawing position from ${oasisName} Oasis pool.`,
                 completed: `Successfully withdrew position from ${oasisName} Oasis pool.`,
                 failed: 'Failed to withdraw position.',
                 info: `Withdrew position from ${oasisName} Oasis pool.`,
