@@ -242,8 +242,8 @@ const Pool = () => {
     if (!pair) return null
     return {
       ...pair,
-      token0: new Token(pair.token0),
-      token1: new Token(pair.token1),
+      token0: new Token({ ...pair.token0, imageUrl: pair.token0.imageUrl ?? undefined }),
+      token1: new Token({ ...pair.token1, imageUrl: pair.token1.imageUrl ?? undefined }),
     }
   }, [pair])
 

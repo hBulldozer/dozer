@@ -70,8 +70,8 @@ export const PositionsTable: FC = () => {
         ) {
           const pair: PositionPair = {
             ...pool,
-            token0: new Token(pool.token0),
-            token1: new Token(pool.token1),
+            token0: new Token({ ...pool.token0, imageUrl: pool.token0.imageUrl ?? undefined }),
+            token1: new Token({ ...pool.token1, imageUrl: pool.token1.imageUrl ?? undefined }),
           }
           // userPosition.token0Amount and token1Amount are already in decimal format
           pair.value0 = userPosition.token0Amount * prices[pool.token0.uuid]

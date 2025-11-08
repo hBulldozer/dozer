@@ -62,8 +62,8 @@ const Add: FC = () => {
     return pools_db.map((pool) => {
       return {
         ...pool,
-        token0: new Token(pool.token0),
-        token1: new Token(pool.token1),
+        token0: new Token({ ...pool.token0, imageUrl: pool.token0.imageUrl ?? undefined }),
+        token1: new Token({ ...pool.token1, imageUrl: pool.token1.imageUrl ?? undefined }),
       }
     })
   }, [pools_db])
