@@ -103,13 +103,14 @@ export const PoolsTable: FC = () => {
         return true
       })
       .map((pool) => {
-        // Construct Token instances for token0 and token1
+        // Construct Token instances for token0 and token1 with imageUrl
         const token0 = new Token({
           chainId: pool.token0.chainId || 1,
           uuid: pool.token0.uuid,
           decimals: pool.token0.decimals || 2,
           symbol: pool.token0.symbol,
           name: pool.token0.name,
+          imageUrl: pool.token0.imageUrl || undefined,
         })
         const token1 = new Token({
           chainId: pool.token1.chainId || 1,
@@ -117,6 +118,7 @@ export const PoolsTable: FC = () => {
           decimals: pool.token1.decimals || 2,
           symbol: pool.token1.symbol,
           name: pool.token1.name,
+          imageUrl: pool.token1.imageUrl || undefined,
         })
         return { ...pool, priceHtr: prices?.['00'], isPending: pool.id.startsWith('pending-'), token0, token1 }
       })

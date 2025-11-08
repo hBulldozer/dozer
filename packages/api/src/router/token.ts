@@ -298,7 +298,6 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
     return null
   } catch (error) {
     // Silently fail for DozerTools integration - it's optional
-    // console.debug(`DozerTools image lookup failed for token ${tokenUuid}`)
     return null
   }
 }
@@ -716,6 +715,7 @@ export const tokenRouter = createTRPCRouter({
         name: tokenInfo.name,
         decimals: 2,
         chainId: 1,
+        imageUrl: await getDozerToolsImageUrl(tokenUuid),
 
         // Token metrics
         totalSupply,

@@ -28,7 +28,7 @@ export const NAME_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   id: 'name',
   header: 'Name',
   cell: (props) => <TokenNameCell row={props.row.original} />,
-  size: 160,
+  size: 180,
   meta: {
     skeleton: (
       <div className="flex items-center w-full gap-2">

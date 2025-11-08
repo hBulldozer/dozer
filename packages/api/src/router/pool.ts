@@ -57,7 +57,6 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
     return null
   } catch (error) {
     // Silently fail for DozerTools integration - it's optional
-    // console.debug(`DozerTools image lookup failed for token ${tokenUuid}`)
     return null
   }
 }
@@ -456,7 +455,7 @@ export const poolRouter = createTRPCRouter({
                 name: token0Info.name,
                 decimals: 2,
                 chainId: 1,
-                imageUrl: (await getDozerToolsImageUrl(tokenA || '')) || undefined,
+                imageUrl: await getDozerToolsImageUrl(tokenA || ''),
               },
               token1: {
                 uuid: tokenB,
@@ -464,7 +463,7 @@ export const poolRouter = createTRPCRouter({
                 name: token1Info.name,
                 decimals: 2,
                 chainId: 1,
-                imageUrl: (await getDozerToolsImageUrl(tokenB || '')) || undefined,
+                imageUrl: await getDozerToolsImageUrl(tokenB || ''),
               },
               reserve0,
               reserve1,
@@ -522,7 +521,7 @@ export const poolRouter = createTRPCRouter({
           name: await getTokenName(tokenA || ''),
           decimals: 2,
           chainId: 1,
-          imageUrl: (await getDozerToolsImageUrl(tokenA || '')) || undefined,
+          imageUrl: await getDozerToolsImageUrl(tokenA || ''),
         },
         token1: {
           uuid: tokenB,
@@ -530,7 +529,7 @@ export const poolRouter = createTRPCRouter({
           name: await getTokenName(tokenB || ''),
           decimals: 2,
           chainId: 1,
-          imageUrl: (await getDozerToolsImageUrl(tokenB || '')) || undefined,
+          imageUrl: await getDozerToolsImageUrl(tokenB || ''),
         },
         reserve0: (poolInfo.reserve_a || 0) / 100,
         reserve1: (poolInfo.reserve_b || 0) / 100,
@@ -694,7 +693,7 @@ export const poolRouter = createTRPCRouter({
           name: token0Info.name,
           decimals: 2,
           chainId: 1,
-          imageUrl: (await getDozerToolsImageUrl(tokenA || '')) || undefined,
+          imageUrl: await getDozerToolsImageUrl(tokenA || ''),
         },
         token1: {
           uuid: tokenB,
@@ -702,7 +701,7 @@ export const poolRouter = createTRPCRouter({
           name: token1Info.name,
           decimals: 2,
           chainId: 1,
-          imageUrl: (await getDozerToolsImageUrl(tokenB || '')) || undefined,
+          imageUrl: await getDozerToolsImageUrl(tokenB || ''),
         },
         reserve0,
         reserve1,
