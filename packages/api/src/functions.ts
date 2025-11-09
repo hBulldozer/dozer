@@ -21,7 +21,7 @@ import { type Pair, dbPoolWithTokens, dbToken, dbTokenWithPools } from './types'
 
 export function toToken(dbToken: any): Token {
   return new Token({
-    imageUrl: dbToken.imageUrl || null,
+    imageUrl: dbToken.imageUrl || undefined,
     chainId: dbToken.chainId || ChainId.HATHOR,
     uuid: dbToken.uuid,
     decimals: dbToken.decimals,

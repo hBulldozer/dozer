@@ -62,29 +62,26 @@ const Add: FC = () => {
     return pools_db.map((pool) => {
       return {
         ...pool,
-        token0: new Token(pool.token0),
-        token1: new Token(pool.token1),
+        token0: new Token({ ...pool.token0, imageUrl: pool.token0.imageUrl ?? undefined }),
+        token1: new Token({ ...pool.token1, imageUrl: pool.token1.imageUrl ?? undefined }),
       }
     })
   }, [pools_db])
 
   // Find HTR and hUSDC tokens for defaults
-  const htrToken = tokens?.find(token => token.uuid === '00') // HTR token
-  const usdcToken = tokens?.find(token => token.symbol === 'hUSDC') // hUSDC token
+  const htrToken = tokens?.find((token) => token.uuid === '00') // HTR token
+  const usdcToken = tokens?.find((token) => token.symbol === 'hUSDC') // hUSDC token
 
   const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
   const [selectedPool, setSelectedPool] = useState<Pair>()
   const [input0, setInput0] = useState<string>('')
   const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([
     htrToken ? toToken(htrToken) : undefined,
-    usdcToken ? toToken(usdcToken) : undefined
+    usdcToken ? toToken(usdcToken) : undefined,
   ])
   const [input1, setInput1] = useState<string>('')
   const [parsedInput0, parsedInput1] = useMemo(() => {
-    return [
-      parseInt((Number(input0) * 100).toString()) || 0,
-      parseInt((Number(input1) * 100).toString()) || 0
-    ]
+    return [parseInt((Number(input0) * 100).toString()) || 0, parseInt((Number(input1) * 100).toString()) || 0]
   }, [input0, input1])
   const { network } = useNetwork()
   const trade = useTrade()
@@ -108,21 +105,27 @@ const Add: FC = () => {
   }, [tokens, htrToken, usdcToken, token0, token1])
   // const [fee, setFee] = useState(2)
 
-  const onInput0 = useCallback(async (val: string) => {
-    setInput0(val)
-    if (!val) {
-      setInput1('')
-    }
-    trade.setTradeType(TradeType.EXACT_INPUT)
-  }, [trade])
+  const onInput0 = useCallback(
+    async (val: string) => {
+      setInput0(val)
+      if (!val) {
+        setInput1('')
+      }
+      trade.setTradeType(TradeType.EXACT_INPUT)
+    },
+    [trade]
+  )
 
-  const onInput1 = useCallback(async (val: string) => {
-    setInput1(val)
-    if (!val) {
-      setInput0('')
-    }
-    trade.setTradeType(TradeType.EXACT_OUTPUT)
-  }, [trade])
+  const onInput1 = useCallback(
+    async (val: string) => {
+      setInput1(val)
+      if (!val) {
+        setInput0('')
+      }
+      trade.setTradeType(TradeType.EXACT_OUTPUT)
+    },
+    [trade]
+  )
 
   // Pool finding effect - runs when tokens change
   useEffect(() => {
@@ -133,9 +136,9 @@ const Add: FC = () => {
         const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
         return checker([token0.uuid, token1.uuid], [uuid0, uuid1])
       })
-      
+
       setSelectedPool(foundPool)
-      
+
       // Update pool state based on what we found
       if (foundPool) {
         setPoolState(PairState.EXISTS)
@@ -158,9 +161,9 @@ const Add: FC = () => {
     const timeoutId = setTimeout(() => {
       const fetchQuote = async () => {
         if (!selectedPool || !token0 || !token1) return
-        
+
         setFetchLoading(true)
-        
+
         try {
           if (trade.tradeType === TradeType.EXACT_INPUT) {
             // User entered amount for token0, calculate required token1
@@ -368,13 +371,13 @@ const Add: FC = () => {
           </PoolPositionProvider>
         )} */}
           </div>
-          {selectedPool && (
+          {/* {selectedPool && (
             <div className="order-1 sm:order-3">
               <AppearOnMount>
                 <AddSectionMyPosition pair={selectedPool} />
               </AppearOnMount>
             </div>
-          )}
+          )} */}
         </div>
       </Layout>
     </>

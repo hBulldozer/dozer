@@ -97,25 +97,20 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
   // Function to poll for EVM transaction confirmation
   const startEvmConfirmationPolling = async (txHash: string) => {
-    console.log('Starting EVM confirmation polling for tx:', txHash)
-    
     const getWeb3Provider = async () => {
       const Web3 = (await import('web3')).default
-      
+
       // First try window.ethereum (browser extension or injected provider)
       if (window.ethereum) {
-        console.log('Using window.ethereum provider')
         return new Web3(window.ethereum)
       }
-      
+
       // Fallback to public RPC for read-only operations like getting transaction receipts
       // This is more reliable for native app scenarios since we only need to read transaction status
-      console.log('window.ethereum not available, using public RPC endpoint for transaction confirmation')
-      
+
       // Import bridge config to get the correct RPC URL
       const bridgeConfig = (await import('@dozer/higmi/config/bridge')).default
       const publicRpcUrl = bridgeConfig.ethereumConfig.rpcUrl
-      console.log('Using RPC URL:', publicRpcUrl)
       return new Web3(publicRpcUrl)
     }
 
@@ -123,17 +118,13 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       try {
         const web3 = await getWeb3Provider()
         if (!web3) {
-          console.warn('No Web3 provider available, retrying...')
           return false // Keep polling
         }
 
-        console.log('Checking confirmation for tx:', txHash)
         const receipt = await web3.eth.getTransactionReceipt(txHash)
-        console.log('Transaction receipt:', receipt)
 
         if (receipt && receipt.status) {
           // Transaction confirmed successfully
-          console.log('EVM transaction confirmed:', receipt)
 
           if (isMounted.current) {
             setIsProcessing(false)
@@ -156,61 +147,25 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
               evmTimeoutRef.current = null
             }
 
-            // Create a notification toast that will poll for Hathor receipt in the background
-            // Only create once to avoid duplicates
-            if (!bridgeNotificationCreated.current) {
-              bridgeNotificationCreated.current = true
-
-              const bridgeConfig = (await import('@dozer/higmi/config/bridge')).default
-
-              // Create notification data for the notification center
-              const notificationData = {
-                type: 'bridge' as const,
-                summary: {
-                  pending: `Waiting for ${selectedToken?.symbol || 'tokens'} to arrive on Hathor network`,
-                  completed: `Bridge complete! ${selectedToken?.symbol || 'Tokens'} received on Hathor network.`,
-                  failed: 'Bridge transaction failed',
-                },
-                txHash: txHash,
-                groupTimestamp: Math.floor(Date.now() / 1000),
-                timestamp: Math.floor(Date.now() / 1000),
-                promise: new Promise((resolve) => setTimeout(resolve, 500)),
-                account: hathorAddress,
-                href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
-                // Add bridge-specific metadata for status checking
-                bridgeMetadata: {
-                  tokenUuid: selectedToken?.uuid || '',
-                  tokenSymbol: selectedToken?.symbol || '',
-                  evmConfirmationTime: confirmationTime,
-                  isTestnet: bridgeConfig.isTestnet,
-                },
-              }
-
-              // Add to notification center (will poll for Hathor confirmation)
-              const notificationGroup: string[] = []
-              notificationGroup.push(JSON.stringify(notificationData))
-              addNotification(notificationGroup)
-
-              // Show simple success toast for EVM confirmation
-              // The notification center will handle polling for Hathor confirmation
-              createSuccessToast({
-                type: 'bridge',
-                summary: {
-                  pending: '',
-                  completed: `Bridge transaction confirmed on Arbitrum! Check the notification center for Hathor confirmation status.`,
-                  failed: '',
-                },
-                txHash: nanoid(),
-                groupTimestamp: Date.now(),
-                timestamp: Date.now(),
-                href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
-              })
-            }
+            // Show simple success toast for EVM confirmation
+            // The notification in the notification center will continue polling for Hathor confirmation
+            const bridgeConfig = (await import('@dozer/higmi/config/bridge')).default
+            createSuccessToast({
+              type: 'bridge',
+              summary: {
+                pending: '',
+                completed: `Bridge transaction confirmed on Arbitrum! Check the notification center for Hathor confirmation status.`,
+                failed: '',
+              },
+              txHash: nanoid(),
+              groupTimestamp: Date.now(),
+              timestamp: Date.now(),
+              href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
+            })
           }
           return true // Stop polling
         } else if (receipt && !receipt.status) {
           // Transaction failed
-          console.error('EVM transaction failed:', receipt)
           if (isMounted.current) {
             updateStep('evm-confirming', 'failed', undefined, 'Transaction failed on blockchain')
             setIsProcessing(false)
@@ -221,10 +176,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         }
 
         // No receipt yet, keep polling
-        console.log('Transaction not confirmed yet, continuing to poll...')
         return false // Keep polling
       } catch (error) {
-        console.error('Error checking EVM confirmation:', error)
         // For network errors or provider issues, keep polling
         return false // Keep polling
       }
@@ -252,7 +205,6 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           clearInterval(evmIntervalRef.current)
           evmIntervalRef.current = null
         }
-        console.warn('EVM confirmation polling timed out after 10 minutes')
         if (isMounted.current) {
           updateStep('evm-confirming', 'failed', undefined, 'Transaction confirmation timed out')
           setErrorMessage('Transaction confirmation timed out. Please check your transaction manually.')
@@ -285,45 +237,77 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
     // Add event listeners for real-time bridge progress
     const handleApprovalStarted = (event: CustomEvent) => {
-      console.log('Approval started:', event.detail)
       updateStep('approval', 'active')
     }
 
     const handleApprovalSent = (event: CustomEvent) => {
-      console.log('Approval sent:', event.detail)
       setApprovalTxHash(event.detail.txHash)
       updateStep('approval', 'completed', event.detail.txHash)
       updateStep('approval-confirmed', 'active', event.detail.txHash)
     }
 
     const handleApprovalConfirmed = (event: CustomEvent) => {
-      console.log('Approval confirmed:', event.detail)
       updateStep('approval-confirmed', 'completed', event.detail.txHash)
       updateStep('bridge-tx', 'active')
     }
 
-    const handleBridgeTransactionSent = (event: CustomEvent) => {
-      console.log('Bridge transaction sent:', event.detail)
-      setBridgeTxHash(event.detail.txHash)
-      updateStep('bridge-tx', 'completed', event.detail.txHash)
-      updateStep('evm-confirming', 'active', event.detail.txHash)
+    const handleBridgeTransactionSent = async (event: CustomEvent) => {
+      const txHash = event.detail.txHash
+      setBridgeTxHash(txHash)
+      updateStep('bridge-tx', 'completed', txHash)
+      updateStep('evm-confirming', 'active', txHash)
+
+      // Create notification immediately when bridge tx is sent
+      // This allows users to track the transaction even if they navigate away
+      if (!bridgeNotificationCreated.current) {
+        bridgeNotificationCreated.current = true
+
+        const bridgeConfig = (await import('@dozer/higmi/config/bridge')).default
+
+        // Create notification data for the notification center
+        const notificationData = {
+          type: 'bridge' as const,
+          summary: {
+            pending: `Bridging ${selectedToken?.symbol || 'tokens'} to Hathor network`,
+            completed: `Bridge complete! ${selectedToken?.symbol || 'Tokens'} received on Hathor network.`,
+            failed: 'Bridge transaction failed',
+          },
+          txHash: txHash,
+          groupTimestamp: Math.floor(Date.now() / 1000),
+          timestamp: Math.floor(Date.now() / 1000),
+          promise: new Promise((resolve) => setTimeout(resolve, 500)),
+          account: hathorAddress,
+          href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
+          // Add bridge-specific metadata for status checking
+          bridgeMetadata: {
+            tokenUuid: selectedToken?.uuid || '',
+            tokenSymbol: selectedToken?.symbol || '',
+            evmConfirmationTime: Math.floor(Date.now() / 1000), // Will be updated when EVM confirms
+            isTestnet: bridgeConfig.isTestnet,
+          },
+        }
+
+        // Add to notification center
+        const notificationGroup: string[] = []
+        notificationGroup.push(JSON.stringify(notificationData))
+        addNotification(notificationGroup)
+      }
 
       // Start EVM polling
-      startEvmConfirmationPolling(event.detail.txHash)
+      startEvmConfirmationPolling(txHash)
     }
 
     // Add event listeners
     window.addEventListener('bridgeApprovalStarted', handleApprovalStarted as EventListener)
     window.addEventListener('bridgeApprovalSent', handleApprovalSent as EventListener)
     window.addEventListener('bridgeApprovalConfirmed', handleApprovalConfirmed as EventListener)
-    window.addEventListener('bridgeTransactionSent', handleBridgeTransactionSent as EventListener)
+    window.addEventListener('bridgeTransactionSent', handleBridgeTransactionSent as unknown as EventListener)
 
     // Add event listener for bridge transaction updates
     const handleBridgeTransactionUpdate = (event: CustomEvent) => {
       if (!isMounted.current) return
 
       const detail = event.detail
-      console.log('Bridge transaction update received:', detail)
 
       if (detail.status === 'confirmed' && detail.success) {
         // Handle successful transaction confirmation
@@ -364,8 +348,6 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
     // Add global error event listener to catch unhandled promise rejections
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.log('Unhandled promise rejection:', event)
-
       // Check if this is a MetaMask transaction rejection
       if (
         event.reason &&
@@ -373,8 +355,6 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           event.reason.message?.includes('User denied transaction signature') ||
           event.reason.code === 4001)
       ) {
-        console.log('Detected MetaMask transaction rejection via global handler')
-        
         // Prevent the error from bubbling up and causing a runtime error
         event.preventDefault()
 
@@ -415,7 +395,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       window.removeEventListener('bridgeApprovalStarted', handleApprovalStarted as EventListener)
       window.removeEventListener('bridgeApprovalSent', handleApprovalSent as EventListener)
       window.removeEventListener('bridgeApprovalConfirmed', handleApprovalConfirmed as EventListener)
-      window.removeEventListener('bridgeTransactionSent', handleBridgeTransactionSent as EventListener)
+      window.removeEventListener('bridgeTransactionSent', handleBridgeTransactionSent as unknown as EventListener)
     }
   }, [updateStep, setApprovalTxHash, setBridgeTxHash])
 

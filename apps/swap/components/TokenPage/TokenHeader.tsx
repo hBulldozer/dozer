@@ -11,11 +11,14 @@ import {
   Button,
   TwitterIcon,
   TelegramIcon,
+  ArrowIcon,
 } from '@dozer/ui'
 import { FC, useMemo } from 'react'
 import { ArrowTopRightOnSquareIcon, Square2StackIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 import chains from '@dozer/chain'
 import { hathorLib } from '@dozer/nanocontracts'
+import { formatPercentChange } from '@dozer/format'
+import { api } from '../../utils/api'
 
 interface TokenHeader {
   pair: Pair
@@ -29,12 +32,24 @@ export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
   // Get price from getPrices router - prices are already formatted by API
   const price = prices[token.uuid] || 0
 
+  // Fetch 24h price change
+  const { data: priceChangeData } = api.getPrices.priceChange.useQuery(
+    { tokenUid: token.uuid },
+    {
+      enabled: !!token.uuid,
+      staleTime: 60000, // Cache for 1 minute
+      refetchInterval: 60000, // Refresh every minute
+    }
+  )
+
+  const change = priceChangeData?.change ?? 0
+
   return (
     <div className="flex flex-col gap-4">
       <AppearOnMount>
-        <div className="flex flex-col gap-4 justify-between md:flex-row">
-          <div className="flex gap-4 items-center">
-            <div className="flex gap-2 items-center">
+        <div className="flex flex-col justify-between gap-4 md:flex-row">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <div className={pair.token1.imageUrl ? 'cursor-pointer' : ''}>
                 <Currency.Icon currency={toToken(token)} width={32} height={32} />
               </div>
@@ -46,10 +61,24 @@ export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
         </div>
       </AppearOnMount>
       <AppearOnMount>
-        <div className="flex flex-col gap-4 justify-between md:flex-row">
+        <div className="flex flex-col justify-between gap-4 md:flex-row">
+          <div className="flex flex-col">
+            <Typography variant="xl" weight={600} className="text-white">
+              {formatUSD(price)}
+            </Typography>
+            <div className="flex items-center gap-2">
+              <ArrowIcon type={change < 0 ? 'down' : 'up'} className={change < 0 ? 'text-red-400' : 'text-green-400'} />
+              <Typography variant="sm" className={change < 0 ? 'text-red-400' : 'text-green-400'}>
+                {formatPercentChange(change)}
+              </Typography>
+              <Typography variant="sm" className="text-stone-400">
+                24H
+              </Typography>
+            </div>
+          </div>
           <div className="flex flex-col gap-4">
-            <div className="flex gap-4 justify-between items-center md:justify-end">
-              <div className="flex gap-4 items-center">
+            <div className="flex items-center justify-between gap-4 md:justify-end">
+              <div className="flex items-center gap-4">
                 <CopyHelper
                   toCopy={
                     pair.id == 'native'

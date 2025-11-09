@@ -1,14 +1,13 @@
-import logging
 from typing import NamedTuple
 
-from hathor.nanocontracts.blueprint import Blueprint
-from hathor.nanocontracts.context import Context
-from hathor.nanocontracts.exception import NCFail
-from hathor.nanocontracts.types import (
+from hathor import (
+    Blueprint,
+    BlueprintId,
+    Context,
+    NCFail,
     Address,
     Amount,
     CallerId,
-    ContractId,
     NCDepositAction,
     NCWithdrawalAction,
     Timestamp,
@@ -17,12 +16,11 @@ from hathor.nanocontracts.types import (
     NCActionType,
     public,
     view,
+    export
 )
 
 PRECISION = Amount(10**20)
 HTR_UID = b'\x00'
-
-logger = logging.getLogger(__name__)
 
 
 # Custom error classes
@@ -56,6 +54,10 @@ class InvalidAction(NCFail):
     pass
 
 
+class InvalidVersion(NCFail):
+    pass
+
+
 class Unauthorized(NCFail):
     """Raised when an unauthorized address tries to perform an action."""
 
@@ -70,6 +72,12 @@ class InvalidPath(NCFail):
 
 class InsufficientLiquidity(NCFail):
     """Raised when there is insufficient liquidity for an operation."""
+
+    pass
+
+
+class InvalidState(NCFail):
+    """Raised when contract is in an invalid state for the operation."""
 
     pass
 
@@ -183,6 +191,7 @@ class SingleTokenLiquidityQuote(NamedTuple):
     excess_amount: Amount
     swap_amount: Amount
     swap_output: Amount
+    price_impact: Amount  # Price impact percentage in basis points (e.g., 100 = 1%)
 
 
 class SingleTokenRemovalQuote(NamedTuple):
@@ -193,9 +202,11 @@ class SingleTokenRemovalQuote(NamedTuple):
     token_b_withdrawn: Amount
     swap_amount: Amount
     swap_output: Amount
+    price_impact: Amount  # Price impact percentage in basis points (e.g., 100 = 1%)
     user_liquidity: Amount
 
 
+@export
 class DozerPoolManager(Blueprint):
     """Singleton manager for multiple liquidity pools inspired by Uniswap v2.
 
@@ -214,12 +225,16 @@ class DozerPoolManager(Blueprint):
     - Signed pools for listing in Dozer dApp
     """
 
+    # Version control
+    contract_version: str
+
     # Administrative state
     owner: Address
     default_fee: Amount
     default_protocol_fee: Amount
     authorized_signers: dict[CallerId, bool]  # Addresses authorized to sign pools
-    htr_usd_pool_key: str  # Reference pool key for HTR-USD price calculations
+    htr_usd_pool_key: str | None  # Reference pool key for HTR-USD price calculations
+    paused: bool  # For emergency pause
 
     # Pool registry - token_a/token_b/fee -> exists
     pool_exists: dict[str, bool]
@@ -283,15 +298,48 @@ class DozerPoolManager(Blueprint):
 
         Sets up the initial state for the contract.
         """
+        self.contract_version = "1.0.0"
         self.owner = Address(ctx.caller_id)
         self.default_fee = Amount(3)  # 0.3%
-        self.default_protocol_fee = Amount(10)  # 10% of fees
+        self.default_protocol_fee = Amount(40)  # 40% of fees
+
+        # Initialize dictionaries and lists
+        self.authorized_signers:dict[CallerId, bool] = {}
+        self.pool_exists:dict[str, bool] = {}
+        self.all_pools: list[str] = []
+        self.token_to_pools: dict[TokenUid, list[str]] = {}
+        self.signed_pools: list[str] = []
+        self.pool_signers: dict[str, CallerId] = {}
+        self.htr_token_map: dict[TokenUid, str] = {}
+        self.pool_token_a: dict[str, TokenUid] = {}
+        self.pool_token_b: dict[str, TokenUid] = {}
+        self.pool_reserve_a: dict[str, Amount] = {}
+        self.pool_reserve_b: dict[str, Amount] = {}
+        self.pool_fee_numerator: dict[str, Amount] = {}
+        self.pool_fee_denominator: dict[str, Amount] = {}
+        self.pool_total_liquidity: dict[str, Amount] = {}
+        self.pool_user_liquidity: dict[str, dict[CallerId, Amount]] = {}
+        self.pool_balance_a: dict[str, dict[CallerId, Amount]] = {}
+        self.pool_balance_b: dict[str, dict[CallerId, Amount]] = {}
+        self.pool_total_balance_a: dict[str, Amount] = {}
+        self.pool_total_balance_b: dict[str, Amount] = {}
+        self.pool_accumulated_fee: dict[str, dict[TokenUid, Amount]] = {}
+        self.pool_transactions: dict[str, Amount] = {}
+        self.pool_last_activity: dict[str, int] = {}
+        self.pool_volume_a: dict[str, Amount] = {}
+        self.pool_volume_b: dict[str, Amount] = {}
+        self.pool_user_deposit_price_usd: dict[str, dict[CallerId, Amount]] = {}
+        self.pool_user_last_action_timestamp: dict[str, dict[CallerId, int]] = {}
+
 
         # Add owner as authorized signer
         self.authorized_signers[self.owner] = True
-        
-        # Initialize htr_usd_pool_key to empty string
-        self.htr_usd_pool_key = ""
+
+        # Initialize htr_usd_pool_key to None
+        self.htr_usd_pool_key = None
+
+        # Initialize pause state
+        self.paused = False
 
     def _get_pool_key(self, token_a: TokenUid, token_b: TokenUid, fee: Amount) -> str:
         """Create a standardized pool key from tokens and fee.
@@ -348,7 +396,7 @@ class DozerPoolManager(Blueprint):
         action_b = ctx.get_single_action(token_b)
 
         # Update last activity timestamp
-        self.pool_last_activity[pool_key] = int(ctx.timestamp)
+        self.pool_last_activity[pool_key] = int(ctx.block.timestamp)
 
         return action_a, action_b
 
@@ -532,7 +580,7 @@ class DozerPoolManager(Blueprint):
 
         # Update timestamp
         partial_timestamp = self.pool_user_last_action_timestamp.get(pool_key, {})
-        partial_timestamp.update({user_address: int(ctx.timestamp)})
+        partial_timestamp.update({user_address: int(ctx.block.timestamp)})
         self.pool_user_last_action_timestamp[pool_key] = partial_timestamp
 
     def _calculate_user_position_usd_value(
@@ -593,6 +641,7 @@ class DozerPoolManager(Blueprint):
         amount_b = (amount_a * reserve_b) // reserve_a
         return Amount(amount_b)
 
+
     @view
     def get_amount_out(
         self,
@@ -618,7 +667,7 @@ class DozerPoolManager(Blueprint):
         b = fee_denominator
         amount_out = (reserve_out * amount_in * a) // (reserve_in * b + amount_in * a)
         if amount_out > reserve_out:
-            amount_out = reserve_out**0.99
+            amount_out = (reserve_out * 99) // 100
         return Amount(amount_out)
 
     @view
@@ -689,31 +738,10 @@ class DozerPoolManager(Blueprint):
     def quote_add_liquidity_single_token(
         self, token_in: TokenUid, amount_in: Amount, token_out: TokenUid, fee: Amount
     ) -> SingleTokenLiquidityQuote:
-        """Quote liquidity addition with a single token.
-
-        Args:
-            token_in: The token to deposit
-            amount_in: The amount to deposit
-            token_out: The other token in the pool
-            fee: Pool fee
-
-        Returns:
-            Dictionary containing:
-            - liquidity_amount: The liquidity tokens that will be received
-            - token_a_used: Amount of token A that will be used
-            - token_b_used: Amount of token B that will be used
-            - excess_token: Which token will have excess
-            - excess_amount: Amount of excess tokens
-
-        Raises:
-            PoolNotFound: If the pool does not exist
-            InvalidTokens: If the tokens are invalid
-        """
-        # Validate tokens and get pool key
+        """Quote liquidity addition with a single token."""
         if token_in == token_out:
             raise InvalidTokens("Input and output tokens cannot be the same")
 
-        # Ensure tokens are ordered
         if token_in > token_out:
             token_a, token_b = token_out, token_in
         else:
@@ -722,11 +750,9 @@ class DozerPoolManager(Blueprint):
         pool_key = self._get_pool_key(token_a, token_b, fee)
         self._validate_pool_exists(pool_key)
 
-        # Get current reserves
         reserve_a = self.pool_reserve_a[pool_key]
         reserve_b = self.pool_reserve_b[pool_key]
 
-        # Calculate optimal swap amount
         if token_in == token_a:
             reserve_in = reserve_a
             reserve_out = reserve_b
@@ -738,7 +764,6 @@ class DozerPoolManager(Blueprint):
             amount_in, reserve_in, reserve_out, fee
         )
 
-        # Calculate swap output
         swap_amount_out = self.get_amount_out(
             optimal_swap_amount,
             reserve_in,
@@ -747,31 +772,33 @@ class DozerPoolManager(Blueprint):
             self.pool_fee_denominator[pool_key],
         )
 
-        # Calculate token amounts after swap
         if token_in == token_a:
             token_a_amount = amount_in - optimal_swap_amount
             token_b_amount = swap_amount_out
-            new_reserve_a = reserve_a + optimal_swap_amount
-            new_reserve_b = reserve_b - swap_amount_out
+            reserve_a_after_swap = reserve_a + optimal_swap_amount
+            reserve_b_after_swap = reserve_b - swap_amount_out
         else:
-            token_b_amount = amount_in - optimal_swap_amount
+            token_b_amount = Amount(amount_in - optimal_swap_amount)
             token_a_amount = swap_amount_out
-            new_reserve_b = reserve_b + optimal_swap_amount
-            new_reserve_a = reserve_a - swap_amount_out
+            reserve_a_after_swap = reserve_a - swap_amount_out
+            reserve_b_after_swap = reserve_b + optimal_swap_amount
 
-        # Calculate liquidity that will be minted
         total_liquidity = self.pool_total_liquidity[pool_key]
-        liquidity_a = (total_liquidity * token_a_amount) // new_reserve_a
-        liquidity_b = (total_liquidity * token_b_amount) // new_reserve_b
-        liquidity_increase = min(liquidity_a, liquidity_b)
 
-        # Calculate actual amounts that will be used
-        actual_a = (liquidity_increase * new_reserve_a) // total_liquidity
-        actual_b = (liquidity_increase * new_reserve_b) // total_liquidity
+        if total_liquidity == 0:
+            liquidity_increase = Amount(0)
+            actual_a = Amount(0)
+            actual_b = Amount(0)
+        else:
+            liquidity_a = (total_liquidity * token_a_amount) // reserve_a_after_swap if reserve_a_after_swap > 0 else 0
+            liquidity_b = (total_liquidity * token_b_amount) // reserve_b_after_swap if reserve_b_after_swap > 0 else 0
+            liquidity_increase = Amount(min(liquidity_a, liquidity_b))
 
-        # Calculate excess
-        excess_a = token_a_amount - actual_a
-        excess_b = token_b_amount - actual_b
+            actual_a = (liquidity_increase * reserve_a_after_swap) // total_liquidity if total_liquidity > 0 else Amount(0)
+            actual_b = (liquidity_increase * reserve_b_after_swap) // total_liquidity if total_liquidity > 0 else Amount(0)
+
+        excess_a = Amount(token_a_amount - actual_a)
+        excess_b = Amount(token_b_amount - actual_b)
 
         if excess_a > 0:
             excess_token = token_a
@@ -783,107 +810,98 @@ class DozerPoolManager(Blueprint):
             excess_token = token_in
             excess_amount = Amount(0)
 
+        # Calculate value-based price impact (shows real value loss to user)
+        price_impact = self._calculate_value_based_price_impact(
+            amount_in, token_in, Amount(actual_a), Amount(actual_b), token_a, token_b
+        )
+
         return SingleTokenLiquidityQuote(
             liquidity_amount=liquidity_increase,
-            token_a_used=actual_a,
-            token_b_used=actual_b,
+            token_a_used=Amount(actual_a),
+            token_b_used=Amount(actual_b),
             excess_token=excess_token.hex(),
             excess_amount=excess_amount,
             swap_amount=optimal_swap_amount,
             swap_output=swap_amount_out,
+            price_impact=price_impact,
         )
 
     @view
     def quote_remove_liquidity_single_token(
         self, user_address: CallerId, token_a: TokenUid, token_b: TokenUid, token_out: TokenUid, fee: Amount
     ) -> SingleTokenRemovalQuote:
-        """Quote liquidity removal to receive a single token.
-
-        Args:
-            user_address: The user's address
-            token_a: The first token of the pool pair
-            token_b: The second token of the pool pair
-            token_out: The token to receive (must be either token_a or token_b)
-            fee: Pool fee
-
-        Returns:
-            SingleTokenRemovalQuote containing:
-            - amount_out: Total amount of output tokens that will be received
-            - token_a_withdrawn: Amount of token A that will be withdrawn from LP
-            - token_b_withdrawn: Amount of token B that will be withdrawn from LP
-            - swap_amount: Amount that will be swapped
-            - swap_output: Output from the internal swap
-            - user_liquidity: User's current liquidity amount
-
-        Raises:
-            PoolNotFound: If the pool does not exist
-            InvalidTokens: If token_out is not one of the pool tokens
-            InvalidAction: If user has no liquidity
-        """
-        # Validate that token_out is one of the pool tokens
+        """Quote liquidity removal to receive a single token."""
         if token_out != token_a and token_out != token_b:
             raise InvalidTokens("token_out must be either token_a or token_b")
 
-        # Construct pool key directly
         pool_key = self._get_pool_key(token_a, token_b, fee)
         self._validate_pool_exists(pool_key)
 
-        # Check if user has liquidity
-        user_liquidity = self.pool_user_liquidity.get(pool_key, {}).get(user_address, 0)
+        user_liquidity = self.pool_user_liquidity.get(pool_key, {}).get(user_address, Amount(0))
         if user_liquidity == 0:
             raise InvalidAction("No liquidity to remove")
 
-        # Calculate withdrawal amounts
         total_liquidity = self.pool_total_liquidity[pool_key]
         reserve_a = self.pool_reserve_a[pool_key]
         reserve_b = self.pool_reserve_b[pool_key]
 
-        amount_a = (reserve_a * user_liquidity) // total_liquidity
-        amount_b = (reserve_b * user_liquidity) // total_liquidity
+        amount_a = Amount((reserve_a * user_liquidity) // total_liquidity)
+        amount_b = Amount((reserve_b * user_liquidity) // total_liquidity)
 
-        # Calculate swap and final output
         if token_out == token_a:
-            # Want token A, will swap token B for token A
             if amount_b > 0:
-                # Calculate reserves after liquidity removal
-                new_reserve_a = reserve_a - amount_a
-                new_reserve_b = reserve_b - amount_b
+                new_reserve_a = Amount(reserve_a - amount_a)
+                new_reserve_b = Amount(reserve_b - amount_b)
+
+                swap_reserve_in = Amount(new_reserve_b + amount_b)
+                swap_reserve_out = Amount(new_reserve_a)
 
                 extra_a = self.get_amount_out(
                     amount_b,
-                    new_reserve_b + amount_b,  # Reserve after adding back token B
-                    new_reserve_a - amount_a,  # Reserve before taking out extra token A
+                    swap_reserve_in,
+                    swap_reserve_out,
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
-                total_amount_out = amount_a + extra_a
+                total_amount_out = Amount(amount_a + extra_a)
                 swap_amount = amount_b
                 swap_output = extra_a
+
+                price_impact = self._calculate_single_swap_price_impact(
+                    swap_amount, swap_output, new_reserve_b, new_reserve_a
+                )
             else:
                 total_amount_out = amount_a
                 swap_amount = Amount(0)
                 swap_output = Amount(0)
+                price_impact = Amount(0)
         else:
-            # Want token B, will swap token A for token B
             if amount_a > 0:
-                # Calculate reserves after liquidity removal
                 new_reserve_a = reserve_a - amount_a
                 new_reserve_b = reserve_b - amount_b
 
+                swap_reserve_in = Amount(new_reserve_a + amount_a)
+                swap_reserve_out = Amount(new_reserve_b)
+
                 extra_b = self.get_amount_out(
                     amount_a,
-                    new_reserve_a + amount_a,  # Reserve after adding back token A
-                    new_reserve_b - amount_b,  # Reserve before taking out extra token B
+                    swap_reserve_in,
+                    swap_reserve_out,
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
-                total_amount_out = amount_b + extra_b
+                total_amount_out = Amount(amount_b + extra_b)
                 swap_amount = amount_a
                 swap_output = extra_b
+
+                price_impact = self._calculate_single_swap_price_impact(
+                    swap_amount, swap_output, Amount(new_reserve_a), Amount(new_reserve_b)
+                )
             else:
                 total_amount_out = amount_b
                 swap_amount = Amount(0)
                 swap_output = Amount(0)
+                price_impact = Amount(0)
 
         return SingleTokenRemovalQuote(
             amount_out=total_amount_out,
@@ -891,6 +909,7 @@ class DozerPoolManager(Blueprint):
             token_b_withdrawn=amount_b,
             swap_amount=swap_amount,
             swap_output=swap_output,
+            price_impact=price_impact,
             user_liquidity=user_liquidity,
         )
 
@@ -898,108 +917,94 @@ class DozerPoolManager(Blueprint):
     def quote_remove_liquidity_single_token_percentage(
         self, user_address: CallerId, pool_key: str, token_out: TokenUid, percentage: Amount
     ) -> SingleTokenRemovalQuote:
-        """Quote liquidity removal to receive a single token based on percentage.
-
-        Args:
-            user_address: The user's address
-            pool_key: The pool key (format: token_a/token_b/fee)
-            token_out: The token to receive (must be either token_a or token_b)
-            percentage: Percentage of liquidity to remove (in basis points, 10000 = 100%)
-
-        Returns:
-            SingleTokenRemovalQuote containing:
-            - amount_out: Total amount of output tokens that will be received
-            - token_a_withdrawn: Amount of token A that will be withdrawn from LP
-            - token_b_withdrawn: Amount of token B that will be withdrawn from LP
-            - swap_amount: Amount that will be swapped
-            - swap_output: Output from the internal swap
-            - user_liquidity: User's current liquidity amount
-
-        Raises:
-            PoolNotFound: If the pool does not exist
-            InvalidTokens: If token_out is not one of the pool tokens
-            InvalidAction: If user has no liquidity or invalid percentage
-        """
+        """Quote liquidity removal to receive a single token based on percentage."""
         self._validate_pool_exists(pool_key)
 
-        # Validate percentage
         if percentage <= 0 or percentage > 10000:
             raise InvalidAction("Invalid percentage")
 
-        # Validate token_out
         token_a = self.pool_token_a[pool_key]
         token_b = self.pool_token_b[pool_key]
 
         if token_out != token_a and token_out != token_b:
             raise InvalidTokens("token_out must be either token_a or token_b")
 
-        # Check if user has liquidity
         user_liquidity = self.pool_user_liquidity.get(pool_key, {}).get(user_address, 0)
         if user_liquidity == 0:
             raise InvalidAction("No liquidity to remove")
 
-        # Calculate liquidity to remove based on percentage
         liquidity_to_remove = (user_liquidity * percentage) // 10000
 
-        # Calculate withdrawal amounts based on percentage
         total_liquidity = self.pool_total_liquidity[pool_key]
         reserve_a = self.pool_reserve_a[pool_key]
         reserve_b = self.pool_reserve_b[pool_key]
 
-        amount_a = (reserve_a * liquidity_to_remove) // total_liquidity
-        amount_b = (reserve_b * liquidity_to_remove) // total_liquidity
+        amount_a = Amount((reserve_a * liquidity_to_remove) // total_liquidity)
+        amount_b = Amount((reserve_b * liquidity_to_remove) // total_liquidity)
 
-        # Calculate swap and final output
         if token_out == token_a:
-            # Want token A, will swap token B for token A
             if amount_b > 0:
-                # Calculate reserves after liquidity removal
-                new_reserve_a = reserve_a - amount_a
-                new_reserve_b = reserve_b - amount_b
+                new_reserve_a = Amount(reserve_a - amount_a)
+                new_reserve_b = Amount(reserve_b - amount_b)
+
+                swap_reserve_in = Amount(new_reserve_b + amount_b)
+                swap_reserve_out = Amount(new_reserve_a)
 
                 extra_a = self.get_amount_out(
                     amount_b,
-                    new_reserve_b + amount_b,  # Reserve after adding back token B
-                    new_reserve_a - amount_a,  # Reserve before taking out extra token A
+                    swap_reserve_in,
+                    swap_reserve_out,
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
                 total_amount_out = amount_a + extra_a
                 swap_amount = amount_b
                 swap_output = extra_a
+
+                price_impact = self._calculate_single_swap_price_impact(
+                    swap_amount, swap_output, new_reserve_b, new_reserve_a
+                )
             else:
                 total_amount_out = amount_a
                 swap_amount = Amount(0)
                 swap_output = Amount(0)
+                price_impact = Amount(0)
         else:
-            # Want token B, will swap token A for token B
             if amount_a > 0:
-                # Calculate reserves after liquidity removal
                 new_reserve_a = reserve_a - amount_a
                 new_reserve_b = reserve_b - amount_b
 
+                swap_reserve_in = Amount(new_reserve_a + amount_a)
+                swap_reserve_out = Amount(new_reserve_b)
+
                 extra_b = self.get_amount_out(
                     amount_a,
-                    new_reserve_a + amount_a,  # Reserve after adding back token A
-                    new_reserve_b - amount_b,  # Reserve before taking out extra token B
+                    swap_reserve_in,
+                    swap_reserve_out,
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
                 total_amount_out = amount_b + extra_b
                 swap_amount = amount_a
                 swap_output = extra_b
+
+                price_impact = self._calculate_single_swap_price_impact(
+                    swap_amount, swap_output, Amount(new_reserve_a), Amount(new_reserve_b)
+                )
             else:
                 total_amount_out = amount_b
                 swap_amount = Amount(0)
                 swap_output = Amount(0)
+                price_impact = Amount(0)
 
         return SingleTokenRemovalQuote(
-            amount_out=total_amount_out,
+            amount_out=Amount(total_amount_out),
             token_a_withdrawn=amount_a,
             token_b_withdrawn=amount_b,
             swap_amount=swap_amount,
             swap_output=swap_output,
-            user_liquidity=user_liquidity,
+            price_impact=price_impact,
+            user_liquidity=Amount(user_liquidity),
         )
 
     @view
@@ -1090,6 +1095,9 @@ class DozerPoolManager(Blueprint):
             PoolExists: If the pool already exists
             InvalidFee: If the fee is invalid
         """
+        if self.paused and ctx.caller_id != self.owner:
+            raise InvalidState("Contract is paused")
+
         token_a, token_b = set(ctx.actions.keys())
 
         # Validate tokens
@@ -1167,21 +1175,23 @@ class DozerPoolManager(Blueprint):
         self.pool_volume_b[pool_key] = Amount(0)
         self.pool_total_balance_a[pool_key] = Amount(0)
         self.pool_total_balance_b[pool_key] = Amount(0)
-        self.pool_last_activity[pool_key] = Timestamp(ctx.timestamp)
+        self.pool_last_activity[pool_key] = Timestamp(ctx.block.timestamp)
 
         # Update registry
         # all_pools should already be initialized by the Blueprint system
         self.all_pools.append(pool_key)
 
         # Update token to pools mapping
-        partial_a = list(self.token_to_pools.get(token_a, tuple()))
-        partial_a.append(pool_key)
-        self.token_to_pools[token_a] = partial_a
+        if token_a in self.token_to_pools:
+            self.token_to_pools[token_a].append(pool_key)
+        else:
+            self.token_to_pools[token_a] = [pool_key]
 
         # For token_b
-        partial_b = list(self.token_to_pools.get(token_b, tuple()))
-        partial_b.append(pool_key)
-        self.token_to_pools[token_b] = partial_b
+        if token_b in self.token_to_pools:
+            self.token_to_pools[token_b].append(pool_key)
+        else:
+            self.token_to_pools[token_b] = [pool_key]
 
         # Update HTR token map if this is an HTR pool
         if token_a == HTR_UID or token_b == HTR_UID:
@@ -1219,6 +1229,9 @@ class DozerPoolManager(Blueprint):
             PoolNotFound: If the pool does not exist
             InvalidAction: If the actions are invalid
         """
+        if self.paused and ctx.caller_id != self.owner:
+            raise InvalidState("Contract is paused")
+
         token_a, token_b = set(ctx.actions.keys())
         user_address = ctx.caller_id
 
@@ -1338,6 +1351,9 @@ class DozerPoolManager(Blueprint):
             PoolNotFound: If the pool does not exist
             InvalidAction: If the user has no liquidity or insufficient liquidity
         """
+        if self.paused and ctx.caller_id != self.owner:
+            raise InvalidState("Contract is paused")
+
         token_a, token_b = set(ctx.actions.keys())
         user_address = ctx.caller_id
 
@@ -1436,6 +1452,9 @@ class DozerPoolManager(Blueprint):
         Half of the input token is swapped to the other token, then liquidity is added
         using both tokens in the correct ratio.
 
+        The internal swap has a hard-coded maximum price impact of 15% (1500 basis points)
+        to protect users from excessive losses.
+
         Args:
             ctx: The transaction context (should contain deposit of one token)
             token_out: The other token in the pool (not the deposited one)
@@ -1446,9 +1465,12 @@ class DozerPoolManager(Blueprint):
 
         Raises:
             PoolNotFound: If the pool does not exist
-            InvalidAction: If the actions are invalid
+            InvalidAction: If the actions are invalid or price impact too high (>15%)
             InvalidTokens: If the tokens are invalid
         """
+        if self.paused and ctx.caller_id != self.owner:
+            raise InvalidState("Contract is paused")
+
         # Get the single deposit action
         if len(ctx.actions) != 1:
             raise InvalidAction("Must provide exactly one token deposit")
@@ -1493,7 +1515,7 @@ class DozerPoolManager(Blueprint):
         # Calculate optimal swap amount using quadratic formula
         # This ensures we get the right ratio after the swap
         optimal_swap_amount = self._calculate_optimal_swap_amount(
-            amount_in, reserve_in, reserve_out, fee
+            Amount(amount_in), reserve_in, reserve_out, fee
         )
 
         # Execute the internal swap
@@ -1504,6 +1526,14 @@ class DozerPoolManager(Blueprint):
             self.pool_fee_numerator[pool_key],
             self.pool_fee_denominator[pool_key],
         )
+
+        # Validate price impact of internal swap (max 15% = 1500 basis points)
+        price_impact = self._calculate_single_swap_price_impact(
+            optimal_swap_amount, swap_amount_out, reserve_in, reserve_out
+        )
+        MAX_PRICE_IMPACT = Amount(1500)  # 15% in basis points
+        if price_impact > MAX_PRICE_IMPACT:
+            raise InvalidAction("Price impact too high - internal swap exceeds 15% impact")
 
         # Update reserves for the internal swap
         if token_in == token_a:
@@ -1528,13 +1558,14 @@ class DozerPoolManager(Blueprint):
         liquidity_b = (total_liquidity * token_b_amount) // current_reserve_b
         liquidity_increase = min(liquidity_a, liquidity_b)
 
-        # Calculate actual amounts that will be used
+        # Calculate actual amounts that will be used based on the liquidity being minted
+        # The amounts should be proportional to what percentage of the pool the new liquidity represents
         actual_a = (liquidity_increase * current_reserve_a) // total_liquidity
         actual_b = (liquidity_increase * current_reserve_b) // total_liquidity
 
         # Calculate excess tokens
-        excess_a = token_a_amount - actual_a
-        excess_b = token_b_amount - actual_b
+        excess_a = Amount(token_a_amount - actual_a)
+        excess_b = Amount(token_b_amount - actual_b)
 
         # Update user liquidity
         partial = self.pool_user_liquidity.get(pool_key, {})
@@ -1567,45 +1598,138 @@ class DozerPoolManager(Blueprint):
         else:
             return (token_in, Amount(0))
 
+    def _isqrt(self, n: Amount) -> Amount:
+        """
+        Integer square root using Newton's method (Babylonian algorithm).
+        Same algorithm used in Uniswap V2 and other DeFi protocols.
+
+        Returns the largest integer x such that x² ≤ n.
+        """
+        if n == 0:
+            return Amount(0)
+
+        # Initial guess
+        x = Amount(n)
+        y = Amount((x + 1) // 2)
+
+        while y < x:
+            x = y
+            y = Amount((x + n // x) // 2)
+
+        return x
+
     def _calculate_optimal_swap_amount(
         self, amount_in: Amount, reserve_in: Amount, reserve_out: Amount, fee: Amount
     ) -> Amount:
-        """Calculate the optimal amount to swap for single-token liquidity addition.
+        """
+        Calculate optimal swap amount using Uniswap's proven formula with integer math.
 
-        Uses the quadratic formula to find the exact amount that results in
-        the correct token ratio for the pool after swapping.
+        This ensures that after swapping, the remaining tokens are in perfect ratio
+        with the pool, resulting in minimal excess (<0.2% typically).
 
-        Args:
-            amount_in: Total input amount
-            reserve_in: Reserve of input token
-            reserve_out: Reserve of output token
-            fee: Pool fee
+        Formula: optimal = (sqrt(reserve_in * (reserve_in * fee_denom² + amount_in * fee_denom * fee_mult)) - reserve_in * fee_denom) / fee_mult
 
-        Returns:
-            Optimal amount to swap
+        Where:
+        - fee_denom = 1000
+        - fee_mult = 1000 - fee (e.g., 997 for 0.3% fee)
         """
         fee_denominator = Amount(1000)
         if fee >= fee_denominator:
             return Amount(0)
 
-        # Quadratic formula coefficients for optimal swap calculation
-        # We want to solve: (reserve_in + x) / (reserve_out - y) = (amount_in - x) / y
-        # Where y = get_amount_out(x)
+        if amount_in == 0 or reserve_in == 0:
+            return Amount(0)
 
-        a = fee_denominator - fee
+        fee_multiplier = Amount(fee_denominator - fee)
 
-        # Simplified calculation - swap approximately half, adjusted for fees
-        # This is an approximation that works well in practice
-        swap_amount = (amount_in * reserve_out) // (2 * reserve_out + amount_in)
+        # Calculate: reserve_in * fee_denom²
+        term1 = reserve_in * fee_denominator * fee_denominator
 
-        # Apply fee adjustment
-        swap_amount = (swap_amount * a) // fee_denominator
+        # Calculate: amount_in * fee_denom * fee_mult
+        term2 = amount_in * fee_denominator * fee_multiplier
 
-        # Ensure we don't swap more than we have
-        if swap_amount > amount_in:
-            swap_amount = amount_in // 2
+        # Calculate: reserve_in * (term1 + term2)
+        under_sqrt = Amount(reserve_in * (term1 + term2))
 
-        return Amount(swap_amount)
+        # Take integer square root
+        sqrt_k = self._isqrt(under_sqrt)
+
+        # Calculate: (sqrt_k - reserve_in * fee_denom) / fee_mult
+        numerator = Amount(sqrt_k - (reserve_in * fee_denominator))
+
+        if numerator <= 0:
+            return Amount(0)
+
+        optimal = Amount(numerator // fee_multiplier)
+
+        # Safety check
+        if optimal > amount_in:
+            optimal = Amount(amount_in // 2)
+
+        return optimal
+
+    def _calculate_single_swap_price_impact(
+        self, amount_in: Amount, amount_out: Amount, reserve_in: Amount, reserve_out: Amount
+    ) -> Amount:
+        """Calculate price impact of internal swap in basis points (100 = 1%).
+
+        Price impact = (1 - execution_price / spot_price) * 10000
+        """
+        if amount_in == 0 or amount_out == 0 or reserve_in == 0 or reserve_out == 0:
+            return Amount(0)
+
+        numerator = amount_out * reserve_in
+        denominator = amount_in * reserve_out
+
+        if denominator == 0 or numerator >= denominator:
+            return Amount(0)
+
+        price_impact = ((denominator - numerator) * 10000) // denominator
+        return Amount(price_impact)
+
+    def _calculate_value_based_price_impact(
+        self,
+        amount_in: Amount,
+        token_in: TokenUid,
+        actual_a: Amount,
+        actual_b: Amount,
+        token_a: TokenUid,
+        token_b: TokenUid
+    ) -> Amount:
+        """
+        Calculate the real price impact based on value difference.
+
+        This shows users the actual value loss:
+        price_impact = (input_value - position_value) / input_value * 10000
+
+        Returns: Price impact in basis points (100 = 1%)
+        """
+        # Get token prices in USD (8 decimals)
+        token_in_price = self.get_token_price_in_usd(token_in)
+        token_a_price = self.get_token_price_in_usd(token_a)
+        token_b_price = self.get_token_price_in_usd(token_b)
+
+        if token_in_price == 0:
+            return Amount(0)
+
+        # Calculate input value in USD (amounts are in cents, prices have 8 decimals)
+        # Result is in cents USD
+        input_value_usd = (amount_in * token_in_price) // 100_000000
+
+        # Calculate output value based on actual tokens added to position
+        value_a_usd = (actual_a * token_a_price) // 100_000000
+        value_b_usd = (actual_b * token_b_price) // 100_000000
+        output_value_usd = Amount(value_a_usd + value_b_usd)
+
+        # Price impact = (input_value - output_value) / input_value * 10000
+        if input_value_usd == 0:
+            return Amount(0)
+
+        if output_value_usd >= input_value_usd:
+            return Amount(0)  # No loss
+
+        price_impact = Amount(((input_value_usd - output_value_usd) * 10000) // input_value_usd)
+        return price_impact
 
     @public(allow_withdrawal=True)
     def remove_liquidity_single_token(
@@ -1620,6 +1744,9 @@ class DozerPoolManager(Blueprint):
         and receive only one token. The liquidity is partially removed to get
         both tokens, then one token is swapped for the desired output token.
 
+        The internal swap has a hard-coded maximum price impact of 15% (1500 basis points)
+        to protect users from excessive losses.
+
         Args:
             ctx: The transaction context (should contain withdrawal of desired token)
             pool_key: The pool key (format: token_a/token_b/fee)
@@ -1630,8 +1757,11 @@ class DozerPoolManager(Blueprint):
 
         Raises:
             PoolNotFound: If the pool does not exist
-            InvalidAction: If the actions are invalid
+            InvalidAction: If the actions are invalid or price impact too high (>15%)
         """
+        if self.paused and ctx.caller_id != self.owner:
+            raise InvalidState("Contract is paused")
+
         self._validate_pool_exists(pool_key)
         user_address = ctx.caller_id
 
@@ -1670,8 +1800,8 @@ class DozerPoolManager(Blueprint):
         reserve_a = self.pool_reserve_a[pool_key]
         reserve_b = self.pool_reserve_b[pool_key]
 
-        amount_a = (reserve_a * liquidity_to_remove) // total_liquidity
-        amount_b = (reserve_b * liquidity_to_remove) // total_liquidity
+        amount_a = Amount((reserve_a * liquidity_to_remove) // total_liquidity)
+        amount_b = Amount((reserve_b * liquidity_to_remove) // total_liquidity)
 
         # Update user liquidity
         partial = self.pool_user_liquidity.get(pool_key, {})
@@ -1689,6 +1819,10 @@ class DozerPoolManager(Blueprint):
         if token_out == token_a:
             # Want token A, swap token B for token A
             if amount_b > 0:
+                # Store reserves before swap for price impact calculation
+                reserve_b_before_swap = Amount(reserve_b - amount_b)
+                reserve_a_before_swap = Amount(reserve_a - amount_a)
+
                 extra_a = self.get_amount_out(
                     amount_b,
                     self.pool_reserve_b[pool_key],
@@ -1696,6 +1830,15 @@ class DozerPoolManager(Blueprint):
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
+
+                # Validate price impact of internal swap (max 15%)
+                price_impact = self._calculate_single_swap_price_impact(
+                    amount_b, extra_a, reserve_b_before_swap, reserve_a_before_swap
+                )
+                MAX_PRICE_IMPACT = Amount(1500)  # 15% in basis points
+                if price_impact > MAX_PRICE_IMPACT:
+                    raise InvalidAction("Price impact too high - internal swap exceeds 15% impact")
+
                 # Update reserves for the swap
                 self.pool_reserve_b[pool_key] = Amount(self.pool_reserve_b[pool_key] + amount_b)
                 self.pool_reserve_a[pool_key] = Amount(self.pool_reserve_a[pool_key] - extra_a)
@@ -1705,6 +1848,10 @@ class DozerPoolManager(Blueprint):
         else:
             # Want token B, swap token A for token B
             if amount_a > 0:
+                # Store reserves before swap for price impact calculation
+                reserve_a_before_swap = Amount(reserve_a - amount_a)
+                reserve_b_before_swap = Amount(reserve_b - amount_b)
+
                 extra_b = self.get_amount_out(
                     amount_a,
                     self.pool_reserve_a[pool_key],
@@ -1712,6 +1859,15 @@ class DozerPoolManager(Blueprint):
                     self.pool_fee_numerator[pool_key],
                     self.pool_fee_denominator[pool_key],
                 )
+
+                # Validate price impact of internal swap (max 15%)
+                price_impact = self._calculate_single_swap_price_impact(
+                    amount_a, extra_b, reserve_a_before_swap, reserve_b_before_swap
+                )
+                MAX_PRICE_IMPACT = Amount(1500)  # 15% in basis points
+                if price_impact > MAX_PRICE_IMPACT:
+                    raise InvalidAction("Price impact too high - internal swap exceeds 15% impact")
+
                 # Update reserves for the swap
                 self.pool_reserve_a[pool_key] = Amount(self.pool_reserve_a[pool_key] + amount_a)
                 self.pool_reserve_b[pool_key] = Amount(self.pool_reserve_b[pool_key] - extra_b)
@@ -1721,7 +1877,7 @@ class DozerPoolManager(Blueprint):
 
         # Handle slippage - if user requested less than calculated, store excess
         if withdrawal_amount < total_amount_out:
-            excess = total_amount_out - withdrawal_amount
+            excess = Amount(total_amount_out - withdrawal_amount)
             self._update_balance(user_address, excess, token_out, pool_key)
             total_amount_out = withdrawal_amount
         elif withdrawal_amount > total_amount_out:
@@ -1754,6 +1910,9 @@ class DozerPoolManager(Blueprint):
             InvalidAction: If the actions are invalid
             InsufficientLiquidity: If there is insufficient liquidity
         """
+        if self.paused and ctx.caller_id != self.owner:
+            raise InvalidState("Contract is paused")
+
         token_a, token_b = set(ctx.actions.keys())
         user_address = ctx.caller_id
 
@@ -1827,14 +1986,14 @@ class DozerPoolManager(Blueprint):
             raise InvalidAction("Amount out is too high")
 
         # Calculate slippage
-        slippage_in = amount_out - action_out_amount
+        slippage_in = Amount(amount_out - action_out_amount)
 
         # Update user balance for slippage
         self._update_balance(user_address, slippage_in, action_out.token_uid, pool_key)
 
         # Update reserves
         self._update_reserve(amount_in, action_in.token_uid, pool_key)
-        self._update_reserve(-amount_out, action_out.token_uid, pool_key)
+        self._update_reserve(Amount(-amount_out), action_out.token_uid, pool_key)
 
         # Update statistics
         self.pool_transactions[pool_key] = Amount(self.pool_transactions[pool_key] + 1)
@@ -1878,6 +2037,9 @@ class DozerPoolManager(Blueprint):
             InvalidAction: If the actions are invalid
             InsufficientLiquidity: If there is insufficient liquidity
         """
+        if self.paused and ctx.caller_id != self.owner:
+            raise InvalidState("Contract is paused")
+
         token_a, token_b = set(ctx.actions.keys())
         user_address = ctx.caller_id
 
@@ -1999,6 +2161,9 @@ class DozerPoolManager(Blueprint):
             InvalidPath: If the path is invalid
             InvalidAction: If the actions are invalid
         """
+        if self.paused and ctx.caller_id != self.owner:
+            raise InvalidState("Contract is paused")
+
         user_address = ctx.caller_id
         # Parse the path
         if not path_str:
@@ -2233,7 +2398,7 @@ class DozerPoolManager(Blueprint):
             )
 
         # Update last activity timestamp
-        self.pool_last_activity[pool_key] = Timestamp(ctx.timestamp)
+        self.pool_last_activity[pool_key] = Timestamp(ctx.block.timestamp)
 
         # Increment transaction count
         self.pool_transactions[pool_key] = Amount(
@@ -2362,7 +2527,7 @@ class DozerPoolManager(Blueprint):
             )
 
         # Update last activity timestamp
-        self.pool_last_activity[pool_key] = Timestamp(ctx.timestamp)
+        self.pool_last_activity[pool_key] = Timestamp(ctx.block.timestamp)
 
         # Increment transaction count
         self.pool_transactions[pool_key] = Amount(
@@ -2392,6 +2557,9 @@ class DozerPoolManager(Blueprint):
             InvalidPath: If the path is invalid
             InvalidAction: If the actions are invalid
         """
+        if self.paused and ctx.caller_id != self.owner:
+            raise InvalidState("Contract is paused")
+
         user_address = ctx.caller_id
         # Parse the path
         if not path_str:
@@ -2805,6 +2973,9 @@ class DozerPoolManager(Blueprint):
             PoolNotFound: If the pool does not exist
             InvalidAction: If there is not enough cashback
         """
+        if self.paused and ctx.caller_id != self.owner:
+            raise InvalidState("Contract is paused")
+
         token_a, token_b = set(ctx.actions.keys())
         user_address = ctx.caller_id
 
@@ -2880,7 +3051,7 @@ class DozerPoolManager(Blueprint):
             raise Unauthorized("Only the owner can change the protocol fee")
 
         if new_fee > 50:
-            raise InvalidFee("Protocol fee must be <= 5%")
+            raise InvalidFee("Protocol fee must be <= 50%")
 
         self.default_protocol_fee = new_fee
 
@@ -3030,6 +3201,48 @@ class DozerPoolManager(Blueprint):
 
         self.htr_usd_pool_key = pool_key
 
+    @public
+    def pause(self, ctx: Context) -> None:
+        """Emergency pause functionality.
+
+        Only the owner can pause the contract.
+        When paused, all trading and liquidity operations are blocked for non-owners.
+
+        Args:
+            ctx: The transaction context
+
+        Raises:
+            Unauthorized: If the caller is not the owner
+        """
+        if ctx.caller_id != self.owner:
+            raise Unauthorized("Only owner can pause")
+        self.paused = True
+
+    @public
+    def unpause(self, ctx: Context) -> None:
+        """Unpause functionality.
+
+        Only the owner can unpause the contract.
+
+        Args:
+            ctx: The transaction context
+
+        Raises:
+            Unauthorized: If the caller is not the owner
+        """
+        if ctx.caller_id != self.owner:
+            raise Unauthorized("Only owner can unpause")
+        self.paused = False
+
+    @view
+    def is_paused(self) -> bool:
+        """Check if the contract is currently paused.
+
+        Returns:
+            True if the contract is paused, False otherwise
+        """
+        return self.paused
+
     @view
     def get_signed_pools(self) -> list[str]:
         """Get a list of all signed pools.
@@ -3069,7 +3282,7 @@ class DozerPoolManager(Blueprint):
         return self.htr_usd_pool_key
 
     @view
-    def get_user_pools(self, address: Address) -> list[str]:
+    def get_user_pools(self, address: CallerId) -> list[str]:
         """Get all pools where a user has liquidity.
 
         Args:
@@ -3088,7 +3301,7 @@ class DozerPoolManager(Blueprint):
         return user_pools
 
     @view
-    def get_user_positions(self, address: Address) -> dict[str, UserPosition]:
+    def get_user_positions(self, address: CallerId) -> dict[str, UserPosition]:
         """Get detailed information about all user positions across pools.
 
         Args:
@@ -3212,8 +3425,8 @@ class DozerPoolManager(Blueprint):
         
         # Calculate cumulative price using reserve ratios with integer precision
         # We want TOKEN_A price in USD, so we calculate in reverse direction
-        # Start with 1.0 
-        final_price = 1.0
+        # Start with 1
+        final_price = 1_00000000  # 1 with 8 decimal places
         current_token = token  # Start from TOKEN_A
         
         # Iterate through pools in reverse order (TOKEN_A → USD direction)
@@ -3237,14 +3450,13 @@ class DozerPoolManager(Blueprint):
             
             # Calculate spot price for this hop: reserve_out / reserve_in
             # This gives us "how much of next_token per current_token"
-            hop_price = reserve_out / reserve_in
-            final_price = final_price * hop_price
+            # hop_price = reserve_out / reserve_in
+            final_price = (final_price * reserve_out) // reserve_in
             
             # Move to next token in the path
             current_token = next_token
         
-        # Convert final price to integer with 8 decimal places
-        result = Amount(int(final_price * 100_000000))
+        result = Amount(final_price)
         return result
 
     @view
@@ -3302,6 +3514,75 @@ class DozerPoolManager(Blueprint):
             raise Unauthorized("Only owner can change owner")
 
         self.owner = new_owner
+
+    @public
+    def upgrade_contract(self, ctx: Context, new_blueprint_id: BlueprintId, new_version: str) -> None:
+        """Upgrade the contract to a new blueprint version.
+
+        Args:
+            ctx: Transaction context
+            new_blueprint_id: The blueprint ID to upgrade to
+            new_version: Version string for the new blueprint (e.g., "1.1.0")
+
+        Raises:
+            Unauthorized: If caller is not the owner
+            InvalidVersion: If new version is not higher than current version
+        """
+        # Only owner can upgrade
+        if ctx.caller_id != self.owner:
+            raise Unauthorized("Only owner can upgrade contract")
+
+        # Validate version is newer
+        if not self._is_version_higher(new_version, self.contract_version):
+            raise InvalidVersion(f"New version {new_version} must be higher than current {self.contract_version}")
+        self.contract_version = new_version
+        
+        # Perform the upgrade
+        self.syscall.change_blueprint(new_blueprint_id)
+
+    def _is_version_higher(self, new_version: str, current_version: str) -> bool:
+        """Compare semantic versions (e.g., "1.2.3").
+
+        Returns True if new_version > current_version.
+        Returns False if versions are malformed or equal.
+        """
+        # Split versions by '.'
+        new_parts_str = new_version.split('.')
+        current_parts_str = current_version.split('.')
+        
+        # Check if all parts are valid integers
+        new_parts: list[int] = []
+        for part in new_parts_str:
+            # Simple check: all characters must be digits
+            if not part or not all(c in '0123456789' for c in part):
+                return False  # Invalid format
+            new_parts.append(int(part))
+        
+        current_parts: list[int] = []
+        for part in current_parts_str:
+            if not part or not all(c in '0123456789' for c in part):
+                return False  # Invalid format
+            current_parts.append(int(part))
+
+        # Pad shorter version with zeros
+        max_len = len(new_parts) if len(new_parts) > len(current_parts) else len(current_parts)
+        while len(new_parts) < max_len:
+            new_parts.append(0)
+        while len(current_parts) < max_len:
+            current_parts.append(0)
+
+        # Compare versions
+        return new_parts > current_parts
+
+    @view
+    def get_contract_version(self) -> str:
+        """Get the current contract version.
+
+        Returns:
+            Version string (e.g., "1.0.0")
+        """
+        return self.contract_version
+
 
     @view
     def get_reserves(
@@ -3371,7 +3652,7 @@ class DozerPoolManager(Blueprint):
     @view
     def liquidity_of(
         self,
-        address: Address,
+        address: CallerId,
         pool_key: str,
     ) -> Amount:
         """Get the liquidity of an address in a specific pool.
@@ -3395,7 +3676,7 @@ class DozerPoolManager(Blueprint):
     @view
     def balance_of(
         self,
-        address: Address,
+        address: CallerId,
         pool_key: str,
     ) -> tuple[Amount, Amount]:
         """Get the balance of an address in a specific pool.
@@ -3528,26 +3809,33 @@ class DozerPoolManager(Blueprint):
         """
         self._validate_pool_exists(pool_key)
 
-        liquidity = self.pool_user_liquidity[pool_key].get(address, 0)
-        balance_a = self.pool_balance_a.get(pool_key, {}).get(address, 0)
-        balance_b = self.pool_balance_b.get(pool_key, {}).get(address, 0)
+        # Safely access nested dicts using 'in' check to avoid state changes
+        liquidity = 0
+        if pool_key in self.pool_user_liquidity:
+            liquidity = self.pool_user_liquidity[pool_key].get(address, 0)
+
+        balance_a = 0
+        if pool_key in self.pool_balance_a:
+            balance_a = self.pool_balance_a[pool_key].get(address, 0)
+
+        balance_b = 0
+        if pool_key in self.pool_balance_b:
+            balance_b = self.pool_balance_b[pool_key].get(address, 0)
 
         # Calculate share
         share = 0
-        if self.pool_total_liquidity[pool_key] > 0:
-            share = liquidity * 100 // self.pool_total_liquidity[pool_key]
+        total_liquidity = self.pool_total_liquidity.get(pool_key, 0)
+        if total_liquidity > 0:
+            share = liquidity * 100 // total_liquidity
 
         # Calculate token amounts based on share
-        token_a_amount = (
-            self.pool_reserve_a[pool_key]
-            * liquidity
-            // self.pool_total_liquidity[pool_key]
-        )
-        token_b_amount = (
-            self.pool_reserve_b[pool_key]
-            * liquidity
-            // self.pool_total_liquidity[pool_key]
-        )
+        reserve_a = self.pool_reserve_a.get(pool_key, 0)
+        reserve_b = self.pool_reserve_b.get(pool_key, 0)
+        token_a_amount = 0
+        token_b_amount = 0
+        if total_liquidity > 0:
+            token_a_amount = reserve_a * liquidity // total_liquidity
+            token_b_amount = reserve_b * liquidity // total_liquidity
 
         return UserInfo(
             liquidity=Amount(liquidity),
@@ -4378,5 +4666,3 @@ class DozerPoolManager(Blueprint):
 
         # Round up
         return Amount(numerator // denominator)
-
-__blueprint__ = DozerPoolManager

@@ -57,7 +57,6 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
     return null
   } catch (error) {
     // Silently fail for DozerTools integration - it's optional
-    // console.debug(`DozerTools image lookup failed for token ${tokenUuid}`)
     return null
   }
 }
@@ -66,7 +65,7 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
 async function calculate24hTransactionCount(poolKey: string): Promise<number> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 // 24 hours ago in seconds
+    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -119,7 +118,7 @@ const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
 async function calculate24hVolume(poolKey: string): Promise<{ volume24h: number; volume24hUSD: number }> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 // 24 hours ago in seconds
+    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -456,7 +455,7 @@ export const poolRouter = createTRPCRouter({
                 name: token0Info.name,
                 decimals: 2,
                 chainId: 1,
-                imageUrl: (await getDozerToolsImageUrl(tokenA || '')) || undefined,
+                imageUrl: await getDozerToolsImageUrl(tokenA || ''),
               },
               token1: {
                 uuid: tokenB,
@@ -464,7 +463,7 @@ export const poolRouter = createTRPCRouter({
                 name: token1Info.name,
                 decimals: 2,
                 chainId: 1,
-                imageUrl: (await getDozerToolsImageUrl(tokenB || '')) || undefined,
+                imageUrl: await getDozerToolsImageUrl(tokenB || ''),
               },
               reserve0,
               reserve1,
@@ -522,7 +521,7 @@ export const poolRouter = createTRPCRouter({
           name: await getTokenName(tokenA || ''),
           decimals: 2,
           chainId: 1,
-          imageUrl: (await getDozerToolsImageUrl(tokenA || '')) || undefined,
+          imageUrl: await getDozerToolsImageUrl(tokenA || ''),
         },
         token1: {
           uuid: tokenB,
@@ -530,7 +529,7 @@ export const poolRouter = createTRPCRouter({
           name: await getTokenName(tokenB || ''),
           decimals: 2,
           chainId: 1,
-          imageUrl: (await getDozerToolsImageUrl(tokenB || '')) || undefined,
+          imageUrl: await getDozerToolsImageUrl(tokenB || ''),
         },
         reserve0: (poolInfo.reserve_a || 0) / 100,
         reserve1: (poolInfo.reserve_b || 0) / 100,
@@ -694,7 +693,7 @@ export const poolRouter = createTRPCRouter({
           name: token0Info.name,
           decimals: 2,
           chainId: 1,
-          imageUrl: (await getDozerToolsImageUrl(tokenA || '')) || undefined,
+          imageUrl: await getDozerToolsImageUrl(tokenA || ''),
         },
         token1: {
           uuid: tokenB,
@@ -702,7 +701,7 @@ export const poolRouter = createTRPCRouter({
           name: token1Info.name,
           decimals: 2,
           chainId: 1,
-          imageUrl: (await getDozerToolsImageUrl(tokenB || '')) || undefined,
+          imageUrl: await getDozerToolsImageUrl(tokenB || ''),
         },
         reserve0,
         reserve1,
@@ -1528,6 +1527,7 @@ export const poolRouter = createTRPCRouter({
           excess_amount: quote.excess_amount / 100, // Convert from cents
           swap_amount: quote.swap_amount / 100, // Convert from cents
           swap_output: quote.swap_output / 100, // Convert from cents
+          price_impact: quote.price_impact / 100, // Convert from basis points to percentage
         }
       } catch (error) {
         console.error(`Error getting single token liquidity quote:`, error)
@@ -1573,6 +1573,7 @@ export const poolRouter = createTRPCRouter({
           token_b_withdrawn: quote.token_b_withdrawn / 100, // Convert from cents
           swap_amount: quote.swap_amount / 100, // Convert from cents
           swap_output: quote.swap_output / 100, // Convert from cents
+          price_impact: quote.price_impact / 100, // Convert from basis points to percentage
           user_liquidity: quote.user_liquidity,
         }
       } catch (error) {
@@ -1599,6 +1600,7 @@ export const poolRouter = createTRPCRouter({
         const response = await fetchFromPoolManager([
           `quote_remove_liquidity_single_token_percentage("${input.address}", "${input.poolKey}", "${input.tokenOut}", ${percentageBasisPoints})`,
         ])
+        console.log('------- response', response)
 
         const quoteArray =
           response.calls[
@@ -1618,6 +1620,7 @@ export const poolRouter = createTRPCRouter({
           token_b_withdrawn: quote.token_b_withdrawn / 100, // Convert from cents
           swap_amount: quote.swap_amount / 100, // Convert from cents
           swap_output: quote.swap_output / 100, // Convert from cents
+          price_impact: quote.price_impact / 100, // Convert from basis points to percentage
           user_liquidity: quote.user_liquidity,
         }
       } catch (error) {
@@ -1745,14 +1748,16 @@ export const poolRouter = createTRPCRouter({
           if (input.tokenFilter) {
             const involvesToken =
               (tx.tokens && tx.tokens.includes(input.tokenFilter)) ||
-              (tx.outputs && tx.outputs.some((output: any) =>
-                (output.token === input.tokenFilter) ||
-                (output.token_data === 0 && input.tokenFilter === '00')
-              )) ||
-              (tx.inputs && tx.inputs.some((input: any) =>
-                (input.token === input.tokenFilter) ||
-                (input.token_data === 0 && input.tokenFilter === '00')
-              ))
+              (tx.outputs &&
+                tx.outputs.some(
+                  (output: any) =>
+                    output.token === input.tokenFilter || (output.token_data === 0 && input.tokenFilter === '00')
+                )) ||
+              (tx.inputs &&
+                tx.inputs.some(
+                  (input: any) =>
+                    input.token === input.tokenFilter || (input.token_data === 0 && input.tokenFilter === '00')
+                ))
 
             if (!involvesToken) {
               continue
@@ -1884,7 +1889,8 @@ export const poolRouter = createTRPCRouter({
               const pathStr = args.path_str || args.path // Support both parsed and legacy formats
               if (tx.nc_method && tx.nc_method.includes('swap') && pathStr && typeof pathStr === 'string') {
                 // Parse the path format: pool1,pool2,pool3 (comma-separated)
-                poolsInvolved = pathStr.split(',').filter((pool) => pool.trim())
+                // Trim each pool key to remove any whitespace
+                poolsInvolved = pathStr.split(',').map((pool) => pool.trim()).filter((pool) => pool)
               }
 
               // For liquidity transactions, extract single pool
@@ -1942,19 +1948,31 @@ export const poolRouter = createTRPCRouter({
         // Apply pool filtering using the same logic that was working on the client side
         let transactions = allTransactions
         if (input.poolFilter) {
-          // Extract pool tokens from pool key (format: tokenA/tokenB/fee)
-          const poolParts = input.poolFilter.split('/')
-          if (poolParts.length >= 2) {
-            const poolToken0 = poolParts[0]
-            const poolToken1 = poolParts[1]
+          const poolFilter = input.poolFilter // Store in const to satisfy TypeScript
+          transactions = allTransactions.filter((tx) => {
+            // First, check if we have explicit pool information from parsed args
+            if (tx.poolsInvolved && tx.poolsInvolved.length > 0) {
+              // For transactions with explicit pool information, check if our target pool is involved
+              const isPoolInvolved = tx.poolsInvolved.includes(poolFilter)
 
-            transactions = allTransactions.filter((tx) => {
+              // When we have explicit pool info, trust it and don't fall back to token-based filtering
+              // This prevents transactions from appearing in wrong pools
+              return isPoolInvolved
+            }
+
+            // Fallback to token-based filtering for transactions without explicit pool info
+            // Extract pool tokens from pool key (format: tokenA/tokenB/fee)
+            const poolParts = poolFilter.split('/')
+            if (poolParts.length >= 2) {
+              const poolToken0 = poolParts[0]
+              const poolToken1 = poolParts[1]
+
               const tokensInvolved = tx.tokensInvolved || []
               const hasToken0 = poolToken0 ? tokensInvolved.includes(poolToken0) : false
               const hasToken1 = poolToken1 ? tokensInvolved.includes(poolToken1) : false
 
               // For regular operations, we need both tokens to be involved
-              // For single token operations, we only need one token to be involved
+              // For single token operations, we only need one of the pool's tokens
               const isSingleTokenOperation =
                 tx.method === 'add_liquidity_single_token' || tx.method === 'remove_liquidity_single_token'
 
@@ -1965,8 +1983,10 @@ export const poolRouter = createTRPCRouter({
                 // Regular operations need both tokens
                 return hasToken0 && hasToken1
               }
-            })
-          }
+            }
+
+            return false
+          })
         }
 
         return {

@@ -338,9 +338,8 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
     console.log('No hUSDC token found - HTR-USD reference not set')
   }
 
-  // 5. Sign all but one pool
+  // 5. Sign all pools
   for (let i = 0; i < createdPools.length; i++) {
-    if (i === 0) continue // Leave the first pool unsigned for testing
     const pool = createdPools[i]
     if (!pool) continue
     const { tokenA, tokenB, fee } = pool

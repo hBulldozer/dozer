@@ -143,10 +143,8 @@ const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pai
       return false
     }
 
-    // Filter out multi-hop transactions
-    if (tx.isMultiHop) {
-      return false
-    }
+    // Multi-hop transactions ARE included if this pool is in the swap path
+    // The server-side filtering already checked that this pool is involved
 
     // Server-side filtering already handled pool-specific filtering via poolFilter parameter
     // No need for additional token involvement checks since the server parsed the NC args properly
@@ -154,7 +152,7 @@ const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pai
   })
 
   // Transform filtered transactions to simple format
-  const simpleTransactions = transformTransactions(poolSpecificTransactions, prices)
+  const simpleTransactions = transformTransactions(poolSpecificTransactions, prices, poolKey)
 
   return (
     <SimplePoolTransactionHistory
@@ -242,8 +240,8 @@ const Pool = () => {
     if (!pair) return null
     return {
       ...pair,
-      token0: new Token(pair.token0),
-      token1: new Token(pair.token1),
+      token0: new Token({ ...pair.token0, imageUrl: pair.token0.imageUrl ?? undefined }),
+      token1: new Token({ ...pair.token1, imageUrl: pair.token1.imageUrl ?? undefined }),
     }
   }, [pair])
 

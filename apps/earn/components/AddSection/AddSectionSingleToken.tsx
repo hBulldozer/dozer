@@ -2,13 +2,15 @@ import { Disclosure, Transition } from '@headlessui/react'
 import { ChainId } from '@dozer/chain'
 import { Type } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
-import { Widget, Currency, Typography, Button } from '@dozer/ui'
+import { Widget, Currency, Typography, Button, formatNumber } from '@dozer/ui'
 import { Web3Input, Checker } from '@dozer/higmi'
-import { FC, useState, useEffect } from 'react'
+import { FC, useState, useEffect, useMemo, useCallback } from 'react'
 import { useNetwork } from '@dozer/zustand'
+import { warningSeverity } from '@dozer/math'
 import { SettingsOverlay } from '../SettingsOverlay'
 import { api } from '../../utils/api'
 import { AddSectionReviewModalSingleToken } from './AddSectionReviewModalSingleToken'
+import { HighPriceImpactConfirmation } from '../HighPriceImpactConfirmation'
 
 interface AddSectionSingleTokenProps {
   chainId: ChainId
@@ -43,7 +45,10 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
     excess_token: string
     swap_amount: number
     swap_output: number
+    price_impact: number
   } | null>(null)
+  const [showPriceImpactWarning, setShowPriceImpactWarning] = useState(false)
+  const [reviewModalOpen, setReviewModalOpen] = useState(false)
 
   // Fetch single token quote when inputs change
   const { data: quote, isLoading: quoteIsLoading } = api.getPools.quoteSingleTokenLiquidity.useQuery(
@@ -66,20 +71,58 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
   }, [quote])
 
   const formatAmount = (amount: number) => {
-    return amount.toFixed(6).replace(/\.?0+$/, '')
+    return formatNumber(amount, 6)
   }
+
+  // Calculate price impact severity and color
+  const priceImpactSeverity = useMemo(() => {
+    if (!quoteData) return 0
+    return warningSeverity(quoteData.price_impact)
+  }, [quoteData])
+
+  const priceImpactColor = useMemo(() => {
+    if (priceImpactSeverity === 0 || priceImpactSeverity === 1) return 'text-green-400'
+    if (priceImpactSeverity === 2) return 'text-yellow-400'
+    if (priceImpactSeverity === 3) return 'text-orange-400'
+    return 'text-red-400'
+  }, [priceImpactSeverity])
+
+  const handleAddLiquidityClick = useCallback(() => {
+    if (!quoteData) return
+
+    // Check for high price impact (5-15% range requires confirmation)
+    if (quoteData.price_impact >= 5 && quoteData.price_impact < 15) {
+      setShowPriceImpactWarning(true)
+    } else {
+      setReviewModalOpen(true)
+    }
+  }, [quoteData])
+
+  const handleConfirmHighImpact = useCallback(() => {
+    setReviewModalOpen(true)
+  }, [])
 
 
   return (
-    <AddSectionReviewModalSingleToken
-      chainId={chainId}
-      token={token}
-      otherToken={otherToken}
-      input={input}
-      fee={fee}
-      prices={prices}
-    >
-      {({ setOpen }) => (
+    <>
+      <HighPriceImpactConfirmation
+        isOpen={showPriceImpactWarning}
+        onClose={() => setShowPriceImpactWarning(false)}
+        onConfirm={handleConfirmHighImpact}
+        priceImpact={quoteData?.price_impact || 0}
+        action="add"
+      />
+      <AddSectionReviewModalSingleToken
+        chainId={chainId}
+        token={token}
+        otherToken={otherToken}
+        input={input}
+        fee={fee}
+        prices={prices}
+        open={reviewModalOpen}
+        setOpen={setReviewModalOpen}
+      >
+        {() => (
         <Widget id="addLiquiditySingleToken" maxWidth={400}>
           <Widget.Content>
             <Disclosure defaultOpen={true}>
@@ -181,7 +224,7 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                           <div className="flex flex-col items-center space-y-1">
                                             <Currency.Icon currency={token} width={24} height={24} />
                                             <Typography variant="xs" className="text-stone-300">
-                                              {parseFloat(input).toFixed(2)}
+                                              {formatNumber(parseFloat(input))}
                                             </Typography>
                                           </div>
 
@@ -253,10 +296,15 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                               {prices && token && otherToken && prices[token.uuid] && prices[otherToken.uuid] ? (
                                                 <span className="text-green-300">
                                                   $
-                                                  {(
-                                                    quoteData.token_a_used * prices[token.uuid] +
-                                                    quoteData.token_b_used * prices[otherToken.uuid]
-                                                  ).toFixed(2)}
+                                                  {(() => {
+                                                    // Contract returns token_a and token_b in alphabetical order
+                                                    // Need to map them to actual tokens to get correct prices
+                                                    const tokens = [token, otherToken].sort((a, b) => a.uuid.localeCompare(b.uuid))
+                                                    const tokenAPrice = prices[tokens[0].uuid]
+                                                    const tokenBPrice = prices[tokens[1].uuid]
+
+                                                    return formatNumber(quoteData.token_a_used * tokenAPrice + quoteData.token_b_used * tokenBPrice, 2)
+                                                  })()}
                                                 </span>
                                               ) : (
                                                 'LP Position'
@@ -270,26 +318,13 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                                       <div className="pt-2 border-t border-stone-700">
                                         <div className="space-y-1 text-xs">
                                           <div className="flex justify-between">
-                                            <span className="text-stone-500">Swap amount:</span>
-                                            <span className="text-blue-300">
-                                              {formatAmount(quoteData.swap_amount)} → {formatAmount(quoteData.swap_output)}
+                                            <span className="text-stone-500">Price Impact:</span>
+                                            <span className={priceImpactColor}>
+                                              {quoteData.price_impact < 0.01
+                                                ? '< 0.01%'
+                                                : `${quoteData.price_impact.toFixed(2)}%`}
                                             </span>
                                           </div>
-                                          {prices && token && prices[token.uuid] && (
-                                            <div className="flex justify-between">
-                                              <span className="text-stone-500">Value difference:</span>
-                                              <span className="text-stone-300">
-                                                ${(parseFloat(input) * prices[token.uuid]).toFixed(2)} →{' '}
-                                                <span className="text-green-300">
-                                                  $
-                                                  {prices[otherToken?.uuid] ? (
-                                                    quoteData.token_a_used * prices[token.uuid] +
-                                                    quoteData.token_b_used * prices[otherToken.uuid]
-                                                  ).toFixed(2) : '---'}
-                                                </span>
-                                              </span>
-                                            </div>
-                                          )}
                                         </div>
                                       </div>
                                     </>
@@ -314,14 +349,25 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                       <div className="p-3">
                         <Checker.Connected fullWidth size="lg">
                           <Checker.Amounts fullWidth size="lg" amount={Number(input)} token={token}>
-                            <Button
-                              size="lg"
-                              className="w-full"
-                              disabled={!quoteData || parseFloat(input) <= 0}
-                              onClick={() => setOpen(true)}
-                            >
-                              {quoteData && parseFloat(input) > 0 ? 'Add Liquidity' : 'Enter an amount'}
-                            </Button>
+                            {quoteData && quoteData.price_impact > 15 ? (
+                              <Button
+                                size="lg"
+                                className="w-full"
+                                disabled={true}
+                                color="red"
+                              >
+                                Price Impact Too High ({quoteData.price_impact.toFixed(2)}%)
+                              </Button>
+                            ) : (
+                              <Button
+                                size="lg"
+                                className="w-full"
+                                disabled={!quoteData || parseFloat(input) <= 0}
+                                onClick={handleAddLiquidityClick}
+                              >
+                                {quoteData && parseFloat(input) > 0 ? 'Add Liquidity' : 'Enter an amount'}
+                              </Button>
+                            )}
                           </Checker.Amounts>
                         </Checker.Connected>
                       </div>
@@ -332,7 +378,8 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
             </Disclosure>
           </Widget.Content>
         </Widget>
-      )}
-    </AddSectionReviewModalSingleToken>
+        )}
+      </AddSectionReviewModalSingleToken>
+    </>
   )
 }

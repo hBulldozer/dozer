@@ -78,7 +78,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
               <Currency.Icon currency={token0} width={20} height={20} />
               <Typography variant="sm" weight={600} className="text-stone-300">
                 {max_withdraw_a ?
-                  Number((Number(max_withdraw_a.toFixed()) / 100).toFixed(6)).toLocaleString(undefined, {
+                  Number((Number(max_withdraw_a.toFixed()) ).toFixed(6)).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 6
                   }) : '0'}
@@ -94,7 +94,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
               <Currency.Icon currency={token1} width={20} height={20} />
               <Typography variant="sm" weight={600} className="text-stone-300">
                 {max_withdraw_b ?
-                  Number((Number(max_withdraw_b.toFixed()) / 100).toFixed(6)).toLocaleString(undefined, {
+                  Number((Number(max_withdraw_b.toFixed())).toFixed(6)).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 6
                   }) : '0'}
@@ -123,7 +123,7 @@ export const PoolPositionDesktop: FC<PoolPositionProps> = ({ pair }) => {
                     weight={500}
                     className={`${profit.profit_amount_usd >= 0 ? 'text-green-400' : 'text-red-400'}`}
                   >
-                    {formatUSD(profit.profit_amount_usd)} ({formatPercentChange(profit.profit_percentage)})
+                    {formatUSD(profit.profit_amount_usd)} ({formatPercentChange(Math.round(profit.profit_percentage) / 100)})
                   </Typography>
                   <ArrowIcon
                     type={profit.profit_amount_usd < 0 ? 'down' : 'up'}

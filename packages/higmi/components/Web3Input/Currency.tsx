@@ -1,7 +1,7 @@
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { Token } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
-import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography } from '@dozer/ui'
+import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography, formatNumber } from '@dozer/ui'
 import { FC, useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { AccountState, useAccount } from '@dozer/zustand'
 
@@ -24,6 +24,7 @@ export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' 
   tokens?: any[]
   hidePercentageButtons?: boolean
   showUnsignedSwitchInDialog?: boolean
+  useLocaleFormat?: boolean
 }
 
 export const CurrencyInput: FC<CurrencyInputProps> = ({
@@ -48,6 +49,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   tokens,
   hidePercentageButtons = false,
   showUnsignedSwitchInDialog = true,
+  useLocaleFormat = true,
 }) => {
   const isMounted = useIsMounted()
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
@@ -81,6 +83,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-3xl py-1 text-stone-200 hover:text-stone-100')}
               value={value}
               readOnly={disabled}
+              useLocaleFormat={useLocaleFormat}
             />
           )}
           <button
@@ -127,7 +130,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             )}
           </button>
         </div>
-        <div className="flex flex-row justify-between h-[24px]">
+        <div className="flex flex-row justify-between items-center">
           <PricePanel
             prices={prices}
             value={value}
@@ -136,8 +139,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             chainId={chainId}
             loading={loading}
           />
-          <div className="h-6">
-            <BalancePanel
+          <BalancePanel
               id={id}
               loading={loading}
               chainId={chainId}
@@ -148,7 +150,6 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               hidePercentageButtons={hidePercentageButtons}
               showPercentageButtons={!hidePercentageButtons}
             />
-          </div>
         </div>
         {onSelect && (
           <TokenSelector
@@ -194,6 +195,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
       value,
       hidePercentageButtons,
       showUnsignedSwitchInDialog,
+      useLocaleFormat,
     ]
   )
 }
@@ -224,8 +226,8 @@ const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, loa
     )
 
   return (
-    <Typography variant="xs" weight={400} className="py-1 select-none text-stone-400">
-      {parsedValue && price && isMounted ? `$${Number(parsedValue * price).toFixed(2)}` : '$0.00'}
+    <Typography variant="xs" weight={400} className="select-none text-stone-400">
+      {parsedValue && price && isMounted ? `$${formatNumber(parsedValue * price, 2)}` : '$0.00'}
       {usd && (
         <span
           className={classNames(

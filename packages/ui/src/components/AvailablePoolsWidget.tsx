@@ -18,6 +18,7 @@ interface Pool {
     name: string
     decimals: number
     chainId: number
+    imageUrl?: string | null
   }
   token1: {
     uuid: string
@@ -25,6 +26,7 @@ interface Pool {
     name: string
     decimals: number
     chainId: number
+    imageUrl?: string | null
   }
   reserve0: number
   reserve1: number

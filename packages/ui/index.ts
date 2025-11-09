@@ -69,6 +69,8 @@ export {
   truncateAddress,
 } from './src/utils/transactionUtils'
 
+export { formatNumber, formatNumberWithLocale, formatCurrency } from './src/utils/formatNumber'
+
 // ChartV2 component
 export { ChartV2, default as ChartV2Default } from './src/components/ChartV2'
 export * from './src/components/ChartV2/types'

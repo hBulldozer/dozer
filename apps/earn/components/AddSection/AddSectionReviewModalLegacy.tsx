@@ -158,10 +158,10 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
             type: 'swap',
             chainId: network,
             summary: {
-              pending: `Waiting for next block. Add liquidity in ${pool.name}.`,
-              completed: `Success! Added ${amountSpecified} ${mainCurrency.symbol} and ${outputAmount} ${otherCurrency.symbol} in ${pool.name} pool.`,
+              pending: `Adding liquidity in ${pool.name}.`,
+              completed: `Success! Added ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} and ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol} in ${pool.name} pool.`,
               failed: 'Failed summary',
-              info: `Adding Liquidity in ${pool.name} pool: ${amountSpecified} ${mainCurrency.symbol} and ${outputAmount} ${otherCurrency.symbol}.`,
+              info: `Adding Liquidity in ${pool.name} pool: ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} and ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol}.`,
             },
             status: 'pending',
             txHash: hash,

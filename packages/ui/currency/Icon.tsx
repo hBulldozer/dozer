@@ -64,13 +64,13 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
   if (isLocalSvg) {
     // Use local SVG
     return (
-      <div className="overflow-hidden relative rounded-full bg-stone-800">
+      <div className="overflow-hidden relative rounded-full bg-stone-800" style={{ width, height }}>
         <NextImage
           src={logoURI}
           alt={currency.symbol || 'Token'}
           width={width}
           height={height}
-          className="object-contain"
+          className="object-contain w-full h-full"
           unoptimized
         />
       </div>

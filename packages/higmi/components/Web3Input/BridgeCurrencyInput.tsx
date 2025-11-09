@@ -1,7 +1,7 @@
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { Token } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
-import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography } from '@dozer/ui'
+import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography, formatNumber } from '@dozer/ui'
 import { FC, useCallback, useMemo, useRef, useState, useEffect } from 'react'
 
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
@@ -116,29 +116,25 @@ export const BridgeCurrencyInput: FC<BridgeCurrencyInputProps> = ({
             )}
           </button>
         </div>
-        <div className="flex flex-row justify-between items-center h-[24px]">
-          <div className="flex items-center h-6">
-            <PricePanel
-              prices={prices}
-              value={value}
-              currency={currency}
-              usdPctChange={usdPctChange}
-              chainId={chainId}
-              loading={loading}
-            />
-          </div>
-          <div className="flex items-center h-6">
-            <BridgeBalancePanel
-              id={id}
-              loading={loading}
-              chainId={chainId}
-              onChange={onChange}
-              currency={currency}
-              disableMaxButton={disableMaxButton}
-              hidePercentageButtons={hidePercentageButtons}
-              showPercentageButtons={!hidePercentageButtons}
-            />
-          </div>
+        <div className="flex flex-row justify-between items-center">
+          <PricePanel
+            prices={prices}
+            value={value}
+            currency={currency}
+            usdPctChange={usdPctChange}
+            chainId={chainId}
+            loading={loading}
+          />
+          <BridgeBalancePanel
+            id={id}
+            loading={loading}
+            chainId={chainId}
+            onChange={onChange}
+            currency={currency}
+            disableMaxButton={disableMaxButton}
+            hidePercentageButtons={hidePercentageButtons}
+            showPercentageButtons={!hidePercentageButtons}
+          />
         </div>
         {onSelect && (
           <TokenSelector
@@ -201,8 +197,8 @@ const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, loa
     )
 
   return (
-    <Typography variant="xs" weight={400} className="py-1 select-none text-stone-400">
-      {parsedValue && price && isMounted ? `$${Number(parsedValue * price).toFixed(2)}` : '$0.00'}
+    <Typography variant="xs" weight={400} className="py-2 select-none text-stone-400 flex items-center">
+      {parsedValue && price && isMounted ? `$${formatNumber(parsedValue * price, 2)}` : '$0.00'}
       {usd && (
         <span
           className={classNames(

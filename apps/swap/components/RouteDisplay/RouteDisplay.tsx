@@ -33,9 +33,9 @@ export const RouteDisplay: FC<RouteDisplayProps> = ({
   }
 
   const getFeeColor = (fee: number) => {
-    if (fee <= 0.3) return 'text-green-400'
-    if (fee <= 0.5) return 'text-yellow-400'
-    if (fee <= 1.0) return 'text-orange-400'
+    if (fee <= 0.9) return 'text-green-400'
+    if (fee <= 1.2) return 'text-yellow-400'
+    if (fee <= 2) return 'text-orange-400'
     return 'text-red-400'
   }
 

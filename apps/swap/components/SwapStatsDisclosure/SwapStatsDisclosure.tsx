@@ -1,19 +1,12 @@
 import { Disclosure, Transition } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
-import { classNames, Typography, Skeleton } from '@dozer/ui'
+import { classNames, Typography, Skeleton, formatNumber } from '@dozer/ui'
 import React, { FC, useMemo, useState, useEffect } from 'react'
 import { Token } from '@dozer/currency'
 
 // Simple USD formatting
 const formatUSD = (value: number): string => {
-  if (value === 0) return '0.00'
-  if (value >= 0.1) {
-    return value.toFixed(2)
-  }
-  if (value < 0.1) {
-    return value.toFixed(4)
-  }
-  return value.toFixed(2)
+  return formatNumber(value, value >= 0.1 ? 2 : 4)
 }
 
 import { Rate } from '../../components'
@@ -198,7 +191,7 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices, loading = false }) 
         {delayedLoading || !hasValidTradeData ? (
           <div className="w-[80px] h-[14px] bg-stone-600 animate-pulse rounded" />
         ) : trade.outputAmount ? (
-          `${(trade.outputAmount * (1 - slippageTolerance / 100)).toFixed(2)} ${trade.otherCurrency?.symbol || ''}`
+          `${formatNumber(trade.outputAmount * (1 - slippageTolerance / 100))} ${trade.otherCurrency?.symbol || ''}`
         ) : (
           ''
         )}

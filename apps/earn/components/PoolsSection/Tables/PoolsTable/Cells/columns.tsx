@@ -26,7 +26,7 @@ export const NAME_COLUMN: ColumnDef<Pair, unknown> = {
   id: 'name',
   header: 'Name',
   cell: (props) => <PairNameCell row={props.row.original} />,
-  size: 160,
+  size: 180,
   meta: {
     skeleton: (
       <div className="flex items-center w-full gap-2">

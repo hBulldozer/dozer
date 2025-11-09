@@ -81,7 +81,8 @@ const formatUSD = (amount: number): string => {
 // Transform complex transaction to simple format
 export function transformToSimpleTransaction(
   complexTx: ComplexTransaction,
-  pricesUSD?: Record<string, number>
+  pricesUSD?: Record<string, number>,
+  currentPoolKey?: string
 ): SimpleTransaction | null {
 
   // Filter out administrative methods that shouldn't appear in transaction history
@@ -111,11 +112,11 @@ export function transformToSimpleTransaction(
   else if (complexTx.method.includes('remove_liquidity')) type = 'Remove'
   else if (complexTx.method.includes('create_pool')) type = 'Create'
   else if (complexTx.method.includes('swap_exact_tokens_for_tokens_through_path')) {
-    // Filter out multi-hop swaps as they are complex to parse and involve multiple pools
-    return null
+    // Multi-hop swaps are now supported - display as Swap type
+    type = 'Swap'
   } else if (complexTx.method.includes('swap_tokens_for_exact_tokens_through_path')) {
-    // Filter out multi-hop swaps as they are complex to parse and involve multiple pools
-    return null
+    // Multi-hop swaps are now supported - display as Swap type
+    type = 'Swap'
   } else if (complexTx.method.includes('swap')) type = 'Swap'
 
 
@@ -276,12 +277,58 @@ export function transformToSimpleTransaction(
       amounts = `${spentAmount.toFixed(2)} ${spentSymbol} → ${receivedAmount.toFixed(2)} ${receivedSymbol}`
       // map amounts to token0/token1 for table
       if (token0Symbol && token1Symbol) {
-        if (spentSymbol === token0Symbol) {
-          token0Amount = spentAmount
-          token1Amount = receivedAmount
+        // For multi-hop swaps, only show amounts for tokens that are in THIS pool
+        const isMultiHop =
+          complexTx.method?.includes('through_path') || (complexTx.poolsInvolved && complexTx.poolsInvolved.length > 1)
+
+        if (isMultiHop) {
+          // For multi-hop swaps, only show amounts if one of the pool's tokens
+          // is either the input or output of the overall transaction
+          // Extract token UUIDs from the CURRENT pool (if provided), not just the first pool
+          let poolToken0Uuid = '00'
+          let poolToken1Uuid = '00'
+
+          // Find which pool from poolsInvolved matches the current pool key
+          let relevantPoolKey = complexTx.poolsInvolved?.[0] // Default to first pool
+          if (currentPoolKey && complexTx.poolsInvolved) {
+            const matchingPool = complexTx.poolsInvolved.find((poolKey) => poolKey === currentPoolKey)
+            if (matchingPool) {
+              relevantPoolKey = matchingPool
+            }
+          }
+
+          if (relevantPoolKey) {
+            const [uuid0, uuid1] = relevantPoolKey.split('/')
+            poolToken0Uuid = uuid0 || '00'
+            poolToken1Uuid = uuid1 || '00'
+          }
+
+          // Check if the spent token is in this pool
+          if (spentToken === poolToken0Uuid) {
+            token0Amount = spentAmount
+            token1Amount = null
+          } else if (spentToken === poolToken1Uuid) {
+            token1Amount = spentAmount
+            token0Amount = null
+          }
+
+          // Check if the received token is in this pool
+          if (receivedToken === poolToken0Uuid) {
+            token0Amount = receivedAmount
+            token1Amount = token1Amount // Keep existing value if any
+          } else if (receivedToken === poolToken1Uuid) {
+            token1Amount = receivedAmount
+            token0Amount = token0Amount // Keep existing value if any
+          }
         } else {
-          token0Amount = receivedAmount
-          token1Amount = spentAmount
+          // For direct swaps, show both amounts normally
+          if (spentSymbol === token0Symbol) {
+            token0Amount = spentAmount
+            token1Amount = receivedAmount
+          } else {
+            token0Amount = receivedAmount
+            token1Amount = spentAmount
+          }
         }
         // Simplified HTR-based Buy/Sell logic
         const HTR_UUID = '00'
@@ -549,6 +596,11 @@ export function transformToSimpleTransaction(
     }
   }
 
+  // Check if this is a multi-hop swap
+  const isMultiHop =
+    complexTx.method?.includes('through_path') ||
+    (complexTx.poolsInvolved && complexTx.poolsInvolved.length > 1)
+
   return {
     id: complexTx.id,
     hash: complexTx.tx_id,
@@ -567,15 +619,17 @@ export function transformToSimpleTransaction(
     account: senderAddress,
     success: complexTx.success,
     explorerUrl: `https://explorer.hathor.network/transaction/${complexTx.tx_id}`,
+    isMultiHop,
   }
 }
 
 // Transform array of complex transactions
 export function transformTransactions(
   complexTransactions: ComplexTransaction[],
-  pricesUSD?: Record<string, number>
+  pricesUSD?: Record<string, number>,
+  currentPoolKey?: string
 ): SimpleTransaction[] {
   return complexTransactions
-    .map((tx) => transformToSimpleTransaction(tx, pricesUSD))
+    .map((tx) => transformToSimpleTransaction(tx, pricesUSD, currentPoolKey))
     .filter((tx): tx is SimpleTransaction => tx !== null)
 }
