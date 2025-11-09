@@ -656,6 +656,7 @@ export const tokenRouter = createTRPCRouter({
                 name: token0Info.name,
                 decimals: 2,
                 chainId: 1,
+                imageUrl: await getDozerToolsImageUrl(tokenA || ''),
               },
               token1: {
                 uuid: tokenB,
@@ -663,6 +664,7 @@ export const tokenRouter = createTRPCRouter({
                 name: token1Info.name,
                 decimals: 2,
                 chainId: 1,
+                imageUrl: await getDozerToolsImageUrl(tokenB || ''),
               },
               reserve0,
               reserve1,

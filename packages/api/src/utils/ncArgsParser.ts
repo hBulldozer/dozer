@@ -32,6 +32,35 @@ export interface ContractMethodSignature {
 // Currently using wallet-lib for parsing which handles this automatically
 
 /**
+ * Read a LEB128 encoded unsigned integer from a buffer
+ * @param buffer The buffer to read from
+ * @param offset The offset to start reading from
+ * @returns A tuple of [value, newOffset]
+ */
+function readLEB128(buffer: Buffer, offset: number): [number, number] {
+  let result = 0
+  let shift = 0
+  let position = offset
+
+  while (position < buffer.length) {
+    const byte = buffer[position]
+    if (byte === undefined) {
+      break
+    }
+
+    result |= (byte & 0x7f) << shift
+    position++
+
+    if ((byte & 0x80) === 0) {
+      break
+    }
+    shift += 7
+  }
+
+  return [result, position]
+}
+
+/**
  * Parse nano contract arguments using Hathor wallet-lib
  * This follows the same approach as the Hathor Explorer
  */
@@ -47,13 +76,52 @@ export async function parseNCArgsWithWalletLib(
   }
 
   try {
-    // Set up network if not provided (similar to Hathor Explorer)
-    hathorLib.config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
-    const actualNetwork = hathorLib.config.setNetwork('testnet')
+    // Special case: create_liquidity_pool is in DozerTools blueprint, not pool manager
+    let actualBlueprintId = blueprintId
+    if (method === 'create_liquidity_pool') {
+      const dozerToolsBlueprintId = process.env.NEXT_PUBLIC_DOZER_TOOLS_BLUEPRINT_ID
+      if (dozerToolsBlueprintId) {
+        actualBlueprintId = dozerToolsBlueprintId
+      }
+    }
+
+    // Set up network configuration (same as Hathor Explorer)
+    const serverUrl = process.env.NEXT_PUBLIC_LOCAL_NODE_URL || ''
+    if (!serverUrl) {
+      console.warn('NEXT_PUBLIC_LOCAL_NODE_URL not set, wallet-lib parsing may fail')
+      return null
+    }
+
+    hathorLib.config.setServerUrl(serverUrl)
+
+    // Fetch network info from the node to set correct network (same as Hathor Explorer does)
+    // This ensures wallet-lib connects to the correct network and can fetch blueprint info
+    let networkName = 'testnet' // Default fallback
+    try {
+      const response = await fetch(`${serverUrl.replace(/\/$/, '')}/version`)
+      const data = await response.json()
+      if (data.network) {
+        // Wallet-lib only supports: testnet, mainnet, privatenet
+        // Map custom network names to these base networks
+        if (data.network.includes('testnet')) {
+          networkName = 'testnet'
+        } else if (data.network.includes('mainnet')) {
+          networkName = 'mainnet'
+        } else if (data.network.includes('privatenet')) {
+          networkName = 'privatenet'
+        } else {
+          networkName = data.network // Try exact match as fallback
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to fetch network info from node, using testnet as default:', error)
+    }
+
+    const actualNetwork = hathorLib.config.setNetwork(networkName)
 
     // Create parser instance (same as Hathor Explorer)
     const ncParser = new hathorLib.NanoContractTransactionParser(
-      blueprintId, // Blueprint ID to get structure
+      actualBlueprintId, // Blueprint ID to get structure (may be DozerTools for create_liquidity_pool)
       method, // Method being called
       address, // Address used to sign
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,7 +155,8 @@ export async function parseNCArgsWithWalletLib(
 
     return parsedArgs
   } catch (error) {
-    console.error('Error parsing NC args with wallet-lib:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error(`Error parsing NC args with wallet-lib for method "${method}":`, errorMessage)
     return null
   }
 }
@@ -106,25 +175,136 @@ export function parseNCArgsFallback(method: string, ncArgs: string): ParsedNCArg
     // Special handling for remove_liquidity_single_token
     if (method === 'remove_liquidity_single_token') {
       // Try to extract pool key from hex string
-      // Based on the data we saw: "024530302f30303030...5c413"
-      // This appears to contain: pool_key + percentage
+      // Format: [arg_count:LEB128][string_length:LEB128][pool_key_string:N][percentage:2]
+      // Example: 024530302f303030...c801
+      // - LEB128 arg count (usually 02 = 2 arguments)
+      // - LEB128 string length (e.g., 45 = 69 bytes)
+      // - 30302f30...: pool key UTF-8 string
+      // - c801: percentage in little-endian uint16
 
       try {
-        // Convert hex to buffer and try to extract text parts
         const buffer = Buffer.from(ncArgs, 'hex')
-        const text = buffer.toString('utf8', 0, buffer.length)
 
-        // Look for pool key pattern (token/token/fee format)
-        const poolKeyMatch = text.match(/([0-9a-f]{2,64}\/[0-9a-f]{2,64}\/\d+)/i)
-        if (poolKeyMatch) {
-          const poolKey = poolKeyMatch[1]
+        if (buffer.length < 3) {
+          return null
+        }
+
+        // Read arg count (LEB128)
+        const [, afterArgCount] = readLEB128(buffer, 0)
+
+        // Read string length (LEB128)
+        const [stringLength, afterLength] = readLEB128(buffer, afterArgCount)
+
+        // Extract pool key string
+        if (buffer.length < afterLength + stringLength) {
+          return null
+        }
+
+        const poolKey = buffer.slice(afterLength, afterLength + stringLength).toString('utf-8')
+
+        // Extract percentage if available
+        let percentage = null
+        if (buffer.length >= afterLength + stringLength + 2) {
+          percentage = buffer.readUInt16LE(afterLength + stringLength)
+        }
+
+        return {
+          pool_key: poolKey,
+          percentage: percentage,
+          method: method
+        }
+      } catch (error) {
+        console.error('Error parsing remove_liquidity_single_token args:', error)
+        // Failed to parse hex, continue with other parsing attempts
+      }
+    }
+
+    // Special handling for add_liquidity_single_token
+    if (method === 'add_liquidity_single_token') {
+      // Similar format to remove_liquidity_single_token
+      // This method might also pass pool_key as first argument
+      try {
+        const buffer = Buffer.from(ncArgs, 'hex')
+
+        if (buffer.length < 3) {
+          return null
+        }
+
+        // Read arg count (LEB128)
+        const [, afterArgCount] = readLEB128(buffer, 0)
+
+        // Read string length (LEB128)
+        const [stringLength, afterLength] = readLEB128(buffer, afterArgCount)
+
+        // Extract pool key string if it exists
+        if (buffer.length < afterLength + stringLength) {
+          return null
+        }
+
+        const firstArg = buffer.slice(afterLength, afterLength + stringLength).toString('utf-8')
+
+        // Check if it looks like a pool key (contains slashes)
+        if (firstArg.includes('/')) {
           return {
-            pool_key: poolKey,
+            pool_key: firstArg,
             method: method
           }
         }
-      } catch {
+      } catch (error) {
+        console.error('Error parsing add_liquidity_single_token args:', error)
         // Failed to parse hex, continue with other parsing attempts
+      }
+    }
+
+    // Special handling for create_liquidity_pool from DozerTools
+    // This method exists in DozerTools blueprint and creates initial liquidity
+    if (method === 'create_liquidity_pool') {
+      // The pool key can't be extracted since the pool doesn't exist yet
+      // Wallet-lib should handle parsing this method with the correct blueprint
+      return {
+        method: 'create_pool', // Display as create_pool for consistency
+      }
+    }
+
+    // Special handling for swap through path methods
+    if (method === 'swap_exact_tokens_for_tokens_through_path' ||
+        method === 'swap_tokens_for_exact_tokens_through_path') {
+      try {
+        const buffer = Buffer.from(ncArgs, 'hex')
+
+        if (buffer.length < 3) {
+          return null
+        }
+
+        // Read arg count (LEB128)
+        const [argCount, afterArgCount] = readLEB128(buffer, 0)
+
+        if (argCount < 1) {
+          return null
+        }
+
+        // Read string length (LEB128)
+        const [stringLength, afterLength] = readLEB128(buffer, afterArgCount)
+
+        if (buffer.length < afterLength + stringLength) {
+          return null
+        }
+
+        // Extract path string
+        let pathStr = buffer.slice(afterLength, afterLength + stringLength).toString('utf-8')
+
+        // Clean up any control characters that might have been included
+        // eslint-disable-next-line no-control-regex
+        pathStr = pathStr.replace(/[\x00-\x1F]/g, '')
+
+        // The path format is: pool1,pool2,pool3
+        // where each pool is token0/token1/fee
+        return {
+          path_str: pathStr,
+          method: method
+        }
+      } catch (error) {
+        console.error(`Error parsing ${method} args:`, error)
       }
     }
 

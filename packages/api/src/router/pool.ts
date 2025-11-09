@@ -1889,7 +1889,8 @@ export const poolRouter = createTRPCRouter({
               const pathStr = args.path_str || args.path // Support both parsed and legacy formats
               if (tx.nc_method && tx.nc_method.includes('swap') && pathStr && typeof pathStr === 'string') {
                 // Parse the path format: pool1,pool2,pool3 (comma-separated)
-                poolsInvolved = pathStr.split(',').filter((pool) => pool.trim())
+                // Trim each pool key to remove any whitespace
+                poolsInvolved = pathStr.split(',').map((pool) => pool.trim()).filter((pool) => pool)
               }
 
               // For liquidity transactions, extract single pool
@@ -1947,19 +1948,31 @@ export const poolRouter = createTRPCRouter({
         // Apply pool filtering using the same logic that was working on the client side
         let transactions = allTransactions
         if (input.poolFilter) {
-          // Extract pool tokens from pool key (format: tokenA/tokenB/fee)
-          const poolParts = input.poolFilter.split('/')
-          if (poolParts.length >= 2) {
-            const poolToken0 = poolParts[0]
-            const poolToken1 = poolParts[1]
+          const poolFilter = input.poolFilter // Store in const to satisfy TypeScript
+          transactions = allTransactions.filter((tx) => {
+            // First, check if we have explicit pool information from parsed args
+            if (tx.poolsInvolved && tx.poolsInvolved.length > 0) {
+              // For transactions with explicit pool information, check if our target pool is involved
+              const isPoolInvolved = tx.poolsInvolved.includes(poolFilter)
 
-            transactions = allTransactions.filter((tx) => {
+              // When we have explicit pool info, trust it and don't fall back to token-based filtering
+              // This prevents transactions from appearing in wrong pools
+              return isPoolInvolved
+            }
+
+            // Fallback to token-based filtering for transactions without explicit pool info
+            // Extract pool tokens from pool key (format: tokenA/tokenB/fee)
+            const poolParts = poolFilter.split('/')
+            if (poolParts.length >= 2) {
+              const poolToken0 = poolParts[0]
+              const poolToken1 = poolParts[1]
+
               const tokensInvolved = tx.tokensInvolved || []
               const hasToken0 = poolToken0 ? tokensInvolved.includes(poolToken0) : false
               const hasToken1 = poolToken1 ? tokensInvolved.includes(poolToken1) : false
 
               // For regular operations, we need both tokens to be involved
-              // For single token operations, we only need one token to be involved
+              // For single token operations, we only need one of the pool's tokens
               const isSingleTokenOperation =
                 tx.method === 'add_liquidity_single_token' || tx.method === 'remove_liquidity_single_token'
 
@@ -1970,8 +1983,10 @@ export const poolRouter = createTRPCRouter({
                 // Regular operations need both tokens
                 return hasToken0 && hasToken1
               }
-            })
-          }
+            }
+
+            return false
+          })
         }
 
         return {

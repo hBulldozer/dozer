@@ -50,6 +50,7 @@ export interface SimpleTransaction {
   account: string // wallet address
   success: boolean
   explorerUrl?: string
+  isMultiHop?: boolean // True if this is a multi-hop swap (routed through multiple pools)
 }
 
 // Helper function to truncate address (show only last digits)
@@ -104,7 +105,36 @@ const TypeCell: React.FC<{ row: SimpleTransaction }> = ({ row }) => {
   }
 
   const color = getTypeColor(typeForColor)
-  return <Chip color={color} size="default" label={label} className="font-semibold" />
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Chip color={color} size="default" label={label} className="font-semibold" />
+      {row.isMultiHop && (
+        <div className="group relative">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-4 h-4 text-blue-400"
+          >
+            <path
+              fillRule="evenodd"
+              d="M13.2 2.24a.75.75 0 00.04 1.06l2.1 1.95H6.75a.75.75 0 000 1.5h8.59l-2.1 1.95a.75.75 0 101.02 1.1l3.5-3.25a.75.75 0 000-1.1l-3.5-3.25a.75.75 0 00-1.06.04zm-6.4 8a.75.75 0 00-1.06-.04l-3.5 3.25a.75.75 0 000 1.1l3.5 3.25a.75.75 0 101.02-1.1l-2.1-1.95h8.59a.75.75 0 000-1.5H4.66l2.1-1.95a.75.75 0 00.04-1.06z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-stone-800 text-stone-100 text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-10 border border-stone-700">
+            <div className="font-medium mb-1">Multi-hop Routing</div>
+            <div className="text-stone-400">This pool was used as a routing hop.</div>
+            <div className="text-stone-400">Amounts shown are only for this pool.</div>
+            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
+              <div className="border-4 border-transparent border-t-stone-800"></div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 const TotalValueCell: React.FC<{ row: SimpleTransaction }> = ({ row }) => (

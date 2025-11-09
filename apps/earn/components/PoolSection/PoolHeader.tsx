@@ -22,6 +22,9 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices, isLoading }) => {
   // const price = useMemo(() => new Price({ baseAmount: reserve0, quoteAmount: reserve1 }), [reserve0, reserve1])
   const price = Number(reserve0) / Number(reserve1)
 
+  // Use pool manager contract ID instead of pool key for explorer link
+  const poolManagerContractId = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID || pair.id
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
@@ -41,7 +44,7 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices, isLoading }) => {
             <div className="flex flex-row gap-2">
               <Link.External
                 className="flex flex-col !no-underline group"
-                href={chains[pair.chainId].getNanoContractDetailsUrl(pair.id)}
+                href={chains[pair.chainId].getNanoContractDetailsUrl(poolManagerContractId)}
               >
                 <div className="flex items-center gap-2">
                   <Typography
@@ -59,7 +62,7 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices, isLoading }) => {
                   </Typography>
                 </div>
               </Link.External>
-              <CopyHelper toCopy={pair.id} hideIcon={true}>
+              <CopyHelper toCopy={poolManagerContractId} hideIcon={true}>
                 {(isCopied) => (
                   <IconButton className="p-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy'}>
                     <Square2StackIcon width={20} height={20} color="stone-500" />
