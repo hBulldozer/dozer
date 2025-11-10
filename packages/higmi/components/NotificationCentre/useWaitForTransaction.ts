@@ -1,8 +1,9 @@
 import { ChainId } from '@dozer/chain'
 import { useEffect, useRef, useState } from 'react'
 import { useAccount } from '@dozer/zustand'
-import { NotificationData } from '@dozer/ui'
+import { NotificationData, createSuccessToast } from '@dozer/ui'
 import { client as api_client } from '@dozer/api'
+import { nanoid } from 'nanoid'
 
 export default function useWaitForTransaction(notification: NotificationData, client: typeof api_client) {
   const [status, setStatus] = useState<string>('pending')
@@ -13,6 +14,7 @@ export default function useWaitForTransaction(notification: NotificationData, cl
   const [timeLeft, setTimeLeft] = useState(0)
   const seconds = 2
   const isBridgeTx = type === 'bridge'
+  const hasShownSuccessToast = useRef(false)
 
   useEffect(() => {
     // Special handling for bridge transactions
@@ -70,6 +72,28 @@ export default function useWaitForTransaction(notification: NotificationData, cl
               ) {
                 setStatus('completed')
                 updateNotificationLastState(txHash, 'completed', 'Bridge completed successfully')
+
+                // Show success toast only once
+                if (!hasShownSuccessToast.current && bridgeMetadata) {
+                  hasShownSuccessToast.current = true
+
+                  const hathorExplorerUrl = `https://explorer.${
+                    bridgeMetadata.isTestnet ? 'bravo.nano-testnet.' : ''
+                  }hathor.network/transaction/${latestTx.tx_id}`
+
+                  createSuccessToast({
+                    type: 'bridge',
+                    summary: {
+                      pending: '',
+                      completed: `Bridge complete! ${bridgeMetadata.tokenSymbol} received on Hathor network.`,
+                      failed: '',
+                    },
+                    txHash: nanoid(),
+                    groupTimestamp: Date.now(),
+                    timestamp: Date.now(),
+                    href: hathorExplorerUrl,
+                  })
+                }
                 return
               }
             }

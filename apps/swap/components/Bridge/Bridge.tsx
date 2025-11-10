@@ -147,21 +147,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
               evmTimeoutRef.current = null
             }
 
-            // Show simple success toast for EVM confirmation
-            // The notification in the notification center will continue polling for Hathor confirmation
-            const bridgeConfig = (await import('@dozer/higmi/config/bridge')).default
-            createSuccessToast({
-              type: 'bridge',
-              summary: {
-                pending: '',
-                completed: `Bridge transaction confirmed on Arbitrum! Check the notification center for Hathor confirmation status.`,
-                failed: '',
-              },
-              txHash: nanoid(),
-              groupTimestamp: Date.now(),
-              timestamp: Date.now(),
-              href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
-            })
+            // No toast here - the notification center will handle status updates
+            // This prevents duplicate toasts from appearing
           }
           return true // Stop polling
         } else if (receipt && !receipt.status) {

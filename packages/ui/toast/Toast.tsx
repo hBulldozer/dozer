@@ -188,11 +188,7 @@ export const createInfoToast = (props: Omit<NotificationData, 'promise'>) => {
 }
 
 export interface BridgeToastConfig {
-  hathorAddress: string
-  tokenUuid: string
   tokenSymbol: string
-  evmConfirmationTime: number
-  isTestnet: boolean
   bridgeTxHash: string
   evmExplorerUrl: string
 }
@@ -212,20 +208,12 @@ export const createBridgeToast = (config: BridgeToastConfig) => {
       href={config.evmExplorerUrl}
       groupTimestamp={Date.now()}
       timestamp={Date.now()}
-      pollingConfig={{
-        hathorAddress: config.hathorAddress,
-        tokenUuid: config.tokenUuid,
-        evmConfirmationTime: config.evmConfirmationTime,
-        isTestnet: config.isTestnet,
-        toastId,
-        bridgeTxHash: config.bridgeTxHash,
-      }}
       onDismiss={() => toast.dismiss(toastId)}
     />,
     {
       ...TOAST_OPTIONS,
       toastId,
-      autoClose: false, // Don't auto-close, let polling complete it
+      autoClose: false, // Don't auto-close, let notification center polling complete it
     }
   )
 
