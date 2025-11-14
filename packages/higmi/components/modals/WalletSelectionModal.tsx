@@ -205,14 +205,14 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
             </div>
           )}
 
-          {isConnecting && (
+          {/* {isConnecting && (
             <div className="flex items-center gap-3 p-4 border rounded-lg bg-blue-900/20 border-blue-500/30">
               <div className="flex-shrink-0 w-5 h-5 border-2 border-blue-400 rounded-full animate-spin border-t-transparent" />
               <Typography variant="sm" className="text-blue-300">
                 {connectionStep || 'Connecting...'}
               </Typography>
             </div>
-          )}
+          )} */}
 
           <div className="space-y-3">
             {/* Hathor Wallet (WalletConnect) Option */}
