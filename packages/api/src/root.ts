@@ -1,3 +1,4 @@
+import { bridgeRouter } from './router/bridge'
 import { dozerToolsRouter } from './router/dozerTools'
 import { faucetRouter } from './router/faucet'
 import { headlessRouter } from './router/headless'
@@ -13,6 +14,7 @@ import { tokenRouter } from './router/token'
 import { createTRPCRouter } from './trpc'
 
 export const appRouter = createTRPCRouter({
+  getBridge: bridgeRouter,
   getPools: poolRouter,
   getTokens: tokenRouter,
   getProfile: profileRouter,

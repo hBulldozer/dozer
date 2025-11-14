@@ -12,8 +12,9 @@ export default function useWaitForTransaction(notification: NotificationData, cl
   const { updateNotificationLastState } = useAccount()
   const utils = client.useUtils()
   const [timeLeft, setTimeLeft] = useState(0)
-  const seconds = 2
   const isBridgeTx = type === 'bridge'
+  // Use longer polling interval for bridge transactions (30s) vs regular transactions (2s)
+  const seconds = isBridgeTx ? 30 : 2
   const hasShownSuccessToast = useRef(false)
 
   useEffect(() => {
@@ -29,81 +30,52 @@ export default function useWaitForTransaction(notification: NotificationData, cl
         const hathorAddress = notification.account
 
         if (!hathorAddress) {
-          console.error('Hathor address missing for bridge transaction')
           return
         }
 
-        // Get the latest transaction for this token from explorer
-        const explorerUrl = isTestnet
-          ? 'https://explorer-service.bravo.nano-testnet.hathor.network'
-          : 'https://explorer-service.hathor.network'
+        // Use tRPC to check bridge receipt (avoids CORS issues)
+        const result = await utils.getBridge.checkBridgeReceipt.fetch({
+          hathorAddress,
+          tokenUuid,
+          evmConfirmationTime,
+          isTestnet: isTestnet ?? true,
+        })
 
-        const historyResponse = await fetch(
-          `${explorerUrl}/address/history?address=${hathorAddress}&token=${tokenUuid}&limit=1`
-        )
-
-        if (!historyResponse.ok) {
-          // Keep pending if we can't fetch
+        if (result.error) {
           return
         }
 
-        const historyData = await historyResponse.json()
+        if (result.received && result.txId) {
+          setStatus('completed')
+          updateNotificationLastState(txHash, 'completed', 'Bridge completed successfully')
 
-        if (historyData.history && historyData.history.length > 0) {
-          const latestTx = historyData.history[0]
+          // Show success toast only once
+          if (!hasShownSuccessToast.current && bridgeMetadata) {
+            hasShownSuccessToast.current = true
 
-          // Check if this transaction is after EVM confirmation
-          if (latestTx.timestamp > evmConfirmationTime && latestTx.balance > 0) {
-            // Get transaction details to verify it's confirmed
-            const nodeUrl = isTestnet
-              ? 'https://node1.bravo.nano-testnet.hathor.network/v1a'
-              : 'https://node1.mainnet.hathor.network/v1a'
+            const hathorExplorerUrl = `https://explorer.${
+              bridgeMetadata.isTestnet ? 'testnet.' : ''
+            }hathor.network/transaction/${result.txId}`
 
-            const txResponse = await fetch(`${nodeUrl}/transaction?id=${latestTx.tx_id}`)
-
-            if (txResponse.ok) {
-              const txData = await txResponse.json()
-
-              // Check if transaction is confirmed (has first_block and not voided)
-              if (
-                txData.success &&
-                txData.meta?.first_block &&
-                (!txData.meta?.voided_by || txData.meta.voided_by.length === 0)
-              ) {
-                setStatus('completed')
-                updateNotificationLastState(txHash, 'completed', 'Bridge completed successfully')
-
-                // Show success toast only once
-                if (!hasShownSuccessToast.current && bridgeMetadata) {
-                  hasShownSuccessToast.current = true
-
-                  const hathorExplorerUrl = `https://explorer.${
-                    bridgeMetadata.isTestnet ? 'bravo.nano-testnet.' : ''
-                  }hathor.network/transaction/${latestTx.tx_id}`
-
-                  createSuccessToast({
-                    type: 'bridge',
-                    summary: {
-                      pending: '',
-                      completed: `Bridge complete! ${bridgeMetadata.tokenSymbol} received on Hathor network.`,
-                      failed: '',
-                    },
-                    txHash: nanoid(),
-                    groupTimestamp: Date.now(),
-                    timestamp: Date.now(),
-                    href: hathorExplorerUrl,
-                  })
-                }
-                return
-              }
-            }
+            createSuccessToast({
+              type: 'bridge',
+              summary: {
+                pending: '',
+                completed: `Bridge complete! ${bridgeMetadata.tokenSymbol} received on Hathor network.`,
+                failed: '',
+              },
+              txHash: nanoid(),
+              groupTimestamp: Date.now(),
+              timestamp: Date.now(),
+              href: hathorExplorerUrl,
+            })
           }
+          return
         }
 
         // Still pending
         setStatus('pending')
       } catch (e) {
-        console.error('Error checking bridge transaction:', e)
         // Don't mark as failed, keep pending
       }
     }

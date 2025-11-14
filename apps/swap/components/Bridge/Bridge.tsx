@@ -75,8 +75,8 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   const evmTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const evmIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Track if we've already created the bridge notification to avoid duplicates
-  const bridgeNotificationCreated = useRef(false)
+  // Track if we've created the Hathor notification to prevent duplicates
+  const hathorNotificationCreated = useRef(false)
 
   const { bridgeTokenToHathor } = useBridge()
 
@@ -97,30 +97,22 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
   // Function to poll for EVM transaction confirmation
   const startEvmConfirmationPolling = async (txHash: string) => {
-    const getWeb3Provider = async () => {
-      const Web3 = (await import('web3')).default
+    // Create Web3 instance once to avoid memory leaks from multiple instances
+    const Web3 = (await import('web3')).default
+    let web3: InstanceType<typeof Web3>
 
-      // First try window.ethereum (browser extension or injected provider)
-      if (window.ethereum) {
-        return new Web3(window.ethereum)
-      }
-
+    // First try window.ethereum (browser extension or injected provider)
+    if (window.ethereum) {
+      web3 = new Web3(window.ethereum)
+    } else {
       // Fallback to public RPC for read-only operations like getting transaction receipts
-      // This is more reliable for native app scenarios since we only need to read transaction status
-
-      // Import bridge config to get the correct RPC URL
       const bridgeConfig = (await import('@dozer/higmi/config/bridge')).default
       const publicRpcUrl = bridgeConfig.ethereumConfig.rpcUrl
-      return new Web3(publicRpcUrl)
+      web3 = new Web3(publicRpcUrl)
     }
 
     const checkConfirmation = async () => {
       try {
-        const web3 = await getWeb3Provider()
-        if (!web3) {
-          return false // Keep polling
-        }
-
         const receipt = await web3.eth.getTransactionReceipt(txHash)
 
         if (receipt && receipt.status) {
@@ -131,26 +123,76 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
             const confirmationTime = Math.floor(Date.now() / 1000)
 
-            // Update stepper - EVM confirmation complete, now checking Hathor
-            // Ensure all previous steps are completed before moving to final step
+            // Update stepper - EVM confirmation complete
+            // All bridge steps are now done (Hathor tracking happens in notification center)
             updateStep('processing', 'completed')
             updateStep('approval', 'completed')
             updateStep('approval-confirmed', 'completed')
             updateStep('bridge-tx', 'completed')
             updateStep('evm-confirming', 'completed', txHash)
-            updateStep('hathor-received', 'completed') // Mark as completed immediately
             setEvmConfirmationTime(confirmationTime)
 
-            // Clear timeout since we're done
+            // Clear timeout since EVM confirmation is done
             if (evmTimeoutRef.current) {
               clearTimeout(evmTimeoutRef.current)
               evmTimeoutRef.current = null
             }
 
-            // No toast here - the notification center will handle status updates
-            // This prevents duplicate toasts from appearing
+            // Create a new notification in the notification center for Hathor polling
+            // This allows tracking token receipt on Hathor network
+            // Only create once to prevent duplicates on re-renders or multiple confirmations
+            if (!hathorNotificationCreated.current) {
+              hathorNotificationCreated.current = true
+
+              // Get token info from bridge transaction store (more reliable than component state)
+              const bridgeState = useBridgeTransactionStore.getState()
+              const tokenSymbol = bridgeState.tokenSymbol || 'tokens'
+              const tokenUuid = bridgeState.tokenUuid || ''
+              const hathorAddr = bridgeState.hathorAddress || ''
+
+              const bridgeConfig = (await import('@dozer/higmi/config/bridge')).default
+              const hathorNotificationData = {
+                type: 'bridge' as const,
+                summary: {
+                  pending: `Waiting for ${tokenSymbol} on Hathor network`,
+                  completed: `Bridge complete! ${tokenSymbol} received on Hathor network.`,
+                  failed: 'Failed to receive tokens on Hathor network',
+                },
+                txHash: txHash, // Use same txHash for correlation
+                groupTimestamp: confirmationTime,
+                timestamp: confirmationTime,
+                promise: new Promise((resolve) => setTimeout(resolve, 500)),
+                account: hathorAddr,
+                href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
+                // Bridge metadata for Hathor polling
+                bridgeMetadata: {
+                  tokenUuid: tokenUuid,
+                  tokenSymbol: tokenSymbol,
+                  evmConfirmationTime: confirmationTime, // When EVM was confirmed
+                  isTestnet: bridgeConfig.isTestnet,
+                },
+              }
+
+              const hathorNotificationGroup: string[] = []
+              hathorNotificationGroup.push(JSON.stringify(hathorNotificationData))
+              addNotification(hathorNotificationGroup)
+
+              // Show success toast for EVM confirmation
+              createSuccessToast({
+                type: 'bridge',
+                summary: {
+                  pending: '',
+                  completed: `EVM confirmed! Waiting for ${tokenSymbol} on Hathor network...`,
+                  failed: '',
+                },
+                txHash: nanoid(),
+                groupTimestamp: Date.now(),
+                timestamp: Date.now(),
+                href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
+              })
+            }
           }
-          return true // Stop polling
+          return true // Stop EVM polling (Hathor polling starts in notification center)
         } else if (receipt && !receipt.status) {
           // Transaction failed
           if (isMounted.current) {
@@ -244,43 +286,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       updateStep('bridge-tx', 'completed', txHash)
       updateStep('evm-confirming', 'active', txHash)
 
-      // Create notification immediately when bridge tx is sent
-      // This allows users to track the transaction even if they navigate away
-      if (!bridgeNotificationCreated.current) {
-        bridgeNotificationCreated.current = true
-
-        const bridgeConfig = (await import('@dozer/higmi/config/bridge')).default
-
-        // Create notification data for the notification center
-        const notificationData = {
-          type: 'bridge' as const,
-          summary: {
-            pending: `Bridging ${selectedToken?.symbol || 'tokens'} to Hathor network`,
-            completed: `Bridge complete! ${selectedToken?.symbol || 'Tokens'} received on Hathor network.`,
-            failed: 'Bridge transaction failed',
-          },
-          txHash: txHash,
-          groupTimestamp: Math.floor(Date.now() / 1000),
-          timestamp: Math.floor(Date.now() / 1000),
-          promise: new Promise((resolve) => setTimeout(resolve, 500)),
-          account: hathorAddress,
-          href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
-          // Add bridge-specific metadata for status checking
-          bridgeMetadata: {
-            tokenUuid: selectedToken?.uuid || '',
-            tokenSymbol: selectedToken?.symbol || '',
-            evmConfirmationTime: Math.floor(Date.now() / 1000), // Will be updated when EVM confirms
-            isTestnet: bridgeConfig.isTestnet,
-          },
-        }
-
-        // Add to notification center
-        const notificationGroup: string[] = []
-        notificationGroup.push(JSON.stringify(notificationData))
-        addNotification(notificationGroup)
-      }
-
-      // Start EVM polling
+      // Start EVM polling (notification will be created after EVM confirmation)
       startEvmConfirmationPolling(txHash)
     }
 
@@ -384,7 +390,10 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       window.removeEventListener('bridgeApprovalConfirmed', handleApprovalConfirmed as EventListener)
       window.removeEventListener('bridgeTransactionSent', handleBridgeTransactionSent as unknown as EventListener)
     }
-  }, [updateStep, setApprovalTxHash, setBridgeTxHash])
+    // Empty dependency array - event listeners should only be set up once on mount
+    // The handlers use refs and Zustand actions that don't need to be in dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (initialToken) {
@@ -463,7 +472,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     setErrorMessage('')
     setTransactionHash('')
     setTxStatus('processing')
-    bridgeNotificationCreated.current = false // Reset notification flag for new transaction
+    hathorNotificationCreated.current = false // Reset notification flag for new transaction
 
     // Initialize stepper with Zustand store
     setShowStepper(true)

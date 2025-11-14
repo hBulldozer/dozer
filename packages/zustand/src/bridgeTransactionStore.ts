@@ -97,12 +97,6 @@ const initialSteps: BridgeStep[] = [
     title: 'EVM Confirming',
     description: 'Waiting for block confirmations on Ethereum network',
     status: 'pending'
-  },
-  {
-    id: 'hathor-received',
-    title: 'Tokens Received',
-    description: 'Waiting for tokens in your Hathor wallet (this may take 2-5 minutes)',
-    status: 'pending'
   }
 ]
 
