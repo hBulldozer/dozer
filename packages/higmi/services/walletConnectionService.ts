@@ -88,7 +88,7 @@ export class WalletConnectionService {
   ): Promise<{ installed: boolean; snapId: string | null }> {
     try {
       const snaps = (await requestFn({ method: 'wallet_getSnaps' })) as Record<string, any>
-      const possibleSnapIds = ['local:http://localhost:8080', 'npm:@hathor/snap']
+      const possibleSnapIds = ['local:http://localhost:8080', 'local:http://localhost:8080']
 
       for (const snapId of possibleSnapIds) {
         if (snaps && snaps[snapId]) {
@@ -105,15 +105,22 @@ export class WalletConnectionService {
    * Get current network from snap
    */
   public async getCurrentNetwork(
-    invokeSnapFn: (params: { snapId: string; method: string; params: any }) => Promise<any>,
-    snapId: string
+    invokeSnapFn: (params: { method: string; params?: any }) => Promise<any>
   ): Promise<'mainnet' | 'testnet' | null> {
     try {
-      const result = await invokeSnapFn({
-        snapId,
-        method: 'htr_getConnectedNetwork',
-        params: {},
+      console.log('Calling htr_getConnectedNetwork with timeout...')
+
+      // Add a timeout to prevent hanging indefinitely
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Network check timeout')), 10000) // 10 second timeout
       })
+
+      const networkPromise = invokeSnapFn({
+        method: 'htr_getConnectedNetwork',
+      })
+
+      const result = await Promise.race([networkPromise, timeoutPromise])
+      console.log('htr_getConnectedNetwork result:', result)
 
       // Parse network response
       if (typeof result === 'string') {
@@ -124,6 +131,7 @@ export class WalletConnectionService {
 
       return null
     } catch (error) {
+      console.warn('Error getting network from snap:', error)
       return null
     }
   }
@@ -133,7 +141,7 @@ export class WalletConnectionService {
    */
   public async connectMetaMaskSnapEnhanced(
     requestFn: (request: { method: string; params?: any }) => Promise<any>,
-    invokeSnapFn: (params: { snapId: string; method: string; params: any }) => Promise<any>,
+    invokeSnapFn: (params: { method: string; params?: any }) => Promise<any>,
     onStatusUpdate?: (status: string) => void
   ): Promise<WalletConnectionResult> {
     try {
@@ -156,7 +164,7 @@ export class WalletConnectionService {
 
       // Step 2: Check if Hathor snap is already installed
       const snapCheck = await this.checkSnapInstallation(requestFn)
-      let snapId: string
+      let snapId: string = ''
 
       if (snapCheck.installed && snapCheck.snapId) {
         // Snap already installed - use it
@@ -165,9 +173,9 @@ export class WalletConnectionService {
       } else {
         // Install snap
         onStatusUpdate?.('Installing Hathor snap...')
-        const defaultSnapId = 'npm:@hathor/snap'
+        const defaultSnapId = 'local:http://localhost:8080'
 
-        // Use request directly to get the snap object
+        console.log('Attempting to connect to local snap:', defaultSnapId)
         const snaps = await requestFn({
           method: 'wallet_requestSnaps',
           params: {
@@ -175,8 +183,12 @@ export class WalletConnectionService {
           },
         })
 
+        // Debug log to see what we got back
+        console.log('Snap installation response:', snaps)
+        console.log('Snap exists?', snaps?.[defaultSnapId])
+
         // Check if snap installation was cancelled or failed
-        if (!snaps || !snaps[defaultSnapId]) {
+        if (!snaps) {
           return {
             success: false,
             walletType: 'metamask-snap',
@@ -186,37 +198,53 @@ export class WalletConnectionService {
           }
         }
 
-        snapId = defaultSnapId
+        // Try to find the snap ID - it might be returned with a different format
+        const availableSnapIds = Object.keys(snaps)
+        console.log('Available snap IDs:', availableSnapIds)
+
+        // Look for our snap - check both exact match and partial match
+        const foundSnapId = availableSnapIds.find((id) => id === defaultSnapId) ||
+          availableSnapIds.find((id) => id.includes('localhost') || id.includes('hathor'))
+
+        if (!foundSnapId) {
+          console.error('Snap not found in response. Available IDs:', availableSnapIds)
+          return {
+            success: false,
+            walletType: 'metamask-snap',
+            address: ethAddress,
+            hathorAddress: '',
+            error: `Local snap not found. Please ensure:
+1. Your snap is running on localhost:8080 (run: pnpm serve)
+2. Local snaps are enabled in MetaMask (use MetaMask Flask or enable in Settings > Advanced)
+Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
+          }
+        }
+
+        snapId = foundSnapId
+        console.log('Using snap ID:', snapId)
         onStatusUpdate?.('Hathor snap installed! Configuring...')
       }
 
-      // Step 3: Check current network and target network
-      const { targetNetwork } = useAccount.getState()
-      const currentNetwork = await this.getCurrentNetwork(invokeSnapFn, snapId)
-
-      // Step 4: Switch network if needed
-      if (currentNetwork && currentNetwork !== targetNetwork) {
-        onStatusUpdate?.(`Switching to ${targetNetwork}...`)
-        await invokeSnapFn({
-          snapId,
-          method: 'htr_changeNetwork',
-          params: { newNetwork: targetNetwork },
+      // Step 3: Get Hathor wallet information (address and network)
+      // Note: We get wallet info first, which includes the network, then switch if needed
+      onStatusUpdate?.('Requesting wallet information...')
+      let walletInfoResult
+      try {
+        walletInfoResult = await invokeSnapFn({
+          method: 'htr_getWalletInformation',
+          // Don't pass params - the method doesn't need any
         })
-      } else if (currentNetwork === targetNetwork) {
-        onStatusUpdate?.(`Already on ${targetNetwork}! Getting address...`)
-      } else {
-        onStatusUpdate?.('Getting Hathor address...')
+        console.log('Raw wallet info result:', walletInfoResult)
+      } catch (error) {
+        console.error('Error calling htr_getWalletInformation:', error)
+        throw error
       }
 
-      // Step 5: Get Hathor address
-      const addressResult = await invokeSnapFn({
-        snapId,
-        method: 'htr_getAddress',
-        params: { type: 'index', index: 0 },
-      })
-
-      // Parse Hathor address response
-      const hathorAddress = this.parseHathorAddress(addressResult)
+      // Parse wallet information response
+      const walletInfo = this.parseWalletInformation(walletInfoResult)
+      console.log('Parsed wallet info:', walletInfo)
+      const hathorAddress = walletInfo?.address
+      const currentNetwork = walletInfo?.network
 
       if (!hathorAddress) {
         return {
@@ -228,15 +256,42 @@ export class WalletConnectionService {
         }
       }
 
+      // Step 4: Check if we need to switch networks
+      const { targetNetwork, setWalletConnection } = useAccount.getState()
+      console.log('Current network:', currentNetwork, 'Target network:', targetNetwork)
+
+      if (currentNetwork && currentNetwork !== targetNetwork) {
+        console.log(`Network mismatch. Need to switch from ${currentNetwork} to ${targetNetwork}`)
+        onStatusUpdate?.(`Switching to ${targetNetwork}...`)
+
+        try {
+          await invokeSnapFn({
+            method: 'htr_changeNetwork',
+            params: { newNetwork: targetNetwork },
+          })
+          console.log('Network switched successfully')
+
+          // Get wallet info again after network switch
+          const newWalletInfoResult = await invokeSnapFn({
+            method: 'htr_getWalletInformation',
+          })
+          const newWalletInfo = this.parseWalletInformation(newWalletInfoResult)
+          if (newWalletInfo?.address) {
+            console.log('New address after network switch:', newWalletInfo.address)
+          }
+        } catch (error) {
+          console.warn('Failed to switch network, continuing with current network:', error)
+        }
+      }
+
       // Update global state with network info
-      const { setWalletConnection } = useAccount.getState()
       setWalletConnection({
         walletType: 'metamask-snap',
         address: ethAddress,
         hathorAddress: hathorAddress,
         isSnapInstalled: true,
         snapId: snapId,
-        selectedNetwork: targetNetwork,
+        selectedNetwork: (currentNetwork as 'mainnet' | 'testnet') || targetNetwork,
       })
 
       return {
@@ -287,33 +342,21 @@ export class WalletConnectionService {
    */
   public async switchSnapNetwork(
     network: 'mainnet' | 'testnet',
-    invokeSnapFn: (params: { snapId: string; method: string; params: any }) => Promise<any>
+    invokeSnapFn: (params: { method: string; params?: any }) => Promise<any>
   ): Promise<NetworkSwitchResult> {
-    const { snapId } = useAccount.getState()
-
-    if (!snapId) {
-      return {
-        success: false,
-        network,
-        error: 'No snap installed',
-      }
-    }
-
     try {
       await invokeSnapFn({
-        snapId,
         method: 'htr_changeNetwork',
         params: { newNetwork: network },
       })
 
-      // Get new address for the network
-      const addressResult = await invokeSnapFn({
-        snapId,
-        method: 'htr_getAddress',
-        params: { type: 'index', index: 0 },
+      // Get wallet information for the new network
+      const walletInfoResult = await invokeSnapFn({
+        method: 'htr_getWalletInformation',
       })
 
-      const hathorAddress = this.parseHathorAddress(addressResult)
+      const walletInfo = this.parseWalletInformation(walletInfoResult)
+      const hathorAddress = walletInfo?.address
 
       // Update global state
       const { setWalletConnection } = useAccount.getState()
@@ -377,20 +420,46 @@ export class WalletConnectionService {
   }
 
   /**
-   * Helper method to parse Hathor address from snap response
+   * Helper method to parse wallet information from snap response
+   * Handles the new htr_getWalletInformation response format
    */
-  private parseHathorAddress(result: any): string | null {
-    if (typeof result === 'string') {
-      try {
+  private parseWalletInformation(result: any): { address: string; network: string } | null {
+    try {
+      if (typeof result === 'string') {
         const parsed = JSON.parse(result)
-        return parsed?.response?.address || parsed?.address || null
-      } catch {
-        // If parsing fails, assume the string itself is the address
-        return result
+        // New format: { type: 'GetWalletInformationResponse', response: { network: string, address0: string } }
+        if (parsed?.response?.address0) {
+          return {
+            address: parsed.response.address0,
+            network: parsed.response.network || 'mainnet',
+          }
+        }
+        // Fallback for older format
+        if (parsed?.address) {
+          return {
+            address: parsed.address,
+            network: parsed.network || 'mainnet',
+          }
+        }
+      } else if (typeof result === 'object') {
+        // Direct object response
+        if (result?.response?.address0) {
+          return {
+            address: result.response.address0,
+            network: result.response.network || 'mainnet',
+          }
+        }
+        if (result?.address) {
+          return {
+            address: result.address,
+            network: result.network || 'mainnet',
+          }
+        }
       }
-    } else if (typeof result === 'object') {
-      return result?.response?.address || result?.address || null
+    } catch (error) {
+      console.error('Error parsing wallet information:', error)
     }
     return null
   }
+
 }

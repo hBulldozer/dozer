@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useAccount } from '@dozer/zustand'
 import { NotificationData, createSuccessToast } from '@dozer/ui'
 import { client as api_client } from '@dozer/api'
-import { nanoid } from 'nanoid'
 
 export default function useWaitForTransaction(notification: NotificationData, client: typeof api_client) {
   const [status, setStatus] = useState<string>('pending')
@@ -64,7 +63,7 @@ export default function useWaitForTransaction(notification: NotificationData, cl
                 completed: `Bridge complete! ${bridgeMetadata.tokenSymbol} received on Hathor network.`,
                 failed: '',
               },
-              txHash: nanoid(),
+              txHash: result.txId,
               groupTimestamp: Date.now(),
               timestamp: Date.now(),
               href: hathorExplorerUrl,

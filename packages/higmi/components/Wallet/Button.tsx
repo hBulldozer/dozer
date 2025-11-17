@@ -82,7 +82,7 @@ export const Button = <C extends React.ElementType>({
   useEffect(() => {
     if (session && accounts.length > 0) {
       const hathorAddress = accounts[0].split(':')[2]
-      
+
       // Only update if the wallet type is not already set to walletconnect
       if (walletType !== 'walletconnect') {
         walletService.setWalletConnection({
@@ -131,7 +131,7 @@ export const Button = <C extends React.ElementType>({
         address: hathorAddress,
         hathorAddress: hathorAddress,
         isSnapInstalled: true,
-        snapId: 'npm:@hathor/snap',
+        snapId: 'local:http://localhost:8080',
         selectedNetwork: 'testnet',
       })
     } catch (error) {

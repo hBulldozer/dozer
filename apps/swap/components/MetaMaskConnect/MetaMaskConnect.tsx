@@ -5,7 +5,6 @@ import { useSDK } from '@metamask/sdk-react'
 import { Button, ButtonProps } from '@dozer/ui'
 import Image from 'next/image'
 import { createSuccessToast, createErrorToast } from '@dozer/ui'
-import { nanoid } from 'nanoid'
 
 interface MetaMaskConnectProps {
   onConnect?: (accounts: string[]) => void
@@ -31,12 +30,12 @@ export const MetaMaskConnect: FC<MetaMaskConnectProps> = ({
 
   const connect = async () => {
     setError('')
-    
+
     // Track user action for deep link handling
     if (typeof window !== 'undefined') {
-      (window as any).lastUserAction = Date.now()
+      ;(window as any).lastUserAction = Date.now()
     }
-    
+
     try {
       const accounts = await sdk?.connect()
       if (accounts && accounts.length > 0 && onConnect) {
@@ -51,7 +50,7 @@ export const MetaMaskConnect: FC<MetaMaskConnectProps> = ({
           completed: 'Connected to MetaMask',
           failed: 'Failed to connect to MetaMask',
         },
-        txHash: nanoid(),
+        txHash: accounts ? accounts[0] : '',
         groupTimestamp: Date.now(),
         timestamp: Date.now(),
       })
@@ -105,10 +104,10 @@ export const MetaMaskConnect: FC<MetaMaskConnectProps> = ({
           title="Click to disconnect"
           type="button"
         >
-          <div className="w-2 h-2 rounded-full bg-green-400 mr-2"></div>
+          <div className="w-2 h-2 mr-2 bg-green-400 rounded-full"></div>
           <span className="text-xs text-green-300 font-medium truncate max-w-[100px]">{formatAddress(account)}</span>
         </button>
-        {!hideText && <span className="text-xs text-gray-500 mt-1">Connected to Arbitrum</span>}
+        {!hideText && <span className="mt-1 text-xs text-gray-500">Connected to Arbitrum</span>}
       </div>
     )
   }
@@ -117,13 +116,13 @@ export const MetaMaskConnect: FC<MetaMaskConnectProps> = ({
     <div className="flex flex-col space-y-3">
       {error && <p className="text-xs text-red-400">{error}</p>}
       <Button {...mergedButtonProps}>
-        <div className="w-5 h-5 mr-2 flex-shrink-0">
+        <div className="flex-shrink-0 w-5 h-5 mr-2">
           <Image src="/images/MetaMask-icon-fox.svg" width={20} height={20} alt="MetaMask" />
         </div>
         <span>{connecting ? 'Connecting...' : 'Connect MetaMask'}</span>
       </Button>
       {!hideText && (
-        <p className="text-center text-xs text-gray-400">Connect your Arbitrum wallet to start bridging tokens</p>
+        <p className="text-xs text-center text-gray-400">Connect your Arbitrum wallet to start bridging tokens</p>
       )}
     </div>
   )

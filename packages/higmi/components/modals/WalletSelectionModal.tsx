@@ -24,7 +24,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
 }) => {
   const { provider } = useMetaMaskContext()
   const request = useRequest()
-  const invokeSnap = useInvokeSnap('npm:@hathor/snap')
+  const invokeSnap = useInvokeSnap('local:http://localhost:8080')
   const { session, accounts, isWaitingApproval } = useWalletConnectClient()
   const walletService = WalletConnectionService.getInstance()
   const { targetNetwork } = useAccount()
@@ -205,14 +205,14 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
             </div>
           )}
 
-          {/* {isConnecting && (
+          {isConnecting && (
             <div className="flex items-center gap-3 p-4 border rounded-lg bg-blue-900/20 border-blue-500/30">
               <div className="flex-shrink-0 w-5 h-5 border-2 border-blue-400 rounded-full animate-spin border-t-transparent" />
               <Typography variant="sm" className="text-blue-300">
                 {connectionStep || 'Connecting...'}
               </Typography>
             </div>
-          )} */}
+          )}
 
           <div className="space-y-3">
             {/* Hathor Wallet (WalletConnect) Option */}
@@ -242,8 +242,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
             {/* MetaMask Snap Option */}
             <button
               onClick={handleMetaMaskSelection}
-              // disabled={isConnecting}
-              disabled // waiting for update of hathor snap
+              disabled={isConnecting}
               className="w-full p-4 transition-all duration-200 border bg-gradient-to-r rounded-xl from-orange-200/10 via-orange-400/10 to-orange-300/10 border-orange-300/20 hover:border-orange-300/40 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-center gap-4">

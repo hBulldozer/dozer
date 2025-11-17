@@ -17,7 +17,6 @@ import { api } from 'utils/api'
 import bridgeIcon from '../../public/bridge-icon.jpeg'
 import { BridgeCurrencyInput } from '../BridgeCurrencyInput'
 import { TradeType } from '../utils/TradeType'
-import { nanoid } from 'nanoid'
 import bridgeConfig from '@dozer/higmi/config/bridge'
 import { MetaMaskConnect } from '../MetaMaskConnect'
 import { useSDK } from '@metamask/sdk-react'
@@ -185,7 +184,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                   completed: `EVM confirmed! Waiting for ${tokenSymbol} on Hathor network...`,
                   failed: '',
                 },
-                txHash: nanoid(),
+                txHash: txHash,
                 groupTimestamp: Date.now(),
                 timestamp: Date.now(),
                 href: `${bridgeConfig.ethereumConfig.explorer}/tx/${txHash}`,
@@ -355,7 +354,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         if (isMounted.current) {
           setIsProcessing(false)
           setErrorMessage('Transaction cancelled: You rejected the request in MetaMask')
-          
+
           // Reset bridge state to allow retry
           clearTransaction()
           setShowStepper(false)
@@ -372,7 +371,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     // Clean up function - remove event listeners and set mounted ref to false
     return () => {
       isMounted.current = false
-      
+
       // Clear any ongoing EVM polling
       if (evmIntervalRef.current) {
         clearInterval(evmIntervalRef.current)
@@ -382,7 +381,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         clearTimeout(evmTimeoutRef.current)
         evmTimeoutRef.current = null
       }
-      
+
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       window.removeEventListener('bridgeTransactionUpdate', handleBridgeTransactionUpdate as EventListener)
       window.removeEventListener('bridgeApprovalStarted', handleApprovalStarted as EventListener)
@@ -465,7 +464,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   const handleBridge = async () => {
     // Track user action for deep link handling
     if (typeof window !== 'undefined') {
-      (window as any).lastUserAction = Date.now()
+      ;(window as any).lastUserAction = Date.now()
     }
 
     // Reset state
@@ -636,11 +635,12 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         setErrorMessage(errorMsg)
 
         // Check if this is a user cancellation to handle differently
-        const isUserCancellation = errorMsg.includes('User denied') || 
-                                   errorMsg.includes('cancelled') || 
-                                   errorMsg.includes('canceled') ||
-                                   errorMsg.includes('rejected')
-        
+        const isUserCancellation =
+          errorMsg.includes('User denied') ||
+          errorMsg.includes('cancelled') ||
+          errorMsg.includes('canceled') ||
+          errorMsg.includes('rejected')
+
         if (isUserCancellation) {
           // For user cancellations, reset the entire bridge state to allow retry
           console.log('User cancelled transaction, resetting bridge state')
@@ -680,7 +680,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
           failed: '',
           info: 'Closed transaction status view. Your transaction may still be processing.',
         },
-        txHash: nanoid(),
+        txHash: transactionHash,
         groupTimestamp: Date.now(),
         timestamp: Date.now(),
       })
@@ -701,7 +701,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     <Widget id="bridge" maxWidth={400} className="shadow-2xl shadow-blue-900/20">
       <Widget.Content>
         <div className="px-4 py-4 font-medium border-b border-stone-700">
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold">Arbitrum to Hathor Bridge</h2>
               <p className="mt-1 text-xs text-gray-400">Transfer tokens from Arbitrum to Hathor Network</p>
@@ -711,7 +711,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
         <div className="p-4 bg-stone-800">
           {errorMessage && (
-            <div className="p-3 mb-5 rounded-lg border border-red-600 bg-red-900/20">
+            <div className="p-3 mb-5 border border-red-600 rounded-lg bg-red-900/20">
               <div className="flex items-start">
                 <ExclamationCircleIcon className="w-5 h-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
                 <span className="text-sm text-red-300">{errorMessage}</span>
@@ -792,7 +792,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                 onClick={async () => {
                   // Track user action for deep link handling
                   if (typeof window !== 'undefined') {
-                    (window as any).lastUserAction = Date.now()
+                    ;(window as any).lastUserAction = Date.now()
                   }
 
                   if (sdk) {
@@ -808,7 +808,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                             completed: 'Connected to Arbitrum network',
                             failed: '',
                           },
-                          txHash: nanoid(),
+                          txHash: accounts[0],
                           groupTimestamp: Date.now(),
                           timestamp: Date.now(),
                         })
@@ -851,7 +851,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
             {/* Show connection status for MetaMask EVM network */}
             {metaMaskConnected && metaMaskAccount && (
-              <div className="flex gap-1 justify-center items-center mt-3">
+              <div className="flex items-center justify-center gap-1 mt-3">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 <span className="text-xs text-green-400">
                   Arbitrum Connected:{' '}
@@ -862,11 +862,9 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
             {/* Show helpful message if user has Snap but not EVM connected */}
             {walletType === 'metamask-snap' && isSnapInstalled && !metaMaskConnected && (
-              <div className="flex gap-1 justify-center items-center mt-3">
+              <div className="flex items-center justify-center gap-1 mt-3">
                 <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-yellow-400">
-                  Connect MetaMask to Arbitrum network to bridge tokens
-                </span>
+                <span className="text-xs text-yellow-400">Connect MetaMask to Arbitrum network to bridge tokens</span>
               </div>
             )}
           </div>

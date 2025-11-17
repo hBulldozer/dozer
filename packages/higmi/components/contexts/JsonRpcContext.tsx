@@ -20,6 +20,35 @@ import config from '../../config/bridge'
 const HATHOR_CHAIN = config.hathorConfig.rpcChain
 
 /**
+ * Utility function to parse snap responses
+ * Handles the new response format: { type: RpcResponseTypes.X, response: { ... } }
+ */
+const parseSnapResponse = <T = any,>(result: unknown): T | null => {
+  try {
+    if (typeof result === 'string') {
+      const parsed = JSON.parse(result)
+      // New format with response wrapper
+      if (parsed?.response !== undefined) {
+        return parsed.response as T
+      }
+      // Direct response
+      return parsed as T
+    } else if (result && typeof result === 'object') {
+      const obj = result as Record<string, unknown>
+      // New format with response wrapper
+      if (obj?.response !== undefined) {
+        return obj.response as T
+      }
+      // Direct response
+      return result as T
+    }
+  } catch (error) {
+    console.error('Error parsing snap response:', error)
+  }
+  return null
+}
+
+/**
  * Types
  */
 export interface IFormattedRpcResponse<T> {
@@ -62,7 +91,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
 
   const { client, session } = useWalletConnectClient()
   const { walletType, hathorAddress, snapId } = useAccount()
-  const invokeSnap = useInvokeSnap('npm:@hathor/snap')
+  const invokeSnap = useInvokeSnap('local:http://localhost:8080')
   const { address: wcAddress } = useAccount()
 
   const address = walletType === 'walletconnect' ? wcAddress : hathorAddress
@@ -221,33 +250,22 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
     }
 
     const handleSnapResponse = (result: unknown): { response: Record<string, unknown> } => {
-      // Handle MetaMask Snap response and extract hash
-      let processedResult = result
-      let hash: string | null = null
+      // Parse the snap response using the utility function
+      const parsedResponse = parseSnapResponse<Record<string, unknown>>(result)
 
-      if (typeof result === 'string') {
-        try {
-          processedResult = JSON.parse(result)
-        } catch {
-          processedResult = result
-        }
+      if (!parsedResponse) {
+        return { response: {} }
       }
 
       // Extract hash from various possible locations
-      if (processedResult && typeof processedResult === 'object') {
-        const obj = processedResult as Record<string, unknown>
-
-        // Look for hash in various possible locations
-        hash = (obj.hash ||
-          obj.tx_id ||
-          obj.txId ||
-          (obj.transaction as any)?.hash ||
-          (obj.response as any)?.hash ||
-          null) as string | null
-      }
+      const hash = (parsedResponse.hash ||
+        parsedResponse.tx_id ||
+        parsedResponse.txId ||
+        (parsedResponse.transaction as any)?.hash ||
+        null) as string | null
 
       const response = {
-        ...(processedResult as Record<string, unknown>),
+        ...parsedResponse,
         hash, // Always include hash for consistency
       }
 
@@ -310,25 +328,13 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
             params: signOracleDataReq.params,
           })
 
-          let response: SignOracleDataResponse['response']
+          // Parse the snap response using the utility function
+          const parsedResponse = parseSnapResponse<SignOracleDataResponse['response']>(result)
 
-          if (typeof result === 'string') {
-            try {
-              const parsed = JSON.parse(result)
-              response = parsed
-            } catch {
-              response = {
-                data: signOracleDataReq.params.data,
-                signedData: { signature: result } as SignOracleDataResponse['response']['signedData'],
-                oracle: signOracleDataReq.params.oracle,
-              }
-            }
-          } else {
-            response = (result as SignOracleDataResponse['response']) || {
-              data: signOracleDataReq.params.data,
-              signedData: { signature: 'No response from snap' } as SignOracleDataResponse['response']['signedData'],
-              oracle: signOracleDataReq.params.oracle,
-            }
+          const response: SignOracleDataResponse['response'] = parsedResponse || {
+            data: signOracleDataReq.params.data,
+            signedData: { signature: 'No response from snap' } as SignOracleDataResponse['response']['signedData'],
+            oracle: signOracleDataReq.params.oracle,
           }
 
           const finalResponse: SignOracleDataResponse = {
