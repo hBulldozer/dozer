@@ -6,6 +6,7 @@ import { FC, useRef } from 'react'
 import { ICON_SIZE } from '../../contants'
 import { CellProps } from './types'
 import { UsersIcon } from '@heroicons/react/24/outline'
+import { FarmRewardsAvailableTooltip } from '../../../../FarmRewardsAvailableTooltip'
 
 export const PairNameCell: FC<CellProps> = ({ row }) => {
   const ref = useRef<HTMLDivElement>(null)
@@ -24,10 +25,11 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
       <div className="flex flex-col">
         <Typography variant="sm" weight={500} className="flex items-center gap-1 text-stone-50">
           {row.token0.symbol} <span className="text-stone-500">/</span> {row.token1.symbol}{' '}
+          <FarmRewardsAvailableTooltip />
           <Chip color="gray" size="sm" label={`${row.swapFee.toFixed(2)}%`} />
           {row.token1.imageUrl && (
             <>
-              <div className={classNames('bg-stone-700 hidden sm:flex rounded-lg px-2 py-0.5 text-xs')}>Community</div>
+              <div className={classNames('bg-stone-700 hidden sm:flex rounded-lg px-2 py-0.5 text-xs')}>Tools</div>
               <div className={classNames('bg-stone-700 flex sm:hidden rounded-lg px-2 py-0.5 text-xs')}>
                 <UsersIcon width={16} height={16} />
               </div>

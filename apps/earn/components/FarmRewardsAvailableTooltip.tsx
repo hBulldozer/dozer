@@ -6,7 +6,7 @@ export const FarmRewardsAvailableTooltip: FC = () => {
     <Tooltip
       placement="bottom"
       button={<span>✨</span>}
-      panel={<div className="text-xs rounded-2xl text-stone-300">Farm rewards available</div>}
+      panel={<div className="text-xs rounded-2xl text-stone-300">Double rewards</div>}
     >
       <></>
     </Tooltip>

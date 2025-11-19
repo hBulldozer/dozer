@@ -41,18 +41,18 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
           loading={shouldPrioritize ? 'eager' : 'lazy'}
         />
       </div>
-      <div className="flex flex-grow items-center ml-3 min-w-0">
-        <div className="flex flex-col flex-grow mr-2 min-w-0">
+      <div className="flex items-center flex-grow min-w-0 ml-3">
+        <div className="flex flex-col flex-grow min-w-0 mr-2">
           {/* Mobile: Show symbol prominently with name smaller underneath */}
-          <Typography variant="sm" weight={600} className="truncate text-stone-50 block sm:hidden">
+          <Typography variant="sm" weight={600} className="block truncate text-stone-50 sm:hidden">
             {token.symbol}
           </Typography>
-          <Typography variant="xxs" className="truncate text-stone-400 block sm:hidden">
+          <Typography variant="xxs" className="block truncate text-stone-400 sm:hidden">
             {token.name}
           </Typography>
-          
+
           {/* Desktop: Show symbol with name underneath */}
-          <Typography variant="sm" weight={500} className="truncate text-stone-50 hidden sm:block">
+          <Typography variant="sm" weight={500} className="hidden truncate text-stone-50 sm:block">
             {token.symbol}
           </Typography>
           <Typography variant="xxs" className="hidden truncate sm:block text-stone-400">
@@ -62,7 +62,7 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
         {token.imageUrl && (
           <>
             <div className={classNames('bg-stone-700 hidden sm:flex rounded-lg px-1 py-0.5 text-xs flex-shrink-0')}>
-              Community
+              Tools
             </div>
             <div className={classNames('bg-stone-700 flex sm:hidden rounded-lg p-0.5 text-xs flex-shrink-0')}>
               <UsersIcon width={16} height={16} />
