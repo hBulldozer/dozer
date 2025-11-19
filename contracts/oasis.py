@@ -24,7 +24,7 @@ from hathor import (
 MIN_DEPOSIT = 10000_00
 PRECISION = 10**20
 PRICE_PRECISION = 10**8  # For decimal price handling (8 decimal places)
-MONTHS_IN_SECONDS = 60
+MONTHS_IN_SECONDS = 60*60*24*30
 HTR_UID = TokenUid(b'\x00')
 
 class OasisUserInfo(NamedTuple):

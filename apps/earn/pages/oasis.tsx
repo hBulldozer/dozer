@@ -44,7 +44,7 @@ import { PRICE_PRECISION } from '@dozer/api/src/router/constants'
 const TokenOption = ({ token, disabled }: { token: { symbol: string; uuid: string }; disabled?: boolean }) => {
   return (
     <div className={classNames('flex flex-row items-center w-full gap-4', disabled && 'opacity-50')}>
-      <div className="flex flex-row gap-4 items-center w-full">
+      <div className="flex flex-row items-center w-full gap-4">
         <div className="flex-shrink-0 w-7 h-7">
           <Icon key={token.symbol} currency={toToken(token)} width={28} height={28} />
         </div>
@@ -247,7 +247,10 @@ const OasisProgram = () => {
                 pending: `${txType} in ${oasisName} Oasis pool.`,
                 completed: `${txType} in ${oasisName} Oasis pool.`,
                 failed: 'Failed summary',
-                info: `${txType} in ${oasisName} Oasis pool: ${parseFloat(amount).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${token}.`,
+                info: `${txType} in ${oasisName} Oasis pool: ${parseFloat(amount).toLocaleString(undefined, {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 2,
+                })} ${token}.`,
               },
               status: 'pending',
               txHash: hash,
@@ -618,7 +621,7 @@ const OasisProgram = () => {
         />
       </div>
 
-      <div className="relative z-10 px-4 py-2 min-h-screen lg:mx-8 lg:my-4 bg-black/80">
+      <div className="relative z-10 min-h-screen px-4 py-2 lg:mx-8 lg:my-4 bg-black/80">
         {/* Title Section */}
         <div className="flex flex-col items-center pt-6 mb-4 lg:pt-10 lg:mb-16">
           <h1 className="relative z-20 text-6xl font-bold text-center text-white sm:text-7xl lg:text-9xl">OASIS</h1>
@@ -708,7 +711,7 @@ const OasisProgram = () => {
                   <Link href="https://docs.dozer.finance/oasis" target="_blank">
                     <Button
                       variant="outlined"
-                      className="hidden justify-center w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"
+                      className="justify-center hidden w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"
                     >
                       <Typography variant="sm" className="text-nowrap" weight={500}>
                         Learn More
@@ -718,7 +721,7 @@ const OasisProgram = () => {
                   </Link>
                   <Button
                     variant="outlined"
-                    className="hidden justify-center border lg:flex text-yellow hover:text-yellow-600 border-yellow"
+                    className="justify-center hidden border lg:flex text-yellow hover:text-yellow-600 border-yellow"
                     onClick={() => setShowChart(!showChart)}
                   >
                     <Typography variant="sm" weight={500}>
@@ -745,7 +748,7 @@ const OasisProgram = () => {
                         <div className="flex flex-col gap-2">
                           <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
                             <div>
-                              <div className="flex gap-4 items-center mb-6 ml-4 sm:gap-6 sm:ml-8">
+                              <div className="flex items-center gap-4 mb-6 ml-4 sm:gap-6 sm:ml-8">
                                 <Tab
                                   className={({ selected }) =>
                                     classNames(
@@ -785,9 +788,9 @@ const OasisProgram = () => {
                                             value={amount}
                                             ref={inputRef}
                                             onUserInput={(val) => setAmount(val)}
-                                            className="pl-3 h-full text-2xl"
+                                            className="h-full pl-3 text-2xl"
                                           />
-                                          <div className="flex absolute right-4 top-1/2 items-center -translate-y-1/2">
+                                          <div className="absolute flex items-center -translate-y-1/2 right-4 top-1/2">
                                             <PricePanel
                                               amount={amount}
                                               tokenSymbol={token}
@@ -811,7 +814,7 @@ const OasisProgram = () => {
                                           }}
                                           button={
                                             <Select.Button>
-                                              <div className="flex flex-row flex-grow gap-4 items-center mr-8">
+                                              <div className="flex flex-row items-center flex-grow gap-4 mr-8">
                                                 <div className="flex-shrink-0 w-7 h-7">
                                                   <Icon
                                                     key={currency}
@@ -839,12 +842,12 @@ const OasisProgram = () => {
                                             <Select.Option value="hUSDC">
                                               <TokenOption token={{ symbol: 'hUSDC', uuid: '00' }} />
                                             </Select.Option>
-                                            <Select.Option disabled value="hETH">
+                                            {/* <Select.Option disabled value="hETH">
                                               <TokenOption disabled token={{ symbol: 'hETH', uuid: '00' }} />
                                             </Select.Option>
                                             <Select.Option disabled value="hBTC">
                                               <TokenOption disabled token={{ symbol: 'hBTC', uuid: '00' }} />
-                                            </Select.Option>
+                                            </Select.Option> */}
                                           </Select.Options>
                                         </Select>
                                       </div>
@@ -875,7 +878,7 @@ const OasisProgram = () => {
                                             </Typography>
                                           </div>
                                         </Transition>
-                                        <div className="flex flex-col gap-2 w-full">
+                                        <div className="flex flex-col w-full gap-2">
                                           <div className="flex justify-between">
                                             <Typography variant="sm" className="text-stone-400">
                                               {currency} Price Change
@@ -1023,7 +1026,7 @@ const OasisProgram = () => {
                                         amount={Number(amount)}
                                         token={new Token({ chainId: ChainId.HATHOR, uuid: tokenUuid, decimals: 2 })}
                                       >
-                                        <div className="flex flex-col gap-2 justify-between">
+                                        <div className="flex flex-col justify-between gap-2">
                                           <Button
                                             size="md"
                                             disabled={isRpcRequestPending || !prices || !prices['00']}
@@ -1051,7 +1054,7 @@ const OasisProgram = () => {
                                       <div className="text-center">
                                         <Typography
                                           variant="xl"
-                                          className="py-36 my-8 rounded-xl bg-stone-700/20 text-stone-300"
+                                          className="my-8 py-36 rounded-xl bg-stone-700/20 text-stone-300"
                                         >
                                           Please connect your wallet to view your positions.
                                         </Typography>
@@ -1063,7 +1066,7 @@ const OasisProgram = () => {
                                       <div className="text-center">
                                         <Typography
                                           variant="xl"
-                                          className="py-36 my-8 rounded-xl bg-stone-700/20 text-stone-300"
+                                          className="my-8 py-36 rounded-xl bg-stone-700/20 text-stone-300"
                                         >
                                           No active positions.
                                         </Typography>
@@ -1144,12 +1147,12 @@ const OasisProgram = () => {
                     <div className="relative h-[30px] w-full overflow-hidden rounded-md">
                       <div className="absolute inset-0 bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500" />
                       <div
-                        className="overflow-hidden absolute inset-y-0 left-0 rounded-md"
+                        className="absolute inset-y-0 left-0 overflow-hidden rounded-md"
                         style={{ width: `${progress}%` }}
                       >
                         <div className="h-full bg-gradient-to-r from-green-700 via-emerald-500 to-green-800" />
                       </div>
-                      <div className="flex absolute inset-0 justify-between items-center px-3">
+                      <div className="absolute inset-0 flex items-center justify-between px-3">
                         <Typography variant="base" weight={600} className="text-white drop-shadow-md">
                           {availableHTR.toLocaleString()} HTR
                         </Typography>

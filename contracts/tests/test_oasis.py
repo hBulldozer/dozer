@@ -15,7 +15,7 @@ from hathor.nanocontracts.exception import NCFail
 settings = HathorSettings()
 PRECISION = 10**20
 PRICE_PRECISION = 10**8  # For decimal price handling (8 decimal places)
-MONTHS_IN_SECONDS = 60
+MONTHS_IN_SECONDS = 60*60*24*30
 HTR_UID = settings.HATHOR_TOKEN_UID
 
 

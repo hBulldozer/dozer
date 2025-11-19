@@ -86,15 +86,18 @@ const UserOasisPosition = ({
   // Calculate ROI
   const calculateROI = () => {
     // Only calculate if we have all the necessary data
-    if (!oasis.user_deposit_b || !prices || !oasis.htr_price_in_deposit || !oasis.token_price_in_htr_in_deposit)
+    if (!oasis.user_deposit_b || !prices)
       return null
 
     const currencyUuid = oasis.token.uuid
 
     // Use initial prices from deposit if available, otherwise fallback to current prices
-    const initialHtrPriceUSD = oasis.htr_price_in_deposit
-    const initialTokenPriceHTR = oasis.token_price_in_htr_in_deposit
-    
+    // Note: API already converts these from contract PRICE_PRECISION format
+    const initialHtrPriceUSD = oasis.htr_price_in_deposit || 0
+    // Contract stores deposit_amount/htr_amount (tokens per HTR), so invert to get HTR per token
+    const tokensPerHTR = oasis.token_price_in_htr_in_deposit || 0
+    const initialTokenPriceHTR = tokensPerHTR > 0 ? 1 / tokensPerHTR : 0
+
     // Calculate initial token price in USD: token_price_htr * htr_price_usd
     const initialTokenPriceUSD = initialTokenPriceHTR * initialHtrPriceUSD
 
