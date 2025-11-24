@@ -66,29 +66,86 @@ const BridgeBalancePanel: FC<BridgeBalancePanelProps> = ({
   // Bridge context for EVM token balances
   const { loadBalances } = useBridge()
 
-  // Load EVM token balance when currency changes
-  useEffect(() => {
-    const loadEvmBalance = async () => {
-      if (!currency?.originalAddress || !metaMaskConnected) {
-        setEvmTokenBalance(0)
-        return
-      }
-
-      setIsLoadingBalance(true)
-      try {
-        const balances = await loadBalances([currency.originalAddress])
-        const balance = balances?.[currency.originalAddress] || 0
-        setEvmTokenBalance(balance)
-      } catch (error) {
-        console.error('Error loading EVM balance for bridge:', error)
-        setEvmTokenBalance(0)
-      } finally {
-        setIsLoadingBalance(false)
-      }
+  // Function to load EVM balance (extracted to be reusable)
+  const loadEvmBalance = React.useCallback(async () => {
+    if (!currency?.originalAddress || !metaMaskConnected) {
+      setEvmTokenBalance(0)
+      return
     }
 
-    loadEvmBalance()
+    setIsLoadingBalance(true)
+    try {
+      const balances = await loadBalances([currency.originalAddress])
+      const balance = balances?.[currency.originalAddress] || 0
+      setEvmTokenBalance(balance)
+    } catch (error) {
+      console.error('Error loading EVM balance for bridge:', error)
+      setEvmTokenBalance(0)
+    } finally {
+      setIsLoadingBalance(false)
+    }
   }, [currency?.originalAddress, metaMaskConnected, loadBalances])
+
+  // Load EVM token balance when currency changes
+  useEffect(() => {
+    loadEvmBalance()
+  }, [loadEvmBalance])
+
+  // Listen for bridge transaction events to refresh balance
+  useEffect(() => {
+    let pollIntervalRef: NodeJS.Timeout | null = null
+    let initialTimeoutRef: NodeJS.Timeout | null = null
+
+    const handleBridgeTransaction = (event: CustomEvent) => {
+      console.log('Bridge transaction detected, starting balance refresh polling...')
+
+      // Clear any existing polling
+      if (pollIntervalRef) {
+        clearInterval(pollIntervalRef)
+      }
+
+      let pollCount = 0
+      const maxPolls = 20 // Poll for up to ~40 seconds (20 polls * 2 seconds)
+      const pollInterval = 2000 // Every 2 seconds
+
+      // Start polling after a short initial delay
+      initialTimeoutRef = setTimeout(() => {
+        console.log('Starting EVM balance polling...')
+
+        // Do an immediate refresh
+        loadEvmBalance()
+
+        // Then set up interval for subsequent refreshes
+        pollIntervalRef = setInterval(() => {
+          pollCount++
+          console.log(`Polling EVM balance (attempt ${pollCount}/${maxPolls})...`)
+          loadEvmBalance()
+
+          // Stop polling after max attempts
+          if (pollCount >= maxPolls) {
+            console.log('Balance refresh polling completed')
+            if (pollIntervalRef) {
+              clearInterval(pollIntervalRef)
+              pollIntervalRef = null
+            }
+          }
+        }, pollInterval)
+      }, 1000) // Wait 1 second before starting to allow tx to propagate
+    }
+
+    // Listen for bridge transaction sent event
+    window.addEventListener('bridgeTransactionSent', handleBridgeTransaction as EventListener)
+
+    return () => {
+      if (pollIntervalRef) {
+        clearInterval(pollIntervalRef)
+      }
+      if (initialTimeoutRef) {
+        clearTimeout(initialTimeoutRef)
+      }
+      window.removeEventListener('bridgeTransactionSent', handleBridgeTransaction as EventListener)
+    }
+  }, [loadEvmBalance])
 
   const handlePercentageClick = (percentage: number) => {
     const amount = (evmTokenBalance * percentage) / 100

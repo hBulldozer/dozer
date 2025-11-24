@@ -454,12 +454,11 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               })
             )
 
-            // Use a higher amount for approval to avoid needing to approve again
-            const factor = Math.pow(10, decimals)
-            const largeAmount = 1000000000 // 1 billion tokens
-            const approvalAmount = (largeAmount * factor).toString()
+            // Approve only the exact amount needed for this transaction
+            // This is more secure and follows best practices
+            const approvalAmount = amountInWei
 
-            console.log(`Setting approval to ${largeAmount} tokens (${approvalAmount} in smallest units)`)
+            console.log(`Setting approval to ${humanReadableAmount} tokens (${approvalAmount} in smallest units)`)
 
             // Create approve method
             const approveMethod = tokenContract.methods.approve(BRIDGE_CONTRACT_ADDRESS, approvalAmount)

@@ -9,7 +9,7 @@ import { useBridge } from '../../../components/contexts/BridgeContext'
 import Web3 from 'web3'
 import { useSDK } from '@metamask/sdk-react'
 import Image from 'next/image'
-import bridgeConfig, { IS_TESTNET } from '../../../config/bridge'
+import bridgeConfig from '../../../config/bridge'
 import { useWalletConnectClient } from '../../contexts'
 
 interface TokensEVMProps {
@@ -27,9 +27,8 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
   const [currentNetwork, setCurrentNetwork] = useState<string>('')
   const { data: prices } = client.getPrices.all.useQuery()
 
-
-  // Get the correct network configuration based on test environment
-  const networkConfig = IS_TESTNET ? bridgeConfig.ethereumConfig.name : 'Arbitrum One'
+  // Get the correct network configuration (automatically detected from environment)
+  const networkConfig = bridgeConfig.ethereumConfig.name
 
   // Check network on component mount
   useEffect(() => {
@@ -39,8 +38,8 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
           const chainId = await window.ethereum.request({ method: 'eth_chainId' })
           const networkId = parseInt(chainId, 16)
 
-          // Expected chain ID based on config
-          const expectedChainId = IS_TESTNET ? bridgeConfig.ethereumConfig.networkId : 42161 // Arbitrum One
+          // Expected chain ID from bridge config (automatically detected from environment)
+          const expectedChainId = bridgeConfig.ethereumConfig.networkId
 
           if (networkId !== expectedChainId) {
             setError(`Please connect to ${networkConfig} in MetaMask`)
@@ -62,10 +61,10 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
 
   // Get bridged tokens from the same source as Bridge component (database API)
   const { data: tokens } = client.getTokens.all.useQuery()
-  
+
   const bridgedTokens = React.useMemo(() => {
     if (!tokens) return []
-    
+
     // Filter tokens that are bridged (same logic as Bridge component)
     return tokens
       .filter((token) => token.bridged)
@@ -91,8 +90,8 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
         const chainId = await window.ethereum.request({ method: 'eth_chainId' })
         const networkId = parseInt(chainId, 16)
 
-        // Expected chain ID based on config
-        const expectedChainId = IS_TESTNET ? bridgeConfig.ethereumConfig.networkId : 42161 // Arbitrum One
+        // Expected chain ID from bridge config (automatically detected from environment)
+        const expectedChainId = bridgeConfig.ethereumConfig.networkId
 
         if (networkId !== expectedChainId) {
           throw new Error(`Please switch to ${networkConfig} network in MetaMask to view balances`)
@@ -101,7 +100,7 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
 
       // Load balances for each token individually (same as BridgeBalancePanel)
       const newBalances: Record<string, number> = {}
-      
+
       for (const token of bridgedTokens) {
         if (token.originalAddress) {
           try {
@@ -114,7 +113,7 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
           }
         }
       }
-      
+
       setTokenBalances(newBalances)
     } catch (error: any) {
       console.error('Error loading EVM token balances:', error)
@@ -156,15 +155,15 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
         const chainId = await window.ethereum.request({ method: 'eth_chainId' })
         const networkId = parseInt(chainId, 16)
 
-        // Expected chain ID based on config
-        const expectedChainId = IS_TESTNET ? bridgeConfig.ethereumConfig.networkId : 42161 // Arbitrum One
+        // Expected chain ID from bridge config (automatically detected from environment)
+        const expectedChainId = bridgeConfig.ethereumConfig.networkId
 
         if (networkId !== expectedChainId) {
           try {
             // Try to switch to the correct network
             await window.ethereum.request({
               method: 'wallet_switchEthereumChain',
-              params: [{ chainId: '0x' + expectedChainId.toString(16) }],
+              params: [{ chainId: bridgeConfig.ethereumConfig.chainIdHex }],
             })
             console.log(`Switched to ${networkConfig}`)
           } catch (switchError: any) {
@@ -279,7 +278,7 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
           </div>
         ) : bridgedTokens.length === 0 ? (
           <Typography variant="xs" className="py-5 text-center text-stone-500">
-            No bridged tokens found for {IS_TESTNET ? 'testnet' : 'mainnet'} environment
+            No bridged tokens found for {bridgeConfig.isTestnet ? 'testnet' : 'mainnet'} environment
           </Typography>
         ) : (
           <div>
@@ -329,7 +328,7 @@ export const TokensEVM: FC<TokensEVMProps> = ({ setView, client }) => {
             <div className="p-3 mx-3 mt-2">
               <Button
                 as="a"
-                href="/bridge"
+                href="/swap/bridge"
                 size="xs"
                 color="blue"
                 className="flex items-center justify-center w-full gap-2"

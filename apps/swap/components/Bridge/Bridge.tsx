@@ -411,6 +411,59 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         try {
           console.log('Auto-connecting MetaMask EVM for Snap user...')
           await sdk.connect()
+
+          // After connecting, check and switch to the correct network (Sepolia for testnet)
+          if (window.ethereum) {
+            try {
+              const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+              const networkId = parseInt(chainId, 16)
+
+              // Expected chain ID from bridge config (Sepolia for testnet, Arbitrum for mainnet)
+              const expectedChainId = bridgeConfig.ethereumConfig.networkId
+              const expectedChainIdHex = bridgeConfig.ethereumConfig.chainIdHex
+
+              if (networkId !== expectedChainId) {
+                console.log(
+                  `Wrong network detected during auto-connect. Switching from ${networkId} to ${expectedChainId} (${bridgeConfig.ethereumConfig.name})`
+                )
+
+                try {
+                  // Try to switch to the correct network
+                  await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: expectedChainIdHex }],
+                  })
+                  console.log(`Successfully switched to ${bridgeConfig.ethereumConfig.name}`)
+
+                  // Show success toast
+                  createSuccessToast({
+                    type: 'approval',
+                    summary: {
+                      pending: '',
+                      completed: `Connected to ${bridgeConfig.ethereumConfig.name}`,
+                      failed: '',
+                    },
+                    txHash: '',
+                    groupTimestamp: Date.now(),
+                    timestamp: Date.now(),
+                  })
+                } catch (switchError: any) {
+                  // This error code indicates that the chain has not been added to MetaMask
+                  if (switchError.code === 4902) {
+                    const errorMsg = `Please add the ${bridgeConfig.ethereumConfig.name} network to your MetaMask`
+                    setErrorMessage(errorMsg)
+                    createErrorToast(errorMsg, false)
+                  } else if (switchError.code === 4001) {
+                    // User rejected the request
+                    const errorMsg = `Please switch to ${bridgeConfig.ethereumConfig.name} network to use the bridge`
+                    setErrorMessage(errorMsg)
+                  }
+                }
+              }
+            } catch (networkError: any) {
+              console.error('Error checking/switching network during auto-connect:', networkError)
+            }
+          }
         } catch (error) {
           console.log('Auto-connect failed (user may have rejected):', error)
           // Don't show error - this is an automatic attempt
@@ -703,8 +756,10 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
         <div className="px-4 py-4 font-medium border-b border-stone-700">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Arbitrum to Hathor Bridge</h2>
-              <p className="mt-1 text-xs text-gray-400">Transfer tokens from Arbitrum to Hathor Network</p>
+              <h2 className="text-xl font-semibold">{bridgeConfig.ethereumConfig.name} to Hathor Bridge</h2>
+              <p className="mt-1 text-xs text-gray-400">
+                Transfer tokens from {bridgeConfig.ethereumConfig.name} to Hathor Network
+              </p>
             </div>
           </div>
         </div>
@@ -800,12 +855,52 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                       console.log('Manually connecting MetaMask to EVM network...')
                       const accounts = await sdk.connect()
                       console.log('Connected to EVM accounts:', accounts)
+
+                      // After connecting, check and switch to the correct network
+                      if (window.ethereum && accounts && accounts.length > 0) {
+                        try {
+                          const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+                          const networkId = parseInt(chainId, 16)
+
+                          // Expected chain ID from bridge config
+                          const expectedChainId = bridgeConfig.ethereumConfig.networkId
+                          const expectedChainIdHex = bridgeConfig.ethereumConfig.chainIdHex
+
+                          if (networkId !== expectedChainId) {
+                            console.log(
+                              `Wrong network detected. Switching from ${networkId} to ${expectedChainId} (${bridgeConfig.ethereumConfig.name})`
+                            )
+
+                            try {
+                              await window.ethereum.request({
+                                method: 'wallet_switchEthereumChain',
+                                params: [{ chainId: expectedChainIdHex }],
+                              })
+                              console.log(`Successfully switched to ${bridgeConfig.ethereumConfig.name}`)
+                            } catch (switchError: any) {
+                              if (switchError.code === 4902) {
+                                const errorMsg = `Please add the ${bridgeConfig.ethereumConfig.name} network to your MetaMask`
+                                setErrorMessage(errorMsg)
+                                createErrorToast(errorMsg, false)
+                                return
+                              } else if (switchError.code === 4001) {
+                                const errorMsg = `Please switch to ${bridgeConfig.ethereumConfig.name} network to use the bridge`
+                                setErrorMessage(errorMsg)
+                                return
+                              }
+                            }
+                          }
+                        } catch (networkError: any) {
+                          console.error('Error checking/switching network:', networkError)
+                        }
+                      }
+
                       if (accounts && accounts.length > 0) {
                         createSuccessToast({
                           type: 'approval',
                           summary: {
                             pending: '',
-                            completed: 'Connected to Arbitrum network',
+                            completed: `Connected to ${bridgeConfig.ethereumConfig.name}`,
                             failed: '',
                           },
                           txHash: accounts[0],
@@ -815,7 +910,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                       }
                     } catch (error: any) {
                       console.error('Failed to connect MetaMask EVM:', error)
-                      const errorMsg = error?.message || 'Failed to connect to Arbitrum network'
+                      const errorMsg = error?.message || `Failed to connect to ${bridgeConfig.ethereumConfig.name}`
                       setErrorMessage(errorMsg)
                       createErrorToast(errorMsg, false)
                     }
@@ -827,7 +922,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                 }}
                 disabled={false}
               >
-                Connect MetaMask to Arbitrum
+                Connect MetaMask to {bridgeConfig.ethereumConfig.name}
               </Button>
             ) : (
               // No MetaMask connection at all - show MetaMask Connect button
@@ -854,7 +949,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
               <div className="flex items-center justify-center gap-1 mt-3">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 <span className="text-xs text-green-400">
-                  Arbitrum Connected:{' '}
+                  {bridgeConfig.ethereumConfig.name} Connected:{' '}
                   {`${metaMaskAccount.substring(0, 6)}...${metaMaskAccount.substring(metaMaskAccount.length - 4)}`}
                 </span>
               </div>
@@ -864,7 +959,9 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
             {walletType === 'metamask-snap' && isSnapInstalled && !metaMaskConnected && (
               <div className="flex items-center justify-center gap-1 mt-3">
                 <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-yellow-400">Connect MetaMask to Arbitrum network to bridge tokens</span>
+                <span className="text-xs text-yellow-400">
+                  Connect MetaMask to {bridgeConfig.ethereumConfig.name} to bridge tokens
+                </span>
               </div>
             )}
           </div>

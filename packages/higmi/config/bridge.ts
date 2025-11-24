@@ -3,11 +3,25 @@ import { TokenConfig, EthereumNetworkConfig, HathorNetworkConfig } from '../type
 /**
  * Bridge Configuration
  * This file centralizes all configuration related to the Arbitrum-Hathor bridge.
- * To switch between mainnet and testnet, change the IS_TESTNET constant.
+ * The environment (testnet vs mainnet) is automatically detected based on the
+ * NEXT_PUBLIC_LOCAL_NODE_URL environment variable.
  */
 
-// Set this to true for testnet, false for mainnet
-export const IS_TESTNET = true
+// Dynamically detect if we're on testnet based on the node URL
+// If the URL contains "testnet" or "self2.dozer.finance", we're on testnet
+const getIsTestnet = (): boolean => {
+  const nodeUrl = process.env.NEXT_PUBLIC_LOCAL_NODE_URL || ''
+  const isTestnet = nodeUrl.includes('testnet') || nodeUrl.includes('self2.dozer.finance')
+
+  // Log the detected environment for debugging
+  if (typeof window !== 'undefined') {
+    console.log(`Bridge config detected: ${isTestnet ? 'TESTNET' : 'MAINNET'} (from URL: ${nodeUrl})`)
+  }
+
+  return isTestnet
+}
+
+export const IS_TESTNET = getIsTestnet()
 
 // Ethereum/Arbitrum Network Configuration
 export const ETHEREUM_CONFIG: {

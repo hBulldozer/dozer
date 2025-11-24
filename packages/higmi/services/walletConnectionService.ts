@@ -333,8 +333,14 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
     requestFn: (request: { method: string; params?: any }) => Promise<any>,
     invokeSnapFn: (params: { snapId: string; method: string; params: any }) => Promise<any>
   ): Promise<WalletConnectionResult> {
+    // Wrap invokeSnapFn to match the enhanced method signature (without snapId)
+    const wrappedInvokeSnapFn = (params: { method: string; params?: any }) => {
+      // The snapId will be determined by the enhanced method, so we pass a placeholder
+      return invokeSnapFn({ snapId: '', ...params, params: params.params || {} })
+    }
+
     // Use the enhanced method
-    return this.connectMetaMaskSnapEnhanced(requestFn, invokeSnapFn)
+    return this.connectMetaMaskSnapEnhanced(requestFn, wrappedInvokeSnapFn)
   }
 
   /**

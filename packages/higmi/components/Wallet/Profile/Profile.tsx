@@ -18,7 +18,7 @@ import { useWalletConnectClient } from '../../contexts'
 import { Tokens } from './Tokens'
 import { TokensEVM } from './TokensEVM'
 import { useBridge } from '../../contexts/BridgeContext'
-import bridgeConfig, { IS_TESTNET } from '../../../config/bridge'
+import bridgeConfig from '../../../config/bridge'
 import { usePathname } from 'next/navigation'
 import path from 'path'
 
@@ -79,12 +79,13 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
       if (!accounts || accounts.length === 0) return
 
       // Filter tokens that are bridged and have original addresses
+      // Automatically detects environment from NEXT_PUBLIC_LOCAL_NODE_URL
       const bridgedTokens = (tokensData || []).filter((token: any) => {
         return (
           token.bridged &&
           token.originalAddress &&
-          ((IS_TESTNET && token.sourceChain?.toLowerCase() === 'sepolia') ||
-            (!IS_TESTNET && token.sourceChain?.toLowerCase() === 'arbitrum'))
+          ((bridgeConfig.isTestnet && token.sourceChain?.toLowerCase() === 'sepolia') ||
+            (!bridgeConfig.isTestnet && token.sourceChain?.toLowerCase() === 'arbitrum'))
         )
       })
 

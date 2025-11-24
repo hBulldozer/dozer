@@ -148,6 +148,7 @@ export const BridgeCurrencyInput: FC<BridgeCurrencyInputProps> = ({
             onSelect={onSelect}
             includeNative={includeNative}
             tokens={tokens}
+            showUnsignedSwitchInDialog={false}
           />
         )}
       </div>
