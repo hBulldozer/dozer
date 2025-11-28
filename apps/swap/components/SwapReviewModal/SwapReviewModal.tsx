@@ -25,7 +25,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
   const { network } = useNetwork()
   const [open, setOpen] = useState(false)
   const [card, setCard] = useState(false)
-  const { slippageTolerance } = useSettings()
+  const { slippageTolerance, transactionDeadline, deadlineType } = useSettings()
 
   const poolManager = new PoolManager()
 
@@ -94,6 +94,9 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
         // Use poolPath from routeInfo, fallback to constructing from path if needed
         const swapPath = routeInfo.poolPath || routeInfo.path.join(',')
 
+        // Calculate deadline in minutes
+        const deadlineMinutes = deadlineType === 'auto' ? 60 : transactionDeadline
+
         if (tradeType === TradeType.EXACT_INPUT) {
           await poolManager.swapExactTokensForTokens(
             hathorRpc,
@@ -102,7 +105,8 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             amountSpecified,
             otherCurrency.uuid,
             outputAmount * (1 - slippageTolerance),
-            swapPath
+            swapPath,
+            deadlineMinutes
           )
         } else {
           await poolManager.swapTokensForExactTokens(
@@ -112,7 +116,8 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             amountSpecified * (1 + slippageTolerance),
             otherCurrency.uuid,
             outputAmount,
-            swapPath
+            swapPath,
+            deadlineMinutes
           )
         }
       } catch (error) {

@@ -88,7 +88,7 @@ export class WalletConnectionService {
   ): Promise<{ installed: boolean; snapId: string | null }> {
     try {
       const snaps = (await requestFn({ method: 'wallet_getSnaps' })) as Record<string, any>
-      const possibleSnapIds = ['local:http://localhost:8080', 'local:http://localhost:8080']
+      const possibleSnapIds = ['local:http://localhost:8080', 'npm:@hathor/snap-hathor']
 
       for (const snapId of possibleSnapIds) {
         if (snaps && snaps[snapId]) {
@@ -203,7 +203,8 @@ export class WalletConnectionService {
         console.log('Available snap IDs:', availableSnapIds)
 
         // Look for our snap - check both exact match and partial match
-        const foundSnapId = availableSnapIds.find((id) => id === defaultSnapId) ||
+        const foundSnapId =
+          availableSnapIds.find((id) => id === defaultSnapId) ||
           availableSnapIds.find((id) => id.includes('localhost') || id.includes('hathor'))
 
         if (!foundSnapId) {
@@ -310,7 +311,7 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
         ) {
           errorMessage = 'User cancelled snap installation'
         } else if (error.message.includes('Snap not found')) {
-          errorMessage = 'Hathor snap not available. Please ensure the snap is running on localhost:8089.'
+          errorMessage = 'Hathor snap not available. Please ensure the snap is running on localhost:8080.'
         } else {
           errorMessage = error.message
         }
@@ -467,5 +468,4 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
     }
     return null
   }
-
 }

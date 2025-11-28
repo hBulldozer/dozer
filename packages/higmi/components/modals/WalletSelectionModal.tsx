@@ -166,7 +166,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
         } else if (err.message.includes('No MetaMask accounts')) {
           setError('No MetaMask accounts found. Please create or unlock your MetaMask wallet.')
         } else if (err.message.includes('Snap not found')) {
-          setError('Hathor snap not available. Please ensure the snap is running on localhost:8089.')
+          setError('Hathor snap not available. Please ensure the snap is running on localhost:8080.')
         } else {
           setError(err.message)
         }

@@ -88,7 +88,10 @@ export class PoolManager extends NanoContract {
     tokenOut: string,
     amountOut: number,
     path: string, // Mandatory path (single pool_key for single-hop, comma-separated for multi-hop)
+    deadlineMinutes: number = 60, // Transaction deadline in minutes from now
   ): Promise<SendNanoContractTxResponse> {
+    // Calculate Unix timestamp deadline
+    const deadline = Math.floor(Date.now() / 1000) + deadlineMinutes * 60
     // Parse path to determine if single-hop or multi-hop
     const pathSegments = path.split(',')
     const isSingleHop = pathSegments.length === 1
@@ -101,7 +104,7 @@ export class PoolManager extends NanoContract {
 
     // Choose method based on path length
     const method = isSingleHop ? 'swap_exact_tokens_for_tokens' : 'swap_exact_tokens_for_tokens_through_path'
-    const args = isSingleHop ? [fee] : [path]
+    const args = isSingleHop ? [fee, deadline] : [path, deadline]
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       method,
       this.poolManagerBlueprintId,
@@ -152,7 +155,10 @@ export class PoolManager extends NanoContract {
     tokenOut: string,
     amountOut: number,
     path: string, // Mandatory path (single pool_key for single-hop, comma-separated for multi-hop)
+    deadlineMinutes: number = 60, // Transaction deadline in minutes from now
   ): Promise<SendNanoContractTxResponse> {
+    // Calculate Unix timestamp deadline
+    const deadline = Math.floor(Date.now() / 1000) + deadlineMinutes * 60
     // Parse path to determine if single-hop or multi-hop
     const pathSegments = path.split(',')
     const isSingleHop = pathSegments.length === 1
@@ -165,7 +171,7 @@ export class PoolManager extends NanoContract {
 
     // Choose method based on path length
     const method = isSingleHop ? 'swap_tokens_for_exact_tokens' : 'swap_tokens_for_exact_tokens_through_path'
-    const args = isSingleHop ? [fee] : [path]
+    const args = isSingleHop ? [fee, deadline] : [path, deadline]
 
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       method,

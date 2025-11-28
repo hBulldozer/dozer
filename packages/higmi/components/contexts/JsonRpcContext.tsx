@@ -16,9 +16,6 @@ import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
 
-// Use the centralized configuration for Hathor chain
-const HATHOR_CHAIN = config.hathorConfig.rpcChain
-
 /**
  * Utility function to parse snap responses
  * Handles the new response format: { type: RpcResponseTypes.X, response: { ... } }
@@ -148,6 +145,15 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       }
     }
 
+    // Get the Hathor chainId from the session namespaces
+    const getHathorChainId = (): string => {
+      if (!session?.namespaces?.hathor?.chains?.[0]) {
+        // Fallback to config if session doesn't have it yet
+        return config.hathorConfig.rpcChain
+      }
+      return session.namespaces.hathor.chains[0]
+    }
+
     return {
       sendNanoContractTx: async (ncTxRpcReq: SendNanoContractRpcRequest): Promise<SendNanoContractTxResponse> => {
         walletClientGuard()
@@ -156,8 +162,8 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
           setPending(true)
 
           const result: SendNanoContractTxResponse = await client!.request<SendNanoContractTxResponse>({
-            chainId: HATHOR_CHAIN,
             topic: session!.topic,
+            chainId: getHathorChainId(),
             request: ncTxRpcReq,
           })
 
@@ -187,8 +193,8 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
           setPending(true)
 
           const result: SignOracleDataResponse = await client!.request<SignOracleDataResponse>({
-            chainId: HATHOR_CHAIN,
             topic: session!.topic,
+            chainId: getHathorChainId(),
             request: signOracleDataReq,
           })
 
@@ -217,8 +223,8 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
           setPending(true)
 
           const result: CreateTokenResponse = await client!.request<CreateTokenResponse>({
-            chainId: HATHOR_CHAIN,
             topic: session!.topic,
+            chainId: getHathorChainId(),
             request: createTokenTxRpcReq,
           })
 

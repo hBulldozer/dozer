@@ -11,15 +11,33 @@ from hathor.nanocontracts.blueprints.dozer_pool_manager import (
     Unauthorized,
 )
 
-from hathor.nanocontracts.types import Address, NCDepositAction, NCWithdrawalAction
+from hathor.nanocontracts.types import Address, NCDepositAction, NCWithdrawalAction, TokenUid
 from hathor.transaction.base_transaction import BaseTransaction
 from hathor.util import not_none
 from hathor.wallet import KeyPair
 from tests.nanocontracts.blueprints.unittest import BlueprintTestCase
 
 PRECISION = 10**20
+MINIMUM_LIQUIDITY = 10**3
 
 HTR_UID = b'\x00'
+
+def isqrt(n):
+    """Integer square root using Newton's method"""
+    if n == 0:
+        return 0
+    x = n
+    y = (x + 1) // 2
+    while y < x:
+        x = y
+        y = (x + n // x) // 2
+    return x
+
+def calculate_burned_liquidity(reserve_a, reserve_b):
+    """Calculate the minimum liquidity that gets burned on pool creation"""
+    product = reserve_a * reserve_b
+    sqrt_product = isqrt(product)
+    return sqrt_product * MINIMUM_LIQUIDITY
 
 settings = HathorSettings()
 
@@ -89,18 +107,18 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
                 token_a_hex, _token_b_hex, _fee = pool.split("/")
                 token_a = bytes.fromhex(token_a_hex)
                 if token_uid == token_a:
-                   
+
                     token_balances[token_uid] = (
                         token_balances.get(token_uid, 0)
-                        + contract.pool_reserve_a.get(pool, 0)
-                        + contract.pool_total_balance_a.get(pool, 0)
+                        + contract.pools[pool].reserve_a
+                        + contract.pools[pool].total_change_a
                     )
                 else:
-                   
+
                     token_balances[token_uid] = (
                         token_balances.get(token_uid, 0)
-                        + contract.pool_reserve_b.get(pool, 0)
-                        + contract.pool_total_balance_b.get(pool, 0)
+                        + contract.pools[pool].reserve_b
+                        + contract.pools[pool].total_change_b
                     )
             state_balance = token_balances[token_uid]
             self.assertEqual(state_balance, contract_balance.value)
@@ -232,8 +250,10 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
     ):
         """Execute a swap_exact_tokens_for_tokens operation"""
         context = self._prepare_swap_context(token_a, amount_in, token_b, amount_out)
+        # Set deadline far in the future (1 year from now)
+        deadline = self.get_current_timestamp() + 365 * 24 * 60 * 60
         result = self.runner.call_public_method(
-            self.nc_id, "swap_exact_tokens_for_tokens", context, fee
+            self.nc_id, "swap_exact_tokens_for_tokens", context, fee, deadline
         )
         return result, context
 
@@ -242,8 +262,10 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
     ):
         """Execute a swap_tokens_for_exact_tokens operation"""
         context = self._prepare_swap_context(token_a, amount_in, token_b, amount_out)
+        # Set deadline far in the future (1 year from now)
+        deadline = self.get_current_timestamp() + 365 * 24 * 60 * 60
         result = self.runner.call_public_method(
-            self.nc_id, "swap_tokens_for_exact_tokens", context, fee
+            self.nc_id, "swap_tokens_for_exact_tokens", context, fee, deadline
         )
         return result, context
 
@@ -255,9 +277,8 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         # Verify owner is set correctly
         self.assertEqual(contract.owner, self.owner_address)
 
-        # Verify default fee and protocol fee are set correctly
-        self.assertEqual(contract.default_fee, 3)
-        self.assertEqual(contract.default_protocol_fee, 10)
+        # Verify protocol fee are set correctly
+        self.assertEqual(contract.default_protocol_fee, 40)
 
     def test_create_pool(self):
         """Test pool creation"""
@@ -268,11 +289,11 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         assert isinstance(contract, DozerPoolManager)
 
         # Verify pool exists
-        self.assertTrue(contract.pool_exists[pool_key])
+        self.assertTrue(pool_key in contract.pool_exists)
 
         # Verify tokens are stored correctly
-        self.assertEqual(contract.pool_token_a[pool_key], self.token_a)
-        self.assertEqual(contract.pool_token_b[pool_key], self.token_b)
+        self.assertEqual(contract.pools[pool_key].token_a, self.token_a)
+        self.assertEqual(contract.pools[pool_key].token_b, self.token_b)
 
         # Verify initial liquidity
         creator_liquidity = self.runner.call_view_method(
@@ -317,10 +338,10 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         assert isinstance(contract, DozerPoolManager)
 
         # Verify all pools exist
-        self.assertTrue(contract.pool_exists[pool_key1])
-        self.assertTrue(contract.pool_exists[pool_key2])
-        self.assertTrue(contract.pool_exists[pool_key3])
-        self.assertTrue(contract.pool_exists[pool_key4])
+        self.assertTrue(pool_key1 in contract.pool_exists)
+        self.assertTrue(pool_key2 in contract.pool_exists)
+        self.assertTrue(pool_key3 in contract.pool_exists)
+        self.assertTrue(pool_key4 in contract.pool_exists)
 
         # Verify all pools are in the all_pools list
         all_pools = self.runner.call_view_method(self.nc_id, "get_all_pools")
@@ -359,9 +380,9 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         assert isinstance(contract, DozerPoolManager)
 
         # Initial reserves
-        initial_reserve_a = contract.pool_reserve_a[pool_key]
-        initial_reserve_b = contract.pool_reserve_b[pool_key]
-        initial_total_liquidity = contract.pool_total_liquidity[pool_key]
+        initial_reserve_a = contract.pools[pool_key].reserve_a
+        initial_reserve_b = contract.pools[pool_key].reserve_b
+        initial_total_liquidity = contract.pools[pool_key].total_liquidity
 
         amount_a = 500_00
         reserve_a, reserve_b = self.runner.call_view_method(
@@ -387,17 +408,17 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
 
         # Verify reserves increased
         self.assertEqual(
-            updated_contract.pool_reserve_a[pool_key],
+            updated_contract.pools[pool_key].reserve_a,
             initial_reserve_a + amount_a,
         )
         self.assertEqual(
-            updated_contract.pool_reserve_b[pool_key],
+            updated_contract.pools[pool_key].reserve_b,
             initial_reserve_b + amount_b,
         )
 
         # Verify total liquidity increased
         self.assertEqual(
-            updated_contract.pool_total_liquidity[pool_key],
+            updated_contract.pools[pool_key].total_liquidity,
             initial_total_liquidity + liquidity_increase,
         )
 
@@ -427,9 +448,9 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         assert isinstance(contract, DozerPoolManager)
 
         # Initial values before removal
-        initial_reserve_a = contract.pool_reserve_a[pool_key]
-        initial_reserve_b = contract.pool_reserve_b[pool_key]
-        initial_total_liquidity = contract.pool_total_liquidity[pool_key]
+        initial_reserve_a = contract.pools[pool_key].reserve_a
+        initial_reserve_b = contract.pools[pool_key].reserve_b
+        initial_total_liquidity = contract.pools[pool_key].total_liquidity
         initial_user_liquidity = self.runner.call_view_method(
             self.nc_id, "liquidity_of", add_context.caller_id, pool_key
         )
@@ -464,17 +485,17 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
 
         # Verify reserves decreased
         self.assertEqual(
-            updated_contract.pool_reserve_a[pool_key],
+            updated_contract.pools[pool_key].reserve_a,
             initial_reserve_a - amount_to_remove_a,
         )
         self.assertEqual(
-            updated_contract.pool_reserve_b[pool_key],
+            updated_contract.pools[pool_key].reserve_b,
             initial_reserve_b - amount_to_remove_b,
         )
 
         # Verify total liquidity decreased
         self.assertEqual(
-            updated_contract.pool_total_liquidity[pool_key],
+            updated_contract.pools[pool_key].total_liquidity,
             initial_total_liquidity - liquidity_decrease,
         )
 
@@ -760,13 +781,13 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         assert isinstance(contract, DozerPoolManager)
 
         # Initial reserves
-        initial_reserve_a = contract.pool_reserve_a[pool_key]
-        initial_reserve_b = contract.pool_reserve_b[pool_key]
+        initial_reserve_a = contract.pools[pool_key].reserve_a
+        initial_reserve_b = contract.pools[pool_key].reserve_b
 
         # Calculate expected output using get_amount_out
         swap_amount_in = 100_00
-        fee_numerator = contract.pool_fee_numerator[pool_key]
-        fee_denominator = contract.pool_fee_denominator[pool_key]
+        fee_numerator = contract.pools[pool_key].fee_numerator
+        fee_denominator = contract.pools[pool_key].fee_denominator
         
         # Calculate expected amount out
         a = fee_denominator - fee_numerator
@@ -784,11 +805,11 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
 
         # Verify reserves changed correctly
         self.assertEqual(
-            updated_contract.pool_reserve_a[pool_key],
+            updated_contract.pools[pool_key].reserve_a,
             initial_reserve_a + swap_amount_in,
         )
         self.assertEqual(
-            updated_contract.pool_reserve_b[pool_key],
+            updated_contract.pools[pool_key].reserve_b,
             initial_reserve_b - expected_amount_out,
         )
 
@@ -811,19 +832,22 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         assert isinstance(contract, DozerPoolManager)
 
         # Initial reserves
-        initial_reserve_a = contract.pool_reserve_a[pool_key]
-        initial_reserve_b = contract.pool_reserve_b[pool_key]
+        initial_reserve_a = contract.pools[pool_key].reserve_a
+        initial_reserve_b = contract.pools[pool_key].reserve_b
 
         # Define exact output amount
         swap_amount_out = 500_00
 
-        # Calculate required input using get_amount_in
-        fee_numerator = contract.pool_fee_numerator[pool_key]
-        fee_denominator = contract.pool_fee_denominator[pool_key]
-        
+        # Calculate required input using get_amount_in (with rounding up)
+        fee_numerator = contract.pools[pool_key].fee_numerator
+        fee_denominator = contract.pools[pool_key].fee_denominator
+
         a = fee_denominator - fee_numerator
         b = fee_denominator
-        required_amount_in = (initial_reserve_a * swap_amount_out * b) // ((initial_reserve_b - swap_amount_out) * a)
+        # This formula matches the blueprint's get_amount_in which rounds up
+        required_amount_in = (
+            initial_reserve_a * swap_amount_out * b + (initial_reserve_b - swap_amount_out) * a - 1
+        ) // ((initial_reserve_b - swap_amount_out) * a)
 
         # Add extra for slippage
         swap_amount_in = required_amount_in + 10_00
@@ -839,11 +863,11 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
 
         # Verify reserves changed correctly
         self.assertEqual(
-            updated_contract.pool_reserve_a[pool_key],
+            updated_contract.pools[pool_key].reserve_a,
             initial_reserve_a + required_amount_in,
         )
         self.assertEqual(
-            updated_contract.pool_reserve_b[pool_key],
+            updated_contract.pools[pool_key].reserve_b,
             initial_reserve_b - swap_amount_out,
         )
 
@@ -954,13 +978,13 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         assert isinstance(contract, DozerPoolManager)
 
         # Verify user has liquidity
-        user_liquidity = contract.pool_user_liquidity.get(pool_key, {}).get(creator_address, 0)
+        user_liquidity = contract.pool_user_liquidity[pool_key].get(creator_address, 0)
         self.assertGreater(user_liquidity, 0)
 
         # Verify pool state
-        self.assertGreater(contract.pool_total_liquidity[pool_key], 0)
-        self.assertEqual(contract.pool_reserve_a[pool_key], 1000_00)
-        self.assertEqual(contract.pool_reserve_b[pool_key], 2000_00)
+        self.assertGreater(contract.pools[pool_key].total_liquidity, 0)
+        self.assertEqual(contract.pools[pool_key].reserve_a, 1000_00)
+        self.assertEqual(contract.pools[pool_key].reserve_b, 2000_00)
 
     def test_change_protocol_fee(self):
         """Test changing the protocol fee"""
@@ -1125,26 +1149,18 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         contract = self.get_readonly_contract(self.nc_id)
         assert isinstance(contract, DozerPoolManager)
 
-        balance_a = 0
-        balance_b = 0
-        if pool_key in contract.pool_balance_a:
-            pool_dict_a = contract.pool_balance_a[pool_key]
-            if context.caller_id in pool_dict_a:
-                balance_a = pool_dict_a[context.caller_id]
+        change_a = 0
+        change_b = 0
+        change_a, change_b = contract.pool_change[pool_key].get(context.caller_id, (0, 0))
 
-        if pool_key in contract.pool_balance_b:
-            pool_dict_b = contract.pool_balance_b[pool_key]
-            if context.caller_id in pool_dict_b:
-                balance_b = pool_dict_b[context.caller_id]
-
-        # Should have some balance in token_b due to ratio mismatch
-        self.assertGreater(balance_b, 0, "Expected some balance_b from liquidity addition")
+        # Should have some change in token_b due to ratio mismatch
+        self.assertGreater(change_b, 0, "Expected some change_b from liquidity addition")
 
         # Withdraw cashback
         withdraw_context = self.create_context(
             [
-                NCWithdrawalAction(token_uid=self.token_a, amount=balance_a),
-                NCWithdrawalAction(token_uid=self.token_b, amount=balance_b),
+                NCWithdrawalAction(token_uid=self.token_a, amount=change_a),
+                NCWithdrawalAction(token_uid=self.token_b, amount=change_b),
             ],
             tx,
             Address(context.caller_id),
@@ -1159,20 +1175,10 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         updated_contract = self.get_readonly_contract(self.nc_id)
         assert isinstance(updated_contract, DozerPoolManager)
 
-        new_balance_a = 0
-        new_balance_b = 0
-        if pool_key in updated_contract.pool_balance_a:
-            pool_dict_a = updated_contract.pool_balance_a[pool_key]
-            if context.caller_id in pool_dict_a:
-                new_balance_a = pool_dict_a[context.caller_id]
+        new_change_a, new_change_b = updated_contract.pool_change[pool_key].get(context.caller_id, (0, 0))
 
-        if pool_key in updated_contract.pool_balance_b:
-            pool_dict_b = updated_contract.pool_balance_b[pool_key]
-            if context.caller_id in pool_dict_b:
-                new_balance_b = pool_dict_b[context.caller_id]
-
-        self.assertEqual(new_balance_a, 0)
-        self.assertEqual(new_balance_b, 0)
+        self.assertEqual(new_change_a, 0)
+        self.assertEqual(new_change_b, 0)
 
         self._check_balance()
 
@@ -1376,4 +1382,388 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         )
         self.assertEqual(token_b_price_htr, 0)
 
+        self._check_balance()
+
+    def test_liquidity_tracking_simple(self):
+        """Simple test to verify liquidity tracking is accurate"""
+        # Create pool
+        pool_key, creator_address = self._create_pool(
+            self.token_a, self.token_b, fee=3, reserve_a=10000_00, reserve_b=20000_00
+        )
+
+        contract = self.get_readonly_contract(self.nc_id)
+        assert isinstance(contract, DozerPoolManager)
+
+        # Check initial state
+        creator_liq = self.runner.call_view_method(
+            self.nc_id, "liquidity_of", creator_address, pool_key
+        )
+        pool = contract.pools[pool_key]
+
+        # Calculate expected values
+        burned_liquidity = calculate_burned_liquidity(10000_00, 20000_00)
+        expected_creator_liq = isqrt(10000_00 * 20000_00) * PRECISION
+        expected_total_liq = expected_creator_liq + burned_liquidity
+
+        # Verify exact values
+        self.assertEqual(creator_liq, expected_creator_liq, "Creator liquidity mismatch")
+        self.assertEqual(pool.total_liquidity, expected_total_liq, "Total liquidity mismatch")
+
+        # Add liquidity with single token
+        tx = self._get_any_tx()
+        amount_in = 1000_00
+        actions = [NCDepositAction(token_uid=self.token_a, amount=amount_in)]
+        address_bytes, _ = self._get_any_address()
+        context = self.create_context(
+            actions=actions,
+            vertex=tx,
+            caller_id=Address(address_bytes),
+            timestamp=self.get_current_timestamp()
+        )
+        self.runner.call_public_method(
+            self.nc_id, "add_liquidity_single_token", context, self.token_b, 3
+        )
+
+        # Check total liquidity matches sum of all users
+        updated_contract = self.get_readonly_contract(self.nc_id)
+        assert isinstance(updated_contract, DozerPoolManager)
+        updated_pool = updated_contract.pools[pool_key]
+
+        creator_liq = self.runner.call_view_method(
+            self.nc_id, "liquidity_of", creator_address, pool_key
+        )
+        new_user_liq = self.runner.call_view_method(
+            self.nc_id, "liquidity_of", context.caller_id, pool_key
+        )
+        owner_liq = self.runner.call_view_method(
+            self.nc_id, "liquidity_of", self.owner_address, pool_key
+        )
+
+        total_user_liq = creator_liq + new_user_liq + owner_liq
+
+        # Calculate expected burned liquidity (constant from pool creation)
+        expected_burned = calculate_burned_liquidity(10000_00, 20000_00)
+        expected_total_liq = total_user_liq + expected_burned
+
+        # Verify exact equality
+        self.assertEqual(
+            updated_pool.total_liquidity,
+            expected_total_liq,
+            f"Total liquidity mismatch: pool={updated_pool.total_liquidity}, expected={expected_total_liq}, burned={expected_burned}"
+        )
+
+        self._check_balance()
+
+    def test_liquidity_consistency_with_random_operations(self):
+        """Test liquidity and balance consistency across random pool operations.
+
+        Performs 300 random operations including swaps (direct and through path),
+        add/remove liquidity (proportional and single token) and verifies:
+        - Total user liquidity always equals pool total_liquidity (including protocol fees)
+        - Balance tracking is correct (via _check_balance)
+        - All operation types work correctly in any order
+        """
+        import random
+        random.seed(42)
+
+        # Create three pools to enable path swaps: A/B, B/C, and A/C
+        pool_key_ab, creator_address = self._create_pool(
+            self.token_a, self.token_b, fee=3, reserve_a=100000_00, reserve_b=200000_00
+        )
+
+        # Create token C
+        token_c_hex = "00000000000000000000000000000000000000000000000000000000000000cc"
+        self.token_c = TokenUid(bytes.fromhex(token_c_hex))
+
+        # Create B/C pool
+        pool_key_bc, creator_bc = self._create_pool(
+            self.token_b, self.token_c, fee=3, reserve_a=200000_00, reserve_b=300000_00
+        )
+
+        # Create A/C pool
+        pool_key_ac, creator_ac = self._create_pool(
+            self.token_a, self.token_c, fee=3, reserve_a=100000_00, reserve_b=300000_00
+        )
+
+        # Track users per pool for liquidity checks and initial reserves for burned liquidity calculation
+        pool_users = {
+            pool_key_ab: {creator_address, self.owner_address},
+            pool_key_bc: {creator_bc, self.owner_address},
+            pool_key_ac: {creator_ac, self.owner_address}
+        }
+
+        # Store initial reserves for each pool to calculate burned liquidity
+        pool_initial_reserves = {
+            pool_key_ab: (100000_00, 200000_00),
+            pool_key_bc: (200000_00, 300000_00),
+            pool_key_ac: (100000_00, 300000_00)
+        }
+
+        def verify_liquidity_consistency():
+            current_contract = self.get_readonly_contract(self.nc_id)
+            assert isinstance(current_contract, DozerPoolManager)
+
+            # Verify each pool's liquidity consistency
+            for pk, users in pool_users.items():
+                if pk not in current_contract.pools:
+                    continue
+                pool = current_contract.pools[pk]
+                total_user_liquidity = sum(
+                    self.runner.call_view_method(self.nc_id, "liquidity_of", addr, pk)
+                    for addr in users
+                )
+
+                # Calculate expected burned liquidity from initial reserves
+                reserve_a_initial, reserve_b_initial = pool_initial_reserves[pk]
+                expected_burned = calculate_burned_liquidity(reserve_a_initial, reserve_b_initial)
+                expected_total = total_user_liquidity + expected_burned
+
+                # Verify exact equality
+                self.assertEqual(
+                    pool.total_liquidity,
+                    expected_total,
+                    f"Pool {pk}: Liquidity mismatch - pool={pool.total_liquidity}, expected={expected_total}, users={total_user_liquidity}, burned={expected_burned}"
+                )
+
+        verify_liquidity_consistency()
+
+        for i in range(300):
+            # Choose which pool to operate on
+            target_pool = random.choice([pool_key_ab, pool_key_bc, pool_key_ac])
+
+            operation_type = random.choice([
+                "add_liquidity",
+                "add_liquidity_single",
+                "remove_liquidity",
+                "remove_liquidity_single",
+                "swap_direct",
+                "swap_through_path"
+            ])
+
+            current_contract = self.get_readonly_contract(self.nc_id)
+            assert isinstance(current_contract, DozerPoolManager)
+
+            # Skip if pool doesn't exist
+            if target_pool not in current_contract.pools:
+                continue
+
+            pool = current_contract.pools[target_pool]
+
+            # Get pool tokens
+            if target_pool == pool_key_ab:
+                token_1, token_2 = self.token_a, self.token_b
+            elif target_pool == pool_key_bc:
+                token_1, token_2 = self.token_b, self.token_c
+            else:  # pool_key_ac
+                token_1, token_2 = self.token_a, self.token_c
+
+            if operation_type == "add_liquidity":
+                # Add proportional liquidity
+                amount_1 = random.randint(1000_00, 10000_00)
+                reserve_a, reserve_b = pool.reserve_a, pool.reserve_b
+                amount_2 = self.runner.call_view_method(
+                    self.nc_id, "quote", amount_1, reserve_a, reserve_b
+                )
+
+                tx = self._get_any_tx()
+                actions = [
+                    NCDepositAction(token_uid=token_1, amount=amount_1),
+                    NCDepositAction(token_uid=token_2, amount=amount_2),
+                ]
+                address_bytes, _ = self._get_any_address()
+                context = self.create_context(
+                    actions=actions,
+                    vertex=tx,
+                    caller_id=Address(address_bytes),
+                    timestamp=self.get_current_timestamp()
+                )
+                self.runner.call_public_method(self.nc_id, "add_liquidity", context, 3)
+                pool_users[target_pool].add(context.caller_id)
+
+            elif operation_type == "add_liquidity_single":
+                # Add liquidity with single token
+                token_in = random.choice([token_1, token_2])
+                token_out = token_2 if token_in == token_1 else token_1
+                amount_in = random.randint(1000_00, 5000_00)
+
+                try:
+                    tx = self._get_any_tx()
+                    actions = [NCDepositAction(token_uid=token_in, amount=amount_in)]
+                    address_bytes, _ = self._get_any_address()
+                    context = self.create_context(
+                        actions=actions,
+                        vertex=tx,
+                        caller_id=Address(address_bytes),
+                        timestamp=self.get_current_timestamp()
+                    )
+                    self.runner.call_public_method(
+                        self.nc_id, "add_liquidity_single_token", context, token_out, 3
+                    )
+                    pool_users[target_pool].add(context.caller_id)
+                except InvalidAction:
+                    # Skip if price impact is too high (>15%) - this is expected behavior
+                    pass
+
+            elif operation_type == "remove_liquidity":
+                # Remove proportional liquidity - pick a random user with liquidity
+                users_with_liquidity = [
+                    u for u in pool_users[target_pool]
+                    if self.runner.call_view_method(self.nc_id, "liquidity_of", u, target_pool) > 0
+                ]
+                if users_with_liquidity:
+                    user = random.choice(users_with_liquidity)
+                    user_liquidity = self.runner.call_view_method(
+                        self.nc_id, "liquidity_of", user, target_pool
+                    )
+                    # Remove a random percentage (10-50%) of user's liquidity
+                    percentage = random.randint(10, 50) / 100
+                    amount_to_remove_1 = int(
+                        (pool.reserve_a * user_liquidity * percentage) // pool.total_liquidity
+                    )
+                    if amount_to_remove_1 > 0:
+                        amount_to_remove_2 = self.runner.call_view_method(
+                            self.nc_id, "quote", amount_to_remove_1, pool.reserve_a, pool.reserve_b
+                        )
+
+                        tx = self._get_any_tx()
+                        actions = [
+                            NCWithdrawalAction(token_uid=token_1, amount=amount_to_remove_1),
+                            NCWithdrawalAction(token_uid=token_2, amount=amount_to_remove_2),
+                        ]
+                        # Ensure user is an Address (not ContractId)
+                        assert isinstance(user, Address)
+                        context = self.create_context(
+                            actions=actions,
+                            vertex=tx,
+                            caller_id=user,
+                            timestamp=self.get_current_timestamp()
+                        )
+                        self.runner.call_public_method(self.nc_id, "remove_liquidity", context, 3)
+
+            elif operation_type == "remove_liquidity_single":
+                # Remove liquidity to get single token
+                users_with_liquidity = [
+                    u for u in pool_users[target_pool]
+                    if self.runner.call_view_method(self.nc_id, "liquidity_of", u, target_pool) > 0
+                ]
+                if users_with_liquidity:
+                    user = random.choice(users_with_liquidity)
+                    # Remove a random percentage (10-50%) of user's liquidity
+                    percentage = random.randint(1000, 5000)  # 10-50% in basis points
+                    token_out = random.choice([token_1, token_2])
+
+                    quote = self.runner.call_view_method(
+                        self.nc_id, "quote_remove_liquidity_single_token_percentage",
+                        user, target_pool, token_out, percentage
+                    )
+
+                    if quote.amount_out > 0:
+                        try:
+                            tx = self._get_any_tx()
+                            actions = [NCWithdrawalAction(token_uid=token_out, amount=quote.amount_out)]
+                            # Ensure user is an Address (not ContractId)
+                            assert isinstance(user, Address)
+                            context = self.create_context(
+                                actions=actions,
+                                vertex=tx,
+                                caller_id=user,
+                                timestamp=self.get_current_timestamp()
+                            )
+                            self.runner.call_public_method(
+                                self.nc_id, "remove_liquidity_single_token", context, target_pool, percentage
+                            )
+                        except InvalidAction:
+                            # Skip if price impact is too high (>15%) - this is expected behavior
+                            pass
+
+            elif operation_type == "swap_direct":
+                # Direct swap within the pool
+                token_in = random.choice([token_1, token_2])
+                token_out = token_2 if token_in == token_1 else token_1
+                amount_in = random.randint(100_00, 2000_00)
+
+                reserve_in = pool.reserve_a if token_in == token_1 else pool.reserve_b
+                reserve_out = pool.reserve_b if token_in == token_1 else pool.reserve_a
+
+                amount_out = self.runner.call_view_method(
+                    self.nc_id, "get_amount_out",
+                    amount_in, reserve_in, reserve_out,
+                    pool.fee_numerator, pool.fee_denominator
+                )
+
+                if amount_out > 0:
+                    tx = self._get_any_tx()
+                    actions = [
+                        NCDepositAction(token_uid=token_in, amount=amount_in),
+                        NCWithdrawalAction(token_uid=token_out, amount=amount_out),
+                    ]
+                    address_bytes, _ = self._get_any_address()
+                    current_timestamp = self.get_current_timestamp()
+                    context = self.create_context(
+                        actions=actions,
+                        vertex=tx,
+                        caller_id=Address(address_bytes),
+                        timestamp=current_timestamp
+                    )
+                    # Set deadline far in the future
+                    deadline = current_timestamp + 365 * 24 * 60 * 60
+                    self.runner.call_public_method(
+                        self.nc_id, "swap_exact_tokens_for_tokens", context, 3, deadline
+                    )
+
+            elif operation_type == "swap_through_path":
+                # Swap through a path of pools (A -> B -> C or A -> C directly via A/C pool)
+                # Choose random token pair for path swap
+                token_pairs = [
+                    (self.token_a, self.token_c),  # A -> B -> C or A -> C
+                    (self.token_c, self.token_a),  # C -> B -> A or C -> A
+                ]
+                token_in, token_out = random.choice(token_pairs)
+                amount_in = random.randint(100_00, 1000_00)
+
+                # Calculate expected output using find_best_swap_path
+                swap_info = self.runner.call_view_method(
+                    self.nc_id, "find_best_swap_path", amount_in, token_in, token_out, 3
+                )
+
+                if swap_info.amount_out > 0:
+                    tx = self._get_any_tx()
+                    actions = [
+                        NCDepositAction(token_uid=token_in, amount=amount_in),
+                        NCWithdrawalAction(token_uid=token_out, amount=swap_info.amount_out),
+                    ]
+                    address_bytes, _ = self._get_any_address()
+                    current_timestamp = self.get_current_timestamp()
+                    context = self.create_context(
+                        actions=actions,
+                        vertex=tx,
+                        caller_id=Address(address_bytes),
+                        timestamp=current_timestamp
+                    )
+                    # Set deadline far in the future (1 year from now)
+                    deadline = current_timestamp + 365 * 24 * 60 * 60
+                    self.runner.call_public_method(
+                        self.nc_id, "swap_exact_tokens_for_tokens_through_path", context, swap_info.path, deadline
+                    )
+
+            # Verify consistency after each operation
+            try:
+                verify_liquidity_consistency()
+            except AssertionError as e:
+                # Get pool state for debugging
+                debug_contract = self.get_readonly_contract(self.nc_id)
+                assert isinstance(debug_contract, DozerPoolManager)
+                debug_pool = debug_contract.pools[target_pool]
+
+                # Raise with more context about which operation failed
+                raise AssertionError(
+                    f"Operation {i} ({operation_type}) on pool {target_pool} broke consistency:\n"
+                    f"  Pool total_liquidity: {debug_pool.total_liquidity}\n"
+                    f"  Pool reserve_a: {debug_pool.reserve_a}\n"
+                    f"  Pool reserve_b: {debug_pool.reserve_b}\n"
+                    f"  Error: {e}"
+                ) from e
+
+        # Final verification
+        verify_liquidity_consistency()
         self._check_balance()
