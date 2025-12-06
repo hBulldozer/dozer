@@ -6,4 +6,4 @@ services:
       dockerfile: Dockerfile.node
     volumes:
       - .:/app/hathor/nanocontracts/blueprints
-      - ./tests:/app/tests/nanocontracts/blueprints
+      - ./tests:/app/hathor_tests/nanocontracts/blueprints

@@ -12,10 +12,10 @@ on:
       hathor_branch:
         description: 'Hathor Core branch to use'
         required: true
-        default: 'experimental/nano-testnet-v1.7.2'
+        default: 'release'
 
 env:
-  HATHOR_BRANCH: ${{ github.event.inputs.hathor_branch || 'experimental/nano-testnet-v1.7.2' }}
+  HATHOR_BRANCH: ${{ github.event.inputs.hathor_branch || 'release' }}
 
 jobs:
   test-blueprints:
@@ -34,7 +34,7 @@ jobs:
       - name: Copy blueprints to Hathor Core
         run: |
           cp -r contracts/* hathor-core/hathor/nanocontracts/blueprints/
-          cp -r contracts/tests/* hathor-core/tests/nanocontracts/blueprints/
+          cp -r contracts/tests/* hathor-core/hathor_tests/nanocontracts/blueprints/
 
       - name: Build Docker image
         working-directory: hathor-core
@@ -44,8 +44,8 @@ jobs:
 
       - name: Test Dozer Pool
         working-directory: hathor-core
-        run: docker run hathor-test poetry run pytest -v tests/nanocontracts/blueprints/test_dozer_pool_v1_1.py
+        run: docker run hathor-test poetry run pytest -v hathor_tests/nanocontracts/blueprints/test_dozer_pool_manager.py
 
       - name: Test Oasis
         working-directory: hathor-core
-        run: docker run hathor-test poetry run pytest -v tests/nanocontracts/blueprints/test_oasis.py
+        run: docker run hathor-test poetry run pytest -v hathor_tests/nanocontracts/blueprints/test_oasis.py
