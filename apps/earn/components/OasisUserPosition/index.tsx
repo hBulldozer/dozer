@@ -105,17 +105,20 @@ const UserOasisPosition = ({
     const initialInvestmentUSD = oasis.user_deposit_b * initialTokenPriceUSD
 
     // Current position value in USD using current prices
-    const tokenValueUSD = oasis.max_withdraw_b * prices[currencyUuid]
-    const htrValueUSD = oasis.max_withdraw_htr * prices['00']
+    const tokenValueUSD = oasis.max_withdraw_b * (prices[currencyUuid] || 0)
+    const htrValueUSD = oasis.max_withdraw_htr * (prices['00'] || 0)
 
     // HTR bonus value in USD using current prices
-    const bonusValueUSD = oasis.user_balance_a * prices['00']
+    const bonusValueUSD = oasis.user_balance_a * (prices['00'] || 0)
 
     // Total current value including bonus if available
     const totalCurrentValueUSD = tokenValueUSD + htrValueUSD
 
     // ROI calculation based on initial investment value
-    const roi = (totalCurrentValueUSD / initialInvestmentUSD - 1) * 100
+    // Guard against division by zero to prevent Infinity
+    const roi = initialInvestmentUSD > 0
+      ? (totalCurrentValueUSD / initialInvestmentUSD - 1) * 100
+      : 0
 
     return {
       roi,

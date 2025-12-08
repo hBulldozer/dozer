@@ -88,7 +88,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
 
   const { client, session } = useWalletConnectClient()
   const { walletType, hathorAddress, snapId } = useAccount()
-  const invokeSnap = useInvokeSnap('local:http://localhost:8080')
+  const invokeSnap = useInvokeSnap()
   const { address: wcAddress } = useAccount()
 
   const address = walletType === 'walletconnect' ? wcAddress : hathorAddress

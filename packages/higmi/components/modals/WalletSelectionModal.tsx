@@ -24,7 +24,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
 }) => {
   const { provider } = useMetaMaskContext()
   const request = useRequest()
-  const invokeSnap = useInvokeSnap('local:http://localhost:8080')
+  const invokeSnap = useInvokeSnap()
   const { session, accounts, isWaitingApproval } = useWalletConnectClient()
   const walletService = WalletConnectionService.getInstance()
   const { targetNetwork } = useAccount()
@@ -242,8 +242,8 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
             {/* MetaMask Snap Option */}
             <button
               onClick={handleMetaMaskSelection}
-              // disabled={isConnecting}
-              disabled
+              disabled={isConnecting}
+              // disabled
               className="w-full p-4 transition-all duration-200 border bg-gradient-to-r rounded-xl from-orange-200/10 via-orange-400/10 to-orange-300/10 border-orange-300/20 hover:border-orange-300/40 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-center gap-4">

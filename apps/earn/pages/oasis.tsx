@@ -688,7 +688,7 @@ const OasisProgram = () => {
 
                 {/* Mobile Learn More Button */}
                 <div className="flex flex-col gap-4 lg:hidden">
-                  <Link href="https://docs.dozer.finance/oasis" target="_blank">
+                  <Link href="https://docs.dozer.finance/yield-farm-oasis/oasis-overview" target="_blank">
                     <Button
                       variant="outlined"
                       className="w-full border text-yellow hover:text-yellow-600 border-yellow"
@@ -708,7 +708,7 @@ const OasisProgram = () => {
                     showChart ? 'flex flex-row col-span-full gap-4 justify-center' : 'flex flex-col gap-4'
                   } `}
                 >
-                  <Link href="https://docs.dozer.finance/oasis" target="_blank">
+                  <Link href="https://docs.dozer.finance/yield-farm-oasis/oasis-overview" target="_blank">
                     <Button
                       variant="outlined"
                       className="justify-center hidden w-full border lg:flex text-yellow hover:text-yellow-600 border-yellow"

@@ -131,7 +131,7 @@ export const Button = <C extends React.ElementType>({
         address: hathorAddress,
         hathorAddress: hathorAddress,
         isSnapInstalled: true,
-        snapId: 'local:http://localhost:8080',
+        snapId: 'npm:@hathor/snap',
         selectedNetwork: 'testnet',
       })
     } catch (error) {

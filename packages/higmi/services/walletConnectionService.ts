@@ -173,7 +173,7 @@ export class WalletConnectionService {
       } else {
         // Install snap
         onStatusUpdate?.('Installing Hathor snap...')
-        const defaultSnapId = 'local:http://localhost:8080'
+        const defaultSnapId = 'npm:@hathor/snap'
 
         console.log('Attempting to connect to local snap:', defaultSnapId)
         const snaps = await requestFn({

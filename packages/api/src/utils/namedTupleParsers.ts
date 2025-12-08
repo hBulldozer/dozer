@@ -87,6 +87,7 @@ export interface QuoteSingleTokenResult {
   swap_amount: number
   swap_output: number
   price_impact: number
+  protocol_liquidity_increase: number
 }
 
 export interface QuoteRemoveSingleTokenResult {
@@ -97,6 +98,7 @@ export interface QuoteRemoveSingleTokenResult {
   swap_output: number
   price_impact: number
   user_liquidity: number
+  protocol_liquidity_increase: number
 }
 
 /**
@@ -271,8 +273,8 @@ export interface OasisQuoteInfo {
   htr_amount: number
   withdrawal_time: number
   has_position: boolean
-  deposit_amount: number
   fee_amount: number
+  deposit_amount: number
   protocol_fee: number
 }
 
@@ -363,10 +365,10 @@ export function parseUserProfitInfo(array: any[]): UserProfitInfo {
 
 /**
  * Parse QuoteSingleTokenResult NamedTuple array to object
- * Contract definition: [liquidity_amount, token_a_used, token_b_used, excess_token, excess_amount, swap_amount, swap_output, price_impact]
+ * Contract definition: [liquidity_amount, token_a_used, token_b_used, excess_token, excess_amount, swap_amount, swap_output, price_impact, protocol_liquidity_increase]
  */
 export function parseQuoteSingleTokenResult(array: any[]): QuoteSingleTokenResult {
-  if (!Array.isArray(array) || array.length !== 8) {
+  if (!Array.isArray(array) || array.length !== 9) {
     throw new Error('Invalid QuoteSingleTokenResult array format')
   }
 
@@ -379,15 +381,16 @@ export function parseQuoteSingleTokenResult(array: any[]): QuoteSingleTokenResul
     swap_amount: array[5] || 0,
     swap_output: array[6] || 0,
     price_impact: array[7] || 0,
+    protocol_liquidity_increase: array[8] || 0,
   }
 }
 
 /**
  * Parse QuoteRemoveSingleTokenResult NamedTuple array to object
- * Contract definition: [amount_out, token_a_withdrawn, token_b_withdrawn, swap_amount, swap_output, price_impact, user_liquidity]
+ * Contract definition: [amount_out, token_a_withdrawn, token_b_withdrawn, swap_amount, swap_output, price_impact, user_liquidity, protocol_liquidity_increase]
  */
 export function parseQuoteRemoveSingleTokenResult(array: any[]): QuoteRemoveSingleTokenResult {
-  if (!Array.isArray(array) || array.length !== 7) {
+  if (!Array.isArray(array) || array.length !== 8) {
     throw new Error('Invalid QuoteRemoveSingleTokenResult array format')
   }
 
@@ -399,5 +402,6 @@ export function parseQuoteRemoveSingleTokenResult(array: any[]): QuoteRemoveSing
     swap_output: array[4] || 0,
     price_impact: array[5] || 0,
     user_liquidity: array[6] || 0,
+    protocol_liquidity_increase: array[7] || 0,
   }
 }
