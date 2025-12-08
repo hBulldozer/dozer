@@ -46,7 +46,7 @@ export const seedConfig: SeedConfig = {
     {
       name: 'USDC',
       symbol: 'hUSDC',
-      totalSupply: 28_000_000_00,
+      totalSupply: 1_000_000_00,
       about: 'hUSDC is the bridged version of USDC on the Hathor Network.',
       bridged: true,
       sourceChain: 'Sepolia',
@@ -90,29 +90,29 @@ export const seedConfig: SeedConfig = {
     // },
     {
       tokenSymbol: 'hUSDC',
-      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
-      tokenQuantity: 20, // hUSDC = 1 USD, HTR = $0.02, so 1000 * 0.02 = 20 USDC
+      htrQuantity: 1_000_000, // Minimal liquidity: 1,000 HTR
+      tokenQuantity: 20_000, // hUSDC = 1 USD, HTR = $0.02, so 1000 * 0.02 = 20 USDC
       fee: 0.008, // 0.8% -> converts to 8 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     {
       tokenSymbol: 'NST',
-      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
-      tokenQuantity: 1_764, // NST = 0.567 HTR (10% discount from 0.63), so 1000 / 0.567 = 1,764 NST
+      htrQuantity: 100_000, // Minimal liquidity: 1,000 HTR
+      tokenQuantity: 176_400, // NST = 0.567 HTR (10% discount from 0.63), so 1000 / 0.567 = 1,764 NST
       fee: 0.008, // 0.8% -> converts to 8 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     {
       tokenSymbol: 'CTHOR',
-      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
-      tokenQuantity: 13, // CTHOR = 74.34 HTR (10% discount from 82.6), so 1000 / 74.34 = 13.45 CTHOR
+      htrQuantity: 100_000, // Minimal liquidity: 1,000 HTR
+      tokenQuantity: 1300, // CTHOR = 74.34 HTR (10% discount from 82.6), so 1000 / 74.34 = 13.45 CTHOR
       fee: 0.008, // 0.8% -> converts to 8 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },
     {
       tokenSymbol: 'KELB',
-      htrQuantity: 1_000, // Minimal liquidity: 1,000 HTR
-      tokenQuantity: 39, // KELB = 25.91 HTR (10% discount from 28.79), so 1000 / 25.91 = 38.6 KELB
+      htrQuantity: 100_000, // Minimal liquidity: 1,000 HTR
+      tokenQuantity: 3_900, // KELB = 25.91 HTR (10% discount from 28.79), so 1000 / 25.91 = 38.6 KELB
       fee: 0.008, // 0.8% -> converts to 8 basis points (matches contract pathfinding)
       protocolFee: 0.01,
     },

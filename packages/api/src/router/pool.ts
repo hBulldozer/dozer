@@ -21,6 +21,7 @@ import {
   type QuoteRemoveSingleTokenResult,
 } from '../utils/namedTupleParsers'
 import { parseNanoContractArgs } from '../utils/ncArgsParser'
+import { parseNCLogs } from '../utils/ncLogParser'
 
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -65,7 +66,7 @@ async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> 
 async function calculate24hTransactionCount(poolKey: string): Promise<number> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 // 24 hours ago in seconds
+    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -118,7 +119,7 @@ const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
 async function calculate24hVolume(poolKey: string): Promise<{ volume24h: number; volume24hUSD: number }> {
   try {
     const now = Math.floor(Date.now() / 1000)
-    const oneDayAgo = now - 24 // 24 hours ago in seconds
+    const oneDayAgo = now - 24 * 60 * 60 // 24 hours ago in seconds
 
     // Get current pool data
     const currentResponse = await fetchFromPoolManager([`front_end_api_pool("${poolKey}")`])
@@ -1025,27 +1026,57 @@ export const poolRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       if (input.hash === 'Error') {
-        return { status: 'failed', message: 'txHash not defined' }
+        return { validation: 'failed', message: 'txHash not defined', hash: input.hash }
       }
 
       try {
         const endpoint = 'transaction'
-        const response = await fetchNodeData(endpoint, [`id=${input.hash}`])
+        const queryParams = [`id=${input.hash}`, 'include_nc_logs=true']
+        const response = await fetchNodeData(endpoint, queryParams)
 
-        const validation = response.success
-          ? response.meta.voided_by.length
-            ? 'failed'
-            : response.meta.first_block
-            ? 'success'
-            : 'pending'
-          : 'failed'
+        if (!response || !response.success) {
+          return {
+            validation: 'failed',
+            message: 'Transaction not found',
+            hash: input.hash,
+          }
+        }
 
-        const message = validation === 'failed' ? 'Transaction failed: Low Slippage.' : ''
+        // Parse NC logs for detailed errors (only if transaction failed)
+        let parsedError = null
 
-        return { status: validation, message: message }
+        // Check transaction status from metadata
+        const meta = response.meta
+        const isVoided = meta?.voided_by && Array.isArray(meta.voided_by) && meta.voided_by.length > 0
+        const isConfirmed = meta?.first_block && meta.first_block !== null
+
+        // Only parse error logs if transaction is voided
+        if (isVoided && response.nc_logs) {
+          parsedError = parseNCLogs(response.nc_logs)
+        }
+
+        const validation = isVoided ? 'failed' : isConfirmed ? 'success' : 'pending'
+
+        // Build response message
+        let message = ''
+        if (validation === 'success') {
+          message = 'Transaction confirmed'
+        } else if (validation === 'pending') {
+          message = 'Transaction pending confirmation'
+        } else {
+          // Use parsed error message if available
+          message = parsedError ? parsedError.userMessage : 'Transaction failed: Low Slippage.'
+        }
+
+        return {
+          validation,
+          message,
+          hash: input.hash,
+          error: parsedError || undefined,
+        }
       } catch (error) {
-        console.error('Error checking transaction status:', error)
-        return { status: 'failed', message: 'Error checking transaction status' }
+        console.error('Error checking transaction status for', input.hash, ':', error)
+        return { validation: 'failed', message: 'Error checking transaction status', hash: input.hash }
       }
     }),
 
@@ -1770,23 +1801,31 @@ export const poolRouter = createTRPCRouter({
         // Parse and enrich transaction data with async processing
         const allTransactions = await Promise.all(
           filteredTransactions.map(async (tx: any) => {
-            // Try to parse NC args properly (hex string to object)
-            let parsedArgs = null
-            if (tx.nc_args && typeof tx.nc_args === 'string' && tx.nc_method) {
+            let args: any = null
+
+            // PREFER nc_args_decoded if available (new Hathor-core API)
+            if (tx.nc_args_decoded) {
+              args = tx.nc_args_decoded
+            }
+            // FALLBACK to manual parsing for backwards compatibility
+            else if (tx.nc_args && typeof tx.nc_args === 'string' && tx.nc_method) {
               try {
-                parsedArgs = await parseNanoContractArgs(
+                const parsedArgs = await parseNanoContractArgs(
                   process.env.NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID || '',
                   tx.nc_method,
                   tx.address || '',
                   tx.nc_args
                 )
+                args = parsedArgs
               } catch (error) {
                 console.warn(`Failed to parse NC args for tx ${tx.tx_id}:`, error)
+                args = typeof tx.nc_args === 'object' ? tx.nc_args : {}
               }
             }
-
-            // Use parsed args if available, otherwise fallback to treating nc_args as object
-            const args = parsedArgs || (typeof tx.nc_args === 'object' ? tx.nc_args : {})
+            // FALLBACK if nc_args is already an object
+            else {
+              args = typeof tx.nc_args === 'object' ? tx.nc_args : {}
+            }
 
             // Analyze transaction for multi-hop routing
             const isMultiHop = args.path_str && typeof args.path_str === 'string' && args.path_str.includes(',')
@@ -1933,7 +1972,7 @@ export const poolRouter = createTRPCRouter({
                 inputs: tx.inputs,
                 outputs: tx.outputs,
                 parents: tx.parents,
-                parsedArgs: parsedArgs,
+                parsedArgs: args,
                 // Add debug info for token extraction only for multi-hop
                 ...(isMultiHop && args.path_str
                   ? {

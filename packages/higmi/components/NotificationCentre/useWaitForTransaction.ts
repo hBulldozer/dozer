@@ -86,9 +86,9 @@ export default function useWaitForTransaction(notification: NotificationData, cl
           hash: txHash,
           chainId: chainId || ChainId.HATHOR,
         })
-        setStatus(data.status || 'pending')
-        updateNotificationLastState(txHash, data.status, data.message)
-        if (data.status == 'failed') setMessage(data.message)
+        setStatus(data.validation || 'pending')
+        updateNotificationLastState(txHash, data.validation, data.message)
+        if (data.validation == 'failed') setMessage(data.message)
       } catch (e) {
         console.log(e)
         setMessage(e as string)

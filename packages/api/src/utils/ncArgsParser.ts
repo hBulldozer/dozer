@@ -1,6 +1,14 @@
 /**
  * Nano Contract Arguments Parser
  *
+ * @deprecated This parser is being phased out in favor of nc_args_decoded from Hathor-core API.
+ *
+ * The Hathor node now provides pre-parsed arguments via the nc_args_decoded field in transaction responses.
+ * This parser is kept for backwards compatibility during the transition period.
+ *
+ * New code should use nc_args_decoded directly from the API response instead of calling this function.
+ * This file will be removed once all nodes are updated to the new API version (PR #1486).
+ *
  * This utility parses nano contract arguments from hex strings to JavaScript objects,
  * following the approach used by Hathor Explorer.
  *
