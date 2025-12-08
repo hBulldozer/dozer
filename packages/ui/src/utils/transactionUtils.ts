@@ -30,6 +30,13 @@ export function truncateAddress(address: string, startLength = 6, endLength = 4)
   return `${address.slice(0, startLength)}...${address.slice(-endLength)}`
 }
 
+// NC Action structure from nc_context.actions
+interface NCAction {
+  type: 'deposit' | 'withdrawal'
+  token_uid: string
+  amount: number
+}
+
 // Original complex transaction structure from API
 interface ComplexTransaction {
   id: string
@@ -41,6 +48,8 @@ interface ComplexTransaction {
   tokenSymbols?: Array<{ uuid: string; symbol: string; name: string }>
   success: boolean
   weight: number
+  // NC actions contain the actual deposit/withdrawal amounts (more accurate than inputs/outputs)
+  ncActions?: NCAction[]
   debug?: {
     fullTx?: {
       inputs?: Array<{
@@ -197,73 +206,92 @@ export function transformToSimpleTransaction(
     }
   }
 
-  // For swaps, calculate net change (what was actually traded, accounting for change)
-  if (type === 'Swap' && inputs.length > 0 && outputs.length > 0) {
-    // Group inputs and outputs by token, accounting for change
-    const inputsByToken: Record<string, number> = {}
-    const outputsByToken: Record<string, number> = {}
-    const changeOutputsByToken: Record<string, number> = {}
-
-    // Process inputs
-    inputs.forEach((input) => {
-      const token = input.token || '00'
-      inputsByToken[token] = (inputsByToken[token] || 0) + input.value
-    })
-
-    // Process outputs and identify change vs received tokens
-    outputs.forEach((output) => {
-      const token = output.token || '00'
-      const outputAddress = output.decoded?.address
-
-      if (outputAddress === senderAddress) {
-        // Check if this is change (same token as input) or received token (different token)
-        const hasInputForThisToken = inputsByToken[token] > 0
-
-        if (hasInputForThisToken) {
-          // This is change back to the sender (same token as input)
-          changeOutputsByToken[token] = (changeOutputsByToken[token] || 0) + output.value
-        } else {
-          // This is a received token (different token than inputs)
-          outputsByToken[token] = (outputsByToken[token] || 0) + output.value
-        }
-      } else {
-        // This is actual output (not change)
-        outputsByToken[token] = (outputsByToken[token] || 0) + output.value
-      }
-    })
-
-    // Find what was spent and what was received (accounting for change)
-    const allTokens = new Set([
-      ...Object.keys(inputsByToken),
-      ...Object.keys(outputsByToken),
-      ...Object.keys(changeOutputsByToken),
-    ])
+  // For swaps, calculate amounts from nc_context.actions (preferred) or inputs/outputs (fallback)
+  if (type === 'Swap') {
     let spentToken = '',
       spentAmount = 0,
       receivedToken = '',
       receivedAmount = 0
 
-    allTokens.forEach((token) => {
-      const inputAmount = inputsByToken[token] || 0
-      const outputAmount = outputsByToken[token] || 0
-      const changeAmount = changeOutputsByToken[token] || 0
+    // PREFERRED: Use ncActions if available - these are the actual deposit/withdrawal amounts
+    // from the nano contract context, which are more accurate than parsing UTXOs
+    if (complexTx.ncActions && complexTx.ncActions.length > 0) {
+      complexTx.ncActions.forEach((action) => {
+        if (action.type === 'deposit') {
+          // Deposit = token the user sent to the contract (spent)
+          spentToken = action.token_uid
+          spentAmount = action.amount / 100 // Convert from cents
+        } else if (action.type === 'withdrawal') {
+          // Withdrawal = token the user received from the contract
+          receivedToken = action.token_uid
+          receivedAmount = action.amount / 100 // Convert from cents
+        }
+      })
+    }
+    // FALLBACK: Parse from inputs/outputs if ncActions not available
+    else if (inputs.length > 0 && outputs.length > 0) {
+      // Group inputs and outputs by token, accounting for change
+      const inputsByToken: Record<string, number> = {}
+      const outputsByToken: Record<string, number> = {}
+      const changeOutputsByToken: Record<string, number> = {}
 
-      // Net spent = input - change (what actually went out of user's wallet)
-      const netSpent = inputAmount - changeAmount
-      // Net received = output (what actually came into user's wallet)
-      const netReceived = outputAmount
+      // Process inputs
+      inputs.forEach((input) => {
+        const token = input.token || '00'
+        inputsByToken[token] = (inputsByToken[token] || 0) + input.value
+      })
 
-      if (netSpent > 0) {
-        // Spent
-        spentToken = token
-        spentAmount = netSpent / 100 // Convert from cents
-      }
-      if (netReceived > 0) {
-        // Received
-        receivedToken = token
-        receivedAmount = netReceived / 100 // Convert from cents
-      }
-    })
+      // Process outputs and identify change vs received tokens
+      outputs.forEach((output) => {
+        const token = output.token || '00'
+        const outputAddress = output.decoded?.address
+
+        if (outputAddress === senderAddress) {
+          // Check if this is change (same token as input) or received token (different token)
+          const hasInputForThisToken = inputsByToken[token] > 0
+
+          if (hasInputForThisToken) {
+            // This is change back to the sender (same token as input)
+            changeOutputsByToken[token] = (changeOutputsByToken[token] || 0) + output.value
+          } else {
+            // This is a received token (different token than inputs)
+            outputsByToken[token] = (outputsByToken[token] || 0) + output.value
+          }
+        } else {
+          // This is actual output (not change)
+          outputsByToken[token] = (outputsByToken[token] || 0) + output.value
+        }
+      })
+
+      // Find what was spent and what was received (accounting for change)
+      const allTokens = new Set([
+        ...Object.keys(inputsByToken),
+        ...Object.keys(outputsByToken),
+        ...Object.keys(changeOutputsByToken),
+      ])
+
+      allTokens.forEach((token) => {
+        const inputAmount = inputsByToken[token] || 0
+        const outputAmount = outputsByToken[token] || 0
+        const changeAmount = changeOutputsByToken[token] || 0
+
+        // Net spent = input - change (what actually went out of user's wallet)
+        const netSpent = inputAmount - changeAmount
+        // Net received = output (what actually came into user's wallet)
+        const netReceived = outputAmount
+
+        if (netSpent > 0) {
+          // Spent
+          spentToken = token
+          spentAmount = netSpent / 100 // Convert from cents
+        }
+        if (netReceived > 0) {
+          // Received
+          receivedToken = token
+          receivedAmount = netReceived / 100 // Convert from cents
+        }
+      })
+    }
 
     // Get token symbols
     const spentSymbol =

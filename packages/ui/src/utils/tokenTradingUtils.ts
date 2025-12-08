@@ -18,6 +18,13 @@ export interface TokenTradingTransaction {
   isMultiHop: boolean // Flag for multi-hop trades
 }
 
+// NC Action structure from nc_context.actions
+interface NCAction {
+  type: 'deposit' | 'withdrawal'
+  token_uid: string
+  amount: number
+}
+
 // Original complex transaction structure from API
 interface ComplexTransaction {
   id: string
@@ -29,6 +36,8 @@ interface ComplexTransaction {
   tokenSymbols?: Array<{ uuid: string; symbol: string; name: string }>
   success: boolean
   weight: number
+  // NC actions contain the actual deposit/withdrawal amounts (more accurate than inputs/outputs)
+  ncActions?: NCAction[]
   debug?: {
     fullTx?: {
       inputs?: Array<{
@@ -76,6 +85,13 @@ const getTokenSymbol = (
 
 // Helper function to determine if a transaction involves the target token
 const involvesToken = (complexTx: ComplexTransaction, targetTokenUuid: string): boolean => {
+  // Check ncActions first (most accurate)
+  if (complexTx.ncActions && complexTx.ncActions.length > 0) {
+    if (complexTx.ncActions.some((action) => action.token_uid === targetTokenUuid)) {
+      return true
+    }
+  }
+
   const tokensInvolved = complexTx.tokensInvolved || []
 
   // Check tokensInvolved array
@@ -96,6 +112,18 @@ const involvesToken = (complexTx: ComplexTransaction, targetTokenUuid: string): 
 
 // Helper function to determine if target token is being bought or sold
 const determineTradeSide = (complexTx: ComplexTransaction, targetTokenUuid: string): 'Buy' | 'Sell' | null => {
+  // PREFERRED: Use ncActions if available - these are the actual deposit/withdrawal amounts
+  if (complexTx.ncActions && complexTx.ncActions.length > 0) {
+    for (const action of complexTx.ncActions) {
+      if (action.token_uid === targetTokenUuid) {
+        // If target token is deposited, user is selling it
+        // If target token is withdrawn, user is buying it
+        return action.type === 'withdrawal' ? 'Buy' : 'Sell'
+      }
+    }
+  }
+
+  // FALLBACK: Use inputs/outputs
   const inputs = complexTx.debug?.fullTx?.inputs || []
   const outputs = complexTx.debug?.fullTx?.outputs || []
 
@@ -134,6 +162,32 @@ const calculateTokenAmounts = (
   targetTokenUuid: string,
   tokenSymbols: Array<{ uuid: string; symbol: string; name: string }>
 ): { tokenAmount: number; otherTokenSymbol: string; otherTokenAmount: number } => {
+  // PREFERRED: Use ncActions if available - these are the actual deposit/withdrawal amounts
+  if (complexTx.ncActions && complexTx.ncActions.length > 0) {
+    let targetTokenAmount = 0
+    let otherTokenUuid = ''
+    let otherTokenAmount = 0
+
+    complexTx.ncActions.forEach((action) => {
+      const amount = action.amount / 100 // Convert from cents
+      if (action.token_uid === targetTokenUuid) {
+        targetTokenAmount = amount
+      } else {
+        otherTokenUuid = action.token_uid
+        otherTokenAmount = amount
+      }
+    })
+
+    const otherTokenSymbol = otherTokenUuid ? getTokenSymbol(otherTokenUuid, tokenSymbols) : 'Unknown'
+
+    return {
+      tokenAmount: targetTokenAmount,
+      otherTokenSymbol,
+      otherTokenAmount,
+    }
+  }
+
+  // FALLBACK: Use inputs/outputs
   const inputs = complexTx.debug?.fullTx?.inputs || []
   const outputs = complexTx.debug?.fullTx?.outputs || []
 

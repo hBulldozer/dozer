@@ -1953,6 +1953,39 @@ export const poolRouter = createTRPCRouter({
               }
             }
 
+            // For single-pool swaps without path_str, derive pool from nc_context.actions
+            // This handles swap_exact_tokens_for_tokens and similar methods that operate on a single pool
+            if (
+              tx.nc_method &&
+              tx.nc_method.includes('swap') &&
+              poolsInvolved.length === 0 &&
+              tx.nc_context?.actions &&
+              Array.isArray(tx.nc_context.actions)
+            ) {
+              // Extract tokens from actions (deposit = token sold, withdrawal = token bought)
+              const actionTokens = new Set<string>()
+              tx.nc_context.actions.forEach((action: { type: string; token_uid: string; amount: number }) => {
+                if (action.token_uid) {
+                  actionTokens.add(action.token_uid)
+                }
+              })
+
+              // If we have exactly 2 tokens, try to find the matching pool
+              if (actionTokens.size === 2) {
+                const tokenArray = Array.from(actionTokens)
+                // Get fee from args if available (decoded args have fee at index 0 for swap methods)
+                const fee = Array.isArray(args) ? args[0] : args.fee || 8 // Default to 8 basis points if not found
+
+                // Try both token orderings to find the correct pool key
+                // Pool keys are typically ordered by token UUID
+                const [tokenA, tokenB] = tokenArray.sort()
+                const potentialPoolKey = `${tokenA}/${tokenB}/${fee}`
+
+                // Add to poolsInvolved
+                poolsInvolved = [potentialPoolKey]
+              }
+            }
+
             return {
               id: tx.tx_id, // Required by GenericTable
               tx_id: tx.tx_id,
@@ -1966,6 +1999,9 @@ export const poolRouter = createTRPCRouter({
               isMultiHop,
               weight: tx.weight,
               success: !tx.is_voided,
+              // Include nc_context.actions for accurate amount calculation
+              // These are the actual deposit/withdrawal amounts, not the raw UTXO values
+              ncActions: tx.nc_context?.actions || [],
               // Include full transaction data for debugging
               debug: {
                 fullTx: tx,
