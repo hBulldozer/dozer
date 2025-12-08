@@ -435,11 +435,11 @@ export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistory
       </div>
 
       {/* Footer with nanocontract explorer link */}
-      {displayTransactions.length > 0 && (
+      {displayTransactions.length > 0 && process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID && (
         <div className="p-4 border-t border-stone-700 bg-stone-900">
           <div className="flex items-center justify-center">
             <a
-              href={getExplorerUrls().getNanoContractUrl(poolKey)}
+              href={getExplorerUrls().getNanoContractUrl(process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-400 hover:text-blue-300 transition-colors text-sm"
