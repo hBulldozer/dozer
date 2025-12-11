@@ -166,7 +166,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     props: {
       trpcState: ssg.dehydrate(),
     },
-    revalidate: 3600,
+    revalidate: 60,
   }
 }
 

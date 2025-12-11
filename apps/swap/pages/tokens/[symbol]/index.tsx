@@ -58,7 +58,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       props: {
         trpcState: ssg.dehydrate(),
       },
-      revalidate: 3600,
+      revalidate: 60,
     }
   } catch (error) {
     console.error(`Error fetching data for token ${symbol}:`, error)

@@ -1,12 +1,7 @@
 import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client'
-
 import { createTRPCNext } from '@trpc/next'
 import superjson from 'superjson'
-
 import type { AppRouter } from '@dozer/api'
-import { RegisterOptions } from 'superjson/dist/class-registry'
-import { CustomTransfomer } from 'superjson/dist/custom-transformer-registry'
-import { SuperJSONResult, Class, JSONValue } from 'superjson/dist/types'
 
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') return '' // browser should use relative url
