@@ -1,6 +1,6 @@
 import { createNextApiHandler } from "@trpc/server/adapters/next";
-
-import { appRouter, createTRPCContext, responseMeta } from "@dozer/api";
+import { appRouter, createTRPCContext } from "@dozer/api";
+import { responseMeta } from "@dozer/api/src/server";
 
 // export API handler
 export default createNextApiHandler({

@@ -1,6 +1,11 @@
 {
   "name": "@dozer/api",
   "version": "0.1.0",
+  "exports": {
+    ".": "./index.ts",
+    "./server": "./src/server.ts",
+    "./src/*": "./src/*"
+  },
   "dependencies": {
     "@dozer/chain": "workspace:*",
     "@dozer/currency": "workspace:*",
