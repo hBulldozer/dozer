@@ -2,6 +2,14 @@
  * Server-only exports
  * Import from '@dozer/api/src/server' in API routes only
  *
+ * DO NOT import these in client-side code as they depend on @trpc/server
+ */
+
+// Re-export server-only items
+export { createTRPCContext } from './trpc'
+export { appRouter } from './root'
+
+/**
  * Response meta function for setting Cache-Control headers based on router and procedure
  * Use this in createNextApiHandler({ responseMeta })
  */

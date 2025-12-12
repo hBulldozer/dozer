@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { RouterOutputs } from '..'
+import { RouterOutputs } from './router-types'
 import { ChainId } from '@dozer/chain'
 import { Pool, daySnapshot, hourSnapshot } from '@dozer/database'
 import { Token } from '@dozer/currency'
