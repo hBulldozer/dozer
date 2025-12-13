@@ -1,8 +1,8 @@
 import { fetchFakeData } from './fetchFakeData'
 
-const MAX_RETRIES = 3
+const MAX_RETRIES = 2
 const INITIAL_TIMEOUT = 5000 // 5 seconds
-const BACKOFF_FACTOR = 2
+const BACKOFF_FACTOR = 1
 
 async function fetchWithTimeout(url: string, timeout: number): Promise<Response> {
   const controller = new AbortController()
