@@ -19,7 +19,7 @@
     "@vercel/analytics": "1.4.0",
     "framer-motion": "11.11.13",
     "nanoid": "5.0.8",
-    "next": "14.2.5",
+    "next": "14.2.35",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "sharp": "^0.33.4",
