@@ -90,8 +90,8 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
   const handleAddLiquidityClick = useCallback(() => {
     if (!quoteData) return
 
-    // Check for high price impact (5-15% range requires confirmation)
-    if (quoteData.price_impact >= 5 && quoteData.price_impact < 15) {
+    // Check for high price impact (>= 5% is blocking)
+    if (quoteData.price_impact >= 5) {
       setShowPriceImpactWarning(true)
     } else {
       setReviewModalOpen(true)
@@ -111,6 +111,7 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
         onConfirm={handleConfirmHighImpact}
         priceImpact={quoteData?.price_impact || 0}
         action="add"
+        blocking={(quoteData?.price_impact || 0) >= 5}
       />
       <AddSectionReviewModalSingleToken
         chainId={chainId}
@@ -349,25 +350,15 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                       <div className="p-3">
                         <Checker.Connected fullWidth size="lg">
                           <Checker.Amounts fullWidth size="lg" amount={Number(input)} token={token}>
-                            {quoteData && quoteData.price_impact > 15 ? (
-                              <Button
-                                size="lg"
-                                className="w-full"
-                                disabled={true}
-                                color="red"
-                              >
-                                Price Impact Too High ({quoteData.price_impact.toFixed(2)}%)
-                              </Button>
-                            ) : (
                               <Button
                                 size="lg"
                                 className="w-full"
                                 disabled={!quoteData || parseFloat(input) <= 0}
                                 onClick={handleAddLiquidityClick}
+                                color={quoteData && quoteData.price_impact >= 15 ? 'red' : undefined}
                               >
-                                {quoteData && parseFloat(input) > 0 ? 'Add Liquidity' : 'Enter an amount'}
+                                {quoteData && parseFloat(input) > 0 ? (quoteData.price_impact >= 15 ? `Price Impact Too High (${quoteData.price_impact.toFixed(2)}%)` : 'Add Liquidity') : 'Enter an amount'}
                               </Button>
-                            )}
                           </Checker.Amounts>
                         </Checker.Connected>
                       </div>

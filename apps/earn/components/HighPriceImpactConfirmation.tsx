@@ -9,6 +9,7 @@ interface HighPriceImpactConfirmationProps {
   onConfirm: () => void
   priceImpact: number
   action?: 'add' | 'remove'
+  blocking?: boolean
 }
 
 export const HighPriceImpactConfirmation: FC<HighPriceImpactConfirmationProps> = ({
@@ -17,6 +18,7 @@ export const HighPriceImpactConfirmation: FC<HighPriceImpactConfirmationProps> =
   onConfirm,
   priceImpact,
   action = 'add',
+  blocking = false,
 }) => {
   const [confirmText, setConfirmText] = useState('')
   const isConfirmValid = confirmText.toLowerCase() === 'confirm'
@@ -67,7 +69,7 @@ export const HighPriceImpactConfirmation: FC<HighPriceImpactConfirmationProps> =
                   <Dialog.Title as="div" className="flex items-center gap-3">
                     <ExclamationTriangleIcon className="h-6 w-6 text-red-400" />
                     <Typography variant="lg" weight={600} className="text-white">
-                      High Price Impact Warning
+                      {blocking ? 'Price Impact Too High' : 'High Price Impact Warning'}
                     </Typography>
                   </Dialog.Title>
                   <button
@@ -81,26 +83,34 @@ export const HighPriceImpactConfirmation: FC<HighPriceImpactConfirmationProps> =
                 <div className="space-y-4">
                   <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
                     <Typography variant="sm" className="text-red-200 mb-2">
-                      This transaction has a price impact of <span className="font-bold">{priceImpact.toFixed(2)}%</span>
+                      {blocking ? (
+                        <>Single token liquidity addition only works for price impacts lower than <span className="font-bold">5%</span>.</>
+                      ) : (
+                        <>This transaction has a price impact of <span className="font-bold">{priceImpact.toFixed(2)}%</span></>
+                      )}
                     </Typography>
                     <Typography variant="xs" className="text-red-300">
-                      You will lose a significant amount of value due to the internal swap required. Consider using a smaller amount.
+                      {blocking
+                        ? 'Please lower the amount of the deposit.'
+                        : 'You will lose a significant amount of value due to the internal swap required. Consider using a smaller amount.'}
                     </Typography>
                   </div>
 
-                  <div className="space-y-2">
-                    <Typography variant="sm" className="text-stone-300">
-                      Type <span className="font-mono font-bold text-white">"confirm"</span> to proceed with this transaction:
-                    </Typography>
-                    <input
-                      type="text"
-                      value={confirmText}
-                      onChange={(e) => setConfirmText(e.target.value)}
-                      placeholder="confirm"
-                      className="w-full px-3 py-2 bg-stone-800 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      autoFocus
-                    />
-                  </div>
+                  {!blocking && (
+                    <div className="space-y-2">
+                      <Typography variant="sm" className="text-stone-300">
+                        Type <span className="font-mono font-bold text-white">"confirm"</span> to proceed with this transaction:
+                      </Typography>
+                      <input
+                        type="text"
+                        value={confirmText}
+                        onChange={(e) => setConfirmText(e.target.value)}
+                        placeholder="confirm"
+                        className="w-full px-3 py-2 bg-stone-800 border border-stone-600 rounded-lg text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        autoFocus
+                      />
+                    </div>
+                  )}
 
                   <div className="flex gap-3 pt-4">
                     <Button
@@ -109,16 +119,18 @@ export const HighPriceImpactConfirmation: FC<HighPriceImpactConfirmationProps> =
                       color="gray"
                       variant="outlined"
                     >
-                      Cancel
+                      {blocking ? 'Close' : 'Cancel'}
                     </Button>
-                    <Button
-                      fullWidth
-                      onClick={handleConfirm}
-                      color="red"
-                      disabled={!isConfirmValid}
-                    >
-                      {actionText} Anyway
-                    </Button>
+                    {!blocking && (
+                      <Button
+                        fullWidth
+                        onClick={handleConfirm}
+                        color="red"
+                        disabled={!isConfirmValid}
+                      >
+                        {actionText} Anyway
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Dialog.Panel>
