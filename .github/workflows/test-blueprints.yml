@@ -44,7 +44,7 @@ jobs:
 
       - name: Test Dozer Pool
         working-directory: hathor-core
-        run: docker run hathor-test poetry run pytest -v hathor_tests/nanocontracts/blueprints/test_dozer_pool_manager.py
+        run: docker run hathor-test poetry run pytest -v hathor_tests/nanocontracts/blueprints/test_dozer_pool_manager.py hathor_tests/nanocontracts/blueprints/test_dozer_pool_manager_2.py hathor_tests/nanocontracts/blueprints/test_dozer_pool_manager_3.py
 
       - name: Test Oasis
         working-directory: hathor-core

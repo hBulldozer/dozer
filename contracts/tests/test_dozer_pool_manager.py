@@ -1553,6 +1553,14 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
             self.nc_id, "set_htr_usd_pool", owner_context, htr_token, usd_token, 3
         )
 
+        # Sign both pools so they're included in pathfinding graph
+        self.runner.call_public_method(
+            self.nc_id, "sign_pool", owner_context, htr_token, usd_token, 3
+        )
+        self.runner.call_public_method(
+            self.nc_id, "sign_pool", owner_context, htr_token, self.token_b, 3
+        )
+
         # Debug: Check if pathfinding works
         swap_path = self.runner.call_view_method(
             self.nc_id, "find_best_swap_path", 100_00, usd_token, self.token_b, 3
@@ -1659,6 +1667,17 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
 
         self.runner.call_public_method(
             self.nc_id, "set_htr_usd_pool", owner_context, htr_token, usd_token, 3
+        )
+
+        # Sign all 3 pools so they're included in pathfinding graph
+        self.runner.call_public_method(
+            self.nc_id, "sign_pool", owner_context, htr_token, usd_token, 3
+        )
+        self.runner.call_public_method(
+            self.nc_id, "sign_pool", owner_context, htr_token, self.token_b, 3
+        )
+        self.runner.call_public_method(
+            self.nc_id, "sign_pool", owner_context, self.token_b, self.token_c, 3
         )
 
         # Test TOKEN_C price in USD
@@ -1825,6 +1844,21 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         # Create A/C pool
         pool_key_ac, creator_ac = self._create_pool(
             self.token_a, self.token_c, fee=3, reserve_a=100000_00, reserve_b=300000_00
+        )
+
+        # Sign all 3 pools so they're included in pathfinding graph
+        tx = self._get_any_tx()
+        owner_context = self.create_context(
+            [], tx, Address(self.owner_address), timestamp=self.get_current_timestamp()
+        )
+        self.runner.call_public_method(
+            self.nc_id, "sign_pool", owner_context, self.token_a, self.token_b, 3
+        )
+        self.runner.call_public_method(
+            self.nc_id, "sign_pool", owner_context, self.token_b, self.token_c, 3
+        )
+        self.runner.call_public_method(
+            self.nc_id, "sign_pool", owner_context, self.token_a, self.token_c, 3
         )
 
         # Track users per pool for liquidity checks and initial reserves for burned liquidity calculation
@@ -2188,3 +2222,315 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
             assert False, "Expected assertion error for negative input"
         except AssertionError as e:
             assert "Cannot calculate square root of negative number" in str(e)
+
+    def test_add_liquidity_price_ratio(self):
+        """Test add_liquidity price ratio check across all pool sizes and asymmetries."""
+        test_scenarios = [
+            # Very small pools (<1000) - 5000 ppm (0.5%) tolerance
+            (500, 500, 50, "Very small symmetric 1:1"),
+            (900, 300, 90, "Very small asymmetric 3:1"),
+            (999, 111, 100, "Very small asymmetric ~9:1"),
+
+            # Small pools (1000-10000) - 2000 ppm (0.2%) tolerance
+            (5000, 5000, 500, "Small symmetric 1:1"),
+            (9000, 3000, 900, "Small asymmetric 3:1"),
+            (9000, 900, 450, "Small asymmetric 10:1"),
+
+            # Normal pools (>=10000) - 100 ppm (0.01%) tolerance
+            (50000, 50000, 5000, "Normal symmetric 1:1"),
+            (100000, 33333, 10000, "Normal asymmetric 3:1"),
+            (100000, 10000, 5000, "Normal asymmetric 10:1"),
+            (500000, 10000, 25000, "Normal asymmetric 50:1"),
+            (1000000, 10000, 50000, "Normal asymmetric 100:1"),
+
+            # Post-swap scenario (unbalanced reserves like 10100/991)
+            (10100, 991, 505, "Post-swap unbalanced"),
+            (100000, 9901, 5000, "Post-swap large unbalanced"),
+        ]
+
+        for reserve_a, reserve_b, amount_a, description in test_scenarios:
+            with self.subTest(scenario=description):
+                token_a = self.gen_random_token_uid()
+                token_b = self.gen_random_token_uid()
+
+                pool_key, _creator_address = self._create_pool(
+                    token_a, token_b, fee=3, reserve_a=reserve_a, reserve_b=reserve_b
+                )
+
+                contract = self.get_readonly_contract(self.nc_id)
+                assert isinstance(contract, DozerPoolManager)
+
+                amount_b = self.runner.call_view_method(
+                    self.nc_id, "quote", amount_a, reserve_a, reserve_b
+                )
+
+                self._add_liquidity(token_a, token_b, 3, amount_a, amount_b)
+
+                self._check_balance()
+
+    def test_remove_liquidity_price_ratio(self):
+        """Test remove_liquidity price ratio check across all pool sizes and asymmetries."""
+        test_scenarios = [
+            # Very small pools (<1000) - 5000 ppm (0.5%) tolerance
+            (500, 500, 250, "Very small symmetric 1:1"),
+            (900, 300, 450, "Very small asymmetric 3:1"),
+
+            # Small pools (1000-10000) - 2000 ppm (0.2%) tolerance
+            (5000, 5000, 2500, "Small symmetric 1:1"),
+            (9000, 3000, 4500, "Small asymmetric 3:1"),
+            (9000, 900, 4500, "Small asymmetric 10:1"),
+
+            # Normal pools (>=10000) - 100 ppm (0.01%) tolerance
+            (50000, 50000, 25000, "Normal symmetric 1:1"),
+            (100000, 10000, 50000, "Normal asymmetric 10:1"),
+            (500000, 10000, 250000, "Normal asymmetric 50:1"),
+            (1000000, 10000, 500000, "Normal asymmetric 100:1"),
+        ]
+
+        for reserve_a, reserve_b, amount_a, description in test_scenarios:
+            with self.subTest(scenario=description):
+                token_a = self.gen_random_token_uid()
+                token_b = self.gen_random_token_uid()
+
+                pool_key, creator_address = self._create_pool(
+                    token_a, token_b, fee=3, reserve_a=reserve_a, reserve_b=reserve_b
+                )
+
+                contract = self.get_readonly_contract(self.nc_id)
+                assert isinstance(contract, DozerPoolManager)
+
+                amount_b = self.runner.call_view_method(
+                    self.nc_id, "quote", amount_a, reserve_a, reserve_b
+                )
+
+                self._remove_liquidity(token_a, token_b, 3, amount_a, amount_b, address=creator_address)
+
+                self._check_balance()
+
+    def test_add_liquidity_single_token_price_ratio(self):
+        """Test add_liquidity_single_token price ratio check across pool sizes."""
+        test_scenarios = [
+            # Small pools (1000-10000) - 2000 ppm (0.2%) tolerance
+            (5000, 5000, 50, "Small symmetric 1:1"),
+
+            # Normal pools (>=10000) - 100 ppm (0.01%) tolerance
+            (50000, 50000, 500, "Normal symmetric 1:1"),
+            (100000, 100000, 1000, "Large symmetric 1:1"),
+            # For asymmetric pools, use larger sizes to keep swap percentage low
+            # 2:1 ratio with larger reserves: 60000:30000, swap must be <1500 for 5% impact
+            (60000, 30000, 200, "Normal asymmetric 2:1"),
+            # 3:1 ratio with large reserves: 150000:50000, swap must be <2500 for 5% impact
+            (150000, 50000, 300, "Large asymmetric 3:1"),
+        ]
+
+        for reserve_a, reserve_b, amount_in, description in test_scenarios:
+            with self.subTest(scenario=description):
+                token_a = self.gen_random_token_uid()
+                token_b = self.gen_random_token_uid()
+
+                pool_key, _creator_address = self._create_pool(
+                    token_a, token_b, fee=3, reserve_a=reserve_a, reserve_b=reserve_b
+                )
+
+                tx = self._get_any_tx()
+                actions = [NCDepositAction(token_uid=token_a, amount=amount_in)]
+                address_bytes, _ = self._get_any_address()
+                context = self.create_context(
+                    actions=actions,
+                    vertex=tx,
+                    caller_id=Address(address_bytes),
+                    timestamp=self.get_current_timestamp()
+                )
+
+                self.runner.call_public_method(
+                    self.nc_id, "add_liquidity_single_token", context, token_b, 3
+                )
+
+                self._check_balance()
+
+    def test_remove_liquidity_single_token_price_ratio(self):
+        """Test remove_liquidity_single_token price ratio check across pool sizes."""
+        test_scenarios = [
+            # Small pools (1000-10000) - 2000 ppm (0.2%) tolerance
+            (5000, 5000, 50, "Small symmetric 1:1"),
+
+            # Normal pools (>=10000) - 100 ppm (0.01%) tolerance
+            (50000, 50000, 500, "Normal symmetric 1:1"),
+            (100000, 100000, 1000, "Large symmetric 1:1"),
+            # For asymmetric pools, use larger sizes to keep swap percentage low
+            (60000, 30000, 200, "Normal asymmetric 2:1"),
+            (150000, 50000, 300, "Large asymmetric 3:1"),
+        ]
+
+        for initial_reserve_a, initial_reserve_b, liquidity_to_add, description in test_scenarios:
+            with self.subTest(scenario=description):
+                token_a = self.gen_random_token_uid()
+                token_b = self.gen_random_token_uid()
+
+                pool_key, creator_address = self._create_pool(
+                    token_a, token_b, fee=3, reserve_a=initial_reserve_a, reserve_b=initial_reserve_b
+                )
+
+                amount_b = self.runner.call_view_method(
+                    self.nc_id, "quote", liquidity_to_add, initial_reserve_a, initial_reserve_b
+                )
+
+                _result, add_context = self._add_liquidity(
+                    token_a, token_b, 3, liquidity_to_add, amount_b
+                )
+
+                removal_percentage = 5000  # Remove 50% of user's liquidity
+
+                quote = self.runner.call_view_method(
+                    self.nc_id, "quote_remove_liquidity_single_token_percentage",
+                    add_context.caller_id, pool_key, token_a, removal_percentage
+                )
+
+                tx = self._get_any_tx()
+                actions = [NCWithdrawalAction(token_uid=token_a, amount=quote.amount_out)]
+                context = self.create_context(
+                    actions=actions,
+                    vertex=tx,
+                    caller_id=Address(add_context.caller_id),
+                    timestamp=self.get_current_timestamp()
+                )
+
+                self.runner.call_public_method(
+                    self.nc_id, "remove_liquidity_single_token", context, pool_key, removal_percentage
+                )
+
+                self._check_balance()
+
+    def test_initial_lp(self):
+        """
+        Test that checks initial LP attack scenario.
+
+        This test validates that the pool manager correctly handles:
+        1. Pool creation with initial liquidity
+        2. A swap operation
+        3. Liquidity removal by the initial LP
+
+        The test ensures that price ratio checks don't fail when the initial LP
+        removes their liquidity after a swap has occurred.
+        """
+        # Create pool with initial liquidity: 10,000 HTR / 1,000 USD (10:1 ratio)
+        pool_key, _creator_address = self._create_pool(
+            HTR_UID,
+            self.token_a,  # Using token_a as USD
+            fee=3,
+            reserve_a=10_000,
+            reserve_b=1_000
+        )
+
+        contract = self.get_readonly_contract(self.nc_id)
+        assert isinstance(contract, DozerPoolManager)
+
+        initial_reserve_htr = contract.pools[pool_key].reserve_a
+        initial_reserve_usd = contract.pools[pool_key].reserve_b
+
+        # Verify initial pool state
+        assert initial_reserve_htr == 10_000
+        assert initial_reserve_usd == 1_000
+        initial_total_liquidity = contract.pools[pool_key].total_liquidity
+        # total_liquidity = isqrt(10000 * 1000) * (PRECISION + MINIMUM_LIQUIDITY)
+        #                 = 3162 * (10^20 + 1000) = 3162 * 10^20 + 3162 * 1000
+        assert initial_total_liquidity == 316200000000000003162000
+
+        # Execute a swap: 100 HTR -> ~9 USD
+        # Using get_amount_out to calculate expected output
+        expected_usd_out = self.runner.call_view_method(
+            self.nc_id,
+            "get_amount_out",
+            100,  # amount_in (HTR)
+            initial_reserve_htr,  # reserve_in (HTR)
+            initial_reserve_usd,  # reserve_out (USD)
+            3,  # fee_numerator
+            1000,  # fee_denominator
+        )
+
+        # Verify expected output calculation
+        # amount_out = (1000 * 100 * 997) // (10000 * 1000 + 100 * 997) = 99700000 // 10099700 = 9
+        assert expected_usd_out == 9
+
+        # Execute the swap
+        swap_result, _swap_context = self._swap_exact_tokens_for_tokens(
+            HTR_UID,
+            self.token_a,  # USD token
+            3,
+            100,  # amount_in (HTR)
+            expected_usd_out,  # amount_out_min (USD)
+        )
+
+        # Verify swap result
+        assert swap_result.amount_in == 100
+        assert swap_result.amount_out == 9
+        assert swap_result.change_in == 0  # No slippage since amount_out = min_accepted_amount
+        assert swap_result.token_in == HTR_UID
+        assert swap_result.token_out == self.token_a
+
+        # Get pool state after swap
+        contract_after_swap = self.get_readonly_contract(self.nc_id)
+        assert isinstance(contract_after_swap, DozerPoolManager)
+
+        reserve_htr_after_swap = contract_after_swap.pools[pool_key].reserve_a
+        reserve_usd_after_swap = contract_after_swap.pools[pool_key].reserve_b
+
+        # Verify pool state after swap
+        assert reserve_htr_after_swap == 10_000 + 100  # 10,100
+        assert reserve_usd_after_swap == 1_000 - 9  # 991
+        assert contract_after_swap.pools[pool_key].total_change_a == 0
+        assert contract_after_swap.pools[pool_key].total_change_b == 0
+
+        # Now the initial LP tries to remove liquidity: 1,000 HTR / 98 USD
+        # This should be proportional to their share of the pool
+        initial_lp_liquidity = self.runner.call_view_method(
+            self.nc_id, "liquidity_of", _creator_address, pool_key
+        )
+        total_liquidity = contract_after_swap.pools[pool_key].total_liquidity
+
+        # Verify liquidity hasn't changed (no fees collected from swap)
+        assert total_liquidity == initial_total_liquidity
+
+        # Calculate what the LP should receive for removing 1,000 HTR worth
+        # Based on their liquidity share
+        amount_to_remove_htr = 1_000
+
+        # Calculate the corresponding USD amount based on current pool ratio
+        amount_to_remove_usd = self.runner.call_view_method(
+            self.nc_id,
+            "quote",
+            amount_to_remove_htr,
+            reserve_htr_after_swap,
+            reserve_usd_after_swap,
+        )
+
+        # Verify quote calculation
+        # amount_to_remove_usd = (1000 * 991) // 10100 = 991000 // 10100 = 98
+        assert amount_to_remove_usd == 98
+
+
+        # Remove liquidity
+        _remove_context, _result = self._remove_liquidity(
+            HTR_UID,
+            self.token_a,
+            3,
+            amount_to_remove_htr,
+            amount_to_remove_usd,
+            address=_creator_address,
+        )
+
+        # Verify final state
+        final_contract = self.get_readonly_contract(self.nc_id)
+        assert isinstance(final_contract, DozerPoolManager)
+
+        final_reserve_htr = final_contract.pools[pool_key].reserve_a
+        final_reserve_usd = final_contract.pools[pool_key].reserve_b
+
+        # Verify final reserves after liquidity removal
+        assert final_reserve_htr == 10_100 - 1_000  # 9,100
+        assert final_reserve_usd == 991 - 98  # 893
+        assert final_contract.pools[pool_key].total_change_a == 0
+        assert final_contract.pools[pool_key].total_change_b == 0
+
+        # The test passes if we reach here without assertion errors
+        self._check_balance()
