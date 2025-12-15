@@ -74,7 +74,7 @@ const Add: NextPage = () => {
             {/* <AddSectionStake poolAddress={pair.id} /> */}
             <Container className="flex justify-center">
               <Link.External
-                href="https://docs.dozer.finance/products/dex-liquidity-pools"
+                href="https://docs.dozer.finance/trading-platform/liquidity-pools"
                 className="flex justify-center px-6 py-4 decoration-stone-500 hover:bg-opacity-[0.06] cursor-pointer rounded-2xl"
               >
                 <Typography variant="xs" weight={500} className="flex items-center gap-1 text-stone-500">

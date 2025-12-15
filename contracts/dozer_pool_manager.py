@@ -997,8 +997,12 @@ class DozerPoolManager(Blueprint):
             excess_token = token_in
             excess_amount = Amount(0)
 
-        price_impact = self._calculate_value_based_price_impact(
-            amount_in, token_in, result.actual_a, result.actual_b, token_a, token_b
+        # Retrieve (reserve_in, reserve_out) for the internal swap calculation
+        # This mirrors the logic in add_liquidity_single_token
+        reserve_in, reserve_out, _ = self._resolve_token_direction(pool, token_in)
+
+        price_impact = self._calculate_single_swap_price_impact(
+            result.optimal_swap_amount, result.swap_output, reserve_in, reserve_out
         )
 
         return SingleTokenLiquidityQuote(
