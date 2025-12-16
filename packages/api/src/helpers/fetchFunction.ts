@@ -1,8 +1,13 @@
 import { fetchFakeData } from './fetchFakeData'
 
-const MAX_RETRIES = 2
-const INITIAL_TIMEOUT = 5000 // 5 seconds
-const BACKOFF_FACTOR = 1
+// Check if running in local development environment
+const isLocalDevelopment = process.env.NODE_ENV === 'development'
+
+// In local development, disable retries and use shorter timeout to fail fast
+// In production, use retries and longer timeout for reliability
+const MAX_RETRIES = isLocalDevelopment ? 0 : 2
+const INITIAL_TIMEOUT = isLocalDevelopment ? 500 : 10000 // 5s local, 10s production
+const BACKOFF_FACTOR = isLocalDevelopment ? 0 : 2
 
 async function fetchWithTimeout(url: string, timeout: number): Promise<Response> {
   const controller = new AbortController()
