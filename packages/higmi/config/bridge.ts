@@ -21,7 +21,9 @@ const getIsTestnet = (): boolean => {
   return isTestnet
 }
 
+// Export as a function for runtime evaluation and as a constant for compatibility
 export const IS_TESTNET = getIsTestnet()
+export const isTestnet = getIsTestnet
 
 // Ethereum/Arbitrum Network Configuration
 export const ETHEREUM_CONFIG: {

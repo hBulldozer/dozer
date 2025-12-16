@@ -24,7 +24,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
 }) => {
   const { provider } = useMetaMaskContext()
   const request = useRequest()
-  const invokeSnap = useInvokeSnap()
+  const invokeSnap = useInvokeSnap('npm:@hathor/snap')
   const { session, accounts, isWaitingApproval } = useWalletConnectClient()
   const walletService = WalletConnectionService.getInstance()
   const { targetNetwork } = useAccount()
@@ -166,7 +166,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
         } else if (err.message.includes('No MetaMask accounts')) {
           setError('No MetaMask accounts found. Please create or unlock your MetaMask wallet.')
         } else if (err.message.includes('Snap not found')) {
-          setError('Hathor snap not available. Please ensure the snap is running on localhost:8080.')
+          setError('Hathor snap not available. Please install the snap from the MetaMask Snap directory.')
         } else {
           setError(err.message)
         }

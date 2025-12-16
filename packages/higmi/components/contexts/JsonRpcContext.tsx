@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useCallback, useContext, useState, useMemo } from 'react'
+import { createContext, ReactNode, useCallback, useContext, useState, useMemo, useEffect } from 'react'
 import { useWalletConnectClient } from './ClientContext'
 import { useAccount } from '@dozer/zustand'
 import {
@@ -87,9 +87,18 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
   const [isTestnet, setIsTestnet] = useState(config.isTestnet)
 
   const { client, session } = useWalletConnectClient()
-  const { walletType, hathorAddress, snapId } = useAccount()
-  const invokeSnap = useInvokeSnap()
-  const { address: wcAddress } = useAccount()
+  const {
+    walletType,
+    hathorAddress,
+    snapId,
+    address: wcAddress,
+    needsNetworkRefresh,
+    setNeedsNetworkRefresh,
+    targetNetwork,
+    setCurrentNetwork,
+    setWalletConnection,
+  } = useAccount()
+  const invokeSnap = useInvokeSnap('npm:@hathor/snap')
 
   const address = walletType === 'walletconnect' ? wcAddress : hathorAddress
 
@@ -99,6 +108,70 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
     // Reset to the configured testnet setting
     setIsTestnet(config.isTestnet)
   }, [])
+
+  // Handle network refresh when environment changes
+  useEffect(() => {
+    const refreshNetworkWalletInfo = async () => {
+      const currentSnapId = snapId || 'npm:@hathor/snap'
+
+      if (!needsNetworkRefresh || walletType !== 'metamask-snap' || !invokeSnap || !currentSnapId) {
+        console.log('Network refresh check:', { needsNetworkRefresh, walletType, hasInvokeSnap: !!invokeSnap, snapId: currentSnapId })
+        return
+      }
+
+      console.log(`Refreshing wallet info for network: ${targetNetwork}, snapId: ${currentSnapId}`)
+
+      try {
+        // Switch network on the snap
+        await invokeSnap({
+          snapId: currentSnapId,
+          method: 'htr_changeNetwork',
+          params: { newNetwork: targetNetwork },
+        })
+        console.log('Network switched successfully')
+
+        // Get updated wallet info
+        const walletInfoResult = await invokeSnap({
+          snapId: currentSnapId,
+          method: 'htr_getWalletInformation',
+          params: {},
+        })
+        console.log('Wallet info result:', walletInfoResult)
+
+        // Parse wallet info response
+        let newAddress: string | null = null
+        const result = walletInfoResult
+        if (typeof result === 'string') {
+          try {
+            const parsed = JSON.parse(result)
+            newAddress = parsed?.response?.address0 || parsed?.address
+          } catch {
+            // Parsing failed
+          }
+        } else if (typeof result === 'object' && result !== null) {
+          newAddress = (result as Record<string, unknown>)?.response?.address0 || (result as Record<string, unknown>)?.address
+        }
+
+        if (newAddress) {
+          console.log(`Updated Hathor address for ${targetNetwork}: ${newAddress}`)
+          setCurrentNetwork(targetNetwork)
+          setWalletConnection({
+            hathorAddress: newAddress as string,
+            selectedNetwork: targetNetwork,
+          })
+        } else {
+          console.warn('Could not parse address from wallet info')
+        }
+      } catch (error) {
+        console.error('Failed to refresh wallet info for new network:', error)
+      } finally {
+        // Clear the flag
+        setNeedsNetworkRefresh(false)
+      }
+    }
+
+    refreshNetworkWalletInfo()
+  }, [needsNetworkRefresh, walletType, invokeSnap, targetNetwork, setCurrentNetwork, setWalletConnection, setNeedsNetworkRefresh, snapId])
 
   const ping = async () => {
     if (typeof client === 'undefined') {

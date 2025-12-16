@@ -88,13 +88,12 @@ export class WalletConnectionService {
   ): Promise<{ installed: boolean; snapId: string | null }> {
     try {
       const snaps = (await requestFn({ method: 'wallet_getSnaps' })) as Record<string, any>
-      const possibleSnapIds = ['local:http://localhost:8080', 'npm:@hathor/snap-hathor']
+      const snapId = 'npm:@hathor/snap'
 
-      for (const snapId of possibleSnapIds) {
-        if (snaps && snaps[snapId]) {
-          return { installed: true, snapId }
-        }
+      if (snaps && snaps[snapId]) {
+        return { installed: true, snapId }
       }
+
       return { installed: false, snapId: null }
     } catch (error) {
       return { installed: false, snapId: null }
@@ -202,10 +201,8 @@ export class WalletConnectionService {
         const availableSnapIds = Object.keys(snaps)
         console.log('Available snap IDs:', availableSnapIds)
 
-        // Look for our snap - check both exact match and partial match
-        const foundSnapId =
-          availableSnapIds.find((id) => id === defaultSnapId) ||
-          availableSnapIds.find((id) => id.includes('localhost') || id.includes('hathor'))
+        // Look for our snap - check for exact match
+        const foundSnapId = availableSnapIds.find((id) => id === defaultSnapId)
 
         if (!foundSnapId) {
           console.error('Snap not found in response. Available IDs:', availableSnapIds)
@@ -214,9 +211,7 @@ export class WalletConnectionService {
             walletType: 'metamask-snap',
             address: ethAddress,
             hathorAddress: '',
-            error: `Local snap not found. Please ensure:
-1. Your snap is running on localhost:8080 (run: pnpm serve)
-2. Local snaps are enabled in MetaMask (use MetaMask Flask or enable in Settings > Advanced)
+            error: `Hathor snap not found. Please install the snap from the MetaMask Snap directory.
 Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
           }
         }
@@ -258,8 +253,12 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
       }
 
       // Step 4: Check if we need to switch networks
-      const { targetNetwork, setWalletConnection } = useAccount.getState()
+      const { targetNetwork, setWalletConnection, setCurrentNetwork } = useAccount.getState()
       console.log('Current network:', currentNetwork, 'Target network:', targetNetwork)
+
+      // Track the final network and address we'll be on
+      let finalNetwork = currentNetwork
+      let finalHathorAddress = hathorAddress
 
       if (currentNetwork && currentNetwork !== targetNetwork) {
         console.log(`Network mismatch. Need to switch from ${currentNetwork} to ${targetNetwork}`)
@@ -271,28 +270,36 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
             params: { newNetwork: targetNetwork },
           })
           console.log('Network switched successfully')
+          finalNetwork = targetNetwork
 
-          // Get wallet info again after network switch
+          // Get wallet info again after network switch to get the correct address
           const newWalletInfoResult = await invokeSnapFn({
             method: 'htr_getWalletInformation',
           })
           const newWalletInfo = this.parseWalletInformation(newWalletInfoResult)
           if (newWalletInfo?.address) {
             console.log('New address after network switch:', newWalletInfo.address)
+            finalHathorAddress = newWalletInfo.address
           }
         } catch (error) {
           console.warn('Failed to switch network, continuing with current network:', error)
+          // Keep finalNetwork as currentNetwork if switch failed
         }
       }
 
-      // Update global state with network info
+      // Update current network in the store
+      if (finalNetwork) {
+        setCurrentNetwork(finalNetwork as 'mainnet' | 'testnet')
+      }
+
+      // Update global state with network info (using the updated address after network switch)
       setWalletConnection({
         walletType: 'metamask-snap',
         address: ethAddress,
-        hathorAddress: hathorAddress,
+        hathorAddress: finalHathorAddress,
         isSnapInstalled: true,
         snapId: snapId,
-        selectedNetwork: (currentNetwork as 'mainnet' | 'testnet') || targetNetwork,
+        selectedNetwork: (finalNetwork as 'mainnet' | 'testnet') || targetNetwork,
       })
 
       return {
@@ -311,7 +318,7 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
         ) {
           errorMessage = 'User cancelled snap installation'
         } else if (error.message.includes('Snap not found')) {
-          errorMessage = 'Hathor snap not available. Please ensure the snap is running on localhost:8080.'
+          errorMessage = 'Hathor snap not available. Please install the snap from the MetaMask Snap directory.'
         } else {
           errorMessage = error.message
         }
@@ -366,7 +373,12 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
       const hathorAddress = walletInfo?.address
 
       // Update global state
-      const { setWalletConnection } = useAccount.getState()
+      const { setWalletConnection, setCurrentNetwork } = useAccount.getState()
+
+      // Update current network
+      setCurrentNetwork(network)
+
+      // Update wallet connection
       setWalletConnection({
         selectedNetwork: network,
         hathorAddress: hathorAddress || '',
