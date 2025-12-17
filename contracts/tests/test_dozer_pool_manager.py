@@ -617,7 +617,7 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
 
         amount_in = 300
         actions = [NCDepositAction(token_uid=self.token_b, amount=amount_in)]
-        context = self.create_context(actions=actions)
+        context = self.create_context(actions=actions, timestamp=self.get_current_timestamp()+1)
 
         contract_before = self.get_readonly_contract(self.nc_id)
         assert isinstance(contract_before, DozerPoolManager)

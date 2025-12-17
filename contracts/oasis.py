@@ -248,8 +248,28 @@ class Oasis(Blueprint):
 
         htr_amount = self._quote_add_liquidity_in(deposit_amount)
         assert htr_amount > 0, "htr_amount must be greater than 0"
-        token_price_in_htr = (deposit_amount * PRICE_PRECISION) // htr_amount
-        bonus = self._get_user_bonus(timelock, htr_amount)
+
+        # Use TWAP price from DozerPoolManager instead of spot price FOR BONUS CALCULATION
+        # This prevents price manipulation attacks where attackers swap to manipulate
+        # the pool price, deposit for inflated bonuses, then undo the swap
+        token_price_in_htr = (
+            self._get_pool_manager()
+            .view()
+            .get_twap_price(
+                HATHOR_TOKEN_UID,
+                self.token_b,
+                self.pool_fee,
+                current_timestamp=int(ctx.block.timestamp),
+            )
+        )
+
+        # Calculate HTR amount using TWAP for bonus calculation
+        # get_twap_price returns "price of token_b in terms of HTR"
+        # i.e., how many HTR for 1 token_b (with PRICE_PRECISION scaling)
+        # So: HTR_amount = deposit_amount_token_b * price_token_b_in_HTR / PRICE_PRECISION
+        htr_amount_for_bonus = (deposit_amount * token_price_in_htr) // PRICE_PRECISION
+
+        bonus = self._get_user_bonus(timelock, htr_amount_for_bonus)
 
         now = ctx.block.timestamp
         if htr_amount + bonus > self.oasis_htr_balance:
@@ -340,6 +360,7 @@ class Oasis(Blueprint):
             self._get_pool_manager().public(*adjust_actions).withdraw_cashback(self._get_pool_key())
             self._add_user_balance(caller, token_uid, cashback_amount)
 
+    @public
     def close_position(self, ctx: Context) -> None:
         """Close a user's position, removing liquidity from the pool and making funds available for withdrawal.
 
@@ -362,7 +383,7 @@ class Oasis(Blueprint):
         if self.user_liquidity.get(caller, 0) == 0:
             raise NCFail("No position to close")
 
-        oasis_quote = self._calculate_position_closure(caller)
+        oasis_quote = self._calculate_position_closure(caller, int(ctx.block.timestamp))
         user_lp_htr = oasis_quote.user_lp_htr
         user_lp_b = oasis_quote.user_lp_b
         loss_htr = oasis_quote.loss_htr
@@ -672,20 +693,32 @@ class Oasis(Blueprint):
         return Amount((amount * bonus_multiplier[timelock]) // 10000)
 
     def _calculate_impermanent_loss_compensation(
-        self, loss_in_token_b: int, user_lp_htr: int
+        self, loss_in_token_b: int, user_lp_htr: int, current_timestamp: int
     ) -> int:
         """Calculate HTR compensation for impermanent loss in token_b.
 
         Args:
             loss_in_token_b: Amount of token_b loss
             user_lp_htr: User's HTR in liquidity pool (max compensation)
+            current_timestamp: Current block timestamp for TWAP calculation
 
         Returns:
             HTR amount to compensate for loss (capped at user_lp_htr)
         """
         pool_manager = self._get_pool_manager()
-        reserves = pool_manager.view().get_reserves(HATHOR_TOKEN_UID, self.token_b, self.pool_fee)
-        loss_htr = pool_manager.view().quote(loss_in_token_b, reserves[1], reserves[0])
+
+        # Use TWAP price instead of spot price for IL compensation
+        # This prevents manipulation where user swaps to inflate IL, gets compensated, then undoes swap
+        token_b_price_in_htr = pool_manager.view().get_twap_price(
+            HATHOR_TOKEN_UID,
+            self.token_b,
+            self.pool_fee,
+            current_timestamp=current_timestamp,
+        )
+
+        # Calculate HTR equivalent of token_b loss using TWAP price
+        # price is token_b/HTR, so HTR = token_b * price / PRICE_PRECISION
+        loss_htr = (loss_in_token_b * token_b_price_in_htr) // PRICE_PRECISION
 
         # Cap compensation at available HTR
         if loss_htr > user_lp_htr:
@@ -884,8 +917,11 @@ class Oasis(Blueprint):
     def user_info(
         self,
         address: Address,
+        current_timestamp: int,
     ) -> OasisUserInfo:
-        remove_liquidity_oasis_quote = self.get_remove_liquidity_oasis_quote(address)
+        remove_liquidity_oasis_quote = self.get_remove_liquidity_oasis_quote(
+            address, current_timestamp
+        )
 
         # Safely access nested dicts using 'in' check to avoid state changes
         user_balance_a = 0
@@ -964,13 +1000,14 @@ class Oasis(Blueprint):
 
     @view
     def get_remove_liquidity_oasis_quote(
-        self, address: Address
+        self, address: Address, current_timestamp: int
     ) -> OasisRemoveLiquidityQuote:
-        return self._calculate_position_closure(address)
+        return self._calculate_position_closure(address, current_timestamp)
 
-    def _calculate_position_closure(self, address: Address) -> OasisRemoveLiquidityQuote:
-        """Internal helper to calculate position closure values.
-        """
+    def _calculate_position_closure(
+        self, address: Address, current_timestamp: int
+    ) -> OasisRemoveLiquidityQuote:
+        """Internal helper to calculate position closure values."""
         # If position is already closed, return the available balances from closed_position_balances
         if self.user_position_closed.get(address, False):
             return OasisRemoveLiquidityQuote(
@@ -1007,7 +1044,9 @@ class Oasis(Blueprint):
         loss_htr = 0
         if self.user_deposit_b.get(address, 0) > max_withdraw_b:
             loss = self.user_deposit_b.get(address, 0) - max_withdraw_b
-            loss_htr = self._calculate_impermanent_loss_compensation(loss, user_lp_htr)
+            loss_htr = self._calculate_impermanent_loss_compensation(
+                loss, user_lp_htr, current_timestamp
+            )
             max_withdraw_htr = user_balance_htr + loss_htr
         else:
             max_withdraw_htr = user_balance_htr

@@ -47,7 +47,8 @@ class TestDozerPoolManagerPathSwaps(BlueprintTestCase):
         ctx = self.create_context(actions=[
             NCDepositAction(token_uid=token_a, amount=reserve_a),
             NCDepositAction(token_uid=token_b, amount=reserve_b),
-        ])
+        ],
+        timestamp=1)
         pool_key = self.runner.call_public_method(self.contract_id, 'create_pool', ctx, fee)
         assert isinstance(ctx.caller_id, Address)
         return pool_key, ctx.caller_id
