@@ -113,7 +113,8 @@ const fetchAndProcessUserOasis = async (
   address: string
 ) => {
   const endpoint = 'nano_contract/state'
-  const call = `user_info("${address}")`
+  const now = Math.floor(Date.now() / 1000)
+  const call = `user_info("${address}", ${now})`
   const queryParams = [`id=${contractId}`, `calls[]=${call}`]
   const response = await fetchNodeData(endpoint, queryParams)
   const result = response['calls'][`${call}`]['value']
