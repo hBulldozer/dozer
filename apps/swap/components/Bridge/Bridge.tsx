@@ -45,6 +45,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   const [transactionHash, setTransactionHash] = useState<string>('')
   const [txStatus, setTxStatus] = useState<string>('idle')
   const [showStepper, setShowStepper] = useState(false)
+  const [evmBalance, setEvmBalance] = useState<number>(0)
 
   // Use Zustand store for bridge transaction state
   const {
@@ -77,7 +78,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   // Track if we've created the Hathor notification to prevent duplicates
   const hathorNotificationCreated = useRef(false)
 
-  const { bridgeTokenToHathor } = useBridge()
+  const { bridgeTokenToHathor, loadBalances } = useBridge()
 
   // Use the unified Hathor address from Zustand store
   // This works for both WalletConnect and MetaMask Snap connections
@@ -403,6 +404,58 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     }
   }, [initialToken, bridgedTokens, selectedToken])
 
+  // Load EVM balance when selected token changes
+  useEffect(() => {
+    const loadEvmBalance = async () => {
+      if (!selectedToken?.originalAddress || !metaMaskConnected) {
+        setEvmBalance(0)
+        return
+      }
+      try {
+        const balances = await loadBalances([selectedToken.originalAddress])
+        const balance = balances?.[selectedToken.originalAddress] || 0
+        setEvmBalance(balance)
+      } catch (error) {
+        console.error('Error loading EVM balance:', error)
+        setEvmBalance(0)
+      }
+    }
+    loadEvmBalance()
+  }, [selectedToken?.originalAddress, metaMaskConnected, loadBalances])
+
+  // Compute validation state for button text and disabled state
+  const getButtonValidation = (): { isDisabled: boolean; message: string } => {
+    const isMetaMaskReady = metaMaskConnected && metaMaskAccount
+
+    if (!selectedToken) {
+      return { isDisabled: true, message: 'Select a token' }
+    }
+    if (!amount) {
+      return { isDisabled: true, message: 'Enter an amount' }
+    }
+
+    const amountValue = parseFloat(amount)
+    if (isNaN(amountValue) || amountValue <= 0) {
+      return { isDisabled: true, message: 'Enter a valid amount' }
+    }
+    if (amountValue < 1) {
+      return { isDisabled: true, message: 'Minimum amount is 1' }
+    }
+    if (evmBalance > 0 && amountValue > evmBalance) {
+      return { isDisabled: true, message: 'Insufficient balance' }
+    }
+    if (!hathorAddress) {
+      return { isDisabled: true, message: 'Connect Hathor wallet' }
+    }
+    if (!isMetaMaskReady) {
+      return { isDisabled: true, message: 'Connect MetaMask' }
+    }
+
+    return { isDisabled: false, message: 'Bridge Token' }
+  }
+
+  const buttonValidation = getButtonValidation()
+
   // Auto-connect MetaMask EVM when user has connected via MetaMask Snap
   useEffect(() => {
     const autoConnectMetaMask = async () => {
@@ -548,12 +601,13 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       return
     }
 
-    // Validate amount is a valid number
+    // Amount validation is now handled by buttonValidation
+    // These checks are kept as safety guards in case button validation is bypassed
     const amountValue = parseFloat(amount)
-    if (isNaN(amountValue) || amountValue <= 0) {
-      const msg = 'Please enter a valid amount greater than 0'
-      setErrorMessage(msg)
-      createErrorToast(msg, false)
+    if (isNaN(amountValue) || amountValue <= 0 || amountValue < 1) {
+      return
+    }
+    if (evmBalance > 0 && amountValue > evmBalance) {
       return
     }
 
@@ -822,9 +876,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                 size="lg"
                 color="blue"
                 onClick={handleBridge}
-                disabled={
-                  !selectedToken || !amount || isProcessing || !hathorAddress || (isBridgeActive && !isDismissed)
-                }
+                disabled={buttonValidation.isDisabled || isProcessing || (isBridgeActive && !isDismissed)}
               >
                 {isProcessing || (isBridgeActive && !isDismissed)
                   ? txStatus === 'processing'
@@ -836,7 +888,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                     : steps.every((step) => step.status === 'completed')
                     ? 'Bridge Complete'
                     : 'Bridge in Progress...'
-                  : 'Bridge Token'}
+                  : buttonValidation.message}
               </Button>
             ) : walletType === 'metamask-snap' && isSnapInstalled ? (
               // User has MetaMask Snap but EVM not connected - show loading/connect state
