@@ -149,7 +149,8 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
             // Parsing failed
           }
         } else if (typeof result === 'object' && result !== null) {
-          newAddress = (result as Record<string, unknown>)?.response?.address0 || (result as Record<string, unknown>)?.address
+          const resultObj = result as Record<string, any>
+          newAddress = resultObj?.response?.address0 || resultObj?.address
         }
 
         if (newAddress) {
