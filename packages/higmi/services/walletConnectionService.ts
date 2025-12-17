@@ -107,8 +107,6 @@ export class WalletConnectionService {
     invokeSnapFn: (params: { method: string; params?: any }) => Promise<any>
   ): Promise<'mainnet' | 'testnet' | null> {
     try {
-      console.log('Calling htr_getConnectedNetwork with timeout...')
-
       // Add a timeout to prevent hanging indefinitely
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Network check timeout')), 10000) // 10 second timeout
@@ -119,7 +117,6 @@ export class WalletConnectionService {
       })
 
       const result = await Promise.race([networkPromise, timeoutPromise])
-      console.log('htr_getConnectedNetwork result:', result)
 
       // Parse network response
       if (typeof result === 'string') {
@@ -174,17 +171,12 @@ export class WalletConnectionService {
         onStatusUpdate?.('Installing Hathor snap...')
         const defaultSnapId = 'npm:@hathor/snap'
 
-        console.log('Attempting to connect to local snap:', defaultSnapId)
         const snaps = await requestFn({
           method: 'wallet_requestSnaps',
           params: {
             [defaultSnapId]: {},
           },
         })
-
-        // Debug log to see what we got back
-        console.log('Snap installation response:', snaps)
-        console.log('Snap exists?', snaps?.[defaultSnapId])
 
         // Check if snap installation was cancelled or failed
         if (!snaps) {
@@ -199,7 +191,6 @@ export class WalletConnectionService {
 
         // Try to find the snap ID - it might be returned with a different format
         const availableSnapIds = Object.keys(snaps)
-        console.log('Available snap IDs:', availableSnapIds)
 
         // Look for our snap - check for exact match
         const foundSnapId = availableSnapIds.find((id) => id === defaultSnapId)
@@ -217,7 +208,6 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
         }
 
         snapId = foundSnapId
-        console.log('Using snap ID:', snapId)
         onStatusUpdate?.('Hathor snap installed! Configuring...')
       }
 
@@ -230,7 +220,6 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
           method: 'htr_getWalletInformation',
           // Don't pass params - the method doesn't need any
         })
-        console.log('Raw wallet info result:', walletInfoResult)
       } catch (error) {
         console.error('Error calling htr_getWalletInformation:', error)
         throw error
@@ -238,7 +227,6 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
 
       // Parse wallet information response
       const walletInfo = this.parseWalletInformation(walletInfoResult)
-      console.log('Parsed wallet info:', walletInfo)
       const hathorAddress = walletInfo?.address
       const currentNetwork = walletInfo?.network
 
@@ -254,14 +242,12 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
 
       // Step 4: Check if we need to switch networks
       const { targetNetwork, setWalletConnection, setCurrentNetwork } = useAccount.getState()
-      console.log('Current network:', currentNetwork, 'Target network:', targetNetwork)
 
       // Track the final network and address we'll be on
       let finalNetwork = currentNetwork
       let finalHathorAddress = hathorAddress
 
       if (currentNetwork && currentNetwork !== targetNetwork) {
-        console.log(`Network mismatch. Need to switch from ${currentNetwork} to ${targetNetwork}`)
         onStatusUpdate?.(`Switching to ${targetNetwork}...`)
 
         try {
@@ -269,7 +255,6 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
             method: 'htr_changeNetwork',
             params: { newNetwork: targetNetwork },
           })
-          console.log('Network switched successfully')
           finalNetwork = targetNetwork
 
           // Get wallet info again after network switch to get the correct address
@@ -278,7 +263,6 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
           })
           const newWalletInfo = this.parseWalletInformation(newWalletInfoResult)
           if (newWalletInfo?.address) {
-            console.log('New address after network switch:', newWalletInfo.address)
             finalHathorAddress = newWalletInfo.address
           }
         } catch (error) {
@@ -306,7 +290,7 @@ Available snap IDs: ${availableSnapIds.join(', ') || 'none'}`,
         success: true,
         walletType: 'metamask-snap',
         address: ethAddress,
-        hathorAddress: hathorAddress,
+        hathorAddress: finalHathorAddress,
       }
     } catch (error) {
       let errorMessage = 'Connection failed'
