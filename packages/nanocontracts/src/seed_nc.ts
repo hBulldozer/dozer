@@ -35,7 +35,7 @@ async function wait_next_block() {
   const response = await fetchNodeData('status', [])
   const height = response.dag.best_block.height
   console.log('Waiting for next block, last block height:', height)
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 360; i++) {
     const new_height = await fetchNodeData('status', [])
     if (new_height.dag.best_block.height > height) {
       console.log('Next block arrived!')
@@ -237,12 +237,14 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
     if (poolConfig.isNonHTRPool) {
       // Handle non-HTR pools
       console.log(`Creating non-HTR pool: ${poolConfig.pairTokenSymbol}/${poolConfig.tokenSymbol}...`)
-      
+
       const tokenA_uuid = tokenUUIDs[`${poolConfig.pairTokenSymbol}_uuid`]
       const tokenB_uuid = tokenUUIDs[`${poolConfig.tokenSymbol}_uuid`]
-      
+
       if (!tokenA_uuid || !tokenB_uuid) {
-        console.log(`Skipping non-HTR pool - token UUIDs not found for ${poolConfig.pairTokenSymbol}/${poolConfig.tokenSymbol}`)
+        console.log(
+          `Skipping non-HTR pool - token UUIDs not found for ${poolConfig.pairTokenSymbol}/${poolConfig.tokenSymbol}`
+        )
         continue
       }
 
@@ -253,7 +255,7 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
       // dzrQuantity is used generically for the "other" token amount in the pair
       const pairTokenAmount = (poolConfig.dzrQuantity || 0) * 100 // Generic pair token amount
       const tokenAmount = poolConfig.tokenQuantity * 100 // Token amount
-      
+
       const actions = [
         {
           type: 'deposit' as const,
@@ -356,7 +358,7 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
   const oasisContractIds: string[] = []
   for (const oasisConfig of config.oasis) {
     console.log(`Deploying Oasis contract for ${oasisConfig.tokenSymbol}...`)
-    
+
     const token_uuid = tokenUUIDs[`${oasisConfig.tokenSymbol}_uuid`]
     if (!token_uuid) {
       console.log(`Skipping Oasis for ${oasisConfig.tokenSymbol} - token UUID not found`)
@@ -364,10 +366,14 @@ export async function seed_nc(n_users = 5, seedConfig: SeedConfig) {
     }
 
     const oasisContract = new Oasis(token_uuid, manager_ncid, oasisConfig.poolFee)
-    const oasisResponse = await oasisContract.initialize(admin_address, oasisConfig.htrQuantity, oasisConfig.protocolFee)
+    const oasisResponse = await oasisContract.initialize(
+      admin_address,
+      oasisConfig.htrQuantity,
+      oasisConfig.protocolFee
+    )
     const oasisContractId = oasisResponse.hash
     oasisContractIds.push(oasisContractId)
-    
+
     console.log(`Deployed Oasis contract for ${oasisConfig.tokenSymbol}: ${oasisContractId}`)
     await check_wallet('master')
     await wait_next_block()

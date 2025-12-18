@@ -1010,15 +1010,18 @@ class Oasis(Blueprint):
         """Internal helper to calculate position closure values."""
         # If position is already closed, return the available balances from closed_position_balances
         if self.user_position_closed.get(address, False):
+            if address in self.closed_position_balances:
+                closed_balance_b = self.closed_position_balances[address].get(self.token_b, 0)
+                closed_balance_htr = self.closed_position_balances[address].get(HATHOR_TOKEN_UID, 0)
+            else:
+                closed_balance_b = 0
+                closed_balance_htr = 0
+
             return OasisRemoveLiquidityQuote(
                 user_lp_b=Amount(0),
                 user_lp_htr=Amount(0),
-                max_withdraw_b=Amount(self.closed_position_balances.get(address, {}).get(
-                    self.token_b, 0
-                )),
-                max_withdraw_htr=Amount(self.closed_position_balances.get(address, {}).get(
-                    HATHOR_TOKEN_UID, 0
-                )),
+                max_withdraw_b=Amount(closed_balance_b),
+                max_withdraw_htr=Amount(closed_balance_htr),
                 loss_htr=Amount(0),
                 position_closed=True,
             )
@@ -1036,8 +1039,16 @@ class Oasis(Blueprint):
         user_lp_b = self._quote_token_b_from_htr(user_lp_htr)
 
         # Calculate total available amounts including existing balances
-        user_balance_b = self.user_balances.get(address, {}).get(self.token_b, 0)
-        user_balance_htr = self.user_balances.get(address, {}).get(HATHOR_TOKEN_UID, 0)
+        if address in self.user_balances:
+            user_balance_b = self.user_balances[address].get(self.token_b, 0)
+        else:
+            user_balance_b = 0
+
+        if address in self.user_balances:
+            user_balance_htr = self.user_balances[address].get(HATHOR_TOKEN_UID, 0)
+        else:
+            user_balance_htr = 0
+
         max_withdraw_b = user_lp_b + user_balance_b
 
         # Calculate impermanent loss compensation if needed

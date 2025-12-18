@@ -384,14 +384,6 @@ class DozerPoolManager(Blueprint):
 
     def _get_pool_key(self, token_a: TokenUid, token_b: TokenUid, fee: Amount) -> PoolKey:
         """Create a standardized pool key from tokens and fee.
-
-        Args:
-            token_a: First token of the pair
-            token_b: Second token of the pair
-            fee: Fee for the pool
-
-        Returns:
-            A composite key in the format token_a:token_b:fee
         """
         # Ensure tokens are ordered
         token_a, token_b = self._order_tokens(token_a, token_b)
@@ -401,28 +393,12 @@ class DozerPoolManager(Blueprint):
 
     def _validate_pool_exists(self, pool_key: str) -> None:
         """Check if a pool exists, raising error if not.
-
-        Args:
-            pool_key: The pool key to check
-
-        Raises:
-            PoolNotFound: If the pool does not exist
         """
         if pool_key not in self.pools:
             raise PoolNotFound(f"Pool does not exist: {pool_key}")
 
     def _get_deposit_action(self, ctx: Context, token_uid: TokenUid) -> NCDepositAction:
         """Get and validate a deposit action for a token.
-
-        Args:
-            ctx: Transaction context
-            token_uid: Token UID to get action for
-
-        Returns:
-            The validated NCDepositAction
-
-        Raises:
-            InvalidAction: If action is not a deposit
         """
         action = ctx.get_single_action(token_uid)
         if not isinstance(action, NCDepositAction):
@@ -431,16 +407,6 @@ class DozerPoolManager(Blueprint):
 
     def _get_withdrawal_action(self, ctx: Context, token_uid: TokenUid) -> NCWithdrawalAction:
         """Get and validate a withdrawal action for a token.
-
-        Args:
-            ctx: Transaction context
-            token_uid: Token UID to get action for
-
-        Returns:
-            The validated NCWithdrawalAction
-
-        Raises:
-            InvalidAction: If action is not a withdrawal
         """
         action = ctx.get_single_action(token_uid)
         if not isinstance(action, NCWithdrawalAction):
@@ -679,12 +645,6 @@ class DozerPoolManager(Blueprint):
         self, address: CallerId, amount: Amount, token: TokenUid, pool_key: str
     ) -> None:
         """Update balance for a given change.
-
-        Args:
-            address: The user address
-            amount: The amount to update
-            token: The token
-            pool_key: The pool key
         """
         if amount == 0:
             return
@@ -851,17 +811,6 @@ class DozerPoolManager(Blueprint):
         price_b_now: Amount,
     ) -> tuple[Amount, Amount]:
         """Calculate updated TWAP window sums based on current prices and time elapsed.
-
-        Implements the windowed average formula used by both _update_twap and get_twap_price.
-
-        Args:
-            pool: The pool state
-            time_elapsed: Seconds since last TWAP update
-            price_a_now: Current spot price of token_a (reserve_b / reserve_a)
-            price_b_now: Current spot price of token_b (reserve_a / reserve_b)
-
-        Returns:
-            Tuple of (new_window_sum_a, new_window_sum_b)
         """
         if time_elapsed > 0:
             # Calculate time weights
@@ -888,14 +837,6 @@ class DozerPoolManager(Blueprint):
 
     def _update_twap(self, pool_key: str, ctx: Context) -> None:
         """Update TWAP oracle for a pool using windowed average.
-
-        Called at the start of every swap and liquidity operation.
-        Uses a fixed time window (twap_window) for the moving average.
-        Formula: NewWindowSum = (Price_Last * T_Elapsed) + (OldWindowSum * T_Remaining / T_Window)
-
-        Args:
-            pool_key: Pool identifier
-            ctx: Execution context for timestamp
         """
         pool = self.pools.get(pool_key)
         if not pool:
@@ -964,13 +905,6 @@ class DozerPoolManager(Blueprint):
         - Very small pools (min_reserve < 1000): 5000 ppm (0.5%)
         - Small pools (1000 <= min_reserve < 10000): 2000 ppm (0.2%)
         - Normal pools (min_reserve >= 10000): 100 ppm (0.01%)
-
-        The tolerance can be overridden by passing an explicit tolerance_ppm value.
-
-        Note: Single-token liquidity operations (add/remove_liquidity_single_token) use
-        the same tolerance because the price ratio check only validates the proportional
-        liquidity operation, not the internal swap. The swap happens separately and is
-        validated by K invariant checks.
         """
         # Calculate dynamic tolerance if not explicitly provided
         if tolerance_ppm is None:
@@ -2611,8 +2545,6 @@ class DozerPoolManager(Blueprint):
                        amount_in=action_in_amount,
                        min_accepted_amount=min_accepted_amount,
                        deadline=deadline)
-        # Update TWAP oracle before swap
-        self._update_twap(pool_key, ctx)
         amount_in = action_in_amount
 
         # Execute the swap using the internal helper method
@@ -2620,7 +2552,7 @@ class DozerPoolManager(Blueprint):
             amount_in,
             action_in.token_uid,
             pool_key,
-            Timestamp(ctx.block.timestamp)
+            ctx
         )
 
         # Check if the requested amount is too high
@@ -2699,9 +2631,6 @@ class DozerPoolManager(Blueprint):
         if reserve_out <= amount_out:
             raise InsufficientLiquidity("Insufficient liquidity")
 
-        # Update TWAP oracle before swap
-        self._update_twap(pool_key, ctx)
-
         # Calculate amount in
         amount_in = self.get_amount_in(
             amount_out,
@@ -2727,7 +2656,7 @@ class DozerPoolManager(Blueprint):
             action_in.token_uid,
             amount_out,
             pool_key,
-            Timestamp(ctx.block.timestamp),
+            ctx,
         )
 
         return SwapResult(
@@ -2796,12 +2725,9 @@ class DozerPoolManager(Blueprint):
         first_pool = self.pools[first_pool_key]
         next_token = self._get_other_token(first_pool, current_token)
 
-        # Update TWAP oracle before swap
-        self._update_twap(first_pool_key, ctx)
-
         # Execute the first swap
         first_amount_out = self._swap(
-            current_amount, current_token, first_pool_key, Timestamp(ctx.block.timestamp)
+            current_amount, current_token, first_pool_key, ctx
         )
 
         # If there's only one hop, we're done
@@ -2821,12 +2747,9 @@ class DozerPoolManager(Blueprint):
             second_pool = self.pools[second_pool_key]
             next_token = self._get_other_token(second_pool, current_token)
 
-            # Update TWAP oracle before swap
-            self._update_twap(second_pool_key, ctx)
-
             # Execute the second swap
             second_amount_out = self._swap(
-                current_amount, current_token, second_pool_key, Timestamp(ctx.block.timestamp)
+                current_amount, current_token, second_pool_key, ctx
             )
 
             # If there are only two hops, we're done
@@ -2846,12 +2769,9 @@ class DozerPoolManager(Blueprint):
                 third_pool = self.pools[third_pool_key]
                 next_token = self._get_other_token(third_pool, current_token)
 
-                # Update TWAP oracle before swap
-                self._update_twap(third_pool_key, ctx)
-
                 # Execute the third swap
                 third_amount_out = self._swap(
-                    current_amount, current_token, third_pool_key, Timestamp(ctx.block.timestamp)
+                    current_amount, current_token, third_pool_key, ctx
                 )
 
                 token_out = next_token
@@ -2884,7 +2804,7 @@ class DozerPoolManager(Blueprint):
         token_in: TokenUid,
         amount_out: Amount,
         pool_key: str,
-        timestamp: Timestamp,
+        ctx: Context,
     ) -> None:
         """Execute a swap in a single pool with exact output amount, updating reserves, volumes, and fees.
 
@@ -2893,8 +2813,12 @@ class DozerPoolManager(Blueprint):
             token_in: The input token
             amount_out: The exact amount of output tokens
             pool_key: The pool key
-            timestamp: The block timestamp for last_activity tracking
+            ctx: The execution context (for TWAP update and timestamp)
         """
+        # Update TWAP oracle before swap
+        self._update_twap(pool_key, ctx)
+        timestamp = Timestamp(ctx.block.timestamp)
+
         # Get pool
         pool = self.pools[pool_key]
 
@@ -2924,7 +2848,7 @@ class DozerPoolManager(Blueprint):
             reserve_b=Amount(reserve_out - amount_out) if pool.token_a == token_in else Amount(reserve_in + amount_in),
             volume_a=Amount(pool.volume_a + volume_a_increment),
             volume_b=Amount(pool.volume_b + volume_b_increment),
-            last_activity=timestamp,
+            last_activity=Timestamp(ctx.block.timestamp),
             transactions=Amount(pool.transactions + 1)
         )
 
@@ -2938,7 +2862,7 @@ class DozerPoolManager(Blueprint):
         amount_in: Amount,
         token_in: TokenUid,
         pool_key: str,
-        timestamp: Timestamp,
+        ctx: Context,
     ) -> Amount:
         """Execute a swap in a single pool, updating reserves, volumes, and fees.
 
@@ -2946,11 +2870,14 @@ class DozerPoolManager(Blueprint):
             amount_in: The amount of input tokens
             token_in: The input token
             pool_key: The pool key
-            timestamp: The block timestamp for last_activity tracking
+            ctx: The execution context (for TWAP update and timestamp)
 
         Returns:
             The amount of output tokens received
         """
+        # Update TWAP oracle before swap
+        self._update_twap(pool_key, ctx)
+
         # Get pool
         pool = self.pools[pool_key]
 
@@ -2989,7 +2916,7 @@ class DozerPoolManager(Blueprint):
             reserve_b=Amount(reserve_out - amount_out) if pool.token_a == token_in else Amount(reserve_in + amount_in),
             volume_a=Amount(pool.volume_a + volume_a_increment),
             volume_b=Amount(pool.volume_b + volume_b_increment),
-            last_activity=timestamp,
+            last_activity=Timestamp(ctx.block.timestamp),
             transactions=Amount(pool.transactions + 1)
         )
 
@@ -3096,16 +3023,13 @@ class DozerPoolManager(Blueprint):
             if change_in > 0:
                 self._update_change(user_address, change_in, token_in, pool_key)
 
-            # Update TWAP oracle before swap
-            self._update_twap(pool_key, ctx)
-
             # Execute the swap (updates reserves and statistics)
             self._swap_exact_out(
                 Amount(amount_in),
                 token_in,
                 Amount(amount_out),
                 pool_key,
-                Timestamp(ctx.block.timestamp),
+                ctx,
             )
 
             return SwapResult(
@@ -3217,27 +3141,21 @@ class DozerPoolManager(Blueprint):
             # Execute the swaps
             # First swap: token_in -> intermediate
             # For the first swap, we need the exact intermediate amount that will be needed for the second swap
-            # Update TWAP oracle before first swap
-            self._update_twap(first_pool_key, ctx)
-
             self._swap_exact_out(
                 amount_in,
                 token_in,
                 intermediate_amount,
                 first_pool_key,
-                Timestamp(ctx.block.timestamp),
+                ctx,
             )
 
             # Second swap: intermediate -> token_out
-            # Update TWAP oracle before second swap
-            self._update_twap(second_pool_key, ctx)
-
             self._swap_exact_out(
                 intermediate_amount,
                 intermediate_token,
                 Amount(amount_out),
                 second_pool_key,
-                Timestamp(ctx.block.timestamp),
+                ctx,
             )
 
             return SwapResult(
@@ -3361,39 +3279,30 @@ class DozerPoolManager(Blueprint):
 
             # Execute the swaps
             # First swap: token_in -> first_intermediate_token
-            # Update TWAP oracle before first swap
-            self._update_twap(first_pool_key, ctx)
-
             self._swap_exact_out(
                 amount_in,
                 token_in,
                 first_intermediate_amount,
                 first_pool_key,
-                Timestamp(ctx.block.timestamp),
+                ctx,
             )
 
             # Second swap: first_intermediate_token -> second_intermediate_token
-            # Update TWAP oracle before second swap
-            self._update_twap(second_pool_key, ctx)
-
             self._swap_exact_out(
                 first_intermediate_amount,
                 first_intermediate_token,
                 second_intermediate_amount,
                 second_pool_key,
-                Timestamp(ctx.block.timestamp),
+                ctx,
             )
 
             # Third swap: second_intermediate_token -> token_out
-            # Update TWAP oracle before third swap
-            self._update_twap(third_pool_key, ctx)
-
             self._swap_exact_out(
                 second_intermediate_amount,
                 second_intermediate_token,
                 Amount(amount_out),
                 third_pool_key,
-                Timestamp(ctx.block.timestamp),
+                ctx,
             )
 
             return SwapResult(
@@ -4041,17 +3950,6 @@ class DozerPoolManager(Blueprint):
         fee: Amount,
     ) -> int:
         """Get the last TWAP update timestamp for a pool.
-
-        Args:
-            token_a: First token
-            token_b: Second token
-            fee: Pool fee
-
-        Returns:
-            The timestamp of the last TWAP update
-
-        Raises:
-            PoolNotFound: If pool doesn't exist
         """
         token_a_ordered, token_b_ordered = self._order_tokens(token_a, token_b)
         pool_key = self._get_pool_key(token_a_ordered, token_b_ordered, fee)
@@ -4067,23 +3965,6 @@ class DozerPoolManager(Blueprint):
         self, token_a: TokenUid, token_b: TokenUid, fee: Amount, current_timestamp: int
     ) -> Amount:
         """Get Time-Weighted Average Price for a token pair using windowed average.
-
-        Returns TWAP over the configured window (twap_window) to resist price
-        manipulation attacks. The window sums are initialized when the pool is
-        created, so TWAP is always available.
-
-        Args:
-            token_a: First token (price denominator)
-            token_b: Second token (price numerator)
-            fee: Pool fee
-            current_timestamp: Current block timestamp from caller's context
-
-        Returns:
-            TWAP price of token_b in terms of token_a with PRICE_PRECISION (10^8)
-
-        Raises:
-            PoolNotFound: If pool doesn't exist
-            NCFail: If pool has no liquidity
         """
         # Get pool
         token_a_ordered, token_b_ordered = self._order_tokens(token_a, token_b)
@@ -4108,10 +3989,6 @@ class DozerPoolManager(Blueprint):
             pool, time_elapsed, price_a_now, price_b_now
         )
 
-        # Determine which window sum to use based on token order
-        # price_a = reserve_b / reserve_a (token_b per token_a)
-        # price_b = reserve_a / reserve_b (token_a per token_b)
-        # We want "price of token_b in terms of token_a" = token_a per token_b
         if token_a == pool.token_a:
             # We want token_a/token_b = reserve_a/reserve_b = price_b
             twap_price = Amount(current_window_sum_b // pool.twap_window)
@@ -4772,9 +4649,9 @@ class DozerPoolManager(Blueprint):
             unvisited.remove(current)
 
             # Check all neighbors
-            for neighbor, (reference_output, pool_key, fee) in graph.get(
-                current, {}
-            ).items():
+            if current not in graph:
+                continue
+            for neighbor, (reference_output, pool_key, fee) in graph[current].items():
                 pool = self.pools[pool_key]
                 if neighbor not in unvisited:
                     continue
@@ -5178,7 +5055,7 @@ class DozerPoolManager(Blueprint):
                 reference_input,
                 pool_key,
                 fee,
-            ) in graph.get(current, {}).items():
+            ) in graph[current].items():
                 if neighbor not in unvisited:
                     continue
                 
