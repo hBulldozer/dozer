@@ -72,6 +72,10 @@ export const BridgeCurrencyInput: FC<BridgeCurrencyInputProps> = ({
               className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-3xl py-1 text-stone-200 hover:text-stone-100')}
               value={value}
               readOnly={disabled}
+              autoComplete="off"
+              data-lpignore="true"
+              type="search"
+              name="bridge-token-amount-search"
             />
           )}
           <button

@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useRef } from 'react'
+import { FC, useState, useEffect, useRef, useMemo } from 'react'
 import { useAccount, useNetwork } from '@dozer/zustand'
 import {
   Button,
@@ -244,21 +244,66 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   }
 
   // Filter to only show bridged tokens
-  const bridgedTokens = tokens
-    ? tokens
-        .filter((token) => token.bridged)
-        .map((token) => {
-          // Convert null values to undefined for correct Token initialization
-          const { originalAddress, sourceChain, targetChain, imageUrl, ...rest } = token
-          return new Token({
-            ...rest,
-            originalAddress: originalAddress || undefined,
-            sourceChain: sourceChain || undefined,
-            targetChain: targetChain || undefined,
-            imageUrl: imageUrl || undefined,
+  const bridgedTokens = useMemo(() => {
+    // Process tokens from API
+    const apiBridgedTokens = tokens
+      ? tokens
+          .filter((token) => token.bridged)
+          .map((token) => {
+            // Convert null values to undefined for correct Token initialization
+            const { originalAddress, sourceChain, targetChain, imageUrl, ...rest } = token
+            return new Token({
+              ...rest,
+              originalAddress: originalAddress || undefined,
+              sourceChain: sourceChain || undefined,
+              targetChain: targetChain || undefined,
+              imageUrl: imageUrl || undefined,
+            })
           })
+      : []
+
+    // Process tokens from local config (fallback/ensure existence)
+    const configTokens = bridgeConfig.bridgeTokens
+      .map((tokenConfig) => {
+        const hathorConfig = tokenConfig[bridgeConfig.hathorConfig.networkId]
+        const evmConfig = tokenConfig[bridgeConfig.ethereumConfig.networkId]
+
+        if (!hathorConfig) return null
+
+        // If no Hathor Address / UUID is defined, we can't use it
+        if (!hathorConfig.hathorAddr) return null
+
+        return new Token({
+          uuid: hathorConfig.hathorAddr,
+          symbol: hathorConfig.symbol,
+          name: tokenConfig.name,
+          decimals: hathorConfig.decimals,
+          chainId: bridgeConfig.hathorConfig.networkId,
+          bridged: true,
+          originalAddress: evmConfig?.address,
+          sourceChain: bridgeConfig.ethereumConfig.name,
+          targetChain: 'Hathor',
+          imageUrl: tokenConfig.icon,
         })
-    : []
+      })
+      .filter((t): t is Token => t !== null)
+
+    // Merge lists, preferring API tokens if they exist (to get dynamic data?), 
+    // or properly handling duplicates by UUID
+    const tokenMap = new Map<string, Token>()
+    
+    // Add config tokens first
+    configTokens.forEach((token) => {
+      tokenMap.set(token.uuid, token)
+    })
+
+    // Override with API tokens if present (assuming API might have more up-to-date dynamic info)
+    apiBridgedTokens.forEach((token) => {
+      tokenMap.set(token.uuid, token)
+    })
+
+    return Array.from(tokenMap.values())
+  }, [tokens])
 
   useEffect(() => {
     // Set the mounted ref to true
@@ -434,14 +479,16 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       return { isDisabled: true, message: 'Enter an amount' }
     }
 
+    const minAmount = bridgeConfig.isTestnet ? 1 : 5
+
     const amountValue = parseFloat(amount)
     if (isNaN(amountValue) || amountValue <= 0) {
       return { isDisabled: true, message: 'Enter a valid amount' }
     }
-    if (amountValue < 1) {
-      return { isDisabled: true, message: 'Minimum amount is 1' }
+    if (amountValue < minAmount) {
+      return { isDisabled: true, message: `Minimum amount is ${minAmount}` }
     }
-    if (evmBalance > 0 && amountValue > evmBalance) {
+    if (amountValue > evmBalance) {
       return { isDisabled: true, message: 'Insufficient balance' }
     }
     if (!hathorAddress) {

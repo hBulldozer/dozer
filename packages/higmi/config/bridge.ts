@@ -142,7 +142,7 @@ const usdcToken: TokenConfig = {
     : {
         symbol: 'hUSDC',
         address: '0x66981C5a01db0Df1De03A5Af4493437B98F5D49c',
-        hathorAddr: '0x00003b17e8d656e4612926d5d2c5a4d5b3e4536e6bebc61c76cb71a65b81986f',
+        hathorAddr: '00003b17e8d656e4612926d5d2c5a4d5b3e4536e6bebc61c76cb71a65b81986f',
         pureHtrAddress: '00003b17e8d656e4612926d5d2c5a4d5b3e4536e6bebc61c76cb71a65b81986f',
         decimals: 6,
       },

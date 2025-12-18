@@ -34,7 +34,7 @@ export const bridgeRouter = createTRPCRouter({
 
         // Fetch transaction history for this address and token
         const historyResponse = await fetch(
-          `${explorerUrl}/address/history?address=${hathorAddress}&token=${tokenUuid}&limit=5`
+          `${explorerUrl}/address/history?address=${hathorAddress}&token=${tokenUuid}&limit=50`
         )
 
         if (!historyResponse.ok) {
@@ -46,6 +46,13 @@ export const bridgeRouter = createTRPCRouter({
         }
 
         const historyData = await historyResponse.json()
+
+        console.log(
+          `[checkBridgeReceipt] Checking for ${tokenUuid} on ${isTestnet ? 'TESTNET' : 'MAINNET'}`
+        )
+        console.log(`[checkBridgeReceipt] Address: ${hathorAddress}, EVM Confirm Time: ${evmConfirmationTime}`)
+        console.log(`[checkBridgeReceipt] Explorer URL: ${explorerUrl}`)
+        console.log(`[checkBridgeReceipt] Found ${historyData.history?.length || 0} transactions`)
 
         if (!historyData.history || historyData.history.length === 0) {
           return { received: false }
