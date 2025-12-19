@@ -80,9 +80,9 @@ const Home = () => {
           <div className="flex flex-col gap-4" style={{ maxWidth: '400px' }}>
             <SwapWidget token0_idx={'2'} token1_idx={'0'} />
             <Link.Internal href="/bridge">
-              <div className="flex gap-3 justify-between items-center p-4 rounded-lg border transition-colors cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800">
-                <div className="flex gap-4 items-center">
-                  <div className="flex justify-center items-center w-12 h-12 rounded-full bg-blue-900/20">
+              <div className="flex items-center justify-between gap-3 p-4 transition-colors border rounded-lg cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-900/20">
                     <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
                   </div>
                   <div className="flex flex-col">
@@ -593,12 +593,13 @@ export const SwapButton: FC<{
         testdata-id="swap-button"
         fullWidth
         onClick={onClick}
-        disabled={
-          (priceImpactTooHigh && !expertMode) ||
-          Number(
-            (outputAmount ? outputAmount : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)).toFixed(2)
-          ) == 0
-        }
+        // disabled={
+        //   (priceImpactTooHigh && !expertMode) ||
+        //   Number(
+        //     (outputAmount ? outputAmount : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)).toFixed(2)
+        //   ) == 0
+        // }
+        disabled
         size="md"
         color={(priceImpactTooHigh && !expertMode) || priceImpactSeverity > 2 ? 'red' : 'blue'}
         {...(Boolean(priceImpactSeverity > 2) && {
