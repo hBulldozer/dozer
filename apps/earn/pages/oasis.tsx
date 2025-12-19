@@ -93,9 +93,8 @@ const OasisProgram = () => {
   // Get the appropriate address based on wallet type
   // For WalletConnect: use accounts array
   // For MetaMask Snap: use hathorAddress from useAccount
-  const address = walletType === 'walletconnect' 
-    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
-    : hathorAddress || ''
+  const address =
+    walletType === 'walletconnect' ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') : hathorAddress || ''
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
   // We're not using pendingPositions from the store anymore
@@ -1038,7 +1037,8 @@ const OasisProgram = () => {
                                         <div className="flex flex-col justify-between gap-2">
                                           <Button
                                             size="md"
-                                            disabled={isRpcRequestPending || !prices || !prices['00']}
+                                            // disabled={isRpcRequestPending || !prices || !prices['00']}
+                                            disabled
                                             fullWidth
                                             onClick={() => setAddModalOpen(true)}
                                           >
