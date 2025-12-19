@@ -19,8 +19,14 @@ export const PoolsSection: FC = () => {
   //   setAddress(accountAddress)
   // }, [accountAddress])
 
+  const { walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
 
   return (
     <section className="flex flex-col">

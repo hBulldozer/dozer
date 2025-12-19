@@ -57,8 +57,14 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
     // address,
     balance,
   } = useAccount()
+  const { walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
   const value0 = (token0?.uuid && prices) ? prices[token0.uuid] : 0
   const value1 = (token1?.uuid && prices) ? prices[token1.uuid] : 0
 

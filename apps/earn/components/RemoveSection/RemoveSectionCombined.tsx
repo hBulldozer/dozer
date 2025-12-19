@@ -6,6 +6,7 @@ import { Typography, classNames } from '@dozer/ui'
 import { ChainId } from '@dozer/chain'
 import { toToken } from '@dozer/api'
 import { useWalletConnectClient } from '@dozer/higmi'
+import { useAccount } from '@dozer/zustand'
 import { Switch } from '@headlessui/react'
 
 interface RemoveSectionCombinedProps {
@@ -15,8 +16,14 @@ interface RemoveSectionCombinedProps {
 
 export const RemoveSectionCombined: FC<RemoveSectionCombinedProps> = ({ pair, prices = {} }) => {
   const [useSingleToken, setUseSingleToken] = useState(false)
+  const { walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
 
   const token0 = toToken(pair.token0)
   const token1 = toToken(pair.token1)

@@ -42,10 +42,15 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
 }) => {
   const [open, setOpen] = useState(false)
   const [sentTX, setSentTX] = useState(false)
-  const { addNotification, setBalance, balance } = useAccount()
+  const { addNotification, setBalance, balance, walletType, hathorAddress } = useAccount()
   const { network } = useNetwork()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const { pool } = useTrade()

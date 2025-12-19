@@ -5,7 +5,7 @@ import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { APR_COLUMN, NAME_COLUMN, VALUE_COLUMN, PROFIT_COLUMN } from './Cells/columns'
 import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
-import { useNetwork } from '@dozer/zustand'
+import { useNetwork, useAccount } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
 import { Pair, UserProfitInfo } from '@dozer/api'
 import { api } from '../../../../utils/api'
@@ -25,8 +25,14 @@ export interface PositionPair extends Pair {
 
 export const PositionsTable: FC = () => {
   // const { address } = useAccount()
+  const { walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
   const { isSm } = useBreakpoint('sm')
   const { isMd } = useBreakpoint('md')
 

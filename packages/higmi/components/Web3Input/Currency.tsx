@@ -84,6 +84,10 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               value={value}
               readOnly={disabled}
               useLocaleFormat={useLocaleFormat}
+              autoComplete="off"
+              data-lpignore="true"
+              type="search"
+              name="liquidity-token-amount-search"
             />
           )}
           <button

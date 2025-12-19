@@ -3,6 +3,7 @@ import { createContext, FC, ReactNode, useContext, useMemo } from 'react'
 import { Pair, toToken, UserProfitInfo } from '@dozer/api'
 import { api } from '../utils/api'
 import { useWalletConnectClient } from '@dozer/higmi'
+import { useAccount } from '@dozer/zustand'
 
 interface PoolPositionContext {
   value0: number
@@ -33,8 +34,14 @@ export const PoolPositionProvider: FC<{
   const token1 = toToken(pair.token1)
 
   // const { address } = useAccount()
+  const { walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
 
   const {
     data: poolInfo,

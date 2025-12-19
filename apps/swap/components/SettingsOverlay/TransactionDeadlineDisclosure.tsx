@@ -123,6 +123,10 @@ export const TransactionDeadlineDisclosure: FC = () => {
                             DEFAULT_INPUT_UNSTYLED,
                             showError ? 'text-red-400' : showWarning ? 'text-yellow-400' : ''
                           )}
+                          autoComplete="off"
+                          data-lpignore="true"
+                          type="search"
+                          name="transaction-deadline-search"
                         />
                         <Typography variant="xs" weight={500} className="text-stone-400">
                           min

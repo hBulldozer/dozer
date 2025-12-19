@@ -33,11 +33,16 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
 }) => {
   const [sentTX, setSentTX] = useState(false)
   const { network } = useNetwork()
+  const { addNotification, walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
   const addTempTx = useTempTxStore((state) => state.addTempTx)
-  const { addNotification } = useAccount()
   const poolManager = new PoolManager()
   const { data: networkData } = api.getNetwork.getBestBlock.useQuery()
 

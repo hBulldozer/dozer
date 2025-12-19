@@ -10,8 +10,9 @@ export const Header: FC = () => {
   const { accounts } = useWalletConnectClient()
   const { walletType, hathorAddress } = useAccount()
   
-  // Get the appropriate address based on wallet type (kept for potential future use)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
   const address = walletType === 'walletconnect' 
     ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
     : hathorAddress || ''

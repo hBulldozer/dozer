@@ -88,9 +88,14 @@ const OasisProgram = () => {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const { network } = useNetwork()
-  const { addNotification } = useAccount()
+  const { addNotification, walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
   // We're not using pendingPositions from the store anymore
@@ -789,6 +794,10 @@ const OasisProgram = () => {
                                             ref={inputRef}
                                             onUserInput={(val) => setAmount(val)}
                                             className="h-full pl-3 text-2xl"
+                                            autoComplete="off"
+                                            data-lpignore="true"
+                                            type="search"
+                                            name="oasis-token-amount-search"
                                           />
                                           <div className="absolute flex items-center -translate-y-1/2 right-4 top-1/2">
                                             <PricePanel

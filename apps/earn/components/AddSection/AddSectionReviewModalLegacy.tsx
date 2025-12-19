@@ -32,16 +32,16 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   const [open, setOpen] = useState(false)
   const { amountSpecified, outputAmount, pool, mainCurrency, otherCurrency, tradeType } = useTrade()
   const [sentTX, setSentTX] = useState(false)
-  const {
-    //  address,
-    addNotification,
-    setBalance,
-    balance,
-  } = useAccount()
+  const { addNotification, walletType, hathorAddress, balance, setBalance } = useAccount()
   const { network } = useNetwork()
 
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
 
   const poolManager = new PoolManager()
 
