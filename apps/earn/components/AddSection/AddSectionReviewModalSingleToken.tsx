@@ -33,7 +33,7 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
 }) => {
   const [sentTX, setSentTX] = useState(false)
   const { network } = useNetwork()
-  const { addNotification, walletType, hathorAddress } = useAccount()
+  const { addNotification, walletType, hathorAddress, selectedNetwork } = useAccount()
   const { accounts } = useWalletConnectClient()
   // Get the appropriate address based on wallet type
   // For WalletConnect: use accounts array
@@ -84,7 +84,8 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
       token.uuid,
       parseFloat(input),
       otherToken.uuid,
-      fee * 10 // Convert fee to basis points
+      fee * 10, // Convert fee to basis points
+      selectedNetwork
     )
   }
 
@@ -249,15 +250,20 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
                     {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Add Liquidity'}
                   </Button>
                   {isRpcRequestPending && (
-                    <Button
-                      size="md"
-                      fullWidth
-                      variant="outlined"
-                      color="red"
-                      onClick={() => reset()}
-                    >
-                      Cancel Transaction
-                    </Button>
+                    <>
+                      <Typography variant="xs" className="text-center text-stone-400">
+                        This may take up to 20 seconds when using MetaMask Snap
+                      </Typography>
+                      <Button
+                        size="md"
+                        fullWidth
+                        variant="outlined"
+                        color="red"
+                        onClick={() => reset()}
+                      >
+                        Cancel Transaction
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>

@@ -88,7 +88,7 @@ const OasisProgram = () => {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const { network } = useNetwork()
-  const { addNotification, walletType, hathorAddress } = useAccount()
+  const { addNotification, walletType, hathorAddress, selectedNetwork } = useAccount()
   const { accounts } = useWalletConnectClient()
   // Get the appropriate address based on wallet type
   // For WalletConnect: use accounts array
@@ -154,7 +154,7 @@ const OasisProgram = () => {
         setAddingToOasisId(existingPosition.id)
       }
 
-      await oasisObj.user_deposit(hathorRpc, address, lockPeriod, oasisId, parseFloat(amount))
+      await oasisObj.user_deposit(hathorRpc, address, lockPeriod, oasisId, parseFloat(amount), selectedNetwork)
 
       // Do not clear the addingLiquidity state here - let it be cleared in the useEffect
       // This ensures the loading overlay remains visible until confirmation
@@ -166,7 +166,7 @@ const OasisProgram = () => {
     setTxType('Remove liquidity')
 
     // Send the transaction first - user will confirm in wallet
-    await oasisObj.user_withdraw(hathorRpc, address, selectedOasisForRemove.id, removeAmount, removeAmountHtr)
+    await oasisObj.user_withdraw(hathorRpc, address, selectedOasisForRemove.id, removeAmount, removeAmountHtr, selectedNetwork)
   }
 
   const handleRemoveBonus = async (removeAmount: number): Promise<void> => {
@@ -174,14 +174,14 @@ const OasisProgram = () => {
     setTxType('Remove bonus')
 
     // Send the transaction first - user will confirm in wallet
-    await oasisObj.user_withdraw_bonus(hathorRpc, address, selectedOasisForRemoveBonus.id, removeAmount)
+    await oasisObj.user_withdraw_bonus(hathorRpc, address, selectedOasisForRemoveBonus.id, removeAmount, selectedNetwork)
   }
 
   const handleClosePosition = async (): Promise<void> => {
     if (!selectedOasisForClose?.id) return
     setTxType('Close position')
 
-    await oasisObj.close_position(hathorRpc, address, selectedOasisForClose.id)
+    await oasisObj.close_position(hathorRpc, address, selectedOasisForClose.id, selectedNetwork)
   }
 
   // Combined effect for setting hasOptimisticUpdate flag

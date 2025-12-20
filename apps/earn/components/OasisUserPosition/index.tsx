@@ -94,12 +94,11 @@ const UserOasisPosition = ({
     // Use initial prices from deposit if available, otherwise fallback to current prices
     // Note: API already converts these from contract PRICE_PRECISION format
     const initialHtrPriceUSD = oasis.htr_price_in_deposit || 0
-    // Contract stores deposit_amount/htr_amount (tokens per HTR), so invert to get HTR per token
-    const tokensPerHTR = oasis.token_price_in_htr_in_deposit || 0
-    const initialTokenPriceHTR = tokensPerHTR > 0 ? 1 / tokensPerHTR : 0
+    // token_price_in_htr_in_deposit is already HTR per token_b (normalized by API)
+    const htrPerToken = oasis.token_price_in_htr_in_deposit || 0
 
-    // Calculate initial token price in USD: token_price_htr * htr_price_usd
-    const initialTokenPriceUSD = initialTokenPriceHTR * initialHtrPriceUSD
+    // Calculate initial token price in USD: (HTR per token) * (USD per HTR) = USD per token
+    const initialTokenPriceUSD = htrPerToken * initialHtrPriceUSD
 
     // Initial investment value in USD using initial prices
     const initialInvestmentUSD = oasis.user_deposit_b * initialTokenPriceUSD
@@ -128,7 +127,7 @@ const UserOasisPosition = ({
       totalCurrentValueUSD,
       // Include initial prices for debugging or display
       initialHtrPriceUSD,
-      initialTokenPriceHTR,
+      htrPerToken,
       initialTokenPriceUSD,
     }
   }

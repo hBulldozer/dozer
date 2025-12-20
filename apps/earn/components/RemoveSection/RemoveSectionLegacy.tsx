@@ -1,7 +1,7 @@
 import { Amount } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
 import { Percent } from '@dozer/math'
-import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } from '@dozer/ui'
+import { Button, createErrorToast, createSuccessToast, Dots, NotificationData, Typography } from '@dozer/ui'
 import { Approve, Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
 import { FC, useEffect, useMemo, useState } from 'react'
 
@@ -29,6 +29,7 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
     addNotification,
     setBalance,
     balance,
+    selectedNetwork,
   } = useAccount()
   const { walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
@@ -166,7 +167,8 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
         amountADecimal,
         token1.uuid,
         amountBDecimal,
-        fee
+        fee,
+        selectedNetwork
       )
     }
   }
@@ -250,16 +252,21 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
               )}
             </Button>
             {isRpcRequestPending && (
-              <Button
-                size="md"
-                testdata-id="swap-review-reset-button"
-                fullWidth
-                variant="outlined"
-                color="red"
-                onClick={() => reset()}
-              >
-                Cancel Transaction
-              </Button>
+              <>
+                <Typography variant="xs" className="text-center text-stone-400">
+                  This may take up to 20 seconds when using MetaMask Snap
+                </Typography>
+                <Button
+                  size="md"
+                  testdata-id="swap-review-reset-button"
+                  fullWidth
+                  variant="outlined"
+                  color="red"
+                  onClick={() => reset()}
+                >
+                  Cancel Transaction
+                </Button>
+              </>
             )}
           </div>
           {/* </Checker.Custom>

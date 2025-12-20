@@ -1,4 +1,4 @@
-import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData } from '@dozer/ui'
+import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData, Typography } from '@dozer/ui'
 import { useAccount, useNetwork, useSettings, useTrade } from '@dozer/zustand'
 import { TradeType } from 'components/utils/TradeType'
 import React, { FC, ReactNode, useCallback, useEffect, useState } from 'react'
@@ -19,7 +19,7 @@ interface SwapReviewModalLegacy {
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
   const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency, routeInfo } = useTrade()
   const [sentTX, setSentTX] = useState(false)
-  const { addNotification, setBalance, balance, walletType, hathorAddress } = useAccount()
+  const { addNotification, setBalance, balance, walletType, hathorAddress, selectedNetwork } = useAccount()
   const { accounts } = useWalletConnectClient()
   const wcAddress = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { network } = useNetwork()
@@ -106,7 +106,8 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             otherCurrency.uuid,
             outputAmount * (1 - slippageTolerance),
             swapPath,
-            deadlineMinutes
+            deadlineMinutes,
+            selectedNetwork
           )
         } else {
           await poolManager.swapTokensForExactTokens(
@@ -117,7 +118,8 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             otherCurrency.uuid,
             outputAmount,
             swapPath,
-            deadlineMinutes
+            deadlineMinutes,
+            selectedNetwork
           )
         }
       } catch (error) {
@@ -186,16 +188,21 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Swap'}
           </Button>
           {isRpcRequestPending && (
-            <Button
-              size="md"
-              testdata-id="swap-review-reset-button"
-              fullWidth
-              variant="outlined"
-              color="red"
-              onClick={() => reset()}
-            >
-              Cancel Transaction
-            </Button>
+            <>
+              <Typography variant="xs" className="text-center text-stone-400">
+                This may take up to 20 seconds when using MetaMask Snap
+              </Typography>
+              <Button
+                size="md"
+                testdata-id="swap-review-reset-button"
+                fullWidth
+                variant="outlined"
+                color="red"
+                onClick={() => reset()}
+              >
+                Cancel Transaction
+              </Button>
+            </>
           )}
         </div>
       </SwapReviewModalBase>
