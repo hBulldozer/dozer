@@ -30,7 +30,7 @@ export const RemoveSectionCombined: FC<RemoveSectionCombinedProps> = ({ pair, pr
 
   const ModeToggle = () => (
     <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200/5">
-      <Typography variant="sm" weight={500} className="text-stone-400">
+      {/* <Typography variant="sm" weight={500} className="text-stone-400">
         Single Token Mode
       </Typography>
       <Switch
@@ -48,7 +48,7 @@ export const RemoveSectionCombined: FC<RemoveSectionCombinedProps> = ({ pair, pr
             'pointer-events-none relative inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
           )}
         />
-      </Switch>
+      </Switch> */}
     </div>
   )
 
