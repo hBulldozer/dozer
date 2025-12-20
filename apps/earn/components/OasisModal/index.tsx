@@ -103,9 +103,14 @@ export const OasisClosePositionModal: React.FC<OasisClosePositionModalProps> = (
               {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Close Position'}
             </Button>
             {isRpcRequestPending && (
-              <Button size="md" fullWidth variant="outlined" color="red" onClick={onReset}>
-                Cancel Transaction
-              </Button>
+              <>
+                <Typography variant="xs" className="text-center text-stone-400">
+                  This may take up to 20 seconds when using MetaMask Snap
+                </Typography>
+                <Button size="md" fullWidth variant="outlined" color="red" onClick={onReset}>
+                  Cancel Transaction
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -188,9 +193,14 @@ export const OasisRemoveModal: React.FC<OasisRemoveModalProps> = ({
               {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Withdraw Position'}
             </Button>
             {isRpcRequestPending && (
-              <Button size="md" fullWidth variant="outlined" color="red" onClick={onReset}>
-                Cancel Transaction
-              </Button>
+              <>
+                <Typography variant="xs" className="text-center text-stone-400">
+                  This may take up to 20 seconds when using MetaMask Snap
+                </Typography>
+                <Button size="md" fullWidth variant="outlined" color="red" onClick={onReset}>
+                  Cancel Transaction
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -258,9 +268,14 @@ export const OasisRemoveBonusModal: React.FC<OasisRemoveModalProps> = ({
               {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Withdraw Bonus'}
             </Button>
             {isRpcRequestPending && (
-              <Button size="md" fullWidth variant="outlined" color="red" onClick={onReset}>
-                Cancel Transaction
-              </Button>
+              <>
+                <Typography variant="xs" className="text-center text-stone-400">
+                  This may take up to 20 seconds when using MetaMask Snap
+                </Typography>
+                <Button size="md" fullWidth variant="outlined" color="red" onClick={onReset}>
+                  Cancel Transaction
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -331,9 +346,14 @@ export const OasisAddModal: React.FC<OasisAddModalProps> = ({
               {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Add Liquidity'}
             </Button>
             {isRpcRequestPending && (
-              <Button size="md" fullWidth variant="outlined" color="red" onClick={onReset}>
-                Cancel Transaction
-              </Button>
+              <>
+                <Typography variant="xs" className="text-center text-stone-400">
+                  This may take up to 20 seconds when using MetaMask Snap
+                </Typography>
+                <Button size="md" fullWidth variant="outlined" color="red" onClick={onReset}>
+                  Cancel Transaction
+                </Button>
+              </>
             )}
           </div>
         </div>

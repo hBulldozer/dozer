@@ -42,7 +42,7 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
 }) => {
   const [open, setOpen] = useState(false)
   const [sentTX, setSentTX] = useState(false)
-  const { addNotification, setBalance, balance, walletType, hathorAddress } = useAccount()
+  const { addNotification, setBalance, balance, walletType, hathorAddress, selectedNetwork } = useAccount()
   const { network } = useNetwork()
   const { accounts } = useWalletConnectClient()
   // Get the appropriate address based on wallet type
@@ -68,7 +68,8 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
           token1.uuid,
           parseFloat(input0),
           parseFloat(input1),
-          5
+          5,
+          selectedNetwork
         )
       } catch (error) {
         console.error('Error initializing pool:', error)
@@ -178,9 +179,14 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
               {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : <>Create Pool</>}
             </Button>
             {isRpcRequestPending && (
-              <Button size="md" fullWidth variant="outlined" color="red" onClick={() => reset()}>
-                Cancel Transaction
-              </Button>
+              <>
+                <Typography variant="xs" className="text-center text-stone-400">
+                  This may take up to 20 seconds when using MetaMask Snap
+                </Typography>
+                <Button size="md" fullWidth variant="outlined" color="red" onClick={() => reset()}>
+                  Cancel Transaction
+                </Button>
+              </>
             )}
           </div>
         </Dialog.Content>

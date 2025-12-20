@@ -39,13 +39,13 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
 }) => {
   const [sentTX, setSentTX] = useState(false)
   const { network } = useNetwork()
-  const { walletType, hathorAddress } = useAccount()
+  const { walletType, hathorAddress, selectedNetwork } = useAccount()
   const { accounts } = useWalletConnectClient()
   // Get the appropriate address based on wallet type
   // For WalletConnect: use accounts array
   // For MetaMask Snap: use hathorAddress from useAccount
-  const address = walletType === 'walletconnect' 
-    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+  const address = walletType === 'walletconnect'
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '')
     : hathorAddress || ''
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
   const addTempTx = useTempTxStore((state) => state.addTempTx)
@@ -90,7 +90,8 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
       poolKey,
       selectedToken.uuid,
       quoteData.amount_out, // The amount user wants to receive
-      parseFloat(percentage) || 100 // Percentage of liquidity to remove
+      parseFloat(percentage) || 100, // Percentage of liquidity to remove
+      selectedNetwork
     )
   }
 
@@ -246,15 +247,20 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
                     {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Remove Liquidity'}
                   </Button>
                   {isRpcRequestPending && (
-                    <Button
-                      size="md"
-                      fullWidth
-                      variant="outlined"
-                      color="red"
-                      onClick={() => reset()}
-                    >
-                      Cancel Transaction
-                    </Button>
+                    <>
+                      <Typography variant="xs" className="text-center text-stone-400">
+                        This may take up to 20 seconds when using MetaMask Snap
+                      </Typography>
+                      <Button
+                        size="md"
+                        fullWidth
+                        variant="outlined"
+                        color="red"
+                        onClick={() => reset()}
+                      >
+                        Cancel Transaction
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
