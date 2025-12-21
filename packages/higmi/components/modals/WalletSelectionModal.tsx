@@ -27,33 +27,44 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
   const invokeSnap = useInvokeSnap('npm:@hathor/snap')
   const { session, accounts, isWaitingApproval } = useWalletConnectClient()
   const walletService = WalletConnectionService.getInstance()
-  const { targetNetwork } = useAccount()
 
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectionStep, setConnectionStep] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [walletConnectTimeoutId, setWalletConnectTimeoutId] = useState<NodeJS.Timeout | null>(null)
+  const [walletConnectMinTimeout, setWalletConnectMinTimeout] = useState<NodeJS.Timeout | null>(null)
+
+  // Separate state to control button disable - enforces a minimum 10-second disable period
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false)
 
   const resetState = useCallback(() => {
     setIsConnecting(false)
     setConnectionStep('')
     setError(null)
+    setIsButtonDisabled(false)
     if (walletConnectTimeoutId) {
       clearTimeout(walletConnectTimeoutId)
       setWalletConnectTimeoutId(null)
     }
-  }, [walletConnectTimeoutId])
+    if (walletConnectMinTimeout) {
+      clearTimeout(walletConnectMinTimeout)
+      setWalletConnectMinTimeout(null)
+    }
+  }, [walletConnectTimeoutId, walletConnectMinTimeout])
 
   useEffect(() => {
+    // Only reset state when modal is first opened (isOpen changes from false to true)
+    // Don't reset when other dependencies change
     if (isOpen) {
       resetState()
     }
-  }, [isOpen, resetState])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
-  // Monitor WalletConnect session state
+  // Monitor WalletConnect session state - ONLY for closing modal on success
   useEffect(() => {
     // If we're connecting via WalletConnect and a session gets established
-    if (isConnecting && connectionStep.includes('Hathor wallet') && session && accounts.length > 0) {
+    if (session && accounts.length > 0 && isConnecting && connectionStep.includes('Hathor wallet')) {
       const hathorAddress = accounts[0].split(':')[2]
 
       // Update the Zustand store with the wallet connection
@@ -66,53 +77,62 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
         selectedNetwork: 'testnet',
       })
 
-      // Connection was successful, close modal
-      resetState()
-      onClose()
-    }
-  }, [session, accounts, isConnecting, connectionStep, onClose, resetState, walletService])
-
-  // Monitor WalletConnect waiting state - reset if user cancels
-  useEffect(() => {
-    // If we were connecting via WalletConnect but it's no longer waiting for approval
-    // and we don't have a session, the user likely canceled
-    if (isConnecting && connectionStep.includes('Hathor wallet') && !isWaitingApproval && !session) {
-      setIsConnecting(false)
-      setConnectionStep('')
-      setError('Connection cancelled')
-
-      // Clear timeout if exists
+      // Connection was successful, clear all timeouts and close modal
       if (walletConnectTimeoutId) {
         clearTimeout(walletConnectTimeoutId)
         setWalletConnectTimeoutId(null)
       }
+      if (walletConnectMinTimeout) {
+        clearTimeout(walletConnectMinTimeout)
+        setWalletConnectMinTimeout(null)
+      }
+
+      resetState()
+      onClose()
     }
-  }, [isConnecting, connectionStep, isWaitingApproval, session, walletConnectTimeoutId])
+  }, [session, accounts, isConnecting, connectionStep, onClose, resetState, walletService, walletConnectTimeoutId, walletConnectMinTimeout])
 
   const handleWalletConnectSelection = () => {
+    // Prevent double-clicks - if already disabled, do nothing
+    if (isButtonDisabled) {
+      return
+    }
+
+    // Immediately disable button and show loading
+    setIsButtonDisabled(true)
     setIsConnecting(true)
     setConnectionStep('Connecting to Hathor wallet...')
     setError(null)
 
-    // Set a timeout for the connection attempt (60 seconds)
-    const timeoutId = setTimeout(() => {
+    // Set a minimum timeout of 10 seconds to prevent double-clicks
+    // Button stays disabled and loading message shows for the full 10 seconds
+    const minTimeoutId = setTimeout(() => {
+      setIsButtonDisabled(false)
+      setIsConnecting(false)
+      setConnectionStep('')
+      setWalletConnectMinTimeout(null)
+    }, 10000)
+
+    setWalletConnectMinTimeout(minTimeoutId)
+
+    // Set a maximum timeout for the connection attempt (60 seconds)
+    const maxTimeoutId = setTimeout(() => {
       setError('Connection timeout. Please ensure your Hathor wallet is ready and try again.')
       setIsConnecting(false)
       setConnectionStep('')
+      setIsButtonDisabled(false)
       setWalletConnectTimeoutId(null)
     }, 60000)
 
-    setWalletConnectTimeoutId(timeoutId)
+    setWalletConnectTimeoutId(maxTimeoutId)
 
+    // Trigger the wallet connect flow
     try {
       onWalletConnect()
-    } catch {
+    } catch (err) {
+      console.error('Failed to initiate WalletConnect:', err)
       setError('Failed to connect to Hathor wallet')
-      setIsConnecting(false)
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-        setWalletConnectTimeoutId(null)
-      }
+      // Don't clear states on error - let the 10 second timer handle it
     }
   }
 
@@ -218,7 +238,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
             {/* Hathor Wallet (WalletConnect) Option */}
             <button
               onClick={handleWalletConnectSelection}
-              disabled={isConnecting}
+              disabled={isButtonDisabled || isConnecting}
               className="w-full p-4 transition-all duration-200 border bg-gradient-to-r rounded-xl from-amber-200/10 via-yellow-400/10 to-amber-300/10 border-amber-300/20 hover:border-amber-300/40 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-center gap-4">
@@ -242,7 +262,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
             {/* MetaMask Snap Option */}
             <button
               onClick={handleMetaMaskSelection}
-              disabled={isConnecting}
+              disabled={isButtonDisabled || isConnecting}
               // disabled
               className="w-full p-4 transition-all duration-200 border bg-gradient-to-r rounded-xl from-orange-200/10 via-orange-400/10 to-orange-300/10 border-orange-300/20 hover:border-orange-300/40 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
