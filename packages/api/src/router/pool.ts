@@ -1986,6 +1986,65 @@ export const poolRouter = createTRPCRouter({
               }
             }
 
+            // For add_liquidity and remove_liquidity without pool_key, derive pool from nc_context.actions
+            // This handles regular add_liquidity/remove_liquidity methods that only pass a fee parameter
+            if (
+              tx.nc_method &&
+              (tx.nc_method.includes('add_liquidity') || tx.nc_method.includes('remove_liquidity')) &&
+              poolsInvolved.length === 0 &&
+              tx.nc_context?.actions &&
+              Array.isArray(tx.nc_context.actions)
+            ) {
+              // Extract tokens from actions (for liquidity operations, tokens are deposited/withdrawn)
+              const actionTokens = new Set<string>()
+              tx.nc_context.actions.forEach((action: { type: string; token_uid: string; amount: number }) => {
+                if (action.token_uid) {
+                  actionTokens.add(action.token_uid)
+                }
+              })
+
+              // If we have exactly 2 tokens, construct the pool key
+              if (actionTokens.size === 2) {
+                const tokenArray = Array.from(actionTokens)
+                // Get fee from parsed args (for add_liquidity, this is the main parameter)
+                // The nc_args for add_liquidity is typically just the fee value
+                let fee = 8 // Default to 8 basis points
+
+                // Try to extract fee from different possible formats
+                if (args && typeof args === 'object') {
+                  if ('fee' in args && typeof args.fee === 'number') {
+                    fee = args.fee
+                  } else if (Array.isArray(args) && args.length > 0 && typeof args[0] === 'number') {
+                    fee = args[0]
+                  }
+                } else if (typeof args === 'number') {
+                  fee = args
+                }
+
+                // Fallback: Try to extract fee from raw nc_args hex string if parsing failed
+                // Format: 0108 = [arg_count:01][fee_value:08]
+                if (fee === 8 && tx.nc_args && typeof tx.nc_args === 'string' && tx.nc_args.length >= 4) {
+                  try {
+                    // Skip first byte (arg count), read second byte as fee
+                    const feeHex = tx.nc_args.substring(2, 4)
+                    const parsedFee = parseInt(feeHex, 16)
+                    if (!isNaN(parsedFee) && parsedFee > 0) {
+                      fee = parsedFee
+                    }
+                  } catch (error) {
+                    // Keep default fee if parsing fails
+                  }
+                }
+
+                // Pool keys are ordered by token UUID
+                const [tokenA, tokenB] = tokenArray.sort()
+                const potentialPoolKey = `${tokenA}/${tokenB}/${fee}`
+
+                // Add to poolsInvolved
+                poolsInvolved = [potentialPoolKey]
+              }
+            }
+
             return {
               id: tx.tx_id, // Required by GenericTable
               tx_id: tx.tx_id,
