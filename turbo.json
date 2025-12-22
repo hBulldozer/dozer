@@ -78,7 +78,8 @@
         "NEXT_PUBLIC_OASIS_BLUEPRINT_ID",
         "NEXT_PUBLIC_BRIDGED_TOKEN_ADDRESSES",
         "NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID",
-        "NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL"
+        "NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL",
+        "NODE_API_KEY"
       ],
       "outputs": [
         ".vercel/**/*",
@@ -164,7 +165,8 @@
         "NEXT_PUBLIC_OASIS_BLUEPRINT_ID",
         "NEXT_PUBLIC_BRIDGED_TOKEN_ADDRESSES",
         "NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID",
-        "NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL"
+        "NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL",
+        "NODE_API_KEY"
       ],
       "cache": false,
       "persistent": true
