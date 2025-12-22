@@ -6,7 +6,7 @@ import { useAccount, useNetwork, useTrade, TokenBalance, useSettings, useTempTxS
 import { AddSectionReviewModal } from './AddSectionReviewModal'
 import { PoolManager } from '@dozer/nanocontracts'
 import { api } from '../../utils/api'
-import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { useJsonRpc, useWalletConnectClient, getErrorMessage } from '@dozer/higmi'
 import { get } from 'lodash'
 
 interface AddSectionReviewModalLegacyProps {
@@ -128,25 +128,31 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   const onClick = async () => {
     setSentTX(true)
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency && networkData) {
-      const fee = parseInt(pool.id.split('/')[2]);
-      const response = await poolManager.addLiquidity(
-        hathorRpc,
-        address,
-        mainCurrency.uuid,
-        amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
-        otherCurrency.uuid,
-        outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
-        fee,
-        selectedNetwork
-      );
-      addTempTx(
-        pool.id,
-        address,
-        amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
-        outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
-        true,
-        networkData.number
-      )
+      try {
+        const fee = parseInt(pool.id.split('/')[2]);
+        await poolManager.addLiquidity(
+          hathorRpc,
+          address,
+          mainCurrency.uuid,
+          amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
+          otherCurrency.uuid,
+          outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
+          fee,
+          selectedNetwork
+        );
+        addTempTx(
+          pool.id,
+          address,
+          amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
+          outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
+          true,
+          networkData.number
+        )
+      } catch (error) {
+        console.error('Error adding liquidity:', error)
+        createErrorToast(getErrorMessage(error), true)
+        setSentTX(false)
+      }
     }
   }
 

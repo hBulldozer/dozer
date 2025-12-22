@@ -18,7 +18,7 @@ import { ArrowTopRightOnSquareIcon, ChartBarIcon, InformationCircleIcon } from '
 import backgroundOasis from '../public/background_oasis.jpeg'
 import { Tab } from '@headlessui/react'
 import { api } from '@dozer/higmi/utils/api'
-import { Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { Checker, useJsonRpc, useWalletConnectClient, getErrorMessage } from '@dozer/higmi'
 import { get } from 'lodash'
 import { Oasis } from '@dozer/nanocontracts'
 import { useAccount, useNetwork } from '@dozer/zustand'
@@ -147,16 +147,23 @@ const OasisProgram = () => {
     setAddingLiquidity(true)
     setTxType('Add liquidity')
     if (amount && lockPeriod && oasisId && prices && prices['00']) {
-      // If user has existing position, mark it as pending
-      const existingPosition = allUserOasis?.find((o) => o?.token.symbol === currency)
-      if (existingPosition) {
-        setAddingToOasisId(existingPosition.id)
+      try {
+        // If user has existing position, mark it as pending
+        const existingPosition = allUserOasis?.find((o) => o?.token.symbol === currency)
+        if (existingPosition) {
+          setAddingToOasisId(existingPosition.id)
+        }
+
+        await oasisObj.user_deposit(hathorRpc, address, lockPeriod, oasisId, parseFloat(amount), selectedNetwork)
+
+        // Do not clear the addingLiquidity state here - let it be cleared in the useEffect
+        // This ensures the loading overlay remains visible until confirmation
+      } catch (error) {
+        console.error('Error adding to oasis:', error)
+        createErrorToast(getErrorMessage(error), true)
+        setAddingLiquidity(false)
+        setAddingToOasisId('')
       }
-
-      await oasisObj.user_deposit(hathorRpc, address, lockPeriod, oasisId, parseFloat(amount), selectedNetwork)
-
-      // Do not clear the addingLiquidity state here - let it be cleared in the useEffect
-      // This ensures the loading overlay remains visible until confirmation
     }
   }
 
@@ -164,23 +171,38 @@ const OasisProgram = () => {
     if (!selectedOasisForRemove?.id) return
     setTxType('Remove liquidity')
 
-    // Send the transaction first - user will confirm in wallet
-    await oasisObj.user_withdraw(hathorRpc, address, selectedOasisForRemove.id, removeAmount, removeAmountHtr, selectedNetwork)
+    try {
+      // Send the transaction first - user will confirm in wallet
+      await oasisObj.user_withdraw(hathorRpc, address, selectedOasisForRemove.id, removeAmount, removeAmountHtr, selectedNetwork)
+    } catch (error) {
+      console.error('Error removing from oasis:', error)
+      createErrorToast(getErrorMessage(error), true)
+    }
   }
 
   const handleRemoveBonus = async (removeAmount: number): Promise<void> => {
     if (!selectedOasisForRemoveBonus?.id) return
     setTxType('Remove bonus')
 
-    // Send the transaction first - user will confirm in wallet
-    await oasisObj.user_withdraw_bonus(hathorRpc, address, selectedOasisForRemoveBonus.id, removeAmount, selectedNetwork)
+    try {
+      // Send the transaction first - user will confirm in wallet
+      await oasisObj.user_withdraw_bonus(hathorRpc, address, selectedOasisForRemoveBonus.id, removeAmount, selectedNetwork)
+    } catch (error) {
+      console.error('Error removing bonus:', error)
+      createErrorToast(getErrorMessage(error), true)
+    }
   }
 
   const handleClosePosition = async (): Promise<void> => {
     if (!selectedOasisForClose?.id) return
     setTxType('Close position')
 
-    await oasisObj.close_position(hathorRpc, address, selectedOasisForClose.id, selectedNetwork)
+    try {
+      await oasisObj.close_position(hathorRpc, address, selectedOasisForClose.id, selectedNetwork)
+    } catch (error) {
+      console.error('Error closing position:', error)
+      createErrorToast(getErrorMessage(error), true)
+    }
   }
 
   // Combined effect for setting hasOptimisticUpdate flag

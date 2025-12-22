@@ -4,7 +4,7 @@ import { Button, createErrorToast, createSuccessToast, Dialog, Dots, Notificatio
 import { FC, ReactNode, useEffect, useState, useMemo } from 'react'
 import { useNetwork, useTempTxStore, useAccount } from '@dozer/zustand'
 import { PoolManager } from '@dozer/nanocontracts'
-import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { useJsonRpc, useWalletConnectClient, getErrorMessage } from '@dozer/higmi'
 import { warningSeverity } from '@dozer/math'
 import { api } from '../../utils/api'
 import { get } from 'lodash'
@@ -84,15 +84,21 @@ export const RemoveSectionReviewModalSingleToken: FC<RemoveSectionReviewModalSin
     if (!quoteData || !selectedToken || !networkData?.number || !address) return
 
     setSentTX(true)
-    await poolManager.removeLiquiditySingleToken(
-      hathorRpc,
-      address,
-      poolKey,
-      selectedToken.uuid,
-      quoteData.amount_out, // The amount user wants to receive
-      parseFloat(percentage) || 100, // Percentage of liquidity to remove
-      selectedNetwork
-    )
+    try {
+      await poolManager.removeLiquiditySingleToken(
+        hathorRpc,
+        address,
+        poolKey,
+        selectedToken.uuid,
+        quoteData.amount_out, // The amount user wants to receive
+        parseFloat(percentage) || 100, // Percentage of liquidity to remove
+        selectedNetwork
+      )
+    } catch (error) {
+      console.error('Error removing liquidity:', error)
+      createErrorToast(getErrorMessage(error), true)
+      setSentTX(false)
+    }
   }
 
   useEffect(() => {

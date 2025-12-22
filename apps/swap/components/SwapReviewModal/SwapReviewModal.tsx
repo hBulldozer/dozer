@@ -6,64 +6,13 @@ import { SwapReviewModalBase } from './SwapReviewModalBase'
 import { XMarkIcon } from '@heroicons/react/24/solid'
 import { TokenBalance } from '@dozer/zustand'
 import { PoolManager } from '@dozer/nanocontracts'
-import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { useJsonRpc, useWalletConnectClient, getErrorMessage } from '@dozer/higmi'
 import { get } from 'lodash'
 
 interface SwapReviewModalLegacy {
   chainId: number | undefined
   children({ setOpen }: { setOpen(open: boolean): void }): ReactNode
   onSuccess(): void
-}
-
-/**
- * Extract a user-friendly error message from various error types
- */
-const getErrorMessage = (error: unknown): string => {
-  // Handle string errors
-  if (typeof error === 'string') {
-    return error
-  }
-
-  // Handle Error objects
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase()
-
-    // User rejection patterns
-    if (message.includes('rejected') || message.includes('denied') || message.includes('cancelled') || message.includes('canceled')) {
-      return 'Transaction cancelled by user'
-    }
-
-    return error.message
-  }
-
-  // Handle WalletConnect/RPC error objects
-  if (error && typeof error === 'object') {
-    const err = error as Record<string, unknown>
-
-    // Check for message property
-    if (typeof err.message === 'string') {
-      const message = err.message.toLowerCase()
-      if (message.includes('rejected') || message.includes('denied') || message.includes('cancelled')) {
-        return 'Transaction cancelled by user'
-      }
-      return err.message
-    }
-
-    // Check for error property (nested error)
-    if (err.error && typeof err.error === 'object') {
-      const nestedErr = err.error as Record<string, unknown>
-      if (typeof nestedErr.message === 'string') {
-        return nestedErr.message
-      }
-    }
-
-    // Check for reason property (some RPC errors)
-    if (typeof err.reason === 'string') {
-      return err.reason
-    }
-  }
-
-  return 'Transaction failed'
 }
 
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {

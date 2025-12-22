@@ -15,7 +15,7 @@ import {
   CopyHelper,
 } from '@dozer/ui'
 import { useAccount, useNetwork, useTrade, TokenBalance, useSettings } from '@dozer/zustand'
-import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { useJsonRpc, useWalletConnectClient, getErrorMessage } from '@dozer/higmi'
 import { PoolManager } from '@dozer/nanocontracts'
 import { get } from 'lodash'
 import { api } from '../../utils/api'
@@ -73,7 +73,7 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
         )
       } catch (error) {
         console.error('Error initializing pool:', error)
-        createErrorToast('Failed to initialize pool', true)
+        createErrorToast(getErrorMessage(error), true)
         setSentTX(false)
       }
     }
