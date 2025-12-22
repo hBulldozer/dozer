@@ -2,7 +2,7 @@ import { Amount } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
 import { Percent } from '@dozer/math'
 import { Button, createErrorToast, createSuccessToast, Dots, NotificationData, Typography } from '@dozer/ui'
-import { Approve, Checker, useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { Approve, Checker, useJsonRpc, useWalletConnectClient, getErrorMessage } from '@dozer/higmi'
 import { FC, useEffect, useMemo, useState } from 'react'
 
 import { TokenBalance, useAccount, useNetwork, useSettings } from '@dozer/zustand'
@@ -154,22 +154,28 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
   const onClick = async () => {
     setSentTX(true)
     if (currencyAToRemove && currencyBToRemove && percentage) {
-      // Convert from cents (quotient) to decimal tokens by dividing by 100
-      // This avoids precision loss from toFixed(2)
-      // Note: quotient is a JSBI instance, convert to string first then to number
-      const amountADecimal = Number(currencyAToRemove.quotient.toString()) / 100
-      const amountBDecimal = Number(currencyBToRemove.quotient.toString()) / 100
+      try {
+        // Convert from cents (quotient) to decimal tokens by dividing by 100
+        // This avoids precision loss from toFixed(2)
+        // Note: quotient is a JSBI instance, convert to string first then to number
+        const amountADecimal = Number(currencyAToRemove.quotient.toString()) / 100
+        const amountBDecimal = Number(currencyBToRemove.quotient.toString()) / 100
 
-      poolManager.removeLiquidity(
-        hathorRpc,
-        address,
-        token0.uuid,
-        amountADecimal,
-        token1.uuid,
-        amountBDecimal,
-        fee,
-        selectedNetwork
-      )
+        await poolManager.removeLiquidity(
+          hathorRpc,
+          address,
+          token0.uuid,
+          amountADecimal,
+          token1.uuid,
+          amountBDecimal,
+          fee,
+          selectedNetwork
+        )
+      } catch (error) {
+        console.error('Error removing liquidity:', error)
+        createErrorToast(getErrorMessage(error), true)
+        setSentTX(false)
+      }
     }
   }
 

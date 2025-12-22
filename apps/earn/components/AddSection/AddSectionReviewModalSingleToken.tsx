@@ -4,7 +4,7 @@ import { Button, createErrorToast, createSuccessToast, Dialog, Dots, Notificatio
 import { FC, ReactNode, useEffect, useState, useMemo } from 'react'
 import { useNetwork, useTempTxStore, useAccount } from '@dozer/zustand'
 import { PoolManager } from '@dozer/nanocontracts'
-import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { useJsonRpc, useWalletConnectClient, getErrorMessage } from '@dozer/higmi'
 import { warningSeverity } from '@dozer/math'
 import { api } from '../../utils/api'
 import { get } from 'lodash'
@@ -78,15 +78,21 @@ export const AddSectionReviewModalSingleToken: FC<AddSectionReviewModalSingleTok
     if (!quoteData || !token || !otherToken || !networkData?.number || !address) return
 
     setSentTX(true)
-    await poolManager.addLiquiditySingleToken(
-      hathorRpc,
-      address,
-      token.uuid,
-      parseFloat(input),
-      otherToken.uuid,
-      fee * 10, // Convert fee to basis points
-      selectedNetwork
-    )
+    try {
+      await poolManager.addLiquiditySingleToken(
+        hathorRpc,
+        address,
+        token.uuid,
+        parseFloat(input),
+        otherToken.uuid,
+        fee * 10, // Convert fee to basis points
+        selectedNetwork
+      )
+    } catch (error) {
+      console.error('Error adding liquidity:', error)
+      createErrorToast(getErrorMessage(error), true)
+      setSentTX(false)
+    }
   }
 
   useEffect(() => {
