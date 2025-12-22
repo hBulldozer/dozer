@@ -52,14 +52,14 @@ const web3Modal = new Web3Modal({
     '--w3m-accent-color': '#eab308',
   },
   enableExplorer: false,
-  mobileWallets: [
-    {
-      id: 'hathor-wallet',
-      name: 'HathorWallet',
-      links: { universal: 'https://apps.apple.com/us/app/hathor-wallet/id1465041963' },
-    },
-  ],
-  walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
+  // mobileWallets: [
+  //   {
+  //     id: 'hathor-wallet',
+  //     name: 'HathorWallet',
+  //     links: { universal: 'https://apps.apple.com/us/app/hathor-wallet/id1465041963' },
+  //   },
+  // ],
+  // walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
 })
 
 /**

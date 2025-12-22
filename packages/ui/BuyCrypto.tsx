@@ -21,22 +21,23 @@ interface BuyCryptoProps {
 }
 export const BuyCrypto: FC<BuyCryptoProps> = ({ address, children }) => {
   const buyUrl = useMemo(() => {
-    const params = new URLSearchParams()
-    // TODO Activate API key after Company Formation
-    // params.append('apiKey', '27633309-e560-41ec-b3de-b32f252c9437')
-    params.append('apiKey', '5baa5495-64a5-4bcb-af71-febf3e54b07e')
-    // if (address) {
-    params.append('walletAddress', 'HJpA7CTpWqL2p2HRtGkGXjbvAzr3sqi1GP')
-    // }
-    // params.append('networks', TRANSAK_NETWORKS.join(','))
-    params.append('redirectURL', 'https://mvp.dozer.finance/swap')
-    // params.append('isAutoFillUserData', 'true')
-    params.append('hideMenu', 'true')
-    params.append('isFeeCalculationHidden', 'true')
-    // TODO Make HTR work as default
-    params.append('defaultCryptoCurrency', 'HTR')
-    // params.append('themeColor', '#eab308')
-    return `https://global.transak.com/?${params.toString()}`
+    // const params = new URLSearchParams()
+    // // TODO Activate API key after Company Formation
+    // // params.append('apiKey', '27633309-e560-41ec-b3de-b32f252c9437')
+    // params.append('apiKey', '5baa5495-64a5-4bcb-af71-febf3e54b07e')
+    // // if (address) {
+    // params.append('walletAddress', 'HJpA7CTpWqL2p2HRtGkGXjbvAzr3sqi1GP')
+    // // }
+    // // params.append('networks', TRANSAK_NETWORKS.join(','))
+    // params.append('redirectURL', `${process.env.NEXT_PUBLIC_SITE_URL}/swap`)
+    // // params.append('isAutoFillUserData', 'true')
+    // params.append('hideMenu', 'true')
+    // params.append('isFeeCalculationHidden', 'true')
+    // // TODO Make HTR work as default
+    // params.append('defaultCryptoCurrency', 'HTR')
+    // // params.append('themeColor', '#eab308')
+    // return `https://global.transak.com/?${params.toString()}`
+    return 'https://hathor.network/htr'
   }, [address])
 
   if (typeof children === 'function') return <>{children(buyUrl)}</>

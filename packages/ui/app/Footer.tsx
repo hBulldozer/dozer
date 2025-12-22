@@ -120,7 +120,7 @@ export function Footer(props: FooterProps): JSX.Element {
             <a href="https://t.me/DozerFinance" target="_blank" rel="noopener noreferrer">
               <TelegramIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
-            <a href="https://forms.gle/8cEKvsaNrTP4c8Ef6" target="_blank" rel="noopener noreferrer">
+            <a href="https://discord.gg/Ec2VPGu5MF" target="_blank" rel="noopener noreferrer">
               <DiscordIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
             <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">
@@ -152,7 +152,7 @@ export function Footer(props: FooterProps): JSX.Element {
             Copyright © 2025 Dozer. All rights reserved.
           </Typography>
           <div className="flex divide-x divide-stone-100/20 gap-">
-            <Link.Internal href="https://mvp.dozer.finance" passHref={true}>
+            <Link.Internal href={`${process.env.NEXT_PUBLIC_SITE_URL}/terms-of-use`} passHref={true}>
               <Typography as="a" variant="xs" weight={500} className="px-3 text-stone-200">
                 Terms of Use
               </Typography>

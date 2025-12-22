@@ -99,7 +99,7 @@ export const Hero: FC = () => {
                   >
                     <div ref={ref} className={classNames('p-3 mx-0.5 grid grid-cols-2 items-center pb-4 font-medium')}>
                       <App.NavItemList hideOnMobile={false}>
-                        <App.NavItem href="https://www.dozer.finance/swap" label="Swap" />
+                        <App.NavItem href={`${process.env.NEXT_PUBLIC_SITE_URL}/swap`} label="Swap" />
                       </App.NavItemList>
                     </div>
                   </motion.div>
