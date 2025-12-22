@@ -120,7 +120,7 @@ export function Footer(props: FooterProps): JSX.Element {
             <a href="https://t.me/DozerFinance" target="_blank" rel="noopener noreferrer">
               <TelegramIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
-            <a href="https://forms.gle/8cEKvsaNrTP4c8Ef6" target="_blank" rel="noopener noreferrer">
+            <a href="https://discord.gg/Ec2VPGu5MF" target="_blank" rel="noopener noreferrer">
               <DiscordIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
             <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">

@@ -1897,8 +1897,19 @@ export const poolRouter = createTRPCRouter({
               }
             }
 
-            // Combine tokens from outputs and arguments
-            const allTokens = new Set([...tokensFromOutputs, ...tokensFromArgs])
+            // Also extract tokens from nc_context.actions for single token operations
+            // This ensures we capture the deposited token even if it doesn't appear in outputs
+            const tokensFromActions = new Set<string>()
+            if (tx.nc_context?.actions && Array.isArray(tx.nc_context.actions)) {
+              tx.nc_context.actions.forEach((action: { type: string; token_uid: string; amount: number }) => {
+                if (action.token_uid) {
+                  tokensFromActions.add(action.token_uid)
+                }
+              })
+            }
+
+            // Combine tokens from outputs, arguments, and actions
+            const allTokens = new Set([...tokensFromOutputs, ...tokensFromArgs, ...tokensFromActions])
             tokensInvolved = Array.from(allTokens)
 
             // Fetch token symbols for display
@@ -2003,8 +2014,36 @@ export const poolRouter = createTRPCRouter({
                 }
               })
 
+              // Special handling for single token operations
+              // For single token ops, nc_args_decoded has [other_token_uid, pool_id]
+              // and nc_context.actions has only the deposited token
+              const isSingleTokenMethod = tx.nc_method === 'add_liquidity_single_token' ||
+                                          tx.nc_method === 'remove_liquidity_single_token'
+
+              if (isSingleTokenMethod && actionTokens.size === 1 && Array.isArray(args) && args.length >= 2) {
+                // args[0] = the "other" token in the pool (not the deposited one)
+                // args[1] = pool ID
+                const depositedToken = Array.from(actionTokens)[0]
+                const otherToken = typeof args[0] === 'string' ? args[0] : String(args[0])
+                const poolId = typeof args[1] === 'number' ? args[1] : 8
+
+                // Both tokens should be added to tokensInvolved (with type guard)
+                if (depositedToken && !tokensInvolved.includes(depositedToken)) {
+                  tokensInvolved.push(depositedToken)
+                }
+                if (otherToken && !tokensInvolved.includes(otherToken)) {
+                  tokensInvolved.push(otherToken)
+                }
+
+                // Construct pool key with both tokens sorted (with type guard)
+                if (depositedToken && otherToken) {
+                  const [tokenA, tokenB] = [depositedToken, otherToken].sort()
+                  const potentialPoolKey = `${tokenA}/${tokenB}/${poolId}`
+                  poolsInvolved = [potentialPoolKey]
+                }
+              }
               // If we have exactly 2 tokens, construct the pool key
-              if (actionTokens.size === 2) {
+              else if (actionTokens.size === 2) {
                 const tokenArray = Array.from(actionTokens)
                 // Get fee from parsed args (for add_liquidity, this is the main parameter)
                 // The nc_args for add_liquidity is typically just the fee value
