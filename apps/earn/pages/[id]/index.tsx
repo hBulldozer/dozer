@@ -37,61 +37,81 @@ export const config = {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
+  // During build, we may hit rate limits on the public node.
+  // To prevent build failures, we wrap this in a try-catch and return empty paths.
+  // Pages will still be generated on-demand via fallback: 'blocking'
+  try {
+    const ssg = generateSSGHelper()
+    const pools = await ssg.getPools.all.fetch()
 
-  if (!pools) {
-    throw new Error(`Failed to fetch pool, received ${pools}`)
+    if (!pools) {
+      console.warn('[getStaticPaths] Failed to fetch pools, returning empty paths')
+      return { paths: [], fallback: 'blocking' }
+    }
+
+    // Get the paths we want to pre-render based on symbol IDs instead of pool keys
+    const paths = pools?.map((pool: any) => ({
+      params: { id: pool.symbolId || `${pool.id}` }, // Use symbolId if available, fallback to pool key
+    }))
+
+    // We'll pre-render only these paths at build time.
+    // { fallback: blocking } will server-render pages
+    // on-demand if the path doesn't exist.
+    return { paths, fallback: 'blocking' }
+  } catch (error) {
+    console.warn('[getStaticPaths] Error fetching pools during build, returning empty paths:', error)
+    // Return empty paths - all pages will be generated on-demand
+    return { paths: [], fallback: 'blocking' }
   }
-  // Get the paths we want to pre-render based on symbol IDs instead of pool keys
-  const paths = pools?.map((pool: any) => ({
-    params: { id: pool.symbolId || `${pool.id}` }, // Use symbolId if available, fallback to pool key
-  }))
-
-  // We'll pre-render only these paths at build time.
-  // { fallback: blocking } will server-render pages
-  // on-demand if the path doesn't exist.
-  return { paths, fallback: 'blocking' }
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
   const ssg = generateSSGHelper()
 
-  // Try to determine if this is a symbol-based ID (contains hyphens) or a pool key (contains slashes)
-  const isSymbolId = id.includes('-') && !id.includes('/')
+  try {
+    // Try to determine if this is a symbol-based ID (contains hyphens) or a pool key (contains slashes)
+    const isSymbolId = id.includes('-') && !id.includes('/')
 
-  let pool: any = null
+    let pool: any = null
 
-  if (isSymbolId) {
-    // Try to fetch using the symbol-based ID
-    try {
-      pool = await ssg.getPools.bySymbolId.fetch({ symbolId: id })
-    } catch (error) {
-      console.error(`Failed to fetch pool with symbol ID ${id}:`, error)
-      throw new Error(`Failed to find pool with symbol ID ${id}`)
+    if (isSymbolId) {
+      // Try to fetch using the symbol-based ID
+      try {
+        pool = await ssg.getPools.bySymbolId.fetch({ symbolId: id })
+      } catch (error) {
+        console.error(`[getStaticProps] Failed to fetch pool with symbol ID ${id}:`, error)
+        // Return notFound instead of throwing - allows build to succeed
+        return { notFound: true, revalidate: 10 }
+      }
+    } else {
+      // Fallback to old method - search in all pools
+      const pools = await ssg.getPools.all.fetch()
+      if (!pools) {
+        console.error(`[getStaticProps] Failed to fetch pools for id ${id}`)
+        return { notFound: true, revalidate: 10 }
+      }
+      pool = pools.find((pool: any) => pool.id === id || pool.symbolId === id)
+      if (!pool) {
+        console.error(`[getStaticProps] Failed to find pool with id ${id}`)
+        return { notFound: true, revalidate: 10 }
+      }
     }
-  } else {
-    // Fallback to old method - search in all pools
-    const pools = await ssg.getPools.all.fetch()
-    if (!pools) {
-      throw new Error(`Failed to fetch pool, received ${pools}`)
-    }
-    pool = pools.find((pool: any) => pool.id === id || pool.symbolId === id)
-    if (!pool) {
-      throw new Error(`Failed to find pool with id ${id}`)
-    }
-  }
 
-  await ssg.getPools.all.prefetch()
-  await ssg.getPrices.allUSD.prefetch()
-  await ssg.getPools.getAllTransactionHistory.prefetch({ count: 20, poolFilter: pool.id })
+    await ssg.getPools.all.prefetch()
+    await ssg.getPrices.allUSD.prefetch()
+    await ssg.getPools.getAllTransactionHistory.prefetch({ count: 20, poolFilter: pool.id })
 
-  return {
-    props: {
-      trpcState: ssg.dehydrate(),
-    },
-    revalidate: 60,
+    return {
+      props: {
+        trpcState: ssg.dehydrate(),
+      },
+      revalidate: 60,
+    }
+  } catch (error) {
+    console.error(`[getStaticProps] Unexpected error for pool ${id}:`, error)
+    // Return notFound to allow build to succeed - page will retry on next request
+    return { notFound: true, revalidate: 10 }
   }
 }
 
