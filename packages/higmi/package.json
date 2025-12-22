@@ -16,10 +16,10 @@
     "@heroicons/react": "^2.1.5",
     "@trpc/client": "^10.45.0",
     "@trpc/next": "^10.45.0",
-    "@walletconnect/core": "^2.15.1",
+    "@walletconnect/core": "^2.16.1",
     "@walletconnect/modal": "^2.7.0",
-    "@walletconnect/sign-client": "^2.15.1",
-    "@walletconnect/types": "^2.15.1",
+    "@walletconnect/sign-client": "^2.16.1",
+    "@walletconnect/types": "^2.16.1",
     "@web3modal/standalone": "^2.4.3",
     "superjson": "1.9.1",
     "web3": "^4.16.0"

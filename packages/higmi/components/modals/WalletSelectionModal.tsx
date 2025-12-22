@@ -74,7 +74,7 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
         hathorAddress: hathorAddress,
         isSnapInstalled: false,
         snapId: null,
-        selectedNetwork: 'testnet',
+        // Don't set selectedNetwork here - it's controlled by environment config
       })
 
       // Connection was successful, clear all timeouts and close modal

@@ -109,16 +109,26 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
     setIsTestnet(config.isTestnet)
   }, [])
 
-  // Handle network refresh when environment changes
+  // Handle network refresh when environment changes (only for MetaMask Snap)
   useEffect(() => {
+    // Early exit conditions - only proceed if we actually need to refresh
+    if (!needsNetworkRefresh) {
+      return
+    }
+
+    if (walletType !== 'metamask-snap') {
+      // For WalletConnect, just clear the flag - network is determined by session
+      setNeedsNetworkRefresh(false)
+      return
+    }
+
+    if (!invokeSnap) {
+      return
+    }
+
+    const currentSnapId = snapId || 'npm:@hathor/snap'
+
     const refreshNetworkWalletInfo = async () => {
-      const currentSnapId = snapId || 'npm:@hathor/snap'
-
-      if (!needsNetworkRefresh || walletType !== 'metamask-snap' || !invokeSnap || !currentSnapId) {
-        console.log('Network refresh check:', { needsNetworkRefresh, walletType, hasInvokeSnap: !!invokeSnap, snapId: currentSnapId })
-        return
-      }
-
       console.log(`Refreshing wallet info for network: ${targetNetwork}, snapId: ${currentSnapId}`)
 
       try {
@@ -136,7 +146,6 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
           method: 'htr_getWalletInformation',
           params: {},
         })
-        console.log('Wallet info result:', walletInfoResult)
 
         // Parse wallet info response
         let newAddress: string | null = null
@@ -158,7 +167,6 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
           setCurrentNetwork(targetNetwork)
           setWalletConnection({
             hathorAddress: newAddress as string,
-            selectedNetwork: targetNetwork,
           })
         } else {
           console.warn('Could not parse address from wallet info')
@@ -172,7 +180,10 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
     }
 
     refreshNetworkWalletInfo()
-  }, [needsNetworkRefresh, walletType, invokeSnap, targetNetwork, setCurrentNetwork, setWalletConnection, setNeedsNetworkRefresh, snapId])
+    // Note: We intentionally exclude invokeSnap from deps as it may be unstable
+    // The effect should only run when needsNetworkRefresh becomes true
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsNetworkRefresh, walletType, targetNetwork, snapId])
 
   const ping = async () => {
     if (typeof client === 'undefined') {

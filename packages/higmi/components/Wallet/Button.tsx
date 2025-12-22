@@ -91,7 +91,7 @@ export const Button = <C extends React.ElementType>({
           hathorAddress: hathorAddress,
           isSnapInstalled: false,
           snapId: null,
-          selectedNetwork: 'testnet',
+          // Don't set selectedNetwork here - it's controlled by environment config
         })
       }
     } else if (!session && walletType === 'walletconnect') {
@@ -132,7 +132,7 @@ export const Button = <C extends React.ElementType>({
         hathorAddress: hathorAddress,
         isSnapInstalled: true,
         snapId: 'npm:@hathor/snap',
-        selectedNetwork: 'testnet',
+        // Don't set selectedNetwork here - it's controlled by environment config
       })
     } catch (error) {
       console.error('Failed to update wallet state after MetaMask connection:', error)

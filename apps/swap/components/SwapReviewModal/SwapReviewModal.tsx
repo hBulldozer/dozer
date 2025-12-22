@@ -4,7 +4,6 @@ import { TradeType } from 'components/utils/TradeType'
 import React, { FC, ReactNode, useCallback, useEffect, useState } from 'react'
 import { SwapReviewModalBase } from './SwapReviewModalBase'
 import { XMarkIcon } from '@heroicons/react/24/solid'
-import { api } from 'utils/api'
 import { TokenBalance } from '@dozer/zustand'
 import { PoolManager } from '@dozer/nanocontracts'
 import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
@@ -16,21 +15,75 @@ interface SwapReviewModalLegacy {
   onSuccess(): void
 }
 
+/**
+ * Extract a user-friendly error message from various error types
+ */
+const getErrorMessage = (error: unknown): string => {
+  // Handle string errors
+  if (typeof error === 'string') {
+    return error
+  }
+
+  // Handle Error objects
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase()
+
+    // User rejection patterns
+    if (message.includes('rejected') || message.includes('denied') || message.includes('cancelled') || message.includes('canceled')) {
+      return 'Transaction cancelled by user'
+    }
+
+    return error.message
+  }
+
+  // Handle WalletConnect/RPC error objects
+  if (error && typeof error === 'object') {
+    const err = error as Record<string, unknown>
+
+    // Check for message property
+    if (typeof err.message === 'string') {
+      const message = err.message.toLowerCase()
+      if (message.includes('rejected') || message.includes('denied') || message.includes('cancelled')) {
+        return 'Transaction cancelled by user'
+      }
+      return err.message
+    }
+
+    // Check for error property (nested error)
+    if (err.error && typeof err.error === 'object') {
+      const nestedErr = err.error as Record<string, unknown>
+      if (typeof nestedErr.message === 'string') {
+        return nestedErr.message
+      }
+    }
+
+    // Check for reason property (some RPC errors)
+    if (typeof err.reason === 'string') {
+      return err.reason
+    }
+  }
+
+  return 'Transaction failed'
+}
+
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
   const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency, routeInfo } = useTrade()
   const [sentTX, setSentTX] = useState(false)
-  const { addNotification, setBalance, balance, walletType, hathorAddress, selectedNetwork } = useAccount()
+  const { addNotification, setBalance, balance, hathorAddress, selectedNetwork } = useAccount()
   const { accounts } = useWalletConnectClient()
   const wcAddress = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { network } = useNetwork()
   const [open, setOpen] = useState(false)
-  const [card, setCard] = useState(false)
+  const [card, setCard] = useState(false) // Used for success card dialog
   const { slippageTolerance, transactionDeadline, deadlineType } = useSettings()
 
   const poolManager = new PoolManager()
 
   // Use unified RPC context that handles both WalletConnect and MetaMask Snap
-  const { hathorRpc, rpcResult, isRpcRequestPending, reset, isWalletConnected } = useJsonRpc()
+  const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
+
+  // Suppress unused variable warning - setCard is intentionally kept for future success card functionality
+  void setCard
 
   // Get the appropriate address based on wallet type
   const address = hathorAddress || wcAddress
@@ -123,7 +176,8 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
           )
         }
       } catch (error) {
-        createErrorToast(error instanceof Error ? error.message : 'Swap failed', true)
+        console.error('Swap error:', error)
+        createErrorToast(getErrorMessage(error), true)
         setSentTX(false)
       }
     }
