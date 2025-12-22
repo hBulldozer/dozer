@@ -566,8 +566,10 @@ export const pricesRouter = createTRPCRouter({
     .query(async ({ input }) => {
       try {
         // Environment-aware time range selection
-        const isDevelopment = process.env.NODE_ENV === 'development'
-        const defaultTimeRange = isDevelopment ? '5min' : '24h'
+        // Use testnet URL detection: if URL includes "testnet", use 5min for quick testing
+        // Otherwise (mainnet or production), use 24h for meaningful data
+        const isTestnet = process.env.NEXT_PUBLIC_PUBLIC_NODE_URL?.includes('testnet') ?? false
+        const defaultTimeRange = isTestnet ? '5min' : '24h'
         const timeRange = input.timeRange || defaultTimeRange
 
         // Calculate timestamps (integers for contract)
@@ -665,8 +667,10 @@ export const pricesRouter = createTRPCRouter({
         const now = Math.floor(Date.now() / 1000) // Integer timestamp for contract
 
         // Environment-aware timeframe selection
-        const isDevelopment = process.env.NODE_ENV === 'development'
-        const defaultTimeframe = isDevelopment ? '5min' : '24h'
+        // Use testnet URL detection: if URL includes "testnet", use 5min for quick testing
+        // Otherwise (mainnet or production), use 24h for meaningful data
+        const isTestnet = process.env.NEXT_PUBLIC_PUBLIC_NODE_URL?.includes('testnet') ?? false
+        const defaultTimeframe = isTestnet ? '5min' : '24h'
         const timeframe = input.timeframe || defaultTimeframe
 
         const intervals = {
