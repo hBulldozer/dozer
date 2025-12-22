@@ -4,8 +4,9 @@ import { Web3Modal } from '@web3modal/standalone'
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState, useRef } from 'react'
 
-import { getAppMetadata, getSdkError } from '@walletconnect/utils'
+import { getSdkError } from '@walletconnect/utils'
 import config from '../../config/bridge'
+import { getRequiredNamespaces } from './namespaces'
 
 export const DEFAULT_APP_METADATA = {
   name: 'Dozer App',
@@ -107,25 +108,21 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       }
 
       try {
-        // Use optionalNamespaces to support both mainnet and testnet
-        // The wallet will connect with whichever chain it supports
-        const optionalNamespaces = {
-          hathor: {
-            methods: ['htr_signWithAddress', 'htr_sendNanoContractTx', 'htr_createToken'],
-            chains: ['hathor:mainnet', 'hathor:testnet'],
-            events: [],
-          },
-        }
+        // Use requiredNamespaces to ensure the wallet supports all required methods
+        // This is necessary for desktop wallet compatibility
+        // Only require the chain that matches the current environment
+        const chains = [config.hathorConfig.rpcChain]
+        const requiredNamespaces = getRequiredNamespaces(chains)
 
         const { uri, approval } = await client.connect({
           pairingTopic: pairing?.topic,
-          optionalNamespaces,
+          requiredNamespaces,
         })
 
         // Open QRCode modal if a URI was returned (i.e. we're not connecting an existing pairing).
         if (uri) {
           // Create a flat array of all requested chains across namespaces.
-          const standaloneChains = Object.values(optionalNamespaces)
+          const standaloneChains = Object.values(requiredNamespaces)
             .map((namespace) => namespace.chains)
             .flat() as string[]
 
