@@ -209,8 +209,8 @@ const Token = () => {
               error={transactionError?.message}
             />
           </div>
-          <div className="hidden flex-col order-2 gap-4 lg:flex">
-            <AppearOnMount>
+          <div className="flex-col order-2 hidden gap-4 lg:flex">
+            {/* <AppearOnMount>
               {primaryPoolForSwap ? (
                 <SwapWidget
                   token0_idx={
@@ -231,7 +231,7 @@ const Token = () => {
                   <Typography className="text-stone-400">No pools available for swapping</Typography>
                 </div>
               )}
-            </AppearOnMount>
+            </AppearOnMount> */}
             <AvailablePoolsWidget pools={tokenData.pools} currentToken={tokenData} />
           </div>
         </div>
@@ -253,7 +253,7 @@ const Token = () => {
         )}
       </Layout>
       <AppearOnMount as={Fragment}>
-        <div className="flex fixed right-0 left-0 bottom-6 justify-center lg:hidden">
+        <div className="fixed left-0 right-0 flex justify-center bottom-6 lg:hidden">
           <div>
             <div className="divide-x rounded-xl min-w-[95vw] shadow-md shadow-black/50 bg-yellow divide-stone-800">
               <Button
