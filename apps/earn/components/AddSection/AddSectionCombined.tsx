@@ -39,9 +39,7 @@ export const AddSectionCombined: FC<AddSectionCombinedProps> = ({ pool, prices }
       setUseSingleToken(true)
 
       // Find token by symbol
-      const targetToken = [token0, token1].find(
-        token => token.symbol?.toLowerCase() === singleToken.toLowerCase()
-      )
+      const targetToken = [token0, token1].find((token) => token.symbol?.toLowerCase() === singleToken.toLowerCase())
 
       if (targetToken) {
         setSelectedToken(targetToken)
@@ -94,7 +92,7 @@ export const AddSectionCombined: FC<AddSectionCombinedProps> = ({ pool, prices }
 
   return (
     <div className="space-y-0">
-      <ModeToggle />
+      {/* <ModeToggle /> */}
       <AddSectionLegacy pool={pool} prices={prices} />
     </div>
   )
