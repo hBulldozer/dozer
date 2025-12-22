@@ -45,7 +45,7 @@ const DATA: ExpendableCardData = {
       </div>
     </>
   ),
-  link: 'https://mvp.dozer.finance/swap',
+  link: `${process.env.NEXT_PUBLIC_SITE_URL}/swap`,
   linkText: 'Visit Swap',
 }
 

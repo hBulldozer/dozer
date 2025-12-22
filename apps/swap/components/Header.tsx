@@ -11,12 +11,11 @@ import { api } from 'utils/api'
 export const Header: FC = () => {
   const { accounts } = useWalletConnectClient()
   const { walletType, hathorAddress } = useAccount()
-  
+
   // Get the appropriate address based on wallet type (kept for potential future use)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const address = walletType === 'walletconnect' 
-    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
-    : hathorAddress || ''
+  const address =
+    walletType === 'walletconnect' ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') : hathorAddress || ''
 
   // const [notifications, { clearNotifications }] = useNotifications(address)
 
@@ -34,7 +33,7 @@ export const Header: FC = () => {
           <App.NavItem href="/tokens" label="Tokens" />
           <App.NavItem href={`${process.env.NEXT_PUBLIC_SITE_URL}/pool`} label="Pools" />
           {/* <App.NavItem href="https://t.me/hathor_solana_bot" label="Get HTR" external /> */}
-          {/* <App.NavItem href="https://mvp.dozer.finance/bridge" label="Bridge" /> */}
+          {/* <App.NavItem href={`${process.env.NEXT_PUBLIC_SITE_URL}/swap/bridge`} label="Bridge" /> */}
           {/* <BuyCrypto address={address} /> */}
           {/* <App.OpenModal label="Donate" setOpen={setOpen} />
           <App.DonateModal open={open} setOpen={setOpen} /> */}

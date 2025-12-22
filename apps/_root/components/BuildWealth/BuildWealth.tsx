@@ -55,7 +55,7 @@ export const BuildWealth: FC = () => {
                       </p>
                     </>
                   }
-                  link="https://mvp.dozer.finance/pool"
+                  link={`${process.env.NEXT_PUBLIC_SITE_URL}/pool`}
                   linkText="Visit Earn"
                 />
                 <ExpandableCard
@@ -81,7 +81,7 @@ export const BuildWealth: FC = () => {
                       </p>
                     </>
                   }
-                  link="https://mvp.dozer.finance/pool"
+                  link={`${process.env.NEXT_PUBLIC_SITE_URL}/pool`}
                   linkText="Visit Earn"
                 />
                 {/* <ExpandableCard
@@ -105,7 +105,7 @@ export const BuildWealth: FC = () => {
                       </p>
                     </>
                   }
-                  link="https://mvp.dozer.finance/pool"
+                  link={`${process.env.NEXT_PUBLIC_SITE_URL}/pool`}
                   linkText="Visit Earn"
                 /> */}
               </div>

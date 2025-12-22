@@ -29,7 +29,7 @@ export const BuyCrypto: FC<BuyCryptoProps> = ({ address, children }) => {
     params.append('walletAddress', 'HJpA7CTpWqL2p2HRtGkGXjbvAzr3sqi1GP')
     // }
     // params.append('networks', TRANSAK_NETWORKS.join(','))
-    params.append('redirectURL', 'https://mvp.dozer.finance/swap')
+    params.append('redirectURL', `${process.env.NEXT_PUBLIC_SITE_URL}/swap`)
     // params.append('isAutoFillUserData', 'true')
     params.append('hideMenu', 'true')
     params.append('isFeeCalculationHidden', 'true')
