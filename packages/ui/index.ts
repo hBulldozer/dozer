@@ -67,6 +67,7 @@ export {
   transformTransactions,
   formatTimeAgo,
   truncateAddress,
+  getExplorerUrls,
 } from './src/utils/transactionUtils'
 
 export { formatNumber, formatNumberWithLocale, formatCurrency } from './src/utils/formatNumber'

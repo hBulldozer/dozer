@@ -12,6 +12,7 @@ import {
   TwitterIcon,
   TelegramIcon,
   ArrowIcon,
+  getExplorerUrls,
 } from '@dozer/ui'
 import { FC, useMemo } from 'react'
 import { ArrowTopRightOnSquareIcon, Square2StackIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
@@ -78,7 +79,12 @@ export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
           </div>
           <div className="flex flex-col gap-4">
             <div className="flex gap-4 justify-between items-center md:justify-end">
-              <div className="flex gap-4 items-center">
+              <div className="flex gap-2 items-center">
+                <Link.External href={getExplorerUrls().getTokenUrl(token.uuid)}>
+                  <IconButton className="p-1 text-stone-400" description="View on Explorer">
+                    <ArrowTopRightOnSquareIcon width={20} height={20} color="stone-500" />
+                  </IconButton>
+                </Link.External>
                 <CopyHelper
                   toCopy={
                     pair.id == 'native'
