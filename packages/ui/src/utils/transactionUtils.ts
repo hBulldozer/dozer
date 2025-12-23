@@ -10,6 +10,7 @@ export const getExplorerUrls = () => {
       getAccountUrl: (address: string) => `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/address/${address}`,
       getNanoContractUrl: (nanoContractId: string) =>
         `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/nano_contract/detail/${nanoContractId}`,
+      getTokenUrl: (tokenUuid: string) => `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/token_detail/${tokenUuid}`,
     }
   }
 
@@ -22,6 +23,7 @@ export const getExplorerUrls = () => {
     getTransactionUrl: (txHash: string) => `${baseUrl}/transaction/${txHash}`,
     getAccountUrl: (address: string) => `${baseUrl}/address/${address}`,
     getNanoContractUrl: (nanoContractId: string) => `${baseUrl}/nano_contract/detail/${nanoContractId}`,
+    getTokenUrl: (tokenUuid: string) => `${baseUrl}/token_detail/${tokenUuid}`,
   }
 }
 
