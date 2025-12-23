@@ -1,5 +1,30 @@
 import { SimpleTransaction } from '../components/SimplePoolTransactionHistory'
 
+// Helper function to get explorer URLs based on environment
+export const getExplorerUrls = () => {
+  // Check if we have a local explorer URL configured
+  if (process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL) {
+    return {
+      baseUrl: process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL,
+      getTransactionUrl: (txHash: string) => `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/transaction/${txHash}`,
+      getAccountUrl: (address: string) => `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/address/${address}`,
+      getNanoContractUrl: (nanoContractId: string) =>
+        `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/nano_contract/detail/${nanoContractId}`,
+    }
+  }
+
+  // Fallback to default explorer URLs based on testnet/mainnet
+  const isTestnet = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_IS_TESTNET === 'true'
+  const baseUrl = isTestnet ? 'https://explorer.testnet.hathor.network' : 'https://explorer.hathor.network'
+
+  return {
+    baseUrl,
+    getTransactionUrl: (txHash: string) => `${baseUrl}/transaction/${txHash}`,
+    getAccountUrl: (address: string) => `${baseUrl}/address/${address}`,
+    getNanoContractUrl: (nanoContractId: string) => `${baseUrl}/nano_contract/detail/${nanoContractId}`,
+  }
+}
+
 // Helper function to format time with proper singular/plural forms
 export function formatTimeAgo(timestamp: number): string {
   const now = Date.now() / 1000
@@ -398,9 +423,24 @@ export function transformToSimpleTransaction(
     }
   }
 
-  // For liquidity operations, calculate net amounts (accounting for change)
+  // For liquidity operations, calculate amounts from nc_context.actions (preferred) or inputs/outputs (fallback)
   if ((type === 'Add' || type === 'Remove') && tokenSymbols.length >= 1) {
-    // Group inputs and outputs by token and address
+    // PREFERRED: Use ncActions if available - these are the actual deposit/withdrawal amounts
+    // from the nano contract context, which are more accurate than parsing UTXOs
+    const depositsByToken: Record<string, number> = {}
+    const withdrawalsByToken: Record<string, number> = {}
+
+    if (complexTx.ncActions && complexTx.ncActions.length > 0) {
+      complexTx.ncActions.forEach((action) => {
+        if (action.type === 'deposit') {
+          depositsByToken[action.token_uid] = (depositsByToken[action.token_uid] || 0) + action.amount / 100
+        } else if (action.type === 'withdrawal') {
+          withdrawalsByToken[action.token_uid] = (withdrawalsByToken[action.token_uid] || 0) + action.amount / 100
+        }
+      })
+    }
+
+    // FALLBACK: Calculate from inputs/outputs if ncActions not available
     const inputsByToken: Record<string, number> = {}
     const outputsByToken: Record<string, number> = {}
     const changeOutputsByToken: Record<string, number> = {}
@@ -435,138 +475,194 @@ export function transformToSimpleTransaction(
     })
 
     if (type === 'Add') {
-      // For add liquidity, show net amounts (inputs - change)
+      // For add liquidity, show deposit amounts
       const amounts_list: string[] = []
       let totalUSD = 0
 
-      // Calculate net amounts for each token
-      const allTokens = new Set([...Object.keys(inputsByToken), ...Object.keys(changeOutputsByToken)])
-      allTokens.forEach((token) => {
-        const inputAmount = inputsByToken[token] || 0
-        const changeAmount = changeOutputsByToken[token] || 0
-        const netAmount = (inputAmount - changeAmount) / 100
+      // PREFERRED: Use ncActions if available
+      if (Object.keys(depositsByToken).length > 0) {
+        Object.entries(depositsByToken).forEach(([token, amount]) => {
+          if (amount > 0) {
+            const symbol =
+              tokenSymbols.find((t) => t.uuid === token)?.symbol ||
+              (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
+            amounts_list.push(`${amount.toFixed(2)} ${symbol}`)
 
-        if (netAmount > 0) {
-          const symbol =
-            tokenSymbols.find((t) => t.uuid === token)?.symbol ||
-            (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
-          amounts_list.push(`${netAmount.toFixed(2)} ${symbol}`)
-
-          if (pricesUSD && pricesUSD[token]) {
-            totalUSD += netAmount * pricesUSD[token]
+            if (pricesUSD && pricesUSD[token]) {
+              totalUSD += amount * pricesUSD[token]
+            }
           }
-        }
-      })
+        })
 
-      amounts = amounts_list.join(' + ')
-
-      // For display, calculate net amounts for token0/token1
-      if (token0Symbol && token1Symbol) {
-        let a0 = 0,
-          a1 = 0
-
-        // Use pool information if available for better matching
-        if (complexTx.poolsInvolved && complexTx.poolsInvolved.length > 0) {
+        // For display, set token0/token1 amounts from deposits
+        if (token0Symbol && token1Symbol && complexTx.poolsInvolved && complexTx.poolsInvolved.length > 0) {
           const currentPoolKey = complexTx.poolsInvolved[0]
           const [poolToken0, poolToken1] = currentPoolKey.split('/')
 
-          // Token 0
           if (poolToken0) {
-            const inputAmount = inputsByToken[poolToken0] || 0
-            const changeAmount = changeOutputsByToken[poolToken0] || 0
-            a0 = (inputAmount - changeAmount) / 100
+            token0Amount = depositsByToken[poolToken0] || null
           }
-
-          // Token 1
           if (poolToken1) {
-            const inputAmount = inputsByToken[poolToken1] || 0
-            const changeAmount = changeOutputsByToken[poolToken1] || 0
-            a1 = (inputAmount - changeAmount) / 100
-          }
-        } else {
-          // Fallback: use tokenSymbols array
-          const token0Uuid = tokenSymbols[0]?.uuid || ''
-          if (token0Uuid) {
-            const inputAmount = inputsByToken[token0Uuid] || 0
-            const changeAmount = changeOutputsByToken[token0Uuid] || 0
-            a0 = (inputAmount - changeAmount) / 100
-          }
-
-          const token1Uuid = tokenSymbols[1]?.uuid || ''
-          if (token1Uuid) {
-            const inputAmount = inputsByToken[token1Uuid] || 0
-            const changeAmount = changeOutputsByToken[token1Uuid] || 0
-            a1 = (inputAmount - changeAmount) / 100
+            token1Amount = depositsByToken[poolToken1] || null
           }
         }
-
-        token0Amount = a0 > 0 ? a0 : null
-        token1Amount = a1 > 0 ? a1 : null
       }
+      // FALLBACK: Calculate net amounts from inputs/outputs if ncActions not available
+      else {
+        const allTokens = new Set([...Object.keys(inputsByToken), ...Object.keys(changeOutputsByToken)])
+        allTokens.forEach((token) => {
+          const inputAmount = inputsByToken[token] || 0
+          const changeAmount = changeOutputsByToken[token] || 0
+          const netAmount = (inputAmount - changeAmount) / 100
+
+          if (netAmount > 0) {
+            const symbol =
+              tokenSymbols.find((t) => t.uuid === token)?.symbol ||
+              (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
+            amounts_list.push(`${netAmount.toFixed(2)} ${symbol}`)
+
+            if (pricesUSD && pricesUSD[token]) {
+              totalUSD += netAmount * pricesUSD[token]
+            }
+          }
+        })
+
+        // For display, calculate net amounts for token0/token1
+        if (token0Symbol && token1Symbol) {
+          let a0 = 0,
+            a1 = 0
+
+          // Use pool information if available for better matching
+          if (complexTx.poolsInvolved && complexTx.poolsInvolved.length > 0) {
+            const currentPoolKey = complexTx.poolsInvolved[0]
+            const [poolToken0, poolToken1] = currentPoolKey.split('/')
+
+            // Token 0
+            if (poolToken0) {
+              const inputAmount = inputsByToken[poolToken0] || 0
+              const changeAmount = changeOutputsByToken[poolToken0] || 0
+              a0 = (inputAmount - changeAmount) / 100
+            }
+
+            // Token 1
+            if (poolToken1) {
+              const inputAmount = inputsByToken[poolToken1] || 0
+              const changeAmount = changeOutputsByToken[poolToken1] || 0
+              a1 = (inputAmount - changeAmount) / 100
+            }
+          } else {
+            // Fallback: use tokenSymbols array
+            const token0Uuid = tokenSymbols[0]?.uuid || ''
+            if (token0Uuid) {
+              const inputAmount = inputsByToken[token0Uuid] || 0
+              const changeAmount = changeOutputsByToken[token0Uuid] || 0
+              a0 = (inputAmount - changeAmount) / 100
+            }
+
+            const token1Uuid = tokenSymbols[1]?.uuid || ''
+            if (token1Uuid) {
+              const inputAmount = inputsByToken[token1Uuid] || 0
+              const changeAmount = changeOutputsByToken[token1Uuid] || 0
+              a1 = (inputAmount - changeAmount) / 100
+            }
+          }
+
+          token0Amount = a0 > 0 ? a0 : null
+          token1Amount = a1 > 0 ? a1 : null
+        }
+      }
+
+      amounts = amounts_list.join(' + ')
       side = 'Add'
       totalValueUSD = totalUSD
     } else if (type === 'Remove') {
-      // For remove liquidity, show the actual outputs received
+      // For remove liquidity, show the withdrawal amounts
       const amounts_list: string[] = []
       let totalUSD = 0
 
-      // Show actual outputs for each token
-      Object.keys(outputsByToken).forEach((token) => {
-        const outputAmount = outputsByToken[token] / 100
+      // PREFERRED: Use ncActions if available
+      if (Object.keys(withdrawalsByToken).length > 0) {
+        Object.entries(withdrawalsByToken).forEach(([token, amount]) => {
+          if (amount > 0) {
+            const symbol =
+              tokenSymbols.find((t) => t.uuid === token)?.symbol ||
+              (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
+            amounts_list.push(`${amount.toFixed(2)} ${symbol}`)
 
-        if (outputAmount > 0) {
-          const symbol =
-            tokenSymbols.find((t) => t.uuid === token)?.symbol ||
-            (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
-          amounts_list.push(`${outputAmount.toFixed(2)} ${symbol}`)
-
-          if (pricesUSD && pricesUSD[token]) {
-            totalUSD += outputAmount * pricesUSD[token]
+            if (pricesUSD && pricesUSD[token]) {
+              totalUSD += amount * pricesUSD[token]
+            }
           }
-        }
-      })
+        })
 
-      amounts = amounts_list.join(' + ')
-
-      // For display, set token0/token1 amounts from actual outputs
-
-      if (token0Symbol && token1Symbol) {
-
-        // Use pool information if available for better matching
-        if (complexTx.poolsInvolved && complexTx.poolsInvolved.length > 0) {
+        // For display, set token0/token1 amounts from withdrawals
+        if (token0Symbol && token1Symbol && complexTx.poolsInvolved && complexTx.poolsInvolved.length > 0) {
           const currentPoolKey = complexTx.poolsInvolved[0]
           const [poolToken0, poolToken1] = currentPoolKey.split('/')
 
-
-          // Match outputs to pool tokens by UUID
-          Object.keys(outputsByToken).forEach((tokenUuid) => {
-            const outputAmount = outputsByToken[tokenUuid] / 100
-
-            if (tokenUuid === poolToken0) {
-              token0Amount = outputAmount
-            } else if (tokenUuid === poolToken1) {
-              token1Amount = outputAmount
-            }
-          })
-        } else {
-          // Fallback: use tokenSymbols array
-          Object.keys(outputsByToken).forEach((tokenUuid) => {
-            const outputAmount = outputsByToken[tokenUuid] / 100
-
-            const tokenInfo = tokenSymbols.find((t) => t.uuid === tokenUuid)
-            if (tokenInfo) {
-              if (tokenInfo.symbol === token0Symbol) {
-                token0Amount = outputAmount
-              } else if (tokenInfo.symbol === token1Symbol) {
-                token1Amount = outputAmount
-              }
-            }
-          })
+          if (poolToken0) {
+            token0Amount = withdrawalsByToken[poolToken0] || null
+          }
+          if (poolToken1) {
+            token1Amount = withdrawalsByToken[poolToken1] || null
+          }
         }
       }
+      // FALLBACK: Calculate from outputs if ncActions not available
+      else {
+        Object.keys(outputsByToken).forEach((token) => {
+          const outputAmount = outputsByToken[token] / 100
+
+          if (outputAmount > 0) {
+            const symbol =
+              tokenSymbols.find((t) => t.uuid === token)?.symbol ||
+              (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
+            amounts_list.push(`${outputAmount.toFixed(2)} ${symbol}`)
+
+            if (pricesUSD && pricesUSD[token]) {
+              totalUSD += outputAmount * pricesUSD[token]
+            }
+          }
+        })
+
+        // For display, set token0/token1 amounts from actual outputs
+        if (token0Symbol && token1Symbol) {
+          // Use pool information if available for better matching
+          if (complexTx.poolsInvolved && complexTx.poolsInvolved.length > 0) {
+            const currentPoolKey = complexTx.poolsInvolved[0]
+            const [poolToken0, poolToken1] = currentPoolKey.split('/')
+
+            // Match outputs to pool tokens by UUID
+            Object.keys(outputsByToken).forEach((tokenUuid) => {
+              const outputAmount = outputsByToken[tokenUuid] / 100
+
+              if (tokenUuid === poolToken0) {
+                token0Amount = outputAmount
+              } else if (tokenUuid === poolToken1) {
+                token1Amount = outputAmount
+              }
+            })
+          } else {
+            // Fallback: use tokenSymbols array
+            Object.keys(outputsByToken).forEach((tokenUuid) => {
+              const outputAmount = outputsByToken[tokenUuid] / 100
+
+              const tokenInfo = tokenSymbols.find((t) => t.uuid === tokenUuid)
+              if (tokenInfo) {
+                if (tokenInfo.symbol === token0Symbol) {
+                  token0Amount = outputAmount
+                } else if (tokenInfo.symbol === token1Symbol) {
+                  token1Amount = outputAmount
+                }
+              }
+            })
+          }
+        }
+      }
+
+      amounts = amounts_list.join(' + ')
       side = 'Remove'
       totalValueUSD = totalUSD
-
     }
   }
 
@@ -576,47 +672,81 @@ export function transformToSimpleTransaction(
       token0Symbol = tokenSymbols[0].symbol
       token1Symbol = tokenSymbols[1].symbol
 
-      // Calculate amounts from inputs (tokens added during pool creation)
       const amounts_list: string[] = []
       let totalUSD = 0
 
-      // Process inputs to get the tokens added during pool creation
-      inputs.forEach((input) => {
-        const token = input.token || '00'
-        const amount = input.value / 100
+      // PREFERRED: Use ncActions if available (create_pool has deposit actions for initial liquidity)
+      if (complexTx.ncActions && complexTx.ncActions.length > 0) {
+        const depositsByToken: Record<string, number> = {}
 
-        if (amount > 0) {
-          const symbol =
-            tokenSymbols.find((t) => t.uuid === token)?.symbol ||
-            (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
-          amounts_list.push(`${amount.toFixed(2)} ${symbol}`)
+        complexTx.ncActions.forEach((action) => {
+          if (action.type === 'deposit') {
+            depositsByToken[action.token_uid] = (depositsByToken[action.token_uid] || 0) + action.amount / 100
+          }
+        })
 
-          if (pricesUSD && pricesUSD[token]) {
-            totalUSD += amount * pricesUSD[token]
+        Object.entries(depositsByToken).forEach(([token, amount]) => {
+          if (amount > 0) {
+            const symbol =
+              tokenSymbols.find((t) => t.uuid === token)?.symbol ||
+              (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
+            amounts_list.push(`${amount.toFixed(2)} ${symbol}`)
+
+            if (pricesUSD && pricesUSD[token]) {
+              totalUSD += amount * pricesUSD[token]
+            }
+          }
+        })
+
+        // Set token amounts for table display
+        const token0Uuid = tokenSymbols[0]?.uuid || ''
+        const token1Uuid = tokenSymbols[1]?.uuid || ''
+
+        if (token0Uuid) {
+          token0Amount = depositsByToken[token0Uuid] || null
+        }
+        if (token1Uuid) {
+          token1Amount = depositsByToken[token1Uuid] || null
+        }
+      }
+      // FALLBACK: Calculate amounts from inputs (tokens added during pool creation)
+      else {
+        inputs.forEach((input) => {
+          const token = input.token || '00'
+          const amount = input.value / 100
+
+          if (amount > 0) {
+            const symbol =
+              tokenSymbols.find((t) => t.uuid === token)?.symbol ||
+              (token === '00' ? 'HTR' : token.substring(0, 8).toUpperCase())
+            amounts_list.push(`${amount.toFixed(2)} ${symbol}`)
+
+            if (pricesUSD && pricesUSD[token]) {
+              totalUSD += amount * pricesUSD[token]
+            }
+          }
+        })
+
+        // Set token amounts for table display
+        const token0Uuid = tokenSymbols[0]?.uuid || ''
+        const token1Uuid = tokenSymbols[1]?.uuid || ''
+
+        if (token0Uuid) {
+          const token0Input = inputs.find((input) => (input.token || '00') === token0Uuid)
+          if (token0Input) {
+            token0Amount = token0Input.value / 100
           }
         }
-      })
+
+        if (token1Uuid) {
+          const token1Input = inputs.find((input) => (input.token || '00') === token1Uuid)
+          if (token1Input) {
+            token1Amount = token1Input.value / 100
+          }
+        }
+      }
 
       amounts = amounts_list.length > 0 ? amounts_list.join(' + ') : `Pool: ${token0Symbol}/${token1Symbol}`
-
-      // Set token amounts for table display
-      const token0Uuid = tokenSymbols[0]?.uuid || ''
-      const token1Uuid = tokenSymbols[1]?.uuid || ''
-
-      if (token0Uuid) {
-        const token0Input = inputs.find((input) => (input.token || '00') === token0Uuid)
-        if (token0Input) {
-          token0Amount = token0Input.value / 100
-        }
-      }
-
-      if (token1Uuid) {
-        const token1Input = inputs.find((input) => (input.token || '00') === token1Uuid)
-        if (token1Input) {
-          token1Amount = token1Input.value / 100
-        }
-      }
-
       side = 'Create'
       totalValueUSD = totalUSD
     } else {
@@ -646,7 +776,7 @@ export function transformToSimpleTransaction(
     totalValue: totalValueUSD > 0 ? formatUSD(totalValueUSD) : undefined,
     account: senderAddress,
     success: complexTx.success,
-    explorerUrl: `https://explorer.hathor.network/transaction/${complexTx.tx_id}`,
+    explorerUrl: getExplorerUrls().getTransactionUrl(complexTx.tx_id),
     isMultiHop,
   }
 }

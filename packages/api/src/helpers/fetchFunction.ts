@@ -58,7 +58,7 @@ async function fetchWithTimeout(url: string, timeout: number, headers?: HeadersI
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers
+      headers,
     })
     clearTimeout(timeoutId)
     return response
@@ -108,20 +108,26 @@ export async function fetchNodeData(endpoint: string, queryParams: string[]): Pr
     }
 
     try {
-      const localNodeUrl = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}${endpoint}?${queryParams.join('&')}`
-      if (localNodeUrl) {
+      // Try local node first if configured
+      if (process.env.NEXT_PUBLIC_LOCAL_NODE_URL) {
         try {
+          const localNodeUrl = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}${endpoint}?${queryParams.join('&')}`
           return await fetchWithRetry(localNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)
-        } catch {
-          const publicNodeUrl = `${process.env.NEXT_PUBLIC_PUBLIC_NODE_URL}${endpoint}?${queryParams.join('&')}`
-          if (publicNodeUrl) {
-            return await fetchWithRetry(publicNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)
-          }
-          throw new Error('Failed to fetch data from both local and public nodes')
+        } catch (error) {
+          // If local node fails, fall through to try public node
+          console.warn(`Local node failed for ${endpoint}, trying public node:`, error)
         }
       }
+
+      // Try public node as fallback or primary
+      if (process.env.NEXT_PUBLIC_PUBLIC_NODE_URL) {
+        const publicNodeUrl = `${process.env.NEXT_PUBLIC_PUBLIC_NODE_URL}${endpoint}?${queryParams.join('&')}`
+        return await fetchWithRetry(publicNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)
+      }
+
+      throw new Error('No node URL configured (NEXT_PUBLIC_LOCAL_NODE_URL or NEXT_PUBLIC_PUBLIC_NODE_URL)')
     } catch (error: any) {
-      throw new Error('Error fetching data to ' + endpoint + 'with params ' + queryParams + ': ' + error.message)
+      throw new Error('Error fetching data from ' + endpoint + ' with params ' + queryParams + ': ' + error.message)
     }
   })
 }
