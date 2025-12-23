@@ -162,8 +162,8 @@ export const queryProcedures = {
       const token0Symbol = parts.slice(0, -2).join('-') // Handle tokens with hyphens
       const token1Symbol = parts[parts.length - 2]
 
-      // Convert fee from identifier format to basis points (e.g., 3 -> 30)
-      const feeBasisPoints = parseInt(feeStr || '0') * 10
+      // Convert fee from identifier format to basis points (e.g., 3 -> 30, 0.8 -> 8)
+      const feeBasisPoints = Math.round(parseFloat(feeStr || '0') * 10)
 
       // Get all signed pools to find matching pool
       const batchResponse = await fetchFromPoolManager(['get_signed_pools()', 'get_all_token_prices_in_usd()'])
