@@ -2,32 +2,7 @@ import React from 'react'
 import { Typography, Chip } from '@dozer/ui'
 import { getCoreRowModel, getSortedRowModel, SortingState, useReactTable, ColumnDef } from '@tanstack/react-table'
 import { formatNumber } from '@dozer/format'
-
-// Helper function to get explorer URLs based on environment
-const getExplorerUrls = () => {
-  // Check if we have a local explorer URL configured
-  if (process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL) {
-    return {
-      baseUrl: process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL,
-      getTransactionUrl: (txHash: string) => `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/transaction/${txHash}`,
-      getAccountUrl: (address: string) => `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/address/${address}`,
-      getNanoContractUrl: (nanoContractId: string) =>
-        `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/nano_contract/detail/${nanoContractId}`,
-    }
-  }
-
-  // Fallback to default explorer URLs based on testnet/mainnet
-  // You can determine this based on your environment or add an env variable
-  const isTestnet = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_IS_TESTNET === 'true'
-  const baseUrl = isTestnet ? 'https://explorer.testnet.hathor.network' : 'https://explorer.hathor.network'
-
-  return {
-    baseUrl,
-    getTransactionUrl: (txHash: string) => `${baseUrl}/transaction/${txHash}`,
-    getAccountUrl: (address: string) => `${baseUrl}/address/${address}`,
-    getNanoContractUrl: (nanoContractId: string) => `${baseUrl}/nano_contract/detail/${nanoContractId}`,
-  }
-}
+import { getExplorerUrls } from '../utils/transactionUtils'
 
 // Simplified transaction data type for Uniswap-style table
 export interface SimpleTransaction {
@@ -241,7 +216,7 @@ const createColumns = (token0Header?: string, token1Header?: string): ColumnDef<
 ]
 
 export interface SimplePoolTransactionHistoryProps {
-  poolKey: string
+  poolKey?: string // Optional - kept for backward compatibility but currently unused
   transactions: SimpleTransaction[]
   loading?: boolean
   error?: string
@@ -251,7 +226,6 @@ export interface SimplePoolTransactionHistoryProps {
 }
 
 export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistoryProps> = ({
-  poolKey,
   transactions,
   loading = false,
   error,

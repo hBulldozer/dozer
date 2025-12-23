@@ -3,28 +3,7 @@ import { Typography, Chip } from '@dozer/ui'
 import { getCoreRowModel, useReactTable, ColumnDef } from '@tanstack/react-table'
 import { formatNumber } from '@dozer/format'
 import { TokenTradingTransaction, transformTokenTradingTransactions } from '../utils/tokenTradingUtils'
-
-// Helper function to get explorer URLs based on environment
-const getExplorerUrls = () => {
-  // Check if we have a local explorer URL configured
-  if (process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL) {
-    return {
-      baseUrl: process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL,
-      getTransactionUrl: (txHash: string) => `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/transaction/${txHash}`,
-      getAccountUrl: (address: string) => `${process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL}/address/${address}`,
-    }
-  }
-
-  // Fallback to default explorer URLs based on testnet/mainnet
-  const isTestnet = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_IS_TESTNET === 'true'
-  const baseUrl = isTestnet ? 'https://explorer.testnet.hathor.network' : 'https://explorer.hathor.network'
-
-  return {
-    baseUrl,
-    getTransactionUrl: (txHash: string) => `${baseUrl}/transaction/${txHash}`,
-    getAccountUrl: (address: string) => `${baseUrl}/address/${address}`,
-  }
-}
+import { getExplorerUrls } from '../utils/transactionUtils'
 
 // Helper function to truncate address (show only last digits)
 const truncateAddress = (address: string): string => {
