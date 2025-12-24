@@ -7,6 +7,7 @@ import { TokenCounter } from './TokenCounter'
 import { PaymentSection } from './PaymentSection'
 import { PriceIncrease } from './PriceIncrease'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { PRESALE_END_DATE } from '../../utils/launchDates'
 
 export const PresaleLanding: React.FC = () => {
   return (
@@ -81,7 +82,7 @@ export const PresaleLanding: React.FC = () => {
 
         <div className="w-full grid grid-cols-1 gap-16 mt-10">
           {/* Countdown Timer */}
-          <CountdownTimer />
+          <CountdownTimer targetDate={PRESALE_END_DATE} />
 
           {/* Token Counter */}
           <TokenCounter />

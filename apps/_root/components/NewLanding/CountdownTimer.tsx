@@ -10,7 +10,12 @@ type TimeLeft = {
   seconds: number
 }
 
-export const CountdownTimer: React.FC = () => {
+interface CountdownTimerProps {
+  targetDate: string
+  title?: string
+}
+
+export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, title = 'FINAL PHASE ENDS IN' }) => {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
@@ -19,7 +24,7 @@ export const CountdownTimer: React.FC = () => {
   })
 
   useEffect(() => {
-    const endDate = new Date('May 5, 2025 23:59:59').getTime()
+    const endDate = new Date(targetDate).getTime()
 
     const calculateTimeLeft = () => {
       const now = new Date().getTime()
@@ -46,7 +51,7 @@ export const CountdownTimer: React.FC = () => {
     const timer = setInterval(calculateTimeLeft, 1000)
 
     return () => clearInterval(timer)
-  }, [])
+  }, [targetDate])
 
   const timeUnits = [
     { label: 'DAYS', value: timeLeft.days },
@@ -56,15 +61,15 @@ export const CountdownTimer: React.FC = () => {
   ]
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center w-full max-w-full">
       <Typography
-        variant="h3"
+        variant="h1"
         weight={600}
-        className="mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600"
+        className="mb-4 text-center text-transparent text-white sm:mb-24 sm:-mt-36 "
       >
-        FINAL PHASE ENDS IN
+        {title}
       </Typography>
-      <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+      <div className="flex items-center justify-center w-full max-w-full gap-2 px-2 sm:gap-4 md:gap-6">
         {timeUnits.map((unit, index) => (
           <motion.div
             key={unit.label}
@@ -73,12 +78,12 @@ export const CountdownTimer: React.FC = () => {
             transition={{ delay: index * 0.1, duration: 0.5 }}
             className="flex flex-col items-center justify-center"
           >
-            <div className="flex items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-black bg-opacity-80 rounded-lg border border-yellow-500/30 shadow-xl shadow-yellow-500/20">
-              <Typography variant="h2" weight={700} className="text-yellow-500">
+            <div className="flex items-center justify-center w-16 h-16 bg-black border rounded-lg shadow-xl sm:w-20 sm:h-20 md:w-24 md:h-24 bg-opacity-80 border-yellow-500/30 shadow-yellow-500/20">
+              <Typography variant="h2" weight={700} className="text-2xl text-yellow-500 sm:text-3xl md:text-4xl">
                 {String(unit.value).padStart(2, '0')}
               </Typography>
             </div>
-            <Typography variant="xs" className="mt-2 text-neutral-400">
+            <Typography weight={600} variant="xs" className="mt-1 sm:mt-2 text-white text-[10px] sm:text-sm ">
               {unit.label}
             </Typography>
           </motion.div>

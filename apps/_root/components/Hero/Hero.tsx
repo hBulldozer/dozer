@@ -49,7 +49,7 @@ export const Hero: FC = () => {
   }, [isInView])
 
   return (
-    <section className="relative  mt-24 py-20 sm:py-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black">
+    <section className="relative pt-12 sm:pt-20 pb-20 sm:pb-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black">
       {/* <section className="mt-48 py-20 sm:py-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black"></section> */}
       <Container maxWidth="5xl" className="px-4 mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[auto_400px] justify-between gap-[100px]">
