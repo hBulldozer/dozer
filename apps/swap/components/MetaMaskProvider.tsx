@@ -9,10 +9,11 @@ interface MetaMaskProviderProps {
 
 export const MetaMaskProvider: FC<MetaMaskProviderProps> = ({ children }) => {
   // Get the current host for dapp metadata
-  const host = typeof window !== 'undefined' ? window.location.host : 'defaultHost'
+  const host = process.env.NEXT_PUBLIC_SITE_URL
 
   // Detect if user is on mobile device
-  const isMobile = typeof window !== 'undefined' && 
+  const isMobile =
+    typeof window !== 'undefined' &&
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
   // SDK configuration options
@@ -30,7 +31,7 @@ export const MetaMaskProvider: FC<MetaMaskProviderProps> = ({ children }) => {
         // Check if there's an active user gesture (e.g., recent click)
         const now = Date.now()
         const lastUserAction = (window as any).lastUserAction || 0
-        
+
         // Only open if user action was within last 5 seconds
         if (now - lastUserAction < 5000) {
           console.log('Opening MetaMask deep link:', link)

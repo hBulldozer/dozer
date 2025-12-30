@@ -54,37 +54,36 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Load token balances from Arbitrum
   const loadBalances = useCallback(async (tokenAddresses: string[]) => {
-    console.log('Loading balances - checking window.ethereum:', !!window.ethereum)
-    
     // Wait for ethereum provider to be available (browser extension might take time to inject)
     let ethereum = window.ethereum
     if (!ethereum) {
-      console.log('Waiting for ethereum provider to be injected...')
       await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
       ethereum = window.ethereum
       if (!ethereum) {
-        console.warn('window.ethereum not available after waiting')
         return {}
       }
     }
 
     try {
+      // Check if MetaMask is on the correct network
+      const currentChainId = await ethereum.request({ method: 'eth_chainId' })
+      const expectedChainId = config.ethereumConfig.chainIdHex
+
+      // If wrong network, return empty balances to avoid RPC errors
+      if (currentChainId !== expectedChainId) {
+        return {}
+      }
+
       const web3 = new Web3(ethereum)
-      console.log('Web3 instance created')
-      
+
       const accounts = await ethereum.request({ method: 'eth_accounts' })
-      console.log('Retrieved accounts:', accounts)
-      
+
       if (!accounts || accounts.length === 0) {
-        console.warn('No accounts available')
         return {}
       }
 
       const arbitrumAddress = accounts[0]
       const balances: Record<string, number> = {}
-
-      console.log('Loading balances for tokens:', tokenAddresses)
-      console.log('From account:', arbitrumAddress)
 
       // Pre-configured decimals for known tokens
       const knownTokenDecimals: Record<string, { decimals: number; symbol: string }> = {
@@ -106,16 +105,13 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           try {
             // Create token contract instance with error handling
             const tokenContract = new web3.eth.Contract(ERC20_ABI as any, address)
-            console.log(`Created contract instance for ${address}`)
 
             // Check that required methods exist before calling them
             // Get token balance first - this should work even if other methods fail
             try {
               if (typeof tokenContract.methods.balanceOf === 'function') {
                 rawBalance = await tokenContract.methods.balanceOf(arbitrumAddress).call()
-                console.log(`Raw balance for token ${address}: ${rawBalance}`)
               } else {
-                console.warn(`Token ${address} does not have balanceOf method`)
                 // Try direct RPC call as fallback
                 const data = web3.eth.abi.encodeFunctionCall(
                   {
@@ -132,10 +128,9 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 })
 
                 rawBalance = balance ? web3.utils.hexToNumberString(balance) : '0'
-                console.log(`Raw balance using RPC call: ${rawBalance}`)
               }
             } catch (balanceError) {
-              console.error(`Error getting balance for token ${address}:`, balanceError)
+              // Silently fail - token might not exist on this network
               rawBalance = '0'
             }
 
@@ -145,13 +140,10 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 const symbolResult = await tokenContract.methods.symbol().call()
                 if (symbolResult) {
                   symbol = String(symbolResult)
-                  console.log(`Symbol for token ${address}: ${symbol}`)
                 }
-              } else {
-                console.warn(`Token ${address} does not have symbol method`)
               }
             } catch (err) {
-              console.warn(`Could not get symbol for token ${address}:`, err)
+              // Silently fail - will use fallback
             }
 
             try {
@@ -159,16 +151,13 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 const decimalResult = await tokenContract.methods.decimals().call()
                 if (decimalResult) {
                   decimals = parseInt(String(decimalResult))
-                  console.log(`Decimals for token ${address}: ${decimals}`)
                 }
-              } else {
-                console.warn(`Token ${address} does not have decimals method`)
               }
             } catch (err) {
-              console.warn(`Could not get decimals for token ${address}:`, err)
+              // Silently fail - will use default 18
             }
           } catch (contractError) {
-            console.error(`Error creating contract for token ${address}:`, contractError)
+            // Silently fail - token contract doesn't exist
           }
 
           // Use known token info if contract methods failed
@@ -181,23 +170,18 @@ export const BridgeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
           }
 
-          console.log(`Using token info for ${address} (${symbol}): decimals=${decimals}`)
-
           // Convert raw balance to human-readable format based on decimals
           const divisor = Math.pow(10, decimals)
           balances[address] = parseFloat(String(rawBalance)) / divisor
-
-          console.log(`Converted balance for ${symbol}: ${balances[address]} (divided by 10^${decimals})`)
         } catch (error) {
-          console.error(`Error loading balance for token ${address}:`, error)
+          // Silently fail for individual token
           balances[address] = 0
         }
       }
 
-      console.log('Final balances:', balances)
       return balances
     } catch (error) {
-      console.error('Error loading balances:', error)
+      // Silently fail and return empty balances
       return {}
     }
   }, [])

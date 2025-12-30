@@ -98,21 +98,66 @@ export const Default: FC<DefaultProps> = ({
 
   const { walletType } = useAccount()
   const walletService = WalletConnectionService.getInstance()
+  const isLoggingOutRef = useRef(false)
 
   async function logout() {
-    // Clear balance first
-    setBalance([])
+    // Prevent multiple simultaneous logout calls
+    if (isLoggingOutRef.current) {
+      console.log('Logout already in progress, skipping...')
+      return
+    }
+
+    isLoggingOutRef.current = true
 
     try {
-      // Use unified wallet service to disconnect
-      await walletService.disconnectWallet()
+      // Clear balance first
+      setBalance([])
 
-      // For WalletConnect, also disconnect the session
+      // For WalletConnect, disconnect the session
       if (walletType === 'walletconnect' && accounts.length > 0) {
         await disconnect()
       }
+
+      // Clean up localStorage items that might trigger auto-reconnection
+      // This must be done BEFORE disconnectWallet to prevent SDK from trying to reconnect
+      try {
+        const localStorageKeys = Object.keys(localStorage)
+        localStorageKeys.forEach((key) => {
+          // Remove MetaMask SDK related keys
+          if (
+            key.startsWith('MMSDK') ||
+            key.startsWith('metamask') ||
+            key.includes('provider') ||
+            key === 'providerType'
+          ) {
+            try {
+              localStorage.removeItem(key)
+            } catch (e) {
+              console.warn(`Failed to remove localStorage key: ${key}`, e)
+            }
+          }
+        })
+      } catch (error) {
+        console.error('Error cleaning localStorage:', error)
+      }
+
+      // Use unified wallet service to disconnect (clears Zustand state)
+      // This also clears the account-storage in localStorage
+      await walletService.disconnectWallet()
+
+      console.log('Wallet disconnected and localStorage cleaned')
+
+      // Set a flag in sessionStorage to indicate we just disconnected
+      // This will trigger a page reload on the bridge page to reset SDK state
+      sessionStorage.setItem('metamask-just-disconnected', 'true')
+
+      // Dispatch a custom event to notify other components about the disconnect
+      window.dispatchEvent(new CustomEvent('walletDisconnected'))
+
+      isLoggingOutRef.current = false
     } catch (error) {
       console.error('Error during wallet disconnect:', error)
+      isLoggingOutRef.current = false
     }
   }
   // useDisconnect()
