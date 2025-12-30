@@ -84,16 +84,38 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   // This works for both WalletConnect and MetaMask Snap connections
   const hathorAddress = hathorAddressFromStore || ''
 
-  // Debug logging to help verify connection state
+
+  // Listen for wallet disconnect events and reload the page
   useEffect(() => {
-    console.log('Bridge Connection State:', {
-      walletType,
-      hathorAddress,
-      metaMaskConnected,
-      metaMaskAccount,
-      isSnapInstalled,
-    })
-  }, [walletType, hathorAddress, metaMaskConnected, metaMaskAccount, isSnapInstalled])
+    const handleWalletDisconnect = () => {
+      // Check if the flag was set
+      const justDisconnected = sessionStorage.getItem('metamask-just-disconnected')
+      if (justDisconnected === 'true') {
+        sessionStorage.removeItem('metamask-just-disconnected')
+        // Small delay to ensure storage operations complete
+        setTimeout(() => {
+          window.location.reload()
+        }, 100)
+      }
+    }
+
+    // Also check on mount in case user refreshed or navigated to this page after disconnect
+    const justDisconnected = sessionStorage.getItem('metamask-just-disconnected')
+    if (justDisconnected === 'true') {
+      sessionStorage.removeItem('metamask-just-disconnected')
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
+    }
+
+    // Listen for custom disconnect event
+    window.addEventListener('walletDisconnected', handleWalletDisconnect)
+
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('walletDisconnected', handleWalletDisconnect)
+    }
+  }, [])
 
   // Function to poll for EVM transaction confirmation
   const startEvmConfirmationPolling = async (txHash: string) => {
@@ -288,10 +310,10 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       })
       .filter((t): t is Token => t !== null)
 
-    // Merge lists, preferring API tokens if they exist (to get dynamic data?), 
+    // Merge lists, preferring API tokens if they exist (to get dynamic data?),
     // or properly handling duplicates by UUID
     const tokenMap = new Map<string, Token>()
-    
+
     // Add config tokens first
     configTokens.forEach((token) => {
       tokenMap.set(token.uuid, token)
@@ -509,7 +531,6 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       // If user connected via MetaMask Snap (for Hathor) but not connected to EVM network
       if (walletType === 'metamask-snap' && isSnapInstalled && !metaMaskConnected && sdk) {
         try {
-          console.log('Auto-connecting MetaMask EVM for Snap user...')
           await sdk.connect()
 
           // After connecting, check and switch to the correct network (Sepolia for testnet)
@@ -561,12 +582,11 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                 }
               }
             } catch (networkError: any) {
-              console.error('Error checking/switching network during auto-connect:', networkError)
+              // Silently fail - network switch is optional
             }
           }
         } catch (error) {
-          console.log('Auto-connect failed (user may have rejected):', error)
-          // Don't show error - this is an automatic attempt
+          // Auto-connect failed - user may have rejected, don't show error
         }
       }
     }
@@ -679,7 +699,6 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
     // Set a safety timeout to reset the processing state if nothing happens
     const safetyTimeout = setTimeout(() => {
       if (isMounted.current && isProcessing) {
-        console.log('Safety timeout triggered, resetting processing state')
         setIsProcessing(false)
       }
     }, 60000) // 1 minute
@@ -720,7 +739,6 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
                   error.message.toLowerCase().includes('reject') ||
                   error.message.toLowerCase().includes('cancel'))))
           ) {
-            console.log('Identified as a MetaMask rejection')
             throw new Error('Transaction cancelled: You rejected the request in MetaMask')
           }
 
@@ -772,9 +790,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
       }
 
       // If we get here, something unexpected happened (shouldn't reach here with current logic)
-      console.warn('Unexpected bridge result status:', result)
     } catch (error: any) {
-      console.error('Bridge operation failed:', error)
       clearTimeout(safetyTimeout)
 
       if (isMounted.current) {
@@ -797,7 +813,6 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
 
         if (isUserCancellation) {
           // For user cancellations, reset the entire bridge state to allow retry
-          console.log('User cancelled transaction, resetting bridge state')
           clearTransaction()
           setShowStepper(false)
           setTxStatus('idle')
@@ -842,13 +857,11 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
   }
 
   const handleMetaMaskConnect = (accounts: string[]) => {
-    console.log('MetaMask connected:', accounts[0])
-    // We don't need to do anything here as the SDK handles connection state
+    // SDK handles connection state
   }
 
   const handleMetaMaskDisconnect = () => {
-    console.log('MetaMask disconnected')
-    // We don't need to do anything here as the SDK handles connection state
+    // SDK handles connection state
   }
 
   return (
@@ -916,125 +929,121 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
               This works for both:
               1. Users who connected directly via MetaMask for bridge
               2. Users who connected via MetaMask Snap (for Hathor) - auto-connect will handle EVM connection
+              We also check !manuallyDisconnected to handle the case where user clicked disconnect
+              but the SDK hasn't updated its state yet
             */}
-            {metaMaskConnected ? (
-              <Button
-                fullWidth
-                size="lg"
-                color="blue"
-                onClick={handleBridge}
-                disabled={buttonValidation.isDisabled || isProcessing || (isBridgeActive && !isDismissed)}
-              >
-                {isProcessing || (isBridgeActive && !isDismissed)
-                  ? txStatus === 'processing'
-                    ? 'Processing...'
-                    : txStatus === 'approval'
-                    ? 'Waiting for Approval...'
-                    : txStatus === 'confirming'
-                    ? 'Confirming Transaction...'
-                    : steps.every((step) => step.status === 'completed')
-                    ? 'Bridge Complete'
-                    : 'Bridge in Progress...'
-                  : buttonValidation.message}
-              </Button>
-            ) : walletType === 'metamask-snap' && isSnapInstalled ? (
-              // User has MetaMask Snap but EVM not connected - show loading/connect state
-              <Button
-                fullWidth
-                size="lg"
-                color="blue"
-                onClick={async () => {
-                  // Track user action for deep link handling
-                  if (typeof window !== 'undefined') {
-                    ;(window as any).lastUserAction = Date.now()
-                  }
+            {(() => {
+              const hasHathorWallet = walletType !== null // User has connected a Hathor wallet (either Snap or WalletConnect)
 
-                  if (sdk) {
-                    try {
-                      console.log('Manually connecting MetaMask to EVM network...')
-                      const accounts = await sdk.connect()
-                      console.log('Connected to EVM accounts:', accounts)
+              if (metaMaskConnected) {
+                return (
+                  <Button
+                    fullWidth
+                    size="lg"
+                    color="blue"
+                    onClick={handleBridge}
+                    disabled={buttonValidation.isDisabled || isProcessing || (isBridgeActive && !isDismissed)}
+                  >
+                    {isProcessing || (isBridgeActive && !isDismissed)
+                      ? txStatus === 'processing'
+                        ? 'Processing...'
+                        : txStatus === 'approval'
+                        ? 'Waiting for Approval...'
+                        : txStatus === 'confirming'
+                        ? 'Confirming Transaction...'
+                        : steps.every((step) => step.status === 'completed')
+                        ? 'Bridge Complete'
+                        : 'Bridge in Progress...'
+                      : buttonValidation.message}
+                  </Button>
+                )
+              } else if ((hasHathorWallet || walletType === 'metamask-snap') && isSnapInstalled && !metaMaskConnected) {
+                return (
+                  // User has MetaMask Snap but EVM not connected - show loading/connect state
+                  <Button
+                    fullWidth
+                    size="lg"
+                    color="blue"
+                    onClick={async () => {
+                      // Track user action for deep link handling
+                      if (typeof window !== 'undefined') {
+                        ;(window as any).lastUserAction = Date.now()
+                      }
 
-                      // After connecting, check and switch to the correct network
-                      if (window.ethereum && accounts && accounts.length > 0) {
+                      if (sdk) {
                         try {
-                          const chainId = await window.ethereum.request({ method: 'eth_chainId' })
-                          const networkId = parseInt(chainId, 16)
+                          const accounts = await sdk.connect()
 
-                          // Expected chain ID from bridge config
-                          const expectedChainId = bridgeConfig.ethereumConfig.networkId
-                          const expectedChainIdHex = bridgeConfig.ethereumConfig.chainIdHex
-
-                          if (networkId !== expectedChainId) {
-                            console.log(
-                              `Wrong network detected. Switching from ${networkId} to ${expectedChainId} (${bridgeConfig.ethereumConfig.name})`
-                            )
-
+                          // After connecting, check and switch to the correct network
+                          if (window.ethereum && accounts && accounts.length > 0) {
                             try {
-                              await window.ethereum.request({
-                                method: 'wallet_switchEthereumChain',
-                                params: [{ chainId: expectedChainIdHex }],
-                              })
-                              console.log(`Successfully switched to ${bridgeConfig.ethereumConfig.name}`)
-                            } catch (switchError: any) {
-                              if (switchError.code === 4902) {
-                                const errorMsg = `Please add the ${bridgeConfig.ethereumConfig.name} network to your MetaMask`
-                                setErrorMessage(errorMsg)
-                                createErrorToast(errorMsg, false)
-                                return
-                              } else if (switchError.code === 4001) {
-                                const errorMsg = `Please switch to ${bridgeConfig.ethereumConfig.name} network to use the bridge`
-                                setErrorMessage(errorMsg)
-                                return
+                              const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+                              const networkId = parseInt(chainId, 16)
+
+                              // Expected chain ID from bridge config
+                              const expectedChainId = bridgeConfig.ethereumConfig.networkId
+                              const expectedChainIdHex = bridgeConfig.ethereumConfig.chainIdHex
+
+                              if (networkId !== expectedChainId) {
+                                console.log(
+                                  `Wrong network detected. Switching from ${networkId} to ${expectedChainId} (${bridgeConfig.ethereumConfig.name})`
+                                )
+
+                                try {
+                                  await window.ethereum.request({
+                                    method: 'wallet_switchEthereumChain',
+                                    params: [{ chainId: expectedChainIdHex }],
+                                  })
+                                  console.log(`Successfully switched to ${bridgeConfig.ethereumConfig.name}`)
+                                } catch (switchError: any) {
+                                  if (switchError.code === 4902) {
+                                    const errorMsg = `Please add the ${bridgeConfig.ethereumConfig.name} network to your MetaMask`
+                                    setErrorMessage(errorMsg)
+                                    createErrorToast(errorMsg, false)
+                                    return
+                                  } else if (switchError.code === 4001) {
+                                    const errorMsg = `Please switch to ${bridgeConfig.ethereumConfig.name} network to use the bridge`
+                                    setErrorMessage(errorMsg)
+                                    return
+                                  }
+                                }
                               }
+                            } catch (networkError: any) {
+                              console.error('Error checking/switching network:', networkError)
                             }
                           }
-                        } catch (networkError: any) {
-                          console.error('Error checking/switching network:', networkError)
+                        } catch (error: any) {
+                          console.error('Failed to connect MetaMask EVM:', error)
+                          const errorMsg = error?.message || `Failed to connect to ${bridgeConfig.ethereumConfig.name}`
+                          setErrorMessage(errorMsg)
+                          createErrorToast(errorMsg, false)
                         }
+                      } else {
+                        const msg = 'MetaMask SDK not initialized. Please refresh the page.'
+                        setErrorMessage(msg)
+                        createErrorToast(msg, false)
                       }
-
-                      if (accounts && accounts.length > 0) {
-                        createSuccessToast({
-                          type: 'approval',
-                          summary: {
-                            pending: '',
-                            completed: `Connected to ${bridgeConfig.ethereumConfig.name}`,
-                            failed: '',
-                          },
-                          txHash: accounts[0],
-                          groupTimestamp: Date.now(),
-                          timestamp: Date.now(),
-                        })
-                      }
-                    } catch (error: any) {
-                      console.error('Failed to connect MetaMask EVM:', error)
-                      const errorMsg = error?.message || `Failed to connect to ${bridgeConfig.ethereumConfig.name}`
-                      setErrorMessage(errorMsg)
-                      createErrorToast(errorMsg, false)
-                    }
-                  } else {
-                    const msg = 'MetaMask SDK not initialized. Please refresh the page.'
-                    setErrorMessage(msg)
-                    createErrorToast(msg, false)
-                  }
-                }}
-                disabled={false}
-              >
-                Connect MetaMask to {bridgeConfig.ethereumConfig.name}
-              </Button>
-            ) : (
-              // No MetaMask connection at all - show MetaMask Connect button
-              <MetaMaskConnect
-                onConnect={handleMetaMaskConnect}
-                onDisconnect={handleMetaMaskDisconnect}
-                buttonProps={{
-                  fullWidth: true,
-                  size: 'lg',
-                }}
-                hideText={false}
-              />
-            )}
+                    }}
+                    disabled={false}
+                  >
+                    Connect MetaMask to {bridgeConfig.ethereumConfig.name}
+                  </Button>
+                )
+              } else {
+                return (
+                  // No MetaMask connection at all - show MetaMask Connect button
+                  <MetaMaskConnect
+                    onConnect={handleMetaMaskConnect}
+                    onDisconnect={handleMetaMaskDisconnect}
+                    buttonProps={{
+                      fullWidth: true,
+                      size: 'lg',
+                    }}
+                    hideText={false}
+                  />
+                )
+              }
+            })()}
 
             {/* Add a cancel button when processing */}
             {isProcessing && (

@@ -51,7 +51,9 @@ export const MetaMaskConnect: FC<MetaMaskConnectProps> = ({
           const expectedChainIdHex = bridgeConfig.ethereumConfig.chainIdHex
 
           if (networkId !== expectedChainId) {
-            console.log(`Wrong network detected. Switching from ${networkId} to ${expectedChainId} (${bridgeConfig.ethereumConfig.name})`)
+            console.log(
+              `Wrong network detected. Switching from ${networkId} to ${expectedChainId} (${bridgeConfig.ethereumConfig.name})`
+            )
 
             try {
               // Try to switch to the correct network
@@ -89,19 +91,6 @@ export const MetaMaskConnect: FC<MetaMaskConnectProps> = ({
       if (accounts && accounts.length > 0 && onConnect) {
         onConnect(accounts)
       }
-
-      // Show success toast
-      createSuccessToast({
-        type: 'approval',
-        summary: {
-          pending: 'Connecting to MetaMask',
-          completed: `Connected to ${bridgeConfig.ethereumConfig.name}`,
-          failed: 'Failed to connect to MetaMask',
-        },
-        txHash: accounts ? accounts[0] : '',
-        groupTimestamp: Date.now(),
-        timestamp: Date.now(),
-      })
     } catch (err: any) {
       console.warn(`Failed to connect to MetaMask: `, err)
       const errorMsg = err.message || 'Failed to connect to MetaMask'
@@ -155,7 +144,9 @@ export const MetaMaskConnect: FC<MetaMaskConnectProps> = ({
           <div className="w-2 h-2 mr-2 bg-green-400 rounded-full"></div>
           <span className="text-xs text-green-300 font-medium truncate max-w-[100px]">{formatAddress(account)}</span>
         </button>
-        {!hideText && <span className="mt-1 text-xs text-gray-500">Connected to {bridgeConfig.ethereumConfig.name}</span>}
+        {!hideText && (
+          <span className="mt-1 text-xs text-gray-500">Connected to {bridgeConfig.ethereumConfig.name}</span>
+        )}
       </div>
     )
   }
@@ -170,7 +161,9 @@ export const MetaMaskConnect: FC<MetaMaskConnectProps> = ({
         <span>{connecting ? 'Connecting...' : 'Connect MetaMask'}</span>
       </Button>
       {!hideText && (
-        <p className="text-xs text-center text-gray-400">Connect your {bridgeConfig.ethereumConfig.name} wallet to start bridging tokens</p>
+        <p className="text-xs text-center text-gray-400">
+          Connect your {bridgeConfig.ethereumConfig.name} wallet to start bridging tokens
+        </p>
       )}
     </div>
   )
