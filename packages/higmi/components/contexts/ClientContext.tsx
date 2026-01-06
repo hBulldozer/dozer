@@ -61,8 +61,10 @@ export const openHathorWalletDeepLink = (wcUri: string): boolean => {
     const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
     // TODO: Uncomment when final mobile wallet version is released
     // window.open(deepLink, '_self')
+    // return true
     console.log('Deeplink would open:', deepLink)
-    return true
+    // Return false while deeplink is disabled so QR modal shows as fallback
+    return false
   } catch (error) {
     console.warn('Failed to open Hathor wallet deeplink:', error)
     return false
