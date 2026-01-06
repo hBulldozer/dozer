@@ -163,6 +163,11 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
           //     .flat() as string[]
           //   web3Modal.openModal({ uri, standaloneChains })
           // }
+
+          const standaloneChains = Object.values(requiredNamespaces)
+            .map((namespace) => namespace.chains)
+            .flat() as string[]
+          web3Modal.openModal({ uri, standaloneChains })
         }
 
         const session = await approval()
