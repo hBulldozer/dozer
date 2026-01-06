@@ -173,7 +173,14 @@ const OasisProgram = () => {
 
     try {
       // Send the transaction first - user will confirm in wallet
-      await oasisObj.user_withdraw(hathorRpc, address, selectedOasisForRemove.id, removeAmount, removeAmountHtr, selectedNetwork)
+      await oasisObj.user_withdraw(
+        hathorRpc,
+        address,
+        selectedOasisForRemove.id,
+        removeAmount,
+        removeAmountHtr,
+        selectedNetwork
+      )
     } catch (error) {
       console.error('Error removing from oasis:', error)
       createErrorToast(getErrorMessage(error), true)
@@ -186,7 +193,13 @@ const OasisProgram = () => {
 
     try {
       // Send the transaction first - user will confirm in wallet
-      await oasisObj.user_withdraw_bonus(hathorRpc, address, selectedOasisForRemoveBonus.id, removeAmount, selectedNetwork)
+      await oasisObj.user_withdraw_bonus(
+        hathorRpc,
+        address,
+        selectedOasisForRemoveBonus.id,
+        removeAmount,
+        selectedNetwork
+      )
     } catch (error) {
       console.error('Error removing bonus:', error)
       createErrorToast(getErrorMessage(error), true)
@@ -1059,8 +1072,7 @@ const OasisProgram = () => {
                                         <div className="flex flex-col justify-between gap-2">
                                           <Button
                                             size="md"
-                                            // disabled={isRpcRequestPending || !prices || !prices['00']}
-                                            disabled
+                                            disabled={isRpcRequestPending || !prices || !prices['00']}
                                             fullWidth
                                             onClick={() => setAddModalOpen(true)}
                                           >
