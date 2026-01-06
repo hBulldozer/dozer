@@ -8,6 +8,8 @@ import { getSdkError } from '@walletconnect/utils'
 import config from '../../config/bridge'
 import { getRequiredNamespaces } from './namespaces'
 
+export const HATHOR_WALLET_DEEP_LINK_SCHEME = 'hathorwallet'
+
 export const DEFAULT_APP_METADATA = {
   name: 'Dozer App',
   description: 'Dozer Finance',
@@ -38,6 +40,13 @@ interface IContext {
  */
 export const ClientContext = createContext<IContext>({} as IContext)
 
+export const openHathorWalletDeepLink = (wcUri: string) => {
+  if (typeof window === 'undefined') return
+
+  const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
+  window.open(deepLink, '_self')
+}
+
 /**
  * Web3Modal Config
  */
@@ -52,14 +61,14 @@ const web3Modal = new Web3Modal({
     '--w3m-accent-color': '#eab308',
   },
   enableExplorer: false,
-  // mobileWallets: [
-  //   {
-  //     id: 'hathor-wallet',
-  //     name: 'HathorWallet',
-  //     links: { universal: 'https://apps.apple.com/us/app/hathor-wallet/id1465041963' },
-  //   },
-  // ],
-  // walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
+  mobileWallets: [
+    {
+      id: 'hathor-wallet',
+      name: 'HathorWallet',
+      links: { universal: 'hathorwallet://wc' },
+    },
+  ],
+  walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
 })
 
 /**
@@ -127,6 +136,9 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
             .flat() as string[]
 
           web3Modal.openModal({ uri, standaloneChains })
+
+          // Open Hathor Wallet via deep link for mobile users
+          openHathorWalletDeepLink(uri)
         }
 
         const session = await approval()
