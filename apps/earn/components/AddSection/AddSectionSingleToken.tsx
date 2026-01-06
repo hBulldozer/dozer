@@ -87,6 +87,12 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
     return 'text-red-400'
   }, [priceImpactSeverity])
 
+  // Check if the resulting LP position would be zero (amount too small)
+  const isPositionZero = useMemo(() => {
+    if (!quoteData) return false
+    return quoteData.token_a_used === 0 && quoteData.token_b_used === 0
+  }, [quoteData])
+
   const handleAddLiquidityClick = useCallback(() => {
     if (!quoteData) return
 
@@ -353,11 +359,17 @@ export const AddSectionSingleToken: FC<AddSectionSingleTokenProps> = ({
                               <Button
                                 size="lg"
                                 className="w-full"
-                                disabled={!quoteData || parseFloat(input) <= 0}
+                                disabled={!quoteData || parseFloat(input) <= 0 || isPositionZero}
                                 onClick={handleAddLiquidityClick}
                                 color={quoteData && quoteData.price_impact >= 15 ? 'red' : undefined}
                               >
-                                {quoteData && parseFloat(input) > 0 ? (quoteData.price_impact >= 15 ? `Price Impact Too High (${quoteData.price_impact.toFixed(2)}%)` : 'Add Liquidity') : 'Enter an amount'}
+                                {quoteData && parseFloat(input) > 0
+                                  ? (isPositionZero
+                                    ? 'Amount too small'
+                                    : (quoteData.price_impact >= 15
+                                      ? `Price Impact Too High (${quoteData.price_impact.toFixed(2)}%)`
+                                      : 'Add Liquidity'))
+                                  : 'Enter an amount'}
                               </Button>
                           </Checker.Amounts>
                         </Checker.Connected>

@@ -92,7 +92,7 @@ export const AddSectionCombined: FC<AddSectionCombinedProps> = ({ pool, prices }
 
   return (
     <div className="space-y-0">
-      {/* <ModeToggle /> */}
+      <ModeToggle />
       <AddSectionLegacy pool={pool} prices={prices} />
     </div>
   )

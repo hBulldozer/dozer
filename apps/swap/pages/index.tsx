@@ -78,7 +78,7 @@ const Home = () => {
       <Layout>
         <div className="flex flex-col md:flex-row justify-center gap-4 max-w-[800px] mx-auto">
           <div className="flex flex-col gap-4" style={{ maxWidth: '400px' }}>
-            {/* <SwapWidget token0_idx={'2'} token1_idx={'0'} /> */}
+            <SwapWidget token0_idx={'2'} token1_idx={'0'} />
             <Link.Internal href="/bridge">
               <div className="flex items-center justify-between gap-3 p-4 transition-colors border rounded-lg cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800">
                 <div className="flex items-center gap-4">

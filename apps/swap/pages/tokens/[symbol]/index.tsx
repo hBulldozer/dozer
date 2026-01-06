@@ -210,7 +210,7 @@ const Token = () => {
             />
           </div>
           <div className="flex-col order-2 hidden gap-4 lg:flex">
-            {/* <AppearOnMount>
+            <AppearOnMount>
               {primaryPoolForSwap ? (
                 <SwapWidget
                   token0_idx={
@@ -231,7 +231,7 @@ const Token = () => {
                   <Typography className="text-stone-400">No pools available for swapping</Typography>
                 </div>
               )}
-            </AppearOnMount> */}
+            </AppearOnMount>
             <AvailablePoolsWidget pools={tokenData.pools} currentToken={tokenData} />
           </div>
         </div>
