@@ -40,11 +40,31 @@ interface IContext {
  */
 export const ClientContext = createContext<IContext>({} as IContext)
 
-export const openHathorWalletDeepLink = (wcUri: string) => {
-  if (typeof window === 'undefined') return
+/**
+ * Detects if the user is on a mobile device
+ */
+export const isMobileDevice = (): boolean => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
 
-  const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
-  window.open(deepLink, '_self')
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
+  // Check for mobile user agents
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())
+}
+
+export const openHathorWalletDeepLink = (wcUri: string): boolean => {
+  if (typeof window === 'undefined') return false
+
+  // Only open deeplink on mobile devices
+  if (!isMobileDevice()) return false
+
+  try {
+    const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
+    window.open(deepLink, '_self')
+    return true
+  } catch (error) {
+    console.warn('Failed to open Hathor wallet deeplink:', error)
+    return false
+  }
 }
 
 /**
@@ -130,15 +150,19 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
 
         // Open QRCode modal if a URI was returned (i.e. we're not connecting an existing pairing).
         if (uri) {
-          // Create a flat array of all requested chains across namespaces.
-          const standaloneChains = Object.values(requiredNamespaces)
-            .map((namespace) => namespace.chains)
-            .flat() as string[]
+          // On mobile, open the deeplink directly without showing the QR modal
+          // (QR codes aren't useful on mobile, and showing both causes double opening)
+          const deeplinkOpened = openHathorWalletDeepLink(uri)
 
-          web3Modal.openModal({ uri, standaloneChains })
+          // Only show QR modal on desktop (when deeplink wasn't opened)
+          if (!deeplinkOpened) {
+            // Create a flat array of all requested chains across namespaces.
+            const standaloneChains = Object.values(requiredNamespaces)
+              .map((namespace) => namespace.chains)
+              .flat() as string[]
 
-          // Open Hathor Wallet via deep link for mobile users
-          openHathorWalletDeepLink(uri)
+            web3Modal.openModal({ uri, standaloneChains })
+          }
         }
 
         const session = await approval()

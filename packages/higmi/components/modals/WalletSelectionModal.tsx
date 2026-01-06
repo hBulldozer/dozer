@@ -5,7 +5,7 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { useMetaMaskContext, useRequest, useInvokeSnap } from '@hathor/snap-utils'
 import Image from 'next/image'
 import { WalletIcon } from '@dozer/ui/icons'
-import { useWalletConnectClient } from '../contexts'
+import { useWalletConnectClient, isMobileDevice } from '../contexts'
 import { WalletConnectionService } from '../../services/walletConnectionService'
 import { useAccount } from '@dozer/zustand'
 
@@ -36,6 +36,12 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
 
   // Separate state to control button disable - enforces a minimum 10-second disable period
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
+
+  // Detect if user is on mobile device
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    setIsMobile(isMobileDevice())
+  }, [])
 
   const resetState = useCallback(() => {
     setIsConnecting(false)
@@ -259,11 +265,10 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
               </div>
             </button>
 
-            {/* MetaMask Snap Option */}
+            {/* MetaMask Snap Option - Desktop only */}
             <button
               onClick={handleMetaMaskSelection}
-              disabled={isButtonDisabled || isConnecting}
-              // disabled
+              disabled={isButtonDisabled || isConnecting || isMobile}
               className="w-full p-4 transition-all duration-200 border bg-gradient-to-r rounded-xl from-orange-200/10 via-orange-400/10 to-orange-300/10 border-orange-300/20 hover:border-orange-300/40 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-center gap-4">
@@ -281,17 +286,17 @@ export const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
                     MetaMask Snap
                   </Typography>
                   <Typography variant="sm" className="text-gray-400 group-hover:text-gray-300">
-                    Connect using MetaMask with Hathor network snap
+                    {isMobile ? 'Desktop browser only' : 'Connect using MetaMask with Hathor network snap'}
                   </Typography>
                 </div>
                 <div className="flex-shrink-0">
-                  <div className={`w-2 h-2 rounded-full ${provider ? 'bg-orange-400' : 'bg-gray-500'}`} />
+                  <div className={`w-2 h-2 rounded-full ${provider && !isMobile ? 'bg-orange-400' : 'bg-gray-500'}`} />
                 </div>
               </div>
             </button>
           </div>
 
-          {!provider && (
+          {!provider && !isMobile && (
             <div className="flex items-center gap-2 p-3 border rounded-lg bg-yellow-900/20 border-yellow-500/30">
               <ExclamationTriangleIcon className="flex-shrink-0 w-4 h-4 text-yellow-400" />
               <Typography variant="xs" className="text-yellow-300">

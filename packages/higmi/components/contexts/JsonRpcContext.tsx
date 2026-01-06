@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useState, useMemo, useEffect } from 'react'
-import { HATHOR_WALLET_DEEP_LINK_SCHEME, useWalletConnectClient } from './ClientContext'
+import { HATHOR_WALLET_DEEP_LINK_SCHEME, useWalletConnectClient, isMobileDevice } from './ClientContext'
 import { useAccount } from '@dozer/zustand'
 import {
   CreateTokenResponse,
@@ -16,12 +16,25 @@ import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
 
-export const openHathorWalletForRequest = (sessionTopic: string) => {
-  if (typeof window === 'undefined') return
+/**
+ * Opens Hathor wallet via deeplink for an existing session (used during RPC requests)
+ * Only opens on mobile devices to bring the wallet to foreground
+ */
+export const openHathorWalletForRequest = (sessionTopic: string): boolean => {
+  if (typeof window === 'undefined') return false
 
-  const wcUri = `wc:${sessionTopic}@2`
-  const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
-  window.open(deepLink, '_self')
+  // Only open deeplink on mobile devices
+  if (!isMobileDevice()) return false
+
+  try {
+    const wcUri = `wc:${sessionTopic}@2`
+    const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
+    window.open(deepLink, '_self')
+    return true
+  } catch (error) {
+    console.warn('Failed to open Hathor wallet deeplink for request:', error)
+    return false
+  }
 }
 
 /**
