@@ -18,8 +18,7 @@ import config from '../../config/bridge'
 
 /**
  * Opens Hathor wallet via deeplink for an existing session (used during RPC requests)
- * Only opens on mobile devices to bring the wallet to foreground.
- * Uses anchor click method to avoid browser errors for unsupported protocols.
+ * Only opens on mobile devices to bring the wallet to foreground
  */
 export const openHathorWalletForRequest = (sessionTopic: string): boolean => {
   if (typeof window === 'undefined') return false
@@ -30,16 +29,9 @@ export const openHathorWalletForRequest = (sessionTopic: string): boolean => {
   try {
     const wcUri = `wc:${sessionTopic}@2`
     const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
-
-    // Use anchor click method - tends to fail more gracefully than window.open
-    // If the wallet isn't installed, this will silently fail without showing a browser error
-    const link = document.createElement('a')
-    link.href = deepLink
-    link.style.display = 'none'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
+    // TODO: Uncomment when final mobile wallet version is released
+    // window.open(deepLink, '_self')
+    console.log('Deeplink for request would open:', deepLink)
     return true
   } catch (error) {
     console.warn('Failed to open Hathor wallet deeplink for request:', error)
