@@ -8,11 +8,21 @@ const nextConfig = {
   experimental: {
     swcPlugins: [['next-superjson-plugin', {}]],
   },
+  output: 'standalone',
   images: {
+    minimumCacheTTL: 86400, // 24 hours
+    deviceSizes: [32, 48, 64, 96, 128, 256], // Adjust based on your needs
+    formats: ['image/webp', 'image/avif'],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'supabase.dozer.finance',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'assets.coingecko.com',
         port: '',
         pathname: '/**',
       },
@@ -37,6 +47,12 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'utfs.io',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '5igvbvpmvvolmdef.public.blob.vercel-storage.com',
         port: '',
         pathname: '/**',
       },

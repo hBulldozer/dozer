@@ -118,6 +118,10 @@ export const SlippageToleranceDisclosure: FC = () => {
                           placeholder="0.5"
                           onUserInput={(val) => onChange(val)}
                           className={classNames(DEFAULT_INPUT_UNSTYLED, '')}
+                          autoComplete="off"
+                          data-lpignore="true"
+                          type="search"
+                          name="slippage-tolerance-search"
                         />
                         <Typography variant="xs" weight={500} className="text-stone-400">
                           %

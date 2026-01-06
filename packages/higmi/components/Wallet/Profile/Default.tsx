@@ -9,12 +9,14 @@ import {
   JazzIcon,
   NotificationData,
   Typography,
+  Loader,
 } from '@dozer/ui'
 import {
   CreditCardIcon,
   Square2StackIcon,
   ArrowTopRightOnSquareIcon,
   ArrowRightOnRectangleIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronRightIcon } from '@heroicons/react/24/solid'
 import { Dispatch, FC, SetStateAction, useCallback, useEffect, useRef, useState } from 'react'
@@ -28,12 +30,16 @@ import { client, toToken } from '@dozer/api'
 import { Token } from '@dozer/currency'
 import { useInViewport } from '@dozer/hooks'
 import { useJsonRpc, useWalletConnectClient } from '../../contexts'
+import { WalletConnectionService } from '../../../services/walletConnectionService'
 
 interface DefaultProps {
   chainId: ChainId
   address: string
   setView: Dispatch<SetStateAction<ProfileView>>
   api_client: typeof client
+  refreshBalance: () => Promise<void>
+  isRefreshing: boolean
+  evmTokensUsdValue?: number
 }
 
 interface BalanceProps {
@@ -42,7 +48,15 @@ interface BalanceProps {
   token: Token | undefined
 }
 
-export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_client }) => {
+export const Default: FC<DefaultProps> = ({
+  chainId,
+  address,
+  setView,
+  api_client,
+  refreshBalance,
+  isRefreshing,
+  evmTokensUsdValue = 0,
+}) => {
   // const setAddress = useAccount((state) => state.setAddress)
   const setBalance = useAccount((state) => state.setBalance)
   const { data: prices } = api_client.getPrices.all.useQuery()
@@ -82,10 +96,69 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
   //   [_balance, chainId]
   // )
 
-  function logout() {
-    // setAddress('')
-    setBalance([])
-    if (accounts.length > 0) disconnect()
+  const { walletType } = useAccount()
+  const walletService = WalletConnectionService.getInstance()
+  const isLoggingOutRef = useRef(false)
+
+  async function logout() {
+    // Prevent multiple simultaneous logout calls
+    if (isLoggingOutRef.current) {
+      console.log('Logout already in progress, skipping...')
+      return
+    }
+
+    isLoggingOutRef.current = true
+
+    try {
+      // Clear balance first
+      setBalance([])
+
+      // For WalletConnect, disconnect the session
+      if (walletType === 'walletconnect' && accounts.length > 0) {
+        await disconnect()
+      }
+
+      // Clean up localStorage items that might trigger auto-reconnection
+      // This must be done BEFORE disconnectWallet to prevent SDK from trying to reconnect
+      try {
+        const localStorageKeys = Object.keys(localStorage)
+        localStorageKeys.forEach((key) => {
+          // Remove MetaMask SDK related keys
+          if (
+            key.startsWith('MMSDK') ||
+            key.startsWith('metamask') ||
+            key.includes('provider') ||
+            key === 'providerType'
+          ) {
+            try {
+              localStorage.removeItem(key)
+            } catch (e) {
+              console.warn(`Failed to remove localStorage key: ${key}`, e)
+            }
+          }
+        })
+      } catch (error) {
+        console.error('Error cleaning localStorage:', error)
+      }
+
+      // Use unified wallet service to disconnect (clears Zustand state)
+      // This also clears the account-storage in localStorage
+      await walletService.disconnectWallet()
+
+      console.log('Wallet disconnected and localStorage cleaned')
+
+      // Set a flag in sessionStorage to indicate we just disconnected
+      // This will trigger a page reload on the bridge page to reset SDK state
+      sessionStorage.setItem('metamask-just-disconnected', 'true')
+
+      // Dispatch a custom event to notify other components about the disconnect
+      window.dispatchEvent(new CustomEvent('walletDisconnected'))
+
+      isLoggingOutRef.current = false
+    } catch (error) {
+      console.error('Error during wallet disconnect:', error)
+      isLoggingOutRef.current = false
+    }
   }
   // useDisconnect()
 
@@ -98,7 +171,18 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
   const { isLoading, error, data } = api_client.getPrices.htr.useQuery()
   const priceHTR = data ? data : 0.01
 
-  const { data: faucetAvailable } = api_client.getFaucet.checkFaucet.useQuery({ address: address })
+  const { data: faucetAvailable, refetch: refetchFaucetStatus } = api_client.getFaucet.checkFaucet.useQuery(
+    { address: address },
+    {
+      enabled: Boolean(address),
+      staleTime: 0, // Don't cache this data - always fetch fresh status
+      refetchOnMount: true, // Always refetch on component mount
+      refetchOnWindowFocus: true, // Refetch when window gains focus
+    }
+  )
+
+  // Local state to track if the faucet was used in this session
+  const [faucetUsed, setFaucetUsed] = useState(false)
 
   const { addNotification } = useAccount()
   const [isLoadingFaucet, setIsLoadingFaucet] = useState(false)
@@ -110,7 +194,7 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
           type: 'swap',
           chainId: network,
           summary: {
-            pending: `Sending HTR to you...`,
+            pending: `Sending HTR to you`,
             completed: `Success! Sent HTR to you.`,
             failed: 'Token creation failed',
             info: `Sending HTR to you.`,
@@ -127,6 +211,15 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
         addNotification(notificationGroup)
         createSuccessToast(notificationData)
         setIsLoadingFaucet(false)
+
+        // Mark the faucet as used in this session
+        setFaucetUsed(true)
+
+        // Refetch faucet status to update backend state
+        refetchFaucetStatus()
+
+        // After successful faucet operation, refresh balance
+        refreshBalance()
       } else {
         setIsLoadingFaucet(false)
         createErrorToast(data.message, true)
@@ -142,6 +235,13 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
     setIsLoadingFaucet(true)
     mutation.mutate({ address: address })
   }
+
+  // Reset faucet used state when address changes
+  useEffect(() => {
+    if (address) {
+      setFaucetUsed(false)
+    }
+  }, [address])
 
   useEffect(() => {
     const balance_user: BalanceProps[] = balance
@@ -159,8 +259,9 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
       })
       .sort((a: BalanceProps, b: BalanceProps) => b.balanceUSD - a.balanceUSD)
 
-    setBalanceUSD(balance_user.reduce((acc, cur) => acc + cur.balanceUSD, 0))
-  }, [balance])
+    // Add EVM tokens USD value to the total balance
+    setBalanceUSD(balance_user.reduce((acc, cur) => acc + cur.balanceUSD, 0) + evmTokensUsdValue)
+  }, [balance, prices, tokens, evmTokensUsdValue])
 
   return (
     <>
@@ -194,13 +295,29 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
             >
               <ArrowTopRightOnSquareIcon width={18} height={18} />
             </IconButton>
+            <IconButton
+              as="button"
+              onClick={() => refreshBalance()}
+              disabled={isRefreshing}
+              className="p-0.5"
+              description="Refresh Balance"
+            >
+              <ArrowPathIcon width={18} height={18} className={isRefreshing ? 'animate-spin' : ''} />
+            </IconButton>
             <IconButton as="button" onClick={() => logout()} className="p-0.5" description="Disconnect">
               <ArrowRightOnRectangleIcon width={18} height={18} />
             </IconButton>
           </div>
         </div>
         <div className="flex flex-col items-center justify-center gap-8">
-          {!isLoading && balanceUSD == 0 ? (
+          {isRefreshing ? (
+            <div className="flex flex-col items-center justify-center gap-2">
+              <Loader className="w-8 h-8 text-stone-400" />
+              <Typography variant="sm" className="text-stone-500">
+                Loading balance...
+              </Typography>
+            </div>
+          ) : !isLoading && balanceUSD == 0 ? (
             <Typography variant="sm" className="text-center text-stone-500">
               No balance in this address
             </Typography>
@@ -215,12 +332,12 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
               </Typography>
             </div>
           )}
-          {!isLoading && faucetAvailable && (
+          {!isLoading && faucetAvailable && !faucetUsed && (
             <Button
               variant="outlined"
               className="px-8"
               onClick={() => handleGetTokens()}
-              disabled={isLoadingFaucet}
+              disabled={isLoadingFaucet || isRefreshing}
               size="xs"
             >
               {isLoadingFaucet ? 'Processing...' : 'Faucet'}
@@ -248,6 +365,17 @@ export const Default: FC<DefaultProps> = ({ chainId, address, setView, api_clien
           className="flex text-sm font-semibold hover:text-stone-50 w-full text-stone-400 justify-between items-center hover:bg-white/[0.04] rounded-xl p-2 pr-1 py-2.5"
         >
           Transactions <ChevronRightIcon width={20} height={20} />
+        </button>
+      </div>
+      <div className="px-2">
+        <div className="w-full h-px bg-stone-200/10" />
+      </div>
+      <div className="p-2">
+        <button
+          onClick={() => setView(ProfileView.TokensEVM)}
+          className="flex text-sm font-semibold hover:text-stone-50 w-full text-stone-400 justify-between items-center hover:bg-white/[0.04] rounded-xl p-2 pr-1 py-2.5"
+        >
+          Tokens (EVM) <ChevronRightIcon width={20} height={20} />
         </button>
       </div>
     </>

@@ -95,11 +95,12 @@ const DATA: ExpendableCardData = {
       </p>
       <p>
         Last but certainly not least, we are not reinventing the wheel; rather, we are absorbing the insights from
-        previous DeFi implementations, learning from their shortcomings, and crafting an enhanced journey.
+        previous DeFi implementations, learning from their shortcomings, and crafting an enhanced journey for both our
+        users and investors.
       </p>
     </>
   ),
-  link: 'https://mvp.dozer.finance/',
+  link: `${process.env.NEXT_PUBLIC_SITE_URL}`,
   linkText: 'Visit Swap',
 }
 

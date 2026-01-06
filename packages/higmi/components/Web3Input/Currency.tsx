@@ -1,11 +1,12 @@
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { Token } from '@dozer/currency'
 import { useIsMounted } from '@dozer/hooks'
-import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography } from '@dozer/ui'
+import { classNames, Currency as UICurrency, DEFAULT_INPUT_UNSTYLED, Input, Skeleton, Typography, formatNumber } from '@dozer/ui'
 import { FC, useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { AccountState, useAccount } from '@dozer/zustand'
 
 import { TokenSelector, TokenSelectorProps } from '../TokenSelector'
+import BalancePanel from './BalancePanel'
 
 export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' | 'chainId'> {
   id?: string
@@ -20,7 +21,10 @@ export interface CurrencyInputProps extends Pick<TokenSelectorProps, 'onSelect' 
   loading?: boolean
   includeNative?: boolean
   prices?: { [key: string]: number }
-  tokens?: Token[]
+  tokens?: any[]
+  hidePercentageButtons?: boolean
+  showUnsignedSwitchInDialog?: boolean
+  useLocaleFormat?: boolean
 }
 
 export const CurrencyInput: FC<CurrencyInputProps> = ({
@@ -43,11 +47,14 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   loading,
   prices,
   tokens,
+  hidePercentageButtons = false,
+  showUnsignedSwitchInDialog = true,
+  useLocaleFormat = true,
 }) => {
   const isMounted = useIsMounted()
-  const account = useAccount()
-  const inputRef = useRef<HTMLInputElement>(null)
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
+
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const focusInput = useCallback(() => {
     if (disabled) return
@@ -61,10 +68,10 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
   return useMemo(
     () => (
       <div className={className} onClick={focusInput}>
-        <div className="relative flex items-center gap-1">
+        <div className="flex relative gap-1 items-center">
           {loading && isMounted ? (
             <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
-              <Skeleton.Box className="w-[120px] h-[22px] bg-white/[0.06] rounded-full" />
+              <Skeleton.Box variant="fast" className="w-[120px] h-[22px] rounded-full" />
             </div>
           ) : (
             <Input.Numeric
@@ -76,6 +83,11 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
               className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-3xl py-1 text-stone-200 hover:text-stone-100')}
               value={value}
               readOnly={disabled}
+              useLocaleFormat={useLocaleFormat}
+              autoComplete="off"
+              data-lpignore="true"
+              type="search"
+              name="liquidity-token-amount-search"
             />
           )}
           <button
@@ -95,8 +107,8 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
           >
             {loading && !currency ? (
               <div className="flex gap-1">
-                <Skeleton.Circle radius={20} className="bg-white/[0.06]" />
-                <Skeleton.Box className="w-[60px] h-[20px] bg-white/[0.06]" />
+                <Skeleton.Circle variant="fast" radius={20} />
+                <Skeleton.Box variant="fast" className="w-[60px] h-[20px]" />
               </div>
             ) : currency ? (
               <>
@@ -122,7 +134,7 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             )}
           </button>
         </div>
-        <div className="flex flex-row justify-between h-[24px]">
+        <div className="flex flex-row justify-between items-center">
           <PricePanel
             prices={prices}
             value={value}
@@ -131,18 +143,17 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             chainId={chainId}
             loading={loading}
           />
-          <div className="h-6">
-            <BalancePanel
+          <BalancePanel
               id={id}
               loading={loading}
               chainId={chainId}
-              account={account}
+              // account={account}
               onChange={onChange}
               currency={currency}
-              // fundSource={fundSource}
               disableMaxButton={disableMaxButton}
+              hidePercentageButtons={hidePercentageButtons}
+              showPercentageButtons={!hidePercentageButtons}
             />
-          </div>
         </div>
         {onSelect && (
           <TokenSelector
@@ -161,12 +172,13 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
             // customTokenMap={customTokenMap}
             includeNative={includeNative}
             tokens={tokens}
+            showUnsignedSwitchInDialog={showUnsignedSwitchInDialog}
           />
         )}
       </div>
     ),
     [
-      account,
+      // account,
       chainId,
       className,
       currency,
@@ -185,6 +197,9 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
       tokens,
       usdPctChange,
       value,
+      hidePercentageButtons,
+      showUnsignedSwitchInDialog,
+      useLocaleFormat,
     ]
   )
 }
@@ -192,44 +207,6 @@ export const CurrencyInput: FC<CurrencyInputProps> = ({
 type BalancePanel = Pick<CurrencyInputProps, 'onChange' | 'chainId' | 'currency' | 'disableMaxButton' | 'loading'> & {
   id?: string
   account: AccountState
-}
-
-const BalancePanel: FC<BalancePanel> = ({
-  id,
-  // chainId,
-  // account,
-  onChange,
-  currency,
-  disableMaxButton,
-  // fundSource = FundSource.WALLET,
-  // loading,
-}) => {
-  const isMounted = useIsMounted()
-
-  // const address = useAccount((state) => state.address)
-  const balance = useAccount((state) => state.balance)
-  const [tokenBalance, setTokenBalance] = useState(0)
-
-  useEffect(() => {
-    if (currency && balance) {
-      const token = balance.find((obj) => {
-        return obj.token_uuid === currency.uuid
-      })
-      setTokenBalance(token ? token.token_balance / 100 : 0)
-    }
-  }, [currency, balance])
-
-  return (
-    <button
-      data-testid={`${id}-balance-button`}
-      type="button"
-      onClick={() => onChange(tokenBalance.toFixed(2))}
-      className="py-1 text-xs text-stone-400 hover:text-stone-300"
-      disabled={disableMaxButton}
-    >
-      {isMounted && balance ? `Balance: ${tokenBalance.toFixed(2)}` : 'Balance: 0'}
-    </button>
-  )
 }
 
 type PricePanel = Pick<CurrencyInputProps, 'chainId' | 'currency' | 'value' | 'usdPctChange' | 'prices' | 'loading'>
@@ -248,13 +225,13 @@ const PricePanel: FC<PricePanel> = ({ prices, currency, value, usdPctChange, loa
   if ((!prices && isMounted) || loading)
     return (
       <div className="h-[24px] w-[60px] flex items-center">
-        <Skeleton.Box className="bg-white/[0.06] h-[12px] w-full" />
+        <Skeleton.Box variant="fast" className="h-[12px] w-full" />
       </div>
     )
 
   return (
-    <Typography variant="xs" weight={400} className="py-1 select-none text-stone-400">
-      {parsedValue && price && isMounted ? `$${Number(parsedValue * price).toFixed(2)}` : '$0.00'}
+    <Typography variant="xs" weight={400} className="select-none text-stone-400">
+      {parsedValue && price && isMounted ? `$${formatNumber(parsedValue * price, 2)}` : '$0.00'}
       {usd && (
         <span
           className={classNames(

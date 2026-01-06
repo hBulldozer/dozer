@@ -28,7 +28,7 @@ export const NAME_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   id: 'name',
   header: 'Name',
   cell: (props) => <TokenNameCell row={props.row.original} />,
-  size: 160,
+  size: 180,
   meta: {
     skeleton: (
       <div className="flex items-center w-full gap-2">
@@ -82,7 +82,7 @@ export const VOLUME_COLUMN: ColumnDef<ExtendedPair, unknown> = {
 
 export const MARKETCAP_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   id: 'marketcap',
-  header: 'Circ. Cap',
+  header: 'Market Cap',
   accessorFn: (row) => row.marketCap,
   cell: (props) => <TokenMarketCapCell row={props.row.original} />,
   size: 100,

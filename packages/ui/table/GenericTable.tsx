@@ -42,7 +42,7 @@ export const GenericTable = <T extends { id: string }>({
     <>
       <LoadingOverlay show={showOverlay} />
       <Table.container>
-        <Table.table style={{ minHeight: (pageSize + 1) * 52 }}>
+        <Table.table>
           <Table.thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <Table.thr key={headerGroup.id}>
@@ -227,28 +227,6 @@ export const GenericTable = <T extends { id: string }>({
                   </Table.tr>
                 )
               })}
-            {!loading &&
-              table.getRowModel().rows.length !== 0 &&
-              Array.from(Array(Math.max(pageSize - table.getRowModel().rows.length, 0))).map((el, index) => (
-                <Table.tr key={index}>
-                  {table.getVisibleFlatColumns().map((column) => (
-                    <Table.td
-                      key={column.id}
-                      style={{
-                        ...(column.columnDef.maxSize && {
-                          maxWidth: column.columnDef.maxSize,
-                        }),
-                        ...(column.columnDef.size && {
-                          maxWidth: column.columnDef.size,
-                        }),
-                        ...(column.columnDef.minSize && {
-                          maxWidth: column.columnDef.minSize,
-                        }),
-                      }}
-                    />
-                  ))}
-                </Table.tr>
-              ))}
             {loading &&
               Array.from(Array(pageSize)).map((el, index) => (
                 <Table.tr key={index}>

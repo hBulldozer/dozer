@@ -8,7 +8,7 @@ const getBaseUrl = () => {
   if (typeof window !== 'undefined') return '' // browser should use relative url
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}` // SSR should use vercel url
 
-  return `http://localhost:9001` // dev SSR should use localhost
+  return `http://localhost:9000` // dev SSR should use localhost
 }
 
 export const api = createTRPCNext<AppRouter>({
@@ -24,6 +24,17 @@ export const api = createTRPCNext<AppRouter>({
           url: `${getBaseUrl()}/api/trpc`,
         }),
       ],
+      queryClientConfig: {
+        defaultOptions: {
+          queries: {
+            // Default settings for all queries
+            staleTime: 30 * 1000,
+            cacheTime: 5 * 60 * 1000,
+            refetchOnWindowFocus: false,
+            retry: 3,
+          },
+        },
+      },
     }
   },
 })

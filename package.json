@@ -2,40 +2,40 @@
   "name": "dozer",
   "version": "0.0.0",
   "devDependencies": {
-    "@changesets/cli": "2.27.7",
+    "@changesets/cli": "2.27.9",
     "@dozer/database": "workspace:*",
     "@dozer/eslint-config": "workspace:*",
     "@dozer/jest-config": "workspace:*",
     "@dozer/nanocontracts": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
-    "@types/node": "20.14.10",
-    "@typescript-eslint/eslint-plugin": "7.16.0",
-    "@typescript-eslint/parser": "7.16.0",
+    "@types/node": "22.9.0",
+    "@typescript-eslint/eslint-plugin": "8.14.0",
+    "@typescript-eslint/parser": "8.14.0",
+    "dotenv": "^17.0.1",
     "dotenv-cli": "7.4.2",
     "eslint": "*",
     "eslint-config-next": "*",
     "eslint-config-prettier": "*",
-    "eslint-config-turbo": "*",
+    "eslint-config-turbo": "^2.0.0",
     "eslint-plugin-prettier": "*",
     "eslint-plugin-simple-import-sort": "*",
     "eslint-plugin-testing-library": "*",
-    "eslint-plugin-turbo": "^2.4.4",
     "eslint-plugin-unused-imports": "*",
-    "husky": "9.0.11",
+    "husky": "9.1.6",
     "is-ci": "3.0.1",
     "jest": "29.7.0",
     "prettier": "*",
-    "sort-package-json": "2.10.0",
-    "ts-jest": "29.2.2",
+    "sort-package-json": "2.10.1",
+    "ts-jest": "29.2.5",
     "tsx": "^4.7.2",
-    "turbo": "2.1.0"
+    "turbo": "2.2.3"
   },
   "engines": {
     "packageManager": "pnpm@9.1.0",
     "node": ">=16.x",
     "pnpm": ">=8.x"
   },
-  "packageManager": "pnpm@9.1.0",
+  "packageManager": "pnpm@10.26.0",
   "pnpm": {
     "overrides": {
       "typescript": "^5.3.3"
@@ -73,6 +73,7 @@
     "seed_all": "dotenv -- tsx ./seed_all.ts",
     "sort": "sort-package-json 'package.json' 'apis/*/package.json' 'apps/*/package.json' 'config/*/package.json' 'examples/*/package.json' 'packages/{,!(node_modules)/}**/package.json' 'protocols/{,!(node_modules)/}**/package.json' 'scripts/*/package.json'",
     "sort-check": "sort-package-json 'package.json' 'apis/*/package.json' 'apps/*/package.json' 'examples/*/package.json' 'packages/{,!(node_modules)/}**/package.json' 'protocols/{,!(node_modules)/}**/package.json' --check",
+    "start": "dotenv -- turbo run start --parallel",
     "test": "dotenv -- turbo run test --parallel",
     "test-apps": "dotenv -- turbo run test --filter={./apps/*}[HEAD^1]...",
     "test-config": "dotenv -- turbo run test --filter={./config/*}[HEAD^1]...",
@@ -81,5 +82,9 @@
     "test-swap-app": "dotenv -- turbo run test --filter=swap",
     "version-config": "dotenv -- turbo run build --filter=./config/* && changeset version",
     "version-packages": "dotenv -- turbo run build --filter=./packages/* && changeset version"
+  },
+  "dependencies": {
+    "@hathor/snap-utils": "0.1.0",
+    "@metamask/sdk-react": "^0.32.1"
   }
 }

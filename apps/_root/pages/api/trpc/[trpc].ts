@@ -1,11 +1,11 @@
 import { createNextApiHandler } from "@trpc/server/adapters/next";
-
-import { appRouter, createTRPCContext } from "@dozer/api";
+import { appRouter, createTRPCContext, responseMeta } from "@dozer/api/src/server";
 
 // export API handler
 export default createNextApiHandler({
   router: appRouter,
   createContext: createTRPCContext,
+  responseMeta,
 });
 
 // If you need to enable cors, you can do so like this:

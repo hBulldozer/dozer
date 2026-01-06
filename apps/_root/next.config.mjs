@@ -7,11 +7,21 @@ const { ROOT_URL, SWAP_URL, EARN_URL } = process.env
 const nextConfig = {
   ...defaultNextConfig,
   transpilePackages: ['@dozer/higmi', '@dozer/ui', '@dozer/math', '@dozer/database', '@dozer/currency'],
+  output: 'standalone',
   images: {
+    minimumCacheTTL: 86400, // 24 hours
+    deviceSizes: [32, 48, 64, 96, 128, 256], // Adjust based on your needs
+    formats: ['image/webp', 'image/avif'],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'supabase.dozer.finance',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'assets.coingecko.com',
         port: '',
         pathname: '/**',
       },
@@ -39,6 +49,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '5igvbvpmvvolmdef.public.blob.vercel-storage.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   async redirects() {
@@ -62,48 +78,34 @@ const nextConfig = {
   },
   async rewrites() {
     return [
-      // {
-      //   source: '/:path*',
-      //   destination: `/:path*`,
-      // },
-      // {
-      //   source: '/swap',
-      //   destination: `${SWAP_URL}/swap`,
-      // },
-      // {
-      //   source: '/swap/:path*',
-      //   destination: `${SWAP_URL}/swap/:path*`,
-      // },
-      // {
-      //   source: '/pool',
-      //   destination: `${EARN_URL}/pool`,
-      // },
-      // {
-      //   source: '/pool/:path*',
-      //   destination: `${EARN_URL}/pool/:path*`,
-      // },
+      {
+        source: '/:path*',
+        destination: `/:path*`,
+      },
+      {
+        source: '/swap',
+        destination: `${SWAP_URL}/swap`,
+      },
+      {
+        source: '/swap/:path*',
+        destination: `${SWAP_URL}/swap/:path*`,
+      },
+      {
+        source: '/pool',
+        destination: `${EARN_URL}/pool`,
+      },
+      {
+        source: '/pool/:path*',
+        destination: `${EARN_URL}/pool/:path*`,
+      },
 
-      // {
-      //   source: '/kucoin/:path*',
-      //   destination: `https://api.kucoin.com/api/v1/:path*`,
-      // },
+      {
+        source: '/kucoin/:path*',
+        destination: `https://api.kucoin.com/api/v1/:path*`,
+      },
       {
         source: '/explorer-service/:path*',
         destination: `https://explorer-service.mainnet.hathor.network/:path*`,
-      },
-    ]
-  },
-  async redirects() {
-    return [
-      {
-        source: '/whitepaper',
-        destination: 'https://www.papermark.com/view/cmazvnn9o0001jy04tpvhphd7',
-        permanent: true,
-      },
-      {
-        source: '/onepager',
-        destination: '/Dozer-onepager.pdf',
-        permanent: true,
       },
     ]
   },

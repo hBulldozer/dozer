@@ -1,12 +1,12 @@
 import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
-import { Button, createErrorToast, createSuccessToast, Dots, NotificationData } from '@dozer/ui'
+import { Button, createErrorToast, createSuccessToast, Dots, NotificationData, Typography } from '@dozer/ui'
 import { FC, ReactNode, useEffect, useState } from 'react'
-import { useAccount, useNetwork, useTrade, TokenBalance, useSettings, useTempTxStore } from '@dozer/zustand'
+import { useAccount, useNetwork, useTrade, TokenBalance, useSettings, useTempTxStore, TradeType } from '@dozer/zustand'
 import { AddSectionReviewModal } from './AddSectionReviewModal'
-import { LiquidityPool } from '@dozer/nanocontracts'
+import { PoolManager } from '@dozer/nanocontracts'
 import { api } from '../../utils/api'
-import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { useJsonRpc, useWalletConnectClient, getErrorMessage } from '@dozer/higmi'
 import { get } from 'lodash'
 
 interface AddSectionReviewModalLegacyProps {
@@ -30,20 +30,20 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
 }) => {
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const [open, setOpen] = useState(false)
-  const { amountSpecified, outputAmount, pool, mainCurrency, otherCurrency } = useTrade()
+  const { amountSpecified, outputAmount, pool, mainCurrency, otherCurrency, tradeType } = useTrade()
   const [sentTX, setSentTX] = useState(false)
-  const {
-    //  address,
-    addNotification,
-    setBalance,
-    balance,
-  } = useAccount()
+  const { addNotification, walletType, hathorAddress, balance, setBalance, selectedNetwork } = useAccount()
   const { network } = useNetwork()
 
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
 
-  const liquiditypool = new LiquidityPool(mainCurrency?.uuid || '', otherCurrency?.uuid || '', 5, 50, pool?.id || '')
+  const poolManager = new PoolManager()
 
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
 
@@ -128,16 +128,31 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   const onClick = async () => {
     setSentTX(true)
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency && networkData) {
-      const response = await liquiditypool.add_liquidity(
-        hathorRpc,
-        pool.id,
-        mainCurrency.uuid,
-        amountSpecified,
-        otherCurrency.uuid,
-        outputAmount * (1 + slippageTolerance),
-        address
-      )
-      addTempTx(pool.id, address, amountSpecified, outputAmount * (1 - slippageTolerance), true, networkData.number)
+      try {
+        const fee = parseInt(pool.id.split('/')[2]);
+        await poolManager.addLiquidity(
+          hathorRpc,
+          address,
+          mainCurrency.uuid,
+          amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
+          otherCurrency.uuid,
+          outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
+          fee,
+          selectedNetwork
+        );
+        addTempTx(
+          pool.id,
+          address,
+          amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
+          outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
+          true,
+          networkData.number
+        )
+      } catch (error) {
+        console.error('Error adding liquidity:', error)
+        createErrorToast(getErrorMessage(error), true)
+        setSentTX(false)
+      }
     }
   }
 
@@ -150,10 +165,10 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
             type: 'swap',
             chainId: network,
             summary: {
-              pending: `Waiting for next block. Add liquidity in ${pool.name}.`,
-              completed: `Success! Added ${amountSpecified} ${mainCurrency.symbol} and ${outputAmount} ${otherCurrency.symbol} in ${pool.name} pool.`,
+              pending: `Adding liquidity in ${pool.name}.`,
+              completed: `Success! Added ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} and ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol} in ${pool.name} pool.`,
               failed: 'Failed summary',
-              info: `Adding Liquidity in ${pool.name} pool: ${amountSpecified} ${mainCurrency.symbol} and ${outputAmount} ${otherCurrency.symbol}.`,
+              info: `Adding Liquidity in ${pool.name} pool: ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} and ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol}.`,
             },
             status: 'pending',
             txHash: hash,
@@ -165,9 +180,9 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
             account: address,
           }
           editBalanceOnAddLiquidity(
-            amountSpecified,
+            amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
             mainCurrency.uuid,
-            outputAmount * (1 + slippageTolerance),
+            outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
             otherCurrency.uuid
           )
           const notificationGroup: string[] = []
@@ -208,16 +223,21 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
             {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : <>Add Liquidity</>}
           </Button>
           {isRpcRequestPending && (
-            <Button
-              size="md"
-              testdata-id="swap-review-reset-button"
-              fullWidth
-              variant="outlined"
-              color="red"
-              onClick={() => reset()}
-            >
-              Cancel Transaction
-            </Button>
+            <>
+              <Typography variant="xs" className="text-center text-stone-400">
+                This may take up to 20 seconds when using MetaMask Snap
+              </Typography>
+              <Button
+                size="md"
+                testdata-id="swap-review-reset-button"
+                fullWidth
+                variant="outlined"
+                color="red"
+                onClick={() => reset()}
+              >
+                Cancel Transaction
+              </Button>
+            </>
           )}
         </div>
       </AddSectionReviewModal>

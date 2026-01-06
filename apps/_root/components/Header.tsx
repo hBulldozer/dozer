@@ -1,5 +1,4 @@
 import { App, AppType, Button, Link, Menu } from '@dozer/ui'
-import { BorderButton } from '@dozer/ui/aceternity/moving-border'
 import React, { FC, useEffect, useState } from 'react'
 // import { DonateModal } from './DonateModal'
 export const Header: FC = () => {
@@ -33,19 +32,9 @@ export const Header: FC = () => {
             Enter App
           </Button>
         </Link.Internal> */}
-        <BorderButton
-          as="a"
-          href="https://t.me/dozerfinance"
-          target="_blank"
-          rel="noopener noreferrer"
-          duration={4000}
-          borderRadius="0.75rem"
-          containerClassName="ml-4 h-auto w-auto p-[2px]"
-          className="bg-yellow-400 !text-black text-sm px-4 py-2 font-semibold hover:bg-yellow-300 !border-0"
-          borderClassName="h-24 w-24 opacity-90 bg-[radial-gradient(#FCD34D_30%,#FBBF24_50%,transparent_70%)]"
-        >
-          Join now
-        </BorderButton>
+        <Button as="a" href="/swap" size="sm" className="ml-4 whitespace-nowrap">
+          Enter App
+        </Button>
       </div>
       {/* <DonateModal open={open} setOpen={setOpen} /> */}
     </App.Header>

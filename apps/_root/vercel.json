@@ -1,0 +1,27 @@
+{
+  "headers": [
+    {
+      "source": "/_next/data/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=30, stale-while-revalidate=60"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "pages/api/trpc/[trpc].ts": {
+      "maxDuration": 60
+    },
+    "pages/api/createcharts.ts": {
+      "maxDuration": 60
+    },
+    "pages/api/daysnap.ts": {
+      "maxDuration": 60
+    },
+    "pages/api/hoursnap.ts": {
+      "maxDuration": 60
+    }
+  }
+}

@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    volumes:
+      - .:/app/hathor/nanocontracts/blueprints
+      - ./tests:/app/hathor_tests/nanocontracts/blueprints

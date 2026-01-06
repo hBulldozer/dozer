@@ -12,13 +12,13 @@ export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
   await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.all.prefetch()
+  await ssg.getPrices.allUSD.prefetch()
   await ssg.getNetwork.getBestBlock.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),
     },
-    revalidate: 3600,
+    revalidate: 30,
   }
 }
 
@@ -46,9 +46,9 @@ const Pools: FC = () => {
                 >
                   New Position
                 </Button>
-                <Button as="a" href="/pool/create" fullWidth startIcon={<BeakerIcon width={20} height={20} />}>
+                {/* <Button as="a" href="/pool/create" fullWidth startIcon={<BeakerIcon width={20} height={20} />}>
                   Create Pool
-                </Button>
+                </Button> */}
               </div>
             </div>
           </div>

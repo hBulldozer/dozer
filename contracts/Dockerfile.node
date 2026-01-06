@@ -1,0 +1,26 @@
+FROM python:3.11-slim-bullseye
+
+RUN apt-get -qy update && apt-get -qy install \
+    libssl1.1 \
+    graphviz \
+    librocksdb6.11 \
+    libssl-dev \
+    libffi-dev \
+    build-essential \
+    zlib1g-dev \
+    libbz2-dev \
+    libsnappy-dev \
+    liblz4-dev \
+    librocksdb-dev \
+    cargo \
+    git \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY . .
+
+RUN pip install poetry && poetry install
+
+CMD ["poetry", "run", "pytest", "-v"]

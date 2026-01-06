@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { prisma } from '@dozer/database'
+import prisma from '@dozer/database'
 import { client } from 'utils/api'
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.query.key && request.query.key === process.env.API_KEY) {

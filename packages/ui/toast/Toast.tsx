@@ -10,10 +10,11 @@ import { ToastFailed } from './ToastFailed'
 import { ToastInfo } from './ToastInfo'
 import { ToastInline } from './ToastInline'
 import { ToastPending } from './ToastPending'
+import { ToastBridgePending } from './ToastBridgePending'
 import { ChainId } from '@dozer/chain'
 
 export const TOAST_OPTIONS: ToastOptions = {
-  position: 'top-right',
+  position: 'bottom-right',
   autoClose: false,
   hideProgressBar: true,
   closeOnClick: false,
@@ -45,6 +46,11 @@ export interface NotificationData {
     | 'createMultipleStream'
     | 'createVesting'
     | 'createMultipleVesting'
+    | 'add_liquidity_single_token'
+    | 'add_liquidity'
+    | 'remove_liquidity'
+    | 'remove_liquidity_single_token'
+    | 'bridge' // Bridge transaction from EVM to Hathor
   // chainId: ChainId
   summary: {
     pending: ReactNode | Array<ReactNode>
@@ -62,6 +68,14 @@ export interface NotificationData {
   promise: Promise<any>
   status?: string
   account?: string
+  title?: string
+  // Bridge-specific metadata
+  bridgeMetadata?: {
+    tokenUuid: string
+    tokenSymbol: string
+    evmConfirmationTime: number
+    isTestnet: boolean
+  }
 }
 
 export const createInlineToast = (props: NotificationData) => {
@@ -122,6 +136,30 @@ export const createErrorToast = (message: string | undefined, code: boolean) => 
   )
 }
 
+export const createZealyErrorToast = (message: string | undefined, code: boolean) => {
+  if (!message) return
+
+  const toastId = `zealy`
+  toast(
+    <>
+      <ToastContent title="Error Occurred" summary={message} code={code} />
+      <ToastButtons onDismiss={() => toast.dismiss(toastId)} />
+    </>,
+    {
+      position: 'bottom-right',
+      autoClose: 5000,
+      hideProgressBar: true,
+      closeOnClick: false,
+      pauseOnHover: true,
+      draggable: false,
+      progress: undefined,
+      closeButton: false,
+      icon: false,
+      toastId,
+    }
+  )
+}
+
 export const createSuccessToast = (props: Omit<NotificationData, 'promise'>) => {
   const toastId = `completed:${props.txHash}`
   toast(<ToastCompleted {...props} onDismiss={() => toast.dismiss(toastId)} />, {
@@ -147,4 +185,37 @@ export const createInfoToast = (props: Omit<NotificationData, 'promise'>) => {
     toastId,
     autoClose: 5000,
   })
+}
+
+export interface BridgeToastConfig {
+  tokenSymbol: string
+  bridgeTxHash: string
+  evmExplorerUrl: string
+}
+
+export const createBridgeToast = (config: BridgeToastConfig) => {
+  const toastId = `bridge-pending:${config.bridgeTxHash}`
+
+  toast(
+    <ToastBridgePending
+      type="send"
+      summary={{
+        pending: `Waiting for ${config.tokenSymbol} to arrive on Hathor network`,
+        completed: `Bridge complete! ${config.tokenSymbol} received on Hathor network.`,
+        failed: '',
+      }}
+      txHash={config.bridgeTxHash}
+      href={config.evmExplorerUrl}
+      groupTimestamp={Date.now()}
+      timestamp={Date.now()}
+      onDismiss={() => toast.dismiss(toastId)}
+    />,
+    {
+      ...TOAST_OPTIONS,
+      toastId,
+      autoClose: false, // Don't auto-close, let notification center polling complete it
+    }
+  )
+
+  return toastId
 }

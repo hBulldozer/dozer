@@ -8,6 +8,7 @@ import { FC, useState } from 'react'
 // import { CustomTokensOverlay } from './CustomTokensOverlay'
 import { ExpertMode } from './ExpertMode'
 import { SlippageToleranceDisclosure } from './SlippageToleranceDisclosure'
+import { TransactionDeadlineDisclosure } from './TransactionDeadlineDisclosure'
 
 interface SettingsOverlay {
   chainId: ChainId | undefined
@@ -29,6 +30,7 @@ export const SettingsOverlay: FC<SettingsOverlay> = ({ chainId }) => {
               <Overlay.Header onClose={() => setOpen(false)} title="Settings" />
               <div className="px-1 py-1">
                 <SlippageToleranceDisclosure />
+                <TransactionDeadlineDisclosure />
                 <ExpertMode />
               </div>
             </div>

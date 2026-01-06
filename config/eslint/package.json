@@ -4,7 +4,7 @@
   "version": "0.1.1",
   "dependencies": {},
   "devDependencies": {
-    "@types/eslint": "8.56.10",
+    "@types/eslint": "9.6.1",
     "@types/node": "20.14.10"
   },
   "files": [

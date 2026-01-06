@@ -1,13 +1,17 @@
-import { formatUSD } from '@dozer/format'
+import { formatUSD, formatNumber } from '@dozer/format'
 import { Typography } from '@dozer/ui'
-import { FC, useRef } from 'react'
+import { FC } from 'react'
 import { CellProps } from './types'
+import { useTokensFromPair } from '@dozer/api'
 
 export const PairValueCell: FC<CellProps> = ({ row }) => {
-  const ref = useRef<HTMLDivElement>(null)
+  const totalValue = (row.value0 || 0) + (row.value1 || 0)
+
   return (
-    <Typography variant="sm" weight={600} className="text-right text-slate-50">
-      {formatUSD((row.value0 || 0) + (row.value1 || 0))}
-    </Typography>
+    <div className="text-right">
+      <Typography variant="base" weight={600} className="text-stone-100">
+        {formatUSD(totalValue)}
+      </Typography>
+    </div>
   )
 }

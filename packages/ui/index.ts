@@ -3,7 +3,6 @@ export * from './animation'
 export * from './app'
 export * from './backdrop'
 export * from './badge'
-export * from './borderbeam'
 export * from './breadcrumb'
 export * from './button'
 export * from './BuyCrypto'
@@ -44,6 +43,34 @@ export * from './tooltip'
 export * from './types'
 export * from './typography'
 export * from './widget'
+
+// Pool transaction history components
+export {
+  PoolTransactionHistory,
+  type PoolTransaction,
+  type PoolTransactionHistoryProps,
+} from './src/components/PoolTransactionHistory'
+export {
+  SimplePoolTransactionHistory,
+  type SimpleTransaction,
+  type SimplePoolTransactionHistoryProps,
+} from './src/components/SimplePoolTransactionHistory'
+
+// Token trading history components
+export { TokenTradingHistory, type TokenTradingHistoryProps } from './src/components/TokenTradingHistory'
+
+export { TokenTradingHistorySection } from './src/components/TokenTradingHistorySection'
+
+export { AvailablePoolsWidget } from './src/components/AvailablePoolsWidget'
+export {
+  transformToSimpleTransaction,
+  transformTransactions,
+  formatTimeAgo,
+  truncateAddress,
+  getExplorerUrls,
+} from './src/utils/transactionUtils'
+
+export { formatNumber, formatNumberWithLocale, formatCurrency } from './src/utils/formatNumber'
 
 // Re-export classnames for convenience
 export { default as classNames } from 'classnames'

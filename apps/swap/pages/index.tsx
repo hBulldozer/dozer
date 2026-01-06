@@ -1,15 +1,17 @@
-import { ChevronDownIcon } from '@heroicons/react/24/solid'
-import { App, Button, classNames, Widget } from '@dozer/ui'
+import { ArrowTopRightOnSquareIcon, ChevronDownIcon } from '@heroicons/react/24/solid'
+import { App, Button, classNames, Link, Widget } from '@dozer/ui'
 import { Layout } from '../components/Layout'
 import { CurrencyInput } from '../components/CurrencyInput'
 import { Token } from '@dozer/currency'
 import { useState, useCallback, useMemo, useEffect, FC, ReactNode } from 'react'
 import { TradeType } from '../components/utils/TradeType'
-import { useNetwork, useSettings, useTrade } from '@dozer/zustand'
-import { SwapStatsDisclosure, SettingsOverlay } from '../components'
-import { Checker, EventType, useWebSocketGeneric } from '@dozer/higmi'
+import { useAccount, useNetwork, useSettings, useTrade } from '@dozer/zustand'
+import { useDebounce } from '@dozer/hooks'
+import { SwapStatsDisclosure, SettingsOverlay, SwapLowBalanceBridge, SwapSideBridgeSuggestion } from '../components'
+import { HighPriceImpactConfirmation } from '../components/HighPriceImpactConfirmation'
+import { BridgeProvider, Checker, EventType, useWebSocketGeneric } from '@dozer/higmi'
 import { SwapReviewModalLegacy } from '../components/SwapReviewModal'
-import { warningSeverity } from '../components/utils/functions'
+import { warningSeverity, calculateUSDPriceImpact } from '../components/utils/functions'
 import { useRouter } from 'next/router'
 import { api, RouterOutputs } from 'utils/api'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
@@ -17,22 +19,30 @@ import type { GetStaticProps } from 'next'
 import type { dbPoolWithTokens, Pair } from '@dozer/api'
 import { tr } from 'date-fns/locale'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
+import Image from 'next/legacy/image'
+import bridgeIcon from '../public/bridge-icon.jpeg'
 
 type TokenOutputArray = RouterOutputs['getTokens']['all']
 
 type ElementType<T> = T extends (infer U)[] ? U : never
 type TokenOutput = ElementType<TokenOutputArray>
 
-function toToken(dbToken: TokenOutput): Token {
-  if (!dbToken) return new Token({ chainId: 1, uuid: '', decimals: 18, name: '', symbol: 'HTR' })
+const toToken = (token: any): Token | undefined => {
+  if (!token) {
+    return undefined
+  }
   return new Token({
-    chainId: dbToken.chainId,
-    uuid: dbToken.uuid,
-    decimals: dbToken.decimals,
-    name: dbToken.name,
-    symbol: dbToken.symbol,
-    imageUrl: dbToken.imageUrl || undefined,
+    ...token,
+    imageUrl: token.imageUrl || undefined,
   })
+}
+
+const toPair = (pool: any): Pair => {
+  return {
+    ...pool,
+    token0: toToken(pool.token0),
+    token1: toToken(pool.token1),
+  }
 }
 
 export const getStaticProps: GetStaticProps = async () => {
@@ -45,7 +55,7 @@ export const getStaticProps: GetStaticProps = async () => {
     props: {
       trpcState: ssg.dehydrate(),
     },
-    // revalidate: 3600,
+    revalidate: 30,
   }
 }
 
@@ -60,64 +70,138 @@ const Home = () => {
   //     // utils.getTokens.all.invalidate()
   //   }
   // }, true)
+  const trade = useTrade()
+  const balances = useAccount((state) => state.balance)
+
   return (
-    <Layout>
-      <SwapWidget token0_idx={'2'} token1_idx={'0'} />
-      <BlockTracker client={api} />
-    </Layout>
+    <BridgeProvider>
+      <Layout>
+        <div className="flex flex-col md:flex-row justify-center gap-4 max-w-[800px] mx-auto">
+          <div className="flex flex-col gap-4" style={{ maxWidth: '400px' }}>
+            <SwapWidget token0_idx={'2'} token1_idx={'0'} />
+            <Link.Internal href="/bridge">
+              <div className="flex items-center justify-between gap-3 p-4 transition-colors border rounded-lg cursor-pointer bg-stone-800/50 border-stone-700 hover:bg-stone-800">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-900/20">
+                    <Image src={bridgeIcon} width={44} height={44} alt="Bridge" className="object-cover rounded-full" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-white">Bridge EVM</span>
+                    <span className="text-xs text-gray-400">Transfer tokens between Arbitrum and Hathor.</span>
+                  </div>
+                </div>
+                <ArrowTopRightOnSquareIcon width={20} height={20} className="text-gray-400" />
+              </div>
+            </Link.Internal>
+          </div>
+        </div>
+        <BlockTracker client={api} />
+      </Layout>
+    </BridgeProvider>
   )
 }
 
 export default Home
 
 export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ token0_idx, token1_idx }) => {
-  const { data: pools = [] } = api.getPools.all.useQuery()
-  const { data: tokens = [] } = api.getTokens.all.useQuery()
-  const { data: prices = { '00': 0 } } = api.getPrices.all.useQuery()
+  const { data: pools } = api.getPools.all.useQuery()
+  const { data: tokens } = api.getTokens.all.useQuery()
+  const { data: prices } = api.getPrices.all.useQuery()
+  const balances = useAccount((state) => state.balance)
   const router = useRouter()
 
-  useEffect(() => {
-    const params = router.query
-    const _initialToken0 =
-      params?.token0 && params?.chainId && tokens
-        ? tokens.find((token) => {
-            return params.token0 == token.uuid
-          })
-        : undefined
-    const _initialToken1 =
-      params?.token1 && params?.chainId && tokens
-        ? tokens.find((token) => {
-            return params.token1 == token.uuid
-          })
-        : undefined
-    if (_initialToken0) setInitialToken0(toToken(_initialToken0))
-    if (_initialToken1) setInitialToken1(toToken(_initialToken1))
-  }, [router.query, router.query.isReady, tokens])
+  // Check if URL contains token parameters for direct access to unsigned pool tokens
+  const hasUrlTokens = router.query?.token0 && router.query?.token1
+
+  // Fetch individual tokens when URL parameters are provided (for unsigned pools)
+  const { data: urlToken0 } = api.getTokens.byUuidAny.useQuery(
+    { uuid: router.query.token0 as string },
+    { enabled: !!router.query.token0 && !!hasUrlTokens }
+  )
+
+  const { data: urlToken1 } = api.getTokens.byUuidAny.useQuery(
+    { uuid: router.query.token1 as string },
+    { enabled: !!router.query.token1 && !!hasUrlTokens }
+  )
+
+  // Find HTR and hUSDC tokens for defaults
+  const htrToken = tokens?.find((token) => token.uuid === '00') // HTR token
+  const usdcToken = tokens?.find((token) => token.symbol === 'hUSDC') // hUSDC token
 
   const network = useNetwork((state) => state.network)
 
-  const [initialToken0, setInitialToken0] = useState(
-    toToken(
-      tokens.filter((token) => {
-        return token.id == token0_idx
-      })[0]
-    )
-  )
+  const [initialToken0, setInitialToken0] = useState<Token | undefined>(undefined)
+  const [initialToken1, setInitialToken1] = useState<Token | undefined>(undefined)
 
-  const [initialToken1, setInitialToken1] = useState(
-    toToken(
-      tokens.filter((token) => {
-        return token.id == token1_idx
-      })[0]
-    )
-  )
+  // Consolidated token initialization logic
+  useEffect(() => {
+    if (!tokens || tokens.length === 0) return
+
+    const params = router.query
+    let selectedToken0: Token | undefined
+    let selectedToken1: Token | undefined
+
+    // Priority 1: URL parameters (if present)
+    if (params?.token0 && params?.chainId) {
+      // First try to find in regular tokens list (signed pools)
+      const regularToken0 = tokens.find((token) => params.token0 == token.uuid)
+      if (regularToken0) {
+        selectedToken0 = toToken(regularToken0)
+      } else if (urlToken0) {
+        // If not found in regular tokens, use the individually fetched token (unsigned pools)
+        selectedToken0 = toToken(urlToken0)
+      }
+    }
+
+    if (params?.token1 && params?.chainId) {
+      // First try to find in regular tokens list (signed pools)
+      const regularToken1 = tokens.find((token) => params.token1 == token.uuid)
+      if (regularToken1) {
+        selectedToken1 = toToken(regularToken1)
+      } else if (urlToken1) {
+        // If not found in regular tokens, use the individually fetched token (unsigned pools)
+        selectedToken1 = toToken(urlToken1)
+      }
+    }
+
+    // Priority 2: Props (if no URL params)
+    if (!selectedToken0) {
+      // For HTR page, we want hUSDC as input token
+      let token0FromProp: any = undefined
+
+      // Check if this is the hUSDC token by looking for bridged hUSDC
+      const husdcToken = tokens.find((token) => token.symbol === 'hUSDC' && token.bridged)
+      if (husdcToken && token0_idx === husdcToken.uuid) {
+        // This is hUSDC UUID, use the found token
+        token0FromProp = husdcToken
+      } else {
+        // For other tokens, use UUID lookup
+        token0FromProp = tokens.find((token) => token.uuid === token0_idx)
+      }
+
+      const htrFromTokens = tokens.find((token) => token.uuid === '00')
+
+      selectedToken0 = toToken(token0FromProp || htrFromTokens)
+    }
+
+    if (!selectedToken1) {
+      const token1FromProp = tokens.find((token) => token.uuid === token1_idx)
+      const usdcFromTokens = tokens.find((token) => token.symbol === 'hUSDC')
+      selectedToken1 = toToken(token1FromProp || usdcFromTokens)
+    }
+
+    setInitialToken0(selectedToken0)
+    setInitialToken1(selectedToken1)
+  }, [tokens, token0_idx, token1_idx, router.isReady, urlToken0, urlToken1])
 
   useEffect(() => {
-    setTokens([initialToken0, initialToken1])
-  }, [network, initialToken0, initialToken1])
+    if (initialToken0 && initialToken1) {
+      setTokens([initialToken0, initialToken1])
+    }
+  }, [initialToken0, initialToken1])
 
   const [input0, setInput0] = useState<string>('')
-  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([initialToken0, initialToken1])
+  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([undefined, undefined])
   const [input1, setInput1] = useState<string>('')
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
   const [selectedPool, setSelectedPool] = useState<Pair>()
@@ -126,10 +210,30 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
   const trade = useTrade()
   const [fetchLoading, setFetchLoading] = useState<boolean>(false)
 
+  // Debounce input values to reduce API calls
+  const debouncedInput0 = useDebounce(input0, 300)
+  const debouncedInput1 = useDebounce(input1, 300)
+
+  // Show loading state when user is typing but before debounced value updates
+  const isTyping = useMemo(() => {
+    if (tradeType === TradeType.EXACT_INPUT) {
+      return input0 !== debouncedInput0 && input0 !== ''
+    } else {
+      return input1 !== debouncedInput1 && input1 !== ''
+    }
+  }, [input0, debouncedInput0, input1, debouncedInput1, tradeType])
+
   const onInput0 = async (val: string) => {
     setInput0(val)
     if (!val) {
       setInput1('')
+      trade.setRouteInfo(undefined) // Clear route info immediately
+    } else {
+      // Clear the output immediately when user starts typing to prevent showing stale data
+      if (tradeType === TradeType.EXACT_INPUT) {
+        setInput1('')
+        trade.setRouteInfo(undefined)
+      }
     }
     setTradeType(TradeType.EXACT_INPUT)
   }
@@ -138,17 +242,29 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
     setInput1(val)
     if (!val) {
       setInput0('')
+      trade.setRouteInfo(undefined) // Clear route info immediately
+    } else {
+      // Clear the input immediately when user starts typing to prevent showing stale data
+      if (tradeType === TradeType.EXACT_OUTPUT) {
+        setInput0('')
+        trade.setRouteInfo(undefined)
+      }
     }
     setTradeType(TradeType.EXACT_OUTPUT)
   }
 
   const switchCurrencies = async () => {
     setTokens(([prevSrc, prevDst]) => [prevDst, prevSrc])
-    if (tradeType == TradeType.EXACT_INPUT) {
-      setInput1('')
-    } else {
-      setInput0('')
-    }
+
+    // Swap the input values and trade type
+    const tempInput0 = input0
+    const tempInput1 = input1
+
+    setInput0(tempInput1)
+    setInput1(tempInput0)
+
+    // Invert the trade type
+    setTradeType(tradeType === TradeType.EXACT_INPUT ? TradeType.EXACT_OUTPUT : TradeType.EXACT_INPUT)
   }
 
   // const onSuccess = () => {
@@ -166,56 +282,102 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
       setFetchLoading(true)
       if (tradeType == TradeType.EXACT_INPUT) {
         const response =
-          selectedPool && token0
-            ? await utils.getPools.quote_exact_tokens_for_tokens.fetch({
-                id: selectedPool?.id,
-                amount_in: parseFloat(input0),
-                token_in: token0?.uuid,
+          token0 && token1 && parseFloat(debouncedInput0) > 0
+            ? await utils.getPools.quote.fetch({
+                amountIn: parseFloat(debouncedInput0),
+                tokenIn: token0?.uuid,
+                tokenOut: token1?.uuid,
+                maxHops: 3,
               })
             : undefined
-        // set state with the result if `isSubscribed` is true
 
-        setInput1(response && response.amount_out != 0 ? response.amount_out.toFixed(2) : '')
-        setPriceImpact(response ? response.price_impact : 0)
+        const quoteData = response // Handle both nested and direct response
+        setInput1(quoteData && quoteData.amountOut != 0 ? quoteData.amountOut.toFixed(2) : '')
+        setPriceImpact(quoteData ? quoteData.priceImpact : 0)
+
+        // Update route info for RouteDisplay component
+        if (quoteData) {
+          trade.setRouteInfo({
+            path: quoteData.path || [],
+            amounts: quoteData.amounts || [],
+            amountOut: quoteData.amountOut,
+            priceImpact: quoteData.priceImpact,
+            poolPath: quoteData.poolPath, // Add pool path for contract execution
+          })
+        } else {
+          trade.setRouteInfo(undefined)
+        }
       } else {
+        // For exact output, use the new exact output quote endpoint
         const response =
-          selectedPool && token0
-            ? await utils.getPools.quote_tokens_for_exact_tokens.fetch({
-                id: selectedPool?.id,
-                amount_out: parseFloat(input1),
-                token_in: token0?.uuid,
+          token0 && token1 && parseFloat(debouncedInput1) > 0
+            ? await utils.getPools.quoteExactOutput.fetch({
+                amountOut: parseFloat(debouncedInput1),
+                tokenIn: token0?.uuid,
+                tokenOut: token1?.uuid,
+                maxHops: 3,
               })
             : undefined
 
-        setInput0(response && response.amount_in != 0 ? response.amount_in.toFixed(2) : '')
-        setPriceImpact(response ? response.price_impact : 0)
+        const quoteData = response // Handle both nested and direct response
+        setInput0(quoteData && quoteData.amountIn != 0 ? quoteData.amountIn.toFixed(2) : '')
+        setPriceImpact(quoteData ? quoteData.priceImpact : 0)
+
+        // Update route info for RouteDisplay component
+        if (quoteData) {
+          trade.setRouteInfo({
+            path: quoteData.path || [],
+            amounts: quoteData.amounts || [],
+            amountOut: parseFloat(debouncedInput1),
+            priceImpact: quoteData.priceImpact,
+            poolPath: quoteData.poolPath, // Add pool path for contract execution
+          })
+        } else {
+          trade.setRouteInfo(undefined)
+        }
       }
     }
-    setSelectedPool(
-      pools.find((pool: Pair) => {
-        const uuid0 = pool.token0.uuid
-        const uuid1 = pool.token1.uuid
-        const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
-        const result = checker(
-          [token0 ? token0.uuid : '', token1 ? token1.uuid : ''],
-          [uuid0 ? uuid0 : '', uuid1 ? uuid1 : '']
-        )
-        return result
-      })
-    )
+    const selected = pools?.find((pool) => {
+      const uuid0 = pool.token0?.uuid
+      const uuid1 = pool.token1?.uuid
+      const checker = (arr: (string | undefined)[], target: (string | undefined)[]) =>
+        target.every((v) => arr.includes(v))
+      const result = checker([token0?.uuid, token1?.uuid], [uuid0, uuid1])
+      return result
+    })
+    if (selected) {
+      setSelectedPool(toPair(selected))
+    }
 
-    // call the function
-    if (input1 || input0) {
+    // call the function - now we only need both tokens selected and an input amount
+    if (
+      token0 &&
+      token1 &&
+      ((tradeType === TradeType.EXACT_INPUT && debouncedInput0) ||
+        (tradeType === TradeType.EXACT_OUTPUT && debouncedInput1))
+    ) {
       fetchData()
         .then(() => {
           setFetchLoading(false)
           trade.setMainCurrency(token0)
           trade.setOtherCurrency(token1)
-          trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
-          trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
+          trade.setMainCurrencyPrice(token0 && prices ? prices[token0?.uuid] : 0)
+          trade.setOtherCurrencyPrice(token1 && prices ? prices[token1?.uuid] : 0)
           trade.setAmountSpecified(Number(input0) || 0)
           trade.setOutputAmount(Number(input1) || 0)
           trade.setPriceImpact(priceImpact || 0)
+
+          // Calculate USD-based price impact
+          const inputTokenPrice = token0 && prices ? prices[token0.uuid] : undefined
+          const outputTokenPrice = token1 && prices ? prices[token1.uuid] : undefined
+          const usdPriceImpact = calculateUSDPriceImpact(
+            Number(input0) || 0,
+            Number(input1) || 0,
+            inputTokenPrice,
+            outputTokenPrice
+          )
+          trade.setUsdPriceImpact(usdPriceImpact)
+
           trade.setTradeType(tradeType)
           if (selectedPool) trade.setPool(selectedPool)
         })
@@ -230,9 +392,10 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
       trade.setAmountSpecified(0)
       trade.setOutputAmount(0)
       trade.setPriceImpact(0)
+      trade.setUsdPriceImpact(undefined)
       trade.setTradeType(tradeType)
     }
-  }, [pools, token0, token1, input0, input1, prices, network, tokens, priceImpact, selectedPool])
+  }, [pools, token0, token1, debouncedInput0, debouncedInput1, prices, network, tokens])
 
   const onSuccess = useCallback(() => {
     setInput0('')
@@ -266,8 +429,8 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         <CurrencyInput
           id={'swap-input-currency0'}
           className="p-3"
-          disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
-          value={token0?.symbol && token1?.symbol ? input0 : ''}
+          disabled={!token0 || !token1}
+          value={input0}
           onChange={onInput0}
           currency={token0}
           onSelect={_setToken0}
@@ -278,13 +441,29 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
           // tokenMap={tokenMap}
           inputType={TradeType.EXACT_INPUT}
           tradeType={tradeType}
-          loading={tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
-          prices={prices}
-          tokens={tokens
-            .filter((token) => !token.custom)
-            .map((token) => {
-              return new Token(token)
-            })}
+          loading={tradeType == TradeType.EXACT_OUTPUT && (fetchLoading || isTyping)}
+          prices={prices || {}}
+          tokens={
+            tokens
+              ? tokens
+                  .filter((token) => !token.custom)
+                  .map((token) => {
+                    // Handle all possible null values by converting to undefined
+                    return new Token({
+                      chainId: token.chainId,
+                      uuid: token.uuid,
+                      decimals: token.decimals,
+                      name: token.name,
+                      symbol: token.symbol,
+                      imageUrl: token.imageUrl || undefined,
+                      bridged: !!token.bridged,
+                      originalAddress: token.originalAddress || undefined,
+                      sourceChain: token.sourceChain || undefined,
+                      targetChain: token.targetChain || undefined,
+                    })
+                  })
+              : []
+          }
         />
         <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
           <button
@@ -300,12 +479,13 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
         <div className="bg-stone-800">
           <CurrencyInput
             id={'swap-output-currency1'}
-            disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
+            disabled={!token0 || !token1}
             className="p-3"
-            value={selectedPool ? (token0?.symbol && token1?.symbol ? input1 : '') : ''}
+            value={input1}
             onChange={onInput1}
             currency={token1}
             onSelect={_setToken1}
+            hidePercentageButtons={true}
             // customTokenMap={customTokensMap}
             // onAddToken={addCustomToken}
             // onRemoveToken={removeCustomToken}
@@ -313,19 +493,51 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
             // tokenMap={tokenMap}
             inputType={TradeType.EXACT_OUTPUT}
             tradeType={tradeType}
-            loading={tradeType == TradeType.EXACT_INPUT && fetchLoading}
-            prices={prices}
-            tokens={tokens
-              .filter((token) => !token.custom)
-              .map((token) => {
-                return new Token(token)
-              })}
+            loading={tradeType == TradeType.EXACT_INPUT && (fetchLoading || isTyping)}
+            prices={prices || {}}
+            tokens={
+              tokens
+                ? tokens
+                    .filter((token) => !token.custom)
+                    .map((token) => {
+                      // Handle all possible null values by converting to undefined
+                      return new Token({
+                        chainId: token.chainId,
+                        uuid: token.uuid,
+                        decimals: token.decimals,
+                        name: token.name,
+                        symbol: token.symbol,
+                        imageUrl: token.imageUrl || undefined,
+                        bridged: !!token.bridged,
+                        originalAddress: token.originalAddress || undefined,
+                        sourceChain: token.sourceChain || undefined,
+                        targetChain: token.targetChain || undefined,
+                      })
+                    })
+                : []
+            }
             // isWrap={isWrap}
           />
-          <SwapStatsDisclosure prices={prices} />
+          {/* Hide route/price impact details when tokens not chosen or no input values */}
+          {token0 && token1 && (input0 || input1) && (
+            <SwapStatsDisclosure prices={prices || {}} loading={fetchLoading || isTyping} />
+          )}
+
+          {/* Show bridge suggestion when balance is low */}
+          {/* <SwapLowBalanceBridge
+            token={token0}
+            hasLowBalance={
+              !!(
+                token0?.bridged &&
+                Number(input0) > 0 &&
+                (balances.find((bal) => bal.token_uuid === token0.uuid)?.token_balance || 0) < Number(input0) * 100
+              )
+            }
+          /> */}
+
           <div className="p-3 pt-0">
             <Checker.Connected fullWidth size="md">
-              <Checker.Pool fullWidth size="md" poolExist={selectedPool ? true : false}>
+              <Checker.Pool fullWidth size="md" poolExist={token0 && token1 ? true : false}>
                 <Checker.Amounts fullWidth size="md" amount={Number(input0)} token={token0}>
                   <SwapReviewModalLegacy chainId={network} onSuccess={onSuccess}>
                     {({ setOpen }) => {
@@ -354,39 +566,63 @@ export const SwapButton: FC<{
   outputAmount: number
 }> = ({ setOpen, priceImpact, outputAmount }) => {
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
+  const [showConfirmation, setShowConfirmation] = useState(false)
 
   const priceImpactSeverity = useMemo(() => warningSeverity(priceImpact), [priceImpact])
   const priceImpactTooHigh = priceImpactSeverity > 3
+  const requiresConfirmation = priceImpact >= 10 && !priceImpactTooHigh // 10-15% range
   const { expertMode } = useSettings()
 
   const onClick = useCallback(() => {
+    // If price impact >= 10% and not expert mode, show confirmation modal
+    if (requiresConfirmation && !expertMode) {
+      setShowConfirmation(true)
+    } else {
+      // Otherwise proceed directly to swap
+      setOpen(true)
+    }
+  }, [requiresConfirmation, expertMode, setOpen])
+
+  const handleConfirmHighImpact = useCallback(() => {
     setOpen(true)
   }, [setOpen])
 
   return (
-    <Button
-      testdata-id="swap-button"
-      fullWidth
-      onClick={onClick}
-      disabled={
-        (priceImpactTooHigh && !expertMode) ||
-        Number(
-          (outputAmount ? outputAmount : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)).toFixed(2)
-        ) == 0
-      }
-      size="md"
-      color={(priceImpactTooHigh && !expertMode) || priceImpactSeverity > 2 ? 'red' : 'blue'}
-      {...(Boolean(priceImpactSeverity > 2) && {
-        title: 'Enable expert mode to swap with high price impact',
-      })}
-    >
-      {false
-        ? 'Finding Best Price'
-        : priceImpactTooHigh && !expertMode
-        ? 'High Price Impact'
-        : priceImpactSeverity > 2
-        ? 'Swap Anyway'
-        : 'Swap'}
-    </Button>
+    <>
+      <Button
+        testdata-id="swap-button"
+        fullWidth
+        onClick={onClick}
+        disabled={
+          (priceImpactTooHigh && !expertMode) ||
+          Number(
+            (outputAmount ? outputAmount : 0 * (1 - (slippageTolerance ? slippageTolerance : 0) / 100)).toFixed(2)
+          ) == 0
+        }
+        size="md"
+        color={(priceImpactTooHigh && !expertMode) || priceImpactSeverity > 2 ? 'red' : 'blue'}
+        {...(Boolean(priceImpactSeverity > 2) && {
+          title:
+            requiresConfirmation && !expertMode
+              ? 'Requires confirmation for high price impact'
+              : 'Enable expert mode to swap with high price impact',
+        })}
+      >
+        {false
+          ? 'Finding Best Price'
+          : priceImpactTooHigh && !expertMode
+          ? 'High Price Impact'
+          : priceImpactSeverity > 2
+          ? 'Swap Anyway'
+          : 'Swap'}
+      </Button>
+
+      <HighPriceImpactConfirmation
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleConfirmHighImpact}
+        priceImpact={priceImpact}
+      />
+    </>
   )
 }

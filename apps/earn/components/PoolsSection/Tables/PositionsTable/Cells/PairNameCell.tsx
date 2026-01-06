@@ -1,5 +1,5 @@
 import { formatNumber } from '@dozer/format'
-import { classNames, Currency, NetworkIcon, Typography } from '@dozer/ui'
+import { classNames, Currency, NetworkIcon, Typography, Chip } from '@dozer/ui'
 import { FC } from 'react'
 
 import { ICON_SIZE } from '../../contants'
@@ -10,27 +10,19 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
   const { token0, token1 } = useTokensFromPair(row)
 
   return (
-    <div className="flex items-center gap-3 sm:gap-0">
-      <div className="hidden sm:flex">
-        <Currency.IconList iconWidth={ICON_SIZE} iconHeight={ICON_SIZE}>
-          <Currency.Icon currency={token0} />
-          <Currency.Icon currency={token1} />
-        </Currency.IconList>
-      </div>
-      <div className="flex sm:hidden">
-        <NetworkIcon chainId={row.chainId} width={ICON_SIZE} height={ICON_SIZE} />
-      </div>
-      <div className="flex flex-col">
-        <Typography variant="sm" weight={500} className="flex items-center gap-1 text-slate-50">
-          {token0.symbol} <span className="text-slate-500">/</span> {token1.symbol}{' '}
-          {/* <div className={classNames('bg-slate-700 rounded-lg px-1 py-0.5 ml-1')}>
-            {formatNumber(row.feeUSD / 100)}%
-          </div> */}
+    <div className="flex items-center gap-3">
+      {/* Token Icons */}
+      <Currency.IconList iconWidth={28} iconHeight={28}>
+        <Currency.Icon currency={token0} />
+        <Currency.Icon currency={token1} />
+      </Currency.IconList>
+
+      {/* Token Pair Info */}
+      <div className="flex items-center gap-2">
+        <Typography variant="base" weight={600} className="text-stone-100">
+          {token0.symbol} / {token1.symbol}
         </Typography>
-        {/* <Typography variant="xxs" className="text-slate-400">
-          {row.type === 'STABLE_POOL' && 'Stable'}
-          {row.type === 'CONSTANT_PRODUCT_POOL' && 'Classic'}
-        </Typography> */}
+        <Chip color="gray" size="sm" label={`${row.swapFee.toFixed(2)}%`} className="text-xs" />
       </div>
     </div>
   )

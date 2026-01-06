@@ -29,11 +29,13 @@ export const NanoStateRouter = createTRPCRouter({
       return result
     }),
   api: procedure.query(async ({ ctx }) => {
-    const contractId = '00009a7b3e3e3a062de7429e49168b7a8bd437058b152e6ef881288abe9eb6c0'
-    const resp = await fetch(`http://localhost:8080/v1a/nano_contract/state?id=${contractId}&calls[]=pool_data()`)
-    const data = await resp.json()
-    const result: ApiResult = data['calls']['pool_data()']['value']
-    return result
+    // This method was using legacy pool_data() call which doesn't exist in DozerPoolManager
+    // Return empty result for now - update if specific functionality is needed
+    return {
+      owner_balance: 0,
+      total_staked: 0,
+      rewards_per_share: 0,
+    }
   }),
 })
 

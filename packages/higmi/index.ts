@@ -7,6 +7,12 @@
 // Export components
 export * from './components'
 
+// Export bridge config
+export { default as bridgeConfig } from './config/bridge'
+
+// Export error utilities
+export { getErrorMessage, getTransactionErrorMessage } from './utils/errorMessages'
+
 // // Export hooks
 // export * from './hooks'
 

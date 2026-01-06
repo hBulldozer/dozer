@@ -1,5 +1,5 @@
-import { ChevronLeftIcon } from '@heroicons/react/24/solid'
-import { Button, Currency, Dialog, IconButton, NetworkIcon, SlideIn, Typography } from '@dozer/ui'
+import { ChevronLeftIcon, ArrowPathIcon } from '@heroicons/react/24/solid'
+import { Button, Currency, Dialog, IconButton, NetworkIcon, SlideIn, Typography, Loader } from '@dozer/ui'
 import React, { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
 
 import { NotificationGroup } from '../../NotificationCentre'
@@ -11,10 +11,9 @@ import { getTokens, Token } from '@dozer/currency'
 
 interface TokensProps {
   setView: Dispatch<SetStateAction<ProfileView>>
-  // notifications: Record<number, string[]>
-  // clearNotifications(): void
-  // updateNotificationStatus: (txHash: string, state: string, message?: string) => void
   client: typeof client
+  isLoading: boolean
+  refreshBalance: () => Promise<void>
 }
 
 interface BalanceProps {
@@ -25,16 +24,16 @@ interface BalanceProps {
 
 export const Tokens: FC<TokensProps> = ({
   setView,
-  // notifications,
-  // clearNotifications,
-  // updateNotificationStatus,
   client,
+  isLoading,
+  refreshBalance
 }) => {
   const { data: tokens } = client.getTokens.all.useQuery()
   const chainId = useNetwork((state) => state.network)
   const balance = useAccount((state) => state.balance)
   const { data: prices } = client.getPrices.all.useQuery()
   const [currencies, setCurrencies] = useState<Token[]>([])
+  const [isEmpty, setIsEmpty] = useState(false)
 
   useEffect(() => {
     const balance_user: BalanceProps[] = balance
@@ -51,11 +50,14 @@ export const Tokens: FC<TokensProps> = ({
         }
       })
       .sort((a: BalanceProps, b: BalanceProps) => b.balanceUSD - a.balanceUSD)
+    
     const user_currencies = balance_user
       .map((b: BalanceProps) => b.token)
       .filter((token): token is Token => token !== undefined)
+    
     setCurrencies(user_currencies)
-  }, [balance])
+    setIsEmpty(user_currencies.length === 0 && !isLoading && balance.length > 0)
+  }, [balance, tokens, prices, isLoading])
   return (
     <div className="">
       <div className="grid items-center h-12 grid-cols-3 px-2 border-b border-stone-200/20">
@@ -67,9 +69,33 @@ export const Tokens: FC<TokensProps> = ({
         <Typography weight={600} className="ml-5 text-stone-400">
           Tokens
         </Typography>
+        <div className="flex justify-end">
+          <IconButton 
+            onClick={() => refreshBalance()} 
+            disabled={isLoading}
+            className="mr-2"
+          >
+            <ArrowPathIcon 
+              width={20} 
+              height={20} 
+              className={`text-stone-400 ${isLoading ? "animate-spin" : ""}`} 
+            />
+          </IconButton>
+        </div>
       </div>
-      <div className="flex flex-col  max-h-[300px] scroll">
-        {currencies.length != 0 && chainId ? (
+      <div className="flex flex-col max-h-[300px] scroll">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-10">
+            <Loader className="w-8 h-8 text-stone-400 mb-2" />
+            <Typography variant="xs" className="text-center text-stone-500">
+              Loading tokens...
+            </Typography>
+          </div>
+        ) : isEmpty ? (
+          <Typography variant="xs" className="py-5 text-center text-stone-500">
+            No tokens found
+          </Typography>
+        ) : currencies.length !== 0 && chainId ? (
           currencies.map((currency) => {
             const currency_balance = (balance?.find((b) => b.token_uuid == currency.uuid)?.token_balance || 0) / 100
             const price = prices?.[currency.uuid]

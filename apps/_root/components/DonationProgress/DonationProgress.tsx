@@ -151,7 +151,7 @@ function CustomDialog({
               Summary
             </Typography>
             <Typography variant="sm" className="mb-6 text-left text-neutral-300">
-              Dozer Donor Token (DZD) is an unique solution designed for the Dozer's prelaunch phase. They enable a
+              Dozer Donor Token (DZD) is an unique solution designed for the Dozer&apos;s prelaunch phase. They enable a
               community-driven funding approach before DZR TGE.
             </Typography>
             <Typography variant="lg" className="mb-2 text-left text-neutral-300">

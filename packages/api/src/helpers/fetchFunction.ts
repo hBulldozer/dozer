@@ -1,36 +1,133 @@
 import { fetchFakeData } from './fetchFakeData'
 
-/**
- * Fetches data from a node, prioritizing a local node if available,
- * and constructs the URL based on the provided endpoint and query parameters.
- *
- * @param {string} endpoint The endpoint to fetch data from.
- * @param {string[]} queryParams An array of query parameters to include in the URL.
- * @returns {Promise<NodeData>} A promise that resolves with the fetched data.
- * @throws {Error} If both local and public node fetches fail, or if there are errors during the process.
- */
+// Check if running in local development environment
+const isLocalDevelopment = process.env.NODE_ENV === 'development'
+
+// Balanced settings to prevent rate limiting while maintaining ISR compatibility
+// Development: fail fast to avoid socket hang up and provide quick feedback
+// Production: moderate retry for reliability without breaking ISR timeout
+const MAX_RETRIES = isLocalDevelopment ? 0 : 1
+const INITIAL_TIMEOUT = isLocalDevelopment ? 3000 : 8000 // 3s dev, 8s prod
+const BACKOFF_FACTOR = isLocalDevelopment ? 0 : 1.5
+
+// Request queue to prevent overwhelming the node with concurrent requests
+class RequestQueue {
+  private queue: Array<() => Promise<any>> = []
+  private activeCount = 0
+  // Conservative concurrency limits to prevent rate limiting
+  private maxConcurrency = isLocalDevelopment ? 10 : 15
+
+  async add<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          const result = await fn()
+          resolve(result)
+        } catch (error) {
+          reject(error)
+        }
+      })
+      this.process()
+    })
+  }
+
+  private async process() {
+    if (this.activeCount >= this.maxConcurrency || this.queue.length === 0) {
+      return
+    }
+
+    const fn = this.queue.shift()
+    if (!fn) return
+
+    this.activeCount++
+    try {
+      await fn()
+    } finally {
+      this.activeCount--
+      this.process()
+    }
+  }
+}
+
+const requestQueue = new RequestQueue()
+
+async function fetchWithTimeout(url: string, timeout: number, headers?: HeadersInit): Promise<Response> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers,
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error) {
+    clearTimeout(timeoutId)
+    throw error
+  }
+}
+
+async function fetchWithRetry(url: string, retries: number, timeout: number, headers?: HeadersInit): Promise<any> {
+  try {
+    const response = await fetchWithTimeout(url, timeout, headers)
+
+    // Check if response is HTML (rate limit or error page) instead of JSON
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('text/html')) {
+      throw new Error(`Node returned HTML error page (likely rate limited or server error). Status: ${response.status}`)
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    if (retries > 0) {
+      const nextTimeout = timeout * BACKOFF_FACTOR
+      // Small delay before retry to reduce load
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      return await fetchWithRetry(url, retries - 1, nextTimeout, headers)
+    }
+    throw error
+  }
+}
+
 export async function fetchNodeData(endpoint: string, queryParams: string[]): Promise<any> {
   if (!process.env.NEXT_PUBLIC_LOCAL_NODE_URL && !process.env.NEXT_PUBLIC_PUBLIC_NODE_URL) {
-    // If Node URL is not given, returns fake data
     return fetchFakeData(endpoint, queryParams)
   }
-  try {
-    const localNodeUrl = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}${endpoint}?${queryParams.join('&')}`
-    if (localNodeUrl) {
-      try {
-        const response = await fetch(localNodeUrl)
-        return await response.json()
-      } catch {
-        const publicNodeUrl = `${process.env.NEXT_PUBLIC_PUBLIC_NODE_URL}${endpoint}?${queryParams.join('&')}`
-        if (publicNodeUrl) {
-          const response = await fetch(publicNodeUrl)
-          return await response.json()
-        }
 
-        throw new Error('Failed to fetch data from both local and public nodes')
-      }
+  // Use request queue to prevent overwhelming the node with concurrent requests
+  return requestQueue.add(async () => {
+    // Prepare headers with API key if available (server-side only)
+    const headers: HeadersInit = {}
+    if (process.env.NODE_API_KEY) {
+      headers['X-API-Key'] = process.env.NODE_API_KEY
     }
-  } catch (error: any) {
-    throw new Error('Error fetching data: ' + error.message)
-  }
+
+    try {
+      // Try local node first if configured
+      if (process.env.NEXT_PUBLIC_LOCAL_NODE_URL) {
+        try {
+          const localNodeUrl = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}${endpoint}?${queryParams.join('&')}`
+          return await fetchWithRetry(localNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)
+        } catch (error) {
+          // If local node fails, fall through to try public node
+          console.warn(`Local node failed for ${endpoint}, trying public node:`, error)
+        }
+      }
+
+      // Try public node as fallback or primary
+      if (process.env.NEXT_PUBLIC_PUBLIC_NODE_URL) {
+        const publicNodeUrl = `${process.env.NEXT_PUBLIC_PUBLIC_NODE_URL}${endpoint}?${queryParams.join('&')}`
+        return await fetchWithRetry(publicNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)
+      }
+
+      throw new Error('No node URL configured (NEXT_PUBLIC_LOCAL_NODE_URL or NEXT_PUBLIC_PUBLIC_NODE_URL)')
+    } catch (error: any) {
+      throw new Error('Error fetching data from ' + endpoint + ' with params ' + queryParams + ': ' + error.message)
+    }
+  })
 }

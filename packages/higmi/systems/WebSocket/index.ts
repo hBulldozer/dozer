@@ -184,10 +184,14 @@ export const useWebSocketGeneric = (
   const [isConnecting, setIsConnecting] = useState(false) // Track connection state
 
   const get_latest = async () => {
-    const response = await fetch(`${NODE_URL}?size=1`)
+    const headers: HeadersInit = {}
+    if (process.env.NEXT_PUBLIC_NODE_API_KEY) {
+      headers['X-API-Key'] = process.env.NEXT_PUBLIC_NODE_API_KEY
+    }
+    const response = await fetch(`${NODE_URL}?size=1`, { headers })
     const result = await response.json()
     const latest = result.latest_event_id
-    
+
     return latest
   }
   useEffect(() => {

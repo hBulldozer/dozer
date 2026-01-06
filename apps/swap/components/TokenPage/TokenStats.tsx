@@ -10,11 +10,6 @@ interface TokenStats {
 }
 
 export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
-  const priceArray = pair.hourSnapshots.map((snap) =>
-    pair.id.includes('native') ? snap.reserve1 / snap.reserve0 : (snap.priceHTR * snap.reserve1) / snap.reserve0
-  )
-  priceArray.push(pair.id.includes('native') ? prices['00'] : prices[pair.token1.uuid])
-
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <div className="flex flex-col gap-1 p-3 rounded-md shadow-md bg-stone-800 shadow-black/20">
@@ -51,7 +46,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
           Min (52W)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {pair.id.includes('usdt') ? formatUSD(1) : formatUSD(Math.min(...priceArray))}
+          -
         </Typography>
         {/* {pair.volume1dChange ? (
           <Typography variant="xs" weight={500} className={pair.volume1dChange > 0 ? 'text-green' : 'text-red'}>
@@ -65,11 +60,7 @@ export const TokenStats: FC<TokenStats> = ({ pair, prices }) => {
           Max (52W)
         </Typography>
         <Typography weight={500} className="text-stone-50">
-          {pair.id.includes('usdt')
-            ? formatUSD(1)
-            : Math.max(...priceArray) > 1
-            ? formatUSD(Math.max(...priceArray))
-            : formatUSD(Math.max(...priceArray))}
+          -
         </Typography>
         {/* {pair.txCount1dChange ? (
           <Typography variant="xs" weight={500} className={pair.txCount1dChange > 0 ? 'text-green' : 'text-red'}>

@@ -14,6 +14,7 @@
     "@dozer/zustand": "workspace:*",
     "@headlessui/react": "^1.7.3",
     "@heroicons/react": "^2.1.5",
+    "@socialgouv/matomo-next": "^1.9.1",
     "@tailwindcss/typography": "^0.5.10",
     "@tanstack/react-table": "8.5.0",
     "@trpc/client": "^10.45.0",
@@ -23,7 +24,7 @@
     "date-fns": "3.6.0",
     "echarts-for-react": "3.0.2",
     "lodash": "^4.17.21",
-    "next": "14.2.5",
+    "next": "14.2.35",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "sharp": "^0.33.4",
@@ -54,6 +55,6 @@
     "dev": "next dev --port 9001",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "next lint",
-    "start": "next start"
+    "start": "PORT=9001 /bin/bash -c 'node .next/standalone/apps/swap/server.js'"
   }
 }

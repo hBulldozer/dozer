@@ -49,7 +49,7 @@ export const Hero: FC = () => {
   }, [isInView])
 
   return (
-    <section className="relative pt-12 sm:pt-20 pb-20 sm:pb-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black">
+    <section className="relative  mt-24 py-20 sm:py-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black">
       {/* <section className="mt-48 py-20 sm:py-40 px-4 border-t border-neutral-200/10 bg-gradient-to-b from-white/[0.04] to-black"></section> */}
       <Container maxWidth="5xl" className="px-4 mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[auto_400px] justify-between gap-[100px]">
@@ -99,7 +99,7 @@ export const Hero: FC = () => {
                   >
                     <div ref={ref} className={classNames('p-3 mx-0.5 grid grid-cols-2 items-center pb-4 font-medium')}>
                       <App.NavItemList hideOnMobile={false}>
-                        <App.NavItem href="https://www.dozer.finance/swap" label="Swap" />
+                        <App.NavItem href={`${process.env.NEXT_PUBLIC_SITE_URL}/swap`} label="Swap" />
                       </App.NavItemList>
                     </div>
                   </motion.div>
@@ -155,14 +155,8 @@ export const Hero: FC = () => {
                           delay: 2,
                         }}
                       >
-                        <Button
-                          as="a"
-                          href="https://forms.gle/8cEKvsaNrTP4c8Ef6"
-                          size="md"
-                          fullWidth
-                          className="relative z-10"
-                        >
-                          Join Now
+                        <Button as="a" href="/swap" size="md" fullWidth className="relative z-10">
+                          Enter App
                         </Button>
                       </motion.div>
                     </div>
@@ -176,7 +170,7 @@ export const Hero: FC = () => {
               Trade Instantly on Dozer. <br /> <span className="text-yellow"> {TITLES[index]}.</span>
             </Typography>
             <Typography variant="lg" className="mt-3 text-neutral-400">
-              The fastest swap in web3. <br />
+              The fastest swap on the web3. <br />
               No registration needed and you won&apos;t spend gas.
             </Typography>
             {/* <div className="mt-10">

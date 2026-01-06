@@ -12,15 +12,17 @@
     "@dozer/ui": "workspace:*",
     "@dozer/zustand": "workspace:*",
     "@headlessui/react": "^1.7.3",
+    "@hathor/hathor-rpc-handler": "3.5.0",
     "@heroicons/react": "^2.1.5",
     "@trpc/client": "^10.45.0",
     "@trpc/next": "^10.45.0",
-    "hathor-rpc-handler-test": "^0.0.38",
+    "@walletconnect/core": "^2.16.1",
+    "@walletconnect/modal": "^2.7.0",
+    "@walletconnect/sign-client": "^2.16.1",
+    "@walletconnect/types": "^2.16.1",
+    "@web3modal/standalone": "^2.4.3",
     "superjson": "1.9.1",
-    "@walletconnect/sign-client": "^2.15.1",
-    "@walletconnect/types": "^2.15.1",
-    "@walletconnect/core": "^2.15.1",
-    "@web3modal/standalone": "^2.4.3"
+    "web3": "^4.16.0"
   },
   "devDependencies": {
     "@dozer/eslint-config": "workspace:*",
@@ -30,7 +32,7 @@
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "eslint": "*",
-    "next": "14.2.5",
+    "next": "14.2.35",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "typechain": "^8.3.2",
@@ -42,7 +44,7 @@
   ],
   "license": "MIT",
   "optionalDependencies": {
-    "next": "14.2.5"
+    "next": "14.2.35"
   },
   "peerDependencies": {
     "react": "18.3.1",

@@ -12,7 +12,9 @@ export function useInterval(callback: () => void, delay: null | number, leading 
   useEffect(() => {
     function tick() {
       const current = savedCallback.current
-      current && current()
+      if (current) {
+        current()
+      }
     }
 
     if (delay !== null) {

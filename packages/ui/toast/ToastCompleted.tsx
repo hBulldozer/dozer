@@ -7,16 +7,17 @@ import { ToastButtons } from './ToastButtons'
 import { ToastContent } from './ToastContent'
 
 interface ToastCompleted extends Omit<NotificationData, 'promise'> {
+  title?: string
   onDismiss(): void
 }
 
-export const ToastCompleted: FC<ToastCompleted> = ({ href, onDismiss, summary }) => {
+export const ToastCompleted: FC<ToastCompleted> = ({ title, href, onDismiss, summary }) => {
   const txUrl = href
   return (
     <>
       <ToastContent
         icon={<CheckCircleIcon width={18} height={18} className="text-green" />}
-        title="Transaction Completed"
+        title={title || 'Transaction Completed'}
         summary={summary.completed}
       />
       <ToastButtons href={txUrl} onDismiss={onDismiss} />

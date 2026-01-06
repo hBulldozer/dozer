@@ -1,8 +1,15 @@
-import { AppearOnMount, BreadcrumbLink, LoadingOverlay } from '@dozer/ui'
+import {
+  AppearOnMount,
+  BreadcrumbLink,
+  LoadingOverlay,
+  SimplePoolTransactionHistory,
+  transformTransactions,
+} from '@dozer/ui'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
 import { Pair } from '@dozer/api'
 import { PoolChart } from '../../components/PoolSection/PoolChart'
+// Remove old transaction history import
 
 import {
   Layout,
@@ -22,134 +29,294 @@ import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { RouterOutputs, api } from '../../utils/api'
 import { useAccount } from '@dozer/zustand'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
+import React, { useMemo, useEffect } from 'react'
+import { Token } from '@dozer/currency'
 
 export const config = {
   maxDuration: 60,
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
+  // During build, we may hit rate limits on the public node.
+  // To prevent build failures, we wrap this in a try-catch and return empty paths.
+  // Pages will still be generated on-demand via fallback: 'blocking'
+  try {
+    const ssg = generateSSGHelper()
+    const pools = await ssg.getPools.all.fetch()
 
-  if (!pools) {
-    throw new Error(`Failed to fetch pool, received ${pools}`)
+    if (!pools) {
+      console.warn('[getStaticPaths] Failed to fetch pools, returning empty paths')
+      return { paths: [], fallback: 'blocking' }
+    }
+
+    // Get the paths we want to pre-render based on symbol IDs instead of pool keys
+    const paths = pools?.map((pool: any) => ({
+      params: { id: pool.symbolId || `${pool.id}` }, // Use symbolId if available, fallback to pool key
+    }))
+
+    // We'll pre-render only these paths at build time.
+    // { fallback: blocking } will server-render pages
+    // on-demand if the path doesn't exist.
+    return { paths, fallback: 'blocking' }
+  } catch (error) {
+    console.warn('[getStaticPaths] Error fetching pools during build, returning empty paths:', error)
+    // Return empty paths - all pages will be generated on-demand
+    return { paths: [], fallback: 'blocking' }
   }
-  // Get the paths we want to pre-render based on pairs
-  const paths = pools?.map((pool) => ({
-    params: { id: `${pool.id}` },
-  }))
-
-  // We'll pre-render only these paths at build time.
-  // { fallback: blocking } will server-render pages
-  // on-demand if the path doesn't exist.
-  return { paths, fallback: 'blocking' }
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string
   const ssg = generateSSGHelper()
-  const pools = await ssg.getPools.all.fetch()
-  if (!pools) {
-    throw new Error(`Failed to fetch pool, received ${pools}`)
-  }
-  const poolsDay = await ssg.getPools.allDay.fetch()
-  if (!poolsDay) {
-    throw new Error(`Failed to fetch pool, received ${pools}`)
-  }
-  const pool = pools.find((pool) => pool.id === id)
-  if (!pool) {
-    throw new Error(`Failed to find pool with id ${id}`)
-  }
-  // const poolNC = await ssg.getPools.byIdFromContract.fetch({ id: pool.id })
-  // if (!poolNC) {
-  //   throw new Error(`Failed to fetch pool, received ${poolNC}`)
-  // }
-  const tokens = [pool.token0, pool.token1]
-  await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.all.prefetch()
-  await ssg.getPools.snapsById.prefetch({ id: pool.id })
-  await ssg.getPools.allDay.prefetch()
-  return {
-    props: {
-      trpcState: ssg.dehydrate(),
-    },
-    revalidate: 3600,
+
+  try {
+    // Try to determine if this is a symbol-based ID (contains hyphens) or a pool key (contains slashes)
+    const isSymbolId = id.includes('-') && !id.includes('/')
+
+    let pool: any = null
+
+    if (isSymbolId) {
+      // Try to fetch using the symbol-based ID
+      try {
+        pool = await ssg.getPools.bySymbolId.fetch({ symbolId: id })
+      } catch (error) {
+        console.error(`[getStaticProps] Failed to fetch pool with symbol ID ${id}:`, error)
+        // Return notFound instead of throwing - allows build to succeed
+        return { notFound: true, revalidate: 10 }
+      }
+    } else {
+      // Fallback to old method - search in all pools
+      const pools = await ssg.getPools.all.fetch()
+      if (!pools) {
+        console.error(`[getStaticProps] Failed to fetch pools for id ${id}`)
+        return { notFound: true, revalidate: 10 }
+      }
+      pool = pools.find((pool: any) => pool.id === id || pool.symbolId === id)
+      if (!pool) {
+        console.error(`[getStaticProps] Failed to find pool with id ${id}`)
+        return { notFound: true, revalidate: 10 }
+      }
+    }
+
+    await ssg.getPools.all.prefetch()
+    await ssg.getPrices.allUSD.prefetch()
+    await ssg.getPools.getAllTransactionHistory.prefetch({ count: 20, poolFilter: pool.id })
+
+    return {
+      props: {
+        trpcState: ssg.dehydrate(),
+      },
+      revalidate: 60,
+    }
+  } catch (error) {
+    console.error(`[getStaticProps] Unexpected error for pool ${id}:`, error)
+    // Return notFound to allow build to succeed - page will retry on next request
+    return { notFound: true, revalidate: 10 }
   }
 }
 
 const LINKS = ({ pair }: { pair: Pair }): BreadcrumbLink[] => [
   {
-    href: `/${pair.id}`,
+    href: `/${(pair as any).symbolId || pair.id}`, // Use symbolId if available, fallback to pool key
     label: `${pair.name}`,
   },
 ]
 
-const Pool = () => {
-  const router = useRouter()
-  if (router.isFallback) {
-    return <div>Loading...</div>
+// Component to handle simplified pool transaction history
+const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pair: Pair }) => {
+  // Fetch all transaction history (since pool filtering isn't working properly)
+  const {
+    data: transactionData,
+    isLoading,
+    error,
+    refetch,
+  } = api.getPools.getAllTransactionHistory.useQuery(
+    {
+      count: 50, // Reduced since we're filtering server-side
+      poolFilter: poolKey, // Use server-side pool filtering
+    },
+    {
+      enabled: !!poolKey,
+      staleTime: 30000, // Cache for 30 seconds
+      refetchOnWindowFocus: false,
+    }
+  )
+
+  // Fetch USD prices for value calculation
+  const { data: pricesData } = api.getPrices.allUSD.useQuery(undefined, {
+    staleTime: 60000, // Cache prices for 1 minute
+    refetchOnWindowFocus: false,
+  })
+
+  const handleRefresh = () => {
+    refetch()
   }
 
-  const id = router.query.id as string
+  const allTransactions = transactionData?.transactions || []
+  const errorMessage = error ? error.message : undefined
+  const prices = pricesData || {}
 
-  const { data: prices = {} } = api.getPrices.all.useQuery()
-  if (!prices) return <></>
-  const { data: poolsDay } = api.getPools.allDay.useQuery()
-  if (!poolsDay) return <></>
-  const { data: pools } = api.getPools.all.useQuery()
-  if (!pools) return <></>
-  const pair_day = poolsDay.find((pool) => pool.id === id)
-  if (!pair_day) return <></>
-  const pair_without_snaps = pools.find((pool) => pool.id === id)
-  if (!pair_without_snaps) return <></>
-  const snaps = api.getPools.snapsById.useQuery({ id: pair_without_snaps.id })
-  if (!snaps || !snaps.data) return <></>
-  const pair = pair_without_snaps
-    ? { ...pair_without_snaps, hourSnapshots: snaps.data.hourSnapshots, daySnapshots: snaps.data.daySnapshots }
-    : undefined
-  if (!pair) return <></>
-  const tokens = pair ? [pair.token0, pair.token1] : []
-  if (!tokens) return <></>
+  // Filter transactions for basic validation (server-side pool filtering already applied)
+  const poolSpecificTransactions = allTransactions.filter((tx) => {
+    // Filter out failed transactions using the success field from API
+    if (tx.success === false) {
+      return false
+    }
+
+    // Multi-hop transactions ARE included if this pool is in the swap path
+    // The server-side filtering already checked that this pool is involved
+
+    // Server-side filtering already handled pool-specific filtering via poolFilter parameter
+    // No need for additional token involvement checks since the server parsed the NC args properly
+    return true
+  })
+
+  // Transform filtered transactions to simple format
+  const simpleTransactions = transformTransactions(poolSpecificTransactions, prices, poolKey)
 
   return (
-    <PoolPositionProvider pair={pair} prices={prices}>
+    <SimplePoolTransactionHistory
+      poolKey={poolKey}
+      transactions={simpleTransactions}
+      loading={isLoading}
+      error={errorMessage}
+      onRefresh={handleRefresh}
+      token0Symbol={pair.token0.symbol}
+      token1Symbol={pair.token1.symbol}
+    />
+  )
+}
+
+const Pool = () => {
+  const router = useRouter()
+  const id = router.query.id as string
+
+  // Determine if this is a symbol-based ID or pool key
+  const isSymbolId = id.includes('-') && !id.includes('/')
+
+  const { data: initialPrices = {} } = api.getPrices.allUSD.useQuery(undefined, {
+    suspense: false,
+    refetchOnMount: false,
+    staleTime: 30000,
+  })
+
+  // Fetch the specific pool by symbol ID if it's a symbol-based ID
+  const { data: poolBySymbolId, isLoading: isLoadingPoolBySymbolId } = api.getPools.bySymbolId.useQuery(
+    { symbolId: id },
+    {
+      enabled: isSymbolId,
+      suspense: false,
+      refetchOnMount: false,
+      staleTime: 30000,
+    }
+  )
+
+  // Fallback: fetch all pools to find the pool by ID (for backwards compatibility)
+  const { data: initialPools, isLoading: isLoadingAllPools } = api.getPools.all.useQuery(undefined, {
+    enabled: !isSymbolId,
+    suspense: false,
+    refetchOnMount: false,
+    staleTime: 30000,
+  })
+
+  // Determine the initial pair
+  const initialPair = useMemo(() => {
+    if (isSymbolId) {
+      return poolBySymbolId
+    }
+    return initialPools?.find((pool: any) => pool.id === id || pool.symbolId === id)
+  }, [isSymbolId, poolBySymbolId, initialPools, id])
+
+  const { data: detailedPrices = {}, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery(undefined, {
+    staleTime: 30000,
+    enabled: !!initialPrices,
+  })
+
+  // For detailed data, we'll fetch the specific pool again or from all pools
+  const { data: detailedPoolBySymbolId, isLoading: isLoadingDetailedPoolBySymbolId } = api.getPools.bySymbolId.useQuery(
+    { symbolId: id },
+    {
+      enabled: isSymbolId && !!initialPair,
+      staleTime: 30000,
+    }
+  )
+
+  const { data: detailedPools, isLoading: isLoadingDetailedPools } = api.getPools.all.useQuery(undefined, {
+    enabled: !isSymbolId && !!initialPair,
+    staleTime: 30000,
+  })
+
+  const detailedPair = useMemo(() => {
+    if (isSymbolId) {
+      return detailedPoolBySymbolId
+    }
+    return detailedPools?.find((pool: any) => pool.id === id || pool.symbolId === id)
+  }, [isSymbolId, detailedPoolBySymbolId, detailedPools, id])
+
+  const prices = detailedPrices || initialPrices || {}
+  const pair = detailedPair || initialPair
+
+  const memoizedPair = useMemo(() => {
+    if (!pair) return null
+    return {
+      ...pair,
+      token0: new Token({ ...pair.token0, imageUrl: pair.token0.imageUrl ?? undefined }),
+      token1: new Token({ ...pair.token1, imageUrl: pair.token1.imageUrl ?? undefined }),
+    }
+  }, [pair])
+
+  // Show loading overlay instead of early returns
+  const isLoading =
+    router.isFallback ||
+    isLoadingPrices ||
+    (isSymbolId ? isLoadingDetailedPoolBySymbolId : isLoadingDetailedPools) ||
+    !initialPrices ||
+    !initialPair ||
+    !pair ||
+    (isSymbolId ? isLoadingPoolBySymbolId : isLoadingAllPools)
+
+  if (isLoading || !memoizedPair) {
+    return (
+      <Layout breadcrumbs={[]}>
+        <LoadingOverlay show={true} />
+      </Layout>
+    )
+  }
+
+  return (
+    <PoolPositionProvider pair={memoizedPair as Pair} prices={prices}>
       <>
-        <LoadingOverlay
-          show={!prices || !pools || !poolsDay || !pair_day || !pair_without_snaps || !snaps || !tokens || !pair}
-        />
-        <Layout breadcrumbs={LINKS({ pair })}>
+        <Layout breadcrumbs={LINKS({ pair: memoizedPair as Pair })}>
           <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
             <div className="flex flex-col order-1 gap-9">
-              <PoolHeader pair={pair} prices={prices} />
-              {/* uses chainid, swapfee, apr, incentivesapr */}
+              <PoolHeader pair={memoizedPair as Pair} prices={prices} isLoading={isLoading} />
               <hr className="my-3 border-t border-stone-200/5" />
-              <PoolChart pair={pair} />
-              {/* uses snapshots and swapfees */}
+              {/* TODO: Re-enable once history data access is refined */}
+              {/* <PoolChart pair={pair} /> */}
               <AppearOnMount>
-                <PoolStats pair={pair_day} prices={prices} />
-                {/* liquidityusd, volume1d, swapfee  */}
+                <PoolStats pair={memoizedPair as Pair} prices={prices} />
               </AppearOnMount>
 
-              {/* uses token0 token1 reserve0 reserve1 */}
-              {/* <PoolRewards pair={pair} /> */}
+              <AppearOnMount>
+                <PoolTransactionHistorySection poolKey={(memoizedPair as Pair).id} pair={memoizedPair as Pair} />
+              </AppearOnMount>
             </div>
 
             <div className="flex flex-col order-2 gap-4">
               <AppearOnMount>
                 <div className="flex flex-col gap-10">
-                  <PoolComposition pair={pair} prices={prices} />
-                  {/* <PoolMyRewards pair={pair} /> */}
-                  <PoolPosition pair={pair} />
+                  <PoolComposition pair={memoizedPair as Pair} prices={prices} isLoading={isLoading} />
+                  <PoolPosition pair={memoizedPair as Pair} isLoading={isLoading} />
                 </div>
               </AppearOnMount>
               <div className="hidden lg:flex">
-                <PoolButtons pair={pair} />
+                <PoolButtons pair={memoizedPair as Pair} />
               </div>
             </div>
           </div>
           <BlockTracker client={api} />
         </Layout>
-        <PoolActionBar pair={pair} />
+        <PoolActionBar pair={memoizedPair as Pair} />
       </>
     </PoolPositionProvider>
   )

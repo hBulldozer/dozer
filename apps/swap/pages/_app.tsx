@@ -8,7 +8,10 @@ import { useEffect, useState } from 'react'
 import { api } from 'utils/api'
 import { Header } from '../components'
 import Head from 'next/head'
-import { ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
+import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
+// @ts-expect-error - Hathor Snap Utils is not typed
+import { MetaMaskProvider as HathorSnapProvider } from '@hathor/snap-utils'
+import { MetaMaskProvider as MetaMaskSDKProvider } from '../components/MetaMaskProvider'
 import { config } from '@hathor/wallet-lib'
 
 config.setServerUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL || '')
@@ -21,37 +24,8 @@ declare global {
 }
 
 const MyApp = ({ Component, pageProps }: AppProps) => {
-  // const router = useRouter()
-  // const [isLoading, setIsLoading] = useState(false)
-  // useEffect(() => {
-  //   const handler = (page: any) => {
-  //     window.dataLayer.push({
-  //       event: 'pageview',
-  //       page,
-  //     })
-  //   }
-  //   return () => {
-  //     router.events.off('routeChangeComplete', handler)
-  //     router.events.off('hashChangeComplete', handler)
-  //   }
-  // }, [router.events])
-
-  // useEffect(() => {
-  //   router.events.on('routeChangeStart', (url) => {
-  //     setIsLoading(true)
-  //   })
-
-  //   router.events.on('routeChangeComplete', (url) => {
-  //     setIsLoading(false)
-  //   })
-
-  //   router.events.on('routeChangeError', (url) => {
-  //     setIsLoading(false)
-  //   })
-  // }, [isLoading, router])
   return (
     <>
-      {/* <LoadingOverlay show={isLoading} /> */}
       <Head>
         <title>Dozer Finance - Swap 📈</title>
         <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=1" />
@@ -64,12 +38,18 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
       <ThemeProvider>
         <App.Shell>
           <ClientContextProvider>
-            <JsonRpcContextProvider>
-              <Header />
-              <Component {...pageProps} />
-              <App.Footer />
-              <ToastContainer className="mt-[50px]" />
-            </JsonRpcContextProvider>
+            <HathorSnapProvider>
+              <MetaMaskSDKProvider>
+                <JsonRpcContextProvider>
+                  <BridgeProvider>
+                    <Header />
+                    <Component {...pageProps} />
+                    <App.Footer />
+                    <ToastContainer className="mt-[50px]" />
+                  </BridgeProvider>
+                </JsonRpcContextProvider>
+              </MetaMaskSDKProvider>
+            </HathorSnapProvider>
           </ClientContextProvider>
         </App.Shell>
       </ThemeProvider>

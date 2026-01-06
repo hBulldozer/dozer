@@ -12,17 +12,17 @@ const config: Record<
 > = {
   Features: {
     Swap: {
-      href: 'https://testnet.dozer.finance/swap',
+      href: `${process.env.NEXT_PUBLIC_SITE_URL}/swap`,
       target: '_blank',
       rel: 'noopener noreferrer',
     },
     Earn: {
-      href: 'https://testnet.dozer.finance/pool',
+      href: `${process.env.NEXT_PUBLIC_SITE_URL}/pool`,
       target: '_blank',
       rel: 'noopener noreferrer',
     },
-    Launch: {
-      href: 'https://testnet.dozer.finance/pool/create_token',
+    Oasis: {
+      href: `${process.env.NEXT_PUBLIC_SITE_URL}/pool/oasis`,
       target: '_blank',
       rel: 'noopener noreferrer',
     },
@@ -104,7 +104,7 @@ export function Footer(props: FooterProps): JSX.Element {
   )
 
   return (
-    <footer className="hidden md:flex flex-col border-t border-stone-300/5 mt-auto pt-[26px]" {...props}>
+    <footer className="hidden md:flex flex-col border-t border-stone-300/5 mt-auto pt-[26px] z-50" {...props}>
       <Container maxWidth="5xl" className="grid grid-cols-1 md:grid-cols-[176px_auto] mx-auto px-4 gap-4">
         <div className="flex flex-col gap-3">
           <div className="items-center justify-start w-32">
@@ -120,7 +120,7 @@ export function Footer(props: FooterProps): JSX.Element {
             <a href="https://t.me/DozerFinance" target="_blank" rel="noopener noreferrer">
               <TelegramIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
-            <a href="https://forms.gle/8cEKvsaNrTP4c8Ef6" target="_blank" rel="noopener noreferrer">
+            <a href="https://discord.gg/Ec2VPGu5MF" target="_blank" rel="noopener noreferrer">
               <DiscordIcon width={16} className="text-stone-200 hover:text-stone-50" />
             </a>
             <a href="https://github.com/Dozer-Protocol" target="_blank" rel="noopener noreferrer">
@@ -149,10 +149,10 @@ export function Footer(props: FooterProps): JSX.Element {
       <Container maxWidth="5xl" className="mx-auto mt-8 mb-2">
         <div className="flex justify-between py-2 mx-4 border-t border-stone-800">
           <Typography variant="xs" className="text-stone-300">
-            Copyright © 2025 Dozer. All rights reserved.
+            Copyright © 2026 Dozer. All rights reserved.
           </Typography>
           <div className="flex divide-x divide-stone-100/20 gap-">
-            <Link.Internal href="https://mvp.dozer.finance" passHref={true}>
+            <Link.Internal href={`${process.env.NEXT_PUBLIC_SITE_URL}/terms-of-use`} passHref={true}>
               <Typography as="a" variant="xs" weight={500} className="px-3 text-stone-200">
                 Terms of Use
               </Typography>

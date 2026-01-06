@@ -88,8 +88,9 @@ export default function Features() {
               Zero Gas Fees
             </Typography>
             <Typography variant="sm" className="text-left text-neutral-500">
-              Thanks to Hathor Network's efficient architecture, transactions fess are zero, yes ZERO. This makes Dozer
-              an ideal platform for micropayments and frequent transactions, opening up infinity possibilities for DeFi.
+              Thanks to Hathor Network&apos;s efficient architecture, transactions fess are zero, yes ZERO. This makes
+              Dozer an ideal platform for micropayments and frequent transactions, opening up infinity possibilities for
+              DeFi.
             </Typography>
           </div>
         </Dialog.Content>
@@ -102,8 +103,8 @@ export default function Features() {
               Seamless Asset Transfer
             </Typography>
             <Typography variant="sm" className="mb-6 text-left text-neutral-500">
-              Dozer's EVM Bridge enables users to easily transfer assets between Ethereum-compatible networks and the
-              Hathor Network. This groundbreaking feature allows you to leverage the best of both worlds – the
+              Dozer&apos;s EVM Bridge enables users to easily transfer assets between Ethereum-compatible networks and
+              the Hathor Network. This groundbreaking feature allows you to leverage the best of both worlds – the
               established ecosystem of Ethereum and the high-speed, low-cost advantages of Hathor.
             </Typography>
             <Typography variant="lg" className="mb-2 text-left text-neutral-300">
@@ -125,9 +126,9 @@ export default function Features() {
               Create Your Token in Seconds
             </Typography>
             <Typography variant="sm" className="mb-6 text-left text-neutral-500">
-              Dozer's intuitive interface allows you to create and deploy custom tokens in seconds. Whether you're
-              launching a new project, creating loyalty points, tokenizing assets, or just exploring the technology, our
-              dApp simplifies the process, making token creation accessible to everyone.
+              Dozer&apos;s intuitive interface allows you to create and deploy custom tokens in seconds. Whether
+              you&apos;re launching a new project, creating loyalty points, tokenizing assets, or just exploring the
+              technology, our dApp simplifies the process, making token creation accessible to everyone.
             </Typography>
             <Typography variant="lg" className="mb-2 text-left text-neutral-300">
               Instant Liquidity

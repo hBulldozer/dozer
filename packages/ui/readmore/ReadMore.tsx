@@ -16,7 +16,7 @@ const ReadMore: React.FC<ReadMoreProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const truncatedText = `${text.slice(0, maxLength)}...`
+    const truncatedText = text.length > maxLength ? `${text.slice(0, maxLength)}...` : text
   const fullText = text
 
   const handleToggle = () => setIsExpanded(!isExpanded)

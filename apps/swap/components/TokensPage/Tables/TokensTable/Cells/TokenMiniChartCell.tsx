@@ -66,33 +66,94 @@ function generateHorizontalLineSvg(width: number, height: number, padding: numbe
 }
 
 export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
-  const { data: prices24h, isLoading } = api.getPrices.all24h.useQuery()
-  const { data: lastPrices, isLoading: isLoadingLast } = api.getPrices.all.useQuery()
-  const tokenUuid = row.id.includes('native') ? row.token0.uuid : row.token1.uuid
-  const lastPrice = lastPrices?.[tokenUuid]
-  let price24h: number[] = []
-  if (prices24h) {
-    price24h = prices24h[tokenUuid].map((p) => Number(p.toPrecision(5)))
+  // Extract token UUID from row ID
+  const tokenUuid = row.id.replace('token-', '')
+
+  // Fetch chart data using improved prices API with automatic environment detection
+  const { data: chartData, isLoading } = api.getPrices.chartData.useQuery(
+    { 
+      tokenUid: tokenUuid,
+      currency: 'USD',
+      // No timeframe needed - automatically uses 5min for dev, 24h for production
+      points: 10, // Use 10 points for smooth chart
+    },
+    {
+      enabled: !!tokenUuid && !row.id.includes('husdc'), // Don't fetch for hUSDC as it's stable
+      staleTime: 60000, // Cache for 1 minute
+      refetchInterval: 120000, // Refresh every 2 minutes (less frequent than change data)
+    }
+  )
+
+  // Handle loading state
+  if (isLoading && !row.id.includes('husdc')) {
+    return (
+      <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
+        <Skeleton.Box className="w-[120px] h-[22px] bg-white/[0.06] rounded-full" />
+      </div>
+    )
   }
-  price24h.push(lastPrice ? Number(lastPrice.toPrecision(5)) : price24h[0])
-  const points = price24h.map((p, i) => ({ x: i, y: p }))
-  const chartSVG =
-    row.id.includes('usdt') || Math.min(...price24h) == Math.max(...price24h)
-      ? generateHorizontalLineSvg(110, 30, 6)
-      : createSVGString(points, 110, 30, 6)
-  return isLoading || isLoadingLast ? (
-    <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
-      <Skeleton.Box className="w-[120px] h-[22px] bg-white/[0.06] rounded-full" />
-    </div>
-  ) : chartSVG && !chartSVG.includes('NaN') ? (
+
+  // Handle hUSDC (stable coin - always flat line)
+  if (row.id.includes('husdc')) {
+    return (
+      <div
+        dangerouslySetInnerHTML={{
+          __html: generateHorizontalLineSvg(110, 30, 6),
+        }}
+      />
+    )
+  }
+
+  // Process chart data and create SVG
+  if (chartData && chartData.length > 1) {
+    // Convert chart data to points - chartData has format {timestamp, price, date}
+    const prices = chartData.map(point => point.price).filter(price => price > 0)
+    
+    // Check if all prices are the same (flat line)
+    const minPrice = Math.min(...prices)
+    const maxPrice = Math.max(...prices)
+    const isFlat = prices.length === 0 || minPrice === maxPrice
+    
+    if (isFlat) {
+      return (
+        <div
+          dangerouslySetInnerHTML={{
+            __html: generateHorizontalLineSvg(110, 30, 6),
+          }}
+        />
+      )
+    }
+
+    // Create points for SVG path
+    const points: Point[] = prices.map((price, index) => ({
+      x: index,
+      y: price,
+    }))
+
+    try {
+      const chartSVG = createSVGString(points, 110, 30, 6)
+      
+      // Validate SVG doesn't contain NaN values
+      if (chartSVG && !chartSVG.includes('NaN')) {
+        return (
+          <div
+            dangerouslySetInnerHTML={{
+              __html: chartSVG,
+            }}
+          />
+        )
+      }
+    } catch (error) {
+      console.error('Error creating chart SVG:', error)
+    }
+  }
+
+  // Fallback: show horizontal line if no valid data or errors
+  return (
     <div
       dangerouslySetInnerHTML={{
-        __html: chartSVG,
+        __html: generateHorizontalLineSvg(110, 30, 6),
       }}
     />
-  ) : (
-    <Typography variant="sm" weight={300}>
-      Failed to fetch
-    </Typography>
   )
 }

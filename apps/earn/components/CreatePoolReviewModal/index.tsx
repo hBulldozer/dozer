@@ -15,8 +15,8 @@ import {
   CopyHelper,
 } from '@dozer/ui'
 import { useAccount, useNetwork, useTrade, TokenBalance, useSettings } from '@dozer/zustand'
-import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
-import { LiquidityPool } from '@dozer/nanocontracts'
+import { useJsonRpc, useWalletConnectClient, getErrorMessage } from '@dozer/higmi'
+import { PoolManager } from '@dozer/nanocontracts'
 import { get } from 'lodash'
 import { api } from '../../utils/api'
 import { Rate } from '../Rate'
@@ -42,51 +42,41 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
 }) => {
   const [open, setOpen] = useState(false)
   const [sentTX, setSentTX] = useState(false)
-  const { addNotification, setBalance, balance } = useAccount()
+  const { addNotification, setBalance, balance, walletType, hathorAddress, selectedNetwork } = useAccount()
   const { network } = useNetwork()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
   const { pool } = useTrade()
 
-  const createPoolMutation = api.getPools.createPool.useMutation()
-
-  const liquidityPool = new LiquidityPool(token0?.uuid || '', token1?.uuid || '', 5, 50)
+  const poolManager = new PoolManager()
 
   const onClick = async () => {
     setSentTX(true)
     if (token0 && token1 && input0 && input1) {
       try {
-        const response = await liquidityPool.wc_initialize(
+        const response = await poolManager.createPool(
           hathorRpc,
           address,
           token0.uuid,
           token1.uuid,
           parseFloat(input0),
           parseFloat(input1),
-          0,
-          0
+          5,
+          selectedNetwork
         )
       } catch (error) {
         console.error('Error initializing pool:', error)
-        createErrorToast('Failed to initialize pool', true)
+        createErrorToast(getErrorMessage(error), true)
         setSentTX(false)
       }
     }
-  }
-
-  const editBalanceOnCreatePool = (amount0: number, token0: string, amount1: number, token1: string) => {
-    setBalance(
-      balance.map((token: TokenBalance) => {
-        if (token.token_uuid === token0) {
-          return { ...token, token_balance: token.token_balance - amount0 * 100 }
-        } else if (token.token_uuid === token1) {
-          return { ...token, token_balance: token.token_balance - amount1 * 100 }
-        }
-        return token
-      })
-    )
   }
 
   useEffect(() => {
@@ -95,17 +85,6 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
       if (token0 && token1 && input0 && input1) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
-          // Create pool in database
-          createPoolMutation.mutate({
-            name: `${token0.symbol}-${token1.symbol}`,
-            chainId: network,
-            token0Uuid: token0.uuid,
-            token1Uuid: token1.uuid,
-            reserve0: input0,
-            reserve1: input1,
-            id: hash,
-          })
-
           const notificationData: NotificationData = {
             type: 'swap',
             chainId: network,
@@ -125,8 +104,6 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
             account: address,
           }
 
-          editBalanceOnCreatePool(parseFloat(input0), token0.uuid, parseFloat(input1), token1.uuid)
-
           const notificationGroup: string[] = []
           notificationGroup.push(JSON.stringify(notificationData))
           addNotification(notificationGroup)
@@ -140,7 +117,7 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
         }
       }
     }
-  }, [rpcResult])
+  }, [rpcResult, sentTX, token0, token1, input0, input1, network, address, addNotification])
 
   return (
     <>
@@ -202,9 +179,14 @@ export const CreatePoolReviewModal: FC<CreatePoolReviewModalProps> = ({
               {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : <>Create Pool</>}
             </Button>
             {isRpcRequestPending && (
-              <Button size="md" fullWidth variant="outlined" color="red" onClick={() => reset()}>
-                Cancel Transaction
-              </Button>
+              <>
+                <Typography variant="xs" className="text-center text-stone-400">
+                  This may take up to 20 seconds when using MetaMask Snap
+                </Typography>
+                <Button size="md" fullWidth variant="outlined" color="red" onClick={() => reset()}>
+                  Cancel Transaction
+                </Button>
+              </>
             )}
           </div>
         </Dialog.Content>

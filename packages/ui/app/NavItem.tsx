@@ -36,7 +36,8 @@ export const NavItem: FC<NavItemProps> = ({ href, label, external, target, class
         <span
           className={classNames(
             href == pathname ? 'text-stone-200' : 'text-stone-400',
-            'text-sm font-semibold hover:text-white cursor-pointer'
+            'text-sm font-semibold hover:text-white cursor-pointer',
+            className
           )}
         >
           {label}

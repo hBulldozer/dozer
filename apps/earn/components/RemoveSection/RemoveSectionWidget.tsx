@@ -34,6 +34,7 @@ interface RemoveSectionWidgetProps {
   setPercentage(percentage: string): void
   prices: { [key: string]: number }
   children: ReactNode
+  hasLiquidity?: boolean
 }
 
 export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
@@ -48,6 +49,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
   currency1,
   prices,
   children,
+  hasLiquidity = true,
 }) => {
   const isMounted = useIsMounted()
   const [hover, setHover] = useState(false)
@@ -55,17 +57,23 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
     // address,
     balance,
   } = useAccount()
+  const { walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
-  const value0 = prices[token0.uuid]
-  const value1 = prices[token1.uuid]
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
+  const value0 = (token0?.uuid && prices) ? prices[token0.uuid] : 0
+  const value1 = (token1?.uuid && prices) ? prices[token1.uuid] : 0
 
   const { network } = useNetwork()
 
   return (
     <div className="relative" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <Transition
-        show={Boolean(hover && (!address || value0 == 0 || value1 == 0))}
+        show={Boolean(hover && (!address || !hasLiquidity))}
         as={Fragment}
         enter="transition duration-300 origin-center ease-out"
         enterFrom="transform opacity-0"
@@ -76,7 +84,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
       >
         <div className="border border-stone-200/5 flex justify-center items-center z-[100] absolute inset-0 backdrop-blur bg-black bg-opacity-[0.24] rounded-2xl">
           <Typography variant="xs" weight={600} className="bg-white bg-opacity-[0.12] rounded-full p-2 px-3">
-            No liquidity tokens found
+            You don&apos;t have liquidity in this pool
           </Typography>
         </div>
       </Transition>
@@ -90,7 +98,7 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                     <div className="flex gap-3">
                       <SettingsOverlay chainId={network} />
                       <Disclosure.Button className="w-full pr-0.5">
-                        <div className="flex items-center justify-between">
+                        <div className="flex justify-between items-center">
                           <div
                             className={classNames(
                               open ? 'rotate-180' : 'rotate-0',
@@ -122,12 +130,12 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                 >
                   <Disclosure.Panel unmount={false}>
                     <div className="flex flex-col gap-3 p-3">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center justify-between flex-grow">
+                      <div className="flex gap-4 items-center">
+                        <div className="flex flex-grow justify-between items-center">
                           <Input.Percent
                             onUserInput={(val) => setPercentage(val ? Math.min(+val, 100).toString() : '')}
                             value={percentage}
-                            placeholder="95%"
+                            placeholder="100%"
                             variant="unstyled"
                             className={classNames(DEFAULT_INPUT_UNSTYLED, '!text-2xl')}
                           />
@@ -142,22 +150,21 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                           <Button size="xs" onClick={() => setPercentage('75')}>
                             75%
                           </Button>
-                          <Button size="xs" onClick={() => setPercentage('95')}>
+                          <Button size="xs" onClick={() => setPercentage('100')}>
                             MAX
                           </Button>
                         </div>
                       </div>
-                      <div className="grid items-center justify-between grid-cols-3 pb-2">
+                      <div className="grid grid-cols-3 justify-between items-center pb-2">
                         <AppearOnMount show={Boolean(balance)}>
                           <Typography variant="sm" weight={500} className="text-stone-300 hover:text-stone-20">
                             {formatUSD(
-                              (Number(token0Minimum?.toFixed(2)) * value0 +
-                                Number(token1Minimum?.toFixed(2)) * value1) *
-                                (+percentage / 100)
+                              (Number(token0Minimum?.toFixed(2) || 0) * value0 +
+                                Number(token1Minimum?.toFixed(2) || 0) * value1)
                             )}
                           </Typography>
                         </AppearOnMount>
-                        {/* <AppearOnMount className="flex justify-end col-span-2" show={Boolean(balance)}>
+                        {/* <AppearOnMount className="flex col-span-2 justify-end" show={Boolean(balance)}>
                           <Typography
                             onClick={() => setPercentage('100')}
                             as="button"
@@ -185,26 +192,26 @@ export const RemoveSectionWidget: FC<RemoveSectionWidgetProps> = ({
                             You&apos;ll receive at least:
                           </Typography>
 
-                          <div className="flex items-center justify-between">
-                            <Typography variant="sm" weight={500} className="flex items-center gap-2 text-stone-50">
+                          <div className="flex justify-between items-center">
+                            <Typography variant="sm" weight={500} className="flex gap-2 items-center text-stone-50">
                               {token0 && <UICurrency.Icon currency={token0} width={20} height={20} />}
                               <span className="text-stone-400">
                                 <span className="text-stone-50">{token0Minimum?.toFixed(2)}</span> {currency0?.symbol}
                               </span>
                             </Typography>
                             <Typography variant="xs" className="text-stone-400">
-                              {formatUSD(Number(token0Minimum?.toFixed(2)) * value0 * (+percentage / 100))}
+                              {formatUSD(Number(token0Minimum?.toFixed(2)) * value0)}
                             </Typography>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <Typography variant="sm" weight={500} className="flex items-center gap-2 text-stone-50">
+                          <div className="flex justify-between items-center">
+                            <Typography variant="sm" weight={500} className="flex gap-2 items-center text-stone-50">
                               {token1 && <UICurrency.Icon currency={token1} width={20} height={20} />}
                               <span className="text-stone-400">
                                 <span className="text-stone-50">{token1Minimum?.toFixed(2)}</span> {currency1?.symbol}
                               </span>
                             </Typography>
                             <Typography variant="xs" className="text-stone-400">
-                              {formatUSD(Number(token1Minimum?.toFixed(2)) * value1 * (+percentage / 100))}
+                              {formatUSD(Number(token1Minimum?.toFixed(2)) * value1)}
                             </Typography>
                           </div>
                         </div>

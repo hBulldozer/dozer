@@ -4,7 +4,11 @@ import { Web3Modal } from '@web3modal/standalone'
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState, useRef } from 'react'
 
-import { getAppMetadata, getSdkError } from '@walletconnect/utils'
+import { getSdkError } from '@walletconnect/utils'
+import config from '../../config/bridge'
+import { getRequiredNamespaces } from './namespaces'
+
+export const HATHOR_WALLET_DEEP_LINK_SCHEME = 'hathorwallet'
 
 export const DEFAULT_APP_METADATA = {
   name: 'Dozer App',
@@ -37,6 +41,34 @@ interface IContext {
 export const ClientContext = createContext<IContext>({} as IContext)
 
 /**
+ * Detects if the user is on a mobile device
+ */
+export const isMobileDevice = (): boolean => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
+  // Check for mobile user agents
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())
+}
+
+export const openHathorWalletDeepLink = (wcUri: string): boolean => {
+  if (typeof window === 'undefined') return false
+
+  // Only open deeplink on mobile devices
+  if (!isMobileDevice()) return false
+
+  try {
+    const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
+
+    window.open(deepLink, '_self')
+    return true
+  } catch (error) {
+    console.warn('Failed to open Hathor wallet deeplink:', error)
+    return false
+  }
+}
+
+/**
  * Web3Modal Config
  */
 const web3Modal = new Web3Modal({
@@ -50,14 +82,14 @@ const web3Modal = new Web3Modal({
     '--w3m-accent-color': '#eab308',
   },
   enableExplorer: false,
-  mobileWallets: [
-    {
-      id: 'hathor-wallet',
-      name: 'HathorWallet',
-      links: { universal: 'https://apps.apple.com/br/app/hathor-play/id6557030964' },
-    },
-  ],
-  walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
+  // mobileWallets: [
+  //   {
+  //     id: 'hathor-wallet',
+  //     name: 'Hathor Wallet',
+  //     links: { universal: 'https://hathor.network/htr#wallet', native: `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc` },
+  //   },
+  // ],
+  // walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
 })
 
 /**
@@ -106,13 +138,11 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       }
 
       try {
-        const requiredNamespaces = {
-          hathor: {
-            methods: ['htr_signWithAddress', 'htr_sendNanoContractTx', 'htr_createToken'],
-            chains: ['hathor:testnet'],
-            events: [],
-          },
-        }
+        // Use requiredNamespaces to ensure the wallet supports all required methods
+        // This is necessary for desktop wallet compatibility
+        // Only require the chain that matches the current environment
+        const chains = [config.hathorConfig.rpcChain]
+        const requiredNamespaces = getRequiredNamespaces(chains)
 
         const { uri, approval } = await client.connect({
           pairingTopic: pairing?.topic,
@@ -121,11 +151,22 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
 
         // Open QRCode modal if a URI was returned (i.e. we're not connecting an existing pairing).
         if (uri) {
-          // Create a flat array of all requested chains across namespaces.
+          // On mobile, open the deeplink directly without showing the QR modal
+          // (QR codes aren't useful on mobile, and showing both causes double opening)
+          // TODO: Uncomment when final mobile wallet version is released
+          // const deeplinkOpened = openHathorWalletDeepLink(uri)
+          // Only show QR modal on desktop (when deeplink wasn't opened)
+          // if (!deeplinkOpened) {
+          //   // Create a flat array of all requested chains across namespaces.
+          //   const standaloneChains = Object.values(requiredNamespaces)
+          //     .map((namespace) => namespace.chains)
+          //     .flat() as string[]
+          //   web3Modal.openModal({ uri, standaloneChains })
+          // }
+
           const standaloneChains = Object.values(requiredNamespaces)
             .map((namespace) => namespace.chains)
             .flat() as string[]
-
           web3Modal.openModal({ uri, standaloneChains })
         }
 

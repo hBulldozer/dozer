@@ -30,6 +30,10 @@ export const PoolSizeCalculator: React.FC<PoolSizeCalculatorProps> = ({ onLiquid
           onUserInput={setAverageTradeSize}
           placeholder="Enter average trade size"
           className="w-full"
+          autoComplete="off"
+          data-lpignore="true"
+          type="search"
+          name="pool-size-calculator-search"
         />
       </div>
       <div>

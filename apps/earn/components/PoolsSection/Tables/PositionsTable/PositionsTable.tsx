@@ -1,42 +1,43 @@
 import { useBreakpoint } from '@dozer/hooks'
 import { GenericTable } from '@dozer/ui'
-import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
-import stringify from 'fast-json-stable-stringify'
+import { getCoreRowModel, getSortedRowModel, SortingState, useReactTable } from '@tanstack/react-table'
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { APR_COLUMN, NAME_COLUMN, NETWORK_COLUMN, VALUE_COLUMN } from './Cells/columns'
+import { APR_COLUMN, NAME_COLUMN, VALUE_COLUMN, PROFIT_COLUMN } from './Cells/columns'
 import { PositionQuickHoverTooltip } from './PositionQuickHoverTooltip'
-import { useAccount, useNetwork } from '@dozer/zustand'
-import { PAGE_SIZE } from '../contants'
+import { useNetwork, useAccount } from '@dozer/zustand'
 import { ChainId } from '@dozer/chain'
-import { Pair } from '@dozer/api'
+import { Pair, UserProfitInfo } from '@dozer/api'
 import { api } from '../../../../utils/api'
-import { usePoolPosition } from '../../../PoolPositionProvider'
 import { useWalletConnectClient } from '@dozer/higmi'
+import { Token } from '@dozer/currency'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const COLUMNS = [NETWORK_COLUMN, NAME_COLUMN, VALUE_COLUMN, APR_COLUMN]
+const COLUMNS = [NAME_COLUMN, VALUE_COLUMN, APR_COLUMN, PROFIT_COLUMN]
 // VOLUME_COLUMN
 
 export interface PositionPair extends Pair {
   value0?: number
   value1?: number
+  profit?: UserProfitInfo
 }
 
 export const PositionsTable: FC = () => {
   // const { address } = useAccount()
+  const { walletType, hathorAddress } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  // Get the appropriate address based on wallet type
+  // For WalletConnect: use accounts array
+  // For MetaMask Snap: use hathorAddress from useAccount
+  const address = walletType === 'walletconnect' 
+    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
+    : hathorAddress || ''
   const { isSm } = useBreakpoint('sm')
   const { isMd } = useBreakpoint('md')
 
   const [sorting, setSorting] = useState<SortingState>([{ id: 'value', desc: true }])
   const [columnVisibility, setColumnVisibility] = useState({})
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: PAGE_SIZE,
-  })
 
   const [rendNetwork, setRendNetwork] = useState<number>(ChainId.HATHOR)
   const { network } = useNetwork()
@@ -46,31 +47,48 @@ export const PositionsTable: FC = () => {
   }, [network])
 
   const { data: pools, isLoading } = api.getPools.all.useQuery()
-  const { data: prices, isLoading: isLoadingPrices } = api.getPrices.all.useQuery()
-  const { data: allPoolInfo, isLoading: isLoadingPoolInfo } = api.getProfile.allPoolInfo.useQuery({ address: address })
+  const { data: prices, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery()
+  const { data: userPositions, isLoading: isLoadingPositions } = api.getPools.getUserPositionsDetailed.useQuery(
+    {
+      address: address,
+    },
+    {
+      enabled: !!address,
+    }
+  )
 
   const _pairs_array: PositionPair[] = useMemo(() => {
     const array: PositionPair[] = []
-    if (pools && prices && allPoolInfo && !isLoadingPrices && !isLoadingPoolInfo && !isLoading) {
-      pools.map((pool) => {
-        const userInfo = allPoolInfo?.find((info) => info.contractId == pool.id)
+    if (pools && prices && userPositions && !isLoadingPrices && !isLoadingPositions && !isLoading) {
+      // Create a map of pool keys to pools for quick lookup
+      const poolMap = new Map(pools.map((pool) => [pool.id, pool]))
+
+      userPositions.map((userPosition) => {
+        const pool = poolMap.get(userPosition.poolKey)
 
         if (
-          userInfo &&
-          (userInfo.max_withdraw_a > 0 || userInfo.max_withdraw_b > 0) &&
+          pool &&
+          userPosition.token0Amount > 0 &&
+          userPosition.token1Amount > 0 &&
           prices &&
           prices[pool.token0.uuid] &&
           prices[pool.token1.uuid]
         ) {
-          const pair: PositionPair = pool
-          pair.value0 = (userInfo.max_withdraw_a / 100) * prices?.[pool.token0.uuid]
-          pair.value1 = (userInfo.max_withdraw_b / 100) * prices?.[pool.token1.uuid]
+          const pair: PositionPair = {
+            ...pool,
+            token0: new Token({ ...pool.token0, imageUrl: pool.token0.imageUrl ?? undefined }),
+            token1: new Token({ ...pool.token1, imageUrl: pool.token1.imageUrl ?? undefined }),
+          }
+          // userPosition.token0Amount and token1Amount are already in decimal format
+          pair.value0 = userPosition.token0Amount * prices[pool.token0.uuid]
+          pair.value1 = userPosition.token1Amount * prices[pool.token1.uuid]
+          pair.profit = userPosition.profit ?? undefined
           array.push(pair)
         }
       })
       return array
     } else return []
-  }, [pools, prices, allPoolInfo, isLoadingPrices, isLoadingPoolInfo, isLoading])
+  }, [pools, prices, userPositions, isLoadingPrices, isLoadingPositions, isLoading])
 
   // if (pools)
   //   pools.map((pool) => {
@@ -98,20 +116,6 @@ export const PositionsTable: FC = () => {
       return pair.chainId == rendNetwork
     })
     .filter((pool) => pool.liquidityUSD > 10)
-  const args = useMemo(
-    () => ({
-      sorting,
-      pagination,
-      // selectedNetworks,
-      // selectedPoolTypes,
-      // farmsOnly,
-      // query,
-      // extraQuery,
-    }),
-    [sorting, pagination]
-    // [sorting, pagination, selectedNetworks, selectedPoolTypes, farmsOnly, query, extraQuery]
-  )
-
 
   const table = useReactTable<PositionPair>({
     data: pairs_array || [],
@@ -122,7 +126,6 @@ export const PositionsTable: FC = () => {
     },
     // pageCount: Math.ceil((poolCount || 0) / PAGE_SIZE),
     onSortingChange: setSorting,
-    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualSorting: true,
@@ -133,7 +136,6 @@ export const PositionsTable: FC = () => {
     if (isSm && !isMd) {
       setColumnVisibility({
         volume: false,
-        network: false,
         rewards: false,
         fees: false,
       })
@@ -142,7 +144,6 @@ export const PositionsTable: FC = () => {
     } else {
       setColumnVisibility({
         volume: false,
-        network: false,
         rewards: false,
         liquidityUSD: false,
         fees: false,
@@ -151,7 +152,7 @@ export const PositionsTable: FC = () => {
   }, [isMd, isSm])
 
   const rowLink = useCallback((row: Pair) => {
-    return `/${row.id}`
+    return `/${(row as PositionPair & { symbolId?: string }).symbolId || row.id}`
   }, [])
 
   return (

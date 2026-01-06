@@ -12,9 +12,14 @@ import {
   Typography,
 } from '@dozer/ui'
 import { format } from 'date-fns'
-import ReactECharts from 'echarts-for-react'
 import { EChartsOption } from 'echarts-for-react/lib/types'
 import { FC, useCallback, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
+
+const ReactECharts = dynamic(() => import('echarts-for-react'), {
+  ssr: false,
+  loading: () => <div className="h-96 bg-stone-800 animate-pulse rounded" />,
+})
 import resolveConfig from 'tailwindcss/resolveConfig'
 
 import { TwitterIcon, TelegramIcon } from '@dozer/ui'
@@ -22,17 +27,25 @@ import { GlobeAltIcon } from '@heroicons/react/24/outline'
 
 import tailwindConfig from '../../tailwind.config.js'
 import { hourSnapshot, Token } from '@dozer/database'
-import { api } from '../../utils/api'
+import { api } from 'utils/api'
 import { ArrowTopRightOnSquareIcon, Square2StackIcon } from '@heroicons/react/24/outline'
 import chains from '@dozer/chain'
 import { hathorLib } from '@dozer/nanocontracts'
 
 const tailwind = resolveConfig(tailwindConfig)
 
-interface TokenChartProps {
-  pair: Pair
-  setIsDialogOpen(isDialogOpen: boolean): void
-  // token: Token
+interface Snapshot {
+  date: string
+  liquidity: number
+  volume: number
+}
+
+interface TokenChart {
+  pair: Pair & {
+    daySnapshots: Snapshot[]
+    weekSnapshots: Snapshot[]
+    hourSnapshots: Snapshot[]
+  }
 }
 
 enum TokenChartCurrency {
@@ -75,7 +88,7 @@ function getFirstPerHour(snapshots: PairHourSnapshot[]): PairHourSnapshot[] {
 
   return hourlySnapshots
 }
-export const TokenChart: FC<TokenChartProps> = ({ pair, setIsDialogOpen }) => {
+export const TokenChart: FC<TokenChart> = ({ pair }) => {
   const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(
     pair.id.includes('native') ? TokenChartCurrency.USD : TokenChartCurrency.HTR
   )
@@ -83,7 +96,6 @@ export const TokenChart: FC<TokenChartProps> = ({ pair, setIsDialogOpen }) => {
   const hourSnapshots = getFirstPerHour(pair.hourSnapshots)
   const { token0, token1 } = pair
   const token = pair.id.includes('native') ? token0 : token1
-  const { data: socialURLs } = api.getTokens.socialURLs.useQuery({ uuid: token.uuid })
   const fifteenMinSnapshots = pair.hourSnapshots
   const tokenReserveNow: { reserve0: number; reserve1: number } = {
     reserve0: Number(pair.reserve0),
@@ -113,7 +125,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair, setIsDialogOpen }) => {
           const priceInHTR = pair.id.includes('native')
             ? 1
             : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
-          const priceInUSD = pair.id.includes('usdt')
+          const priceInUSD = pair.id.includes('husdc')
             ? 1
             : pair.id.includes('native')
             ? Number(tokenReserve.reserve1) / Number(tokenReserve.reserve0)
@@ -300,7 +312,7 @@ export const TokenChart: FC<TokenChartProps> = ({ pair, setIsDialogOpen }) => {
         <div className="flex flex-col gap-1 ">
           <div className="flex items-center gap-2">
             <div className={pair.token1.imageUrl ? 'cursor-pointer' : ''}>
-              <Currency.Icon currency={toToken(token)} width={32} height={32} onClick={() => setIsDialogOpen(true)} />
+              <Currency.Icon currency={toToken(token)} width={32} height={32} />
             </div>
             <Typography variant="lg" weight={600}>
               {token.name}
@@ -339,30 +351,10 @@ export const TokenChart: FC<TokenChartProps> = ({ pair, setIsDialogOpen }) => {
                   <ArrowTopRightOnSquareIcon width={20} height={20} color="stone-500" />
                 </IconButton>
               </Link.External>
-              {socialURLs && socialURLs.twitter && (
-                <Link.External href={`https://twitter.com/${socialURLs.twitter}`}>
-                  <IconButton className="p-1 text-stone-400" description={'Twitter'}>
-                    <TwitterIcon width={20} height={20} className="text-stone-500" />
-                  </IconButton>
-                </Link.External>
-              )}
-
+              {/* Add Twitter icon if available */}
               {/* Add Telegram icon if available */}
-              {socialURLs && socialURLs.telegram && (
-                <Link.External href={`https://t.me/${socialURLs.telegram}`}>
-                  <IconButton className="p-1 text-stone-400" description={'Telegram'}>
-                    <TelegramIcon width={20} height={20} className="text-stone-500" />
-                  </IconButton>
-                </Link.External>
-              )}
 
-              {socialURLs && socialURLs.website && (
-                <Link.External href={`https://${socialURLs.website}`}>
-                  <IconButton className="p-1 text-stone-400" description={'Website'}>
-                    <GlobeAltIcon width={20} height={20} className="text-stone-500" />
-                  </IconButton>
-                </Link.External>
-              )}
+              {/* Add Website icon if available */}
             </div>
           </div>
           <Typography variant="h2" weight={600} className="text-stone-50">
@@ -388,30 +380,30 @@ export const TokenChart: FC<TokenChartProps> = ({ pair, setIsDialogOpen }) => {
             </Typography>
           )}
         </div>
-        <div className="flex gap-4">
-          {!pair.id.includes('usdt') ? (
-            <button
-              onClick={() => setChartCurrency(TokenChartCurrency.USD)}
-              className={classNames(
-                'font-semibold text-xl',
-                chartCurrency === TokenChartCurrency.USD ? 'text-yellow-500' : 'text-stone-500'
-              )}
-            >
-              USD
-            </button>
-          ) : null}
-          {!pair.id.includes('native') ? (
-            <button
-              onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
-              className={classNames(
-                'font-semibold text-xl',
-                chartCurrency === TokenChartCurrency.HTR ? 'text-yellow-500 ' : 'text-stone-500 '
-              )}
-            >
-              HTR
-            </button>
-          ) : null}
-        </div>
+      </div>
+      <div className="flex justify-end gap-4 text-right">
+        {!pair.id.includes('husdc') ? (
+          <button
+            onClick={() => setChartCurrency(TokenChartCurrency.USD)}
+            className={classNames(
+              'font-semibold text-xl',
+              chartCurrency === TokenChartCurrency.USD ? 'text-yellow-500' : 'text-stone-500'
+            )}
+          >
+            USD
+          </button>
+        ) : null}
+        {!pair.id.includes('native') ? (
+          <button
+            onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
+            className={classNames(
+              'font-semibold text-xl',
+              chartCurrency === TokenChartCurrency.HTR ? 'text-yellow-500 ' : 'text-stone-500 '
+            )}
+          >
+            HTR
+          </button>
+        ) : null}
       </div>
       {!isLoading ? (
         <div onMouseLeave={onMouseLeave}>

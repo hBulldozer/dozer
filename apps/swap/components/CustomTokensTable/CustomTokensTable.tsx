@@ -4,27 +4,34 @@ import { useRouter } from 'next/router'
 import { getCoreRowModel, getSortedRowModel, SortingState, useReactTable, ColumnDef } from '@tanstack/react-table'
 import { api } from '../../utils/api'
 import { AllTokensDBOutput } from '@dozer/api' // Adjust the import path as needed
+import { useBreakpoint } from '@dozer/hooks'
 
 interface CustomTokensTableProps {
   address: string
 }
 
-interface CustomToken extends AllTokensDBOutput {
+interface CustomToken extends Omit<AllTokensDBOutput, 'pools0' | 'pools1'> {
   totalSupply?: number
+  pools0: { id: string }[]
+  pools1: { id: string }[]
 }
 
 export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
+  const { isSm } = useBreakpoint('sm')
   const router = useRouter()
   const [sorting, setSorting] = React.useState<SortingState>([])
 
   const { data: tokens, isLoading } = api.getTokens.all.useQuery(undefined, { staleTime: 5000 })
   const { data: totalSupplies } = api.getTokens.allTotalSupply.useQuery()
 
-  const customTokens = useMemo(() => {
-    return (tokens?.filter((token) => token.custom && token.createdBy === address) || []).map((token) => ({
-      ...token,
-      totalSupply: totalSupplies?.[token.uuid] || 0,
-    }))
+  const customTokens: CustomToken[] = useMemo(() => {
+    return (tokens?.filter((token) => token.createdBy === address) || []).map(
+      (token) =>
+        ({
+          ...token,
+          totalSupply: totalSupplies?.[token.uuid] || 0,
+        } as CustomToken)
+    )
   }, [tokens, address, totalSupplies])
 
   const COLUMNS: ColumnDef<CustomToken, unknown>[] = [
@@ -33,7 +40,9 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
       header: 'Token',
       cell: (info) => (
         <div className="flex items-center gap-2">
-          <img src={info.row.original.imageUrl} alt={info.row.original.name} className="w-6 h-6 rounded-full" />
+          {info.row.original.imageUrl && (
+            <img src={info.row.original.imageUrl} alt={info.row.original.name || ''} className="w-6 h-6 rounded-full" />
+          )}
           <Typography variant="sm" weight={500} className="truncate text-stone-50">
             {info.row.original.symbol}
           </Typography>
@@ -42,32 +51,43 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
           </Typography>
         </div>
       ),
-      size: 160,
+      size: 50,
     },
     {
       id: 'totalSupply',
       header: 'Total Supply',
       accessorFn: (row) => row.totalSupply,
       cell: (info) => info.getValue(),
-      size: 110,
+      size: 50,
     },
     {
       id: 'actions',
       header: '',
       cell: (info) => (
-        <Button
-          as="a"
-          href={`/pool/create?token=${info.row.original.uuid}`}
-          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-            e.preventDefault()
-            window.location.href = `/pool/create?token=${info.row.original.uuid}`
-          }}
-          size="sm"
-        >
-          Create Pool
-        </Button>
+        //justify the button to the right of the table
+        <div className="flex justify-end">
+          <Button
+            as="a"
+            href={
+              !info.row.original.custom && info.row.original.pools1?.[0]?.id
+                ? `/pool/${info.row.original.pools1[0].id}`
+                : `/pool/create?token=${info.row.original.uuid}`
+            }
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+              e.preventDefault()
+              if (!info.row.original.custom && info.row.original.pools1?.[0]?.id) {
+                window.location.href = `/pool/${info.row.original.pools1[0].id}`
+              } else {
+                window.location.href = `/pool/create?token=${info.row.original.uuid}`
+              }
+            }}
+            size="sm"
+          >
+            {!info.row.original.custom && info.row.original.pools1?.[0]?.id ? 'View Pool' : 'Create Pool'}
+          </Button>
+        </div>
       ),
-      size: 210,
+      size: isSm ? 20 : 90,
     },
   ]
 
@@ -80,5 +100,12 @@ export const CustomTokensTable: FC<CustomTokensTableProps> = ({ address }) => {
     getSortedRowModel: getSortedRowModel(),
   })
 
-  return <GenericTable table={table} loading={isLoading} placeholder="No custom tokens found" pageSize={20} />
+  return (
+    <GenericTable
+      table={table}
+      loading={isLoading}
+      placeholder="No custom tokens found"
+      pageSize={Math.max(customTokens?.length || 0, 5)}
+    />
+  )
 }

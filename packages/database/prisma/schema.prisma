@@ -1,11 +1,11 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
   url = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
 model Faucet {
@@ -16,19 +16,12 @@ model Faucet {
   hash        String
 }
 
-model PresaleSubmission {
-  id                Int       @id @default(autoincrement())
-  network           String    // Payment network (solana/evm)
-  transactionProof  String    // Transaction ID or explorer URL
-  contactInfo       String    // User's contact information (Discord, Telegram, etc.)
-  hathorAddress     String    // Hathor wallet address to receive DZD
-  price             Float     @default(1.0) // Price of DZD at submission time
-  submittedAt       DateTime  @default(now())
-  hathorExplorerUrl String?   // URL of the Hathor explorer transaction when DZD is sent
-  
-  @@index([hathorAddress])
-  @@index([transactionProof])
-  @@index([submittedAt])
+model dzd {
+  id          Int @id @default(autoincrement())
+  address     String
+  userId      String
+  name        String
+  telegram    String
 }
 
 model Token {
@@ -56,6 +49,11 @@ model Token {
   twitter          String      @default("")
   website          String      @default("")
   custom           Boolean     @default(false)
+  bridged          Boolean     @default(false)
+  sourceChain      String?     
+  targetChain      String?
+  originalAddress  String?     
+  oasis            Oasis[]     @relation("token")
 
   @@unique([chainId, uuid])
   @@index([id])
@@ -90,6 +88,7 @@ model Pool {
   daySnapshots  daySnapshot[]
   hourSnapshots hourSnapshot[]
   Incentive     Incentive[]//
+  oasis         Oasis[]        @relation("pool")
 
   @@index([id])
   @@index([chainId])
@@ -140,6 +139,8 @@ model hourSnapshot {
   pool         Pool     @relation(fields: [poolId], references: [id])
 
   @@index([poolId])
+  @@index([date])
+  @@index([poolId, date]) // Composite index for queries that filter by both
 }
 
 model Incentive {//
@@ -160,12 +161,11 @@ model Incentive {//
   @@index([chainId, rewardTokenId])
 }
 
-model Newsletter {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  submittedAt DateTime @default(now())
-  registered  Boolean  @default(false)
-
-  @@index([email])
-  @@index([registered])
+model Oasis {
+  id          String @id @default(uuid())
+  name        String
+  token        Token          @relation("token", fields: [tokenId], references: [id])
+  pool        Pool   @relation("pool",fields: [poolId], references: [id])
+  poolId      String
+  tokenId      String
 }

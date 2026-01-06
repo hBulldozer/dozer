@@ -1,14 +1,12 @@
-import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData } from '@dozer/ui'
+import { Button, createErrorToast, createSuccessToast, Dialog, Dots, NotificationData, Typography } from '@dozer/ui'
 import { useAccount, useNetwork, useSettings, useTrade } from '@dozer/zustand'
 import { TradeType } from 'components/utils/TradeType'
 import React, { FC, ReactNode, useCallback, useEffect, useState } from 'react'
 import { SwapReviewModalBase } from './SwapReviewModalBase'
 import { XMarkIcon } from '@heroicons/react/24/solid'
-import { api } from 'utils/api'
 import { TokenBalance } from '@dozer/zustand'
-import { LiquidityPool } from '@dozer/nanocontracts'
-import { main } from '@dozer/database/dist/seed_db'
-import { useJsonRpc, useWalletConnectClient } from '@dozer/higmi'
+import { PoolManager } from '@dozer/nanocontracts'
+import { useJsonRpc, useWalletConnectClient, getErrorMessage } from '@dozer/higmi'
 import { get } from 'lodash'
 
 interface SwapReviewModalLegacy {
@@ -18,24 +16,26 @@ interface SwapReviewModalLegacy {
 }
 
 export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, children, onSuccess }) => {
-  const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency } = useTrade()
+  const { amountSpecified, outputAmount, pool, tradeType, mainCurrency, otherCurrency, routeInfo } = useTrade()
   const [sentTX, setSentTX] = useState(false)
-  const {
-    // address,
-    addNotification,
-    setBalance,
-    balance,
-  } = useAccount()
+  const { addNotification, setBalance, balance, hathorAddress, selectedNetwork } = useAccount()
   const { accounts } = useWalletConnectClient()
-  const address = accounts.length > 0 ? accounts[0].split(':')[2] : ''
+  const wcAddress = accounts.length > 0 ? accounts[0].split(':')[2] : ''
   const { network } = useNetwork()
   const [open, setOpen] = useState(false)
-  const [card, setCard] = useState(false)
-  const { slippageTolerance } = useSettings()
+  const [card, setCard] = useState(false) // Used for success card dialog
+  const { slippageTolerance, transactionDeadline, deadlineType } = useSettings()
 
-  const liquiditypool = new LiquidityPool(mainCurrency?.uuid || '', otherCurrency?.uuid || '', 5, 50, pool?.id || '')
+  const poolManager = new PoolManager()
 
+  // Use unified RPC context that handles both WalletConnect and MetaMask Snap
   const { hathorRpc, rpcResult, isRpcRequestPending, reset } = useJsonRpc()
+
+  // Suppress unused variable warning - setCard is intentionally kept for future success card functionality
+  void setCard
+
+  // Get the appropriate address based on wallet type
+  const address = hathorAddress || wcAddress
 
   const onCloseCard = useCallback(() => {
     onSuccess()
@@ -69,76 +69,71 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
     }
   }
 
-  const swapFunction =
-    tradeType === TradeType.EXACT_INPUT
-      ? liquiditypool.swap_tokens_for_exact_tokens
-      : liquiditypool.swap_tokens_for_exact_tokens
-
-  // const mutation = mutateFunction({
-  //   onSuccess: (res) => {
-  //     console.log(res)
-  //     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
-  //       if (res.hash) {
-  //         const notificationData: NotificationData = {
-  //           type: 'swap',
-  //           chainId: network,
-  //           summary: {
-  //             pending: `Waiting for next block`,
-  //             completed: `Success! Traded ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
-  //             failed: 'Failed summary',
-  //             info: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
-  //           },
-  //           status: 'pending',
-  //           txHash: res.hash,
-  //           groupTimestamp: Math.floor(Date.now() / 1000),
-  //           timestamp: Math.floor(Date.now() / 1000),
-  //           promise: new Promise((resolve) => {
-  //             setTimeout(resolve, 500)
-  //           }),
-  //         }
-  //         editBalanceOnSwap(
-  //           amountSpecified,
-  //           mainCurrency.uuid,
-  //           outputAmount * (1 - slippageTolerance),
-  //           otherCurrency.uuid
-  //         )
-  //         const notificationGroup: string[] = []
-  //         notificationGroup.push(JSON.stringify(notificationData))
-  //         addNotification(notificationGroup)
-  //         createSuccessToast(notificationData)
-  //         setOpen(false)
-  //         setIsWritePending(false)
-  //       } else {
-  //         createErrorToast(`${res.error}`, true)
-  //         setIsWritePending(false)
-  //         setOpen(false)
-  //       }
-  //     }
-  //   },
-  //   onError: (error) => {
-  //     createErrorToast(`Error sending TX. \n${error}`, true)
-  //     setIsWritePending(false)
-  //     setOpen(false)
-  //   },
-  // })
   const onClick = async () => {
     setSentTX(true)
-    if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
-      const response = await swapFunction(
-        hathorRpc,
-        address,
-        pool.id,
-        mainCurrency.uuid,
-        amountSpecified,
-        otherCurrency.uuid,
-        outputAmount * (1 - slippageTolerance)
-      )
+
+    // if (!isWalletConnected) {
+    //   console.error('Wallet not connected')
+    //   createErrorToast('Wallet not connected properly', true)
+    //   setSentTX(false)
+    //   return
+    // }
+
+    if (!hathorRpc) {
+      createErrorToast('Unable to connect to wallet', true)
+      setSentTX(false)
+      return
+    }
+
+    if (!address) {
+      createErrorToast('No wallet address available', true)
+      setSentTX(false)
+      return
+    }
+
+    if (amountSpecified && outputAmount && mainCurrency && otherCurrency && routeInfo) {
+      try {
+        // Use poolPath from routeInfo, fallback to constructing from path if needed
+        const swapPath = routeInfo.poolPath || routeInfo.path.join(',')
+
+        // Calculate deadline in minutes
+        const deadlineMinutes = deadlineType === 'auto' ? 60 : transactionDeadline
+
+        if (tradeType === TradeType.EXACT_INPUT) {
+          await poolManager.swapExactTokensForTokens(
+            hathorRpc,
+            address,
+            mainCurrency.uuid,
+            amountSpecified,
+            otherCurrency.uuid,
+            outputAmount * (1 - slippageTolerance),
+            swapPath,
+            deadlineMinutes,
+            selectedNetwork
+          )
+        } else {
+          await poolManager.swapTokensForExactTokens(
+            hathorRpc,
+            address,
+            mainCurrency.uuid,
+            amountSpecified * (1 + slippageTolerance),
+            otherCurrency.uuid,
+            outputAmount,
+            swapPath,
+            deadlineMinutes,
+            selectedNetwork
+          )
+        }
+      } catch (error) {
+        console.error('Swap error:', error)
+        createErrorToast(getErrorMessage(error), true)
+        setSentTX(false)
+      }
     }
   }
 
   useEffect(() => {
     if (rpcResult?.valid && rpcResult?.result && sentTX) {
-      console.log(rpcResult)
       if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
@@ -146,10 +141,10 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             type: 'swap',
             chainId: network,
             summary: {
-              pending: `Waiting for next block. Swap ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
-              completed: `Success! Traded ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
+              pending: `Swapping ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} for ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol}.`,
+              completed: `Success! Traded ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} for ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol}.`,
               failed: 'Failed summary',
-              info: `Trading ${amountSpecified} ${mainCurrency.symbol} for ${outputAmount} ${otherCurrency.symbol}.`,
+              info: `Trading ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} for ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol}.`,
             },
             status: 'pending',
             txHash: hash,
@@ -161,9 +156,9 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             account: address,
           }
           editBalanceOnSwap(
-            amountSpecified,
+            amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
             mainCurrency.uuid,
-            outputAmount * (1 - slippageTolerance),
+            outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 - slippageTolerance : 1),
             otherCurrency.uuid
           )
           const notificationGroup: string[] = []
@@ -185,7 +180,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
     <>
       {children({ setOpen })}
       <SwapReviewModalBase chainId={chainId} open={open} setOpen={setOpen}>
-        <div className="flex flex-col justify-between gap-2">
+        <div className="flex flex-col gap-2 justify-between">
           <Button
             size="md"
             testdata-id="swap-review-confirm-button"
@@ -196,16 +191,21 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             {isRpcRequestPending ? <Dots>Confirm transaction in your wallet</Dots> : 'Swap'}
           </Button>
           {isRpcRequestPending && (
-            <Button
-              size="md"
-              testdata-id="swap-review-reset-button"
-              fullWidth
-              variant="outlined"
-              color="red"
-              onClick={() => reset()}
-            >
-              Cancel Transaction
-            </Button>
+            <>
+              <Typography variant="xs" className="text-center text-stone-400">
+                This may take up to 20 seconds when using MetaMask Snap
+              </Typography>
+              <Button
+                size="md"
+                testdata-id="swap-review-reset-button"
+                fullWidth
+                variant="outlined"
+                color="red"
+                onClick={() => reset()}
+              >
+                Cancel Transaction
+              </Button>
+            </>
           )}
         </div>
       </SwapReviewModalBase>

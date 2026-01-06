@@ -1,12 +1,12 @@
 import { PlusIcon, Square2StackIcon } from '@heroicons/react/24/solid'
 import { ChainId } from '@dozer/chain'
 import { Amount, Type } from '@dozer/currency'
-import { CopyHelper, Currency, Dialog, IconButton, Typography } from '@dozer/ui'
+import { CopyHelper, Currency, Dialog, IconButton, Typography, formatNumber, formatCurrency } from '@dozer/ui'
 import { FC, ReactNode, useMemo } from 'react'
 
 // import { useTokenAmountDollarValues } from '../../lib/hooks'
 import { Rate } from '../Rate'
-import { useSettings, useTrade } from '@dozer/zustand'
+import { TradeType, useSettings, useTrade } from '@dozer/zustand'
 
 interface AddSectionReviewModal {
   chainId: ChainId
@@ -32,11 +32,26 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
   //   amounts: [input0, input1],
   // })
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
-  const { pool } = useTrade()
+  const { pool, tradeType } = useTrade()
 
   const [price0, price1] = useMemo(() => {
     return input0 && input1 ? [prices[input0?.currency.uuid], prices[input1?.currency.uuid]] : [0, 0]
   }, [input0, input1, prices])
+
+  const _input0 = input0
+    ? Number(
+        (
+          Number(input0.multiply(100).toFixed(2)) * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1)
+        ).toFixed(2)
+      )
+    : 0
+  const _input1 = input1
+    ? Number(
+        (
+          Number(input1.multiply(100).toFixed(2)) * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1)
+        ).toFixed(2)
+      )
+    : 0
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>
@@ -47,7 +62,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {input0?.multiply(100).toFixed(2)}{' '}
+                  {formatNumber(_input0)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input0 && (
@@ -62,7 +77,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {price0 && input0 ? `$${(price0 * Number(input0.multiply(100).toFixed(2))).toFixed(2)}` : '-'}
+              {price0 && input0 ? formatCurrency(price0 * _input0) : '-'}
             </Typography>
           </div>
           <div className="flex items-center justify-center col-span-12 -mt-2.5 -mb-2.5">
@@ -74,7 +89,7 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-between w-full gap-2">
                 <Typography variant="h3" weight={500} className="truncate text-stone-50">
-                  {(Number(input1?.multiply(100).toFixed(2)) * (1 + slippageTolerance)).toFixed(2)}{' '}
+                  {formatNumber(_input1)}{' '}
                 </Typography>
                 <div className="flex items-center justify-end gap-2 text-right">
                   {input1 && (
@@ -89,42 +104,24 @@ export const AddSectionReviewModal: FC<AddSectionReviewModal> = ({
               </div>
             </div>
             <Typography variant="sm" weight={500} className="text-stone-500">
-              {price1 && input1
-                ? `$${(Number(price1 * Number(input1.multiply(100).toFixed(2))) * (1 + slippageTolerance)).toFixed(2)}`
-                : '-'}
+              {price1 && input1 ? formatCurrency(price1 * _input1) : '-'}
             </Typography>
           </div>
         </div>
-        <div className="flex justify-between items-center pl-4 gap-2 py-6 ">
-          <div className="flex-1">
-            <Rate token1={input0?.currency} token2={input1?.currency}>
-              {({ toggleInvert, content, usdPrice }) => (
-                <Typography
-                  as="button"
-                  onClick={() => toggleInvert()}
-                  // variant="sm"
-                  weight={600}
-                  className="flex items-center gap-1 text-stone-100"
-                >
-                  {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
-                </Typography>
-              )}
-            </Rate>
-          </div>
-          <div className="flex-1 text-right ">
-            <CopyHelper className="" toCopy={pool?.id || ''} hideIcon={true}>
-              {(isCopied) => (
-                <IconButton className="px-1 text-stone-400" description={isCopied ? 'Copied!' : 'Copy contract ID'}>
-                  <div className="flex flex-row justify-center gap-1">
-                    <Square2StackIcon width={20} height={20} color="stone-500" />
-                    <Typography variant="sm" className="text-stone-100">
-                      Register Contract
-                    </Typography>
-                  </div>
-                </IconButton>
-              )}
-            </CopyHelper>
-          </div>
+        <div className="flex items-center justify-center py-6">
+          <Rate token1={input0?.currency} token2={input1?.currency}>
+            {({ toggleInvert, content, usdPrice }) => (
+              <Typography
+                as="button"
+                onClick={() => toggleInvert()}
+                // variant="sm"
+                weight={600}
+                className="flex items-center gap-1 text-stone-100"
+              >
+                {content} {usdPrice && <span className="font-normal text-stone-300">(${usdPrice})</span>}
+              </Typography>
+            )}
+          </Rate>
         </div>
         {children}
       </Dialog.Content>

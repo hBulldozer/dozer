@@ -33,6 +33,26 @@ export class Token extends Currency {
   public readonly uuid: string
 
   /**
+   * Whether the token is bridged between Hathor and Arbitrum
+   */
+  public readonly bridged: boolean
+
+  /**
+   * Original token address on the source chain
+   */
+  public readonly originalAddress?: string
+
+  /**
+   * The source chain for bridged tokens
+   */
+  public readonly sourceChain?: string
+
+  /**
+   * The target chain for bridged tokens
+   */
+  public readonly targetChain?: string
+
+  /**
    * The rebase
    */
   readonly rebase: {
@@ -46,6 +66,10 @@ export class Token extends Currency {
     symbol,
     name,
     imageUrl,
+    bridged = false,
+    originalAddress,
+    sourceChain,
+    targetChain,
     rebase = { base: JSBI.BigInt(1), elastic: JSBI.BigInt(1) },
   }: {
     chainId: number | string
@@ -54,6 +78,10 @@ export class Token extends Currency {
     decimals: number
     symbol?: string
     name?: string
+    bridged?: boolean
+    originalAddress?: string
+    sourceChain?: string
+    targetChain?: string
     rebase?: { base: JSBI; elastic: JSBI }
   }) {
     super({
@@ -68,6 +96,10 @@ export class Token extends Currency {
     } catch {
       throw `${uuid} is not a valid uuid`
     }
+    this.bridged = bridged
+    this.originalAddress = originalAddress
+    this.sourceChain = sourceChain
+    this.targetChain = targetChain
     try {
       // TODO: No rebase?
       this.rebase = rebase
@@ -92,4 +124,5 @@ export class Token extends Currency {
   public logoURI(): string {
     return `/logos/${this.symbol?.toUpperCase()}.svg`
   }
+
 }

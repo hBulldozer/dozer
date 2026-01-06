@@ -4,6 +4,7 @@ import { ZERO } from '@dozer/math'
 import { classNames, Currency, Typography } from '@dozer/ui'
 import React, { CSSProperties, FC, memo, useCallback, useRef } from 'react'
 import { PlusIcon } from '@heroicons/react/24/outline'
+import { BridgeIndicator } from './BridgeIndicator'
 
 interface TokenSelectorRow {
   id: string
@@ -15,6 +16,7 @@ interface TokenSelectorRow {
   balance?: Amount<Type>
   price?: number
   isCreateToken?: boolean
+  isBridged?: boolean
 }
 
 const _TokenSelectorRow: FC<TokenSelectorRow> = ({
@@ -26,6 +28,7 @@ const _TokenSelectorRow: FC<TokenSelectorRow> = ({
   className,
   onCurrency,
   isCreateToken = false,
+  isBridged = false,
 }) => {
   const onClick = useCallback(() => {
     onCurrency(currency)
@@ -80,9 +83,12 @@ const _TokenSelectorRow: FC<TokenSelectorRow> = ({
             <Currency.Icon currency={currency} width={28} height={28} priority={inViewport} />
           </div>
           <div className="flex flex-col items-start">
-            <Typography variant="xs" weight={500} className="text-stone-200 group-hover:text-stone-50">
-              {currency.symbol}
-            </Typography>
+            <div className="flex items-center gap-2">
+              <Typography variant="xs" weight={500} className="text-stone-200 group-hover:text-stone-50">
+                {currency.symbol}
+              </Typography>
+              {(currency as any).bridged && <BridgeIndicator />}
+            </div>
             <Typography variant="xxs" className="text-stone-500 group-hover:text-yellow-100">
               {currency.name}
             </Typography>

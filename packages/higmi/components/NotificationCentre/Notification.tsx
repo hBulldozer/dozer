@@ -130,18 +130,22 @@ export const Notification: FC<{
               {(status === 'success' || notification.summary.info) && notification.type === 'claimRewards' && (
                 <BanknotesIcon width={20} height={20} />
               )} */}
-              {status === 'success' && <CheckCircleIcon width={20} height={20} className="text-green" />}
+              {(status === 'success' || status === 'completed') && (
+                <CheckCircleIcon width={20} height={20} className="text-green" />
+              )}
             </div>
           </Badge>
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-2">
               <Typography as="span" variant="sm" weight={500} className="items-center whitespace-normal text-stone-50">
-                {notification.summary.info && status == 'pending' ? (
+                {(notification.summary.info || notification.type === 'bridge') && status == 'pending' ? (
                   <Dots>{notification.summary.pending}</Dots>
                 ) : status === 'failed' ? (
                   message
-                ) : (
+                ) : status === 'completed' ? (
                   notification.summary.completed
+                ) : (
+                  notification.summary.pending
                 )}
               </Typography>
             </div>

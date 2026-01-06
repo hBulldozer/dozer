@@ -44,29 +44,45 @@ export const getStaticProps: GetStaticProps = async () => {
   const ssg = generateSSGHelper()
   await ssg.getPools.all.prefetch()
   await ssg.getTokens.all.prefetch()
-  await ssg.getPrices.all.prefetch()
+  await ssg.getPrices.allUSD.prefetch()
   return {
     props: {
       trpcState: ssg.dehydrate(),
     },
-    revalidate: 3600,
+    revalidate: 60,
   }
 }
 
 const Add: FC = () => {
-  const { data: pools = [] } = api.getPools.all.useQuery()
-  const { data: tokens = [] } = api.getTokens.all.useQuery()
-  const { data: prices = {} } = api.getPrices.all.useQuery()
+  const { data: pools_db } = api.getPools.all.useQuery()
+  const { data: tokens } = api.getTokens.all.useQuery()
+  const { data: prices } = api.getPrices.allUSD.useQuery()
+  const pools = useMemo(() => {
+    if (!pools_db) return []
+    return pools_db.map((pool) => {
+      return {
+        ...pool,
+        token0: new Token({ ...pool.token0, imageUrl: pool.token0.imageUrl ?? undefined }),
+        token1: new Token({ ...pool.token1, imageUrl: pool.token1.imageUrl ?? undefined }),
+      }
+    })
+  }, [pools_db])
+
+  // Find HTR and hUSDC tokens for defaults
+  const htrToken = tokens?.find((token) => token.uuid === '00') // HTR token
+  const usdcToken = tokens?.find((token) => token.symbol === 'hUSDC') // hUSDC token
 
   const [poolState, setPoolState] = useState<PairState>(PairState.NOT_EXISTS)
   const [selectedPool, setSelectedPool] = useState<Pair>()
   const [input0, setInput0] = useState<string>('')
-  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([undefined, undefined])
+  const [[token0, token1], setTokens] = useState<[Token | undefined, Token | undefined]>([
+    htrToken ? toToken(htrToken) : undefined,
+    usdcToken ? toToken(usdcToken) : undefined,
+  ])
   const [input1, setInput1] = useState<string>('')
   const [parsedInput0, parsedInput1] = useMemo(() => {
-    return [parseInt((Number(input0) * 100).toString()), parseInt((Number(input1) * 100).toString())]
+    return [parseInt((Number(input0) * 100).toString()) || 0, parseInt((Number(input1) * 100).toString()) || 0]
   }, [input0, input1])
-  const [tradeType, setTradeType] = useState<TradeType>(TradeType.EXACT_INPUT)
   const { network } = useNetwork()
   const trade = useTrade()
   const utils = api.useUtils()
@@ -80,98 +96,130 @@ const Add: FC = () => {
   useEffect(() => {
     setTokens([undefined, undefined])
   }, [chainId])
+
+  // Set default tokens when tokens data is loaded
+  useEffect(() => {
+    if (tokens && htrToken && usdcToken && !token0 && !token1) {
+      setTokens([toToken(htrToken), toToken(usdcToken)])
+    }
+  }, [tokens, htrToken, usdcToken, token0, token1])
   // const [fee, setFee] = useState(2)
 
-  const onInput0 = async (val: string) => {
-    setInput0(val)
-    if (!val) {
-      setInput1('')
-    }
-    setTradeType(TradeType.EXACT_INPUT)
-  }
-
-  const onInput1 = async (val: string) => {
-    setInput1(val)
-    if (!val) {
-      setInput0('')
-    }
-    setTradeType(TradeType.EXACT_OUTPUT)
-  }
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setFetchLoading(true)
-      if (tradeType == TradeType.EXACT_INPUT) {
-        const response =
-          selectedPool && token0
-            ? await utils.getPools.front_quote_add_liquidity_in.fetch({
-                id: selectedPool?.id,
-                amount_in: parseFloat(input0),
-                token_in: token0?.uuid,
-              })
-            : undefined
-        // set state with the result if `isSubscribed` is true
-
-        setInput1(response && response != 0 ? response.toFixed(2) : '')
-      } else {
-        const response =
-          selectedPool && token0
-            ? await utils.getPools.front_quote_add_liquidity_out.fetch({
-                id: selectedPool?.id,
-                amount_out: parseFloat(input1),
-                token_in: token0?.uuid,
-              })
-            : undefined
-
-        setInput0(response && response != 0 ? response.toFixed(2) : '')
+  const onInput0 = useCallback(
+    async (val: string) => {
+      setInput0(val)
+      if (!val) {
+        setInput1('')
       }
-    }
-    setSelectedPool(
-      pools.find((pool: Pair) => {
+      trade.setTradeType(TradeType.EXACT_INPUT)
+    },
+    [trade]
+  )
+
+  const onInput1 = useCallback(
+    async (val: string) => {
+      setInput1(val)
+      if (!val) {
+        setInput0('')
+      }
+      trade.setTradeType(TradeType.EXACT_OUTPUT)
+    },
+    [trade]
+  )
+
+  // Pool finding effect - runs when tokens change
+  useEffect(() => {
+    if (pools && token0 && token1) {
+      const foundPool = pools.find((pool: Pair) => {
         const uuid0 = pool.token0.uuid
         const uuid1 = pool.token1.uuid
         const checker = (arr: string[], target: string[]) => target.every((v) => arr.includes(v))
-        const result = checker(
-          [token0 ? token0.uuid : '', token1 ? token1.uuid : ''],
-          [uuid0 ? uuid0 : '', uuid1 ? uuid1 : '']
-        )
-        return result
+        return checker([token0.uuid, token1.uuid], [uuid0, uuid1])
       })
-    )
 
-    // call the function
-    if (input1 || input0) {
-      fetchData()
-        .then(() => {
-          setFetchLoading(false)
+      setSelectedPool(foundPool)
+
+      // Update pool state based on what we found
+      if (foundPool) {
+        setPoolState(PairState.EXISTS)
+      } else if (token0 && token1) {
+        setPoolState(PairState.NOT_EXISTS)
+        // Reset inputs when no pool exists
+        setInput0('')
+        setInput1('')
+      } else {
+        setPoolState(PairState.INVALID)
+      }
+    } else {
+      setSelectedPool(undefined)
+      setPoolState(PairState.INVALID)
+    }
+  }, [pools, token0, token1])
+
+  // Quote fetching effect - runs when inputs change
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const fetchQuote = async () => {
+        if (!selectedPool || !token0 || !token1) return
+
+        setFetchLoading(true)
+
+        try {
+          if (trade.tradeType === TradeType.EXACT_INPUT) {
+            // User entered amount for token0, calculate required token1
+            if (parseFloat(input0) > 0) {
+              const response = await utils.getPools.front_quote_add_liquidity_in.fetch({
+                id: selectedPool.id,
+                amount_in: parseFloat(input0),
+                token_in: token0.uuid,
+              })
+              setInput1(response != null && !isNaN(response) ? Number(response).toFixed(2) : '')
+            }
+          } else {
+            // User entered amount for token1, calculate required token0
+            if (parseFloat(input1) > 0) {
+              const response = await utils.getPools.front_quote_add_liquidity_out.fetch({
+                id: selectedPool.id,
+                amount_out: parseFloat(input1),
+                token_in: token0.uuid,
+              })
+              setInput0(response != null && !isNaN(response) ? Number(response).toFixed(2) : '')
+            }
+          }
+
+          // Update trade state after successful quote
           trade.setMainCurrency(token0)
           trade.setOtherCurrency(token1)
-          trade.setMainCurrencyPrice(token0 ? prices[token0?.uuid] : 0)
-          trade.setOtherCurrencyPrice(token1 ? prices[token1?.uuid] : 0)
+          trade.setMainCurrencyPrice(token0 && prices ? prices[token0.uuid] : 0)
+          trade.setOtherCurrencyPrice(token1 && prices ? prices[token1.uuid] : 0)
           trade.setAmountSpecified(Number(input0) || 0)
           trade.setOutputAmount(Number(input1) || 0)
-          trade.setTradeType(tradeType)
-          if (selectedPool) trade.setPool(selectedPool)
-        })
-        // make sure to catch any error
-        .catch((err) => {
-          console.error(err)
+          trade.setTradeType(trade.tradeType)
+          trade.setPool(selectedPool)
+        } catch (error) {
+          console.error('Error fetching liquidity quote:', error)
+        } finally {
           setFetchLoading(false)
-        })
-    } else {
-      trade.setMainCurrencyPrice(0)
-      trade.setOtherCurrencyPrice(0)
-      trade.setAmountSpecified(0)
-      trade.setOutputAmount(0)
-      trade.setPriceImpact(0)
-      trade.setTradeType(tradeType)
-    }
-  }, [pools, token0, token1, input0, input1, prices, network, tokens, selectedPool])
+        }
+      }
 
-  const onSuccess = useCallback(() => {
-    setInput0('')
-    setInput1('')
-  }, [])
+      // Call the function only if there are inputs and a valid pool
+      if ((input0 || input1) && selectedPool && token0 && token1) {
+        fetchQuote()
+      } else {
+        // Reset trade state when no inputs or pool
+        trade.setMainCurrencyPrice(0)
+        trade.setOtherCurrencyPrice(0)
+        trade.setAmountSpecified(0)
+        trade.setOutputAmount(0)
+        trade.setPriceImpact(0)
+        trade.setTradeType(trade.tradeType)
+        setFetchLoading(false)
+      }
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(timeoutId)
+  }, [input0, input1, trade.tradeType, selectedPool, token0, token1, prices, trade, utils.getPools])
 
   const _setToken0 = useCallback((currency: Token) => {
     setTokens(([prevSrc, prevDst]) => {
@@ -203,15 +251,25 @@ const Add: FC = () => {
                   className="p-3"
                   value={input0}
                   onChange={onInput0}
-                  disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
+                  disabled={!token0 || !token1}
                   currency={token0}
                   onSelect={_setToken0}
                   chainId={chainId}
                   prices={prices}
-                  loading={tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
-                  tokens={tokens.map((token) => {
-                    return new Token(token)
-                  })}
+                  loading={trade.tradeType == TradeType.EXACT_OUTPUT && fetchLoading}
+                  tokens={
+                    tokens
+                      ? tokens.map((token) => {
+                          return new Token({
+                            ...token,
+                            imageUrl: token.imageUrl ?? undefined,
+                            originalAddress: token.originalAddress ?? undefined,
+                            sourceChain: token.sourceChain ?? undefined,
+                            targetChain: token.targetChain ?? undefined,
+                          })
+                        })
+                      : []
+                  }
                 />
                 <div className="flex items-center justify-center -mt-[12px] -mb-[12px] z-10">
                   <div className="group bg-stone-700 p-0.5 border-2 border-stone-800 transition-all rounded-full">
@@ -223,15 +281,25 @@ const Add: FC = () => {
                     className="p-3 !pb-1"
                     value={input1}
                     onChange={onInput1}
-                    disabled={token0?.symbol && token1?.symbol && selectedPool ? false : true}
+                    disabled={!token0 || !token1}
                     currency={token1}
                     onSelect={_setToken1}
                     chainId={chainId}
-                    loading={tradeType == TradeType.EXACT_INPUT && fetchLoading}
+                    loading={trade.tradeType == TradeType.EXACT_INPUT && fetchLoading}
                     prices={prices}
-                    tokens={tokens.map((token) => {
-                      return new Token(token)
-                    })}
+                    tokens={
+                      tokens
+                        ? tokens.map((token) => {
+                            return new Token({
+                              ...token,
+                              imageUrl: token.imageUrl ?? undefined,
+                              originalAddress: token.originalAddress ?? undefined,
+                              sourceChain: token.sourceChain ?? undefined,
+                              targetChain: token.targetChain ?? undefined,
+                            })
+                          })
+                        : []
+                    }
                   />
                   <div className="p-3">
                     <Checker.Connected fullWidth size="md">
@@ -267,7 +335,7 @@ const Add: FC = () => {
                                 token1={token1}
                                 input0={Amount.fromFractionalAmount(token0, parsedInput0, 100)}
                                 input1={Amount.fromFractionalAmount(token1, parsedInput1, 100)}
-                                prices={prices}
+                                prices={prices || {}}
                               >
                                 {({ setOpen }) => (
                                   <Button
@@ -303,16 +371,15 @@ const Add: FC = () => {
           </PoolPositionProvider>
         )} */}
           </div>
+          {/* {selectedPool && (
+            <div className="order-1 sm:order-3">
+              <AppearOnMount>
+                <AddSectionMyPosition pair={selectedPool} />
+              </AppearOnMount>
+            </div>
+          )} */}
         </div>
       </Layout>
-
-      {/* {selectedPool && (
-        <div className="order-1 sm:order-3">
-          <AppearOnMount>
-            <AddSectionMyPosition pair={selectedPool} />
-          </AppearOnMount>
-        </div>
-      )} */}
     </>
   )
 }

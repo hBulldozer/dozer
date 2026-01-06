@@ -7,9 +7,8 @@
  * The pieces you will need to use are documented accordingly near the end
  */
 // import { getServerSession, type Session } from "@acme/auth";
-import { prisma } from '@dozer/database'
-import { initTRPC, TRPCError } from '@trpc/server'
-import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
+import prisma from '@dozer/database'
+import { initTRPC } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 
@@ -66,9 +65,10 @@ export const createTRPCContext = async () => {
  * This is where the trpc api is initialized, connecting the context and
  * transformer
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
+const t = initTRPC
+  .context<typeof createTRPCContext>()
+  .create({
   transformer: superjson,
-  isServer: true,
   errorFormatter({ shape, error }) {
     return {
       ...shape,
@@ -128,3 +128,8 @@ export const procedure = t.procedure
  * @see https://trpc.io/docs/procedures
  */
 // export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
+
+/**
+ * NOTE: responseMeta has been moved to src/server.ts to prevent bundling in client code.
+ * Import it from '@dozer/api/src/server' in API route handlers only.
+ */

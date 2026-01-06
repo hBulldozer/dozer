@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { prisma } from '@dozer/database'
+import prisma from '@dozer/database'
+import { client } from 'utils/api'
 
 interface Point {
   x: number
@@ -8,19 +9,28 @@ interface Point {
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.query.key && request.query.key === process.env.API_KEY) {
-    const tokens = await prisma.token.findMany({ where: { isLiquidityToken: false }, select: { id: true, uuid: true } })
+    const pools = await prisma.pool.findMany({ select: { id: true, token0: true, token1: true } })
     const tokensId: string[] = []
     const svgStringArray: string[] = []
-    const kuCoinArray = await getKuCoinArray(60 * 24 * 15)
     await Promise.all(
-      tokens.map(async (token) => {
-        tokensId.push(token.id)
-        const snaps = await getSnapsByUuid(token.uuid, kuCoinArray)
-        const points: Point[] = snaps.map((snap: number, index: number) => {
-          return { x: index, y: snap }
-        })
-        const svgString = createSVGString(points, 110, 30, 2)
-        svgStringArray.push(svgString)
+      pools.map(async (pool) => {
+        const prices24h = await client.getPrices.all24h.query()
+        const lastPrices = await client.getPrices.all.query()
+        const tokenUuid = pool.id.includes('native') ? pool.token0.uuid : pool.token1.uuid
+        const tokenId = pool.id.includes('native') ? pool.token0.id : pool.token1.id
+        tokensId.push(tokenId)
+        const lastPrice = lastPrices?.[tokenUuid]
+        let price24h: number[] = []
+        if (prices24h) {
+          price24h = prices24h[tokenUuid].map((p) => Number(p.toPrecision(5)))
+        }
+        price24h.push(lastPrice ? Number(lastPrice.toPrecision(5)) : price24h[0])
+        const points = price24h.map((p, i) => ({ x: i, y: p }))
+        const chartSVG =
+          pool.id.includes('husdc') || Math.min(...price24h) == Math.max(...price24h)
+            ? generateHorizontalLineSvg(110, 30, 6)
+            : createSVGString(points, 110, 30, 6)
+        svgStringArray.push(chartSVG && !chartSVG.includes('NaN') ? chartSVG : generateHorizontalLineSvg(110, 30, 6))
       })
     )
     tokensId.map(async (value, index) => {
@@ -38,53 +48,6 @@ export default async function handler(request: NextApiRequest, response: NextApi
   } else return response.status(401).end(`Not Authorized !`)
 }
 
-const getSnapsByUuid = async (tokenUuid: string, kuCoinArray: number[]) => {
-  if (tokenUuid == '00') {
-    return kuCoinArray
-  } else {
-    const result = await prisma.hourSnapshot.findMany({
-      where: {
-        AND: [
-          { date: { gte: new Date(Date.now() - 60 * 60 * 24 * 1000) } },
-          {
-            pool: {
-              token0: {
-                uuid: '00',
-              },
-            },
-          },
-          {
-            pool: {
-              token1: {
-                uuid: tokenUuid,
-              },
-            },
-          },
-        ],
-      },
-      select: {
-        reserve0: true,
-        reserve1: true,
-        priceHTR: true,
-      },
-    })
-
-    return result.reverse().map((snap, idx) => {
-      return (snap.reserve0 / snap.reserve1) * kuCoinArray[idx]
-    })
-  }
-}
-async function getKuCoinArray(size: number) {
-  const now = Math.round(Date.now() / 1000)
-  const resp = await fetch(
-    `https://api.kucoin.com/api/v1/market/candles\?type\=5min\&symbol\=HTR-USDT\&startAt\=${now - size}\&endAt\=${now}`
-  )
-  const data = await resp.json()
-  const kuCoinArray = data.data.map((item: string[]) => {
-    return Number(item[2])
-  })
-  return kuCoinArray
-}
 const createSVGString = (data: Point[], width: number, height: number, padding: number) => {
   const createPathString = (points: Point[]): string => {
     return (
@@ -106,7 +69,7 @@ const createSVGString = (data: Point[], width: number, height: number, padding: 
     const scaleY = svgHeight / (maxY - minY)
     return points.map((point) => ({
       x: (point.x - minX) * scaleX,
-      y: (point.y - minY) * scaleY,
+      y: svgHeight - (point.y - minY) * scaleY,
     }))
   }
 
@@ -115,13 +78,28 @@ const createSVGString = (data: Point[], width: number, height: number, padding: 
   const maxX_scaled = Math.max(...scaledPoints.map((p) => p.x))
   const minY_scaled = Math.min(...scaledPoints.map((p) => p.y))
   const maxY_scaled = Math.max(...scaledPoints.map((p) => p.y))
-  const viewBoxValues = `0 0 ${maxX_scaled - minX_scaled + 2 * padding} ${
-    maxY_scaled - minY_scaled + 3 * padding // Increase padding for the bottom
-  }`
+  const viewBoxValues = `0 0 ${maxX_scaled - minX_scaled + padding} ${maxY_scaled - minY_scaled + padding}`
 
+  const change = data[data.length - 1].y - data[0].y
   return `
   <svg viewBox="${viewBoxValues}" width="${width}" height="${height}">
-    <path d="${createPathString(scaledPoints)}" stroke="black" stroke-width="1.5" fill="none" />
+    <path d="${createPathString(scaledPoints)}" stroke=${
+    change >= 0 ? '#4ade80' : '#f87171'
+  } stroke-width="1.5" fill="none" />
   </svg>
   `
+}
+
+function generateHorizontalLineSvg(width: number, height: number, padding: number): string {
+  // Calculate the center y-coordinate
+  const centerY = height / 2
+
+  // Define the SVG string with a line element
+  const svgString = `
+  <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+    <line x1="${padding}" y1="${centerY}" x2="${width - padding}" y2="${centerY}" stroke="#4ade80" stroke-width="1.5" />
+  </svg>
+  `
+
+  return svgString
 }
