@@ -29,8 +29,8 @@ export const openHathorWalletForRequest = (sessionTopic: string): boolean => {
   try {
     const wcUri = `wc:${sessionTopic}@2`
     const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
-    // TODO: Uncomment when final mobile wallet version is released
-    // window.open(deepLink, '_self')
+
+    window.open(deepLink, '_self')
     console.log('Deeplink for request would open:', deepLink)
     return true
   } catch (error) {
@@ -269,7 +269,8 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
         try {
           setPending(true)
 
-          if (session) openHathorWalletForRequest(session.topic)
+          // TODO: Uncomment when final mobile wallet version is released
+          // if (session) openHathorWalletForRequest(session.topic)
 
           const result: SendNanoContractTxResponse = await client!.request<SendNanoContractTxResponse>({
             topic: session!.topic,

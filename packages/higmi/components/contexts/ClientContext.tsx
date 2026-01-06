@@ -59,12 +59,9 @@ export const openHathorWalletDeepLink = (wcUri: string): boolean => {
 
   try {
     const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
-    // TODO: Uncomment when final mobile wallet version is released
-    // window.open(deepLink, '_self')
-    // return true
-    console.log('Deeplink would open:', deepLink)
-    // Return false while deeplink is disabled so QR modal shows as fallback
-    return false
+
+    window.open(deepLink, '_self')
+    return true
   } catch (error) {
     console.warn('Failed to open Hathor wallet deeplink:', error)
     return false
@@ -156,17 +153,16 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
         if (uri) {
           // On mobile, open the deeplink directly without showing the QR modal
           // (QR codes aren't useful on mobile, and showing both causes double opening)
-          const deeplinkOpened = openHathorWalletDeepLink(uri)
-
+          // TODO: Uncomment when final mobile wallet version is released
+          // const deeplinkOpened = openHathorWalletDeepLink(uri)
           // Only show QR modal on desktop (when deeplink wasn't opened)
-          if (!deeplinkOpened) {
-            // Create a flat array of all requested chains across namespaces.
-            const standaloneChains = Object.values(requiredNamespaces)
-              .map((namespace) => namespace.chains)
-              .flat() as string[]
-
-            web3Modal.openModal({ uri, standaloneChains })
-          }
+          // if (!deeplinkOpened) {
+          //   // Create a flat array of all requested chains across namespaces.
+          //   const standaloneChains = Object.values(requiredNamespaces)
+          //     .map((namespace) => namespace.chains)
+          //     .flat() as string[]
+          //   web3Modal.openModal({ uri, standaloneChains })
+          // }
         }
 
         const session = await approval()
