@@ -51,18 +51,89 @@ export const isMobileDevice = (): boolean => {
   return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())
 }
 
-export const openHathorWalletDeepLink = (wcUri: string): boolean => {
+/**
+ * Attempts to open Hathor wallet via deeplink with fallback detection.
+ * Uses visibility change detection to determine if the deeplink was successful.
+ *
+ * @param wcUri - The WalletConnect URI to pass to the wallet
+ * @param onFallback - Optional callback if deeplink fails (wallet not installed)
+ * @returns boolean indicating if the deeplink attempt was made (not if it succeeded)
+ */
+export const openHathorWalletDeepLink = (wcUri: string, onFallback?: () => void): boolean => {
   if (typeof window === 'undefined') return false
 
   // Only open deeplink on mobile devices
   if (!isMobileDevice()) return false
 
+  const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
+
+  // Track if the deeplink was successful (page lost visibility)
+  let deeplinkSucceeded = false
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+  const cleanup = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+      timeoutId = null
+    }
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    window.removeEventListener('pagehide', handlePageHide)
+  }
+
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      // Page became hidden, deeplink likely worked
+      deeplinkSucceeded = true
+      cleanup()
+    }
+  }
+
+  const handlePageHide = () => {
+    // Page is being hidden (app switching), deeplink likely worked
+    deeplinkSucceeded = true
+    cleanup()
+  }
+
+  // Set up listeners before opening the deeplink
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('pagehide', handlePageHide)
+
   try {
-    const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
-    window.open(deepLink, '_self')
+    // Store current time to check if we stayed on the page
+    const startTime = Date.now()
+
+    // Create a clickable link and programmatically click it
+    // This approach tends to fail more gracefully than window.location.href
+    // and avoids popup blocker issues compared to window.open
+    const link = document.createElement('a')
+    link.href = deepLink
+    link.style.display = 'none'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    // Set a timeout to check if the deeplink worked
+    // If the page is still visible after 2 seconds, the deeplink likely failed
+    timeoutId = setTimeout(() => {
+      cleanup()
+
+      // Check if significant time passed and page is still visible
+      const elapsed = Date.now() - startTime
+      if (!deeplinkSucceeded && elapsed >= 1800 && !document.hidden) {
+        console.warn('Hathor wallet deeplink may have failed - wallet might not be installed')
+        if (onFallback) {
+          onFallback()
+        }
+      }
+    }, 2000)
+
     return true
   } catch (error) {
+    cleanup()
     console.warn('Failed to open Hathor wallet deeplink:', error)
+    if (onFallback) {
+      onFallback()
+    }
     return false
   }
 }
@@ -150,17 +221,21 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
 
         // Open QRCode modal if a URI was returned (i.e. we're not connecting an existing pairing).
         if (uri) {
-          // On mobile, open the deeplink directly without showing the QR modal
-          // (QR codes aren't useful on mobile, and showing both causes double opening)
-          const deeplinkOpened = openHathorWalletDeepLink(uri)
+          // Create a flat array of all requested chains across namespaces.
+          const standaloneChains = Object.values(requiredNamespaces)
+            .map((namespace) => namespace.chains)
+            .flat() as string[]
 
-          // Only show QR modal on desktop (when deeplink wasn't opened)
+          // On mobile, try deeplink first with QR modal as fallback
+          // (QR codes aren't ideal on mobile, but useful if wallet isn't installed)
+          const deeplinkOpened = openHathorWalletDeepLink(uri, () => {
+            // Fallback: if deeplink fails (wallet not installed), show QR modal
+            // This provides a better UX than showing a browser error
+            web3Modal.openModal({ uri, standaloneChains })
+          })
+
+          // On desktop (when deeplink wasn't attempted), show QR modal directly
           if (!deeplinkOpened) {
-            // Create a flat array of all requested chains across namespaces.
-            const standaloneChains = Object.values(requiredNamespaces)
-              .map((namespace) => namespace.chains)
-              .flat() as string[]
-
             web3Modal.openModal({ uri, standaloneChains })
           }
         }
