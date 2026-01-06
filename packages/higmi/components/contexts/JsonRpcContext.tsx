@@ -16,6 +16,16 @@ import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
 
+export const HATHOR_WALLET_DEEP_LINK_SCHEME = 'hathorwallet'
+
+export const openHathorWalletForRequest = (sessionTopic: string) => {
+  if (typeof window === 'undefined') return
+
+  const wcUri = `wc:${sessionTopic}@2`
+  const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
+  window.open(deepLink, '_self')
+}
+
 /**
  * Utility function to parse snap responses
  * Handles the new response format: { type: RpcResponseTypes.X, response: { ... } }
@@ -245,6 +255,8 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
 
         try {
           setPending(true)
+
+          if (session) openHathorWalletForRequest(session.topic)
 
           const result: SendNanoContractTxResponse = await client!.request<SendNanoContractTxResponse>({
             topic: session!.topic,

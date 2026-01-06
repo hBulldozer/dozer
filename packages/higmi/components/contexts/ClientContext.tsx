@@ -64,8 +64,8 @@ const web3Modal = new Web3Modal({
   mobileWallets: [
     {
       id: 'hathor-wallet',
-      name: 'HathorWallet',
-      links: { universal: 'hathorwallet://wc' },
+      name: 'Hathor Wallet',
+      links: { universal: 'https://hathor.network/htr#wallet', native: `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc` },
     },
   ],
   walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
