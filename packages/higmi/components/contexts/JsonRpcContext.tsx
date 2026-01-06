@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useState, useMemo, useEffect } from 'react'
-import { useWalletConnectClient } from './ClientContext'
+import { HATHOR_WALLET_DEEP_LINK_SCHEME, useWalletConnectClient } from './ClientContext'
 import { useAccount } from '@dozer/zustand'
 import {
   CreateTokenResponse,
@@ -15,8 +15,6 @@ import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 // @ts-expect-error - Hathor Snap Utils is not typed
 import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
-
-export const HATHOR_WALLET_DEEP_LINK_SCHEME = 'hathorwallet'
 
 export const openHathorWalletForRequest = (sessionTopic: string) => {
   if (typeof window === 'undefined') return
