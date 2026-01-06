@@ -18,6 +18,7 @@ import Head from 'next/head'
 
 import { init } from '@socialgouv/matomo-next'
 import { BridgeProvider, ClientContextProvider, JsonRpcContextProvider } from '@dozer/higmi'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const MATOMO_URL = process.env.NEXT_PUBLIC_MATOMO_URL || 'https://matomo.self2.dozer.finance/'
 const MATOMO_SITE_ID = process.env.NEXT_PUBLIC_MATOMO_SITE_ID || '1'
@@ -81,6 +82,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
                 <Header />
                 <MotionConfig reducedMotion={isSmallScreen ? 'always' : 'user'}>
                   <Component {...pageProps} />
+                  <SpeedInsights />
                 </MotionConfig>
                 <App.Footer />
                 <ToastContainer className="mt-[50px]" />
