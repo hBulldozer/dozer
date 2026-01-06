@@ -82,14 +82,14 @@ const web3Modal = new Web3Modal({
     '--w3m-accent-color': '#eab308',
   },
   enableExplorer: false,
-  mobileWallets: [
-    {
-      id: 'hathor-wallet',
-      name: 'Hathor Wallet',
-      links: { universal: 'https://hathor.network/htr#wallet', native: `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc` },
-    },
-  ],
-  walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
+  // mobileWallets: [
+  //   {
+  //     id: 'hathor-wallet',
+  //     name: 'Hathor Wallet',
+  //     links: { universal: 'https://hathor.network/htr#wallet', native: `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc` },
+  //   },
+  // ],
+  // walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
 })
 
 /**
