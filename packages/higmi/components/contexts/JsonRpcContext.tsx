@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useState, useMemo, useEffect } from 'react'
-import { useWalletConnectClient } from './ClientContext'
+import { HATHOR_WALLET_DEEP_LINK_SCHEME, useWalletConnectClient, isMobileDevice } from './ClientContext'
 import { useAccount } from '@dozer/zustand'
 import {
   CreateTokenResponse,
@@ -15,6 +15,29 @@ import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 // @ts-expect-error - Hathor Snap Utils is not typed
 import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
+
+/**
+ * Opens Hathor wallet via deeplink for an existing session (used during RPC requests)
+ * Only opens on mobile devices to bring the wallet to foreground
+ */
+export const openHathorWalletForRequest = (sessionTopic: string): boolean => {
+  if (typeof window === 'undefined') return false
+
+  // Only open deeplink on mobile devices
+  if (!isMobileDevice()) return false
+
+  try {
+    const wcUri = `wc:${sessionTopic}@2`
+    const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
+
+    window.open(deepLink, '_self')
+    console.log('Deeplink for request would open:', deepLink)
+    return true
+  } catch (error) {
+    console.warn('Failed to open Hathor wallet deeplink for request:', error)
+    return false
+  }
+}
 
 /**
  * Utility function to parse snap responses
@@ -245,6 +268,9 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
 
         try {
           setPending(true)
+
+          // TODO: Uncomment when final mobile wallet version is released
+          // if (session) openHathorWalletForRequest(session.topic)
 
           const result: SendNanoContractTxResponse = await client!.request<SendNanoContractTxResponse>({
             topic: session!.topic,
