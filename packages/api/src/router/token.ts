@@ -118,8 +118,8 @@ async function calculate24hFees(
 
     const currentPoolData = parsePoolApiInfo(currentPoolDataArray)
 
-    // Fee rate is in basis points, convert to decimal (e.g., 5 basis points = 0.0005)
-    const feeRate = (currentPoolData.fee || 0) / 10000
+    // Fee rate format: fee/1000 = decimal rate (e.g., fee=8 means 8/1000 = 0.008 = 0.8%)
+    const feeRate = (currentPoolData.fee || 0) / 1000
 
     // Calculate fees: volume * fee rate
     const fees24hUSD = volume24hUSD * feeRate
