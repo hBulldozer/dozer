@@ -22,6 +22,7 @@ export type TokenSelectorProps = {
   showUnsignedTokens?: boolean
   searchTerm?: string
   showUnsignedSwitchInDialog?: boolean
+  stripBridgePrefix?: boolean
 }
 
 export const TokenSelector: FC<TokenSelectorProps> = memo(
@@ -38,6 +39,7 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
     showUnsignedTokens = false,
     searchTerm = '',
     showUnsignedSwitchInDialog = true,
+    stripBridgePrefix = false,
     ...props
   }) => {
     const { accounts } = useWalletConnectClient()
@@ -130,6 +132,7 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
           showUnsignedTokens={showUnsignedTokens}
           searchTerm={searchTerm}
           showUnsignedSwitchInDialog={showUnsignedSwitchInDialog}
+          stripBridgePrefix={stripBridgePrefix}
           {...props}
         />
       )
@@ -147,6 +150,7 @@ export const TokenSelector: FC<TokenSelectorProps> = memo(
       showUnsignedTokens,
       searchTerm,
       showUnsignedSwitchInDialog,
+      stripBridgePrefix,
       id,
       includeNative,
     ])
