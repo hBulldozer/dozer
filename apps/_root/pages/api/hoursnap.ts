@@ -24,7 +24,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     pools.map((pool) => {
       pools_array.push({
         poolId: pool.id,
-        apr: pool.apr,
+        apr: pool.apy, // Note: DB field is still named 'apr' but now stores APY value
         date: new Date(),
         liquidityUSD: pool.liquidityUSD,
         reserve0: Number(pool.reserve0),

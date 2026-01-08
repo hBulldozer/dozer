@@ -19,7 +19,7 @@ export interface Filters {
   tvl: { min?: number; max?: number }
   volume: { min?: number; max?: number }
   fees: { min?: number; max?: number }
-  apr: { min?: number; max?: number }
+  apy: { min?: number; max?: number }
 }
 
 export type FilterPoolsProps = {
@@ -134,9 +134,9 @@ export function FilterPools({ search, setSearch, setFilters, maxValues }: Filter
     tvl: {},
     volume: {},
     fees: {},
-    apr: {},
+    apy: {},
   })
-  const [activeFilter, setActiveFilter] = useState<keyof Filters>('apr')
+  const [activeFilter, setActiveFilter] = useState<keyof Filters>('apy')
 
   const updateFilter = (category: keyof Filters, type: 'min' | 'max', value: number | undefined) => {
     setLocalFilters((prev) => ({
@@ -154,7 +154,7 @@ export function FilterPools({ search, setSearch, setFilters, maxValues }: Filter
       tvl: {},
       volume: {},
       fees: {},
-      apr: {},
+      apy: {},
     }
     setLocalFilters(resetFilters)
     setFilters(resetFilters)
@@ -169,7 +169,7 @@ export function FilterPools({ search, setSearch, setFilters, maxValues }: Filter
   const { isSm } = useBreakpoint('sm')
 
   const filterOptions: Array<{ key: keyof Filters; label: string }> = [
-    { key: 'apr', label: 'APR' },
+    { key: 'apy', label: 'APY' },
     { key: 'tvl', label: 'TVL' },
     { key: 'fees', label: 'Fees' },
     { key: 'volume', label: 'Volume' },
@@ -187,7 +187,7 @@ export function FilterPools({ search, setSearch, setFilters, maxValues }: Filter
           setMax={(value: number | undefined) => updateFilter(option.key, 'max', value)}
           onEnter={applyFilters}
           close={close}
-          sliderMax={option.key === 'apr' ? maxValues[option.key] * 100 : maxValues[option.key]}
+          sliderMax={option.key === 'apy' ? maxValues[option.key] * 100 : maxValues[option.key]}
         />
       ))
     } else {

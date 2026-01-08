@@ -1,29 +1,16 @@
 import { formatPercent } from '@dozer/format'
-import { Typography, Chip } from '@dozer/ui'
+import { Typography } from '@dozer/ui'
 import { FC } from 'react'
 
-import { FarmRewardsAvailableTooltip } from '../../../../FarmRewardsAvailableTooltip'
 import { CellProps } from './types'
 
-export const PairAPRCell: FC<CellProps> = ({ row }) => {
-  const apr = row.apr * 100
-  const isHighYield = apr >= 5
-  const isMediumYield = apr >= 1 && apr < 5
-  const isLowYield = apr > 0 && apr < 1
-  const isZeroYield = apr === 0
-
-  // Determine APR color
-  const getApyColor = () => {
-    if (isZeroYield) return 'gray'
-    if (isLowYield) return 'yellow'
-    if (isMediumYield) return 'green'
-    if (isHighYield) return 'green'
-    return 'gray'
-  }
-
+export const PairAPYCell: FC<CellProps> = ({ row }) => {
   return (
-    <div className="text-right">
-      <Chip color={getApyColor()} size="sm" label={`${apr.toFixed(2)}% APR`} className="font-semibold" />
-    </div>
+    <Typography variant="sm" weight={600} className="flex items-center justify-end gap-1 text-stone-50">
+      {formatPercent(row.apy)}
+    </Typography>
   )
 }
+
+// Keep old export for backwards compatibility during migration
+export const PairAPRCell = PairAPYCell
