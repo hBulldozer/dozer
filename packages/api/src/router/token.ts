@@ -615,6 +615,11 @@ export const tokenRouter = createTRPCRouter({
             // Calculate USD values
             const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
 
+            // Calculate token's contribution to this pool's TVL
+            // Only count the side of the pool that belongs to this token
+            const tokenLiquidityContribution =
+              tokenA === tokenUuid ? reserve0 * token0PriceUSD : reserve1 * token1PriceUSD
+
             // Calculate 24h volume using delta approach
             const { volume24h, volume24hUSD } = await calculate24hVolume(poolKey)
             const volume1d = volume24h
@@ -673,15 +678,15 @@ export const tokenRouter = createTRPCRouter({
 
             pools.push(poolDetails)
 
-            // Aggregate totals
-            totalLiquidityUSD += liquidityUSD
+            // Aggregate totals - use token's contribution for TVL, not total pool liquidity
+            totalLiquidityUSD += tokenLiquidityContribution
             totalVolumeUSD += volumeUSD
             totalFeesUSD += feeUSD
 
             console.log(
-              `   ✅ Processed pool ${poolKey}: ${token0Info.symbol}-${token1Info.symbol}, TVL: $${liquidityUSD.toFixed(
+              `   ✅ Processed pool ${poolKey}: ${token0Info.symbol}-${token1Info.symbol}, Pool TVL: $${liquidityUSD.toFixed(
                 2
-              )}`
+              )}, Token TVL contribution: $${tokenLiquidityContribution.toFixed(2)}`
             )
           } catch (error) {
             console.error(`❌ Error processing pool ${poolKey}:`, error)
