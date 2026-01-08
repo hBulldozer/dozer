@@ -23,7 +23,7 @@ export const PairAPRCell: FC<CellProps> = ({ row }) => {
 
   return (
     <div className="text-right">
-      <Chip color={getApyColor()} size="sm" label={`${apr.toFixed(2)}% APY`} className="font-semibold" />
+      <Chip color={getApyColor()} size="sm" label={`${apr.toFixed(2)}% APR`} className="font-semibold" />
     </div>
   )
 }

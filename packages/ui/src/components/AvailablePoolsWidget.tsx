@@ -134,7 +134,7 @@ export const AvailablePoolsWidget: React.FC<AvailablePoolsWidgetProps> = ({ pool
                   <Chip
                     color={getApyChipColor()}
                     size="sm"
-                    label={`${apr.toFixed(2)}% APY`}
+                    label={`${apr.toFixed(2)}% APR`}
                     className="font-semibold"
                   />
                 </div>
