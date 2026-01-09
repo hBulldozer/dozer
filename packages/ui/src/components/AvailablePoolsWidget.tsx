@@ -11,7 +11,7 @@ interface Pool {
   volumeUSD: number
   feeUSD: number
   swapFee: number
-  apr: number
+  apy: number
   token0: {
     uuid: string
     symbol: string
@@ -79,11 +79,11 @@ export const AvailablePoolsWidget: React.FC<AvailablePoolsWidgetProps> = ({ pool
           {pools.map((pool) => {
             // Get the paired token (not the current token)
             const pairedToken = pool.token0.uuid === currentToken.uuid ? pool.token1 : pool.token0
-            const apr = pool.apr * 100
-            const isHighYield = apr >= 5
-            const isMediumYield = apr >= 1 && apr < 5
-            const isLowYield = apr > 0 && apr < 1
-            const isZeroYield = apr === 0
+            const apy = pool.apy * 100
+            const isHighYield = apy >= 5
+            const isMediumYield = apy >= 1 && apy < 5
+            const isLowYield = apy > 0 && apy < 1
+            const isZeroYield = apy === 0
 
             // Determine APY color and treatment
             const getApyColor = () => {
@@ -134,7 +134,7 @@ export const AvailablePoolsWidget: React.FC<AvailablePoolsWidgetProps> = ({ pool
                   <Chip
                     color={getApyChipColor()}
                     size="sm"
-                    label={`${apr.toFixed(2)}% APY`}
+                    label={`${apy.toFixed(2)}% APY`}
                     className="font-semibold"
                   />
                 </div>

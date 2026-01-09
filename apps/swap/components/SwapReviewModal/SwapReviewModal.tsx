@@ -137,14 +137,34 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
       if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
+          const amount_in = amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1)
+          const amount_out = outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 - slippageTolerance : 1)
           const notificationData: NotificationData = {
             type: 'swap',
             chainId: network,
             summary: {
-              pending: `Swapping ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} for ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol}.`,
-              completed: `Success! Traded ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} for ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol}.`,
+              pending: `Swapping ${amount_in.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} ${mainCurrency.symbol} for ${amount_out.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} ${otherCurrency.symbol}.`,
+              completed: `Success! Traded ${amount_in.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} ${mainCurrency.symbol} for ${amount_out.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} ${otherCurrency.symbol}.`,
               failed: 'Failed summary',
-              info: `Trading ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} for ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol}.`,
+              info: `Trading ${amount_in.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} ${mainCurrency.symbol} for ${amount_out.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} ${otherCurrency.symbol}.`,
             },
             status: 'pending',
             txHash: hash,
@@ -155,12 +175,7 @@ export const SwapReviewModalLegacy: FC<SwapReviewModalLegacy> = ({ chainId, chil
             }),
             account: address,
           }
-          editBalanceOnSwap(
-            amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
-            mainCurrency.uuid,
-            outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 - slippageTolerance : 1),
-            otherCurrency.uuid
-          )
+          editBalanceOnSwap(amount_in, mainCurrency.uuid, amount_out, otherCurrency.uuid)
           const notificationGroup: string[] = []
           notificationGroup.push(JSON.stringify(notificationData))
           addNotification(notificationGroup)

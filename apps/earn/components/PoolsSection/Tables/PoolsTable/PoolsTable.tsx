@@ -43,7 +43,7 @@ export const PoolsTable: FC = () => {
     tvl: { min: undefined, max: undefined },
     volume: { min: undefined, max: undefined },
     fees: { min: undefined, max: undefined },
-    apr: { min: undefined, max: undefined },
+    apy: { min: undefined, max: undefined },
   })
 
   // Add mounted state to handle hydration
@@ -78,7 +78,7 @@ export const PoolsTable: FC = () => {
       return []
     }
 
-    const maxAPR = Math.max(...(_pools?.map((pool) => pool.apr) || [])) * 100
+    const maxAPY = Math.max(...(_pools?.map((pool) => pool.apy) || [])) * 100
     const maxTVL = Math.max(...(_pools?.map((pool) => pool.liquidityUSD) || []))
     const maxFees = Math.max(...(_pools?.map((pool) => pool.fees1d) || []))
     const maxVolume = Math.max(...(_pools?.map((pool) => pool.volume1d) || []))
@@ -88,8 +88,8 @@ export const PoolsTable: FC = () => {
       })
       .filter((pool) => pool.liquidity > 1)
       .filter((pool) => {
-        if (filters.apr.min || filters.apr.max) {
-          return pool.apr * 100 >= (filters.apr.min || 0) && pool.apr * 100 <= (filters.apr.max || maxAPR)
+        if (filters.apy.min || filters.apy.max) {
+          return pool.apy * 100 >= (filters.apy.min || 0) && pool.apy * 100 <= (filters.apy.max || maxAPY)
         }
         if (filters.tvl.min || filters.tvl.max) {
           return pool.liquidityUSD >= (filters.tvl.min || 0) && pool.liquidityUSD <= (filters.tvl.max || maxTVL)
@@ -126,18 +126,18 @@ export const PoolsTable: FC = () => {
 
   const maxValues = useMemo(() => {
     if (!mounted || !_pools.length) {
-      return { tvl: 0, volume: 0, fees: 0, apr: 0 }
+      return { tvl: 0, volume: 0, fees: 0, apy: 0 }
     }
 
     const maxTVL = Math.max(...(_pools?.map((pool) => pool.liquidityUSD) || []))
     const maxVolume = Math.max(...(_pools?.map((pool) => pool.volume1d) || []))
     const maxFees = Math.max(...(_pools?.map((pool) => pool.fees1d) || []))
-    const maxAPR = Math.max(...(_pools?.map((pool) => pool.apr) || []))
+    const maxAPY = Math.max(...(_pools?.map((pool) => pool.apy) || []))
     return {
       tvl: maxTVL,
       volume: maxVolume,
       fees: maxFees,
-      apr: maxAPR,
+      apy: maxAPY,
     }
   }, [_pools, mounted])
 

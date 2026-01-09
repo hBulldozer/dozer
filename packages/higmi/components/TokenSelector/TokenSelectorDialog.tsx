@@ -20,6 +20,7 @@ type TokenSelectorDialog = {
   showUnsignedTokens?: boolean
   searchTerm?: string
   showUnsignedSwitchInDialog?: boolean
+  stripBridgePrefix?: boolean
 }
 
 export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
@@ -36,6 +37,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
   showUnsignedTokens: initialShowUnsigned = false,
   searchTerm: initialSearchTerm = '',
   showUnsignedSwitchInDialog = true,
+  stripBridgePrefix = false,
 }) => {
   // Local state for search and unsigned tokens toggle
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
@@ -204,6 +206,7 @@ export const TokenSelectorDialog: FC<TokenSelectorDialog> = ({
                           100
                         )}
                         price={pricesMap?.[currency.uuid]}
+                        stripBridgePrefix={stripBridgePrefix}
                       />
                     )}
                   />

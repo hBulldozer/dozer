@@ -118,8 +118,8 @@ async function calculate24hFees(
 
     const currentPoolData = parsePoolApiInfo(currentPoolDataArray)
 
-    // Fee rate is in basis points, convert to decimal (e.g., 5 basis points = 0.0005)
-    const feeRate = (currentPoolData.fee || 0) / 10000
+    // Fee rate format: fee/1000 = decimal rate (e.g., fee=8 means 8/1000 = 0.008 = 0.8%)
+    const feeRate = (currentPoolData.fee || 0) / 1000
 
     // Calculate fees: volume * fee rate
     const fees24hUSD = volume24hUSD * feeRate
@@ -615,6 +615,11 @@ export const tokenRouter = createTRPCRouter({
             // Calculate USD values
             const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
 
+            // Calculate token's contribution to this pool's TVL
+            // Only count the side of the pool that belongs to this token
+            const tokenLiquidityContribution =
+              tokenA === tokenUuid ? reserve0 * token0PriceUSD : reserve1 * token1PriceUSD
+
             // Calculate 24h volume using delta approach
             const { volume24h, volume24hUSD } = await calculate24hVolume(poolKey)
             const volume1d = volume24h
@@ -627,13 +632,10 @@ export const tokenRouter = createTRPCRouter({
             // Calculate 24h transaction count using delta approach
             const txCount1d = await calculate24hTransactionCount(poolKey)
 
-            // Keep the old fee calculation for APR (using accumulated fees)
-            const fee0 = (poolData.fee0 || 0) / 100
-            const fee1 = (poolData.fee1 || 0) / 100
-            const accumulatedFeeUSD = fee0 * token0PriceUSD + fee1 * token1PriceUSD
-
-            // Calculate APR (annualized based on accumulated fees)
-            const apr = liquidityUSD > 0 ? ((accumulatedFeeUSD * 365) / liquidityUSD) * 100 : 0
+            // Calculate APY using 24h fees with compound interest formula
+            // APY = (1 + daily_rate)^365 - 1
+            const dailyRate = liquidityUSD > 0 ? feeUSD / liquidityUSD : 0
+            const apy = Math.pow(1 + dailyRate, 365) - 1
 
             // Generate symbol-based identifier for URL-friendly access
             const feeBasisPoints = parseInt(feeStr || '0')
@@ -649,7 +651,7 @@ export const tokenRouter = createTRPCRouter({
               feeUSD,
               txCount1d,
               swapFee,
-              apr: apr / 100, // Convert back to decimal for consistency
+              apy, // Already in decimal format (0.05 = 5%)
               token0: {
                 uuid: tokenA,
                 symbol: token0Info.symbol,
@@ -673,15 +675,15 @@ export const tokenRouter = createTRPCRouter({
 
             pools.push(poolDetails)
 
-            // Aggregate totals
-            totalLiquidityUSD += liquidityUSD
+            // Aggregate totals - use token's contribution for TVL, not total pool liquidity
+            totalLiquidityUSD += tokenLiquidityContribution
             totalVolumeUSD += volumeUSD
             totalFeesUSD += feeUSD
 
             console.log(
-              `   ✅ Processed pool ${poolKey}: ${token0Info.symbol}-${token1Info.symbol}, TVL: $${liquidityUSD.toFixed(
+              `   ✅ Processed pool ${poolKey}: ${token0Info.symbol}-${token1Info.symbol}, Pool TVL: $${liquidityUSD.toFixed(
                 2
-              )}`
+              )}, Token TVL contribution: $${tokenLiquidityContribution.toFixed(2)}`
             )
           } catch (error) {
             console.error(`❌ Error processing pool ${poolKey}:`, error)

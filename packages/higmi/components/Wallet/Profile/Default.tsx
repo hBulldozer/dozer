@@ -332,7 +332,7 @@ export const Default: FC<DefaultProps> = ({
               </Typography>
             </div>
           )}
-          {!isLoading && faucetAvailable && !faucetUsed && (
+          {!isLoading && faucetAvailable && !faucetUsed && isTestnet && (
             <Button
               variant="outlined"
               className="px-8"

@@ -39,9 +39,8 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
   // Get the appropriate address based on wallet type
   // For WalletConnect: use accounts array
   // For MetaMask Snap: use hathorAddress from useAccount
-  const address = walletType === 'walletconnect' 
-    ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') 
-    : hathorAddress || ''
+  const address =
+    walletType === 'walletconnect' ? (accounts.length > 0 ? accounts[0].split(':')[2] : '') : hathorAddress || ''
 
   const poolManager = new PoolManager()
 
@@ -129,7 +128,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
     setSentTX(true)
     if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency && networkData) {
       try {
-        const fee = parseInt(pool.id.split('/')[2]);
+        const fee = parseInt(pool.id.split('/')[2])
         await poolManager.addLiquidity(
           hathorRpc,
           address,
@@ -139,7 +138,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
           outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
           fee,
           selectedNetwork
-        );
+        )
         addTempTx(
           pool.id,
           address,
@@ -161,14 +160,28 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
       if (amountSpecified && outputAmount && pool && mainCurrency && otherCurrency) {
         const hash = get(rpcResult, 'result.response.hash') as string
         if (hash) {
+          const amount_in = amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1)
+          const amount_out = outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1)
           const notificationData: NotificationData = {
             type: 'swap',
             chainId: network,
             summary: {
               pending: `Adding liquidity in ${pool.name}.`,
-              completed: `Success! Added ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} and ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol} in ${pool.name} pool.`,
+              completed: `Success! Added ${amount_in.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} ${mainCurrency.symbol} and ${amount_out.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} ${otherCurrency.symbol} in ${pool.name} pool.`,
               failed: 'Failed summary',
-              info: `Adding Liquidity in ${pool.name} pool: ${amountSpecified.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${mainCurrency.symbol} and ${outputAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${otherCurrency.symbol}.`,
+              info: `Adding Liquidity in ${pool.name} pool: ${amount_in.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} ${mainCurrency.symbol} and ${amount_out.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} ${otherCurrency.symbol}.`,
             },
             status: 'pending',
             txHash: hash,
@@ -179,12 +192,7 @@ export const AddSectionReviewModalLegacy: FC<AddSectionReviewModalLegacyProps> =
             }),
             account: address,
           }
-          editBalanceOnAddLiquidity(
-            amountSpecified * (tradeType === TradeType.EXACT_OUTPUT ? 1 + slippageTolerance : 1),
-            mainCurrency.uuid,
-            outputAmount * (tradeType === TradeType.EXACT_INPUT ? 1 + slippageTolerance : 1),
-            otherCurrency.uuid
-          )
+          editBalanceOnAddLiquidity(amount_in, mainCurrency.uuid, amount_out, otherCurrency.uuid)
           const notificationGroup: string[] = []
           notificationGroup.push(JSON.stringify(notificationData))
           addNotification(notificationGroup)

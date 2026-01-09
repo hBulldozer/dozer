@@ -106,9 +106,10 @@ export const TokensTable: FC = () => {
       return []
     }
 
-    // Build a map to aggregate TVL for each token across all pools
+    // Build a map to aggregate TVL and volume for each token across all pools
     const tokenMap = new Map<string, {
       tvl: number,
+      volume: number,
       price: number,
       totalSupply: number,
       symbol: string,
@@ -124,10 +125,12 @@ export const TokensTable: FC = () => {
       const token0Price = currentPrices[token0Uuid] || 0
       const token0TotalSupply = totalSupplies[token0Uuid] || 0
       const token0TVL = pool.liquidityUSD / 2 // Token0's side of the pool
+      const token0Volume = (pool.volumeUSD || 0) / 2 // Token0's share of pool volume
 
       if (!tokenMap.has(token0Uuid)) {
         tokenMap.set(token0Uuid, {
           tvl: token0TVL,
+          volume: token0Volume,
           price: token0Price,
           totalSupply: token0TotalSupply,
           symbol: pool.token0.symbol,
@@ -138,6 +141,7 @@ export const TokensTable: FC = () => {
       } else {
         const existing = tokenMap.get(token0Uuid)!
         existing.tvl += token0TVL
+        existing.volume += token0Volume
         // Keep the pool with higher liquidity as primary
         if (pool.liquidityUSD > existing.primaryPool.liquidityUSD) {
           existing.primaryPool = pool
@@ -149,10 +153,12 @@ export const TokensTable: FC = () => {
       const token1Price = currentPrices[token1Uuid] || 0
       const token1TotalSupply = totalSupplies[token1Uuid] || 0
       const token1TVL = pool.liquidityUSD / 2 // Token1's side of the pool
+      const token1Volume = (pool.volumeUSD || 0) / 2 // Token1's share of pool volume
 
       if (!tokenMap.has(token1Uuid)) {
         tokenMap.set(token1Uuid, {
           tvl: token1TVL,
+          volume: token1Volume,
           price: token1Price,
           totalSupply: token1TotalSupply,
           symbol: pool.token1.symbol,
@@ -163,6 +169,7 @@ export const TokensTable: FC = () => {
       } else {
         const existing = tokenMap.get(token1Uuid)!
         existing.tvl += token1TVL
+        existing.volume += token1Volume
         // Keep the pool with higher liquidity as primary
         if (pool.liquidityUSD > existing.primaryPool.liquidityUSD) {
           existing.primaryPool = pool
@@ -201,6 +208,7 @@ export const TokensTable: FC = () => {
         }) : normalizeToken(token),
         token1: normalizeToken(otherToken),
         liquidityUSD: tokenData.tvl, // Use aggregated TVL
+        volumeUSD: tokenData.volume, // Use aggregated volume across all pools
         price: tokenData.price,
         marketCap: tokenData.totalSupply * tokenData.price,
         totalSupply: tokenData.totalSupply,
