@@ -201,7 +201,7 @@ export function FilterPools({ search, setSearch, setFilters, maxValues }: Filter
           setMax={(value: number | undefined) => updateFilter(currentFilter.key, 'max', value)}
           onEnter={applyFilters}
           close={close}
-          sliderMax={currentFilter.key === 'apr' ? maxValues[currentFilter.key] * 100 : maxValues[currentFilter.key]}
+          sliderMax={currentFilter.key === 'apy' ? maxValues[currentFilter.key] * 100 : maxValues[currentFilter.key]}
         />
       )
     }
