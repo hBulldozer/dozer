@@ -4,23 +4,67 @@ import { useAccount } from '@dozer/zustand'
 import { NotificationData, createSuccessToast } from '@dozer/ui'
 import { client as api_client } from '@dozer/api'
 
+// Expiration times in seconds
+const BRIDGE_TX_EXPIRATION_SECONDS = 20 * 60 // 20 minutes for bridge transactions
+const REGULAR_TX_EXPIRATION_SECONDS = 5 * 60 // 5 minutes for regular transactions
+
 export default function useWaitForTransaction(notification: NotificationData, client: typeof api_client) {
   const [status, setStatus] = useState<string>('pending')
   const [message, setMessage] = useState<string | undefined>()
-  const { txHash, chainId, type, bridgeMetadata } = notification
+  const { txHash, chainId, type, bridgeMetadata, groupTimestamp } = notification
   const { updateNotificationLastState } = useAccount()
   const utils = client.useUtils()
   const [timeLeft, setTimeLeft] = useState(0)
   const isBridgeTx = type === 'bridge'
-  // Use longer polling interval for bridge transactions (30s) vs regular transactions (2s)
-  const seconds = isBridgeTx ? 30 : 2
+  // Use longer polling interval for bridge transactions (30s) vs regular transactions (10s)
+  const seconds = isBridgeTx ? 30 : 10
   const hasShownSuccessToast = useRef(false)
+  const hasExpired = useRef(false)
 
   useEffect(() => {
+    // Check if transaction has expired
+    function checkExpiration(): boolean {
+      if (hasExpired.current) return true
+
+      const now = Math.floor(Date.now() / 1000)
+
+      if (isBridgeTx && bridgeMetadata?.evmConfirmationTime) {
+        // Bridge transaction: check against EVM confirmation time
+        const elapsed = now - bridgeMetadata.evmConfirmationTime
+        if (elapsed > BRIDGE_TX_EXPIRATION_SECONDS) {
+          hasExpired.current = true
+          const errorMsg =
+            'Bridge timeout - tokens not received within 20 minutes. If you did not receive your tokens, please contact support.'
+          setStatus('failed')
+          setMessage(errorMsg)
+          updateNotificationLastState(txHash, 'failed', errorMsg)
+          return true
+        }
+      } else if (!isBridgeTx && groupTimestamp) {
+        // Regular transaction: check against notification creation time
+        const elapsed = now - groupTimestamp
+        if (elapsed > REGULAR_TX_EXPIRATION_SECONDS) {
+          hasExpired.current = true
+          const errorMsg = 'Transaction status check timeout - please verify manually on the explorer.'
+          setStatus('failed')
+          setMessage(errorMsg)
+          updateNotificationLastState(txHash, 'failed', errorMsg)
+          return true
+        }
+      }
+
+      return false
+    }
+
     // Special handling for bridge transactions
     async function fetchBridgeTx() {
       if (!bridgeMetadata) {
         console.error('Bridge metadata missing')
+        return
+      }
+
+      // Check expiration before making API call
+      if (checkExpiration()) {
         return
       }
 
@@ -81,6 +125,11 @@ export default function useWaitForTransaction(notification: NotificationData, cl
 
     // Regular Hathor transaction status check
     async function fetchTx() {
+      // Check expiration before making API call
+      if (checkExpiration()) {
+        return
+      }
+
       try {
         const data = await utils.getPools.getTxStatus.fetch({
           hash: txHash,
@@ -98,6 +147,11 @@ export default function useWaitForTransaction(notification: NotificationData, cl
 
     if (!timeLeft) {
       if (!notification.last_status || notification.last_status == 'pending') {
+        // Check expiration first - this handles existing stuck notifications
+        if (checkExpiration()) {
+          return
+        }
+
         // Use different fetch logic for bridge transactions
         if (isBridgeTx) {
           fetchBridgeTx()
