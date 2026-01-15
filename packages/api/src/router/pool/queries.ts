@@ -78,13 +78,14 @@ export const queryProcedures = {
           const volumeUSD = metrics24h.volume24hUSD
           const feeUSD = metrics24h.fees24hUSD
 
-          // Keep the old fee calculation for APR (using accumulated fees)
+          // Keep accumulated fees for reference
           const fee0 = (poolData.fee0 || 0) / 100
           const fee1 = (poolData.fee1 || 0) / 100
-          const accumulatedFeeUSD = fee0 * token0PriceUSD + fee1 * token1PriceUSD
 
-          // Calculate APR (annualized based on accumulated fees)
-          const apr = liquidityUSD > 0 ? ((accumulatedFeeUSD * 365) / liquidityUSD) * 100 : 0
+          // Calculate APY using 24h fees with compound interest formula
+          // APY = (1 + daily_rate)^365 - 1
+          const dailyRate = liquidityUSD > 0 ? feeUSD / liquidityUSD : 0
+          const apy = Math.pow(1 + dailyRate, 365) - 1
 
           // Generate symbol-based identifier for URL-friendly access
           const feeBasisPoints = parseInt(feeStr || '0')
@@ -101,7 +102,7 @@ export const queryProcedures = {
             volumeUSD,
             feeUSD,
             swapFee,
-            apr: apr / 100, // Convert back to decimal for consistency
+            apy, // Already in decimal format (0.05 = 5%)
             token0: {
               uuid: tokenA,
               symbol: token0Info.symbol,
@@ -228,13 +229,14 @@ export const queryProcedures = {
       const volumeUSD = metrics24h.volume24hUSD
       const feeUSD = metrics24h.fees24hUSD
 
-      // Keep the old fee calculation for APR (using accumulated fees)
+      // Keep accumulated fees for reference
       const fee0 = (poolData.fee0 || 0) / 100
       const fee1 = (poolData.fee1 || 0) / 100
-      const accumulatedFeeUSD = fee0 * token0PriceUSD + fee1 * token1PriceUSD
 
-      // Calculate APR (annualized based on accumulated fees)
-      const apr = liquidityUSD > 0 ? ((accumulatedFeeUSD * 365) / liquidityUSD) * 100 : 0
+      // Calculate APY using 24h fees with compound interest formula
+      // APY = (1 + daily_rate)^365 - 1
+      const dailyRate = liquidityUSD > 0 ? feeUSD / liquidityUSD : 0
+      const apy = Math.pow(1 + dailyRate, 365) - 1
 
       return {
         id: matchingPoolKey,
@@ -246,7 +248,7 @@ export const queryProcedures = {
         volumeUSD,
         feeUSD,
         swapFee,
-        apr: apr / 100, // Convert back to decimal for consistency
+        apy, // Already in decimal format (0.05 = 5%)
         token0: {
           uuid: tokenA,
           symbol: token0Info.symbol,

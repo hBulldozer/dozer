@@ -17,6 +17,7 @@ interface TokenSelectorRow {
   price?: number
   isCreateToken?: boolean
   isBridged?: boolean
+  stripBridgePrefix?: boolean
 }
 
 const _TokenSelectorRow: FC<TokenSelectorRow> = ({
@@ -29,7 +30,13 @@ const _TokenSelectorRow: FC<TokenSelectorRow> = ({
   onCurrency,
   isCreateToken = false,
   isBridged = false,
+  stripBridgePrefix = false,
 }) => {
+  // Get display symbol - strip "h" prefix for bridged tokens if stripBridgePrefix is true
+  const displaySymbol =
+    stripBridgePrefix && (currency as any).bridged && currency.symbol?.startsWith('h')
+      ? currency.symbol.slice(1)
+      : currency.symbol
   const onClick = useCallback(() => {
     onCurrency(currency)
   }, [currency, onCurrency])
@@ -85,7 +92,7 @@ const _TokenSelectorRow: FC<TokenSelectorRow> = ({
           <div className="flex flex-col items-start">
             <div className="flex items-center gap-2">
               <Typography variant="xs" weight={500} className="text-stone-200 group-hover:text-stone-50">
-                {currency.symbol}
+                {displaySymbol}
               </Typography>
               {(currency as any).bridged && <BridgeIndicator />}
             </div>

@@ -127,9 +127,9 @@ const Token = () => {
         volumeUSD: tokenData.totalVolumeUSD,
         feeUSD: tokenData.totalFeesUSD,
         swapFee: primaryPool.swapFee,
-        apr:
+        apy:
           tokenData.pools.length > 0
-            ? tokenData.pools.reduce((sum, pool) => sum + pool.apr, 0) / tokenData.pools.length
+            ? tokenData.pools.reduce((sum, pool) => sum + pool.apy, 0) / tokenData.pools.length
             : 0,
         token0:
           tokenData.symbol === 'HTR'

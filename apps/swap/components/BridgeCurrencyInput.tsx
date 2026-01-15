@@ -11,6 +11,7 @@ interface BridgeCurrencyInputPropsExtended extends BridgeCurrencyInputProps {
   prices: { [key: string]: number }
   tokens?: Token[]
   hidePercentageButtons?: boolean
+  stripBridgePrefix?: boolean
 }
 
 export const BridgeCurrencyInput: FC<BridgeCurrencyInputPropsExtended> = ({
@@ -28,6 +29,7 @@ export const BridgeCurrencyInput: FC<BridgeCurrencyInputPropsExtended> = ({
   prices,
   tokens,
   hidePercentageButtons = false,
+  stripBridgePrefix = false,
 }) => {
   return (
     <HigmiBridgeCurrencyInput
@@ -43,6 +45,7 @@ export const BridgeCurrencyInput: FC<BridgeCurrencyInputPropsExtended> = ({
       prices={prices}
       tokens={tokens}
       hidePercentageButtons={hidePercentageButtons}
+      stripBridgePrefix={stripBridgePrefix}
     />
   )
 }

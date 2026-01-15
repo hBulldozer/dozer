@@ -3,18 +3,18 @@ updates:
   - package-ecosystem: "npm" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm" 
-    directory: "/apps/_root" 
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm" 
-    directory: "/apps/earn" 
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm" 
-    directory: "/apps/swap"
-    schedule:
-      interval: "weekly"
+      interval: "monthly"
+  # - package-ecosystem: "npm" 
+  #   directory: "/apps/_root" 
+  #   schedule:
+  #     interval: "monthly"
+  # - package-ecosystem: "npm" 
+  #   directory: "/apps/earn" 
+  #   schedule:
+  #     interval: "monthly"
+  # - package-ecosystem: "npm" 
+  #   directory: "/apps/swap"
+  #   schedule:
+  #     interval: "monthly"
 
       

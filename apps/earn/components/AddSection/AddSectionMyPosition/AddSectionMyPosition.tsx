@@ -10,10 +10,10 @@ export const AddSectionMyPosition: FC<{ pair: Pair }> = ({ pair }) => {
       <div className="flex flex-col gap-4 p-5">
         <div className="grid items-center grid-cols-2 gap-2">
           <Typography variant="xs" weight={500} className="text-stone-300">
-            Total APR:
+            Total APY:
           </Typography>
           <Typography variant="xs" weight={500} className="text-right text-stone-300">
-            {formatPercent(pair.apr)}
+            {formatPercent(pair.apy)}
           </Typography>
           {/* {pair.farm && (
             <>

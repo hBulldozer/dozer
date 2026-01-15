@@ -52,14 +52,8 @@ export const PairQuickHoverTooltip: FC<PairQuickHoverTooltipProps> = ({ row }) =
         </div>
         <div className="flex flex-col gap-1">
           <Typography variant="sm" weight={600} className="flex gap-3 text-stone-50">
-            <span className="text-stone-400">APR:</span> {formatPercent(row.apr)}
+            <span className="text-stone-400">APY:</span> {formatPercent(row.apy)}
           </Typography>
-          {/* <Typography variant="xxs" weight={600} className="flex justify-end gap-1 text-stone-50">
-            <span className="text-stone-400">Rewards:</span> {formatPercent(row.incentiveApr)}
-          </Typography> */}
-          {/* <Typography variant="xxs" weight={600} className="flex justify-end gap-1 text-stone-50">
-            <span className="text-stone-400">Fees:</span> {formatPercent(row.feeApr)}
-          </Typography> */}
         </div>
       </div>
       {/* {!!row?.farm?.incentives?.length && (

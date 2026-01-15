@@ -1,10 +1,21 @@
-import { ArrowTopRightOnSquareIcon, Square2StackIcon } from '@heroicons/react/24/solid'
+import { ArrowTopRightOnSquareIcon, Square2StackIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
 import chains from '@dozer/chain'
 import { Price } from '@dozer/currency'
 import { formatPercent, formatUSD } from '@dozer/format'
 // import { Pair } from '@dozer/graph-client'
 import { Pair } from '@dozer/api'
-import { AppearOnMount, CopyHelper, Currency, Dots, IconButton, Link, NetworkIcon, Typography, Chip } from '@dozer/ui'
+import {
+  AppearOnMount,
+  CopyHelper,
+  Currency,
+  Dots,
+  IconButton,
+  Link,
+  NetworkIcon,
+  Typography,
+  Chip,
+  Tooltip,
+} from '@dozer/ui'
 import { FC, useMemo } from 'react'
 
 // import { useTokensFromPair } from '../../lib/hooks'
@@ -72,20 +83,38 @@ export const PoolHeader: FC<PoolHeader> = ({ pair, prices, isLoading }) => {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <Typography weight={400} as="span" className="text-stone-400 sm:text-right">
-              APR: <span className="font-semibold text-stone-50">{formatPercent(pair.apr)}</span>
-              {/* {pair.incentiveApr > 0 ? <FarmRewardsAvailableTooltip /> : ''} */}
-            </Typography>
-            <div className="flex gap-2">
-              {/* {pair.incentiveApr > 0 && (
-                <Typography variant="sm" weight={400} as="span" className="text-stone-400">
-                  Rewards: {formatPercent(pair.incentiveApr)}
-                </Typography>
-              )} */}
-              {/* <Typography variant="sm" weight={400} as="span" className="text-stone-400">
-                Fees: {formatPercent(1)}
-              </Typography> */}
-              {/* Don't know what these "fees" are */}
+            <div className="flex items-center gap-1 sm:justify-end">
+              <Typography weight={400} as="span" className="text-stone-400">
+                APY: <span className="font-semibold text-stone-50">{formatPercent(pair.apy)}</span>
+              </Typography>
+              <Tooltip
+                button={
+                  <InformationCircleIcon width={16} height={16} className="text-stone-400 cursor-help" />
+                }
+                panel={
+                  <div className="flex flex-col gap-2 p-2 max-w-xs">
+                    <Typography variant="xs" weight={600} className="text-stone-200">
+                      APY Calculation
+                    </Typography>
+                    <Typography variant="xs" className="text-stone-400">
+                      APY (Annual Percentage Yield) is calculated using the compound interest formula based on
+                      the last 24 hours of trading fees:
+                    </Typography>
+                    <Typography variant="xs" className="text-stone-300 font-mono bg-stone-900 p-2 rounded">
+                      APY = (1 + daily_rate)^365 - 1
+                    </Typography>
+                    <Typography variant="xs" className="text-stone-400">
+                      Where daily_rate = (24h Fees) / (Total Liquidity)
+                    </Typography>
+                    <Typography variant="xs" className="text-stone-500 italic">
+                      Note: APY assumes fees are compounded daily and may vary based on trading activity.
+                    </Typography>
+                  </div>
+                }
+                placement="bottom"
+              >
+                <></>
+              </Tooltip>
             </div>
           </div>
         </div>

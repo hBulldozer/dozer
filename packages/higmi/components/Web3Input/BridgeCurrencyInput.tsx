@@ -21,6 +21,7 @@ export interface BridgeCurrencyInputProps extends Pick<TokenSelectorProps, 'onSe
   prices?: { [key: string]: number }
   tokens?: any[]
   hidePercentageButtons?: boolean
+  stripBridgePrefix?: boolean
 }
 
 export const BridgeCurrencyInput: FC<BridgeCurrencyInputProps> = ({
@@ -39,9 +40,16 @@ export const BridgeCurrencyInput: FC<BridgeCurrencyInputProps> = ({
   prices,
   tokens,
   hidePercentageButtons = false,
+  stripBridgePrefix = false,
 }) => {
   const isMounted = useIsMounted()
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
+
+  // Get display symbol - strip "h" prefix for bridged tokens if stripBridgePrefix is true
+  const displaySymbol =
+    stripBridgePrefix && currency?.bridged && currency?.symbol?.startsWith('h')
+      ? currency.symbol.slice(1)
+      : currency?.symbol
 
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -108,7 +116,7 @@ export const BridgeCurrencyInput: FC<BridgeCurrencyInputProps> = ({
                     priority
                   />
                 </div>
-                <div className="ml-0.5 -mr-0.5">{currency.symbol}</div>
+                <div className="ml-0.5 -mr-0.5">{displaySymbol}</div>
               </>
             ) : (
               <div className="ml-0.5 -mr-0.5 pl-1">Select</div>
@@ -153,6 +161,7 @@ export const BridgeCurrencyInput: FC<BridgeCurrencyInputProps> = ({
             includeNative={includeNative}
             tokens={tokens}
             showUnsignedSwitchInDialog={false}
+            stripBridgePrefix={stripBridgePrefix}
           />
         )}
       </div>
@@ -163,6 +172,7 @@ export const BridgeCurrencyInput: FC<BridgeCurrencyInputProps> = ({
       currency,
       disableMaxButton,
       disabled,
+      displaySymbol,
       focusInput,
       handleClose,
       id,
@@ -172,6 +182,7 @@ export const BridgeCurrencyInput: FC<BridgeCurrencyInputProps> = ({
       onChange,
       onSelect,
       prices,
+      stripBridgePrefix,
       tokenSelectorOpen,
       tokens,
       usdPctChange,

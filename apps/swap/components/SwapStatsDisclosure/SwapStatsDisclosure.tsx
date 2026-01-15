@@ -12,7 +12,7 @@ const formatUSD = (value: number): string => {
 import { Rate } from '../../components'
 import { RouteDisplay, RouteDisplaySkeleton } from '../RouteDisplay'
 import { useTrade, useSettings } from '@dozer/zustand'
-import { warningSeverity, calculateUSDPriceImpact } from '../utils/functions'
+import { warningSeverity } from '../utils/functions'
 import { api } from 'utils/api'
 // import { useSettings } from '../../lib/state/storage'
 
@@ -46,20 +46,9 @@ export const SwapStatsDisclosure: FC<SwapStats> = ({ prices, loading = false }) 
 
   const slippageTolerance = useSettings((state) => state.slippageTolerance)
 
-  // Calculate USD-based price impact
-  const usdPriceImpact = useMemo(() => {
-    if (!trade.mainCurrency || !trade.otherCurrency || !trade.amountSpecified || !trade.outputAmount) {
-      return undefined
-    }
-
-    const inputTokenPrice = prices[trade.mainCurrency.uuid]
-    const outputTokenPrice = prices[trade.otherCurrency.uuid]
-
-    return calculateUSDPriceImpact(trade.amountSpecified, trade.outputAmount, inputTokenPrice, outputTokenPrice)
-  }, [trade.amountSpecified, trade.outputAmount, trade.mainCurrency, trade.otherCurrency, prices])
-
-  // Use USD price impact if available, fallback to contract price impact
-  const displayPriceImpact = usdPriceImpact ?? trade?.priceImpact
+  // Use the contract's calculated price impact (from routeInfo or trade store)
+  // This is the accurate AMM price impact, not a USD-based approximation
+  const displayPriceImpact = routeInfo?.priceImpact ?? trade?.priceImpact
   const priceImpactSeverity = useMemo(() => warningSeverity(displayPriceImpact), [displayPriceImpact])
 
   // Convert route info to RouteDisplay format

@@ -90,7 +90,7 @@ export type Pair = {
   liquidityUSD: number
   feeUSD: number
   swapFee: number
-  apr: number
+  apy: number
   /**  First Token  */
   token0: Token
   /**  Second Token  */

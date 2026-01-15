@@ -900,6 +900,7 @@ export const Bridge: FC<BridgeProps> = ({ initialToken }) => {
             tradeType={TradeType.EXACT_INPUT}
             prices={prices || {}}
             tokens={bridgedTokens}
+            stripBridgePrefix={true}
           />
 
           {/* Bridge Transaction Stepper */}
