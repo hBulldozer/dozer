@@ -56,7 +56,7 @@ const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
   return (
     <>
       <Head>
-        <title>Dozer - The future of finance - Coming soon</title>
+        <title>Dozer - The future of finance</title>
         <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=1" />
         <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png?v=1" />
         <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png?v=1" />
