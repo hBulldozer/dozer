@@ -54,9 +54,6 @@ export const isMobileDevice = (): boolean => {
 export const openHathorWalletDeepLink = (wcUri: string): boolean => {
   if (typeof window === 'undefined') return false
 
-  // Only open deeplink on mobile devices
-  if (!isMobileDevice()) return false
-
   try {
     const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
 
@@ -151,18 +148,15 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
 
         // Open QRCode modal if a URI was returned (i.e. we're not connecting an existing pairing).
         if (uri) {
-          // On mobile, open the deeplink directly without showing the QR modal
-          // (QR codes aren't useful on mobile, and showing both causes double opening)
-          // TODO: Uncomment when final mobile wallet version is released
-          const deeplinkOpened = openHathorWalletDeepLink(uri)
-          // Only show QR modal on desktop (when deeplink wasn't opened)
-          // if (!deeplinkOpened) {
-          // Create a flat array of all requested chains across namespaces.
-          const standaloneChains = Object.values(requiredNamespaces)
-            .map((namespace) => namespace.chains)
-            .flat() as string[]
-          web3Modal.openModal({ uri, standaloneChains })
-          // }
+          if (isMobileDevice()) {
+            openHathorWalletDeepLink(uri)
+          } else {
+            // Create a flat array of all requested chains across namespaces.
+            const standaloneChains = Object.values(requiredNamespaces)
+              .map((namespace) => namespace.chains)
+              .flat() as string[]
+            web3Modal.openModal({ uri, standaloneChains })
+          }
         }
 
         const session = await approval()
