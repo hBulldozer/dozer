@@ -51,13 +51,57 @@ export const isMobileDevice = (): boolean => {
   return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())
 }
 
+// App store URLs for Hathor Wallet
+const HATHOR_WALLET_IOS_URL = 'https://apps.apple.com/br/app/hathor-wallet/id1465041963'
+const HATHOR_WALLET_ANDROID_URL = 'https://play.google.com/store/apps/details?id=network.hathor.wallet'
+
+/**
+ * Detects if the device is iOS
+ */
+const isIOSDevice = (): boolean => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+  return /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase())
+}
+
+/**
+ * Gets the appropriate app store URL based on the device
+ */
+const getAppStoreUrl = (): string => {
+  return isIOSDevice() ? HATHOR_WALLET_IOS_URL : HATHOR_WALLET_ANDROID_URL
+}
+
 export const openHathorWalletDeepLink = (wcUri: string): boolean => {
   if (typeof window === 'undefined') return false
 
   try {
     const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
 
-    window.open(deepLink, '_self')
+    // Track if the app was opened
+    let appOpened = false
+
+    // Listen for visibility change - if the page becomes hidden, the app was opened
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        appOpened = true
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // Try to open the deep link
+    window.location.href = deepLink
+
+    // After a delay, check if the app was opened
+    // If not, redirect to the app store
+    setTimeout(() => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+
+      // If the page is still visible and app wasn't opened, go to app store
+      if (!document.hidden && !appOpened) {
+        const appStoreUrl = getAppStoreUrl()
+        window.location.href = appStoreUrl
+      }
+    }, 1500) // 1.5 seconds delay - enough time for the app to open
+
     return true
   } catch (error) {
     console.warn('Failed to open Hathor wallet deeplink:', error)
@@ -149,16 +193,11 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
         // Open QRCode modal if a URI was returned (i.e. we're not connecting an existing pairing).
         if (uri) {
           if (isMobileDevice()) {
-            const deeplinkOpened = openHathorWalletDeepLink(uri)
-            if (!deeplinkOpened) {
-              // Create a flat array of all requested chains across namespaces.
-              const standaloneChains = Object.values(requiredNamespaces)
-                .map((namespace) => namespace.chains)
-                .flat() as string[]
-              web3Modal.openModal({ uri, standaloneChains })
-            }
+            // On mobile, open the deep link directly
+            // The deep link function handles app store fallback if wallet isn't installed
+            openHathorWalletDeepLink(uri)
           } else {
-            // Create a flat array of all requested chains across namespaces.
+            // On desktop, show the QR code modal
             const standaloneChains = Object.values(requiredNamespaces)
               .map((namespace) => namespace.chains)
               .flat() as string[]
