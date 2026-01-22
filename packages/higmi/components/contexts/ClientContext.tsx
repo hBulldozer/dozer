@@ -149,7 +149,14 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
         // Open QRCode modal if a URI was returned (i.e. we're not connecting an existing pairing).
         if (uri) {
           if (isMobileDevice()) {
-            openHathorWalletDeepLink(uri)
+            const deeplinkOpened = openHathorWalletDeepLink(uri)
+            if (!deeplinkOpened) {
+              // Create a flat array of all requested chains across namespaces.
+              const standaloneChains = Object.values(requiredNamespaces)
+                .map((namespace) => namespace.chains)
+                .flat() as string[]
+              web3Modal.openModal({ uri, standaloneChains })
+            }
           } else {
             // Create a flat array of all requested chains across namespaces.
             const standaloneChains = Object.values(requiredNamespaces)
