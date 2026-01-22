@@ -82,14 +82,14 @@ const web3Modal = new Web3Modal({
     '--w3m-accent-color': '#eab308',
   },
   enableExplorer: false,
-  // mobileWallets: [
-  //   {
-  //     id: 'hathor-wallet',
-  //     name: 'Hathor Wallet',
-  //     links: { universal: 'https://hathor.network/htr#wallet', native: `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc` },
-  //   },
-  // ],
-  // walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
+  mobileWallets: [
+    {
+      id: 'hathor-wallet',
+      name: 'Hathor Wallet',
+      links: { universal: 'https://hathor.network/htr#wallet', native: `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc` },
+    },
+  ],
+  walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
 })
 
 /**
@@ -154,20 +154,15 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
           // On mobile, open the deeplink directly without showing the QR modal
           // (QR codes aren't useful on mobile, and showing both causes double opening)
           // TODO: Uncomment when final mobile wallet version is released
-          // const deeplinkOpened = openHathorWalletDeepLink(uri)
+          const deeplinkOpened = openHathorWalletDeepLink(uri)
           // Only show QR modal on desktop (when deeplink wasn't opened)
           // if (!deeplinkOpened) {
-          //   // Create a flat array of all requested chains across namespaces.
-          //   const standaloneChains = Object.values(requiredNamespaces)
-          //     .map((namespace) => namespace.chains)
-          //     .flat() as string[]
-          //   web3Modal.openModal({ uri, standaloneChains })
-          // }
-
+          // Create a flat array of all requested chains across namespaces.
           const standaloneChains = Object.values(requiredNamespaces)
             .map((namespace) => namespace.chains)
             .flat() as string[]
           web3Modal.openModal({ uri, standaloneChains })
+          // }
         }
 
         const session = await approval()

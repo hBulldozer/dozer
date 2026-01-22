@@ -65,27 +65,33 @@ function generateHorizontalLineSvg(width: number, height: number, padding: numbe
   return svgString
 }
 
-export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
+export const TokenMiniChartCell: FC<CellProps> = ({ row, displayCurrency = 'USD' }) => {
   // Extract token UUID from row ID
   const tokenUuid = row.id.replace('token-', '')
 
-  // Fetch chart data using improved prices API with automatic environment detection
+  // Determine if the chart should be flat (HTR in HTR mode is always 1)
+  const isHtrInHtrMode = displayCurrency === 'HTR' && tokenUuid === '00'
+  // hUSDC is only flat in USD mode, in HTR mode it fluctuates (inverse of HTR)
+  const isHusdcInUsdMode = displayCurrency === 'USD' && row.id.includes('husdc')
+  const isHusdcInHtrMode = displayCurrency === 'HTR' && row.id.includes('husdc')
+
+  // Fetch chart data using the appropriate currency
+  // For hUSDC in HTR mode, we fetch HTR's USD chart and will invert it
   const { data: chartData, isLoading } = api.getPrices.chartData.useQuery(
-    { 
-      tokenUid: tokenUuid,
-      currency: 'USD',
-      // No timeframe needed - automatically uses 5min for dev, 24h for production
-      points: 10, // Use 10 points for smooth chart
+    {
+      tokenUid: isHusdcInHtrMode ? '00' : tokenUuid, // For hUSDC in HTR mode, use HTR's chart
+      currency: isHusdcInHtrMode ? 'USD' : displayCurrency,
+      points: 10,
     },
     {
-      enabled: !!tokenUuid && !row.id.includes('husdc'), // Don't fetch for hUSDC as it's stable
-      staleTime: 60000, // Cache for 1 minute
-      refetchInterval: 120000, // Refresh every 2 minutes (less frequent than change data)
+      enabled: !!tokenUuid && !isHtrInHtrMode && !isHusdcInUsdMode,
+      staleTime: 60000,
+      refetchInterval: 120000,
     }
   )
 
   // Handle loading state
-  if (isLoading && !row.id.includes('husdc')) {
+  if (isLoading && !isHtrInHtrMode && !isHusdcInUsdMode) {
     return (
       <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
         <Skeleton.Box className="w-[120px] h-[22px] bg-white/[0.06] rounded-full" />
@@ -93,8 +99,8 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
     )
   }
 
-  // Handle hUSDC (stable coin - always flat line)
-  if (row.id.includes('husdc')) {
+  // Handle stable cases (HTR in HTR mode, hUSDC in USD mode - always flat line)
+  if (isHtrInHtrMode || isHusdcInUsdMode) {
     return (
       <div
         dangerouslySetInnerHTML={{
@@ -107,13 +113,19 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
   // Process chart data and create SVG
   if (chartData && chartData.length > 1) {
     // Convert chart data to points - chartData has format {timestamp, price, date}
-    const prices = chartData.map(point => point.price).filter(price => price > 0)
-    
+    let prices = chartData.map((point) => point.price).filter((price) => price > 0)
+
+    // For hUSDC in HTR mode, invert the prices (1/price) to show USD value in HTR
+    // This creates the inverse chart pattern
+    if (isHusdcInHtrMode) {
+      prices = prices.map((price) => (price > 0 ? 1 / price : 0)).filter((price) => price > 0)
+    }
+
     // Check if all prices are the same (flat line)
     const minPrice = Math.min(...prices)
     const maxPrice = Math.max(...prices)
     const isFlat = prices.length === 0 || minPrice === maxPrice
-    
+
     if (isFlat) {
       return (
         <div
@@ -132,7 +144,7 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row }) => {
 
     try {
       const chartSVG = createSVGString(points, 110, 30, 6)
-      
+
       // Validate SVG doesn't contain NaN values
       if (chartSVG && !chartSVG.includes('NaN')) {
         return (

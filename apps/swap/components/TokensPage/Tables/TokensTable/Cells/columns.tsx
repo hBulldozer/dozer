@@ -10,19 +10,20 @@ import { TokenTVLCell } from './TokenTVLCell'
 import { TokenVolume24hCell } from './TokenVolume24hCell'
 import { TokenMarketCapCell } from './TokenMarketCapCell'
 import { ExtendedPair } from '../TokensTable'
+import { DisplayCurrency } from '../../../TokensSection'
 
 const ICON_SIZE = 26
 const PAGE_SIZE = 20
 
-export const CHART_COLUMN: ColumnDef<ExtendedPair, unknown> = {
+export const createChartColumn = (displayCurrency: DisplayCurrency): ColumnDef<ExtendedPair, unknown> => ({
   id: 'chart',
   header: '',
-  cell: (props) => <TokenMiniChartCell row={props.row.original} />,
+  cell: (props) => <TokenMiniChartCell row={props.row.original} displayCurrency={displayCurrency} />,
   size: 100,
   meta: {
     skeleton: <div className="rounded-full bg-stone-700 w-[26px] h-[26px] animate-pulse" />,
   },
-}
+})
 
 export const NAME_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   id: 'name',
@@ -44,62 +45,62 @@ export const NAME_COLUMN: ColumnDef<ExtendedPair, unknown> = {
   },
 }
 
-export const TVL_COLUMN: ColumnDef<ExtendedPair, unknown> = {
+export const createTvlColumn = (displayCurrency: DisplayCurrency): ColumnDef<ExtendedPair, unknown> => ({
   header: 'TVL',
   id: 'liquidityUSD',
   accessorFn: (row) => row.liquidityUSD,
-  cell: (props) => <TokenTVLCell row={props.row.original} />,
+  cell: (props) => <TokenTVLCell row={props.row.original} displayCurrency={displayCurrency} />,
   size: 100,
   meta: {
     className: 'justify-end',
     skeleton: <div className="rounded-full bg-stone-700 w-full h-[20px] animate-pulse" />,
   },
-}
+})
 
-export const CHANGE_COLUMN: ColumnDef<ExtendedPair, unknown> = {
+export const createChangeColumn = (displayCurrency: DisplayCurrency): ColumnDef<ExtendedPair, unknown> => ({
   id: 'change',
   header: 'Change',
   accessorFn: (row) => row.change,
-  cell: (props) => <TokenChangeCell row={props.row.original} />,
+  cell: (props) => <TokenChangeCell row={props.row.original} displayCurrency={displayCurrency} />,
   size: 100,
   meta: {
     className: 'justify-end',
     skeleton: <div className="rounded-full bg-stone-700 w-full h-[20px] animate-pulse" />,
   },
-}
+})
 
-export const VOLUME_COLUMN: ColumnDef<ExtendedPair, unknown> = {
+export const createVolumeColumn = (displayCurrency: DisplayCurrency): ColumnDef<ExtendedPair, unknown> => ({
   id: 'volume',
   header: 'Volume (24h)',
-  cell: (props) => <TokenVolume24hCell row={props.row.original} />,
+  cell: (props) => <TokenVolume24hCell row={props.row.original} displayCurrency={displayCurrency} />,
   accessorFn: (row) => row.volumeUSD,
   size: 100,
   meta: {
     className: 'justify-end',
     skeleton: <div className="rounded-full bg-stone-700 w-full h-[20px] animate-pulse" />,
   },
-}
+})
 
-export const MARKETCAP_COLUMN: ColumnDef<ExtendedPair, unknown> = {
+export const createMarketCapColumn = (displayCurrency: DisplayCurrency): ColumnDef<ExtendedPair, unknown> => ({
   id: 'marketcap',
   header: 'Market Cap',
   accessorFn: (row) => row.marketCap,
-  cell: (props) => <TokenMarketCapCell row={props.row.original} />,
+  cell: (props) => <TokenMarketCapCell row={props.row.original} displayCurrency={displayCurrency} />,
   size: 100,
   meta: {
     className: 'justify-end',
     skeleton: <div className="rounded-full bg-stone-700 w-full h-[20px] animate-pulse" />,
   },
-}
+})
 
-export const PRICE_COLUMN: ColumnDef<ExtendedPair, unknown> = {
+export const createPriceColumn = (displayCurrency: DisplayCurrency): ColumnDef<ExtendedPair, unknown> => ({
   header: 'Price',
   id: 'price',
   accessorFn: (row) => row.price,
-  cell: (props) => <TokenPriceCell row={props.row.original} />,
+  cell: (props) => <TokenPriceCell row={props.row.original} displayCurrency={displayCurrency} />,
   size: 100,
   meta: {
     className: 'justify-end',
     skeleton: <div className="rounded-full bg-stone-700 w-full h-[20px] animate-pulse" />,
   },
-}
+})

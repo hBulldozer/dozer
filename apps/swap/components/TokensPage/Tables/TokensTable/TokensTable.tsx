@@ -8,21 +8,18 @@ import { Token } from '@dozer/currency'
 
 import { PAGE_SIZE } from '../contants'
 import {
-  CHANGE_COLUMN,
-  PRICE_COLUMN,
-  CHART_COLUMN,
+  createChangeColumn,
+  createPriceColumn,
+  createChartColumn,
   NAME_COLUMN,
-  TVL_COLUMN,
-  VOLUME_COLUMN,
-  MARKETCAP_COLUMN,
+  createTvlColumn,
+  createVolumeColumn,
+  createMarketCapColumn,
 } from './Cells/columns'
 import { ChainId } from '@dozer/chain'
 import { useNetwork } from '@dozer/zustand'
 import { api } from '../../../../utils/api'
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-const COLUMNS = [NAME_COLUMN, PRICE_COLUMN, CHANGE_COLUMN, MARKETCAP_COLUMN, TVL_COLUMN, VOLUME_COLUMN, CHART_COLUMN]
+import { DisplayCurrency } from '../../TokensSection'
 
 export interface ExtendedPair extends Pair {
   priceHtr?: number
@@ -30,6 +27,10 @@ export interface ExtendedPair extends Pair {
   marketCap?: number
   totalSupply?: number
   change?: number // Will be calculated by TokenChangeCell component, not set here
+}
+
+interface TokensTableProps {
+  displayCurrency: DisplayCurrency
 }
 
 // Utility to normalize a token object to the Token class structure
@@ -49,7 +50,7 @@ function normalizeToken(token: any): Token {
   })
 }
 
-export const TokensTable: FC = () => {
+export const TokensTable: FC<TokensTableProps> = ({ displayCurrency }) => {
   const { isSm } = useBreakpoint('sm')
   const { isMd } = useBreakpoint('md')
 
@@ -71,6 +72,19 @@ export const TokensTable: FC = () => {
   })
 
   const [mounted, setMounted] = useState(false)
+
+  // Create columns dynamically based on displayCurrency
+  const COLUMNS = useMemo(() => {
+    const cols: any[] = []
+    cols.push(NAME_COLUMN as any)
+    cols.push(createPriceColumn(displayCurrency) as any)
+    cols.push(createChangeColumn(displayCurrency) as any)
+    cols.push(createMarketCapColumn(displayCurrency) as any)
+    cols.push(createTvlColumn(displayCurrency) as any)
+    cols.push(createVolumeColumn(displayCurrency) as any)
+    cols.push(createChartColumn(displayCurrency) as any)
+    return cols
+  }, [displayCurrency])
 
   useEffect(() => {
     setMounted(true)
@@ -107,16 +121,19 @@ export const TokensTable: FC = () => {
     }
 
     // Build a map to aggregate TVL and volume for each token across all pools
-    const tokenMap = new Map<string, {
-      tvl: number,
-      volume: number,
-      price: number,
-      totalSupply: number,
-      symbol: string,
-      name: string,
-      primaryPool: any,
-      token: any
-    }>()
+    const tokenMap = new Map<
+      string,
+      {
+        tvl: number
+        volume: number
+        price: number
+        totalSupply: number
+        symbol: string
+        name: string
+        primaryPool: any
+        token: any
+      }
+    >()
 
     // Iterate through all pools and calculate each token's TVL contribution
     allPools.forEach((pool) => {
@@ -136,7 +153,7 @@ export const TokensTable: FC = () => {
           symbol: pool.token0.symbol,
           name: pool.token0.name || pool.token0.symbol,
           primaryPool: pool,
-          token: pool.token0
+          token: pool.token0,
         })
       } else {
         const existing = tokenMap.get(token0Uuid)!
@@ -164,7 +181,7 @@ export const TokensTable: FC = () => {
           symbol: pool.token1.symbol,
           name: pool.token1.name || pool.token1.symbol,
           primaryPool: pool,
-          token: pool.token1
+          token: pool.token1,
         })
       } else {
         const existing = tokenMap.get(token1Uuid)!
@@ -193,19 +210,21 @@ export const TokensTable: FC = () => {
         ...pool,
         id: `token-${tokenUuid}`,
         name: tokenData.symbol,
-        token0: isHTR ? normalizeToken({
-          uuid: '00',
-          symbol: 'HTR',
-          name: 'Hathor',
-          chainId: 1,
-          decimals: 2,
-          imageUrl: '',
-          bridged: false,
-          originalAddress: '',
-          sourceChain: '',
-          targetChain: '',
-          rebase: { base: 1, elastic: 1 },
-        }) : normalizeToken(token),
+        token0: isHTR
+          ? normalizeToken({
+              uuid: '00',
+              symbol: 'HTR',
+              name: 'Hathor',
+              chainId: 1,
+              decimals: 2,
+              imageUrl: '',
+              bridged: false,
+              originalAddress: '',
+              sourceChain: '',
+              targetChain: '',
+              rebase: { base: 1, elastic: 1 },
+            })
+          : normalizeToken(token),
         token1: normalizeToken(otherToken),
         liquidityUSD: tokenData.tvl, // Use aggregated TVL
         volumeUSD: tokenData.volume, // Use aggregated volume across all pools
@@ -218,9 +237,7 @@ export const TokensTable: FC = () => {
     })
 
     // Filter and sort the entries
-    return tokenEntries
-      .filter((pair) => pair.liquidityUSD > 0)
-      .sort((a, b) => b.liquidityUSD - a.liquidityUSD)
+    return tokenEntries.filter((pair) => pair.liquidityUSD > 0).sort((a, b) => b.liquidityUSD - a.liquidityUSD)
   }, [allPools, currentPrices, totalSupplies, mounted])
 
   const pairs_array = useMemo(() => {
