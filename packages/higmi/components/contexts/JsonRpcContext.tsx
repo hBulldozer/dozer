@@ -270,7 +270,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
           setPending(true)
 
           // TODO: Uncomment when final mobile wallet version is released
-          // if (session) openHathorWalletForRequest(session.topic)
+          if (session) openHathorWalletForRequest(session.topic)
 
           const result: SendNanoContractTxResponse = await client!.request<SendNanoContractTxResponse>({
             topic: session!.topic,
