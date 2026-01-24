@@ -51,7 +51,6 @@ export const isMobileDevice = (): boolean => {
   return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())
 }
 
-
 /**
  * Opens the Hathor Wallet via deep link for WalletConnect CONNECTION (not RPC requests)
  * @param wcUri - The WalletConnect URI
@@ -86,11 +85,11 @@ const web3Modal = new Web3Modal({
   },
   enableExplorer: false,
   mobileWallets: [
-    {
-      id: 'hathor-wallet',
-      name: 'Hathor Wallet',
-      links: { universal: 'https://hathor.network/htr#wallet', native: `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc` },
-    },
+    // {
+    //   id: 'hathor-wallet',
+    //   name: 'Hathor Wallet',
+    //   links: { universal: 'https://hathor.network/htr#wallet', native: `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc` },
+    // },
   ],
   walletImages: { 'hathor-wallet': '/logos/HTR.svg' },
 })
