@@ -16,43 +16,41 @@ import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
 
-// Timestamp of the last deep link open to prevent duplicates (more robust than boolean flag)
-let lastDeepLinkOpenTime = 0
-const DEEP_LINK_COOLDOWN_MS = 5000 // 5 seconds cooldown between deep link opens
+const DEEP_LINK_STORAGE_KEY = 'dozer_deeplink_timestamp'
+const DEEP_LINK_COOLDOWN_MS = 10000 // 10 seconds cooldown between deep link opens
 
 /**
  * Opens Hathor wallet via deeplink for an existing session (used during RPC requests)
  * Only opens on mobile devices to bring the wallet to foreground
- * Uses anchor element click instead of window.location.href for better cross-browser compatibility
+ * Uses sessionStorage to track timing across page reloads
+ * Uses setTimeout to ensure it runs after React render cycle
  */
-export const openHathorWalletForRequest = (sessionTopic: string): boolean => {
-  if (typeof window === 'undefined') return false
-  if (!isMobileDevice()) return false
+export const openHathorWalletForRequest = (sessionTopic: string): void => {
+  if (typeof window === 'undefined') return
+  if (!isMobileDevice()) return
 
-  // Prevent duplicate deep links within cooldown period
-  const now = Date.now()
-  if (now - lastDeepLinkOpenTime < DEEP_LINK_COOLDOWN_MS) {
-    return false
-  }
+  // Use setTimeout to break out of React's render cycle
+  setTimeout(() => {
+    // Check cooldown using sessionStorage (persists across page reloads)
+    const now = Date.now()
+    try {
+      const lastOpen = parseInt(sessionStorage.getItem(DEEP_LINK_STORAGE_KEY) || '0', 10)
+      if (now - lastOpen < DEEP_LINK_COOLDOWN_MS) {
+        return
+      }
+      sessionStorage.setItem(DEEP_LINK_STORAGE_KEY, now.toString())
+    } catch {
+      // sessionStorage might not be available, continue anyway
+    }
 
-  try {
-    const wcUri = `wc:${sessionTopic}@2`
-    const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
-
-    lastDeepLinkOpenTime = now
-
-    // Use anchor element approach - more reliable than window.location.href on HTTPS
-    const anchor = document.createElement('a')
-    anchor.href = deepLink
-    anchor.style.display = 'none'
-    document.body.appendChild(anchor)
-    anchor.click()
-    document.body.removeChild(anchor)
-
-    return true
-  } catch {
-    return false
-  }
+    try {
+      const wcUri = `wc:${sessionTopic}@2`
+      const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
+      window.location.href = deepLink
+    } catch {
+      // ignore errors
+    }
+  }, 100) // Small delay to escape React render cycle
 }
 
 /**
@@ -282,13 +280,13 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       sendNanoContractTx: async (ncTxRpcReq: SendNanoContractRpcRequest): Promise<SendNanoContractTxResponse> => {
         walletClientGuard()
 
+        // Open deep link to bring wallet to foreground on mobile
+        if (session) {
+          openHathorWalletForRequest(session.topic)
+        }
+
         try {
           setPending(true)
-
-          // Open deep link to bring wallet to foreground on mobile
-          if (session) {
-            openHathorWalletForRequest(session.topic)
-          }
 
           const result: SendNanoContractTxResponse = await client!.request<SendNanoContractTxResponse>({
             topic: session!.topic,
