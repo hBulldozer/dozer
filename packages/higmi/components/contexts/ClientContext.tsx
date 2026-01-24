@@ -53,7 +53,7 @@ export const isMobileDevice = (): boolean => {
 
 
 /**
- * Opens the Hathor Wallet via deep link for WalletConnect
+ * Opens the Hathor Wallet via deep link for WalletConnect CONNECTION (not RPC requests)
  * @param wcUri - The WalletConnect URI
  * On mobile, the OS will handle showing an error if the wallet isn't installed
  */
@@ -62,10 +62,11 @@ export const openHathorWalletDeepLink = (wcUri: string): boolean => {
 
   try {
     const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
+    console.log('[Connection DeepLink] Opening:', deepLink)
     window.location.href = deepLink
     return true
   } catch (error) {
-    console.warn('Failed to open Hathor wallet deeplink:', error)
+    console.warn('[Connection DeepLink] Failed:', error)
     return false
   }
 }
