@@ -16,23 +16,39 @@ import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
 
-// Flag to prevent duplicate deep link opens within the same RPC request
-let rpcDeepLinkOpened = false
+// Timestamp of the last deep link open to prevent duplicates (more robust than boolean flag)
+let lastDeepLinkOpenTime = 0
+const DEEP_LINK_COOLDOWN_MS = 5000 // 5 seconds cooldown between deep link opens
 
 /**
  * Opens Hathor wallet via deeplink for an existing session (used during RPC requests)
  * Only opens on mobile devices to bring the wallet to foreground
+ * Uses anchor element click instead of window.location.href for better cross-browser compatibility
  */
 export const openHathorWalletForRequest = (sessionTopic: string): boolean => {
   if (typeof window === 'undefined') return false
   if (!isMobileDevice()) return false
-  if (rpcDeepLinkOpened) return false
+
+  // Prevent duplicate deep links within cooldown period
+  const now = Date.now()
+  if (now - lastDeepLinkOpenTime < DEEP_LINK_COOLDOWN_MS) {
+    return false
+  }
 
   try {
     const wcUri = `wc:${sessionTopic}@2`
     const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
-    rpcDeepLinkOpened = true
-    window.location.href = deepLink
+
+    lastDeepLinkOpenTime = now
+
+    // Use anchor element approach - more reliable than window.location.href on HTTPS
+    const anchor = document.createElement('a')
+    anchor.href = deepLink
+    anchor.style.display = 'none'
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+
     return true
   } catch {
     return false
@@ -266,9 +282,6 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       sendNanoContractTx: async (ncTxRpcReq: SendNanoContractRpcRequest): Promise<SendNanoContractTxResponse> => {
         walletClientGuard()
 
-        // Reset deep link flag for new request
-        rpcDeepLinkOpened = false
-
         try {
           setPending(true)
 
@@ -299,7 +312,6 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
           throw error
         } finally {
           setPending(false)
-          rpcDeepLinkOpened = false
         }
       },
       signOracleData: async (signOracleDataReq: SignOracleDataRpcRequest): Promise<SignOracleDataResponse> => {
