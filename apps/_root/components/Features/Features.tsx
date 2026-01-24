@@ -6,21 +6,32 @@ import { useOnScreen } from './useOnScreen'
 import { BoltIcon, ArrowsRightLeftIcon, CubeIcon, CubeTransparentIcon } from '@heroicons/react/24/outline'
 
 import DynamicCanvasRevealEffect from '@dozer/ui/aceternity/dynamic-canvas-reveal-effect'
-import { useBreakpoint } from '@dozer/hooks'
 
 export default function Features() {
   const [open1, setOpen1] = React.useState(false)
   const [open2, setOpen2] = React.useState(false)
   const [open3, setOpen3] = React.useState(false)
-  const { isSm } = useBreakpoint('sm')
+  // Default to true (mobile/safe) - only show heavy effects after confirming desktop
+  const [isDesktop, setIsDesktop] = React.useState(false)
+
+  React.useEffect(() => {
+    const checkDesktop = () => {
+      const isLargeScreen = window.innerWidth >= 640
+      const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        (navigator.userAgent || '').toLowerCase()
+      )
+      return isLargeScreen && !isMobileUA
+    }
+    setIsDesktop(checkDesktop())
+  }, [])
 
   // On mobile, use simple gradient backgrounds instead of heavy Three.js canvas
-  const isMobile = !isSm
+  const isMobile = !isDesktop
 
   return (
     <div
       className={`flex flex-col items-center justify-center w-full max-w-5xl gap-4 px-8 py-20  mx-auto ${
-        isSm ? 'lg:flex-row' : ''
+        isDesktop ? 'lg:flex-row' : ''
       } dark:bg-black`}
     >
       <Card

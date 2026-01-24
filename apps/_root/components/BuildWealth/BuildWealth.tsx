@@ -1,7 +1,7 @@
 'use client'
 import { Container, Typography } from '@dozer/ui'
 import Image from 'next/legacy/image'
-import React, { FC } from 'react'
+import React, { FC, useState, useEffect } from 'react'
 
 import { AnimatedTitle } from '../AnimatedTitle/AnimatedTitle'
 import { ExpandableCard } from '../ExpandableCard/ExpandableCard'
@@ -9,6 +9,20 @@ import { ExpandableCard } from '../ExpandableCard/ExpandableCard'
 import magnet from './magnet.png'
 
 export const BuildWealth: FC = () => {
+  // Default to false (mobile/safe) - only show heavy blur after confirming desktop
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      const isLargeScreen = window.innerWidth >= 640
+      const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        (navigator.userAgent || '').toLowerCase()
+      )
+      return isLargeScreen && !isMobileUA
+    }
+    setIsDesktop(checkDesktop())
+  }, [])
+
   return (
     <section className="px-4 py-20 sm:py-40">
       <Container maxWidth="5xl" className="mx-auto">
@@ -19,7 +33,8 @@ export const BuildWealth: FC = () => {
           </AnimatedTitle>
           <div className="grid items-center grid-cols-1 gap-20 md:grid-cols-2 justify-items-center">
             <div className="relative h-[420px] md:max-w-[420px] md:max-h-[420px] w-full  flex items-center justify-center">
-              <div className="absolute w-[210px] h-[210px] bg-rose-500 rounded-full blur-[200px]" />
+              {/* Heavy blur only on desktop - causes lag on mobile */}
+              {isDesktop && <div className="absolute w-[210px] h-[210px] bg-rose-500 rounded-full blur-[200px]" />}
               <Image alt="stellar" objectFit="contain" src={magnet} layout="fill" />
             </div>
             <div className="flex flex-col items-center md:items-start">

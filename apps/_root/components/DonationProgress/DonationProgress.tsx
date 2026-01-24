@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { ArrowRightIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { useBreakpoint } from '@dozer/hooks'
 
 const DynamicLampContainer = dynamic(() => import('@dozer/ui/aceternity/lamp').then((mod) => mod.LampContainer), {
   ssr: false,
@@ -15,7 +14,19 @@ export default function DonationProgress() {
   const maxSupply = 100000
   const progress = Math.min(Math.max((totalDonations / maxSupply) * 100, 0), 100)
   const [isOpen, setIsOpen] = useState(false)
-  const { isSm } = useBreakpoint('sm')
+  // Default to false (mobile/safe) - only show heavy effects after confirming desktop
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      const isLargeScreen = window.innerWidth >= 640
+      const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        (navigator.userAgent || '').toLowerCase()
+      )
+      return isLargeScreen && !isMobileUA
+    }
+    setIsDesktop(checkDesktop())
+  }, [])
 
   useEffect(() => {
     async function fetchDonationData() {
@@ -79,13 +90,13 @@ export default function DonationProgress() {
     </div>
   )
 
-  // On mobile, show simplified version without heavy blur effects
-  if (!isSm) {
+  // Default to simplified version (mobile-safe) - no blur effects
+  if (!isDesktop) {
     return (
       <AppearOnMount className="w-full">
         <div className="relative flex min-h-[70vh] flex-col items-center justify-center overflow-hidden bg-black w-full py-20">
-          {/* Simple gradient glow instead of heavy blur effects */}
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-64 h-32 bg-yellow-500/30 rounded-full blur-3xl" />
+          {/* Simple solid gradient - no blur effects which are heavy on mobile */}
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-64 h-32 bg-gradient-to-b from-yellow-500/20 to-transparent rounded-full" />
           <div className="relative z-10">{content}</div>
         </div>
       </AppearOnMount>
