@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useState, useMemo, useEffect } from 'react'
-import { HATHOR_WALLET_DEEP_LINK_SCHEME, useWalletConnectClient, isMobileDevice } from './ClientContext'
+import { useWalletConnectClient } from './ClientContext'
 import { useAccount } from '@dozer/zustand'
 import {
   CreateTokenResponse,
@@ -16,14 +16,14 @@ import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
 
-/**
- * Opens Hathor wallet via deep link to bring it to foreground for RPC requests (mobile only)
- */
-const openHathorWalletForRequest = (sessionTopic: string): void => {
-  if (typeof window === 'undefined' || !isMobileDevice()) return
-  const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(`wc:${sessionTopic}@2`)}`
-  window.location.href = deepLink
-}
+// Deep link for RPC requests is currently disabled - the wallet receives requests via WebSocket
+// If needed in the future, uncomment and adapt:
+//
+// export const openHathorWalletForRequest = (sessionTopic: string): void => {
+//   if (typeof window === 'undefined' || !isMobileDevice()) return
+//   const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(`wc:${sessionTopic}@2`)}`
+//   window.location.href = deepLink
+// }
 
 /**
  * Utility function to parse snap responses
@@ -251,11 +251,6 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
     return {
       sendNanoContractTx: async (ncTxRpcReq: SendNanoContractRpcRequest): Promise<SendNanoContractTxResponse> => {
         walletClientGuard()
-
-        // Open deep link to bring wallet to foreground on mobile
-        if (session) {
-          openHathorWalletForRequest(session.topic)
-        }
 
         try {
           setPending(true)
