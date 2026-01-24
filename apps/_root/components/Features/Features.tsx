@@ -14,6 +14,9 @@ export default function Features() {
   const [open3, setOpen3] = React.useState(false)
   const { isSm } = useBreakpoint('sm')
 
+  // On mobile, use simple gradient backgrounds instead of heavy Three.js canvas
+  const isMobile = !isSm
+
   return (
     <div
       className={`flex flex-col items-center justify-center w-full max-w-5xl gap-4 px-8 py-20  mx-auto ${
@@ -24,52 +27,60 @@ export default function Features() {
         title="Lightning-Fast"
         onClick={() => setOpen1(true)}
         icon={<BoltIcon className="w-12 h-12" />}
-        isMobile={!isSm}
+        isMobile={isMobile}
+        mobileGradient="bg-gradient-to-br from-emerald-950 to-emerald-800"
       >
-        <DynamicCanvasRevealEffect
-          containerClassName="bg-emerald-950"
-          animationSpeed={3}
-          colors={[
-            [16, 185, 129],
-            [6, 78, 59],
-            [4, 120, 87],
-          ]}
-          dotSize={2}
-        />
+        {!isMobile && (
+          <DynamicCanvasRevealEffect
+            containerClassName="bg-emerald-950"
+            animationSpeed={3}
+            colors={[
+              [16, 185, 129],
+              [6, 78, 59],
+              [4, 120, 87],
+            ]}
+            dotSize={2}
+          />
+        )}
       </Card>
       <Card
         title="Cross-Chain"
         onClick={() => setOpen2(true)}
         icon={<ArrowsRightLeftIcon className="w-12 h-12" />}
-        isMobile={!isSm}
+        isMobile={isMobile}
+        mobileGradient="bg-gradient-to-br from-indigo-950 to-indigo-800"
       >
-        <DynamicCanvasRevealEffect
-          animationSpeed={3}
-          containerClassName="bg-indigo-950"
-          colors={[
-            [99, 102, 241],
-            [67, 56, 202],
-            [79, 70, 229],
-          ]}
-          dotSize={2}
-        />
+        {!isMobile && (
+          <DynamicCanvasRevealEffect
+            animationSpeed={3}
+            containerClassName="bg-indigo-950"
+            colors={[
+              [99, 102, 241],
+              [67, 56, 202],
+              [79, 70, 229],
+            ]}
+            dotSize={2}
+          />
+        )}
       </Card>
       <Card
         title="No-Code Launch"
         onClick={() => setOpen3(true)}
-        // icon={<CubeIcon className="w-12 h-12" />}
         icon={<CubeTransparentIcon className="w-12 h-12" />}
-        isMobile={!isSm}
+        isMobile={isMobile}
+        mobileGradient="bg-gradient-to-br from-amber-950 to-amber-800"
       >
-        <DynamicCanvasRevealEffect
-          animationSpeed={3}
-          containerClassName="bg-amber-950"
-          colors={[
-            [245, 158, 11],
-            [180, 83, 9],
-            [217, 119, 6],
-          ]}
-        />
+        {!isMobile && (
+          <DynamicCanvasRevealEffect
+            animationSpeed={3}
+            containerClassName="bg-amber-950"
+            colors={[
+              [245, 158, 11],
+              [180, 83, 9],
+              [217, 119, 6],
+            ]}
+          />
+        )}
       </Card>
       <Dialog open={open1} onClose={() => setOpen1(false)}>
         <Dialog.Content className="w-screen !pb-4 bg-stone-950">
@@ -150,12 +161,14 @@ const Card = ({
   children,
   icon,
   isMobile,
+  mobileGradient,
 }: {
   title: string
   onClick: () => void
   children?: React.ReactNode
   icon: React.ReactNode
   isMobile: boolean
+  mobileGradient?: string
 }) => {
   const [active, setActive] = React.useState(false)
   const [isMounted, setIsMounted] = React.useState(false)
@@ -182,15 +195,34 @@ const Card = ({
     e.stopPropagation()
   }
 
+  // On mobile, show simplified static card with gradient background
+  if (isMobile) {
+    return (
+      <div
+        ref={ref}
+        onClick={onClick}
+        className={`border border-black/[0.2] group/canvas-card flex flex-col items-center justify-center dark:border-white/[0.2] w-full mx-auto p-4 relative overflow-hidden h-[200px] cursor-pointer ${mobileGradient || 'bg-gradient-to-br from-stone-950 to-stone-800'}`}
+      >
+        <Icon className="absolute w-6 h-6 text-black -top-3 -left-3 dark:text-white" />
+        <Icon className="absolute w-6 h-6 text-black -bottom-3 -left-3 dark:text-white" />
+        <Icon className="absolute w-6 h-6 text-black -top-3 -right-3 dark:text-white" />
+        <Icon className="absolute w-6 h-6 text-black -bottom-3 -right-3 dark:text-white" />
+
+        <div className="relative z-20 flex flex-col items-center justify-center w-full h-full">
+          <div className="mb-4 text-yellow-500">{icon}</div>
+          <h2 className="mb-2 text-2xl font-bold text-white">{title}</h2>
+          <p className="text-sm text-neutral-300">Tap to learn more</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       ref={ref}
-      onMouseEnter={isMobile ? undefined : handleInteraction}
-      onMouseLeave={isMobile ? undefined : () => setActive(false)}
-      // onClick={isMobile ? handleInteraction : undefined}
-      className={`border border-black/[0.2] group/canvas-card flex flex-col items-center justify-between dark:border-white/[0.2] w-full mx-auto p-4 relative overflow-hidden bg-gradient-to-br from-stone-950 to-stone-800 ${
-        isMobile ? 'h-[200px]' : 'h-[30rem] max-w-sm'
-      }`}
+      onMouseEnter={handleInteraction}
+      onMouseLeave={() => setActive(false)}
+      className="border border-black/[0.2] group/canvas-card flex flex-col items-center justify-between dark:border-white/[0.2] w-full mx-auto p-4 relative overflow-hidden bg-gradient-to-br from-stone-950 to-stone-800 h-[30rem] max-w-sm"
     >
       <Icon className="absolute w-6 h-6 text-black -top-3 -left-3 dark:text-white" />
       <Icon className="absolute w-6 h-6 text-black -bottom-3 -left-3 dark:text-white" />
@@ -198,7 +230,7 @@ const Card = ({
       <Icon className="absolute w-6 h-6 text-black -bottom-3 -right-3 dark:text-white" />
 
       <AnimatePresence>
-        {isMounted && (active || (isMobile && isVisible)) && (
+        {isMounted && active && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -211,9 +243,9 @@ const Card = ({
       </AnimatePresence>
 
       <div className="relative z-20 flex flex-col items-center justify-center w-full h-full">
-        {active || (isMobile && isVisible) ? (
+        {active ? (
           <>
-            <AnimatedDozerIcon hovered={active || (isMobile && isVisible)} />
+            <AnimatedDozerIcon hovered={active} />
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -239,7 +271,6 @@ const Card = ({
           >
             <div className="mb-4 text-yellow-500">{icon}</div>
             <h2 className="mb-4 text-2xl font-bold text-neutral-300">{title}</h2>
-            {isMobile && <p className="text-sm text-neutral-400">Scroll to learn more</p>}
           </motion.div>
         )}
       </div>

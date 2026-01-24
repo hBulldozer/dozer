@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { ArrowRightIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { useBreakpoint } from '@dozer/hooks'
 
 const DynamicLampContainer = dynamic(() => import('@dozer/ui/aceternity/lamp').then((mod) => mod.LampContainer), {
   ssr: false,
@@ -14,6 +15,7 @@ export default function DonationProgress() {
   const maxSupply = 100000
   const progress = Math.min(Math.max((totalDonations / maxSupply) * 100, 0), 100)
   const [isOpen, setIsOpen] = useState(false)
+  const { isSm } = useBreakpoint('sm')
 
   useEffect(() => {
     async function fetchDonationData() {
@@ -34,6 +36,62 @@ export default function DonationProgress() {
     fetchDonationData()
   }, [])
 
+  const content = (
+    <div className="flex flex-col items-center justify-center gap-3 px-4 lg:gap-8 lg:px-0">
+      <div className="flex flex-col items-center justify-center gap-1 lg:gap-1">
+        <Typography
+          variant="h1"
+          weight={600}
+          className="pb-2 text-2xl font-medium tracking-tight text-center text-transparent lg:text-5xl bg-gradient-to-br from-stone-100 to-stone-200 bg-clip-text md:text-5xl"
+        >
+          Contribute with Dozer <br /> building the future of DeFi
+        </Typography>
+      </div>
+      <div className="w-full max-w-[600px] ">
+        <div className="relative h-[23px] w-full">
+          <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500 "></div>
+          <div className="absolute inset-y-0 left-0 overflow-hidden rounded-md" style={{ width: `${progress}%` }}>
+            <div className="h-full bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-500" />
+          </div>
+        </div>
+        <div className="flex flex-row items-center justify-between mt-2">
+          <Typography variant="sm" className="text-center text-neutral-200">
+            DZD distributed
+          </Typography>
+          <Typography variant="sm" className="text-center text-neutral-200">
+            {totalDonations.toLocaleString()} / {maxSupply.toLocaleString()}
+          </Typography>
+        </div>
+      </div>
+      <Typography variant="sm" className="max-w-2xl text-sm text-center text-neutral-300 lg:text-base">
+        We are proud to be a community-driven project. DZD Token was created to support the growth of Dozer and its
+        community. DZD is a utility token that will be used to log contribututions and incentivize the development of
+        Dozer. <LearnMoreButton onClick={() => setIsOpen(true)} />
+      </Typography>
+      <Link href="https://forms.gle/8cEKvsaNrTP4c8Ef6" target="_blank" className="p-[3px] relative">
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-orange-600 to-yellow-500" />
+        <div className="px-8 py-2  bg-black rounded-[6px] text-xl  relative group transition duration-200 text-white hover:bg-transparent">
+          JOIN NOW
+        </div>
+      </Link>
+
+      <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} />
+    </div>
+  )
+
+  // On mobile, show simplified version without heavy blur effects
+  if (!isSm) {
+    return (
+      <AppearOnMount className="w-full">
+        <div className="relative flex min-h-[70vh] flex-col items-center justify-center overflow-hidden bg-black w-full py-20">
+          {/* Simple gradient glow instead of heavy blur effects */}
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-64 h-32 bg-yellow-500/30 rounded-full blur-3xl" />
+          <div className="relative z-10">{content}</div>
+        </div>
+      </AppearOnMount>
+    )
+  }
+
   return (
     <AppearOnMount className="w-full">
       <DynamicLampContainer className=" pt-80">
@@ -45,54 +103,8 @@ export default function DonationProgress() {
             duration: 0.8,
             ease: 'easeInOut',
           }}
-          className="flex flex-col items-center justify-center gap-3 px-4 lg:gap-8 lg:px-0"
         >
-          <div className="flex flex-col items-center justify-center gap-1 lg:gap-1">
-            <Typography
-              variant="h1"
-              weight={600}
-              className="pb-2 text-2xl font-medium tracking-tight text-center text-transparent lg:text-5xl bg-gradient-to-br from-stone-100 to-stone-200 bg-clip-text md:text-5xl"
-            >
-              Contribute with Dozer <br /> building the future of DeFi
-            </Typography>
-          </div>
-          <div className="w-full max-w-[600px] ">
-            <div className="relative h-[23px] w-full">
-              <div className="absolute inset-0 rounded-md bg-[rgba(255,255,255,0.12)] ring-1 ring-yellow-500 "></div>
-              <div className="absolute inset-y-0 left-0 overflow-hidden rounded-md" style={{ width: `${progress}%` }}>
-                {/* <DynamicBackgroundGradientAnimation
-                  gradientBackgroundStart="rgb(146, 64, 14)"
-                  gradientBackgroundEnd="rgb(202, 138, 4)"
-                  pointerColor="253, 224, 71"
-                  containerClassName="rounded-md h-full"
-                  className="h-full"
-                  interactive={false}
-                /> */}
-                <div className="h-full bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-500" />
-              </div>
-            </div>
-            <div className="flex flex-row items-center justify-between mt-2">
-              <Typography variant="sm" className="text-center text-neutral-200">
-                DZD distributed
-              </Typography>
-              <Typography variant="sm" className="text-center text-neutral-200">
-                {totalDonations.toLocaleString()} / {maxSupply.toLocaleString()}
-              </Typography>
-            </div>
-          </div>
-          <Typography variant="sm" className="max-w-2xl text-sm text-center text-neutral-300 lg:text-base">
-            We are proud to be a community-driven project. DZD Token was created to support the growth of Dozer and its
-            community. DZD is a utility token that will be used to log contribututions and incentivize the development
-            of Dozer. <LearnMoreButton onClick={() => setIsOpen(true)} />
-          </Typography>
-          <Link href="https://forms.gle/8cEKvsaNrTP4c8Ef6" target="_blank" className="p-[3px] relative">
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-orange-600 to-yellow-500" />
-            <div className="px-8 py-2  bg-black rounded-[6px] text-xl  relative group transition duration-200 text-white hover:bg-transparent">
-              JOIN NOW
-            </div>
-          </Link>
-
-          <CustomDialog isOpen={isOpen} setIsOpen={setIsOpen} />
+          {content}
         </motion.div>
       </DynamicLampContainer>
     </AppearOnMount>
