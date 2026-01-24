@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useState, useMemo, useEffect } from 'react'
-import { HATHOR_WALLET_DEEP_LINK_SCHEME, useWalletConnectClient, isMobileDevice } from './ClientContext'
+import { useWalletConnectClient } from './ClientContext'
 import { useAccount } from '@dozer/zustand'
 import {
   CreateTokenResponse,
@@ -16,42 +16,14 @@ import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
 
-const DEEP_LINK_STORAGE_KEY = 'dozer_deeplink_timestamp'
-const DEEP_LINK_COOLDOWN_MS = 10000 // 10 seconds cooldown between deep link opens
-
-/**
- * Opens Hathor wallet via deeplink for an existing session (used during RPC requests)
- * Only opens on mobile devices to bring the wallet to foreground
- * Uses sessionStorage to track timing across page reloads
- * Uses setTimeout to ensure it runs after React render cycle
- */
-export const openHathorWalletForRequest = (sessionTopic: string): void => {
-  if (typeof window === 'undefined') return
-  if (!isMobileDevice()) return
-
-  // Use setTimeout to break out of React's render cycle
-  setTimeout(() => {
-    // Check cooldown using sessionStorage (persists across page reloads)
-    const now = Date.now()
-    try {
-      const lastOpen = parseInt(sessionStorage.getItem(DEEP_LINK_STORAGE_KEY) || '0', 10)
-      if (now - lastOpen < DEEP_LINK_COOLDOWN_MS) {
-        return
-      }
-      sessionStorage.setItem(DEEP_LINK_STORAGE_KEY, now.toString())
-    } catch {
-      // sessionStorage might not be available, continue anyway
-    }
-
-    try {
-      const wcUri = `wc:${sessionTopic}@2`
-      const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
-      window.location.href = deepLink
-    } catch {
-      // ignore errors
-    }
-  }, 100) // Small delay to escape React render cycle
-}
+// Deep link for RPC requests is currently disabled - the wallet receives requests via WebSocket
+// If needed in the future, uncomment and adapt:
+//
+// export const openHathorWalletForRequest = (sessionTopic: string): void => {
+//   if (typeof window === 'undefined' || !isMobileDevice()) return
+//   const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(`wc:${sessionTopic}@2`)}`
+//   window.location.href = deepLink
+// }
 
 /**
  * Utility function to parse snap responses
@@ -279,11 +251,6 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
     return {
       sendNanoContractTx: async (ncTxRpcReq: SendNanoContractRpcRequest): Promise<SendNanoContractTxResponse> => {
         walletClientGuard()
-
-        // Open deep link to bring wallet to foreground on mobile
-        if (session) {
-          openHathorWalletForRequest(session.topic)
-        }
 
         try {
           setPending(true)
