@@ -16,9 +16,14 @@ import { IHathorRpc } from '@dozer/nanocontracts/src/types'
 import { useInvokeSnap } from '@hathor/snap-utils'
 import config from '../../config/bridge'
 
+// Track the last deep link open time to prevent duplicate triggers
+let lastDeepLinkOpenTime = 0
+const DEEP_LINK_DEBOUNCE_MS = 10000 // 10 seconds debounce - enough time for wallet interaction
+
 /**
  * Opens Hathor wallet via deeplink for an existing session (used during RPC requests)
  * Only opens on mobile devices to bring the wallet to foreground
+ * Uses a hidden link click to avoid navigation history issues
  */
 export const openHathorWalletForRequest = (sessionTopic: string): boolean => {
   if (typeof window === 'undefined') return false
@@ -26,12 +31,29 @@ export const openHathorWalletForRequest = (sessionTopic: string): boolean => {
   // Only open deeplink on mobile devices
   if (!isMobileDevice()) return false
 
+  // Debounce: don't open if we recently opened a deep link
+  const now = Date.now()
+  if (now - lastDeepLinkOpenTime < DEEP_LINK_DEBOUNCE_MS) {
+    console.log('Skipping deep link - debounce active')
+    return false
+  }
+
   try {
     const wcUri = `wc:${sessionTopic}@2`
     const deepLink = `${HATHOR_WALLET_DEEP_LINK_SCHEME}://wc?uri=${encodeURIComponent(wcUri)}`
 
-    window.open(deepLink, '_self')
-    console.log('Deeplink for request would open:', deepLink)
+    lastDeepLinkOpenTime = now
+
+    // Create a temporary link element and click it
+    // This avoids navigation history issues that cause duplicate dialogs
+    const link = document.createElement('a')
+    link.href = deepLink
+    link.style.display = 'none'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    console.log('Deeplink for request triggered:', deepLink)
     return true
   } catch (error) {
     console.warn('Failed to open Hathor wallet deeplink for request:', error)
