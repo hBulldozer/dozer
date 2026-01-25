@@ -5,6 +5,10 @@ import type { Currency } from '@dozer/currency'
 
 // Type assertion to fix React version compatibility issues with Next.js Image
 const NextImage = Image as React.ComponentType<ImageProps>
+
+// Supported local image extensions (in priority order)
+const LOCAL_IMAGE_EXTENSIONS = ['.svg', '.jpg', '.png', '.webp']
+
 export interface IconProps extends Omit<ImageProps, 'src' | 'alt'> {
   currency: Currency
   priority?: boolean
@@ -14,14 +18,20 @@ export interface IconProps extends Omit<ImageProps, 'src' | 'alt'> {
 export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest }) => {
   const width = rest.width || 24
   const height = rest.height || 24
-  const [imageLoadError, setImageLoadError] = useState(false)
+  const [localExtensionIndex, setLocalExtensionIndex] = useState(0)
+  const [remoteImageError, setRemoteImageError] = useState(false)
 
   // Check existing imageUrl (now includes DozerTools URLs) and logoURI
   const iconUrl = currency.imageUrl || ''
   const logoURI = currency.logoURI?.()
-  const isLocalSvg = logoURI && !logoURI.startsWith('http')
+  const isLocalImage = logoURI && !logoURI.startsWith('http')
 
-  // Priority order: existing imageUrl (includes DozerTools) → logoURI → default
+  // For local images, get the base path without extension to try multiple formats
+  const localImageBasePath = isLocalImage
+    ? logoURI.replace(/\.(svg|jpg|jpeg|png|webp)$/i, '')
+    : ''
+
+  // Priority order: existing imageUrl (includes DozerTools) → local logoURI → remote logoURI → default
   if (iconUrl !== '') {
     // Use existing imageUrl
     return (
@@ -61,24 +71,33 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
     )
   }
 
-  if (isLocalSvg) {
-    // Use local SVG
+  if (isLocalImage && localExtensionIndex < LOCAL_IMAGE_EXTENSIONS.length) {
+    // Use local image with extension fallback (SVG → JPG → PNG → WebP)
+    // Always use unoptimized for local images to ensure they're fetched from _root's public folder
+    // (not through Next.js image optimizer which runs on each app's server)
+    const currentExtension = LOCAL_IMAGE_EXTENSIONS[localExtensionIndex]
+    const currentSrc = `${localImageBasePath}${currentExtension}`
+
     return (
       <div className="overflow-hidden relative rounded-full bg-stone-800" style={{ width, height }}>
         <NextImage
-          src={logoURI}
+          src={currentSrc}
           alt={currency.symbol || 'Token'}
           width={width}
           height={height}
           className="object-contain w-full h-full"
           unoptimized
+          onError={() => {
+            // Try next extension on error
+            setLocalExtensionIndex((prev) => prev + 1)
+          }}
         />
       </div>
     )
   }
 
-  if (logoURI) {
-    // Use remote logoURI
+  if (logoURI && !isLocalImage && !remoteImageError) {
+    // Use remote logoURI (skip if local image exhausted all extensions or remote failed)
     return (
       <div className="overflow-hidden relative rounded-full bg-stone-800" style={{ width, height }}>
         <NextImage
@@ -95,7 +114,7 @@ export const Icon: FC<IconProps> = memo(({ currency, priority, loading, ...rest 
           blurDataURL={`data:image/svg+xml;base64,${btoa(
             `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#1c1917"/></svg>`
           )}`}
-          onError={() => setImageLoadError(true)}
+          onError={() => setRemoteImageError(true)}
         />
       </div>
     )
