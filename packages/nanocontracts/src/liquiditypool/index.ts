@@ -296,7 +296,10 @@ export class PoolManager extends NanoContract {
         {
           type: NanoContractActionType.WITHDRAWAL,
           token: tokenB,
-          amount: Math.floor(amountB * 100).toString(),
+          // Math.round instead of Math.floor: amountB arrives as (integer_cents / 100), so
+          // multiplying back by 100 can land just below the integer due to float imprecision
+          // (e.g. 264.43 * 100 = 26442.999...). Math.round recovers the original integer correctly.
+          amount: Math.round(amountB * 100).toString(),
           address: address,
           // changeAddress: address,
         } as any,

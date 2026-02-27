@@ -155,11 +155,17 @@ export const RemoveSectionLegacy: FC<RemoveSectionLegacyProps> = ({ pair, prices
     setSentTX(true)
     if (currencyAToRemove && currencyBToRemove && percentage) {
       try {
-        // Convert from cents (quotient) to decimal tokens by dividing by 100
-        // This avoids precision loss from toFixed(2)
-        // Note: quotient is a JSBI instance, convert to string first then to number
         const amountADecimal = Number(currencyAToRemove.quotient.toString()) / 100
-        const amountBDecimal = Number(currencyBToRemove.quotient.toString()) / 100
+        // Determine the exact cents that removeLiquidity will send for token A (it uses Math.floor internally).
+        // Then re-derive token B from that same value so A and B are consistent with what the contract
+        // computes: optimal_b = floor(action_a * reserve_b / reserve_a).
+        // Without this, a float round-trip (quotient→/100→*100) can drop A by 1 cent while B stays
+        // calculated from the original quotient, causing "Insufficient token B amount".
+        const amountACentsSent = Math.floor(amountADecimal * 100)
+        const reserveA = BigInt(Math.floor(pair.reserve0 * 100))
+        const reserveB = BigInt(Math.floor(pair.reserve1 * 100))
+        const amountBCentsSent = Number((BigInt(amountACentsSent) * reserveB) / reserveA)
+        const amountBDecimal = amountBCentsSent / 100
 
         await poolManager.removeLiquidity(
           hathorRpc,

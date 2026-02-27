@@ -252,8 +252,8 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       sendNanoContractTx: async (ncTxRpcReq: SendNanoContractRpcRequest): Promise<SendNanoContractTxResponse> => {
         walletClientGuard()
 
-        // Open deep link to bring wallet to foreground on mobile
-        if (session) {
+        // Open deep link to bring wallet to foreground on mobile only
+        if (session && isMobileDevice()) {
           openHathorWalletForRequest(session.topic)
         }
 
@@ -287,6 +287,11 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       signOracleData: async (signOracleDataReq: SignOracleDataRpcRequest): Promise<SignOracleDataResponse> => {
         walletClientGuard()
 
+        // Open deep link to bring wallet to foreground on mobile only
+        if (session && isMobileDevice()) {
+          openHathorWalletForRequest(session.topic)
+        }
+
         try {
           setPending(true)
 
@@ -316,6 +321,11 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
       },
       createToken: async (createTokenTxRpcReq: CreateTokenRpcRequest): Promise<CreateTokenResponse> => {
         walletClientGuard()
+
+        // Open deep link to bring wallet to foreground on mobile only
+        if (session && isMobileDevice()) {
+          openHathorWalletForRequest(session.topic)
+        }
 
         try {
           setPending(true)
