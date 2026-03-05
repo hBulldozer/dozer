@@ -74,6 +74,11 @@ const nextConfig = {
         permanent: true,
         destination: 'https://twitter.com/DozerProtocol',
       },
+      {
+        source: '/onepager',
+        destination: '/Dozer-onepager.pdf',
+        permanent: true,
+      },
     ]
   },
   async rewrites() {
