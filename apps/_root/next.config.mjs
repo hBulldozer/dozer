@@ -79,6 +79,11 @@ const nextConfig = {
         destination: '/Dozer-onepager.pdf',
         permanent: true,
       },
+      {
+        source: '/whitepaper',
+        destination: 'https://www.papermark.com/view/cmazvnn9o0001jy04tpvhphd7',
+        permanent: true,
+      },
     ]
   },
   async rewrites() {
