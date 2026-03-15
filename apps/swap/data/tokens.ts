@@ -7,4 +7,6 @@ export const customAbouts: Record<string, string> = {
   HUSDC:
     'hUSDC is the bridged version of USD Coin (USDC), a stablecoin issued by Circle, from the Arbitrum chain. USDC is pegged 1:1 to the U.S. dollar and is fully backed by cash and short-term U.S. Treasury bonds, held in regulated U.S. financial institutions.',
   FROGZ: 'Frogz on Hathor is a frog flavored meme coin on Hathor supporting frogs around the world',
+  PUNKS:
+    'HTRPunks Rewards coin (PUNKS) is a rewards token supporting the Hathor Network ecosystem while Promoting the HTRPunks NFT Community. With a fixed Max of 100,000 PUNKS and an initial circulating supply of 60,000 PUNKS, it incentivizes participation In community events, and historical preservation of Hathor Network based NFT projects.',
 }

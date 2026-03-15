@@ -25,7 +25,7 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
       <div className="flex flex-col">
         <Typography variant="sm" weight={500} className="flex items-center gap-1 text-stone-50">
           {row.token0.symbol} <span className="text-stone-500">/</span> {row.token1.symbol}{' '}
-          <FarmRewardsAvailableTooltip />
+          {row.token0.symbol == 'HTR' && row.token1.symbol == 'hUSDC' && <FarmRewardsAvailableTooltip />}
           <Chip color="gray" size="sm" label={`${row.swapFee.toFixed(2)}%`} />
           {row.token1.imageUrl && (
             <>
