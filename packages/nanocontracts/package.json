@@ -10,7 +10,7 @@
   "devDependencies": {
     "@types/node": "20.14.10",
     "eslint": "*",
-    "tsx": "^4.7.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.3.3"
   },
   "license": "MIT",

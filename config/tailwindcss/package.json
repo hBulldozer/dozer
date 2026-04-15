@@ -13,7 +13,7 @@
     "@dozer/jest-config": "workspace:*",
     "@dozer/prettier-config": "workspace:*",
     "@dozer/typescript-config": "workspace:*",
-    "tsup": "8.1.0",
+    "tsup": "8.5.1",
     "typescript": "^5.3.3"
   },
   "files": [
