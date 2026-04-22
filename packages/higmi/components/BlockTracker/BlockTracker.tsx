@@ -14,7 +14,10 @@ const BlockTracker: React.FC<Props> = ({ client, animationDuration = 1000, class
   const [previousNumber, setPreviousNumber] = useState<number | undefined>()
   const { network } = useNetwork()
 
-  const { data } = client.getNetwork.getBestBlock.useQuery(undefined, { refetchInterval: 30000 })
+  const { data } = client.getNetwork.getBestBlock.useQuery(undefined, {
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  })
   const utils = client.useUtils()
   const [number, setNumber] = useState<number | undefined>(data?.number)
   const [hash, setHash] = useState<string | undefined>(data?.hash)

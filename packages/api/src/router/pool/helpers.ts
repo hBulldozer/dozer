@@ -11,9 +11,23 @@ const NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL = process.env.NEXT_PUBLIC_DOZER_TO
 
 // Cache for token information to avoid repeated API calls
 const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
+const poolManagerResponseCache = new Map<string, { expiresAt: number; promise: Promise<any> }>()
+
+const LIVE_POOL_MANAGER_TTL_MS = 5_000
+const HISTORICAL_POOL_MANAGER_TTL_MS = 24 * 60 * 60 * 1000
 
 if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
   console.warn('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
+}
+
+function prunePoolManagerResponseCache(now: number) {
+  if (poolManagerResponseCache.size < 500) return
+
+  for (const [key, entry] of poolManagerResponseCache.entries()) {
+    if (entry.expiresAt <= now) {
+      poolManagerResponseCache.delete(key)
+    }
+  }
 }
 
 // Helper function to fetch DozerTools image URL for a token
@@ -54,14 +68,37 @@ export async function fetchFromPoolManager(calls: string[], timestamp?: number):
     throw new Error('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
   }
 
-  const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, ...calls.map((call) => `calls[]=${call}`)]
+  const normalizedCalls = Array.from(new Set(calls)).sort()
+  const cacheKey = JSON.stringify({
+    timestamp: timestamp ?? 'live',
+    calls: normalizedCalls,
+  })
+  const now = Date.now()
+  prunePoolManagerResponseCache(now)
+  const cachedEntry = poolManagerResponseCache.get(cacheKey)
 
-  if (timestamp) {
+  if (cachedEntry && cachedEntry.expiresAt > now) {
+    return cachedEntry.promise
+  }
+
+  const endpoint = 'nano_contract/state'
+  const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, ...normalizedCalls.map((call) => `calls[]=${call}`)]
+
+  if (timestamp !== undefined) {
     queryParams.push(`timestamp=${timestamp}`)
   }
 
-  return await fetchNodeData(endpoint, queryParams)
+  const promise = fetchNodeData(endpoint, queryParams).catch((error) => {
+    poolManagerResponseCache.delete(cacheKey)
+    throw error
+  })
+
+  poolManagerResponseCache.set(cacheKey, {
+    expiresAt: now + (timestamp !== undefined ? HISTORICAL_POOL_MANAGER_TTL_MS : LIVE_POOL_MANAGER_TTL_MS),
+    promise,
+  })
+
+  return await promise
 }
 
 // Helper function to calculate 24h transaction count using delta approach

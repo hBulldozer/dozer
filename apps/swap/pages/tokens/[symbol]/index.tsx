@@ -22,7 +22,7 @@ import { TokenStats } from 'components/TokenPage/TokenStats'
 import ReadMore from '@dozer/ui/readmore/ReadMore'
 import BlockTracker from '@dozer/higmi/components/BlockTracker/BlockTracker'
 import { toToken } from '@dozer/api'
-import { TokenHeader } from 'components/TokenPage/TokenHeader'
+import { TokenChart } from 'components/TokenPage/TokenChart'
 import Image from 'next/image'
 import { customAbouts } from '../../../data/tokens'
 
@@ -162,6 +162,7 @@ const Token = () => {
 
   const currentToken = aggregatedPair?.token1
   const primaryPoolForSwap = primaryPool || null
+  const totalLiquidityUSD = tokenData.pools.reduce((sum, pool) => sum + pool.liquidityUSD, 0)
 
   return (
     <>
@@ -170,13 +171,17 @@ const Token = () => {
         <BlockTracker client={api} />
         <div className="flex flex-col lg:grid lg:grid-cols-[568px_auto] gap-12">
           <div className="flex flex-col order-1 gap-6">
-            {aggregatedPair && <>{/* <TokenChart pair={aggregatedPair} setIsDialogOpen={setIsDialogOpen} /> */}</>}
-            {aggregatedPair && <TokenHeader pair={aggregatedPair} prices={prices} />}
+            {aggregatedPair && <TokenChart pair={aggregatedPair} setIsDialogOpen={setIsDialogOpen} />}
             <div className="flex flex-col gap-4">
               <Typography weight={500} variant="h1">
                 Stats
               </Typography>
-              {aggregatedPair && <TokenStats pair={aggregatedPair} prices={prices} />}
+              <TokenStats
+                totalLiquidityUSD={totalLiquidityUSD}
+                totalVolumeUSD={tokenData.totalVolumeUSD}
+                totalFeesUSD={tokenData.totalFeesUSD}
+                marketCap={tokenData.marketCap}
+              />
               {(() => {
                 const customAbout = customAbouts[tokenData.symbol.toUpperCase()]
                 const poolText = tokenData.poolCount === 1 ? 'pool' : 'pools'

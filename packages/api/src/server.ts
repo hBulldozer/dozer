@@ -86,6 +86,13 @@ export function responseMeta(opts: any) {
           },
         }
       }
+      if (['getPoolChartData'].includes(procedure || '')) {
+        return {
+          headers: {
+            'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=45',
+          },
+        }
+      }
       if (['getAllTransactionHistory', 'getTxStatus'].includes(procedure || '')) {
         // Transaction data: No cache (user-specific and time-sensitive)
         return {
@@ -111,6 +118,13 @@ export function responseMeta(opts: any) {
         return {
           headers: {
             'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+          },
+        }
+      }
+      if (['getTokenChartData'].includes(procedure || '')) {
+        return {
+          headers: {
+            'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=45',
           },
         }
       }

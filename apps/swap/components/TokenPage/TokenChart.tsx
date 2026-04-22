@@ -1,319 +1,256 @@
-import { formatHTR, formatPercentChange, formatUSD } from '@dozer/format'
-import { Pair, PairHourSnapshot, toToken, useTokensFromPair } from '@dozer/api'
+import { Pair, TokenChartPoint, toToken } from '@dozer/api'
+import chains from '@dozer/chain'
+import { hathorLib } from '@dozer/nanocontracts'
 import {
-  AppearOnMount,
   ArrowIcon,
-  classNames,
+  ChartControls,
+  ChartHeader,
+  chartTheme,
+  ChartSkeleton,
+  type ChartTimeRange,
   CopyHelper,
   Currency,
   IconButton,
+  LightweightChart,
   Link,
-  Skeleton,
   Typography,
 } from '@dozer/ui'
-import { format } from 'date-fns'
-import { EChartsOption } from 'echarts-for-react/lib/types'
-import { FC, useCallback, useMemo, useState } from 'react'
-import dynamic from 'next/dynamic'
-
-const ReactECharts = dynamic(() => import('echarts-for-react'), {
-  ssr: false,
-  loading: () => <div className="h-96 bg-stone-800 animate-pulse rounded" />,
-})
-import resolveConfig from 'tailwindcss/resolveConfig'
-
-import { TwitterIcon, TelegramIcon } from '@dozer/ui'
-import { GlobeAltIcon } from '@heroicons/react/24/outline'
-
-import tailwindConfig from '../../tailwind.config.js'
-import { hourSnapshot, Token } from '@dozer/database'
-import { api } from 'utils/api'
 import { ArrowTopRightOnSquareIcon, Square2StackIcon } from '@heroicons/react/24/outline'
-import chains from '@dozer/chain'
-import { hathorLib } from '@dozer/nanocontracts'
+import { AreaSeries, CandlestickSeries, HistogramSeries, type Time } from 'lightweight-charts'
+import { FC, useCallback, useMemo, useState } from 'react'
 
-const tailwind = resolveConfig(tailwindConfig)
+import { api } from 'utils/api'
 
-interface Snapshot {
-  date: string
-  liquidity: number
-  volume: number
-}
+type TokenChartMode = 'price' | 'volume'
+type PriceStyle = 'candles' | 'area'
+type Denomination = 'USD' | 'HTR'
 
-interface TokenChart {
+interface TokenChartProps {
   pair: Pair & {
-    daySnapshots: Snapshot[]
-    weekSnapshots: Snapshot[]
-    hourSnapshots: Snapshot[]
+    daySnapshots?: unknown[]
+    weekSnapshots?: unknown[]
+    hourSnapshots?: unknown[]
   }
+  setIsDialogOpen?: (open: boolean) => void
+  height?: number
 }
 
-enum TokenChartCurrency {
-  HTR,
-  USD,
+const MODE_OPTIONS = [
+  { id: 'price' as const, label: 'Price' },
+  { id: 'volume' as const, label: 'Volume' },
+]
+
+const PRICE_STYLE_OPTIONS = [
+  { id: 'candles' as const, label: 'Candles' },
+  { id: 'area' as const, label: 'Area' },
+]
+
+const USD_HTR_OPTIONS = [
+  { id: 'USD' as const, label: 'USD' },
+  { id: 'HTR' as const, label: 'HTR' },
+]
+
+const formatCompact = (value: number, prefix = '', suffix = ''): string => {
+  if (!Number.isFinite(value)) return `${prefix}0${suffix}`
+  const abs = Math.abs(value)
+  if (abs >= 1_000_000_000) return `${prefix}${(value / 1_000_000_000).toFixed(2)}B${suffix}`
+  if (abs >= 1_000_000) return `${prefix}${(value / 1_000_000).toFixed(2)}M${suffix}`
+  if (abs >= 1_000) return `${prefix}${(value / 1_000).toFixed(2)}K${suffix}`
+  return `${prefix}${value.toFixed(2)}${suffix}`
 }
 
-enum TokenChartPeriod {
-  Day,
-  Week,
-  Month,
-  Year,
-  All,
+const formatPriceValue = (value: number): string => {
+  if (!Number.isFinite(value) || value === 0) return '0'
+  const abs = Math.abs(value)
+  if (abs < 0.0001) return value.toFixed(8)
+  if (abs < 0.01) return value.toFixed(6)
+  if (abs < 1) return value.toFixed(4)
+  return value.toFixed(4)
 }
 
-const chartTimespans: Record<TokenChartPeriod, number> = {
-  [TokenChartPeriod.Day]: 86400 * 1000,
-  [TokenChartPeriod.Week]: 604800 * 1000,
-  [TokenChartPeriod.Month]: 2629746 * 1000,
-  [TokenChartPeriod.Year]: 31556952 * 1000,
-  [TokenChartPeriod.All]: Infinity,
+const formatHoverTime = (time: Time): string => {
+  const unixSeconds = typeof time === 'number' ? time : 0
+  if (!unixSeconds) return ''
+  return new Date(unixSeconds * 1000).toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
-function getFirstPerHour(snapshots: PairHourSnapshot[]): PairHourSnapshot[] {
-  // Sort snapshots by date in ascending order
-  snapshots.sort((a, b) => a.date.getTime() - b.date.getTime())
+export const TokenChart: FC<TokenChartProps> = ({ pair, height = 400 }) => {
+  const isNative = pair.id.includes('native')
+  const token = isNative ? pair.token0 : pair.token1
+  const tokenUuid = token.uuid
 
-  const hourlySnapshots: PairHourSnapshot[] = []
-  let currentHour = -1 // Initialize with an invalid hour
+  const [mode, setMode] = useState<TokenChartMode>('price')
+  const [priceStyle, setPriceStyle] = useState<PriceStyle>('candles')
+  const [currency, setCurrency] = useState<Denomination>(isNative ? 'USD' : 'HTR')
+  const [timeRange, setTimeRange] = useState<ChartTimeRange>('24h')
+  const [hoverOHLC, setHoverOHLC] = useState<{ open: number; high: number; low: number; close: number } | null>(null)
+  const [hoverValue, setHoverValue] = useState<number | null>(null)
+  const [hoverTime, setHoverTime] = useState<string | null>(null)
 
-  for (const snap of snapshots) {
-    const snapHour = snap.date.getHours()
-
-    // Check if we moved to a new hour
-    if (snapHour !== currentHour) {
-      currentHour = snapHour
-      hourlySnapshots.push(snap) // Add first snapshot of the new hour
+  const { data, isLoading, isFetching } = api.getTokens.getTokenChartData.useQuery(
+    { tokenUuid, timeRange },
+    {
+      enabled: Boolean(tokenUuid),
     }
-  }
-
-  return hourlySnapshots
-}
-export const TokenChart: FC<TokenChart> = ({ pair }) => {
-  const [chartCurrency, setChartCurrency] = useState<TokenChartCurrency>(
-    pair.id.includes('native') ? TokenChartCurrency.USD : TokenChartCurrency.HTR
-  )
-  const [chartPeriod, setChartPeriod] = useState<TokenChartPeriod>(TokenChartPeriod.Day)
-  const hourSnapshots = getFirstPerHour(pair.hourSnapshots)
-  const { token0, token1 } = pair
-  const token = pair.id.includes('native') ? token0 : token1
-  const fifteenMinSnapshots = pair.hourSnapshots
-  const tokenReserveNow: { reserve0: number; reserve1: number } = {
-    reserve0: Number(pair.reserve0),
-    reserve1: Number(pair.reserve1),
-  }
-  const priceInHTRNow = pair.id.includes('native')
-    ? 1
-    : Number(tokenReserveNow.reserve0) / Number(tokenReserveNow.reserve1)
-  const { data: _priceHTRNow, isLoading } = api.getPrices.htr.useQuery()
-  const data = useMemo(() => {
-    return chartPeriod == TokenChartPeriod.Day
-      ? fifteenMinSnapshots.filter((snap) => snap.date < new Date(Date.now()))
-      : chartPeriod >= TokenChartPeriod.Year
-      ? pair.daySnapshots.filter((snap) => snap.date < new Date(Date.now())).reverse()
-      : hourSnapshots.filter((snap) => snap.date < new Date(Date.now()))
-  }, [chartPeriod, fifteenMinSnapshots, hourSnapshots, pair.daySnapshots])
-  const [xData, yData] = useMemo(() => {
-    const currentDate = Math.round(Date.now())
-    const [x, y] = data.reduce<[number[], number[]]>(
-      (acc, cur, idx) => {
-        const date = new Date(cur.date).getTime()
-        if (date >= currentDate - chartTimespans[chartPeriod]) {
-          const tokenReserve: { reserve0: number; reserve1: number } = {
-            reserve0: Number(cur.reserve0),
-            reserve1: Number(cur.reserve1),
-          }
-          const priceInHTR = pair.id.includes('native')
-            ? 1
-            : Number(tokenReserve.reserve0) / Number(tokenReserve.reserve1)
-          const priceInUSD = pair.id.includes('husdc')
-            ? 1
-            : pair.id.includes('native')
-            ? Number(tokenReserve.reserve1) / Number(tokenReserve.reserve0)
-            : priceInHTR * cur.priceHTR
-          acc[0].push(date / 1000)
-          if (chartCurrency === TokenChartCurrency.HTR) {
-            acc[1].push(priceInHTR)
-          } else {
-            acc[1].push(priceInUSD)
-          }
-        }
-        return acc
-      },
-      [[], []]
-    )
-    if (_priceHTRNow) {
-      x.push(Math.round(Date.now()) / 1000)
-      if (chartCurrency === TokenChartCurrency.HTR) {
-        y.push(priceInHTRNow)
-      } else {
-        y.push(priceInHTRNow * _priceHTRNow)
-      }
-    }
-
-    return [x, y]
-  }, [data, _priceHTRNow, pair.id, chartPeriod, chartCurrency, priceInHTRNow])
-  const [priceChange, setPriceChange] = useState<number>(
-    (yData[yData.length - 1] - yData[0]) / (yData[0] != 0 ? yData[0] : 1)
-  )
-  // Transient update for performance
-  const onMouseOver = useCallback(
-    ({ name, value, change }: { name: number; value: number; change: number }) => {
-      const valueNodes = document.getElementsByClassName('hoveredItemValue')
-      const nameNodes = document.getElementsByClassName('hoveredItemName')
-      const changeNodes = document.getElementsByClassName('hoveredItemChange')
-
-      if (chartCurrency === TokenChartCurrency.USD) {
-        valueNodes[0].innerHTML = formatUSD(value)
-      } else {
-        valueNodes[0].innerHTML = formatHTR(value)
-      }
-
-      nameNodes[0].innerHTML = format(new Date(name * 1000), 'dd MMM yyyy HH:mm')
-
-      changeNodes[0].innerHTML = formatPercentChange(change)
-      setPriceChange(change)
-    },
-    [chartCurrency]
   )
 
-  const onMouseLeave = useCallback(() => {
-    const valueNodes = document.getElementsByClassName('hoveredItemValue')
-    const changeNodes = document.getElementsByClassName('hoveredItemChange')
-
-    if (chartCurrency === TokenChartCurrency.USD) {
-      valueNodes[0].innerHTML = formatUSD(yData[yData.length - 1])
-    } else {
-      valueNodes[0].innerHTML = formatHTR(yData[yData.length - 1])
-    }
-
-    const change = (yData[yData.length - 1] - yData[0]) / (yData[0] != 0 ? yData[0] : 1)
-    changeNodes[0].innerHTML = formatPercentChange(change)
-    setPriceChange(change)
-  }, [chartCurrency])
-
-  const DEFAULT_OPTION: EChartsOption = useMemo(
-    () => ({
-      tooltip: {
-        trigger: 'axis',
-        extraCssText: 'z-index: 1000',
-        responsive: true,
-        // @ts-ignore
-        backgroundColor: tailwind.theme.colors.stone['700'],
-        textStyle: {
-          // @ts-ignore
-          color: tailwind.theme.colors.stone['50'],
-          fontSize: 12,
-          fontWeight: 600,
-        },
-        formatter: (params: any) => {
-          onMouseOver({
-            name: params[0].name,
-            value: params[0].value,
-            change: (params[0].value - yData[0]) / (yData[0] != 0 ? yData[0] : 1),
-          })
-
-          const date = new Date(Number(params[0].name * 1000))
-          return `<div class="flex flex-col gap-0.5">
-            <span class="text-sm text-stone-50 font-semibold">${
-              chartCurrency == TokenChartCurrency.USD ? formatUSD(params[0].value) : formatHTR(params[0].value)
-            }</span>
-            <span class="text-xs text-stone-400 font-medium">${
-              date instanceof Date && !isNaN(date?.getTime()) ? format(date, 'dd MMM yyyy HH:mm') : ''
-            }</span>
-          </div>`
-        },
-        borderWidth: 0,
-      },
-      toolbox: {
-        show: false,
-      },
-      grid: {
-        top: 40,
-        left: 20,
-        right: 20,
-        bottom: 60,
-        containLabel: false,
-      },
-      dataZoom: {
-        show: false,
-        start: 0,
-        end: 100,
-      },
-      visualMap: {
-        show: false,
-        // @ts-ignore
-        color: [tailwind.theme.colors.yellow['500']],
-      },
-      xAxis: [
-        {
-          // show: false,
-          type: 'category',
-          boundaryGap: true,
-          data: xData,
-          axisLabel: {
-            formatter: function (value: number) {
-              return format(
-                new Date(value * 1000),
-                chartPeriod == TokenChartPeriod.Day
-                  ? 'HH:mm aaa'
-                  : chartPeriod == TokenChartPeriod.Week
-                  ? 'eeee'
-                  : chartPeriod === TokenChartPeriod.Month
-                  ? 'LLLL d'
-                  : 'LLLL'
-              )
-            },
-            interval: 'auto',
-            showMinLabel: true, // Changed: Show the first label
-            showMaxLabel: true, // Changed: Show the last label
-            inside: false, // Changed: Place labels outside the chart area
-            margin: 48, // Changed: Adjust margin for better positioning
-            rotate: 0, // Added: Ensure labels are not rotated
-            hideOverlap: true, // Added: Prevent hiding overlapping labels
-          },
-          axisTick: {
-            show: false,
-          },
-        },
-      ],
-      yAxis: [
-        {
-          show: false,
-          type: 'value',
-          scale: true,
-          name: 'Price',
-          // max: 'dataMax',
-          // min: Math.min(...yData) - 0.001,
-        },
-      ],
-      series: [
-        {
-          name: 'Price',
-          symbol: 'none',
-          type: 'line',
-          xAxisIndex: 0,
-          yAxisIndex: 0,
-          animationEasingUpdate: 'circularInOut',
-          animationDurationUpdate: 0,
-          animationDelay: function (idx: number) {
-            return idx * 2
-          },
-          animationEasing: 'circularInOut',
-          data: yData,
-        },
-      ],
+  const pickOHLC = useCallback(
+    (p: TokenChartPoint) => ({
+      time: p.time as Time,
+      open: currency === 'USD' ? p.openUSD : p.openHTR,
+      high: currency === 'USD' ? p.highUSD : p.highHTR,
+      low: currency === 'USD' ? p.lowUSD : p.lowHTR,
+      close: currency === 'USD' ? p.closeUSD : p.closeHTR,
     }),
-    [xData, chartPeriod, yData, onMouseOver, chartCurrency]
+    [currency]
   )
+
+  const candleData = useMemo(() => (data ? data.map(pickOHLC) : []), [data, pickOHLC])
+
+  const areaData = useMemo(
+    () => candleData.map((p) => ({ time: p.time, value: p.close })),
+    [candleData]
+  )
+
+  const volumeData = useMemo(() => {
+    if (!data) return []
+    return data.map((p) => ({
+      time: p.time as Time,
+      value: currency === 'USD' ? p.volumeUSD : p.volumeHTR,
+    }))
+  }, [data, currency])
+
+  const latestValue =
+    mode === 'volume'
+      ? volumeData[volumeData.length - 1]?.value ?? 0
+      : candleData[candleData.length - 1]?.close ?? 0
+
+  const priceChange = useMemo(() => {
+    const first = candleData[0]?.open
+    const last = candleData[candleData.length - 1]?.close
+    if (first === undefined || last === undefined || first === 0) return 0
+    return (last - first) / first
+  }, [candleData])
+
+  const hoverChange = useMemo(() => {
+    if (hoverOHLC === null) return null
+    const first = candleData[0]?.open
+    if (first === undefined || first === 0) return null
+    return (hoverOHLC.close - first) / first
+  }, [candleData, hoverOHLC])
+
+  const displayChange = hoverChange ?? priceChange
+
+  const buildSeries = useCallback(
+    ({ chart }: { chart: import('lightweight-charts').IChartApi }) => {
+      const cleanups: Array<() => void> = []
+
+      if (mode === 'volume') {
+        if (volumeData.length === 0) return
+        const s = chart.addSeries(HistogramSeries, {
+          color: chartTheme.histogram,
+          priceFormat: { type: 'volume' },
+          priceLineVisible: false,
+        })
+        s.setData(volumeData)
+        cleanups.push(() => {
+          try {
+            chart.removeSeries(s)
+          } catch {
+            // ignore
+          }
+        })
+      } else if (priceStyle === 'candles') {
+        if (candleData.length === 0) return
+        const s = chart.addSeries(CandlestickSeries, {
+          upColor: chartTheme.candleUp,
+          downColor: chartTheme.candleDown,
+          borderUpColor: chartTheme.candleUp,
+          borderDownColor: chartTheme.candleDown,
+          wickUpColor: chartTheme.candleUp,
+          wickDownColor: chartTheme.candleDown,
+          priceLineVisible: false,
+        })
+        s.setData(candleData)
+        cleanups.push(() => {
+          try {
+            chart.removeSeries(s)
+          } catch {
+            // ignore
+          }
+        })
+      } else {
+        if (areaData.length === 0) return
+        const s = chart.addSeries(AreaSeries, {
+          lineColor: chartTheme.areaLine,
+          topColor: chartTheme.areaTop,
+          bottomColor: chartTheme.areaBottom,
+          lineWidth: 2,
+          priceLineVisible: false,
+        })
+        s.setData(areaData)
+        cleanups.push(() => {
+          try {
+            chart.removeSeries(s)
+          } catch {
+            // ignore
+          }
+        })
+      }
+
+      return () => cleanups.forEach((fn) => fn())
+    },
+    [mode, priceStyle, candleData, areaData, volumeData]
+  )
+
+  const onCrosshairMove = useCallback(
+    ({ time, seriesData }: { time: Time | undefined; seriesData: Map<unknown, unknown> }) => {
+      if (!time || seriesData.size === 0) {
+        setHoverOHLC(null)
+        setHoverValue(null)
+        setHoverTime(null)
+        return
+      }
+      const first = Array.from(seriesData.values())[0] as
+        | { open?: number; high?: number; low?: number; close?: number; value?: number }
+        | undefined
+      setHoverTime(formatHoverTime(time))
+      if (!first) {
+        setHoverOHLC(null)
+        setHoverValue(null)
+        return
+      }
+      if (first.open !== undefined && first.high !== undefined && first.low !== undefined && first.close !== undefined) {
+        setHoverOHLC({ open: first.open, high: first.high, low: first.low, close: first.close })
+        setHoverValue(null)
+      } else if (first.value !== undefined) {
+        setHoverOHLC(null)
+        setHoverValue(first.value)
+      }
+    },
+    []
+  )
+
+  const priceFormatter = useCallback(
+    (v: number) => (mode === 'volume' ? formatCompact(v, currency === 'USD' ? '$' : '', currency === 'USD' ? '' : ' HTR') : formatPriceValue(v)),
+    [mode, currency]
+  )
+
+  const currencySymbol = currency === 'USD' ? '$' : ''
+  const currencySuffix = currency === 'USD' ? '' : ' HTR'
+  const priceFormat: 'compact' | 'price' = mode === 'price' ? 'price' : 'compact'
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex justify-between gap-5 mr-3">
-        <div className="flex flex-col gap-1 ">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <div className={pair.token1.imageUrl ? 'cursor-pointer' : ''}>
-              <Currency.Icon currency={toToken(token)} width={32} height={32} />
-            </div>
+            <Currency.Icon currency={toToken(token)} width={32} height={32} />
             <Typography variant="lg" weight={600}>
               {token.name}
             </Typography>
@@ -322,142 +259,129 @@ export const TokenChart: FC<TokenChart> = ({ pair }) => {
             </Typography>
             <div className="flex flex-row items-center gap-2 ml-2">
               <CopyHelper
-                toCopy={
-                  pair.id == 'native'
-                    ? hathorLib.tokensUtils.getConfigurationString(
-                        pair.token0.uuid,
-                        pair.token0.name || '',
-                        pair.token0.symbol || ''
-                      )
-                    : hathorLib.tokensUtils.getConfigurationString(
-                        pair.token1.uuid,
-                        pair.token1.name || '',
-                        pair.token1.symbol || ''
-                      )
-                }
+                toCopy={hathorLib.tokensUtils.getConfigurationString(
+                  token.uuid,
+                  token.name || '',
+                  token.symbol || ''
+                )}
                 hideIcon={true}
               >
                 {(isCopied) => (
-                  <IconButton
-                    className="p-1 text-stone-400"
-                    description={isCopied ? 'Copied!' : 'Configuration String'}
-                  >
+                  <IconButton className="p-1 text-stone-400" description={isCopied ? 'Copied!' : 'Configuration String'}>
                     <Square2StackIcon width={20} height={20} color="stone-500" />
                   </IconButton>
                 )}
               </CopyHelper>
-              <Link.External href={chains[pair.chainId].getTokenUrl(pair.id == 'native' ? token0.uuid : token1.uuid)}>
-                <IconButton className="p-1 text-stone-400" description={'View on explorer'}>
+              <Link.External href={chains[pair.chainId].getTokenUrl(token.uuid)}>
+                <IconButton className="p-1 text-stone-400" description="View on explorer">
                   <ArrowTopRightOnSquareIcon width={20} height={20} color="stone-500" />
                 </IconButton>
               </Link.External>
-              {/* Add Twitter icon if available */}
-              {/* Add Telegram icon if available */}
-
-              {/* Add Website icon if available */}
             </div>
           </div>
-          <Typography variant="h2" weight={600} className="text-stone-50">
-            <span className="hoveredItemValue">
-              {chartCurrency === TokenChartCurrency.USD
-                ? formatUSD(yData[yData.length - 1])
-                : formatHTR(yData[yData.length - 1])}
+          <Typography variant="sm" className="flex items-center gap-1 text-stone-400">
+            <span className={displayChange < 0 ? 'text-red-500' : 'text-green-500'}>
+              {(displayChange * 100).toFixed(2)}%
             </span>
+            <ArrowIcon type={displayChange < 0 ? 'down' : 'up'} className={displayChange < 0 ? 'text-red-500' : 'text-green-500'} />
+            <span className="text-stone-500">over {timeRange}</span>
           </Typography>
-          <div className="flex gap-1 ">
-            <Typography variant="lg" weight={500} className="text-stone-400">
-              <span className="hoveredItemChange">{formatPercentChange(priceChange)}</span>
-            </Typography>
-            <ArrowIcon
-              type={priceChange < 0 ? 'down' : 'up'}
-              className={priceChange < 0 ? 'text-red-500' : 'text-green-500'}
-            />
-          </div>
+        </div>
+      </div>
 
-          {xData.length && (
-            <Typography variant="sm" className="hidden text-stone-500 hoveredItemName">
-              <AppearOnMount>{format(new Date(xData[xData.length - 1] * 1000), 'dd MMM yyyy HH:mm')}</AppearOnMount>
-            </Typography>
-          )}
-        </div>
-      </div>
-      <div className="flex justify-end gap-4 text-right">
-        {!pair.id.includes('husdc') ? (
-          <button
-            onClick={() => setChartCurrency(TokenChartCurrency.USD)}
-            className={classNames(
-              'font-semibold text-xl',
-              chartCurrency === TokenChartCurrency.USD ? 'text-yellow-500' : 'text-stone-500'
-            )}
-          >
-            USD
-          </button>
-        ) : null}
-        {!pair.id.includes('native') ? (
-          <button
-            onClick={() => setChartCurrency(TokenChartCurrency.HTR)}
-            className={classNames(
-              'font-semibold text-xl',
-              chartCurrency === TokenChartCurrency.HTR ? 'text-yellow-500 ' : 'text-stone-500 '
-            )}
-          >
-            HTR
-          </button>
-        ) : null}
-      </div>
-      {!isLoading ? (
-        <div onMouseLeave={onMouseLeave}>
-          <ReactECharts option={DEFAULT_OPTION} style={{ height: 400 }} />
-        </div>
-      ) : (
-        <Skeleton.Box className="h-96" />
-      )}
-      <div className="flex justify-between px-8 md:px-0 md:gap-4 md:justify-end">
-        <button
-          onClick={() => setChartPeriod(TokenChartPeriod.Day)}
-          className={classNames(
-            'font-semibold text-xl',
-            chartPeriod === TokenChartPeriod.Day ? 'text-yellow' : 'text-stone-500'
-          )}
-        >
-          1D
-        </button>
-        <button
-          onClick={() => setChartPeriod(TokenChartPeriod.Week)}
-          className={classNames(
-            'font-semibold text-xl',
-            chartPeriod === TokenChartPeriod.Week ? 'text-yellow' : 'text-stone-500'
-          )}
-        >
-          1W
-        </button>
-        <button
-          onClick={() => setChartPeriod(TokenChartPeriod.Month)}
-          className={classNames(
-            'font-semibold text-xl',
-            chartPeriod === TokenChartPeriod.Month ? 'text-yellow' : 'text-stone-500'
-          )}
-        >
-          1M
-        </button>
-        <button
-          onClick={() => setChartPeriod(TokenChartPeriod.Year)}
-          className={classNames(
-            'font-semibold text-xl',
-            chartPeriod === TokenChartPeriod.Year ? 'text-yellow' : 'text-stone-500'
-          )}
-        >
-          1Y
-        </button>
-        <button
-          onClick={() => setChartPeriod(TokenChartPeriod.All)}
-          className={classNames(
-            'font-semibold text-xl',
-            chartPeriod === TokenChartPeriod.All ? 'text-yellow' : 'text-stone-500'
-          )}
-        >
-          ALL
-        </button>
+      <div className="rounded-xl border border-stone-700/80 bg-stone-800/40 p-4">
+        {isLoading && !data ? (
+          <ChartSkeleton height={height} />
+        ) : !data || data.length === 0 ? (
+          <>
+            <ChartHeader
+              label={mode === 'price' ? 'Price' : 'Volume'}
+              value={0}
+              format={priceFormat}
+              currencySymbol={currencySymbol}
+              currencySuffix={currencySuffix}
+            />
+            <div
+              className="flex items-center justify-center rounded-lg bg-stone-900/40 text-sm text-stone-400"
+              style={{ height: `${height}px` }}
+            >
+              No chart data yet. Will appear once on-chain state history accumulates.
+            </div>
+          </>
+        ) : (
+          <>
+            <ChartHeader
+              label={mode === 'price' ? (priceStyle === 'candles' ? 'Price (OHLC)' : 'Price') : 'Volume'}
+              value={latestValue}
+              hoverData={
+                hoverOHLC
+                  ? {
+                      time: hoverTime ?? '',
+                      open: hoverOHLC.open,
+                      high: hoverOHLC.high,
+                      low: hoverOHLC.low,
+                      close: hoverOHLC.close,
+                    }
+                  : hoverValue !== null
+                  ? { time: hoverTime ?? '', value: hoverValue }
+                  : null
+              }
+              format={priceFormat}
+              currencySymbol={currencySymbol}
+              currencySuffix={currencySuffix}
+              showOHLC={mode === 'price' && priceStyle === 'candles'}
+            />
+            <div className="relative">
+              <LightweightChart
+                height={height}
+                buildSeries={buildSeries}
+                onCrosshairMove={onCrosshairMove}
+                priceFormatter={priceFormatter}
+                timeRange={timeRange}
+                deps={[mode, priceStyle, currency, timeRange, candleData, areaData, volumeData]}
+              />
+              {isFetching && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded bg-stone-950/15 backdrop-blur-[1px]">
+                  <span className="rounded-full bg-stone-900/80 px-3 py-1 text-xs font-medium text-stone-200">
+                    Updating chart...
+                  </span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        <ChartControls
+          modes={MODE_OPTIONS}
+          mode={mode}
+          onModeChange={setMode}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+          currencyOptions={USD_HTR_OPTIONS}
+          currency={currency}
+          onCurrencyChange={setCurrency}
+          extraControls={
+            mode === 'price' ? (
+              <div className="flex gap-0.5 rounded-md bg-stone-800/60 p-0.5 backdrop-blur-sm">
+                {PRICE_STYLE_OPTIONS.map((opt) => {
+                  const active = opt.id === priceStyle
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setPriceStyle(opt.id)}
+                      className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                        active ? 'bg-yellow-500 text-stone-900 shadow-sm' : 'text-stone-300 hover:bg-stone-700/60'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null
+          }
+        />
       </div>
     </div>
   )

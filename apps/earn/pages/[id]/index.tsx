@@ -291,8 +291,9 @@ const Pool = () => {
             <div className="flex flex-col order-1 gap-9">
               <PoolHeader pair={memoizedPair as Pair} prices={prices} isLoading={isLoading} />
               <hr className="my-3 border-t border-stone-200/5" />
-              {/* TODO: Re-enable once history data access is refined */}
-              {/* <PoolChart pair={pair} /> */}
+              <AppearOnMount>
+                <PoolChart pair={memoizedPair as Pair} />
+              </AppearOnMount>
               <AppearOnMount>
                 <PoolStats pair={memoizedPair as Pair} prices={prices} />
               </AppearOnMount>
