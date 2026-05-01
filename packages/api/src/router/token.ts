@@ -4,17 +4,15 @@ import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 import { parsePoolApiInfo, type PoolApiInfo } from '../utils/namedTupleParsers'
 import { formatPrice } from './constants'
-
-// Get the DozerTools Contract ID from environment
-const NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID = process.env.NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID
-const NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL = process.env.NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL
-
-// Get the Pool Manager Contract ID from environment
-const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
-
-if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
-  console.warn('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
-}
+import {
+  extractTokensFromPools,
+  fetchFromPoolManager,
+  fetchTokenInfo,
+  getDozerToolsImageUrl,
+  getTokenName,
+  getTokenSymbol,
+} from './pool/helpers'
+import { tokenChartProcedures } from './token-chart'
 
 // Get the bridged token UUIDs from environment
 const BRIDGED_TOKEN_UUIDS = process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS
@@ -180,22 +178,6 @@ async function calculate24hTransactionCount(poolKey: string): Promise<number> {
   }
 }
 
-// Helper function to fetch data from the pool manager contract
-async function fetchFromPoolManager(calls: string[], timestamp?: number): Promise<any> {
-  if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
-    throw new Error('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
-  }
-
-  const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, ...calls.map((call) => `calls[]=${call}`)]
-
-  if (timestamp) {
-    queryParams.push(`timestamp=${timestamp}`)
-  }
-
-  return await fetchNodeData(endpoint, queryParams)
-}
-
 // Helper function to parse JSON string responses from _str methods
 function parseJsonResponse(jsonString: string): any {
   try {
@@ -206,103 +188,8 @@ function parseJsonResponse(jsonString: string): any {
   }
 }
 
-// Helper function to extract unique tokens from pool keys
-function extractTokensFromPools(poolKeys: string[]): string[] {
-  const tokens = new Set<string>()
-
-  for (const poolKey of poolKeys) {
-    const [tokenA, tokenB] = poolKey.split('/')
-    if (tokenA) tokens.add(tokenA)
-    if (tokenB) tokens.add(tokenB)
-  }
-
-  return Array.from(tokens)
-}
-
-// Cache for token information to avoid repeated API calls
-const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
-
-// Helper function to fetch token information from Hathor node
-async function fetchTokenInfo(tokenUuid: string): Promise<{ symbol: string; name: string }> {
-  if (tokenUuid === '00') {
-    return { symbol: 'HTR', name: 'Hathor' }
-  }
-
-  // Check cache first
-  if (tokenInfoCache.has(tokenUuid)) {
-    return tokenInfoCache.get(tokenUuid)!
-  }
-
-  try {
-    const endpoint = 'thin_wallet/token'
-    const queryParams = [`id=${tokenUuid}`]
-    const response = await fetchNodeData(endpoint, queryParams)
-
-    const tokenInfo = {
-      symbol: response.symbol || tokenUuid.substring(0, 8).toUpperCase(),
-      name: response.name || `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
-    }
-
-    // Cache the result
-    tokenInfoCache.set(tokenUuid, tokenInfo)
-    return tokenInfo
-  } catch (error) {
-    console.error(`Error fetching token info for ${tokenUuid}:`, error)
-    // Fallback to shortened UUID
-    const fallback = {
-      symbol: tokenUuid.substring(0, 8).toUpperCase(),
-      name: `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
-    }
-    tokenInfoCache.set(tokenUuid, fallback)
-    return fallback
-  }
-}
-
-// Helper function to get token symbol from UUID (with caching)
-async function getTokenSymbol(tokenUuid: string): Promise<string> {
-  const tokenInfo = await fetchTokenInfo(tokenUuid)
-  return tokenInfo.symbol
-}
-
-// Helper function to get token name from UUID (with caching)
-async function getTokenName(tokenUuid: string): Promise<string> {
-  const tokenInfo = await fetchTokenInfo(tokenUuid)
-  return tokenInfo.name
-}
-
-// Helper function to fetch DozerTools image URL for a token
-async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> {
-  try {
-    // Skip if DozerTools integration is not configured
-    if (!NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID || !NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL) {
-      return null
-    }
-
-    // Fetch project info from DozerTools contract
-    const endpoint = 'nano_contract/state'
-    const queryParams = [`id=${NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID}`, `calls[]=get_project_info("${tokenUuid}")`]
-
-    const response = await fetchNodeData(endpoint, queryParams)
-    const projectInfo = response.calls[`get_project_info("${tokenUuid}")`]?.value
-
-    if (projectInfo && projectInfo.logo_url) {
-      // Check if it's a valid Vercel Blob URL format
-      if (projectInfo.logo_url.startsWith('http')) {
-        return projectInfo.logo_url
-      } else {
-        // Construct URL using Vercel Blob base URL
-        return `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/${projectInfo.logo_url}`
-      }
-    }
-
-    return null
-  } catch (error) {
-    // Silently fail for DozerTools integration - it's optional
-    return null
-  }
-}
-
 export const tokenRouter = createTRPCRouter({
+  ...tokenChartProcedures,
   // Get all tokens that have signed pools
   all: procedure.query(async ({ ctx }) => {
     try {

@@ -4,50 +4,7 @@ import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 import { parseOasisInfo, parseOasisUserInfo, parseOasisQuoteInfo } from '../utils/namedTupleParsers'
 import { PRICE_PRECISION, formatPrice, TOKEN_PRECISION, formatTokenAmount } from './constants'
-
-// Cache for token information to avoid repeated API calls
-const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
-
-// Helper function to fetch token information from Hathor node
-async function fetchTokenInfo(tokenUuid: string): Promise<{ symbol: string; name: string }> {
-  if (tokenUuid === '00') {
-    return { symbol: 'HTR', name: 'Hathor' }
-  }
-
-  // Validate tokenUuid
-  if (!tokenUuid || typeof tokenUuid !== 'string') {
-    throw new Error(`Invalid token UUID: ${tokenUuid}`)
-  }
-
-  // Check cache first
-  if (tokenInfoCache.has(tokenUuid)) {
-    return tokenInfoCache.get(tokenUuid)!
-  }
-
-  try {
-    const endpoint = 'thin_wallet/token'
-    const queryParams = [`id=${tokenUuid}`]
-    const response = await fetchNodeData(endpoint, queryParams)
-
-    const tokenInfo = {
-      symbol: response.symbol || tokenUuid.substring(0, 8).toUpperCase(),
-      name: response.name || `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
-    }
-
-    // Cache the result
-    tokenInfoCache.set(tokenUuid, tokenInfo)
-    return tokenInfo
-  } catch (error) {
-    console.error(`Error fetching token info for ${tokenUuid}:`, error)
-    // Return fallback token info
-    const fallbackInfo = {
-      symbol: tokenUuid.substring(0, 8).toUpperCase(),
-      name: `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
-    }
-    tokenInfoCache.set(tokenUuid, fallbackInfo)
-    return fallbackInfo
-  }
-}
+import { fetchTokenInfo } from './pool/helpers'
 
 // Get Oasis contract IDs from environment variable
 const getOasisContracts = () => {
