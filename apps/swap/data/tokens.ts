@@ -9,4 +9,5 @@ export const customAbouts: Record<string, string> = {
   FROGZ: 'Frogz on Hathor is a frog flavored meme coin on Hathor supporting frogs around the world',
   PUNKS:
     'HTRPunks Rewards coin (PUNKS) is a rewards token supporting the Hathor Network ecosystem while Promoting the HTRPunks NFT Community. With a fixed Max of 100,000 PUNKS and an initial circulating supply of 60,000 PUNKS, it incentivizes participation In community events, and historical preservation of Hathor Network based NFT projects.',
+  BUFO: 'Bufo is a community-driven meme token built on Hathor, centered around a simple idea: staying calm, thinking long-term, and recognizing opportunities early. More than just a coin, Bufo represents a mindset — not chasing hype, but moving with confidence and patience. As it expands into the Dozer ecosystem, Bufo aims to grow through organic community engagement, creativity, and a strong shared identity.',
 }
