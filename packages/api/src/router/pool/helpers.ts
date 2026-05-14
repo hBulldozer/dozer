@@ -8,13 +8,28 @@ export const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL
 // Get the DozerTools Contract ID from environment
 const NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID = process.env.NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID
 const NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL = process.env.NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL
+const NEXT_PUBLIC_KHENSU_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_KHENSU_MANAGER_CONTRACT_ID
+const NEXT_PUBLIC_PINATA_GATEWAY_URL = process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs'
 
 // Cache for token information to avoid repeated API calls
 const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
+const tokenMetadataCache = new Map<string, { expiresAt: number; promise: Promise<TokenDisplayMetadata> }>()
 const poolManagerResponseCache = new Map<string, { expiresAt: number; promise: Promise<any> }>()
 
 const LIVE_POOL_MANAGER_TTL_MS = 5_000
 const HISTORICAL_POOL_MANAGER_TTL_MS = 24 * 60 * 60 * 1000
+const TOKEN_METADATA_TTL_MS = 60 * 1000
+
+export interface TokenDisplayMetadata {
+  imageUrl: string | null
+  about: string | null
+  telegram: string | null
+  twitter: string | null
+  website: string | null
+  createdBy: string | null
+  communityTag: string | null
+  metadataSource: 'khensu' | 'dozer-tools' | null
+}
 
 if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
   console.warn('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
@@ -62,6 +77,101 @@ export async function getDozerToolsImageUrl(tokenUuid: string): Promise<string |
   }
 }
 
+function convertIpfsToGatewayUrl(imageLink: string): string {
+  const trimmedImageLink = imageLink.trim()
+
+  if (trimmedImageLink.startsWith('ipfs://ipfs/')) {
+    const hash = trimmedImageLink.replace('ipfs://ipfs/', '')
+    const gatewayBaseUrl = NEXT_PUBLIC_PINATA_GATEWAY_URL.replace(/\/$/, '')
+    return gatewayBaseUrl.endsWith('/ipfs') ? `${gatewayBaseUrl}/${hash}` : `${gatewayBaseUrl}/ipfs/${hash}`
+  }
+
+  if (trimmedImageLink.startsWith('ipfs://')) {
+    const hash = trimmedImageLink.replace('ipfs://', '')
+    const gatewayBaseUrl = NEXT_PUBLIC_PINATA_GATEWAY_URL.replace(/\/$/, '')
+    return gatewayBaseUrl.endsWith('/ipfs') ? `${gatewayBaseUrl}/${hash}` : `${gatewayBaseUrl}/ipfs/${hash}`
+  }
+
+  return trimmedImageLink
+}
+
+async function fetchKhensuTokenMetadata(tokenUuid: string): Promise<TokenDisplayMetadata | null> {
+  if (!NEXT_PUBLIC_KHENSU_MANAGER_CONTRACT_ID || tokenUuid === '00') {
+    return null
+  }
+
+  try {
+    const call = `get_token_info("${tokenUuid}")`
+    const response = await fetchNodeData('nano_contract/state', [
+      `id=${NEXT_PUBLIC_KHENSU_MANAGER_CONTRACT_ID}`,
+      `calls[]=${call}`,
+    ])
+    const tokenInfo = response.calls?.[call]?.value
+
+    if (!Array.isArray(tokenInfo) || tokenInfo.length < 21) {
+      return null
+    }
+
+    const imageLink = typeof tokenInfo[3] === 'string' ? tokenInfo[3] : ''
+    const description = typeof tokenInfo[4] === 'string' ? tokenInfo[4] : ''
+    const twitter = typeof tokenInfo[5] === 'string' ? tokenInfo[5] : ''
+    const telegram = typeof tokenInfo[6] === 'string' ? tokenInfo[6] : ''
+    const website = typeof tokenInfo[7] === 'string' ? tokenInfo[7] : ''
+    const creator = typeof tokenInfo[0] === 'string' ? tokenInfo[0] : ''
+
+    return {
+      imageUrl: imageLink ? convertIpfsToGatewayUrl(imageLink) : null,
+      about: description || null,
+      telegram: telegram || null,
+      twitter: twitter || null,
+      website: website || null,
+      createdBy: creator || null,
+      communityTag: 'Community',
+      metadataSource: 'khensu',
+    }
+  } catch {
+    return null
+  }
+}
+
+export async function getTokenDisplayMetadata(tokenUuid: string): Promise<TokenDisplayMetadata> {
+  const now = Date.now()
+  const cachedEntry = tokenMetadataCache.get(tokenUuid)
+
+  if (cachedEntry && cachedEntry.expiresAt > now) {
+    return cachedEntry.promise
+  }
+
+  const promise = (async (): Promise<TokenDisplayMetadata> => {
+    const khensuMetadata = await fetchKhensuTokenMetadata(tokenUuid)
+    if (khensuMetadata) {
+      return khensuMetadata
+    }
+
+    const dozerToolsImageUrl = await getDozerToolsImageUrl(tokenUuid)
+    return {
+      imageUrl: dozerToolsImageUrl,
+      about: null,
+      telegram: null,
+      twitter: null,
+      website: null,
+      createdBy: null,
+      communityTag: dozerToolsImageUrl ? 'Tools' : null,
+      metadataSource: dozerToolsImageUrl ? 'dozer-tools' : null,
+    }
+  })().catch((error) => {
+    tokenMetadataCache.delete(tokenUuid)
+    throw error
+  })
+
+  tokenMetadataCache.set(tokenUuid, {
+    expiresAt: now + TOKEN_METADATA_TTL_MS,
+    promise,
+  })
+
+  return promise
+}
+
 // Helper function to fetch data from the pool manager contract
 export async function fetchFromPoolManager(calls: string[], timestamp?: number): Promise<any> {
   if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
@@ -82,7 +192,10 @@ export async function fetchFromPoolManager(calls: string[], timestamp?: number):
   }
 
   const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, ...normalizedCalls.map((call) => `calls[]=${call}`)]
+  const queryParams = [
+    `id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`,
+    ...normalizedCalls.map((call) => `calls[]=${call}`),
+  ]
 
   if (timestamp !== undefined) {
     queryParams.push(`timestamp=${timestamp}`)

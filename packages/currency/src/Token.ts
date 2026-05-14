@@ -66,6 +66,8 @@ export class Token extends Currency {
     symbol,
     name,
     imageUrl,
+    communityTag,
+    metadataSource,
     bridged = false,
     originalAddress,
     sourceChain,
@@ -74,6 +76,8 @@ export class Token extends Currency {
   }: {
     chainId: number | string
     imageUrl?: string
+    communityTag?: string | null
+    metadataSource?: string | null
     uuid: string
     decimals: number
     symbol?: string
@@ -90,6 +94,8 @@ export class Token extends Currency {
       symbol,
       name,
       imageUrl,
+      communityTag,
+      metadataSource,
     })
     try {
       this.uuid = getUuid(uuid)
@@ -124,5 +130,4 @@ export class Token extends Currency {
   public logoURI(): string {
     return `/logos/${this.symbol?.toUpperCase()}.svg`
   }
-
 }

@@ -10,6 +10,8 @@ import { Token } from './Token'
  */
 export abstract class Currency {
   public readonly imageUrl?: string
+  public readonly communityTag?: string | null
+  public readonly metadataSource?: string | null
   /**
    * Returns whether the currency is native to the chain and must be wrapped (e.g. Ether)
    */
@@ -48,6 +50,8 @@ export abstract class Currency {
    */
   protected constructor({
     imageUrl,
+    communityTag,
+    metadataSource,
     chainId,
     decimals,
     symbol,
@@ -55,6 +59,8 @@ export abstract class Currency {
     rebase = { base: JSBI.BigInt(1), elastic: JSBI.BigInt(1) },
   }: {
     imageUrl?: string
+    communityTag?: string | null
+    metadataSource?: string | null
     chainId: number | string
     decimals: number | string
     symbol?: string
@@ -68,6 +74,8 @@ export abstract class Currency {
     this.name = name
     this.rebase = rebase
     this.imageUrl = imageUrl
+    this.communityTag = communityTag
+    this.metadataSource = metadataSource
   }
 
   /**

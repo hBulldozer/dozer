@@ -7,7 +7,7 @@ import {
   enrichPoolWith24hMetrics,
   fetchFromPoolManager,
   fetchTokenInfo,
-  getDozerToolsImageUrl,
+  getTokenDisplayMetadata,
   getTokenSymbol,
   getTokenName,
   extractTokensFromPools,
@@ -41,11 +41,28 @@ export const queryProcedures = {
       // Batch fetch token metadata (symbols and names) for all unique tokens
       const tokenMetadataPromises = allTokens.map((tokenUuid) => fetchTokenInfo(tokenUuid))
       const tokenMetadataResults = await Promise.all(tokenMetadataPromises)
+      const tokenDisplayMetadataResults = await Promise.all(
+        allTokens.map((tokenUuid) => getTokenDisplayMetadata(tokenUuid))
+      )
 
       // Create a map of token UUID -> { symbol, name }
       const tokenMetadata = new Map<string, { symbol: string; name: string }>()
+      const tokenDisplayMetadata = new Map<string, Awaited<ReturnType<typeof getTokenDisplayMetadata>>>()
       allTokens.forEach((tokenUuid, index) => {
         tokenMetadata.set(tokenUuid, tokenMetadataResults[index] || { symbol: 'UNK', name: 'Unknown' })
+        tokenDisplayMetadata.set(
+          tokenUuid,
+          tokenDisplayMetadataResults[index] || {
+            imageUrl: null,
+            about: null,
+            telegram: null,
+            twitter: null,
+            website: null,
+            createdBy: null,
+            communityTag: null,
+            metadataSource: null,
+          }
+        )
       })
 
       // Process each pool
@@ -60,6 +77,8 @@ export const queryProcedures = {
           // Get token metadata
           const token0Info = tokenMetadata.get(tokenA || '') || { symbol: 'UNK', name: 'Unknown' }
           const token1Info = tokenMetadata.get(tokenB || '') || { symbol: 'UNK', name: 'Unknown' }
+          const token0DisplayMetadata = tokenDisplayMetadata.get(tokenA || '')
+          const token1DisplayMetadata = tokenDisplayMetadata.get(tokenB || '')
 
           // Calculate reserves (convert from cents to full units)
           const reserve0 = (poolData.reserve0 || 0) / 100
@@ -109,7 +128,9 @@ export const queryProcedures = {
               name: token0Info.name,
               decimals: 2,
               chainId: 1,
-              imageUrl: await getDozerToolsImageUrl(tokenA || ''),
+              imageUrl: token0DisplayMetadata?.imageUrl || null,
+              communityTag: token0DisplayMetadata?.communityTag || null,
+              metadataSource: token0DisplayMetadata?.metadataSource || null,
             },
             token1: {
               uuid: tokenB,
@@ -117,7 +138,9 @@ export const queryProcedures = {
               name: token1Info.name,
               decimals: 2,
               chainId: 1,
-              imageUrl: await getDozerToolsImageUrl(tokenB || ''),
+              imageUrl: token1DisplayMetadata?.imageUrl || null,
+              communityTag: token1DisplayMetadata?.communityTag || null,
+              metadataSource: token1DisplayMetadata?.metadataSource || null,
             },
             reserve0,
             reserve1,
@@ -211,6 +234,8 @@ export const queryProcedures = {
       // Get token metadata
       const token0Info = await fetchTokenInfo(tokenA || '')
       const token1Info = await fetchTokenInfo(tokenB || '')
+      const token0DisplayMetadata = await getTokenDisplayMetadata(tokenA || '')
+      const token1DisplayMetadata = await getTokenDisplayMetadata(tokenB || '')
 
       // Calculate reserves
       const reserve0 = (poolData.reserve0 || 0) / 100
@@ -255,7 +280,9 @@ export const queryProcedures = {
           name: token0Info.name,
           decimals: 2,
           chainId: 1,
-          imageUrl: await getDozerToolsImageUrl(tokenA || ''),
+          imageUrl: token0DisplayMetadata.imageUrl,
+          communityTag: token0DisplayMetadata.communityTag,
+          metadataSource: token0DisplayMetadata.metadataSource,
         },
         token1: {
           uuid: tokenB,
@@ -263,7 +290,9 @@ export const queryProcedures = {
           name: token1Info.name,
           decimals: 2,
           chainId: 1,
-          imageUrl: await getDozerToolsImageUrl(tokenB || ''),
+          imageUrl: token1DisplayMetadata.imageUrl,
+          communityTag: token1DisplayMetadata.communityTag,
+          metadataSource: token1DisplayMetadata.metadataSource,
         },
         reserve0,
         reserve1,

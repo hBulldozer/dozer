@@ -23,6 +23,8 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
         symbol: _token.symbol,
         chainId: _token.chainId,
         imageUrl: _token.imageUrl || undefined,
+        communityTag: _token.communityTag || undefined,
+        metadataSource: _token.metadataSource || undefined,
       }),
     [row]
   )
@@ -59,10 +61,10 @@ export const TokenNameCell: FC<CellProps> = ({ row }) => {
             {token.name}
           </Typography>
         </div>
-        {token.imageUrl && (
+        {token.communityTag && (
           <>
             <div className={classNames('bg-stone-700 hidden sm:flex rounded-lg px-1 py-0.5 text-xs flex-shrink-0')}>
-              Tools
+              {token.communityTag}
             </div>
             <div className={classNames('bg-stone-700 flex sm:hidden rounded-lg p-0.5 text-xs flex-shrink-0')}>
               <UsersIcon width={16} height={16} />

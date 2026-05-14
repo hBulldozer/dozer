@@ -8,7 +8,7 @@ import {
   extractTokensFromPools,
   fetchFromPoolManager,
   fetchTokenInfo,
-  getDozerToolsImageUrl,
+  getTokenDisplayMetadata,
   getTokenName,
   getTokenSymbol,
 } from './pool/helpers'
@@ -201,28 +201,34 @@ export const tokenRouter = createTRPCRouter({
       const tokenUuids = extractTokensFromPools(poolKeys)
 
       // Build token data for each token
-      const tokenPromises = tokenUuids.map(async (uuid) => ({
-        id: uuid,
-        uuid: uuid,
-        symbol: await getTokenSymbol(uuid),
-        name: await getTokenName(uuid),
-        decimals: 2,
-        chainId: 1,
-        custom: false,
-        imageUrl: await getDozerToolsImageUrl(uuid), // Fetch from DozerTools if available
-        about: null, // Will be null until added to contract
-        telegram: null, // Will be null until added to contract
-        twitter: null, // Will be null until added to contract
-        website: null, // Will be null until added to contract
-        createdBy: null, // Will be null until added to contract
-        bridged: isBridgedToken(uuid),
-        sourceChain: isBridgedToken(uuid) ? 'unknown' : null,
-        targetChain: isBridgedToken(uuid) ? 'hathor' : null,
-        originalAddress: getBridgedTokenOriginalAddress(uuid),
-        // Add pool information for each token
-        pools0: [], // Will be populated by frontend if needed
-        pools1: [], // Will be populated by frontend if needed
-      }))
+      const tokenPromises = tokenUuids.map(async (uuid) => {
+        const metadata = await getTokenDisplayMetadata(uuid)
+
+        return {
+          id: uuid,
+          uuid: uuid,
+          symbol: await getTokenSymbol(uuid),
+          name: await getTokenName(uuid),
+          decimals: 2,
+          chainId: 1,
+          custom: false,
+          imageUrl: metadata.imageUrl,
+          about: metadata.about,
+          telegram: metadata.telegram,
+          twitter: metadata.twitter,
+          website: metadata.website,
+          createdBy: metadata.createdBy,
+          communityTag: metadata.communityTag,
+          metadataSource: metadata.metadataSource,
+          bridged: isBridgedToken(uuid),
+          sourceChain: isBridgedToken(uuid) ? 'unknown' : null,
+          targetChain: isBridgedToken(uuid) ? 'hathor' : null,
+          originalAddress: getBridgedTokenOriginalAddress(uuid),
+          // Add pool information for each token
+          pools0: [], // Will be populated by frontend if needed
+          pools1: [], // Will be populated by frontend if needed
+        }
+      })
 
       const tokens = await Promise.all(tokenPromises)
 
@@ -244,28 +250,34 @@ export const tokenRouter = createTRPCRouter({
       const tokenUuids = extractTokensFromPools(poolKeys)
 
       // Build token data for each token
-      const tokenPromises = tokenUuids.map(async (uuid) => ({
-        id: uuid,
-        uuid: uuid,
-        symbol: await getTokenSymbol(uuid),
-        name: await getTokenName(uuid),
-        decimals: 2,
-        chainId: 1,
-        custom: false,
-        imageUrl: await getDozerToolsImageUrl(uuid), // Fetch from DozerTools if available
-        about: null, // Will be null until added to contract
-        telegram: null, // Will be null until added to contract
-        twitter: null, // Will be null until added to contract
-        website: null, // Will be null until added to contract
-        createdBy: null, // Will be null until added to contract
-        bridged: isBridgedToken(uuid),
-        sourceChain: isBridgedToken(uuid) ? 'unknown' : null,
-        targetChain: isBridgedToken(uuid) ? 'hathor' : null,
-        originalAddress: getBridgedTokenOriginalAddress(uuid),
-        // Add pool information for each token
-        pools0: [], // Will be populated by frontend if needed
-        pools1: [], // Will be populated by frontend if needed
-      }))
+      const tokenPromises = tokenUuids.map(async (uuid) => {
+        const metadata = await getTokenDisplayMetadata(uuid)
+
+        return {
+          id: uuid,
+          uuid: uuid,
+          symbol: await getTokenSymbol(uuid),
+          name: await getTokenName(uuid),
+          decimals: 2,
+          chainId: 1,
+          custom: false,
+          imageUrl: metadata.imageUrl,
+          about: metadata.about,
+          telegram: metadata.telegram,
+          twitter: metadata.twitter,
+          website: metadata.website,
+          createdBy: metadata.createdBy,
+          communityTag: metadata.communityTag,
+          metadataSource: metadata.metadataSource,
+          bridged: isBridgedToken(uuid),
+          sourceChain: isBridgedToken(uuid) ? 'unknown' : null,
+          targetChain: isBridgedToken(uuid) ? 'hathor' : null,
+          originalAddress: getBridgedTokenOriginalAddress(uuid),
+          // Add pool information for each token
+          pools0: [], // Will be populated by frontend if needed
+          pools1: [], // Will be populated by frontend if needed
+        }
+      })
 
       const tokens = await Promise.all(tokenPromises)
 
@@ -323,6 +335,8 @@ export const tokenRouter = createTRPCRouter({
         return null
       }
 
+      const metadata = await getTokenDisplayMetadata(input.uuid)
+
       return {
         id: input.uuid,
         uuid: input.uuid,
@@ -331,12 +345,14 @@ export const tokenRouter = createTRPCRouter({
         decimals: 2,
         chainId: 1,
         custom: false,
-        imageUrl: await getDozerToolsImageUrl(input.uuid),
-        about: null,
-        telegram: null,
-        twitter: null,
-        website: null,
-        createdBy: null,
+        imageUrl: metadata.imageUrl,
+        about: metadata.about,
+        telegram: metadata.telegram,
+        twitter: metadata.twitter,
+        website: metadata.website,
+        createdBy: metadata.createdBy,
+        communityTag: metadata.communityTag,
+        metadataSource: metadata.metadataSource,
         bridged: isBridgedToken(input.uuid),
         sourceChain: isBridgedToken(input.uuid) ? 'unknown' : null,
         targetChain: isBridgedToken(input.uuid) ? 'hathor' : null,
@@ -367,6 +383,8 @@ export const tokenRouter = createTRPCRouter({
           twitter: null,
           website: null,
           createdBy: null,
+          communityTag: null,
+          metadataSource: null,
           bridged: false,
           sourceChain: null,
           targetChain: null,
@@ -383,6 +401,8 @@ export const tokenRouter = createTRPCRouter({
         return null
       }
 
+      const metadata = await getTokenDisplayMetadata(input.uuid)
+
       return {
         id: input.uuid,
         uuid: input.uuid,
@@ -391,12 +411,14 @@ export const tokenRouter = createTRPCRouter({
         decimals: 2,
         chainId: 1,
         custom: false,
-        imageUrl: await getDozerToolsImageUrl(input.uuid),
-        about: null,
-        telegram: null,
-        twitter: null,
-        website: null,
-        createdBy: null,
+        imageUrl: metadata.imageUrl,
+        about: metadata.about,
+        telegram: metadata.telegram,
+        twitter: metadata.twitter,
+        website: metadata.website,
+        createdBy: metadata.createdBy,
+        communityTag: metadata.communityTag,
+        metadataSource: metadata.metadataSource,
         bridged: isBridgedToken(input.uuid),
         sourceChain: isBridgedToken(input.uuid) ? 'unknown' : null,
         targetChain: isBridgedToken(input.uuid) ? 'hathor' : null,
@@ -490,6 +512,8 @@ export const tokenRouter = createTRPCRouter({
             // Get token metadata for both tokens
             const token0Info = await fetchTokenInfo(tokenA || '')
             const token1Info = await fetchTokenInfo(tokenB || '')
+            const token0Metadata = await getTokenDisplayMetadata(tokenA || '')
+            const token1Metadata = await getTokenDisplayMetadata(tokenB || '')
 
             // Calculate reserves (convert from cents to full units)
             const reserve0 = (poolData.reserve0 || 0) / 100
@@ -545,7 +569,9 @@ export const tokenRouter = createTRPCRouter({
                 name: token0Info.name,
                 decimals: 2,
                 chainId: 1,
-                imageUrl: await getDozerToolsImageUrl(tokenA || ''),
+                imageUrl: token0Metadata.imageUrl,
+                communityTag: token0Metadata.communityTag,
+                metadataSource: token0Metadata.metadataSource,
               },
               token1: {
                 uuid: tokenB,
@@ -553,7 +579,9 @@ export const tokenRouter = createTRPCRouter({
                 name: token1Info.name,
                 decimals: 2,
                 chainId: 1,
-                imageUrl: await getDozerToolsImageUrl(tokenB || ''),
+                imageUrl: token1Metadata.imageUrl,
+                communityTag: token1Metadata.communityTag,
+                metadataSource: token1Metadata.metadataSource,
               },
               reserve0,
               reserve1,
@@ -568,9 +596,11 @@ export const tokenRouter = createTRPCRouter({
             totalFeesUSD += feeUSD
 
             console.log(
-              `   ✅ Processed pool ${poolKey}: ${token0Info.symbol}-${token1Info.symbol}, Pool TVL: $${liquidityUSD.toFixed(
+              `   ✅ Processed pool ${poolKey}: ${token0Info.symbol}-${
+                token1Info.symbol
+              }, Pool TVL: $${liquidityUSD.toFixed(2)}, Token TVL contribution: $${tokenLiquidityContribution.toFixed(
                 2
-              )}, Token TVL contribution: $${tokenLiquidityContribution.toFixed(2)}`
+              )}`
             )
           } catch (error) {
             console.error(`❌ Error processing pool ${poolKey}:`, error)
@@ -592,6 +622,7 @@ export const tokenRouter = createTRPCRouter({
       // Get current price
       const currentPriceUSD = tokenPrices[tokenUuid] || 0
       const marketCap = totalSupply * currentPriceUSD
+      const tokenMetadata = await getTokenDisplayMetadata(tokenUuid)
 
       console.log(`🎉 [TOKEN_BY_SYMBOL_DETAILED] Successfully processed token ${input.symbol}:`)
       console.log(`   💰 Total TVL: $${totalLiquidityUSD.toFixed(2)}`)
@@ -606,7 +637,14 @@ export const tokenRouter = createTRPCRouter({
         name: tokenInfo.name,
         decimals: 2,
         chainId: 1,
-        imageUrl: await getDozerToolsImageUrl(tokenUuid),
+        imageUrl: tokenMetadata.imageUrl,
+        about: tokenMetadata.about,
+        telegram: tokenMetadata.telegram,
+        twitter: tokenMetadata.twitter,
+        website: tokenMetadata.website,
+        createdBy: tokenMetadata.createdBy,
+        communityTag: tokenMetadata.communityTag,
+        metadataSource: tokenMetadata.metadataSource,
 
         // Token metrics
         totalSupply,

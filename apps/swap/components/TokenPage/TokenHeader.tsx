@@ -57,6 +57,9 @@ export const TokenHeader: FC<TokenHeader> = ({ pair, prices = {} }) => {
               <Typography variant="lg" weight={600}>
                 {token.name}
               </Typography>
+              {token.communityTag && (
+                <div className="rounded-lg bg-stone-700 px-2 py-0.5 text-xs text-stone-100">{token.communityTag}</div>
+              )}
             </div>
           </div>
         </div>
