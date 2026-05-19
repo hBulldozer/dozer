@@ -190,9 +190,9 @@ export const quoteProcedures = {
           const feeValue = parseFloat(feeString || '0')
           const feeBasisPoints = Math.round(feeValue * 10)
 
-          // Get all signed pools to find the matching one
-          const batchResponse = await fetchFromPoolManager(['get_signed_pools()'])
-          const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
+          // Get all pools (including unsigned) to find the matching one for direct URL access
+          const batchResponse = await fetchFromPoolManager(['get_all_pools()'])
+          const poolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
 
           let matchingPoolKey: string | null = null
           for (const key of poolKeys) {
@@ -278,9 +278,9 @@ export const quoteProcedures = {
           const feeValue = parseFloat(feeString || '0')
           const feeBasisPoints = Math.round(feeValue * 10)
 
-          // Get all signed pools to find the matching one
-          const batchResponse = await fetchFromPoolManager(['get_signed_pools()'])
-          const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
+          // Get all pools (including unsigned) to find the matching one for direct URL access
+          const batchResponse = await fetchFromPoolManager(['get_all_pools()'])
+          const poolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
 
           let matchingPoolKey: string | null = null
           for (const key of poolKeys) {

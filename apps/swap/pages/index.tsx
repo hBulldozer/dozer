@@ -124,6 +124,18 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
     { enabled: !!router.query.token1 && !!hasUrlTokens }
   )
 
+  // Fetch prop-based tokens via byUuidAny as fallback for unsigned pool tokens.
+  // Enabled for all UUIDs including '00' (byUuidAny handles HTR natively).
+  const { data: propToken0 } = api.getTokens.byUuidAny.useQuery(
+    { uuid: token0_idx },
+    { enabled: !!token0_idx }
+  )
+
+  const { data: propToken1 } = api.getTokens.byUuidAny.useQuery(
+    { uuid: token1_idx },
+    { enabled: !!token1_idx }
+  )
+
   // Find HTR and hUSDC tokens for defaults
   const htrToken = tokens?.find((token) => token.uuid === '00') // HTR token
   const usdcToken = tokens?.find((token) => token.symbol === 'hUSDC') // hUSDC token
@@ -135,7 +147,8 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
 
   // Consolidated token initialization logic
   useEffect(() => {
-    if (!tokens || tokens.length === 0) return
+    // Wait for the tokens query to settle (undefined = still loading; [] = loaded but no signed pools)
+    if (tokens === undefined) return
 
     const params = router.query
     let selectedToken0: Token | undefined
@@ -143,56 +156,52 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
 
     // Priority 1: URL parameters (if present)
     if (params?.token0 && params?.chainId) {
-      // First try to find in regular tokens list (signed pools)
       const regularToken0 = tokens.find((token) => params.token0 == token.uuid)
       if (regularToken0) {
         selectedToken0 = toToken(regularToken0)
       } else if (urlToken0) {
-        // If not found in regular tokens, use the individually fetched token (unsigned pools)
         selectedToken0 = toToken(urlToken0)
       }
+      // else: urlToken0 still loading — effect re-runs when it arrives
     }
 
     if (params?.token1 && params?.chainId) {
-      // First try to find in regular tokens list (signed pools)
       const regularToken1 = tokens.find((token) => params.token1 == token.uuid)
       if (regularToken1) {
         selectedToken1 = toToken(regularToken1)
       } else if (urlToken1) {
-        // If not found in regular tokens, use the individually fetched token (unsigned pools)
         selectedToken1 = toToken(urlToken1)
       }
+      // else: urlToken1 still loading — effect re-runs when it arrives
     }
 
     // Priority 2: Props (if no URL params)
     if (!selectedToken0) {
-      // For HTR page, we want hUSDC as input token
-      let token0FromProp: any = undefined
-
-      // Check if this is the hUSDC token by looking for bridged hUSDC
       const husdcToken = tokens.find((token) => token.symbol === 'hUSDC' && token.bridged)
       if (husdcToken && token0_idx === husdcToken.uuid) {
-        // This is hUSDC UUID, use the found token
-        token0FromProp = husdcToken
+        selectedToken0 = toToken(husdcToken)
       } else {
-        // For other tokens, use UUID lookup
-        token0FromProp = tokens.find((token) => token.uuid === token0_idx)
+        // Try signed list first, then byUuidAny fallback (covers HTR and unsigned pool tokens)
+        const source = tokens.find((token) => token.uuid === token0_idx) || propToken0
+        if (source) selectedToken0 = toToken(source)
+        // else: propToken0 still loading — effect re-runs when it arrives
       }
-
-      const htrFromTokens = tokens.find((token) => token.uuid === '00')
-
-      selectedToken0 = toToken(token0FromProp || htrFromTokens)
     }
 
     if (!selectedToken1) {
-      const token1FromProp = tokens.find((token) => token.uuid === token1_idx)
-      const usdcFromTokens = tokens.find((token) => token.symbol === 'hUSDC')
-      selectedToken1 = toToken(token1FromProp || usdcFromTokens)
+      const source = tokens.find((token) => token.uuid === token1_idx) || propToken1
+      if (source) {
+        selectedToken1 = toToken(source)
+      } else {
+        // Last resort: hUSDC from signed list (main swap page default)
+        const usdcFromTokens = tokens.find((token) => token.symbol === 'hUSDC')
+        if (usdcFromTokens) selectedToken1 = toToken(usdcFromTokens)
+      }
     }
 
-    setInitialToken0(selectedToken0)
-    setInitialToken1(selectedToken1)
-  }, [tokens, token0_idx, token1_idx, router.isReady, urlToken0, urlToken1])
+    if (selectedToken0) setInitialToken0(selectedToken0)
+    if (selectedToken1) setInitialToken1(selectedToken1)
+  }, [tokens, token0_idx, token1_idx, router.isReady, urlToken0, urlToken1, propToken0, propToken1])
 
   useEffect(() => {
     if (initialToken0 && initialToken1) {

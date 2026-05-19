@@ -438,9 +438,9 @@ export const tokenRouter = createTRPCRouter({
       if (input.symbol.toLowerCase() === 'htr') {
         tokenUuid = '00'
       } else {
-        // Fetch all signed pools to find tokens
-        const response = await fetchFromPoolManager(['get_signed_pools()'])
-        const poolKeys: string[] = response.calls['get_signed_pools()'].value || []
+        // Fetch all pools (including unsigned) so direct URL access works for unsigned tokens
+        const response = await fetchFromPoolManager(['get_all_pools()'])
+        const poolKeys: string[] = response.calls['get_all_pools()'].value || []
         const tokenUuids = extractTokensFromPools(poolKeys)
 
         // Find matching token by checking symbols
@@ -460,27 +460,20 @@ export const tokenRouter = createTRPCRouter({
       // Get token basic info
       const tokenInfo = await fetchTokenInfo(tokenUuid)
 
-      // Get pools for this token and token prices
+      // Get pools for this token and token prices (all pools, including unsigned, for direct URL access)
       const batchResponse = await fetchFromPoolManager([
         `get_pools_for_token("${tokenUuid}")`,
         'get_all_token_prices_in_usd()',
-        'get_signed_pools()',
       ])
 
-      const allTokenPools: string[] = batchResponse.calls[`get_pools_for_token("${tokenUuid}")`].value || []
+      const tokenPools: string[] = batchResponse.calls[`get_pools_for_token("${tokenUuid}")`].value || []
       const rawTokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
       // Format token prices from contract units to USD (divide by PRICE_PRECISION)
       const tokenPrices: Record<string, number> = Object.fromEntries(
         Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
       )
-      const allSignedPools: string[] = batchResponse.calls['get_signed_pools()'].value || []
 
-      // Filter to only include pools that are both token-related AND signed
-      const tokenPools = allTokenPools.filter((poolKey) => allSignedPools.includes(poolKey))
-
-      console.log(
-        `   📊 Found ${allTokenPools.length} total pools for token ${input.symbol}, ${tokenPools.length} signed pools`
-      )
+      console.log(`   📊 Found ${tokenPools.length} pools for token ${input.symbol}`)
 
       // Get detailed pool data for token's pools
       let totalLiquidityUSD = 0

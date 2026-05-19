@@ -189,9 +189,9 @@ export const queryProcedures = {
       // Convert fee from identifier format to basis points (e.g., 3 -> 30, 0.8 -> 8)
       const feeBasisPoints = Math.round(parseFloat(feeStr || '0') * 10)
 
-      // Get all signed pools to find matching pool
-      const batchResponse = await fetchFromPoolManager(['get_signed_pools()', 'get_all_token_prices_in_usd()'])
-      const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
+      // Get all pools (including unsigned) to find matching pool for direct URL access
+      const batchResponse = await fetchFromPoolManager(['get_all_pools()', 'get_all_token_prices_in_usd()'])
+      const poolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
       const rawTokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
       const tokenPrices: Record<string, number> = Object.fromEntries(
         Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])

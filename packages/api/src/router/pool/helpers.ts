@@ -60,19 +60,30 @@ export async function getDozerToolsImageUrl(tokenUuid: string): Promise<string |
     const response = await fetchNodeData(endpoint, queryParams)
     const projectInfo = response.calls[`get_project_info("${tokenUuid}")`]?.value
 
-    if (projectInfo && projectInfo.logo_url) {
-      // Check if it's a valid Vercel Blob URL format
-      if (projectInfo.logo_url.startsWith('http')) {
-        return projectInfo.logo_url
-      } else {
-        // Construct URL using Vercel Blob base URL
-        return `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/${projectInfo.logo_url}`
-      }
+    if (!projectInfo) {
+      console.warn(`[DozerTools] No project info found for token ${tokenUuid} — token not registered in DozerTools contract`)
+      return null
+    }
+
+    const logoUrl: string | null = projectInfo.logo_url || null
+    console.log(`[DozerTools] token ${tokenUuid}: logo_url=${logoUrl}, symbol=${projectInfo.symbol}, dev=${projectInfo.dev}`)
+
+    if (logoUrl) {
+      return logoUrl.startsWith('http')
+        ? logoUrl
+        : `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/${logoUrl}`
+    }
+
+    // Pattern-based fallback: image may be stored at token-icons/{symbol}-{dev} even if logo_url is not set
+    const symbol: string | null = projectInfo.symbol || null
+    const dev: string | null = projectInfo.dev || null
+    if (symbol && dev) {
+      return `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/token-icons/${symbol}-${dev}`
     }
 
     return null
-  } catch {
-    // Silently fail for DozerTools integration - it's optional
+  } catch (error) {
+    console.warn(`[DozerTools] Failed to fetch image URL for token ${tokenUuid}:`, error)
     return null
   }
 }
