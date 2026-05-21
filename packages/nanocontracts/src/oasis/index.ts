@@ -48,7 +48,7 @@ export class Oasis extends NanoContract {
     poolFee: number,
     protocolFee: number,
     amount: number,
-    network: 'mainnet' | 'testnet' = 'testnet'
+    network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet'
   ) {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'initialize',
@@ -81,7 +81,7 @@ export class Oasis extends NanoContract {
     return rpcResponse
   }
 
-  public async user_deposit(hathorRpc: IHathorRpc, address: string, timelock: number, ncId: string, amount: number, network: 'mainnet' | 'testnet' = 'testnet') {
+  public async user_deposit(hathorRpc: IHathorRpc, address: string, timelock: number, ncId: string, amount: number, network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet') {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_deposit',
       process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '',
@@ -114,7 +114,7 @@ export class Oasis extends NanoContract {
     return rpcResponse
   }
 
-  public async close_position(hathorRpc: IHathorRpc, address: string, ncId: string, network: 'mainnet' | 'testnet' = 'testnet') {
+  public async close_position(hathorRpc: IHathorRpc, address: string, ncId: string, network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet') {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'close_position',
       process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '',
@@ -138,7 +138,7 @@ export class Oasis extends NanoContract {
     return rpcResponse
   }
 
-  public async user_withdraw(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number, amount_htr: number, network: 'mainnet' | 'testnet' = 'testnet') {
+  public async user_withdraw(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number, amount_htr: number, network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet') {
     const actions = [
       {
         type: NanoContractActionType.WITHDRAWAL,
@@ -181,7 +181,7 @@ export class Oasis extends NanoContract {
     return rpcResponse
   }
 
-  public async user_withdraw_bonus(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number, network: 'mainnet' | 'testnet' = 'testnet') {
+  public async user_withdraw_bonus(hathorRpc: IHathorRpc, address: string, ncId: string, amount: number, network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet') {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'user_withdraw_bonus',
       process.env.NEXT_PUBLIC_OASIS_BLUEPRINT_ID || '',

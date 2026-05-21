@@ -37,7 +37,7 @@ export class PoolManager extends NanoContract {
     amountA: number,
     amountB: number,
     fee: number,
-    network: 'mainnet' | 'testnet' = 'testnet',
+    network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet',
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'create_pool',
@@ -90,7 +90,7 @@ export class PoolManager extends NanoContract {
     amountOut: number,
     path: string, // Mandatory path (single pool_key for single-hop, comma-separated for multi-hop)
     deadlineMinutes: number = 60, // Transaction deadline in minutes from now
-    network: 'mainnet' | 'testnet' = 'testnet',
+    network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet',
   ): Promise<SendNanoContractTxResponse> {
     // Calculate Unix timestamp deadline
     const deadline = Math.floor(Date.now() / 1000) + deadlineMinutes * 60
@@ -158,7 +158,7 @@ export class PoolManager extends NanoContract {
     amountOut: number,
     path: string, // Mandatory path (single pool_key for single-hop, comma-separated for multi-hop)
     deadlineMinutes: number = 60, // Transaction deadline in minutes from now
-    network: 'mainnet' | 'testnet' = 'testnet',
+    network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet',
   ): Promise<SendNanoContractTxResponse> {
     // Calculate Unix timestamp deadline
     const deadline = Math.floor(Date.now() / 1000) + deadlineMinutes * 60
@@ -226,7 +226,7 @@ export class PoolManager extends NanoContract {
     tokenB: string,
     amountB: number,
     fee: number,
-    network: 'mainnet' | 'testnet' = 'testnet',
+    network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet',
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'add_liquidity',
@@ -278,7 +278,7 @@ export class PoolManager extends NanoContract {
     tokenB: string,
     amountB: number,
     fee: number,
-    network: 'mainnet' | 'testnet' = 'testnet',
+    network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet',
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'remove_liquidity',
@@ -332,7 +332,7 @@ export class PoolManager extends NanoContract {
     amountIn: number,
     tokenOut: string,
     fee: number,
-    network: 'mainnet' | 'testnet' = 'testnet',
+    network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet',
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'add_liquidity_single_token',
@@ -374,7 +374,7 @@ export class PoolManager extends NanoContract {
     tokenOut: string,
     withdrawalAmount: number,
     percentage: number,
-    network: 'mainnet' | 'testnet' = 'testnet',
+    network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet',
   ): Promise<SendNanoContractTxResponse> {
     // Convert percentage to basis points (percentage * 100)
     const percentageBasisPoints = Math.round(percentage * 100)
@@ -419,7 +419,7 @@ export class PoolManager extends NanoContract {
     tokenB: string,
     amountB: number,
     fee: number,
-    network: 'mainnet' | 'testnet' = 'testnet',
+    network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet',
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'withdraw_cashback',

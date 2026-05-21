@@ -84,9 +84,14 @@ export const queryProcedures = {
           const reserve0 = (poolData.reserve0 || 0) / 100
           const reserve1 = (poolData.reserve1 || 0) / 100
 
-          // Get token prices
-          const token0PriceUSD = tokenPrices[tokenA || ''] || 0
-          const token1PriceUSD = tokenPrices[tokenB || ''] || 0
+          // Get token prices — fall back to spot price from reserves for unsigned-pool tokens
+          let token0PriceUSD = tokenPrices[tokenA || ''] || 0
+          let token1PriceUSD = tokenPrices[tokenB || ''] || 0
+          if (token0PriceUSD === 0 && token1PriceUSD > 0 && reserve0 > 0 && reserve1 > 0) {
+            token0PriceUSD = (reserve1 / reserve0) * token1PriceUSD
+          } else if (token1PriceUSD === 0 && token0PriceUSD > 0 && reserve0 > 0 && reserve1 > 0) {
+            token1PriceUSD = (reserve0 / reserve1) * token0PriceUSD
+          }
 
           // Calculate USD values
           const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
@@ -241,9 +246,14 @@ export const queryProcedures = {
       const reserve0 = (poolData.reserve0 || 0) / 100
       const reserve1 = (poolData.reserve1 || 0) / 100
 
-      // Get token prices
-      const token0PriceUSD = tokenPrices[tokenA || ''] || 0
-      const token1PriceUSD = tokenPrices[tokenB || ''] || 0
+      // Get token prices — fall back to spot price from reserves for unsigned-pool tokens
+      let token0PriceUSD = tokenPrices[tokenA || ''] || 0
+      let token1PriceUSD = tokenPrices[tokenB || ''] || 0
+      if (token0PriceUSD === 0 && token1PriceUSD > 0 && reserve0 > 0 && reserve1 > 0) {
+        token0PriceUSD = (reserve1 / reserve0) * token1PriceUSD
+      } else if (token1PriceUSD === 0 && token0PriceUSD > 0 && reserve0 > 0 && reserve1 > 0) {
+        token1PriceUSD = (reserve0 / reserve1) * token0PriceUSD
+      }
 
       // Calculate USD values
       const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD

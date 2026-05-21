@@ -185,15 +185,20 @@ const Token = () => {
               {(() => {
                 const customAbout = customAbouts[tokenData.symbol.toUpperCase()]
                 const poolText = tokenData.poolCount === 1 ? 'pool' : 'pools'
-                const aboutText = customAbout
-                  ? `${customAbout} It can be traded in ${tokenData.poolCount} liquidity ${poolText}.`
-                  : tokenData.bridged
-                  ? `${
-                      tokenData.symbol
-                    } is a token on the Hathor network with a total supply of ${tokenData.totalSupply.toLocaleString()} tokens. It is available for trading in ${
-                      tokenData.poolCount
-                    } liquidity ${poolText}.`
-                  : `${tokenData.symbol} is the native token of the Hathor network. It can be staked, used for transaction fees, and traded in ${tokenData.poolCount} liquidity ${poolText}.`
+                const tradingLine = `It can be traded in ${tokenData.poolCount} liquidity ${poolText}.`
+
+                let aboutText: string
+                if (customAbout) {
+                  // Manually curated description for known tokens — always takes priority
+                  aboutText = `${customAbout} ${tradingLine}`
+                } else if (tokenData.about && (tokenData.metadataSource === 'dozer-tools' || tokenData.metadataSource === 'khensu')) {
+                  // Community token: use the description stored on-chain
+                  aboutText = `${tokenData.about} ${tradingLine}`
+                } else if (tokenData.bridged) {
+                  aboutText = `${tokenData.symbol} is a token on the Hathor network with a total supply of ${tokenData.totalSupply.toLocaleString()} tokens. It is available for trading in ${tokenData.poolCount} liquidity ${poolText}.`
+                } else {
+                  aboutText = `${tokenData.symbol} is the native token of the Hathor network. It can be staked, used for transaction fees, and traded in ${tokenData.poolCount} liquidity ${poolText}.`
+                }
 
                 return (
                   <>

@@ -6,6 +6,81 @@ import { createTRPCRouter, procedure } from '../trpc'
 import { PRICE_PRECISION, formatPrice } from './constants'
 import { fetchFromPoolManager } from './pool/helpers'
 
+/**
+ * Derive spot prices for tokens that don't appear in the signed pool graph
+ * (e.g. tokens that only exist in unsigned pools).
+ *
+ * @param rawContractPrices  Raw price map from get_all_token_prices_in_usd() or get_all_token_prices_in_htr()
+ * @param denominator        Amount to divide each raw value by to get human-readable price
+ * @param allPoolKeys        All pool keys (including unsigned) from get_all_pools()
+ * @returns                  Augmented prices map with spot-price fallbacks for missing tokens
+ */
+async function addSpotPriceFallbacks(
+  rawContractPrices: Record<string, number>,
+  denominator: number,
+  allPoolKeys: string[]
+): Promise<Record<string, number>> {
+  const prices: Record<string, number> = Object.fromEntries(
+    Object.entries(rawContractPrices).map(([k, v]) => [k, v / denominator])
+  )
+
+  // Collect tokens that need a price derivation
+  const tokensNeedingPrice = new Set<string>()
+  for (const poolKey of allPoolKeys) {
+    const [a, b] = poolKey.split('/')
+    if (a && (!(a in prices) || prices[a] === 0)) tokensNeedingPrice.add(a)
+    if (b && (!(b in prices) || prices[b] === 0)) tokensNeedingPrice.add(b)
+  }
+  if (tokensNeedingPrice.size === 0) return prices
+
+  // Build reserve calls for pools where one side has a known price
+  const reserveCalls: string[] = []
+  const relevantPools: { tokenA: string; tokenB: string; fee: number }[] = []
+
+  for (const poolKey of allPoolKeys) {
+    const [a, b, feeStr] = poolKey.split('/')
+    if (!a || !b) continue
+    const fee = parseInt(feeStr || '0')
+    const aNeedsPrice = tokensNeedingPrice.has(a)
+    const bNeedsPrice = tokensNeedingPrice.has(b)
+    const aHasPrice = !aNeedsPrice && (prices[a] ?? 0) > 0
+    const bHasPrice = !bNeedsPrice && (prices[b] ?? 0) > 0
+
+    if ((aNeedsPrice && bHasPrice) || (bNeedsPrice && aHasPrice)) {
+      const call = `get_reserves("${a}", "${b}", ${fee})`
+      if (!reserveCalls.includes(call)) {
+        reserveCalls.push(call)
+        relevantPools.push({ tokenA: a, tokenB: b, fee })
+      }
+    }
+  }
+
+  if (reserveCalls.length === 0) return prices
+
+  try {
+    const resResponse = await fetchFromPoolManager(reserveCalls)
+    for (const { tokenA, tokenB, fee } of relevantPools) {
+      const call = `get_reserves("${tokenA}", "${tokenB}", ${fee})`
+      const reserves: [number, number] | null = resResponse.calls[call]?.value ?? null
+      if (!reserves || reserves[0] <= 0 || reserves[1] <= 0) continue
+      const [resA, resB] = reserves
+
+      if (tokensNeedingPrice.has(tokenA) && (prices[tokenB] ?? 0) > 0) {
+        const spot = (resB / resA) * (prices[tokenB] as number)
+        if (spot > 0) { prices[tokenA] = spot; tokensNeedingPrice.delete(tokenA) }
+      }
+      if (tokensNeedingPrice.has(tokenB) && (prices[tokenA] ?? 0) > 0) {
+        const spot = (resA / resB) * (prices[tokenA] as number)
+        if (spot > 0) { prices[tokenB] = spot; tokensNeedingPrice.delete(tokenB) }
+      }
+    }
+  } catch {
+    // Spot fallback failed — return best-effort prices
+  }
+
+  return prices
+}
+
 // Legacy helper functions removed - now using DozerPoolManager contract methods
 const htrKline = async (input: { period: number; size: number; prisma: PrismaClient }) => {
   // const period = input.period == 0 ? '15min' : input.period == 1 ? '1hour' : '1day'
@@ -225,14 +300,14 @@ export const pricesRouter = createTRPCRouter({
     })
     return prices
   }),
-  all: procedure.query(async ({ ctx }) => {
+  all: procedure.query(async () => {
     try {
-      const response = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-      const prices = response.calls['get_all_token_prices_in_usd()'].value || {}
-      // Format prices: divide by PRICE_PRECISION (8 decimal places)
-      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, formatPrice(v as number)]))
-      return formatted
-    } catch (error) {
+      const batchResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()', 'get_all_pools()'])
+      const rawPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      const allPoolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
+      // formatPrice divides by PRICE_PRECISION (100_000_000)
+      return addSpotPriceFallbacks(rawPrices, PRICE_PRECISION, allPoolKeys)
+    } catch {
       return {}
     }
   }),
@@ -408,25 +483,27 @@ export const pricesRouter = createTRPCRouter({
     }),
 
   // Get all token prices in USD
-  allUSD: procedure.query(async ({ ctx }) => {
+  allUSD: procedure.query(async () => {
     try {
-      const response = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-      const prices = response.calls['get_all_token_prices_in_usd()'].value || {}
-      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, (v as number) / 100_000000]))
-      return formatted
-    } catch (error) {
+      const batchResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()', 'get_all_pools()'])
+      const rawPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      const allPoolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
+      return addSpotPriceFallbacks(rawPrices, 100_000_000, allPoolKeys)
+    } catch {
       return {}
     }
   }),
 
-  // Get all token prices in HTR
-  allHTR: procedure.query(async ({ ctx }) => {
+  // Get all token prices in HTR (with spot-price fallback for unsigned-pool tokens)
+  allHTR: procedure.query(async () => {
     try {
-      const response = await fetchFromPoolManager(['get_all_token_prices_in_htr()'])
-      const prices = response.calls['get_all_token_prices_in_htr()'].value || {}
-      const formatted = Object.fromEntries(Object.entries(prices).map(([k, v]) => [k, (v as number) / 100_000000]))
-      return formatted
-    } catch (error) {
+      const batchResponse = await fetchFromPoolManager(['get_all_token_prices_in_htr()', 'get_all_pools()'])
+      const rawPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_htr()'].value || {}
+      const allPoolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
+      // For HTR denomination: HTR price of token = reserve_htr / reserve_token
+      // The denominator is the same PRICE_PRECISION (100_000_000)
+      return addSpotPriceFallbacks(rawPrices, 100_000_000, allPoolKeys)
+    } catch {
       return {}
     }
   }),

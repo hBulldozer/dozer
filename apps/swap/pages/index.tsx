@@ -124,16 +124,18 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
     { enabled: !!router.query.token1 && !!hasUrlTokens }
   )
 
-  // Fetch prop-based tokens via byUuidAny as fallback for unsigned pool tokens.
-  // Enabled for all UUIDs including '00' (byUuidAny handles HTR natively).
+  // Only query byUuidAny for real Hathor token UUIDs (64-char hex or '00').
+  // Placeholder indices like '0' or '2' used on the main swap page are skipped.
+  const isRealUuid = (uuid: string) => uuid === '00' || /^[0-9a-f]{64}$/.test(uuid)
+
   const { data: propToken0 } = api.getTokens.byUuidAny.useQuery(
     { uuid: token0_idx },
-    { enabled: !!token0_idx }
+    { enabled: isRealUuid(token0_idx) }
   )
 
   const { data: propToken1 } = api.getTokens.byUuidAny.useQuery(
     { uuid: token1_idx },
-    { enabled: !!token1_idx }
+    { enabled: isRealUuid(token1_idx) }
   )
 
   // Find HTR and hUSDC tokens for defaults
@@ -179,23 +181,34 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
     if (!selectedToken0) {
       const husdcToken = tokens.find((token) => token.symbol === 'hUSDC' && token.bridged)
       if (husdcToken && token0_idx === husdcToken.uuid) {
+        // token0_idx is the hUSDC UUID — use it directly
         selectedToken0 = toToken(husdcToken)
       } else {
-        // Try signed list first, then byUuidAny fallback (covers HTR and unsigned pool tokens)
-        const source = tokens.find((token) => token.uuid === token0_idx) || propToken0
-        if (source) selectedToken0 = toToken(source)
-        // else: propToken0 still loading — effect re-runs when it arrives
+        const fromSigned = tokens.find((token) => token.uuid === token0_idx)
+        const htrFallback = tokens.find((token) => token.uuid === '00')
+        if (fromSigned) {
+          selectedToken0 = toToken(fromSigned)
+        } else if (propToken0 === undefined && isRealUuid(token0_idx)) {
+          // byUuidAny still loading for a real UUID — wait for it
+        } else {
+          // propToken0 resolved (or token0_idx is a placeholder) — use it or fall back to HTR
+          const source = propToken0 || htrFallback
+          if (source) selectedToken0 = toToken(source)
+        }
       }
     }
 
     if (!selectedToken1) {
-      const source = tokens.find((token) => token.uuid === token1_idx) || propToken1
-      if (source) {
-        selectedToken1 = toToken(source)
+      const fromSigned = tokens.find((token) => token.uuid === token1_idx)
+      const usdcFallback = tokens.find((token) => token.symbol === 'hUSDC')
+      if (fromSigned) {
+        selectedToken1 = toToken(fromSigned)
+      } else if (propToken1 === undefined && isRealUuid(token1_idx)) {
+        // byUuidAny still loading for a real UUID — wait for it
       } else {
-        // Last resort: hUSDC from signed list (main swap page default)
-        const usdcFromTokens = tokens.find((token) => token.symbol === 'hUSDC')
-        if (usdcFromTokens) selectedToken1 = toToken(usdcFromTokens)
+        // propToken1 resolved (or token1_idx is a placeholder) — use it or fall back to hUSDC
+        const source = propToken1 || usdcFallback
+        if (source) selectedToken1 = toToken(source)
       }
     }
 
@@ -290,56 +303,93 @@ export const SwapWidget: FC<{ token0_idx: string; token1_idx: string }> = ({ tok
     const fetchData = async () => {
       setFetchLoading(true)
       if (tradeType == TradeType.EXACT_INPUT) {
-        const response =
-          token0 && token1 && parseFloat(debouncedInput0) > 0
-            ? await utils.getPools.quote.fetch({
-                amountIn: parseFloat(debouncedInput0),
-                tokenIn: token0?.uuid,
-                tokenOut: token1?.uuid,
-                maxHops: 3,
-              })
-            : undefined
+        let quoteData: { path: string[]; amounts: number[]; amountOut: number; priceImpact: number; poolPath: string } | undefined
 
-        const quoteData = response // Handle both nested and direct response
+        if (token0 && token1 && parseFloat(debouncedInput0) > 0) {
+          // First try the router (signed pools / multi-hop)
+          try {
+            const routerQuote = await utils.getPools.quote.fetch({
+              amountIn: parseFloat(debouncedInput0),
+              tokenIn: token0.uuid,
+              tokenOut: token1.uuid,
+              maxHops: 3,
+            })
+            if (routerQuote && routerQuote.amountOut > 0) quoteData = routerQuote
+          } catch {
+            // Router returned no path — pool may be unsigned, fall through to direct quote
+          }
+
+          // Fall back to direct single-hop quote (works for unsigned pools too)
+          if (!quoteData) {
+            try {
+              const directQuote = await utils.getPools.quoteDirect.fetch({
+                tokenIn: token0.uuid,
+                tokenOut: token1.uuid,
+                amountIn: parseFloat(debouncedInput0),
+              })
+              if (directQuote && directQuote.amountOut > 0) quoteData = directQuote
+            } catch {
+              // No pool found for pair
+            }
+          }
+        }
+
         setInput1(quoteData && quoteData.amountOut != 0 ? quoteData.amountOut.toFixed(2) : '')
         setPriceImpact(quoteData ? quoteData.priceImpact : 0)
 
-        // Update route info for RouteDisplay component
         if (quoteData) {
           trade.setRouteInfo({
             path: quoteData.path || [],
             amounts: quoteData.amounts || [],
             amountOut: quoteData.amountOut,
             priceImpact: quoteData.priceImpact,
-            poolPath: quoteData.poolPath, // Add pool path for contract execution
+            poolPath: quoteData.poolPath,
           })
         } else {
           trade.setRouteInfo(undefined)
         }
       } else {
-        // For exact output, use the new exact output quote endpoint
-        const response =
-          token0 && token1 && parseFloat(debouncedInput1) > 0
-            ? await utils.getPools.quoteExactOutput.fetch({
-                amountOut: parseFloat(debouncedInput1),
-                tokenIn: token0?.uuid,
-                tokenOut: token1?.uuid,
-                maxHops: 3,
-              })
-            : undefined
+        let quoteData: { path: string[]; amounts: number[]; amountIn: number; priceImpact: number; poolPath: string } | undefined
 
-        const quoteData = response // Handle both nested and direct response
+        if (token0 && token1 && parseFloat(debouncedInput1) > 0) {
+          // First try the router (signed pools / multi-hop)
+          try {
+            const routerQuote = await utils.getPools.quoteExactOutput.fetch({
+              amountOut: parseFloat(debouncedInput1),
+              tokenIn: token0.uuid,
+              tokenOut: token1.uuid,
+              maxHops: 3,
+            })
+            if (routerQuote && routerQuote.amountIn > 0) quoteData = routerQuote
+          } catch {
+            // Router returned no path — fall through to direct quote
+          }
+
+          // Fall back to direct single-hop exact-output quote
+          if (!quoteData) {
+            try {
+              const directQuote = await utils.getPools.quoteDirectExactOutput.fetch({
+                tokenIn: token0.uuid,
+                tokenOut: token1.uuid,
+                amountOut: parseFloat(debouncedInput1),
+              })
+              if (directQuote && directQuote.amountIn > 0) quoteData = directQuote
+            } catch {
+              // No pool found for pair
+            }
+          }
+        }
+
         setInput0(quoteData && quoteData.amountIn != 0 ? quoteData.amountIn.toFixed(2) : '')
         setPriceImpact(quoteData ? quoteData.priceImpact : 0)
 
-        // Update route info for RouteDisplay component
         if (quoteData) {
           trade.setRouteInfo({
             path: quoteData.path || [],
             amounts: quoteData.amounts || [],
             amountOut: parseFloat(debouncedInput1),
             priceImpact: quoteData.priceImpact,
-            poolPath: quoteData.poolPath, // Add pool path for contract execution
+            poolPath: quoteData.poolPath,
           })
         } else {
           trade.setRouteInfo(undefined)

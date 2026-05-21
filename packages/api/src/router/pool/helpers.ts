@@ -45,15 +45,13 @@ function prunePoolManagerResponseCache(now: number) {
   }
 }
 
-// Helper function to fetch DozerTools image URL for a token
-export async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> {
+// Fetch full metadata from the DozerTools contract for a token
+async function getDozerToolsMetadata(tokenUuid: string): Promise<TokenDisplayMetadata | null> {
   try {
-    // Skip if DozerTools integration is not configured
-    if (!NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID || !NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL) {
+    if (!NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID) {
       return null
     }
 
-    // Fetch project info from DozerTools contract
     const endpoint = 'nano_contract/state'
     const queryParams = [`id=${NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID}`, `calls[]=get_project_info("${tokenUuid}")`]
 
@@ -65,27 +63,44 @@ export async function getDozerToolsImageUrl(tokenUuid: string): Promise<string |
       return null
     }
 
+    // Resolve image URL
+    let imageUrl: string | null = null
     const logoUrl: string | null = projectInfo.logo_url || null
-    console.log(`[DozerTools] token ${tokenUuid}: logo_url=${logoUrl}, symbol=${projectInfo.symbol}, dev=${projectInfo.dev}`)
-
     if (logoUrl) {
-      return logoUrl.startsWith('http')
+      imageUrl = logoUrl.startsWith('http')
         ? logoUrl
-        : `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/${logoUrl}`
+        : NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL
+          ? `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/${logoUrl}`
+          : null
+    } else if (NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL) {
+      // Pattern-based fallback: token-icons/{symbol}-{dev}
+      const symbol: string | null = projectInfo.symbol || null
+      const dev: string | null = projectInfo.dev || null
+      if (symbol && dev) {
+        imageUrl = `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/token-icons/${symbol}-${dev}`
+      }
     }
 
-    // Pattern-based fallback: image may be stored at token-icons/{symbol}-{dev} even if logo_url is not set
-    const symbol: string | null = projectInfo.symbol || null
-    const dev: string | null = projectInfo.dev || null
-    if (symbol && dev) {
-      return `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/token-icons/${symbol}-${dev}`
+    return {
+      imageUrl,
+      about: (projectInfo.description as string) || null,
+      telegram: (projectInfo.telegram as string) || null,
+      twitter: (projectInfo.twitter as string) || null,
+      website: (projectInfo.website as string) || null,
+      createdBy: (projectInfo.dev as string) || null,
+      communityTag: 'Tools',
+      metadataSource: 'dozer-tools',
     }
-
-    return null
   } catch (error) {
-    console.warn(`[DozerTools] Failed to fetch image URL for token ${tokenUuid}:`, error)
+    console.warn(`[DozerTools] Failed to fetch metadata for token ${tokenUuid}:`, error)
     return null
   }
+}
+
+// Keep the old export for any direct callers that only need the image URL
+export async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> {
+  const metadata = await getDozerToolsMetadata(tokenUuid)
+  return metadata?.imageUrl ?? null
 }
 
 function convertIpfsToGatewayUrl(imageLink: string): string {
@@ -159,16 +174,20 @@ export async function getTokenDisplayMetadata(tokenUuid: string): Promise<TokenD
       return khensuMetadata
     }
 
-    const dozerToolsImageUrl = await getDozerToolsImageUrl(tokenUuid)
+    const dozerToolsMetadata = await getDozerToolsMetadata(tokenUuid)
+    if (dozerToolsMetadata) {
+      return dozerToolsMetadata
+    }
+
     return {
-      imageUrl: dozerToolsImageUrl,
+      imageUrl: null,
       about: null,
       telegram: null,
       twitter: null,
       website: null,
       createdBy: null,
-      communityTag: dozerToolsImageUrl ? 'Tools' : null,
-      metadataSource: dozerToolsImageUrl ? 'dozer-tools' : null,
+      communityTag: null,
+      metadataSource: null,
     }
   })().catch((error) => {
     tokenMetadataCache.delete(tokenUuid)

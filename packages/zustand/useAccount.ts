@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { isTestnet } from '@dozer/higmi/config/bridge'
+import { isTestnet, NETWORK_TYPE } from '@dozer/higmi/config/bridge'
 
 const { hUSDC_UUID } = process.env
 
@@ -24,7 +24,7 @@ export interface WalletConnection {
   isSnapInstalled: boolean
   snapId: string | null
   // Network state
-  selectedNetwork: 'mainnet' | 'testnet'
+  selectedNetwork: 'mainnet' | 'testnet' | 'privatenet'
 }
 
 export interface AccountState extends WalletConnection {
@@ -37,9 +37,9 @@ export interface AccountState extends WalletConnection {
   disconnectWallet: () => void
 
   // Network management
-  targetNetwork: 'mainnet' | 'testnet'
-  currentNetwork: 'mainnet' | 'testnet' | null
-  setCurrentNetwork: (network: 'mainnet' | 'testnet') => void
+  targetNetwork: 'mainnet' | 'testnet' | 'privatenet'
+  currentNetwork: 'mainnet' | 'testnet' | 'privatenet' | null
+  setCurrentNetwork: (network: 'mainnet' | 'testnet' | 'privatenet') => void
   isNetworkMismatch: () => boolean
   needsNetworkRefresh: boolean
   setNeedsNetworkRefresh: (needs: boolean) => void
@@ -66,11 +66,11 @@ export const useAccount = create<AccountState>()(
       hathorAddress: '',
       isSnapInstalled: false,
       snapId: null as string | null,
-      selectedNetwork: (isTestnet() ? 'testnet' : 'mainnet') as 'mainnet' | 'testnet',
+      selectedNetwork: NETWORK_TYPE,
 
       // Network management
-      targetNetwork: (isTestnet() ? 'testnet' : 'mainnet') as 'mainnet' | 'testnet',
-      currentNetwork: null as 'mainnet' | 'testnet' | null,
+      targetNetwork: NETWORK_TYPE,
+      currentNetwork: null as 'mainnet' | 'testnet' | 'privatenet' | null,
       setCurrentNetwork: (network) => set(() => ({ currentNetwork: network })),
       isNetworkMismatch: (): boolean => {
         const state: AccountState = useAccount.getState()
@@ -102,7 +102,7 @@ export const useAccount = create<AccountState>()(
           hathorAddress: '',
           isSnapInstalled: false,
           snapId: null,
-          selectedNetwork: (isTestnet() ? 'testnet' : 'mainnet') as 'mainnet' | 'testnet',
+          selectedNetwork: NETWORK_TYPE,
           currentNetwork: null,
           balance: [
             {
@@ -203,7 +203,7 @@ export const useAccount = create<AccountState>()(
         const persisted = persistedState as Partial<AccountState> | undefined
 
         // Always use environment-based network values, not persisted ones
-        const envNetwork = isTestnet() ? 'testnet' : 'mainnet'
+        const envNetwork = NETWORK_TYPE
 
         // Check if network changed - if so, clear wallet info since addresses are network-specific
         const persistedNetwork = persisted?.selectedNetwork || persisted?.targetNetwork
@@ -213,8 +213,8 @@ export const useAccount = create<AccountState>()(
           console.log(`Network changed from ${persistedNetwork} to ${envNetwork}, flagging for refresh`)
           return {
             ...merged,
-            targetNetwork: envNetwork as 'mainnet' | 'testnet',
-            selectedNetwork: envNetwork as 'mainnet' | 'testnet',
+            targetNetwork: envNetwork,
+            selectedNetwork: envNetwork,
             // Flag that we need to refresh wallet info from snap
             needsNetworkRefresh: true,
           }
