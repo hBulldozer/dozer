@@ -134,16 +134,34 @@ async function fetchKhensuTokenMetadata(tokenUuid: string): Promise<TokenDisplay
     ])
     const tokenInfo = response.calls?.[call]?.value
 
-    if (!Array.isArray(tokenInfo) || tokenInfo.length < 21) {
+    if (!tokenInfo) {
       return null
     }
 
-    const imageLink = typeof tokenInfo[3] === 'string' ? tokenInfo[3] : ''
-    const description = typeof tokenInfo[4] === 'string' ? tokenInfo[4] : ''
-    const twitter = typeof tokenInfo[5] === 'string' ? tokenInfo[5] : ''
-    const telegram = typeof tokenInfo[6] === 'string' ? tokenInfo[6] : ''
-    const website = typeof tokenInfo[7] === 'string' ? tokenInfo[7] : ''
-    const creator = typeof tokenInfo[0] === 'string' ? tokenInfo[0] : ''
+    // TokenInfo NamedTuple field order (contract: khensu_manager.py → TokenInfo):
+    //   0: creator, 1: token_name, 2: token_symbol, 3: image_link,
+    //   4: description, 5: twitter, 6: telegram, 7: website, ...
+    // Hathor nodes may return NamedTuples as a plain array OR as a named object — handle both.
+    let creator: string, imageLink: string, description: string,
+        twitter: string, telegram: string, website: string
+
+    if (Array.isArray(tokenInfo)) {
+      if (tokenInfo.length < 8) return null
+      creator     = typeof tokenInfo[0] === 'string' ? tokenInfo[0] : ''
+      imageLink   = typeof tokenInfo[3] === 'string' ? tokenInfo[3] : ''
+      description = typeof tokenInfo[4] === 'string' ? tokenInfo[4] : ''
+      twitter     = typeof tokenInfo[5] === 'string' ? tokenInfo[5] : ''
+      telegram    = typeof tokenInfo[6] === 'string' ? tokenInfo[6] : ''
+      website     = typeof tokenInfo[7] === 'string' ? tokenInfo[7] : ''
+    } else {
+      // Object / named-key response
+      creator     = typeof tokenInfo.creator     === 'string' ? tokenInfo.creator     : ''
+      imageLink   = typeof tokenInfo.image_link  === 'string' ? tokenInfo.image_link  : ''
+      description = typeof tokenInfo.description === 'string' ? tokenInfo.description : ''
+      twitter     = typeof tokenInfo.twitter     === 'string' ? tokenInfo.twitter     : ''
+      telegram    = typeof tokenInfo.telegram    === 'string' ? tokenInfo.telegram    : ''
+      website     = typeof tokenInfo.website     === 'string' ? tokenInfo.website     : ''
+    }
 
     return {
       imageUrl: imageLink ? convertIpfsToGatewayUrl(imageLink) : null,
