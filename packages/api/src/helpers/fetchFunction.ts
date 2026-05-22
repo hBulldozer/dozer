@@ -3,19 +3,26 @@ import { fetchFakeData } from './fetchFakeData'
 // Check if running in local development environment
 const isLocalDevelopment = process.env.NODE_ENV === 'development'
 
-// Balanced settings to prevent rate limiting while maintaining ISR compatibility
-// Development: fail fast to avoid socket hang up and provide quick feedback
-// Production: moderate retry for reliability without breaking ISR timeout
-const MAX_RETRIES = isLocalDevelopment ? 0 : 1
-const INITIAL_TIMEOUT = isLocalDevelopment ? 3000 : 8000 // 3s dev, 8s prod
+// Timeout / retry settings.
+//
+// Production: historical contract-state queries (chart data) can take 10-30s on
+// the node. We set a generous 25s timeout with NO retries so the worst-case per
+// request is 25s (local) + 25s (public fallback) = 50s, safely within Vercel's
+// 60s function limit. Retrying a timed-out historical query just doubles the wait.
+//
+// Development: fail fast so socket hang-ups don't stall local dev.
+const MAX_RETRIES = isLocalDevelopment ? 0 : 0
+const INITIAL_TIMEOUT = isLocalDevelopment ? 3000 : 25000 // 3s dev, 25s prod
 const BACKOFF_FACTOR = isLocalDevelopment ? 0 : 1.5
 
 // Request queue to prevent overwhelming the node with concurrent requests
 class RequestQueue {
   private queue: Array<() => Promise<any>> = []
   private activeCount = 0
-  // Conservative concurrency limits to prevent rate limiting
-  private maxConcurrency = isLocalDevelopment ? 10 : 15
+  // Conservative concurrency limits to prevent rate limiting.
+  // Production is lower (5) because historical chart state queries are slow and
+  // firing 15 at once risks saturating the node before nginx can cache results.
+  private maxConcurrency = isLocalDevelopment ? 10 : 5
 
   async add<T>(fn: () => Promise<T>): Promise<T> {
     return new Promise((resolve, reject) => {
