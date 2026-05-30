@@ -738,6 +738,102 @@ export const pricesRouter = createTRPCRouter({
       }
     }),
 
+  // Bulk price changes for all tokens in one batch — replaces N individual priceChange calls
+  allPriceChanges: procedure
+    .input(
+      z.object({
+        tokenUids: z.array(z.string()).max(50),
+        timeRange: z.enum(['5min', '24h']).optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      if (input.tokenUids.length === 0) return {}
+
+      const isTestnet = process.env.NEXT_PUBLIC_PUBLIC_NODE_URL?.includes('testnet') ?? false
+      const timeRange = input.timeRange || (isTestnet ? '5min' : '24h')
+      const timeRangeSeconds = timeRange === '5min' ? 5 * 60 : 24 * 60 * 60
+      const now = Math.floor(Date.now() / 1000)
+      const historicalTimestamp = now - timeRangeSeconds
+
+      const calls = input.tokenUids.map((uid) => `get_token_price_in_usd("${uid}")`)
+
+      // 2 node calls total regardless of how many tokens (vs 2×N before)
+      const [currentResponse, historicalResponse] = await Promise.all([
+        fetchFromPoolManager(calls),
+        fetchFromPoolManager(calls, historicalTimestamp).catch(() => null),
+      ])
+
+      const result: Record<string, { currentPrice: number; historicalPrice: number; change: number; timeRange: string }> =
+        {}
+      for (const uid of input.tokenUids) {
+        const call = `get_token_price_in_usd("${uid}")`
+        const currentPrice = formatPrice(currentResponse.calls[call]?.value ?? 0)
+        const historicalPrice = formatPrice(historicalResponse?.calls[call]?.value ?? currentPrice)
+        let change = 0
+        if (historicalPrice > 0 && currentPrice > 0) {
+          change = (currentPrice - historicalPrice) / historicalPrice
+          if (Math.abs(change) > 10) change = 0
+        }
+        result[uid] = { currentPrice, historicalPrice, change, timeRange }
+      }
+      return result
+    }),
+
+  // Bulk sparkline data for all tokens — replaces N×(points+1) calls with (points+1) batched calls
+  allSparklineData: procedure
+    .input(
+      z.object({
+        tokenUids: z.array(z.string()).max(50),
+        currency: z.enum(['USD', 'HTR']).default('USD'),
+        timeframe: z.enum(['5min', '1h', '24h', '7d', '30d']).optional(),
+        points: z.number().min(2).max(10).default(5),
+      })
+    )
+    .query(async ({ input }) => {
+      if (input.tokenUids.length === 0) return {}
+
+      const isTestnet = process.env.NEXT_PUBLIC_PUBLIC_NODE_URL?.includes('testnet') ?? false
+      const timeframe = input.timeframe || (isTestnet ? '5min' : '24h')
+      const totalTime = { '5min': 300, '1h': 3600, '24h': 86400, '7d': 604800, '30d': 2592000 }[timeframe]
+      const interval = totalTime / input.points
+      const now = Math.floor(Date.now() / 1000)
+
+      const methodName = (uid: string) =>
+        input.currency === 'USD' ? `get_token_price_in_usd("${uid}")` : `get_token_price_in_htr("${uid}")`
+      const calls = input.tokenUids.map(methodName)
+
+      const timestamps = Array.from({ length: input.points }, (_, i) =>
+        Math.floor(now - (totalTime - i * interval))
+      )
+
+      // (points+1) node calls total regardless of how many tokens (vs N×(points+1) before)
+      const responses = await Promise.all([
+        ...timestamps.map((ts) => fetchFromPoolManager(calls, ts).catch(() => null)),
+        fetchFromPoolManager(calls), // current price (no timestamp)
+      ])
+
+      const result: Record<string, Array<{ timestamp: number; price: number; date: string }>> = {}
+      for (const uid of input.tokenUids) {
+        const call = methodName(uid)
+        const points: Array<{ timestamp: number; price: number; date: string }> = []
+        for (let i = 0; i < timestamps.length; i++) {
+          points.push({
+            timestamp: timestamps[i]!,
+            price: formatPrice(responses[i]?.calls[call]?.value ?? 0),
+            date: new Date(timestamps[i]! * 1000).toISOString(),
+          })
+        }
+        const currentResp = responses[timestamps.length]
+        points.push({
+          timestamp: now,
+          price: formatPrice(currentResp?.calls[call]?.value ?? 0),
+          date: new Date(now * 1000).toISOString(),
+        })
+        result[uid] = points
+      }
+      return result
+    }),
+
   // Get market summary with key price information
   marketSummary: procedure.query(async ({ ctx }) => {
     try {

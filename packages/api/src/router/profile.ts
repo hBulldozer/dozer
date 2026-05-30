@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createTRPCRouter, procedure } from '../trpc'
 import { fetchNodeData } from '../helpers/fetchFunction'
 import { useTempTxStore } from '@dozer/zustand'
-import { fetchFromPoolManager, getTokenName, getTokenSymbol } from './pool/helpers'
+import { fetchFromPoolManager, fetchTokenInfo, getTokenName, getTokenSymbol } from './pool/helpers'
 import { 
   parseUserPositions, 
   parseUserInfo,
@@ -313,34 +313,33 @@ export const profileRouter = createTRPCRouter({
           return null
         }
 
-        const response = await fetchFromPoolManager([`user_info("${input.address}", "${input.poolKey}")`])
-        const userInfoArray = 
-          response.calls[`user_info("${input.address}", "${input.poolKey}")`].value
+        const [tokenA, tokenB] = input.poolKey.split('/')
 
+        // Batch contract calls + token metadata in parallel
+        const [batchResponse, token0Info, token1Info] = await Promise.all([
+          fetchFromPoolManager([
+            `user_info("${input.address}", "${input.poolKey}")`,
+            'get_all_token_prices_in_usd()',
+          ]),
+          fetchTokenInfo(tokenA || ''),
+          fetchTokenInfo(tokenB || ''),
+        ])
+
+        const userInfoArray = batchResponse.calls[`user_info("${input.address}", "${input.poolKey}")`].value
         if (!userInfoArray || !Array.isArray(userInfoArray)) {
           return null
         }
 
-        // Parse the NamedTuple array to an object with proper property names
         const userInfo = parseUserInfo(userInfoArray)
+        const tokenPrices = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
 
-        // Get token prices for USD values
-        const pricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-        const tokenPrices = pricesResponse.calls['get_all_token_prices_in_usd()'].value || {}
-
-        const [tokenA, tokenB, feeStr] = input.poolKey.split('/')
-
-        // Convert amounts from cents to decimals
         const token0Amount = userInfo.token0Amount || 0
         const token1Amount = userInfo.token1Amount || 0
         const balanceA = userInfo.balance_a || 0
         const balanceB = userInfo.balance_b || 0
 
-        // Calculate USD values
         const token0PriceUSD = (tokenA && tokenPrices[tokenA]) || 0
         const token1PriceUSD = (tokenB && tokenPrices[tokenB]) || 0
-        const token0ValueUSD = token0Amount * token0PriceUSD
-        const token1ValueUSD = token1Amount * token1PriceUSD
 
         return {
           poolKey: input.poolKey,
@@ -349,19 +348,19 @@ export const profileRouter = createTRPCRouter({
           token1Amount,
           balanceA,
           balanceB,
-          token0ValueUSD,
-          token1ValueUSD,
-          totalValueUSD: token0ValueUSD + token1ValueUSD,
+          token0ValueUSD: token0Amount * token0PriceUSD,
+          token1ValueUSD: token1Amount * token1PriceUSD,
+          totalValueUSD: token0Amount * token0PriceUSD + token1Amount * token1PriceUSD,
           token0: {
             uuid: tokenA,
-            symbol: await getTokenSymbol(tokenA || ''),
-            name: await getTokenName(tokenA || ''),
+            symbol: token0Info.symbol,
+            name: token0Info.name,
             priceUSD: token0PriceUSD,
           },
           token1: {
             uuid: tokenB,
-            symbol: await getTokenSymbol(tokenB || ''),
-            name: await getTokenName(tokenB || ''),
+            symbol: token1Info.symbol,
+            name: token1Info.name,
             priceUSD: token1PriceUSD,
           },
         }

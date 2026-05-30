@@ -202,45 +202,49 @@ export const queryProcedures = {
         Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
       )
 
-      // Find the matching pool by comparing symbols and fee
-      let matchingPoolKey: string | null = null
-      for (const poolKey of poolKeys) {
-        const [tokenA, tokenB, poolFeeStr] = poolKey.split('/')
-        const poolFeeBasisPoints = parseInt(poolFeeStr || '0')
+      // Filter to pools whose fee matches — avoids fetching symbols for unrelated pools
+      const candidatePools = poolKeys.filter((pk) => parseInt(pk.split('/')[2] || '0') === feeBasisPoints)
 
-        // Get token info to check symbols
-        const tokenAInfo = await fetchTokenInfo(tokenA || '')
-        const tokenBInfo = await fetchTokenInfo(tokenB || '')
+      // Fetch all unique token symbols in parallel (replaces sequential loop)
+      const uniqueTokenUuids = [
+        ...new Set(candidatePools.flatMap((pk) => [pk.split('/')[0] || '', pk.split('/')[1] || ''])),
+      ]
+      const tokenInfoResults = await Promise.all(uniqueTokenUuids.map((uuid) => fetchTokenInfo(uuid)))
+      const symbolMap = new Map<string, string>()
+      uniqueTokenUuids.forEach((uuid, i) => symbolMap.set(uuid, tokenInfoResults[i]!.symbol))
 
-        // Check if symbols and fee match (allowing for either token order)
-        const symbolsMatch =
-          ((tokenAInfo.symbol === token0Symbol && tokenBInfo.symbol === token1Symbol) ||
-            (tokenAInfo.symbol === token1Symbol && tokenBInfo.symbol === token0Symbol)) &&
-          poolFeeBasisPoints === feeBasisPoints
-
-        if (symbolsMatch) {
-          matchingPoolKey = poolKey
-          break
-        }
-      }
+      // Find matching pool using pre-fetched symbol map — no awaits in loop
+      const matchingPoolKey =
+        candidatePools.find((pk) => {
+          const [a, b] = pk.split('/')
+          const symA = symbolMap.get(a || '') || ''
+          const symB = symbolMap.get(b || '') || ''
+          return (
+            (symA === token0Symbol && symB === token1Symbol) ||
+            (symA === token1Symbol && symB === token0Symbol)
+          )
+        }) ?? null
 
       if (!matchingPoolKey) {
         throw new Error(`Pool not found for symbol ID: ${input.symbolId}`)
       }
 
-      // Fetch pool data
-      const poolDataResponse = await fetchFromPoolManager([`front_end_api_pool("${matchingPoolKey}")`])
-      const poolData = parsePoolApiInfo(poolDataResponse.calls[`front_end_api_pool("${matchingPoolKey}")`].value)
-
       // Parse pool key
       const [tokenA, tokenB, _feeStr] = matchingPoolKey.split('/')
       const swapFee = parseInt(_feeStr || '0') / 10
 
-      // Get token metadata
-      const token0Info = await fetchTokenInfo(tokenA || '')
-      const token1Info = await fetchTokenInfo(tokenB || '')
-      const token0DisplayMetadata = await getTokenDisplayMetadata(tokenA || '')
-      const token1DisplayMetadata = await getTokenDisplayMetadata(tokenB || '')
+      // Fetch pool data, token metadata, and 24h metrics all in parallel
+      const [poolDataResponse, token0Info, token1Info, token0DisplayMetadata, token1DisplayMetadata, metrics24h] =
+        await Promise.all([
+          fetchFromPoolManager([`front_end_api_pool("${matchingPoolKey}")`]),
+          fetchTokenInfo(tokenA || ''),
+          fetchTokenInfo(tokenB || ''),
+          getTokenDisplayMetadata(tokenA || ''),
+          getTokenDisplayMetadata(tokenB || ''),
+          enrichPoolWith24hMetrics(matchingPoolKey),
+        ])
+
+      const poolData = parsePoolApiInfo(poolDataResponse.calls[`front_end_api_pool("${matchingPoolKey}")`].value)
 
       // Calculate reserves
       const reserve0 = (poolData.reserve0 || 0) / 100
@@ -258,8 +262,7 @@ export const queryProcedures = {
       // Calculate USD values
       const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
 
-      // Calculate 24h metrics (volume, fees, txCount)
-      const metrics24h = await enrichPoolWith24hMetrics(matchingPoolKey)
+      // metrics24h already fetched in the parallel block above
       const volume1d = metrics24h.volume24h
       const volumeUSD = metrics24h.volume24hUSD
       const feeUSD = metrics24h.fees24hUSD

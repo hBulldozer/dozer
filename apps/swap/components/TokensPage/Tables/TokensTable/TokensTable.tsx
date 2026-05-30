@@ -75,18 +75,7 @@ export const TokensTable: FC<TokensTableProps> = ({ displayCurrency }) => {
 
   const [mounted, setMounted] = useState(false)
 
-  // Create columns dynamically based on displayCurrency
-  const COLUMNS = useMemo(() => {
-    const cols: any[] = []
-    cols.push(NAME_COLUMN as any)
-    cols.push(createPriceColumn(displayCurrency) as any)
-    cols.push(createChangeColumn(displayCurrency) as any)
-    cols.push(createMarketCapColumn(displayCurrency) as any)
-    cols.push(createTvlColumn(displayCurrency) as any)
-    cols.push(createVolumeColumn(displayCurrency) as any)
-    cols.push(createChartColumn(displayCurrency) as any)
-    return cols
-  }, [displayCurrency])
+  // Columns are built after bulk data is available (see below, after _pairs_array)
 
   useEffect(() => {
     setMounted(true)
@@ -243,6 +232,37 @@ export const TokensTable: FC<TokensTableProps> = ({ displayCurrency }) => {
     // Filter and sort the entries
     return tokenEntries.filter((pair) => pair.liquidityUSD > 0).sort((a, b) => b.liquidityUSD - a.liquidityUSD)
   }, [allPools, currentPrices, totalSupplies, mounted])
+
+  // Extract all token UUIDs for bulk queries (runs after _pairs_array is computed)
+  const allTokenUuids = useMemo(
+    () => _pairs_array.map((p) => p.id.replace('token-', '')).filter(Boolean),
+    [_pairs_array]
+  )
+
+  // Single bulk query replaces N individual priceChange calls (2 node calls total)
+  const { data: allPriceChanges } = api.getPrices.allPriceChanges.useQuery(
+    { tokenUids: allTokenUuids },
+    { enabled: mounted && allTokenUuids.length > 0, staleTime: 60000, refetchInterval: 60000 }
+  )
+
+  // Single bulk query replaces N×(points+1) chartData calls ((points+1) node calls total)
+  const { data: allSparklines } = api.getPrices.allSparklineData.useQuery(
+    { tokenUids: allTokenUuids, currency: displayCurrency === 'HTR' ? 'HTR' : 'USD', points: 5 },
+    { enabled: mounted && allTokenUuids.length > 0, staleTime: 60000, refetchInterval: 120000 }
+  )
+
+  // Create columns with bulk pre-fetched data passed in
+  const COLUMNS = useMemo(() => {
+    const cols: any[] = []
+    cols.push(NAME_COLUMN as any)
+    cols.push(createPriceColumn(displayCurrency) as any)
+    cols.push(createChangeColumn(displayCurrency, allPriceChanges) as any)
+    cols.push(createMarketCapColumn(displayCurrency) as any)
+    cols.push(createTvlColumn(displayCurrency) as any)
+    cols.push(createVolumeColumn(displayCurrency) as any)
+    cols.push(createChartColumn(displayCurrency, allSparklines) as any)
+    return cols
+  }, [displayCurrency, allPriceChanges, allSparklines])
 
   const pairs_array = useMemo(() => {
     if (!mounted || !_pairs_array.length) {
