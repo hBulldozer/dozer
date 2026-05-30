@@ -242,13 +242,13 @@ export const TokensTable: FC<TokensTableProps> = ({ displayCurrency }) => {
   // Single bulk query replaces N individual priceChange calls (2 node calls total)
   const { data: allPriceChanges } = api.getPrices.allPriceChanges.useQuery(
     { tokenUids: allTokenUuids },
-    { enabled: mounted && allTokenUuids.length > 0, staleTime: 60000, refetchInterval: 60000 }
+    { enabled: mounted && allTokenUuids.length > 0, staleTime: 300000, refetchInterval: 300000 }
   )
 
   // Single bulk query replaces N×(points+1) chartData calls ((points+1) node calls total)
   const { data: allSparklines } = api.getPrices.allSparklineData.useQuery(
     { tokenUids: allTokenUuids, currency: displayCurrency === 'HTR' ? 'HTR' : 'USD', points: 5 },
-    { enabled: mounted && allTokenUuids.length > 0, staleTime: 60000, refetchInterval: 120000 }
+    { enabled: mounted && allTokenUuids.length > 0, staleTime: 300000, refetchInterval: 300000 }
   )
 
   // Create columns with bulk pre-fetched data passed in

@@ -13,7 +13,7 @@ import {
 import { formatUSD } from '@dozer/format'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Layout } from 'components/Layout'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../utils/api'
@@ -79,6 +79,9 @@ const LINKS = ({ symbol, name }: { symbol: string; name: string }): BreadcrumbLi
 
 const Token = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  // Delay slow queries so they fire in a separate tRPC batch after the initial render.
+  const [slowQueriesReady, setSlowQueriesReady] = useState(false)
+  useEffect(() => { setSlowQueriesReady(true) }, [])
   const router = useRouter()
   const symbol = router.query.symbol as string
 
@@ -95,12 +98,11 @@ const Token = () => {
     error: transactionError,
   } = api.getPools.getAllTransactionHistory.useQuery(
     {
-      count: 200, // Get more to filter client-side
-      // Remove tokenFilter - we'll filter client-side for better results
+      count: 200,
     },
     {
-      enabled: !!tokenData?.uuid,
-      staleTime: 30000, // Cache for 30 seconds
+      enabled: slowQueriesReady && !!tokenData?.uuid,
+      staleTime: 30000,
       refetchOnWindowFocus: false,
     }
   )

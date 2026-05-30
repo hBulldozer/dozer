@@ -17,7 +17,7 @@ import {
 } from '@dozer/ui'
 import { ArrowTopRightOnSquareIcon, Square2StackIcon } from '@heroicons/react/24/outline'
 import { AreaSeries, CandlestickSeries, HistogramSeries, type Time } from 'lightweight-charts'
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { api } from 'utils/api'
 
@@ -92,10 +92,17 @@ export const TokenChart: FC<TokenChartProps> = ({ pair, height = 400 }) => {
   const [hoverValue, setHoverValue] = useState<number | null>(null)
   const [hoverTime, setHoverTime] = useState<string | null>(null)
 
+  // Delay chart data query to a separate tRPC batch so it doesn't block the initial page render.
+  // Without this, 97 chart timestamp requests batch with every other page query and cause timeouts.
+  const [chartReady, setChartReady] = useState(false)
+  useEffect(() => {
+    setChartReady(true)
+  }, [])
+
   const { data, isLoading, isFetching } = api.getTokens.getTokenChartData.useQuery(
     { tokenUuid, timeRange },
     {
-      enabled: Boolean(tokenUuid),
+      enabled: chartReady && Boolean(tokenUuid),
     }
   )
 
