@@ -79,9 +79,18 @@ const LINKS = ({ symbol, name }: { symbol: string; name: string }): BreadcrumbLi
 
 const Token = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  // Delay slow queries so they fire in a separate tRPC batch after the initial render.
-  const [slowQueriesReady, setSlowQueriesReady] = useState(false)
-  useEffect(() => { setSlowQueriesReady(true) }, [])
+  // chartReady: fires immediately after mount — chart data is fast when nginx cache is warm.
+  const [chartReady, setChartReady] = useState(false)
+  useEffect(() => { setChartReady(true) }, [])
+
+  // historyReady: fires 600ms after mount — guaranteed separate tRPC batch from chart data.
+  // getAllTransactionHistory is the slowest query (scans contract history); isolating it
+  // prevents it from blocking chart data even when tokenData is already in React Query cache.
+  const [historyReady, setHistoryReady] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setHistoryReady(true), 600)
+    return () => clearTimeout(t)
+  }, [])
   const router = useRouter()
   const symbol = router.query.symbol as string
 
@@ -98,10 +107,11 @@ const Token = () => {
     error: transactionError,
   } = api.getPools.getAllTransactionHistory.useQuery(
     {
-      count: 200,
+      count: 50,                          // was 200 — fewer records = faster node scan
+      tokenFilter: tokenData?.uuid,       // server-side filter so node only returns relevant txs
     },
     {
-      enabled: slowQueriesReady && !!tokenData?.uuid,
+      enabled: historyReady && !!tokenData?.uuid,
       staleTime: 30000,
       refetchOnWindowFocus: false,
     }
