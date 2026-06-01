@@ -1,12 +1,7 @@
 import { z } from 'zod'
 
 import { procedure } from '../trpc'
-import {
-  CHART_BATCH_DELAY_MS,
-  CHART_MAX_STATE_REQUESTS_PER_BATCH,
-  generateCandleWindows,
-  processBatched,
-} from '../utils/chart'
+import { CHART_BATCH_DELAY_MS, CHART_MAX_STATE_REQUESTS_PER_BATCH, generateCandleWindows, processBatched } from '../utils/chart'
 import { parsePoolApiInfo } from '../utils/namedTupleParsers'
 import { formatPrice } from './constants'
 import { fetchFromPoolManager } from './pool/helpers'

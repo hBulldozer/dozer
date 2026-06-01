@@ -4,25 +4,26 @@ import { fetchFakeData } from './fetchFakeData'
 const isLocalDevelopment = process.env.NODE_ENV === 'development'
 
 // Timeout / retry settings.
-//
-// Production: historical contract-state queries (chart data) can take 10-30s on
-// the node. We set a generous 25s timeout with NO retries so the worst-case per
-// request is 25s (local) + 25s (public fallback) = 50s, safely within Vercel's
-// 60s function limit. Retrying a timed-out historical query just doubles the wait.
-//
-// Development: fail fast so socket hang-ups don't stall local dev.
-const MAX_RETRIES = isLocalDevelopment ? 0 : 0
-const INITIAL_TIMEOUT = isLocalDevelopment ? 3000 : 25000 // 3s dev, 25s prod
-const BACKOFF_FACTOR = isLocalDevelopment ? 0 : 1.5
+// No retries in either environment — retrying a timed-out node request just doubles the wait.
+const MAX_RETRIES = 0
+// 8s is enough for nginx-cached requests (~200ms) and uncached historical state queries
+// (3-5s node computation + network). Old values: 3s dev (too short for cold cache),
+// 25s prod (held queue slots too long on hung requests).
+const INITIAL_TIMEOUT = 8000
+const BACKOFF_FACTOR = 0
 
-// Request queue to prevent overwhelming the node with concurrent requests
+// Request queue — throttles concurrent node requests.
+//
+// Production (maxConcurrency=10): most chart requests hit the nginx cache (~200ms) so
+// high concurrency is safe and improves throughput.
+//
+// Development (maxConcurrency=5): the local node computes historical state without nginx
+// caching on first load. 10 simultaneous state computations stress the node, pushing
+// individual request times above the timeout. 5 keeps the node comfortable.
 class RequestQueue {
   private queue: Array<() => Promise<any>> = []
   private activeCount = 0
-  // Conservative concurrency limits to prevent rate limiting.
-  // Production is lower (5) because historical chart state queries are slow and
-  // firing 15 at once risks saturating the node before nginx can cache results.
-  private maxConcurrency = isLocalDevelopment ? 10 : 5
+  private maxConcurrency = isLocalDevelopment ? 5 : 10
 
   async add<T>(fn: () => Promise<T>): Promise<T> {
     return new Promise((resolve, reject) => {
@@ -114,6 +115,13 @@ export async function fetchNodeData(endpoint: string, queryParams: string[]): Pr
       headers['X-API-Key'] = process.env.NODE_API_KEY
     }
 
+    // Historical state requests (nano_contract/state with a timestamp) are served from
+    // the nginx cache on the local node. The public node doesn't have this nginx cache,
+    // so falling back to it would just add another INITIAL_TIMEOUT wait for a request
+    // it can't serve faster. Skip public fallback for these requests entirely.
+    const isHistoricalStateRequest =
+      endpoint === 'nano_contract/state' && queryParams.some((p) => p.startsWith('timestamp='))
+
     try {
       // Try local node first if configured
       if (process.env.NEXT_PUBLIC_LOCAL_NODE_URL) {
@@ -121,12 +129,17 @@ export async function fetchNodeData(endpoint: string, queryParams: string[]): Pr
           const localNodeUrl = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}${endpoint}?${queryParams.join('&')}`
           return await fetchWithRetry(localNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)
         } catch (error) {
-          // If local node fails, fall through to try public node
+          if (isHistoricalStateRequest) {
+            // No point trying the public node — it won't have our nginx chart cache.
+            // Re-throw so the chart point is skipped (null → forward-filled) rather than
+            // waiting another INITIAL_TIMEOUT for a result that won't come.
+            throw error
+          }
           console.warn(`Local node failed for ${endpoint}, trying public node:`, error)
         }
       }
 
-      // Try public node as fallback or primary
+      // Try public node as fallback or primary (live state only)
       if (process.env.NEXT_PUBLIC_PUBLIC_NODE_URL) {
         const publicNodeUrl = `${process.env.NEXT_PUBLIC_PUBLIC_NODE_URL}${endpoint}?${queryParams.join('&')}`
         return await fetchWithRetry(publicNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)

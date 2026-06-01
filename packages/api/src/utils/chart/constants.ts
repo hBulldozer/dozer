@@ -1,6 +1,11 @@
 export type ChartTimeRange = '24h' | '3d' | '1w'
 
-export const CHART_MAX_STATE_REQUESTS_PER_BATCH = 5  // matches queue maxConcurrency in production
+// Batch size for chart timestamp requests fed into the shared requestQueue.
+// Keep at 5 (dev queue concurrency) — this lets other tRPC procedures'
+// requests interleave between chart batches instead of being starved.
+// Using Promise.all (all 97 at once) dumped them into a FIFO queue and
+// blocked byUuidAny / getAllTransactionHistory for 40s.
+export const CHART_MAX_STATE_REQUESTS_PER_BATCH = 5
 export const CHART_BATCH_DELAY_MS = 0
 export const INTRA_CANDLE_SAMPLES = 1  // 1 midpoint sample per candle → proper OHLC (open, mid, close)
 

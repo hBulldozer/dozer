@@ -79,26 +79,41 @@ const LINKS = ({ symbol, name }: { symbol: string; name: string }): BreadcrumbLi
 
 const Token = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  // chartReady: fires immediately after mount — chart data is fast when nginx cache is warm.
-  const [chartReady, setChartReady] = useState(false)
-  useEffect(() => { setChartReady(true) }, [])
-
-  // historyReady: fires 600ms after mount — guaranteed separate tRPC batch from chart data.
-  // getAllTransactionHistory is the slowest query (scans contract history); isolating it
-  // prevents it from blocking chart data even when tokenData is already in React Query cache.
-  const [historyReady, setHistoryReady] = useState(false)
-  useEffect(() => {
-    const t = setTimeout(() => setHistoryReady(true), 600)
-    return () => clearTimeout(t)
-  }, [])
   const router = useRouter()
   const symbol = router.query.symbol as string
 
   const { data: tokenData, isLoading: isLoadingToken } = api.getTokens.bySymbolDetailed.useQuery(
     { symbol: symbol?.toUpperCase() || '' },
-    { enabled: !!symbol }
+    {
+      enabled: !!symbol,
+      // Prevent client-side refetch when ISR/SSG dehydrated state is fresh.
+      // Without this, staleTime=0 (default) causes an immediate background refetch that
+      // joins Batch A and adds 18s to the chart batch on tokens without a warm ISR cache.
+      staleTime: 30000,
+    }
   )
   const { data: prices = {}, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery()
+
+  // historyReady: fires 1.5s AFTER tokenData arrives — not after mount.
+  //
+  // Why not after mount? TokenChart only renders when aggregatedPair is non-null, which
+  // requires tokenData. So TokenChart's own chartReady fires the same millisecond tokenData
+  // arrives, enabling getTokenChartData. If historyReady depended on mount time, it would
+  // already be true when tokenData arrives → both chart + history enable simultaneously →
+  // same tRPC batch → 52s timeout.
+  //
+  // With this approach:
+  //   T=0:       bySymbolDetailed fires (initial batch, or served from ISR cache)
+  //   T=X:       tokenData arrives → TokenChart mounts → chart fires (Batch A)
+  //   T=X+1500ms: historyReady fires → history fires (Batch B, separate HTTP request)
+  //
+  // Each batch has its own 60s Vercel limit. Neither should exceed it.
+  const [historyReady, setHistoryReady] = useState(false)
+  useEffect(() => {
+    if (!tokenData?.uuid) return
+    const t = setTimeout(() => setHistoryReady(true), 1500)
+    return () => clearTimeout(t)
+  }, [tokenData?.uuid])
 
   // Fetch transaction history for trading history (filter client-side)
   const {
@@ -111,7 +126,7 @@ const Token = () => {
       tokenFilter: tokenData?.uuid,       // server-side filter so node only returns relevant txs
     },
     {
-      enabled: historyReady && !!tokenData?.uuid,
+      enabled: historyReady, // tokenData.uuid is guaranteed present when historyReady fires
       staleTime: 30000,
       refetchOnWindowFocus: false,
     }
