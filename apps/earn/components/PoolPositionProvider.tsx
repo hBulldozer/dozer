@@ -10,14 +10,10 @@ interface PoolPositionContext {
   value1: number
   max_withdraw_a: Amount<Type> | undefined
   max_withdraw_b: Amount<Type> | undefined
-  // user_deposited_a: Amount<Type> | undefined
-  // user_deposited_b: Amount<Type> | undefined
-  // depositedUSD0: number
-  // depositedUSD1: number
   last_tx: number
-  // changeUSD0: number
-  // changeUSD1: number
   liquidity: number | undefined
+  balanceA: number | undefined  // cashback for token0, in cents
+  balanceB: number | undefined  // cashback for token1, in cents
   profit: UserProfitInfo | null
   isLoading: boolean
   isError: boolean
@@ -58,13 +54,14 @@ export const PoolPositionProvider: FC<{
     liquidity,
     token0Amount,
     token1Amount,
-    // user_deposited_a, user_deposited_b,
+    balanceA,
+    balanceB,
   } = poolInfo || {
     liquidity: undefined,
     token0Amount: undefined,
     token1Amount: undefined,
-    // user_deposited_a: undefined,
-    // user_deposited_b: undefined,
+    balanceA: undefined,
+    balanceB: undefined,
   }
 
   const isLoading = useMemo(() => {
@@ -123,13 +120,9 @@ export const PoolPositionProvider: FC<{
           value1,
           max_withdraw_a: _max_withdraw_a,
           max_withdraw_b: _max_withdraw_b,
-          // user_deposited_a: _user_deposited_a,
-          // user_deposited_b: _user_deposited_b,
           last_tx: profitInfo?.last_action_timestamp || 0,
-          // changeUSD0,
-          // changeUSD1,
-          // depositedUSD0,
-          // depositedUSD1,
+          balanceA,
+          balanceB,
           profit: profitInfo || null,
           isLoading,
           isError,
@@ -140,16 +133,12 @@ export const PoolPositionProvider: FC<{
           isLoading,
           _max_withdraw_a,
           _max_withdraw_b,
-          // _user_deposited_a,
-          // _user_deposited_b,
-          // depositedUSD0,
-          // depositedUSD1,
-          // changeUSD0,
-          // changeUSD1,
           value0,
           value1,
           token0Amount,
           token1Amount,
+          balanceA,
+          balanceB,
           profitInfo,
         ]
       )}

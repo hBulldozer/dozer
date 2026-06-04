@@ -1745,11 +1745,8 @@ class DozerPoolManager(Blueprint):
         if len(ctx.actions) != 1:
             raise InvalidAction("Must provide exactly one token deposit")
 
-        deposit_action = list(ctx.actions.values())[0][0]
-        if not isinstance(deposit_action, NCDepositAction):
-            raise InvalidAction("Must provide a deposit action")
-
-        token_in = deposit_action.token_uid
+        token_in = list(ctx.actions.keys())[0]
+        deposit_action = self._get_deposit_action(ctx, token_in)
         amount_in = Amount(deposit_action.amount)
         user_address = ctx.caller_id
 
@@ -2326,11 +2323,8 @@ class DozerPoolManager(Blueprint):
         if len(ctx.actions) != 1:
             raise InvalidAction("Must provide exactly one token withdrawal")
 
-        withdrawal_action = list(ctx.actions.values())[0][0]
-        if not isinstance(withdrawal_action, NCWithdrawalAction):
-            raise InvalidAction("Must provide a withdrawal action")
-
-        token_out = withdrawal_action.token_uid
+        token_out = list(ctx.actions.keys())[0]
+        withdrawal_action = self._get_withdrawal_action(ctx, token_out)
         withdrawal_amount = withdrawal_action.amount
 
         # Get pool
@@ -2780,6 +2774,9 @@ class DozerPoolManager(Blueprint):
         # Check if the output amount matches the withdrawal action
         if withdrawal_action.token_uid != token_out:
             raise InvalidAction("Withdrawal token does not match output token")
+
+        if withdrawal_action.amount > amount_out:
+            raise InvalidAction("Withdrawal amount exceeds swap output")
 
         # Calculate slippage (if the withdrawal amount is less than the calculated output)
         slippage_out = 0
@@ -3518,15 +3515,15 @@ class DozerPoolManager(Blueprint):
         )
 
     @public
-    def add_authorized_signer(self, ctx: Context, signer_address: Address) -> None:
-        """Add an address to the list of authorized signers.
+    def add_authorized_signer(self, ctx: Context, signer_address: CallerId) -> None:
+        """Add a caller ID to the list of authorized signers.
 
         Only the contract owner can add authorized signers.
         Authorized signers can sign pools for listing in the Dozer dApp.
 
         Args:
             ctx: The transaction context
-            signer_address: The address to authorize as a signer
+            signer_address: The address or contract ID to authorize as a signer
 
         Raises:
             Unauthorized: If the caller is not the owner
@@ -3541,15 +3538,15 @@ class DozerPoolManager(Blueprint):
                       caller=str(ctx.caller_id))
 
     @public
-    def remove_authorized_signer(self, ctx: Context, signer_address: Address) -> None:
-        """Remove an address from the list of authorized signers.
+    def remove_authorized_signer(self, ctx: Context, signer_address: CallerId) -> None:
+        """Remove a caller ID from the list of authorized signers.
 
         Only the contract owner can remove authorized signers.
         The owner cannot be removed as an authorized signer.
 
         Args:
             ctx: The transaction context
-            signer_address: The address to remove authorization from
+            signer_address: The address or contract ID to remove authorization from
 
         Raises:
             Unauthorized: If the caller is not the owner
@@ -3727,6 +3724,33 @@ class DozerPoolManager(Blueprint):
         self.log.info('contract unpaused',
                       caller=str(ctx.caller_id))
 
+    @public(allow_deposit=True)
+    def replenish_funds(self, ctx: Context) -> None:
+        """Replenish contract funds 
+        
+        Args:
+            ctx: The transaction context. Must contain exactly one NCDepositAction.
+
+        Raises:
+            Unauthorized: If the caller is not the owner.
+            InvalidAction: If the context does not contain exactly one deposit action.
+        """
+        if ctx.caller_id != self.owner:
+            raise Unauthorized("Only the owner can replenish funds")
+
+        if len(ctx.actions) != 1:
+            raise InvalidAction("Must provide exactly one token deposit")
+
+        token = list(ctx.actions.keys())[0]
+        deposit_action = self._get_deposit_action(ctx, token)
+
+        self.log.info(
+            'funds replenished',
+            caller=str(ctx.caller_id),
+            token=deposit_action.token_uid.hex(),
+            amount=deposit_action.amount,
+        )
+
     @view
     def is_paused(self) -> bool:
         """Check if the contract is currently paused.
@@ -3751,11 +3775,11 @@ class DozerPoolManager(Blueprint):
         return result
 
     @view
-    def is_authorized_signer(self, address: Address) -> bool:
-        """Check if an address is an authorized signer.
+    def is_authorized_signer(self, address: CallerId) -> bool:
+        """Check if a caller ID is an authorized signer.
 
         Args:
-            address: The address to check
+            address: The address or contract ID to check
 
         Returns:
             True if the address is an authorized signer, False otherwise
