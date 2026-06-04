@@ -1,15 +1,10 @@
 import { z } from 'zod'
 
 import { procedure } from '../trpc'
-import {
-  CHART_BATCH_DELAY_MS,
-  CHART_MAX_STATE_REQUESTS_PER_BATCH,
-  generateCandleWindows,
-  processBatched,
-} from '../utils/chart'
+import { CHART_BATCH_DELAY_MS, CHART_MAX_STATE_REQUESTS_PER_BATCH, generateCandleWindows, processBatched } from '../utils/chart'
 import { parsePoolApiInfo } from '../utils/namedTupleParsers'
 import { formatPrice } from './constants'
-import { fetchFromPoolManager } from './pool/helpers'
+import { fetchFromPoolManager, NodeUnavailableError } from './pool/helpers'
 
 export interface TokenChartPoint {
   time: number
@@ -40,7 +35,8 @@ interface TokenSample {
 async function fetchTokenSample(
   tokenUuid: string,
   poolKeys: string[],
-  tsSeconds: number | undefined
+  tsSeconds: number | undefined,
+  onNodeUnavailable?: () => void
 ): Promise<TokenSample | null> {
   const priceUSDCall = `get_token_price_in_usd("${tokenUuid}")`
   const priceHTRCall = `get_token_price_in_htr("${tokenUuid}")`
@@ -48,22 +44,62 @@ async function fetchTokenSample(
   const poolCalls: string[] = []
   const token0PriceUSDCalls: string[] = []
   const token0PriceHTRCalls: string[] = []
+  const reserveCalls: string[] = []
   for (const poolKey of poolKeys) {
-    const [token0] = poolKey.split('/')
-    if (!token0) continue
+    const [token0, token1, feeStr] = poolKey.split('/')
+    if (!token0 || !token1) continue
     poolCalls.push(`front_end_api_pool("${poolKey}")`)
     token0PriceUSDCalls.push(`get_token_price_in_usd("${token0}")`)
     token0PriceHTRCalls.push(`get_token_price_in_htr("${token0}")`)
+    // Pre-fetch reserves so we can compute spot prices if the router returns 0
+    reserveCalls.push(`get_reserves("${token0}", "${token1}", ${parseInt(feeStr || '0')})`)
   }
 
   try {
+    const isHistorical = tsSeconds !== undefined
     const response = await fetchFromPoolManager(
-      [priceUSDCall, priceHTRCall, ...poolCalls, ...token0PriceUSDCalls, ...token0PriceHTRCalls],
-      tsSeconds
+      [priceUSDCall, priceHTRCall, ...poolCalls, ...token0PriceUSDCalls, ...token0PriceHTRCalls, ...reserveCalls],
+      tsSeconds,
+      isHistorical ? { skipPublicFallback: true } : undefined
     )
 
-    const priceUSD = formatPrice(response.calls[priceUSDCall]?.value ?? 0)
-    const priceHTR = formatPrice(response.calls[priceHTRCall]?.value ?? 0)
+    let priceUSD = formatPrice(response.calls[priceUSDCall]?.value ?? 0)
+    let priceHTR = formatPrice(response.calls[priceHTRCall]?.value ?? 0)
+
+    // Spot-price fallback for unsigned-pool tokens (router returns 0)
+    // Only makes sense at current time (tsSeconds === undefined) because
+    // historical reserves are not reliable for deriving historical prices.
+    if ((priceUSD === 0 || priceHTR === 0) && tsSeconds === undefined) {
+      for (const poolKey of poolKeys) {
+        const [token0, token1, feeStr] = poolKey.split('/')
+        if (!token0 || !token1) continue
+        const fee = parseInt(feeStr || '0')
+
+        // Determine which token in the pool is the "other" token with a known price
+        const isToken0 = token0 === tokenUuid
+        const otherToken = isToken0 ? token1 : token0
+
+        const otherPriceUSD = formatPrice(response.calls[`get_token_price_in_usd("${otherToken}")`]?.value ?? 0)
+        const otherPriceHTR = formatPrice(response.calls[`get_token_price_in_htr("${otherToken}")`]?.value ?? 0)
+
+        const reserveCall = `get_reserves("${token0}", "${token1}", ${fee})`
+        const reserves: [number, number] | null = response.calls[reserveCall]?.value ?? null
+        if (!reserves || reserves[0] <= 0 || reserves[1] <= 0) continue
+
+        const [resA, resB] = reserves
+        // resA = reserve of token0, resB = reserve of token1
+        // If tokenUuid is token0: spotRatio = resB/resA (price of token0 in units of token1)
+        // If tokenUuid is token1: spotRatio = resA/resB (price of token1 in units of token0)
+        const spotRatio = isToken0 ? resB / resA : resA / resB
+
+        if (priceUSD === 0 && otherPriceUSD > 0) priceUSD = spotRatio * otherPriceUSD
+        if (priceHTR === 0 && otherPriceHTR > 0) priceHTR = spotRatio * otherPriceHTR
+        // HTR itself is always 1 HTR
+        if (priceHTR === 0 && otherToken === '00') priceHTR = spotRatio
+
+        if (priceUSD > 0 && priceHTR > 0) break
+      }
+    }
 
     const pools: Record<string, PoolVolumeSample> = {}
     for (const poolKey of poolKeys) {
@@ -80,7 +116,8 @@ async function fetchTokenSample(
     }
 
     return { priceUSD, priceHTR, pools }
-  } catch {
+  } catch (e) {
+    if (e instanceof NodeUnavailableError) onNodeUnavailable?.()
     return null
   }
 }
@@ -93,17 +130,24 @@ export const tokenChartProcedures = {
         timeRange: z.enum(['24h', '3d', '1w']).default('24h'),
       })
     )
-    .query(async ({ input }): Promise<TokenChartPoint[]> => {
-      const signedResponse = await fetchFromPoolManager(['get_signed_pools()'])
-      const allPoolKeys: string[] = signedResponse.calls['get_signed_pools()']?.value || []
+    .query(async ({ input }): Promise<{ points: TokenChartPoint[]; nodeUnavailable: boolean }> => {
+      // Use get_all_pools() so unsigned-pool tokens (e.g. DozerTools-created tokens)
+      // are included. Signed pools are preferred for historical accuracy, but for the
+      // current "live" candle we fall back to spot price from reserves when the router
+      // returns 0 for an unsigned-pool token.
+      const allPoolsResponse = await fetchFromPoolManager(['get_all_pools()'])
+      const allPoolKeys: string[] = allPoolsResponse.calls['get_all_pools()']?.value || []
       const tokenPoolKeys = allPoolKeys.filter((k) => {
         const [a, b] = k.split('/')
         return a === input.tokenUuid || b === input.tokenUuid
       })
-      if (tokenPoolKeys.length === 0) return []
+      if (tokenPoolKeys.length === 0) return { points: [], nodeUnavailable: false }
+
+      let nodeUnavailable = false
+      const onNodeUnavailable = () => { nodeUnavailable = true }
 
       const windows = generateCandleWindows(input.timeRange)
-      if (windows.length === 0) return []
+      if (windows.length === 0) return { points: [], nodeUnavailable: false }
 
       // Each window has open + intra samples + close. Consecutive windows share a boundary,
       // so we dedupe into a monotonic list of unique second-level timestamps.
@@ -128,7 +172,7 @@ export const tokenChartProcedures = {
         CHART_BATCH_DELAY_MS,
         (tsSeconds) => {
           const isLive = tsSeconds >= Math.floor(nowMs / 1000)
-          return fetchTokenSample(input.tokenUuid, tokenPoolKeys, isLive ? undefined : tsSeconds)
+          return fetchTokenSample(input.tokenUuid, tokenPoolKeys, isLive ? undefined : tsSeconds, onNodeUnavailable)
         }
       )
 
@@ -146,7 +190,7 @@ export const tokenChartProcedures = {
       }
       // Back-fill any leading nulls with the first known sample.
       const firstKnown = sampleSecondsOrdered.map((ts) => sampleByTs.get(ts)).find((s) => !!s) ?? null
-      if (!firstKnown) return []
+      if (!firstKnown) return { points: [], nodeUnavailable }
       for (const ts of sampleSecondsOrdered) {
         if (!sampleByTs.get(ts)) sampleByTs.set(ts, firstKnown)
       }
@@ -201,6 +245,6 @@ export const tokenChartProcedures = {
         })
       }
 
-      return points
+      return { points, nodeUnavailable }
     }),
 }

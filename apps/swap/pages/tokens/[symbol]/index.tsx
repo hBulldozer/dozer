@@ -13,7 +13,7 @@ import {
 import { formatUSD } from '@dozer/format'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Layout } from 'components/Layout'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../utils/api'
@@ -84,9 +84,36 @@ const Token = () => {
 
   const { data: tokenData, isLoading: isLoadingToken } = api.getTokens.bySymbolDetailed.useQuery(
     { symbol: symbol?.toUpperCase() || '' },
-    { enabled: !!symbol }
+    {
+      enabled: !!symbol,
+      // Prevent client-side refetch when ISR/SSG dehydrated state is fresh.
+      // Without this, staleTime=0 (default) causes an immediate background refetch that
+      // joins Batch A and adds 18s to the chart batch on tokens without a warm ISR cache.
+      staleTime: 30000,
+    }
   )
   const { data: prices = {}, isLoading: isLoadingPrices } = api.getPrices.allUSD.useQuery()
+
+  // historyReady: fires 1.5s AFTER tokenData arrives — not after mount.
+  //
+  // Why not after mount? TokenChart only renders when aggregatedPair is non-null, which
+  // requires tokenData. So TokenChart's own chartReady fires the same millisecond tokenData
+  // arrives, enabling getTokenChartData. If historyReady depended on mount time, it would
+  // already be true when tokenData arrives → both chart + history enable simultaneously →
+  // same tRPC batch → 52s timeout.
+  //
+  // With this approach:
+  //   T=0:       bySymbolDetailed fires (initial batch, or served from ISR cache)
+  //   T=X:       tokenData arrives → TokenChart mounts → chart fires (Batch A)
+  //   T=X+1500ms: historyReady fires → history fires (Batch B, separate HTTP request)
+  //
+  // Each batch has its own 60s Vercel limit. Neither should exceed it.
+  const [historyReady, setHistoryReady] = useState(false)
+  useEffect(() => {
+    if (!tokenData?.uuid) return
+    const t = setTimeout(() => setHistoryReady(true), 1500)
+    return () => clearTimeout(t)
+  }, [tokenData?.uuid])
 
   // Fetch transaction history for trading history (filter client-side)
   const {
@@ -95,12 +122,12 @@ const Token = () => {
     error: transactionError,
   } = api.getPools.getAllTransactionHistory.useQuery(
     {
-      count: 200, // Get more to filter client-side
-      // Remove tokenFilter - we'll filter client-side for better results
+      count: 50,                          // was 200 — fewer records = faster node scan
+      tokenFilter: tokenData?.uuid,       // server-side filter so node only returns relevant txs
     },
     {
-      enabled: !!tokenData?.uuid,
-      staleTime: 30000, // Cache for 30 seconds
+      enabled: historyReady, // tokenData.uuid is guaranteed present when historyReady fires
+      staleTime: 30000,
       refetchOnWindowFocus: false,
     }
   )
@@ -185,15 +212,20 @@ const Token = () => {
               {(() => {
                 const customAbout = customAbouts[tokenData.symbol.toUpperCase()]
                 const poolText = tokenData.poolCount === 1 ? 'pool' : 'pools'
-                const aboutText = customAbout
-                  ? `${customAbout} It can be traded in ${tokenData.poolCount} liquidity ${poolText}.`
-                  : tokenData.bridged
-                  ? `${
-                      tokenData.symbol
-                    } is a token on the Hathor network with a total supply of ${tokenData.totalSupply.toLocaleString()} tokens. It is available for trading in ${
-                      tokenData.poolCount
-                    } liquidity ${poolText}.`
-                  : `${tokenData.symbol} is the native token of the Hathor network. It can be staked, used for transaction fees, and traded in ${tokenData.poolCount} liquidity ${poolText}.`
+                const tradingLine = `It can be traded in ${tokenData.poolCount} liquidity ${poolText}.`
+
+                let aboutText: string
+                if (customAbout) {
+                  // Manually curated description for known tokens — always takes priority
+                  aboutText = `${customAbout} ${tradingLine}`
+                } else if (tokenData.about && (tokenData.metadataSource === 'dozer-tools' || tokenData.metadataSource === 'khensu')) {
+                  // Community token: use the description stored on-chain
+                  aboutText = `${tokenData.about} ${tradingLine}`
+                } else if (tokenData.bridged) {
+                  aboutText = `${tokenData.symbol} is a token on the Hathor network with a total supply of ${tokenData.totalSupply.toLocaleString()} tokens. It is available for trading in ${tokenData.poolCount} liquidity ${poolText}.`
+                } else {
+                  aboutText = `${tokenData.symbol} is the native token of the Hathor network. It can be staked, used for transaction fees, and traded in ${tokenData.poolCount} liquidity ${poolText}.`
+                }
 
                 return (
                   <>

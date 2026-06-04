@@ -111,6 +111,8 @@ export const PoolsTable: FC = () => {
           symbol: pool.token0.symbol,
           name: pool.token0.name,
           imageUrl: pool.token0.imageUrl || undefined,
+          communityTag: pool.token0.communityTag || undefined,
+          metadataSource: pool.token0.metadataSource || undefined,
         })
         const token1 = new Token({
           chainId: pool.token1.chainId || 1,
@@ -119,6 +121,8 @@ export const PoolsTable: FC = () => {
           symbol: pool.token1.symbol,
           name: pool.token1.name,
           imageUrl: pool.token1.imageUrl || undefined,
+          communityTag: pool.token1.communityTag || undefined,
+          metadataSource: pool.token1.metadataSource || undefined,
         })
         return { ...pool, priceHtr: prices?.['00'], isPending: pool.id.startsWith('pending-'), token0, token1 }
       })

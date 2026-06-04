@@ -11,6 +11,8 @@ import { FarmRewardsAvailableTooltip } from '../../../../FarmRewardsAvailableToo
 export const PairNameCell: FC<CellProps> = ({ row }) => {
   const ref = useRef<HTMLDivElement>(null)
   const inViewport = useInViewport(ref)
+  const communityTag = row.token0.communityTag || row.token1.communityTag
+
   return (
     <div className="flex items-center gap-3 sm:gap-0">
       <div className="hidden sm:flex">
@@ -27,9 +29,11 @@ export const PairNameCell: FC<CellProps> = ({ row }) => {
           {row.token0.symbol} <span className="text-stone-500">/</span> {row.token1.symbol}{' '}
           {row.token0.symbol == 'HTR' && row.token1.symbol == 'hUSDC' && <FarmRewardsAvailableTooltip />}
           <Chip color="gray" size="sm" label={`${row.swapFee.toFixed(2)}%`} />
-          {row.token1.imageUrl && (
+          {communityTag && (
             <>
-              <div className={classNames('bg-stone-700 hidden sm:flex rounded-lg px-2 py-0.5 text-xs')}>Tools</div>
+              <div className={classNames('bg-stone-700 hidden sm:flex rounded-lg px-2 py-0.5 text-xs')}>
+                {communityTag}
+              </div>
               <div className={classNames('bg-stone-700 flex sm:hidden rounded-lg px-2 py-0.5 text-xs')}>
                 <UsersIcon width={16} height={16} />
               </div>

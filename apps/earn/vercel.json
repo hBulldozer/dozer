@@ -1,4 +1,5 @@
 {
+  "regions": ["gru1"],
   "headers": [
     {
       "source": "/pool/_next/data/:path*",

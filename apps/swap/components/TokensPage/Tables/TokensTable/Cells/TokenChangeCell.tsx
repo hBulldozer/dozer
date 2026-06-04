@@ -5,41 +5,43 @@ import { CellProps } from './types'
 import { formatPercentChange } from '@dozer/format'
 import { api } from 'utils/api'
 
-export const TokenChangeCell: FC<CellProps> = ({ row, displayCurrency = 'USD' }) => {
-  // Extract token UUID from row ID
+export const TokenChangeCell: FC<CellProps> = ({ row, displayCurrency = 'USD', preloadedPriceChanges }) => {
   const tokenUuid = row.id.replace('token-', '')
 
-  // Determine special cases
   const isHtrToken = tokenUuid === '00'
   const isHusdcToken = row.id.includes('husdc')
   const isHtrInHtrMode = displayCurrency === 'HTR' && isHtrToken
   const isHusdcInUsdMode = displayCurrency === 'USD' && isHusdcToken
 
-  // Fetch the token's own price change (in USD terms)
+  const hasPreloaded = !!preloadedPriceChanges
+
+  // Only fire individual queries when no bulk data was provided (standalone usage)
   const { data: priceChangeData, isLoading: isLoadingToken } = api.getPrices.priceChange.useQuery(
     { tokenUid: tokenUuid },
     {
-      enabled: !!tokenUuid && !isHtrInHtrMode && !isHusdcInUsdMode,
+      enabled: !hasPreloaded && !!tokenUuid && !isHtrInHtrMode && !isHusdcInUsdMode,
       staleTime: 60000,
       refetchInterval: 60000,
     }
   )
 
-  // For HTR mode (all tokens except HTR itself), we need HTR's USD change
-  // to calculate the relative change
   const { data: htrChangeData, isLoading: isLoadingHtr } = api.getPrices.priceChange.useQuery(
-    { tokenUid: '00' }, // HTR token UUID
+    { tokenUid: '00' },
     {
-      enabled: displayCurrency === 'HTR' && !isHtrToken,
+      enabled: !hasPreloaded && displayCurrency === 'HTR' && !isHtrToken,
       staleTime: 60000,
       refetchInterval: 60000,
     }
   )
 
-  // Handle loading state
-  const showLoading =
+  // Resolve data — bulk preloaded takes priority over individual queries
+  const resolvedPriceChange = preloadedPriceChanges?.[tokenUuid] ?? priceChangeData
+  const resolvedHtrChange = preloadedPriceChanges?.['00'] ?? htrChangeData
+
+  const showLoading = !hasPreloaded && (
     (isLoadingToken && !isHtrInHtrMode && !isHusdcInUsdMode) ||
     (isLoadingHtr && displayCurrency === 'HTR' && !isHtrToken)
+  )
 
   if (showLoading) {
     return (
@@ -74,8 +76,7 @@ export const TokenChangeCell: FC<CellProps> = ({ row, displayCurrency = 'USD' })
     )
   }
 
-  // Get the token's USD change
-  const tokenUsdChange = priceChangeData?.change ?? row.change ?? 0
+  const tokenUsdChange = resolvedPriceChange?.change ?? row.change ?? 0
 
   // Helper function to normalize very small values to zero (floating-point precision fix)
   // This ensures 0.00% always shows as green up arrow
@@ -88,7 +89,7 @@ export const TokenChangeCell: FC<CellProps> = ({ row, displayCurrency = 'USD' })
   // Formula: change_in_htr = (1 + token_usd_change) / (1 + htr_usd_change) - 1
   // This gives the token's price change when measured in HTR instead of USD
   if (displayCurrency === 'HTR' && !isHtrToken) {
-    const htrUsdChange = htrChangeData?.change ?? 0
+    const htrUsdChange = resolvedHtrChange?.change ?? 0
 
     // Calculate relative change
     // If token went up X% and HTR went up Y%,

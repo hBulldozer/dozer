@@ -1,4 +1,5 @@
-import { fetchNodeData } from '../../helpers/fetchFunction'
+import { fetchNodeData, NodeUnavailableError } from '../../helpers/fetchFunction'
+export { NodeUnavailableError }
 import { formatPrice } from '../constants'
 import { parsePoolApiInfo } from '../../utils/namedTupleParsers'
 
@@ -8,13 +9,28 @@ export const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL
 // Get the DozerTools Contract ID from environment
 const NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID = process.env.NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID
 const NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL = process.env.NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL
+const NEXT_PUBLIC_KHENSU_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_KHENSU_MANAGER_CONTRACT_ID
+const NEXT_PUBLIC_PINATA_GATEWAY_URL = process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs'
 
 // Cache for token information to avoid repeated API calls
 const tokenInfoCache = new Map<string, { symbol: string; name: string }>()
+const tokenMetadataCache = new Map<string, { expiresAt: number; promise: Promise<TokenDisplayMetadata> }>()
 const poolManagerResponseCache = new Map<string, { expiresAt: number; promise: Promise<any> }>()
 
 const LIVE_POOL_MANAGER_TTL_MS = 5_000
 const HISTORICAL_POOL_MANAGER_TTL_MS = 24 * 60 * 60 * 1000
+const TOKEN_METADATA_TTL_MS = 60 * 1000
+
+export interface TokenDisplayMetadata {
+  imageUrl: string | null
+  about: string | null
+  telegram: string | null
+  twitter: string | null
+  website: string | null
+  createdBy: string | null
+  communityTag: string | null
+  metadataSource: 'khensu' | 'dozer-tools' | null
+}
 
 if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
   console.warn('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
@@ -30,40 +46,187 @@ function prunePoolManagerResponseCache(now: number) {
   }
 }
 
-// Helper function to fetch DozerTools image URL for a token
-export async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> {
+// Fetch full metadata from the DozerTools contract for a token
+async function getDozerToolsMetadata(tokenUuid: string): Promise<TokenDisplayMetadata | null> {
   try {
-    // Skip if DozerTools integration is not configured
-    if (!NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID || !NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL) {
+    if (!NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID) {
       return null
     }
 
-    // Fetch project info from DozerTools contract
     const endpoint = 'nano_contract/state'
     const queryParams = [`id=${NEXT_PUBLIC_DOZER_TOOLS_CONTRACT_ID}`, `calls[]=get_project_info("${tokenUuid}")`]
 
     const response = await fetchNodeData(endpoint, queryParams)
     const projectInfo = response.calls[`get_project_info("${tokenUuid}")`]?.value
 
-    if (projectInfo && projectInfo.logo_url) {
-      // Check if it's a valid Vercel Blob URL format
-      if (projectInfo.logo_url.startsWith('http')) {
-        return projectInfo.logo_url
-      } else {
-        // Construct URL using Vercel Blob base URL
-        return `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/${projectInfo.logo_url}`
+    if (!projectInfo) {
+      console.warn(`[DozerTools] No project info found for token ${tokenUuid} — token not registered in DozerTools contract`)
+      return null
+    }
+
+    // Resolve image URL
+    let imageUrl: string | null = null
+    const logoUrl: string | null = projectInfo.logo_url || null
+    if (logoUrl) {
+      imageUrl = logoUrl.startsWith('http')
+        ? logoUrl
+        : NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL
+          ? `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/${logoUrl}`
+          : null
+    } else if (NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL) {
+      // Pattern-based fallback: token-icons/{symbol}-{dev}
+      const symbol: string | null = projectInfo.symbol || null
+      const dev: string | null = projectInfo.dev || null
+      if (symbol && dev) {
+        imageUrl = `${NEXT_PUBLIC_DOZER_TOOLS_VERCEL_BLOB_URL}/token-icons/${symbol}-${dev}`
       }
     }
 
-    return null
-  } catch {
-    // Silently fail for DozerTools integration - it's optional
+    return {
+      imageUrl,
+      about: (projectInfo.description as string) || null,
+      telegram: (projectInfo.telegram as string) || null,
+      twitter: (projectInfo.twitter as string) || null,
+      website: (projectInfo.website as string) || null,
+      createdBy: (projectInfo.dev as string) || null,
+      communityTag: 'Tools',
+      metadataSource: 'dozer-tools',
+    }
+  } catch (error) {
+    console.warn(`[DozerTools] Failed to fetch metadata for token ${tokenUuid}:`, error)
     return null
   }
 }
 
+// Keep the old export for any direct callers that only need the image URL
+export async function getDozerToolsImageUrl(tokenUuid: string): Promise<string | null> {
+  const metadata = await getDozerToolsMetadata(tokenUuid)
+  return metadata?.imageUrl ?? null
+}
+
+function convertIpfsToGatewayUrl(imageLink: string): string {
+  const trimmedImageLink = imageLink.trim()
+
+  if (trimmedImageLink.startsWith('ipfs://ipfs/')) {
+    const hash = trimmedImageLink.replace('ipfs://ipfs/', '')
+    const gatewayBaseUrl = NEXT_PUBLIC_PINATA_GATEWAY_URL.replace(/\/$/, '')
+    return gatewayBaseUrl.endsWith('/ipfs') ? `${gatewayBaseUrl}/${hash}` : `${gatewayBaseUrl}/ipfs/${hash}`
+  }
+
+  if (trimmedImageLink.startsWith('ipfs://')) {
+    const hash = trimmedImageLink.replace('ipfs://', '')
+    const gatewayBaseUrl = NEXT_PUBLIC_PINATA_GATEWAY_URL.replace(/\/$/, '')
+    return gatewayBaseUrl.endsWith('/ipfs') ? `${gatewayBaseUrl}/${hash}` : `${gatewayBaseUrl}/ipfs/${hash}`
+  }
+
+  return trimmedImageLink
+}
+
+async function fetchKhensuTokenMetadata(tokenUuid: string): Promise<TokenDisplayMetadata | null> {
+  if (!NEXT_PUBLIC_KHENSU_MANAGER_CONTRACT_ID || tokenUuid === '00') {
+    return null
+  }
+
+  try {
+    const call = `get_token_info("${tokenUuid}")`
+    const response = await fetchNodeData('nano_contract/state', [
+      `id=${NEXT_PUBLIC_KHENSU_MANAGER_CONTRACT_ID}`,
+      `calls[]=${call}`,
+    ])
+    const tokenInfo = response.calls?.[call]?.value
+
+    if (!tokenInfo) {
+      return null
+    }
+
+    // TokenInfo NamedTuple field order (contract: khensu_manager.py → TokenInfo):
+    //   0: creator, 1: token_name, 2: token_symbol, 3: image_link,
+    //   4: description, 5: twitter, 6: telegram, 7: website, ...
+    // Hathor nodes may return NamedTuples as a plain array OR as a named object — handle both.
+    let creator: string, imageLink: string, description: string,
+        twitter: string, telegram: string, website: string
+
+    if (Array.isArray(tokenInfo)) {
+      if (tokenInfo.length < 8) return null
+      creator     = typeof tokenInfo[0] === 'string' ? tokenInfo[0] : ''
+      imageLink   = typeof tokenInfo[3] === 'string' ? tokenInfo[3] : ''
+      description = typeof tokenInfo[4] === 'string' ? tokenInfo[4] : ''
+      twitter     = typeof tokenInfo[5] === 'string' ? tokenInfo[5] : ''
+      telegram    = typeof tokenInfo[6] === 'string' ? tokenInfo[6] : ''
+      website     = typeof tokenInfo[7] === 'string' ? tokenInfo[7] : ''
+    } else {
+      // Object / named-key response
+      creator     = typeof tokenInfo.creator     === 'string' ? tokenInfo.creator     : ''
+      imageLink   = typeof tokenInfo.image_link  === 'string' ? tokenInfo.image_link  : ''
+      description = typeof tokenInfo.description === 'string' ? tokenInfo.description : ''
+      twitter     = typeof tokenInfo.twitter     === 'string' ? tokenInfo.twitter     : ''
+      telegram    = typeof tokenInfo.telegram    === 'string' ? tokenInfo.telegram    : ''
+      website     = typeof tokenInfo.website     === 'string' ? tokenInfo.website     : ''
+    }
+
+    return {
+      imageUrl: imageLink ? convertIpfsToGatewayUrl(imageLink) : null,
+      about: description || null,
+      telegram: telegram || null,
+      twitter: twitter || null,
+      website: website || null,
+      createdBy: creator || null,
+      communityTag: 'Community',
+      metadataSource: 'khensu',
+    }
+  } catch {
+    return null
+  }
+}
+
+export async function getTokenDisplayMetadata(tokenUuid: string): Promise<TokenDisplayMetadata> {
+  const now = Date.now()
+  const cachedEntry = tokenMetadataCache.get(tokenUuid)
+
+  if (cachedEntry && cachedEntry.expiresAt > now) {
+    return cachedEntry.promise
+  }
+
+  const promise = (async (): Promise<TokenDisplayMetadata> => {
+    const khensuMetadata = await fetchKhensuTokenMetadata(tokenUuid)
+    if (khensuMetadata) {
+      return khensuMetadata
+    }
+
+    const dozerToolsMetadata = await getDozerToolsMetadata(tokenUuid)
+    if (dozerToolsMetadata) {
+      return dozerToolsMetadata
+    }
+
+    return {
+      imageUrl: null,
+      about: null,
+      telegram: null,
+      twitter: null,
+      website: null,
+      createdBy: null,
+      communityTag: null,
+      metadataSource: null,
+    }
+  })().catch((error) => {
+    tokenMetadataCache.delete(tokenUuid)
+    throw error
+  })
+
+  tokenMetadataCache.set(tokenUuid, {
+    expiresAt: now + TOKEN_METADATA_TTL_MS,
+    promise,
+  })
+
+  return promise
+}
+
 // Helper function to fetch data from the pool manager contract
-export async function fetchFromPoolManager(calls: string[], timestamp?: number): Promise<any> {
+export async function fetchFromPoolManager(
+  calls: string[],
+  timestamp?: number,
+  options?: { skipPublicFallback?: boolean }
+): Promise<any> {
   if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
     throw new Error('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
   }
@@ -82,13 +245,16 @@ export async function fetchFromPoolManager(calls: string[], timestamp?: number):
   }
 
   const endpoint = 'nano_contract/state'
-  const queryParams = [`id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`, ...normalizedCalls.map((call) => `calls[]=${call}`)]
+  const queryParams = [
+    `id=${NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID}`,
+    ...normalizedCalls.map((call) => `calls[]=${call}`),
+  ]
 
   if (timestamp !== undefined) {
     queryParams.push(`timestamp=${timestamp}`)
   }
 
-  const promise = fetchNodeData(endpoint, queryParams).catch((error) => {
+  const promise = fetchNodeData(endpoint, queryParams, options).catch((error) => {
     poolManagerResponseCache.delete(cacheKey)
     throw error
   })

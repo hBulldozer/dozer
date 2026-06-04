@@ -28,6 +28,8 @@ export function toToken(dbToken: any): Token {
     decimals: dbToken.decimals,
     name: dbToken.name,
     symbol: dbToken.symbol,
+    communityTag: dbToken.communityTag || undefined,
+    metadataSource: dbToken.metadataSource || undefined,
   })
 }
 // export function pairFromPoolAndTokens(

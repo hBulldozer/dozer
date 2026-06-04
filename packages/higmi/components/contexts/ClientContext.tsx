@@ -258,9 +258,91 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
     [session, onSessionConnected]
   )
 
-  const createClient = useCallback(async () => {
+  // localStorage key used to signal that IDB cleanup is needed on next boot
+  const WC_CLEAR_FLAG = 'wc_idb_needs_clear'
+
+  /**
+   * Delete ALL IndexedDB databases that are missing the 'keyvaluestorage' store.
+   *
+   * Strategy: enumerate every database (Chrome/Safari/Edge support indexedDB.databases()).
+   * For each one, open it and check its objectStoreNames. If 'keyvaluestorage' is absent
+   * the schema is corrupt — delete it so WalletConnect can recreate it from scratch.
+   *
+   * For Firefox (no indexedDB.databases()), fall back to deleting a known-name list.
+   *
+   * MUST run before any call to Client.init() so there are no open connections
+   * blocking the deleteDatabase requests.
+   */
+  const clearWCStorageNow = useCallback(async () => {
+    if (typeof indexedDB === 'undefined') return
+
+    const deleteDB = (name: string) =>
+      new Promise<void>((resolve) => {
+        const req = indexedDB.deleteDatabase(name)
+        req.onsuccess = () => resolve()
+        req.onerror = () => resolve()
+        req.onblocked = () => resolve()
+      })
+
+    const openAndCheck = (name: string, version?: number) =>
+      new Promise<boolean>((resolve) => {
+        // Open without specifying version so we get the existing schema
+        const req = version ? indexedDB.open(name, version) : indexedDB.open(name)
+        req.onsuccess = () => {
+          const db = req.result
+          const ok = db.objectStoreNames.contains('keyvaluestorage')
+          db.close()
+          resolve(ok)
+        }
+        req.onerror = () => resolve(true)   // can't check → assume fine
+        req.onblocked = () => resolve(true)
+        req.onupgradeneeded = () => {
+          // If upgrade fires the DB is brand-new → no corruption
+          req.transaction?.abort()
+          resolve(true)
+        }
+      })
+
     try {
-      setIsInitializing(true)
+      if (indexedDB.databases) {
+        const dbs = await indexedDB.databases()
+        await Promise.all(
+          dbs.map(async (info) => {
+            if (!info.name) return
+            const ok = await openAndCheck(info.name, info.version)
+            if (!ok) {
+              console.info(`[WalletConnect] Deleting corrupt IDB: ${info.name}`)
+              await deleteDB(info.name)
+            }
+          })
+        )
+        return
+      }
+    } catch {
+      // Fall through to known-name list
+    }
+
+    // Firefox / older browsers: delete by well-known WalletConnect v2 database names
+    await Promise.all([
+      'WALLET_CONNECT_V2_INDEXED_DB',
+      'wc@2:core:0.3//keychain',
+      'wc@2:sign-client:0.3//session',
+      'wc@2:sign-client:0.3//proposal',
+      'wc@2:sign-client:0.3//pairing',
+      'keyval-store',
+    ].map(deleteDB))
+  }, [])
+
+  const createClient = useCallback(async () => {
+    setIsInitializing(true)
+    try {
+      // Phase 2: a previous load detected a corrupt IDB and set this flag before
+      // reloading. Now that there are no open connections, run the cleanup.
+      if (typeof localStorage !== 'undefined' && localStorage.getItem(WC_CLEAR_FLAG)) {
+        localStorage.removeItem(WC_CLEAR_FLAG)
+        console.info('[WalletConnect] Running scheduled IDB cleanup...')
+        await clearWCStorageNow()
+      }
 
       const _client = await Client.init({
         logger: 'debug',
@@ -274,17 +356,55 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       await _subscribeToEvents(_client)
       await _checkPersistedState(_client)
     } catch (err) {
-      throw err
+      console.error('[WalletConnect] Failed to initialize client:', err)
+      // Do NOT rethrow — leaves isInitializing=true and disables the connect button.
     } finally {
       setIsInitializing(false)
     }
-  }, [_checkPersistedState, _subscribeToEvents, relayerRegion])
+  }, [_checkPersistedState, _subscribeToEvents, relayerRegion, clearWCStorageNow])
 
   useEffect(() => {
     if (!client || prevRelayerValue.current !== relayerRegion) {
       createClient()
     }
   }, [client, createClient, relayerRegion])
+
+  /**
+   * Global unhandled-rejection handler — catches IDB errors that WalletConnect fires
+   * on background (fire-and-forget) promises that are NOT connected to the Client.init()
+   * promise chain, so our try-catch in createClient never sees them.
+   *
+   * On detection:
+   *   1. Suppress the console error (event.preventDefault)
+   *   2. Set localStorage flag so the next boot runs cleanup before Client.init()
+   *   3. Reload the page — this closes all open IDB connections so deleteDatabase
+   *      can complete without being blocked.
+   */
+  useEffect(() => {
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const msg =
+        event.reason instanceof Error
+          ? event.reason.message
+          : String(event.reason ?? '')
+
+      const isWCIdbError =
+        msg.includes('keyvaluestorage') || msg.includes('not a known object store')
+
+      if (!isWCIdbError) return
+
+      event.preventDefault() // suppress the red console error
+      console.warn('[WalletConnect] Caught background IDB error — scheduling repair:', msg)
+
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(WC_CLEAR_FLAG, '1')
+      }
+      // Small delay so any in-flight state updates can settle before reload
+      setTimeout(() => window.location.reload(), 100)
+    }
+
+    window.addEventListener('unhandledrejection', onUnhandledRejection)
+    return () => window.removeEventListener('unhandledrejection', onUnhandledRejection)
+  }, [WC_CLEAR_FLAG])
 
   const value = useMemo(
     () => ({

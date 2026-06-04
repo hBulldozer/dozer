@@ -59,6 +59,13 @@ export const HathorChainData: ChainsMap = {
     slip44: 280,
     testnet: true,
   },
+  privatenet: {
+    id: 'hathor:privatenet',
+    name: 'Hathor Privatenet',
+    rpc: [],
+    slip44: 280,
+    testnet: true,
+  },
 }
 
 export const HathorMetadata: NamespaceMetadata = {
@@ -69,6 +76,11 @@ export const HathorMetadata: NamespaceMetadata = {
   },
   // Hathor TestNet
   testnet: {
+    logo: 'https://icoholder.com/media/cache/ico_logo_view_page/files/img/3da29e8fcf45923a8ccefa52e91f107d.jpeg',
+    rgb: '183, 62, 49',
+  },
+  // Hathor Privatenet (local dev)
+  privatenet: {
     logo: 'https://icoholder.com/media/cache/ico_logo_view_page/files/img/3da29e8fcf45923a8ccefa52e91f107d.jpeg',
     rgb: '183, 62, 49',
   },

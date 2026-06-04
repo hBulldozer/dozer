@@ -55,6 +55,18 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'gateway.pinata.cloud',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.mypinata.cloud',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   async redirects() {

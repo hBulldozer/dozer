@@ -7,23 +7,45 @@ import { TokenConfig, EthereumNetworkConfig, HathorNetworkConfig } from '../type
  * NEXT_PUBLIC_LOCAL_NODE_URL environment variable.
  */
 
-// Dynamically detect if we're on testnet based on the node URL
-// If the URL contains "testnet" or "self2.dozer.finance", we're on testnet
-const getIsTestnet = (): boolean => {
+// Detect network type from the node URL.
+// - localhost / 127.0.0.1 / 0.0.0.0 → privatenet (local dev node)
+// - URL contains "testnet" or "self2.dozer.finance" → testnet
+// - anything else → mainnet
+const getNetworkType = (): 'mainnet' | 'testnet' | 'privatenet' => {
   const nodeUrl = process.env.NEXT_PUBLIC_LOCAL_NODE_URL || ''
-  const isTestnet = nodeUrl.includes('testnet') || nodeUrl.includes('self2.dozer.finance')
 
-  // Log the detected environment for debugging
-  if (typeof window !== 'undefined') {
-    console.log(`Bridge config detected: ${isTestnet ? 'TESTNET' : 'MAINNET'} (from URL: ${nodeUrl})`)
+  if (
+    nodeUrl.includes('localhost') ||
+    nodeUrl.includes('127.0.0.1') ||
+    nodeUrl.includes('0.0.0.0')
+  ) {
+    if (typeof window !== 'undefined') {
+      console.log(`Bridge config detected: PRIVATENET (from URL: ${nodeUrl})`)
+    }
+    return 'privatenet'
   }
 
-  return isTestnet
+  if (nodeUrl.includes('testnet') || nodeUrl.includes('self2.dozer.finance')) {
+    if (typeof window !== 'undefined') {
+      console.log(`Bridge config detected: TESTNET (from URL: ${nodeUrl})`)
+    }
+    return 'testnet'
+  }
+
+  if (typeof window !== 'undefined') {
+    console.log(`Bridge config detected: MAINNET (from URL: ${nodeUrl})`)
+  }
+  return 'mainnet'
 }
 
-// Export as a function for runtime evaluation and as a constant for compatibility
-export const IS_TESTNET = getIsTestnet()
-export const isTestnet = getIsTestnet
+export const NETWORK_TYPE = getNetworkType()
+
+// IS_TESTNET stays true for both testnet and privatenet (backward compatibility)
+export const IS_TESTNET = NETWORK_TYPE !== 'mainnet'
+export const IS_PRIVATENET = NETWORK_TYPE === 'privatenet'
+
+// Legacy function export for compatibility
+export const isTestnet = () => IS_TESTNET
 
 // Ethereum/Arbitrum Network Configuration
 export const ETHEREUM_CONFIG: {
@@ -66,6 +88,7 @@ export const ETHEREUM_CONFIG: {
 export const HATHOR_CONFIG: {
   mainnet: HathorNetworkConfig
   testnet: HathorNetworkConfig
+  privatenet: HathorNetworkConfig
 } = {
   // Mainnet
   mainnet: {
@@ -91,6 +114,18 @@ export const HATHOR_CONFIG: {
     confirmationTime: '30 minutes',
     secondsPerBlock: 30,
   },
+  // Privatenet (local dev node)
+  privatenet: {
+    networkId: 31,
+    name: 'Hathor Privatenet',
+    rpcChain: 'hathor:privatenet',
+    federation: '',
+    explorer: process.env.NEXT_PUBLIC_LOCAL_EXPLORER_URL || 'http://localhost:3001',
+    explorerTokenTab: 'token_detail',
+    confirmations: 1,
+    confirmationTime: '5 minutes',
+    secondsPerBlock: 30,
+  },
 }
 
 // Arbitrum Federation Host URLs
@@ -98,10 +133,10 @@ export const ARBITRUM_FEDERATION_HOST = IS_TESTNET
   ? 'https://arb-sepolia.g.alchemy.com/v2/uZC_k6qzUFbIP5MigPnBCvry-n9M-gOV'
   : 'https://arbitrum-mainnet.infura.io/v3/399500b5679b442eb991fefee1c5bfdc'
 
-// Current Network Settings (determined by IS_TESTNET)
+// Current Network Settings (determined by NETWORK_TYPE)
 export const CURRENT_ETHEREUM_CONFIG = IS_TESTNET ? ETHEREUM_CONFIG.testnet : ETHEREUM_CONFIG.mainnet
 
-export const CURRENT_HATHOR_CONFIG = IS_TESTNET ? HATHOR_CONFIG.testnet : HATHOR_CONFIG.mainnet
+export const CURRENT_HATHOR_CONFIG = HATHOR_CONFIG[NETWORK_TYPE]
 
 // Cross-network references
 CURRENT_ETHEREUM_CONFIG.crossToNetwork = CURRENT_HATHOR_CONFIG

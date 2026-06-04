@@ -1,4 +1,5 @@
 {
+  "regions": ["gru1"],
   "headers": [
     {
       "source": "/swap/_next/data/:path*",

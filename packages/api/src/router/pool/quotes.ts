@@ -10,6 +10,73 @@ import {
 } from '../../utils/namedTupleParsers'
 import { fetchFromPoolManager, getTokenSymbol } from './helpers'
 
+// ─── AMM helpers for unsigned-pool direct quotes ───────────────────────────
+// fee_denom = 1000 in the contract (fee expressed as basis points e.g. 8 = 0.8%)
+const FEE_DENOM = 1000
+
+/** Exact-input AMM formula (mirrors the contract's get_amount_out). All values in cents. */
+function ammAmountOut(amountIn: number, reserveIn: number, reserveOut: number, fee: number): number {
+  if (reserveIn <= 0 || reserveOut <= 0 || amountIn <= 0) return 0
+  const num = reserveOut * amountIn * (FEE_DENOM - fee)
+  const den = reserveIn * FEE_DENOM + amountIn * (FEE_DENOM - fee)
+  return num / den
+}
+
+/** Exact-output AMM formula (inverse of ammAmountOut). All values in cents. */
+function ammAmountIn(amountOut: number, reserveIn: number, reserveOut: number, fee: number): number {
+  if (reserveIn <= 0 || reserveOut <= 0 || amountOut <= 0 || amountOut >= reserveOut) return 0
+  const num = amountOut * reserveIn * FEE_DENOM
+  const den = (FEE_DENOM - fee) * (reserveOut - amountOut)
+  return num / den
+}
+
+/** Price impact as a percentage (e.g. 3.41 = 3.41%). All values in same unit. */
+function ammPriceImpact(amountIn: number, amountOut: number, reserveIn: number, reserveOut: number): number {
+  if (reserveIn === 0 || reserveOut === 0 || amountIn === 0 || amountOut === 0) return 0
+  // spot_price = reserveOut / reserveIn; execution_price = amountOut / amountIn
+  // impact = (1 - execution_price / spot_price) * 100
+  return (1 - (amountOut * reserveIn) / (amountIn * reserveOut)) * 100
+}
+
+/**
+ * Find pool keys in the full pool list that contain the given token pair
+ * (in either order). Returns keys sorted by fee ascending (cheapest first).
+ */
+async function findPoolsForPair(tokenIn: string, tokenOut: string): Promise<string[]> {
+  const response = await fetchFromPoolManager(['get_all_pools()'])
+  const allKeys: string[] = response.calls['get_all_pools()'].value || []
+  return allKeys
+    .filter((key) => {
+      const [a, b] = key.split('/')
+      return (a === tokenIn && b === tokenOut) || (a === tokenOut && b === tokenIn)
+    })
+    .sort((ka, kb) => {
+      const feeA = parseInt(ka.split('/')[2] || '0')
+      const feeB = parseInt(kb.split('/')[2] || '0')
+      return feeA - feeB
+    })
+}
+
+/**
+ * Fetch reserves for a pool key. Returns [reserveIn, reserveOut] relative to tokenIn.
+ * All values are in contract units (cents).
+ */
+async function fetchReservesForPool(
+  poolKey: string,
+  tokenIn: string,
+): Promise<{ reserveIn: number; reserveOut: number } | null> {
+  const [tokenA, tokenB, feeStr] = poolKey.split('/')
+  if (!tokenA || !tokenB || !feeStr) return null
+  const fee = parseInt(feeStr)
+  const call = `get_reserves("${tokenA}", "${tokenB}", ${fee})`
+  const response = await fetchFromPoolManager([call])
+  const reserves: [number, number] | null = response.calls[call]?.value ?? null
+  if (!reserves) return null
+  const [resA, resB] = reserves
+  return tokenA === tokenIn ? { reserveIn: resA, reserveOut: resB } : { reserveIn: resB, reserveOut: resA }
+}
+// ───────────────────────────────────────────────────────────────────────────
+
 export const quoteProcedures = {
   // Get swap quote
   quote: procedure
@@ -190,9 +257,9 @@ export const quoteProcedures = {
           const feeValue = parseFloat(feeString || '0')
           const feeBasisPoints = Math.round(feeValue * 10)
 
-          // Get all signed pools to find the matching one
-          const batchResponse = await fetchFromPoolManager(['get_signed_pools()'])
-          const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
+          // Get all pools (including unsigned) to find the matching one for direct URL access
+          const batchResponse = await fetchFromPoolManager(['get_all_pools()'])
+          const poolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
 
           let matchingPoolKey: string | null = null
           for (const key of poolKeys) {
@@ -278,9 +345,9 @@ export const quoteProcedures = {
           const feeValue = parseFloat(feeString || '0')
           const feeBasisPoints = Math.round(feeValue * 10)
 
-          // Get all signed pools to find the matching one
-          const batchResponse = await fetchFromPoolManager(['get_signed_pools()'])
-          const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
+          // Get all pools (including unsigned) to find the matching one for direct URL access
+          const batchResponse = await fetchFromPoolManager(['get_all_pools()'])
+          const poolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
 
           let matchingPoolKey: string | null = null
           for (const key of poolKeys) {
@@ -471,6 +538,125 @@ export const quoteProcedures = {
       } catch (error) {
         console.error(`Error getting single token removal quote:`, error)
         throw new Error('Failed to get single token removal quote')
+      }
+    }),
+
+  // ─── Direct (unsigned-pool) swap quotes ──────────────────────────────────
+
+  /**
+   * Exact-input quote for a single pool, bypassing the router.
+   * Works for both signed and unsigned pools. Picks the best-priced pool
+   * when multiple pools exist for the same token pair.
+   */
+  quoteDirect: procedure
+    .input(
+      z.object({
+        tokenIn: z.string(),
+        tokenOut: z.string(),
+        amountIn: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const poolKeys = await findPoolsForPair(input.tokenIn, input.tokenOut)
+        if (poolKeys.length === 0) throw new Error('No pool found for token pair')
+
+        let best: {
+          path: string[]
+          amounts: number[]
+          amountOut: number
+          priceImpact: number
+          route: string[]
+          poolPath: string
+        } | null = null
+
+        for (const poolKey of poolKeys) {
+          const res = await fetchReservesForPool(poolKey, input.tokenIn)
+          if (!res || res.reserveIn <= 0 || res.reserveOut <= 0) continue
+
+          const amountInCents = Math.round(input.amountIn * 100)
+          const amountOutCents = ammAmountOut(amountInCents, res.reserveIn, res.reserveOut, parseInt(poolKey.split('/')[2] || '0'))
+          if (amountOutCents <= 0) continue
+
+          const amountOut = amountOutCents / 100
+          const priceImpact = ammPriceImpact(amountInCents, amountOutCents, res.reserveIn, res.reserveOut)
+
+          if (!best || amountOut > best.amountOut) {
+            best = {
+              path: [input.tokenIn, input.tokenOut],
+              amounts: [input.amountIn, amountOut],
+              amountOut,
+              priceImpact,
+              route: [input.tokenIn, input.tokenOut],
+              poolPath: poolKey,
+            }
+          }
+        }
+
+        if (!best) throw new Error('Could not compute direct quote — pool may have no liquidity')
+        return best
+      } catch (error) {
+        console.error('❌ [QUOTE_DIRECT] Error:', error)
+        throw new Error('Failed to get direct swap quote')
+      }
+    }),
+
+  /**
+   * Exact-output quote for a single pool, bypassing the router.
+   * Works for both signed and unsigned pools.
+   */
+  quoteDirectExactOutput: procedure
+    .input(
+      z.object({
+        tokenIn: z.string(),
+        tokenOut: z.string(),
+        amountOut: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const poolKeys = await findPoolsForPair(input.tokenIn, input.tokenOut)
+        if (poolKeys.length === 0) throw new Error('No pool found for token pair')
+
+        let best: {
+          path: string[]
+          amounts: number[]
+          amountIn: number
+          priceImpact: number
+          route: string[]
+          poolPath: string
+        } | null = null
+
+        for (const poolKey of poolKeys) {
+          const res = await fetchReservesForPool(poolKey, input.tokenIn)
+          if (!res || res.reserveIn <= 0 || res.reserveOut <= 0) continue
+
+          const amountOutCents = Math.round(input.amountOut * 100)
+          if (amountOutCents >= res.reserveOut) continue // Cannot withdraw more than reserve
+
+          const amountInCents = ammAmountIn(amountOutCents, res.reserveIn, res.reserveOut, parseInt(poolKey.split('/')[2] || '0'))
+          if (amountInCents <= 0) continue
+
+          const amountIn = amountInCents / 100
+          const priceImpact = ammPriceImpact(amountInCents, amountOutCents, res.reserveIn, res.reserveOut)
+
+          if (!best || amountIn < best.amountIn) {
+            best = {
+              path: [input.tokenIn, input.tokenOut],
+              amounts: [amountIn, input.amountOut],
+              amountIn,
+              priceImpact,
+              route: [input.tokenIn, input.tokenOut],
+              poolPath: poolKey,
+            }
+          }
+        }
+
+        if (!best) throw new Error('Could not compute direct exact-output quote')
+        return best
+      } catch (error) {
+        console.error('❌ [QUOTE_DIRECT_EXACT_OUTPUT] Error:', error)
+        throw new Error('Failed to get direct exact-output swap quote')
       }
     }),
 }

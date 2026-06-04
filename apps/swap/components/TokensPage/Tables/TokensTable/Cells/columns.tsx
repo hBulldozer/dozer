@@ -11,14 +11,24 @@ import { TokenVolume24hCell } from './TokenVolume24hCell'
 import { TokenMarketCapCell } from './TokenMarketCapCell'
 import { ExtendedPair } from '../TokensTable'
 import { DisplayCurrency } from '../../../TokensSection'
+import { PriceChangeData, SparklinePoint } from './types'
 
 const ICON_SIZE = 26
 const PAGE_SIZE = 20
 
-export const createChartColumn = (displayCurrency: DisplayCurrency): ColumnDef<ExtendedPair, unknown> => ({
+export const createChartColumn = (
+  displayCurrency: DisplayCurrency,
+  preloadedSparklines?: Record<string, SparklinePoint[]>
+): ColumnDef<ExtendedPair, unknown> => ({
   id: 'chart',
   header: '',
-  cell: (props) => <TokenMiniChartCell row={props.row.original} displayCurrency={displayCurrency} />,
+  cell: (props) => (
+    <TokenMiniChartCell
+      row={props.row.original}
+      displayCurrency={displayCurrency}
+      preloadedSparklines={preloadedSparklines}
+    />
+  ),
   size: 100,
   meta: {
     skeleton: <div className="rounded-full bg-stone-700 w-[26px] h-[26px] animate-pulse" />,
@@ -57,11 +67,20 @@ export const createTvlColumn = (displayCurrency: DisplayCurrency): ColumnDef<Ext
   },
 })
 
-export const createChangeColumn = (displayCurrency: DisplayCurrency): ColumnDef<ExtendedPair, unknown> => ({
+export const createChangeColumn = (
+  displayCurrency: DisplayCurrency,
+  preloadedPriceChanges?: Record<string, PriceChangeData>
+): ColumnDef<ExtendedPair, unknown> => ({
   id: 'change',
   header: 'Change',
   accessorFn: (row) => row.change,
-  cell: (props) => <TokenChangeCell row={props.row.original} displayCurrency={displayCurrency} />,
+  cell: (props) => (
+    <TokenChangeCell
+      row={props.row.original}
+      displayCurrency={displayCurrency}
+      preloadedPriceChanges={preloadedPriceChanges}
+    />
+  ),
   size: 100,
   meta: {
     className: 'justify-end',

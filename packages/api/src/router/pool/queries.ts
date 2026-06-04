@@ -7,7 +7,7 @@ import {
   enrichPoolWith24hMetrics,
   fetchFromPoolManager,
   fetchTokenInfo,
-  getDozerToolsImageUrl,
+  getTokenDisplayMetadata,
   getTokenSymbol,
   getTokenName,
   extractTokensFromPools,
@@ -41,11 +41,28 @@ export const queryProcedures = {
       // Batch fetch token metadata (symbols and names) for all unique tokens
       const tokenMetadataPromises = allTokens.map((tokenUuid) => fetchTokenInfo(tokenUuid))
       const tokenMetadataResults = await Promise.all(tokenMetadataPromises)
+      const tokenDisplayMetadataResults = await Promise.all(
+        allTokens.map((tokenUuid) => getTokenDisplayMetadata(tokenUuid))
+      )
 
       // Create a map of token UUID -> { symbol, name }
       const tokenMetadata = new Map<string, { symbol: string; name: string }>()
+      const tokenDisplayMetadata = new Map<string, Awaited<ReturnType<typeof getTokenDisplayMetadata>>>()
       allTokens.forEach((tokenUuid, index) => {
         tokenMetadata.set(tokenUuid, tokenMetadataResults[index] || { symbol: 'UNK', name: 'Unknown' })
+        tokenDisplayMetadata.set(
+          tokenUuid,
+          tokenDisplayMetadataResults[index] || {
+            imageUrl: null,
+            about: null,
+            telegram: null,
+            twitter: null,
+            website: null,
+            createdBy: null,
+            communityTag: null,
+            metadataSource: null,
+          }
+        )
       })
 
       // Process each pool
@@ -60,14 +77,21 @@ export const queryProcedures = {
           // Get token metadata
           const token0Info = tokenMetadata.get(tokenA || '') || { symbol: 'UNK', name: 'Unknown' }
           const token1Info = tokenMetadata.get(tokenB || '') || { symbol: 'UNK', name: 'Unknown' }
+          const token0DisplayMetadata = tokenDisplayMetadata.get(tokenA || '')
+          const token1DisplayMetadata = tokenDisplayMetadata.get(tokenB || '')
 
           // Calculate reserves (convert from cents to full units)
           const reserve0 = (poolData.reserve0 || 0) / 100
           const reserve1 = (poolData.reserve1 || 0) / 100
 
-          // Get token prices
-          const token0PriceUSD = tokenPrices[tokenA || ''] || 0
-          const token1PriceUSD = tokenPrices[tokenB || ''] || 0
+          // Get token prices — fall back to spot price from reserves for unsigned-pool tokens
+          let token0PriceUSD = tokenPrices[tokenA || ''] || 0
+          let token1PriceUSD = tokenPrices[tokenB || ''] || 0
+          if (token0PriceUSD === 0 && token1PriceUSD > 0 && reserve0 > 0 && reserve1 > 0) {
+            token0PriceUSD = (reserve1 / reserve0) * token1PriceUSD
+          } else if (token1PriceUSD === 0 && token0PriceUSD > 0 && reserve0 > 0 && reserve1 > 0) {
+            token1PriceUSD = (reserve0 / reserve1) * token0PriceUSD
+          }
 
           // Calculate USD values
           const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
@@ -109,7 +133,9 @@ export const queryProcedures = {
               name: token0Info.name,
               decimals: 2,
               chainId: 1,
-              imageUrl: await getDozerToolsImageUrl(tokenA || ''),
+              imageUrl: token0DisplayMetadata?.imageUrl || null,
+              communityTag: token0DisplayMetadata?.communityTag || null,
+              metadataSource: token0DisplayMetadata?.metadataSource || null,
             },
             token1: {
               uuid: tokenB,
@@ -117,7 +143,9 @@ export const queryProcedures = {
               name: token1Info.name,
               decimals: 2,
               chainId: 1,
-              imageUrl: await getDozerToolsImageUrl(tokenB || ''),
+              imageUrl: token1DisplayMetadata?.imageUrl || null,
+              communityTag: token1DisplayMetadata?.communityTag || null,
+              metadataSource: token1DisplayMetadata?.metadataSource || null,
             },
             reserve0,
             reserve1,
@@ -166,65 +194,75 @@ export const queryProcedures = {
       // Convert fee from identifier format to basis points (e.g., 3 -> 30, 0.8 -> 8)
       const feeBasisPoints = Math.round(parseFloat(feeStr || '0') * 10)
 
-      // Get all signed pools to find matching pool
-      const batchResponse = await fetchFromPoolManager(['get_signed_pools()', 'get_all_token_prices_in_usd()'])
-      const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
+      // Get all pools (including unsigned) to find matching pool for direct URL access
+      const batchResponse = await fetchFromPoolManager(['get_all_pools()', 'get_all_token_prices_in_usd()'])
+      const poolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
       const rawTokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
       const tokenPrices: Record<string, number> = Object.fromEntries(
         Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
       )
 
-      // Find the matching pool by comparing symbols and fee
-      let matchingPoolKey: string | null = null
-      for (const poolKey of poolKeys) {
-        const [tokenA, tokenB, poolFeeStr] = poolKey.split('/')
-        const poolFeeBasisPoints = parseInt(poolFeeStr || '0')
+      // Filter to pools whose fee matches — avoids fetching symbols for unrelated pools
+      const candidatePools = poolKeys.filter((pk) => parseInt(pk.split('/')[2] || '0') === feeBasisPoints)
 
-        // Get token info to check symbols
-        const tokenAInfo = await fetchTokenInfo(tokenA || '')
-        const tokenBInfo = await fetchTokenInfo(tokenB || '')
+      // Fetch all unique token symbols in parallel (replaces sequential loop)
+      const uniqueTokenUuids = [
+        ...new Set(candidatePools.flatMap((pk) => [pk.split('/')[0] || '', pk.split('/')[1] || ''])),
+      ]
+      const tokenInfoResults = await Promise.all(uniqueTokenUuids.map((uuid) => fetchTokenInfo(uuid)))
+      const symbolMap = new Map<string, string>()
+      uniqueTokenUuids.forEach((uuid, i) => symbolMap.set(uuid, tokenInfoResults[i]!.symbol))
 
-        // Check if symbols and fee match (allowing for either token order)
-        const symbolsMatch =
-          ((tokenAInfo.symbol === token0Symbol && tokenBInfo.symbol === token1Symbol) ||
-            (tokenAInfo.symbol === token1Symbol && tokenBInfo.symbol === token0Symbol)) &&
-          poolFeeBasisPoints === feeBasisPoints
-
-        if (symbolsMatch) {
-          matchingPoolKey = poolKey
-          break
-        }
-      }
+      // Find matching pool using pre-fetched symbol map — no awaits in loop
+      const matchingPoolKey =
+        candidatePools.find((pk) => {
+          const [a, b] = pk.split('/')
+          const symA = symbolMap.get(a || '') || ''
+          const symB = symbolMap.get(b || '') || ''
+          return (
+            (symA === token0Symbol && symB === token1Symbol) ||
+            (symA === token1Symbol && symB === token0Symbol)
+          )
+        }) ?? null
 
       if (!matchingPoolKey) {
         throw new Error(`Pool not found for symbol ID: ${input.symbolId}`)
       }
 
-      // Fetch pool data
-      const poolDataResponse = await fetchFromPoolManager([`front_end_api_pool("${matchingPoolKey}")`])
-      const poolData = parsePoolApiInfo(poolDataResponse.calls[`front_end_api_pool("${matchingPoolKey}")`].value)
-
       // Parse pool key
       const [tokenA, tokenB, _feeStr] = matchingPoolKey.split('/')
       const swapFee = parseInt(_feeStr || '0') / 10
 
-      // Get token metadata
-      const token0Info = await fetchTokenInfo(tokenA || '')
-      const token1Info = await fetchTokenInfo(tokenB || '')
+      // Fetch pool data, token metadata, and 24h metrics all in parallel
+      const [poolDataResponse, token0Info, token1Info, token0DisplayMetadata, token1DisplayMetadata, metrics24h] =
+        await Promise.all([
+          fetchFromPoolManager([`front_end_api_pool("${matchingPoolKey}")`]),
+          fetchTokenInfo(tokenA || ''),
+          fetchTokenInfo(tokenB || ''),
+          getTokenDisplayMetadata(tokenA || ''),
+          getTokenDisplayMetadata(tokenB || ''),
+          enrichPoolWith24hMetrics(matchingPoolKey),
+        ])
+
+      const poolData = parsePoolApiInfo(poolDataResponse.calls[`front_end_api_pool("${matchingPoolKey}")`].value)
 
       // Calculate reserves
       const reserve0 = (poolData.reserve0 || 0) / 100
       const reserve1 = (poolData.reserve1 || 0) / 100
 
-      // Get token prices
-      const token0PriceUSD = tokenPrices[tokenA || ''] || 0
-      const token1PriceUSD = tokenPrices[tokenB || ''] || 0
+      // Get token prices — fall back to spot price from reserves for unsigned-pool tokens
+      let token0PriceUSD = tokenPrices[tokenA || ''] || 0
+      let token1PriceUSD = tokenPrices[tokenB || ''] || 0
+      if (token0PriceUSD === 0 && token1PriceUSD > 0 && reserve0 > 0 && reserve1 > 0) {
+        token0PriceUSD = (reserve1 / reserve0) * token1PriceUSD
+      } else if (token1PriceUSD === 0 && token0PriceUSD > 0 && reserve0 > 0 && reserve1 > 0) {
+        token1PriceUSD = (reserve0 / reserve1) * token0PriceUSD
+      }
 
       // Calculate USD values
       const liquidityUSD = reserve0 * token0PriceUSD + reserve1 * token1PriceUSD
 
-      // Calculate 24h metrics (volume, fees, txCount)
-      const metrics24h = await enrichPoolWith24hMetrics(matchingPoolKey)
+      // metrics24h already fetched in the parallel block above
       const volume1d = metrics24h.volume24h
       const volumeUSD = metrics24h.volume24hUSD
       const feeUSD = metrics24h.fees24hUSD
@@ -255,7 +293,9 @@ export const queryProcedures = {
           name: token0Info.name,
           decimals: 2,
           chainId: 1,
-          imageUrl: await getDozerToolsImageUrl(tokenA || ''),
+          imageUrl: token0DisplayMetadata.imageUrl,
+          communityTag: token0DisplayMetadata.communityTag,
+          metadataSource: token0DisplayMetadata.metadataSource,
         },
         token1: {
           uuid: tokenB,
@@ -263,7 +303,9 @@ export const queryProcedures = {
           name: token1Info.name,
           decimals: 2,
           chainId: 1,
-          imageUrl: await getDozerToolsImageUrl(tokenB || ''),
+          imageUrl: token1DisplayMetadata.imageUrl,
+          communityTag: token1DisplayMetadata.communityTag,
+          metadataSource: token1DisplayMetadata.metadataSource,
         },
         reserve0,
         reserve1,

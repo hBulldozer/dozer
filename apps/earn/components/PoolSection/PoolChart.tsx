@@ -62,12 +62,15 @@ export const PoolChart: FC<PoolChartProps> = ({ pair, height = 400 }) => {
   const [hoverValue, setHoverValue] = useState<number | null>(null)
   const [hoverTime, setHoverTime] = useState<string | null>(null)
 
-  const { data, isLoading, isFetching } = api.getPools.getPoolChartData.useQuery(
+  const { data: chartResult, isLoading, isFetching } = api.getPools.getPoolChartData.useQuery(
     { poolKey: pair.id, timeRange },
     {
       enabled: Boolean(pair.id),
     }
   )
+
+  const data = chartResult?.points
+  const nodeUnavailable = chartResult?.nodeUnavailable ?? false
 
   const seriesPoints = useMemo(() => {
     if (!data || data.length === 0) return []
@@ -138,6 +141,19 @@ export const PoolChart: FC<PoolChartProps> = ({ pair, height = 400 }) => {
     <div className="rounded-xl border border-stone-700/80 bg-stone-800/40 p-4">
       {isLoading && !data ? (
         <ChartSkeleton height={height} />
+      ) : nodeUnavailable && (!data || data.length === 0) ? (
+        <>
+          <ChartHeader label={modeLabel} value={0} format="compact" currencySymbol="$" />
+          <div
+            className="flex flex-col items-center justify-center gap-2 rounded-lg bg-stone-900/40 text-sm"
+            style={{ height: `${height}px` }}
+          >
+            <span className="text-yellow-400 font-medium">Historical data temporarily unavailable</span>
+            <span className="text-stone-400 text-xs text-center max-w-xs">
+              Our node is unreachable. Chart history will restore automatically once the connection is re-established.
+            </span>
+          </div>
+        </>
       ) : !data || data.length === 0 ? (
         <>
           <ChartHeader label={modeLabel} value={0} format="compact" currencySymbol="$" />
@@ -170,6 +186,13 @@ export const PoolChart: FC<PoolChartProps> = ({ pair, height = 400 }) => {
               timeRange={timeRange}
               deps={[mode, timeRange, seriesPoints]}
             />
+            {nodeUnavailable && (
+              <div className="pointer-events-none absolute inset-0 flex items-end justify-center rounded pb-3">
+                <span className="rounded-full bg-yellow-500/10 border border-yellow-500/30 px-3 py-1 text-xs font-medium text-yellow-400">
+                  ⚠ Historical data partial — node temporarily unreachable
+                </span>
+              </div>
+            )}
             {isFetching && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded bg-stone-950/15 backdrop-blur-[1px]">
                 <span className="rounded-full bg-stone-900/80 px-3 py-1 text-xs font-medium text-stone-200">

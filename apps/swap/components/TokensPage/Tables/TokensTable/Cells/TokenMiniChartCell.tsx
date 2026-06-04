@@ -65,33 +65,34 @@ function generateHorizontalLineSvg(width: number, height: number, padding: numbe
   return svgString
 }
 
-export const TokenMiniChartCell: FC<CellProps> = ({ row, displayCurrency = 'USD' }) => {
-  // Extract token UUID from row ID
+export const TokenMiniChartCell: FC<CellProps> = ({ row, displayCurrency = 'USD', preloadedSparklines }) => {
   const tokenUuid = row.id.replace('token-', '')
 
-  // Determine if the chart should be flat (HTR in HTR mode is always 1)
   const isHtrInHtrMode = displayCurrency === 'HTR' && tokenUuid === '00'
-  // hUSDC is only flat in USD mode, in HTR mode it fluctuates (inverse of HTR)
   const isHusdcInUsdMode = displayCurrency === 'USD' && row.id.includes('husdc')
   const isHusdcInHtrMode = displayCurrency === 'HTR' && row.id.includes('husdc')
 
-  // Fetch chart data using the appropriate currency
-  // For hUSDC in HTR mode, we fetch HTR's USD chart and will invert it
+  const hasPreloaded = !!preloadedSparklines
+  const sparklineUuid = isHusdcInHtrMode ? '00' : tokenUuid
+
+  // Only fire individual query when no bulk data was provided
   const { data: chartData, isLoading } = api.getPrices.chartData.useQuery(
     {
-      tokenUid: isHusdcInHtrMode ? '00' : tokenUuid, // For hUSDC in HTR mode, use HTR's chart
+      tokenUid: sparklineUuid,
       currency: isHusdcInHtrMode ? 'USD' : displayCurrency,
-      points: 10,
+      points: 5,
     },
     {
-      enabled: !!tokenUuid && !isHtrInHtrMode && !isHusdcInUsdMode,
+      enabled: !hasPreloaded && !!tokenUuid && !isHtrInHtrMode && !isHusdcInUsdMode,
       staleTime: 60000,
       refetchInterval: 120000,
     }
   )
 
-  // Handle loading state
-  if (isLoading && !isHtrInHtrMode && !isHusdcInUsdMode) {
+  // Bulk preloaded takes priority over individual query
+  const resolvedChartData = preloadedSparklines?.[sparklineUuid] ?? chartData
+
+  if (!hasPreloaded && isLoading && !isHtrInHtrMode && !isHusdcInUsdMode) {
     return (
       <div className="flex flex-col gap-1 justify-center flex-grow h-[44px]">
         <Skeleton.Box className="w-[120px] h-[22px] bg-white/[0.06] rounded-full" />
@@ -111,9 +112,9 @@ export const TokenMiniChartCell: FC<CellProps> = ({ row, displayCurrency = 'USD'
   }
 
   // Process chart data and create SVG
-  if (chartData && chartData.length > 1) {
+  if (resolvedChartData && resolvedChartData.length > 1) {
     // Convert chart data to points - chartData has format {timestamp, price, date}
-    let prices = chartData.map((point) => point.price).filter((price) => price > 0)
+    let prices = resolvedChartData.map((point) => point.price).filter((price) => price > 0)
 
     // For hUSDC in HTR mode, invert the prices (1/price) to show USD value in HTR
     // This creates the inverse chart pattern
