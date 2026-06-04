@@ -15,6 +15,7 @@ import {
   Layout,
   PoolActionBar,
   PoolButtons,
+  PoolCashbackSection,
   PoolComposition,
   PoolHeader,
   PoolMyRewards,
@@ -303,12 +304,15 @@ const Pool = () => {
               </AppearOnMount>
             </div>
 
-            <div className="flex flex-col order-2 gap-4">
+            <div className="flex flex-col order-2 gap-6">
               <AppearOnMount>
                 <div className="flex flex-col gap-10">
                   <PoolComposition pair={memoizedPair as Pair} prices={prices} isLoading={isLoading} />
                   <PoolPosition pair={memoizedPair as Pair} isLoading={isLoading} />
                 </div>
+              </AppearOnMount>
+              <AppearOnMount>
+                <PoolCashbackSection pair={memoizedPair as Pair} prices={prices} />
               </AppearOnMount>
               <div className="hidden lg:flex">
                 <PoolButtons pair={memoizedPair as Pair} />

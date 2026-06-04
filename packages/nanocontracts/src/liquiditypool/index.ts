@@ -409,40 +409,52 @@ export class PoolManager extends NanoContract {
   }
 
   /**
-   * Withdraw cashback from a pool
+   * Withdraw cashback (slippage excess) from a pool.
+   *
+   * Only tokens with amount > 0 are included in the actions, because Hathor
+   * rejects withdrawal actions with a zero amount.
    */
   public async withdrawCashback(
     hathorRpc: IHathorRpc,
     address: string,
+    poolKey: string,
     tokenA: string,
     amountA: number,
     tokenB: string,
     amountB: number,
-    fee: number,
     network: 'mainnet' | 'testnet' | 'privatenet' = 'testnet',
   ): Promise<SendNanoContractTxResponse> {
+    const actions: any[] = []
+
+    if (amountA > 0) {
+      actions.push({
+        type: NanoContractActionType.WITHDRAWAL,
+        token: tokenA,
+        amount: Math.ceil(amountA * 100).toString(),
+        address,
+        changeAddress: address,
+      })
+    }
+
+    if (amountB > 0) {
+      actions.push({
+        type: NanoContractActionType.WITHDRAWAL,
+        token: tokenB,
+        amount: Math.ceil(amountB * 100).toString(),
+        address,
+        changeAddress: address,
+      })
+    }
+
+    if (actions.length === 0) {
+      throw new Error('No cashback to withdraw: both token amounts are zero')
+    }
+
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'withdraw_cashback',
       this.poolManagerBlueprintId,
-      [
-        // @ts-ignore
-        {
-          type: NanoContractActionType.WITHDRAWAL,
-          token: tokenA,
-          amount: Math.ceil(amountA * 100).toString(),
-          address: address,
-          changeAddress: address,
-        },
-        // @ts-ignore
-        {
-          type: NanoContractActionType.WITHDRAWAL,
-          token: tokenB,
-          amount: Math.ceil(amountB * 100).toString(),
-          address: address,
-          changeAddress: address,
-        } as any,
-      ],
-      [fee],
+      actions,
+      [poolKey],
       true,
       this.poolManagerContractId,
     )
