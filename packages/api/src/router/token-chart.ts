@@ -4,7 +4,7 @@ import { procedure } from '../trpc'
 import { CHART_BATCH_DELAY_MS, CHART_MAX_STATE_REQUESTS_PER_BATCH, generateCandleWindows, processBatched } from '../utils/chart'
 import { parsePoolApiInfo } from '../utils/namedTupleParsers'
 import { formatPrice } from './constants'
-import { fetchFromPoolManager } from './pool/helpers'
+import { fetchFromPoolManager, NodeUnavailableError } from './pool/helpers'
 
 export interface TokenChartPoint {
   time: number
@@ -35,7 +35,8 @@ interface TokenSample {
 async function fetchTokenSample(
   tokenUuid: string,
   poolKeys: string[],
-  tsSeconds: number | undefined
+  tsSeconds: number | undefined,
+  onNodeUnavailable?: () => void
 ): Promise<TokenSample | null> {
   const priceUSDCall = `get_token_price_in_usd("${tokenUuid}")`
   const priceHTRCall = `get_token_price_in_htr("${tokenUuid}")`
@@ -55,9 +56,11 @@ async function fetchTokenSample(
   }
 
   try {
+    const isHistorical = tsSeconds !== undefined
     const response = await fetchFromPoolManager(
       [priceUSDCall, priceHTRCall, ...poolCalls, ...token0PriceUSDCalls, ...token0PriceHTRCalls, ...reserveCalls],
-      tsSeconds
+      tsSeconds,
+      isHistorical ? { skipPublicFallback: true } : undefined
     )
 
     let priceUSD = formatPrice(response.calls[priceUSDCall]?.value ?? 0)
@@ -113,7 +116,8 @@ async function fetchTokenSample(
     }
 
     return { priceUSD, priceHTR, pools }
-  } catch {
+  } catch (e) {
+    if (e instanceof NodeUnavailableError) onNodeUnavailable?.()
     return null
   }
 }
@@ -126,7 +130,7 @@ export const tokenChartProcedures = {
         timeRange: z.enum(['24h', '3d', '1w']).default('24h'),
       })
     )
-    .query(async ({ input }): Promise<TokenChartPoint[]> => {
+    .query(async ({ input }): Promise<{ points: TokenChartPoint[]; nodeUnavailable: boolean }> => {
       // Use get_all_pools() so unsigned-pool tokens (e.g. DozerTools-created tokens)
       // are included. Signed pools are preferred for historical accuracy, but for the
       // current "live" candle we fall back to spot price from reserves when the router
@@ -137,10 +141,13 @@ export const tokenChartProcedures = {
         const [a, b] = k.split('/')
         return a === input.tokenUuid || b === input.tokenUuid
       })
-      if (tokenPoolKeys.length === 0) return []
+      if (tokenPoolKeys.length === 0) return { points: [], nodeUnavailable: false }
+
+      let nodeUnavailable = false
+      const onNodeUnavailable = () => { nodeUnavailable = true }
 
       const windows = generateCandleWindows(input.timeRange)
-      if (windows.length === 0) return []
+      if (windows.length === 0) return { points: [], nodeUnavailable: false }
 
       // Each window has open + intra samples + close. Consecutive windows share a boundary,
       // so we dedupe into a monotonic list of unique second-level timestamps.
@@ -165,7 +172,7 @@ export const tokenChartProcedures = {
         CHART_BATCH_DELAY_MS,
         (tsSeconds) => {
           const isLive = tsSeconds >= Math.floor(nowMs / 1000)
-          return fetchTokenSample(input.tokenUuid, tokenPoolKeys, isLive ? undefined : tsSeconds)
+          return fetchTokenSample(input.tokenUuid, tokenPoolKeys, isLive ? undefined : tsSeconds, onNodeUnavailable)
         }
       )
 
@@ -183,7 +190,7 @@ export const tokenChartProcedures = {
       }
       // Back-fill any leading nulls with the first known sample.
       const firstKnown = sampleSecondsOrdered.map((ts) => sampleByTs.get(ts)).find((s) => !!s) ?? null
-      if (!firstKnown) return []
+      if (!firstKnown) return { points: [], nodeUnavailable }
       for (const ts of sampleSecondsOrdered) {
         if (!sampleByTs.get(ts)) sampleByTs.set(ts, firstKnown)
       }
@@ -238,6 +245,6 @@ export const tokenChartProcedures = {
         })
       }
 
-      return points
+      return { points, nodeUnavailable }
     }),
 }

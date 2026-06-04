@@ -1,5 +1,14 @@
 import { fetchFakeData } from './fetchFakeData'
 
+/** Thrown when the local node is unreachable for a historical state request
+ *  and the caller has opted out of the public-node fallback. */
+export class NodeUnavailableError extends Error {
+  constructor() {
+    super('Historical chart data temporarily unavailable — local node unreachable')
+    this.name = 'NodeUnavailableError'
+  }
+}
+
 // Check if running in local development environment
 const isLocalDevelopment = process.env.NODE_ENV === 'development'
 
@@ -102,7 +111,22 @@ async function fetchWithRetry(url: string, retries: number, timeout: number, hea
   }
 }
 
-export async function fetchNodeData(endpoint: string, queryParams: string[]): Promise<any> {
+export interface FetchNodeOptions {
+  /**
+   * When true AND the local node fails, throw `NodeUnavailableError` instead of
+   * falling through to the public node. Use this only for full chart data where
+   * the public node won't have the nginx-cached historical state anyway.
+   * Sparklines, live state and all other data should leave this unset (default false)
+   * so the public node fallback is preserved.
+   */
+  skipPublicFallback?: boolean
+}
+
+export async function fetchNodeData(
+  endpoint: string,
+  queryParams: string[],
+  options?: FetchNodeOptions
+): Promise<any> {
   if (!process.env.NEXT_PUBLIC_LOCAL_NODE_URL && !process.env.NEXT_PUBLIC_PUBLIC_NODE_URL) {
     return fetchFakeData(endpoint, queryParams)
   }
@@ -115,13 +139,6 @@ export async function fetchNodeData(endpoint: string, queryParams: string[]): Pr
       headers['X-API-Key'] = process.env.NODE_API_KEY
     }
 
-    // Historical state requests (nano_contract/state with a timestamp) are served from
-    // the nginx cache on the local node. The public node doesn't have this nginx cache,
-    // so falling back to it would just add another INITIAL_TIMEOUT wait for a request
-    // it can't serve faster. Skip public fallback for these requests entirely.
-    const isHistoricalStateRequest =
-      endpoint === 'nano_contract/state' && queryParams.some((p) => p.startsWith('timestamp='))
-
     try {
       // Try local node first if configured
       if (process.env.NEXT_PUBLIC_LOCAL_NODE_URL) {
@@ -129,17 +146,17 @@ export async function fetchNodeData(endpoint: string, queryParams: string[]): Pr
           const localNodeUrl = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}${endpoint}?${queryParams.join('&')}`
           return await fetchWithRetry(localNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)
         } catch (error) {
-          if (isHistoricalStateRequest) {
-            // No point trying the public node — it won't have our nginx chart cache.
-            // Re-throw so the chart point is skipped (null → forward-filled) rather than
-            // waiting another INITIAL_TIMEOUT for a result that won't come.
-            throw error
+          if (options?.skipPublicFallback) {
+            // Caller has opted out of public fallback (e.g. full chart data where the public
+            // node won't have our nginx-cached historical state). Signal the caller so it
+            // can show a "temporarily unavailable" overlay instead of waiting another timeout.
+            throw new NodeUnavailableError()
           }
           console.warn(`Local node failed for ${endpoint}, trying public node:`, error)
         }
       }
 
-      // Try public node as fallback or primary (live state only)
+      // Try public node as fallback or primary
       if (process.env.NEXT_PUBLIC_PUBLIC_NODE_URL) {
         const publicNodeUrl = `${process.env.NEXT_PUBLIC_PUBLIC_NODE_URL}${endpoint}?${queryParams.join('&')}`
         return await fetchWithRetry(publicNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)
@@ -147,6 +164,7 @@ export async function fetchNodeData(endpoint: string, queryParams: string[]): Pr
 
       throw new Error('No node URL configured (NEXT_PUBLIC_LOCAL_NODE_URL or NEXT_PUBLIC_PUBLIC_NODE_URL)')
     } catch (error: any) {
+      if (error instanceof NodeUnavailableError) throw error
       throw new Error('Error fetching data from ' + endpoint + ' with params ' + queryParams + ': ' + error.message)
     }
   })

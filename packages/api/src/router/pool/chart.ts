@@ -4,7 +4,7 @@ import { procedure } from '../../trpc'
 import { CHART_BATCH_DELAY_MS, CHART_MAX_STATE_REQUESTS_PER_BATCH, generateCandleWindows, processBatched } from '../../utils/chart'
 import { parsePoolApiInfo } from '../../utils/namedTupleParsers'
 import { formatPrice } from '../constants'
-import { fetchFromPoolManager } from './helpers'
+import { fetchFromPoolManager, NodeUnavailableError } from './helpers'
 
 export interface PoolChartPoint {
   time: number
@@ -25,13 +25,19 @@ async function fetchPoolSample(
   poolKey: string,
   tokenA: string,
   tokenB: string,
-  tsSeconds: number | undefined
+  tsSeconds: number | undefined,
+  onNodeUnavailable?: () => void
 ): Promise<SamplePoolState | null> {
   const poolCall = `front_end_api_pool("${poolKey}")`
   const priceACall = `get_token_price_in_usd("${tokenA}")`
   const priceBCall = `get_token_price_in_usd("${tokenB}")`
   try {
-    const response = await fetchFromPoolManager([poolCall, priceACall, priceBCall], tsSeconds)
+    const isHistorical = tsSeconds !== undefined
+    const response = await fetchFromPoolManager(
+      [poolCall, priceACall, priceBCall],
+      tsSeconds,
+      isHistorical ? { skipPublicFallback: true } : undefined
+    )
     const poolValue = response.calls[poolCall]?.value
     if (!poolValue) return null
 
@@ -46,7 +52,8 @@ async function fetchPoolSample(
       token0PriceUSD: formatPrice(token0PriceRaw),
       token1PriceUSD: formatPrice(token1PriceRaw),
     }
-  } catch {
+  } catch (e) {
+    if (e instanceof NodeUnavailableError) onNodeUnavailable?.()
     return null
   }
 }
@@ -59,7 +66,7 @@ export const chartProcedures = {
         timeRange: z.enum(['24h', '3d', '1w']).default('24h'),
       })
     )
-    .query(async ({ input }): Promise<PoolChartPoint[]> => {
+    .query(async ({ input }): Promise<{ points: PoolChartPoint[]; nodeUnavailable: boolean }> => {
       const [tokenA, tokenB, feeStr] = input.poolKey.split('/')
       if (!tokenA || !tokenB || !feeStr) {
         throw new Error(`Invalid pool key: ${input.poolKey}`)
@@ -67,7 +74,10 @@ export const chartProcedures = {
       const feeRate = parseInt(feeStr) / 1000
 
       const windows = generateCandleWindows(input.timeRange)
-      if (windows.length === 0) return []
+      if (windows.length === 0) return { points: [], nodeUnavailable: false }
+
+      let nodeUnavailable = false
+      const onNodeUnavailable = () => { nodeUnavailable = true }
 
       // Sample at each candle-close timestamp. Add the opening timestamp once at the very start
       // so the first candle has a "previous" cumulative-volume anchor.
@@ -83,7 +93,7 @@ export const chartProcedures = {
         CHART_BATCH_DELAY_MS,
         (tsSeconds) => {
           const isLive = tsSeconds >= Math.floor(nowMs / 1000)
-          return fetchPoolSample(input.poolKey, tokenA, tokenB, isLive ? undefined : tsSeconds)
+          return fetchPoolSample(input.poolKey, tokenA, tokenB, isLive ? undefined : tsSeconds, onNodeUnavailable)
         }
       )
 
@@ -100,7 +110,7 @@ export const chartProcedures = {
       // Back-fill any leading nulls with the first known sample (will yield zero deltas anyway).
       if (!samples[0]) {
         const firstKnown = samples.find((s) => s !== null)
-        if (!firstKnown) return []
+        if (!firstKnown) return { points: [], nodeUnavailable }
         for (let i = 0; i < samples.length && !samples[i]; i++) {
           samples[i] = firstKnown
         }
@@ -128,6 +138,6 @@ export const chartProcedures = {
         prevVolumeToken0 = close.volumeToken0
       }
 
-      return points
+      return { points, nodeUnavailable }
     }),
 }

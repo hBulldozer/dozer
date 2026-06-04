@@ -1,4 +1,5 @@
-import { fetchNodeData } from '../../helpers/fetchFunction'
+import { fetchNodeData, NodeUnavailableError } from '../../helpers/fetchFunction'
+export { NodeUnavailableError }
 import { formatPrice } from '../constants'
 import { parsePoolApiInfo } from '../../utils/namedTupleParsers'
 
@@ -221,7 +222,11 @@ export async function getTokenDisplayMetadata(tokenUuid: string): Promise<TokenD
 }
 
 // Helper function to fetch data from the pool manager contract
-export async function fetchFromPoolManager(calls: string[], timestamp?: number): Promise<any> {
+export async function fetchFromPoolManager(
+  calls: string[],
+  timestamp?: number,
+  options?: { skipPublicFallback?: boolean }
+): Promise<any> {
   if (!NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID) {
     throw new Error('NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
   }
@@ -249,7 +254,7 @@ export async function fetchFromPoolManager(calls: string[], timestamp?: number):
     queryParams.push(`timestamp=${timestamp}`)
   }
 
-  const promise = fetchNodeData(endpoint, queryParams).catch((error) => {
+  const promise = fetchNodeData(endpoint, queryParams, options).catch((error) => {
     poolManagerResponseCache.delete(cacheKey)
     throw error
   })
