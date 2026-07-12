@@ -214,17 +214,26 @@ const Token = () => {
                 const poolText = tokenData.poolCount === 1 ? 'pool' : 'pools'
                 const tradingLine = `It can be traded in ${tokenData.poolCount} liquidity ${poolText}.`
 
+                const isCommunityToken =
+                  tokenData.metadataSource === 'dozer-tools' || tokenData.metadataSource === 'khensu'
+
                 let aboutText: string
                 if (customAbout) {
                   // Manually curated description for known tokens — always takes priority
                   aboutText = `${customAbout} ${tradingLine}`
-                } else if (tokenData.about && (tokenData.metadataSource === 'dozer-tools' || tokenData.metadataSource === 'khensu')) {
+                } else if (tokenData.about && isCommunityToken) {
                   // Community token: use the description stored on-chain
                   aboutText = `${tokenData.about} ${tradingLine}`
+                } else if (isCommunityToken) {
+                  // Community token without an on-chain description — generic, source-aware fallback
+                  const source = tokenData.metadataSource === 'khensu' ? 'launched on Khensu' : 'created with Dozer Tools'
+                  aboutText = `${tokenData.symbol} is a community token ${source} on the Hathor network. ${tradingLine}`
                 } else if (tokenData.bridged) {
                   aboutText = `${tokenData.symbol} is a token on the Hathor network with a total supply of ${tokenData.totalSupply.toLocaleString()} tokens. It is available for trading in ${tokenData.poolCount} liquidity ${poolText}.`
-                } else {
+                } else if (tokenData.symbol === 'HTR') {
                   aboutText = `${tokenData.symbol} is the native token of the Hathor network. It can be staked, used for transaction fees, and traded in ${tokenData.poolCount} liquidity ${poolText}.`
+                } else {
+                  aboutText = `${tokenData.symbol} is a token on the Hathor network. ${tradingLine}`
                 }
 
                 return (
