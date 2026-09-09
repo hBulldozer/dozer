@@ -430,7 +430,7 @@ export class PoolManager extends NanoContract {
       actions.push({
         type: NanoContractActionType.WITHDRAWAL,
         token: tokenA,
-        amount: Math.ceil(amountA * 100).toString(),
+        amount: Math.round(amountA * 100).toString(),
         address,
         changeAddress: address,
       })
@@ -440,7 +440,7 @@ export class PoolManager extends NanoContract {
       actions.push({
         type: NanoContractActionType.WITHDRAWAL,
         token: tokenB,
-        amount: Math.ceil(amountB * 100).toString(),
+        amount: Math.round(amountB * 100).toString(),
         address,
         changeAddress: address,
       })
