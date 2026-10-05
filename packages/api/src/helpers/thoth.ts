@@ -1,6 +1,6 @@
 import { ThothIdSDK } from 'thoth-id-sdk'
 
-import { sameOrigin } from './fetchFunction'
+import { localNodeHealthy, sameOrigin } from './fetchFunction'
 
 // thoth.id (Hathor naming service) reverse lookups: address -> primary name.
 
@@ -64,6 +64,11 @@ function getPinnedUrl(): string | undefined {
   return buildNodeStateUrl(process.env.THOTH_NODE_URL)
 }
 
+// Same headers fetchFunction uses for the health check against our own node
+function getLocalHeaders(): HeadersInit {
+  return process.env.NODE_API_KEY ? { 'X-API-Key': process.env.NODE_API_KEY } : {}
+}
+
 async function initSdk(): Promise<ThothIdSDK> {
   const pinnedUrl = getPinnedUrl()
   if (pinnedUrl) {
@@ -79,7 +84,10 @@ async function initSdk(): Promise<ThothIdSDK> {
     getNetworkType() === 'testnet' ? process.env.NEXT_PUBLIC_TESTNET_NODE_URL : process.env.NEXT_PUBLIC_PUBLIC_NODE_URL,
   )
 
-  const candidates: (string | undefined)[] = [primaryUrl, fallbackUrl, undefined].filter(
+  // A local node that is still syncing answers with stale data: skip it until it reports healthy
+  const localUsable = !!primaryUrl && (await localNodeHealthy(getLocalHeaders()))
+
+  const candidates: (string | undefined)[] = [...(localUsable ? [primaryUrl] : []), fallbackUrl, undefined].filter(
     (url, index, all) => all.indexOf(url) === index,
   )
 
@@ -104,10 +112,11 @@ function maybeRetryLocalNode(current: Promise<ThothIdSDK>) {
   const primaryUrl = buildNodeStateUrl(process.env.NEXT_PUBLIC_LOCAL_NODE_URL)
   if (!primaryUrl || activeOnLocalNode || Date.now() < nextLocalRetryAt) return
   nextLocalRetryAt = Date.now() + LOCAL_NODE_RETRY_MS
-  const sdk = createSdk(primaryUrl)
-  sdk
-    .loadContractIds()
-    .then(() => {
+  localNodeHealthy(getLocalHeaders())
+    .then(async (healthy) => {
+      if (!healthy) return
+      const sdk = createSdk(primaryUrl)
+      await sdk.loadContractIds()
       if (sdkPromise !== current) return
       sdkPromise = Promise.resolve(sdk)
       activeOnLocalNode = true
