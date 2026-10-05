@@ -2029,7 +2029,7 @@ class DozerPoolManager(Blueprint):
                         b = fee_denominator
                         denominator = (reserve_out - current_amount) * a
                         if denominator > 0:
-                            required_input_for_neighbor = reserve_in * current_amount * b // denominator
+                            required_input_for_neighbor = self.get_amount_in(Amount(current_amount), reserve_in, reserve_out, fee, fee_denominator)
                             neighbor_amount, _ = distances[neighbor]
                             new_hops = current_hops + 1
                             if required_input_for_neighbor < neighbor_amount:
