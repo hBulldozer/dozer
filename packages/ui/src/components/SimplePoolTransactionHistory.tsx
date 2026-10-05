@@ -128,8 +128,9 @@ const TokenAmountCell: React.FC<{ tokenAmount?: number | null }> = ({ tokenAmoun
   </div>
 )
 
-const AccountCell: React.FC<{ row: SimpleTransaction }> = ({ row }) => {
+const AccountCell: React.FC<{ row: SimpleTransaction; names?: Record<string, string | null> }> = ({ row, names }) => {
   const address = row.account
+  const name = names?.[address]
   const explorerUrls = getExplorerUrls()
   const accountUrl = explorerUrls.getAccountUrl(address)
 
@@ -138,17 +139,22 @@ const AccountCell: React.FC<{ row: SimpleTransaction }> = ({ row }) => {
       href={accountUrl}
       target="_blank"
       rel="noopener noreferrer"
+      title={address}
       className="text-blue-400 hover:text-blue-300 transition-colors"
     >
-      <Typography variant="sm" className="font-mono">
-        {truncateAddress(address)}
+      <Typography variant="sm" className={name ? 'truncate max-w-[10rem] inline-block align-bottom' : 'font-mono'}>
+        {name ?? truncateAddress(address)}
       </Typography>
     </a>
   )
 }
 
 // Mobile-optimized column definitions
-const createColumns = (token0Header?: string, token1Header?: string): ColumnDef<SimpleTransaction, unknown>[] => [
+const createColumns = (
+  token0Header?: string,
+  token1Header?: string,
+  names?: Record<string, string | null>
+): ColumnDef<SimpleTransaction, unknown>[] => [
   {
     id: 'time',
     header: 'Time',
@@ -206,7 +212,7 @@ const createColumns = (token0Header?: string, token1Header?: string): ColumnDef<
     id: 'account',
     header: 'Account',
     accessorFn: (row) => row.account,
-    cell: (props) => <AccountCell row={props.row.original} />,
+    cell: (props) => <AccountCell row={props.row.original} names={names} />,
     size: 100,
     meta: {
       className: 'hidden md:table-cell',
@@ -223,6 +229,7 @@ export interface SimplePoolTransactionHistoryProps {
   onRefresh?: () => void
   token0Symbol?: string
   token1Symbol?: string
+  names?: Record<string, string | null>
 }
 
 export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistoryProps> = ({
@@ -232,6 +239,7 @@ export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistory
   onRefresh,
   token0Symbol,
   token1Symbol,
+  names,
 }) => {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'time', desc: true }])
 
@@ -250,7 +258,7 @@ export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistory
     return first.token1Symbol || first.tokenPair.split('/')[1]
   }, [token1Symbol, transactions])
 
-  const columns = React.useMemo(() => createColumns(token0Header, token1Header), [token0Header, token1Header])
+  const columns = React.useMemo(() => createColumns(token0Header, token1Header, names), [token0Header, token1Header, names])
 
   const table = useReactTable({
     data: transactions,
@@ -399,7 +407,7 @@ export const SimplePoolTransactionHistory: React.FC<SimplePoolTransactionHistory
                     <TokenAmountCell tokenAmount={transaction.token1Amount} />
                   </td>
                   <td className="px-3 py-3 hidden md:table-cell">
-                    <AccountCell row={transaction} />
+                    <AccountCell row={transaction} names={names} />
                   </td>
                 </tr>
               ))

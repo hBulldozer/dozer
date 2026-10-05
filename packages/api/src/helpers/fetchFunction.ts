@@ -155,7 +155,7 @@ function localNodeHealthy(headers: HeadersInit): Promise<boolean> {
   return healthy
 }
 
-function sameOrigin(a?: string, b?: string): boolean {
+export function sameOrigin(a?: string, b?: string): boolean {
   if (!a || !b) return false
   try {
     return new URL(a).origin === new URL(b).origin
