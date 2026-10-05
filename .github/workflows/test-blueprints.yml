@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'contracts/**'
+      - '.github/workflows/test-blueprints.yml'
   pull_request:
     paths:
       - 'contracts/**'
@@ -12,10 +13,10 @@ on:
       hathor_branch:
         description: 'Hathor Core branch to use'
         required: true
-        default: 'release'
+        default: 'dozer-testnet-v0.71'
 
 env:
-  HATHOR_BRANCH: ${{ github.event.inputs.hathor_branch || 'release' }}
+  HATHOR_BRANCH: ${{ github.event.inputs.hathor_branch || 'dozer-testnet-v0.71' }}
 
 jobs:
   test-blueprints:
@@ -24,10 +25,19 @@ jobs:
       - name: Checkout dozer-tools
         uses: actions/checkout@v4
 
+      - name: Check cleaned pool manager is in sync and fits on-chain limits
+        working-directory: contracts
+        run: |
+          set -e
+          # dozer_pool_manager_cleaned.py is the deployable copy (mainnet source plus fixes);
+          # it must contain exactly the same code as the documented source.
+          python3 check_cleaned_sync.py dozer_pool_manager.py dozer_pool_manager_cleaned.py
+          python3 -c "import sys,zlib; s=open(sys.argv[1],'rb').read(); c=len(zlib.compress(s,9)); print(sys.argv[1], len(s), c); sys.exit(1 if len(s) > 240000 or c > 24000 else 0)" dozer_pool_manager_cleaned.py
+
       - name: Checkout Hathor Core
         uses: actions/checkout@v4
         with:
-          repository: HathorNetwork/hathor-core
+          repository: Dozer-Protocol/dozer-blueprints
           ref: ${{ env.HATHOR_BRANCH }}
           path: hathor-core
 
