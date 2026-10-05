@@ -13,6 +13,7 @@ import {
   getTokenSymbol,
 } from './pool/helpers'
 import { tokenChartProcedures } from './token-chart'
+import { POOL_KEYS, SIGNED_POOL_KEYS, TOKEN_PRICES_HTR, TOKEN_PRICES_USD, fetchPagedView } from './pool/pagedViews'
 
 // Get the bridged token UUIDs from environment
 const BRIDGED_TOKEN_UUIDS = process.env.NEXT_PUBLIC_BRIDGED_TOKEN_UUIDS
@@ -82,9 +83,7 @@ async function calculate24hVolume(poolKey: string): Promise<{ volume24h: number;
       return { volume24h: 0, volume24hUSD: 0 }
     }
 
-    const tokenPricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-    const rawTokenPrices: Record<string, number> =
-      tokenPricesResponse.calls['get_all_token_prices_in_usd()'].value || {}
+    const rawTokenPrices: Record<string, number> = await fetchPagedView(TOKEN_PRICES_USD)
     const tokenPrices: Record<string, number> = Object.fromEntries(
       Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
     )
@@ -194,8 +193,7 @@ export const tokenRouter = createTRPCRouter({
   all: procedure.query(async ({ ctx }) => {
     try {
       // Fetch all signed pools from the contract
-      const response = await fetchFromPoolManager(['get_signed_pools()'])
-      const poolKeys: string[] = response.calls['get_signed_pools()'].value || []
+      const poolKeys: string[] = await fetchPagedView(SIGNED_POOL_KEYS)
 
       // Extract unique tokens from pool keys
       const tokenUuids = extractTokensFromPools(poolKeys)
@@ -243,8 +241,7 @@ export const tokenRouter = createTRPCRouter({
   allWithUnsigned: procedure.query(async ({ ctx }) => {
     try {
       // Fetch all pools (signed and unsigned) from the contract
-      const response = await fetchFromPoolManager(['get_all_pools()'])
-      const poolKeys: string[] = response.calls['get_all_pools()'].value || []
+      const poolKeys: string[] = await fetchPagedView(POOL_KEYS)
 
       // Extract unique tokens from pool keys
       const tokenUuids = extractTokensFromPools(poolKeys)
@@ -297,8 +294,7 @@ export const tokenRouter = createTRPCRouter({
       }
 
       // Fetch all signed pools to find tokens
-      const response = await fetchFromPoolManager(['get_signed_pools()'])
-      const poolKeys: string[] = response.calls['get_signed_pools()'].value || []
+      const poolKeys: string[] = await fetchPagedView(SIGNED_POOL_KEYS)
       const tokenUuids = extractTokensFromPools(poolKeys)
 
       // Find token by symbol (simplified matching)
@@ -327,8 +323,7 @@ export const tokenRouter = createTRPCRouter({
   byUuid: procedure.input(z.object({ uuid: z.string() })).query(async ({ input }) => {
     try {
       // Check if this token exists in any signed pool
-      const response = await fetchFromPoolManager(['get_signed_pools()'])
-      const poolKeys: string[] = response.calls['get_signed_pools()'].value || []
+      const poolKeys: string[] = await fetchPagedView(SIGNED_POOL_KEYS)
       const tokenUuids = extractTokensFromPools(poolKeys)
 
       if (!tokenUuids.includes(input.uuid)) {
@@ -393,8 +388,7 @@ export const tokenRouter = createTRPCRouter({
       }
 
       // Check if token exists in any pool (signed or unsigned)
-      const allPoolsResponse = await fetchFromPoolManager(['get_all_pools()'])
-      const allPoolKeys: string[] = allPoolsResponse.calls['get_all_pools()'].value || []
+      const allPoolKeys: string[] = await fetchPagedView(POOL_KEYS)
       const allTokenUuids = extractTokensFromPools(allPoolKeys)
 
       if (!allTokenUuids.includes(input.uuid)) {
@@ -439,8 +433,7 @@ export const tokenRouter = createTRPCRouter({
         tokenUuid = '00'
       } else {
         // Fetch all pools (including unsigned) so direct URL access works for unsigned tokens
-        const response = await fetchFromPoolManager(['get_all_pools()'])
-        const poolKeys: string[] = response.calls['get_all_pools()'].value || []
+        const poolKeys: string[] = await fetchPagedView(POOL_KEYS)
         const tokenUuids = extractTokensFromPools(poolKeys)
 
         // Find matching token by checking symbols
@@ -461,13 +454,12 @@ export const tokenRouter = createTRPCRouter({
       const tokenInfo = await fetchTokenInfo(tokenUuid)
 
       // Get pools for this token and token prices (all pools, including unsigned, for direct URL access)
-      const batchResponse = await fetchFromPoolManager([
-        `get_pools_for_token("${tokenUuid}")`,
-        'get_all_token_prices_in_usd()',
+      const [batchResponse, rawTokenPrices] = await Promise.all([
+        fetchFromPoolManager([`get_pools_for_token("${tokenUuid}")`]),
+        fetchPagedView(TOKEN_PRICES_USD),
       ])
 
       const tokenPools: string[] = batchResponse.calls[`get_pools_for_token("${tokenUuid}")`].value || []
-      const rawTokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
       // Format token prices from contract units to USD (divide by PRICE_PRECISION)
       const tokenPrices: Record<string, number> = Object.fromEntries(
         Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
@@ -682,8 +674,7 @@ export const tokenRouter = createTRPCRouter({
   allTotalSupply: procedure.query(async ({ ctx }) => {
     try {
       // Fetch all signed pools to get token list
-      const response = await fetchFromPoolManager(['get_signed_pools()'])
-      const poolKeys: string[] = response.calls['get_signed_pools()'].value || []
+      const poolKeys: string[] = await fetchPagedView(SIGNED_POOL_KEYS)
       const tokenUuids = extractTokensFromPools(poolKeys)
 
       const totalSupplies: Record<string, number> = {}
@@ -713,8 +704,7 @@ export const tokenRouter = createTRPCRouter({
   // Get token prices in USD
   prices: procedure.query(async ({ ctx }) => {
     try {
-      const response = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-      const prices = response.calls['get_all_token_prices_in_usd()'].value || {}
+      const prices = await fetchPagedView(TOKEN_PRICES_USD)
 
       return prices
     } catch (error) {
@@ -726,8 +716,7 @@ export const tokenRouter = createTRPCRouter({
   // Get token prices in HTR
   pricesHTR: procedure.query(async ({ ctx }) => {
     try {
-      const response = await fetchFromPoolManager(['get_all_token_prices_in_htr()'])
-      const prices = response.calls['get_all_token_prices_in_htr()'].value || {}
+      const prices = await fetchPagedView(TOKEN_PRICES_HTR)
 
       return prices
     } catch (error) {
