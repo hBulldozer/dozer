@@ -12,15 +12,13 @@ import {
   getTokenName,
   extractTokensFromPools,
 } from './helpers'
+import { POOL_KEYS, SIGNED_POOL_KEYS, TOKEN_PRICES_USD, fetchPagedView, fetchPagedViews, userPositions } from './pagedViews'
 
 export const queryProcedures = {
   // Get all signed pools
   all: procedure.query(async () => {
     try {
-      const batchResponse = await fetchFromPoolManager(['get_signed_pools()', 'get_all_token_prices_in_usd()'])
-
-      const poolKeys: string[] = batchResponse.calls['get_signed_pools()'].value || []
-      const rawTokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      const [poolKeys, rawTokenPrices] = (await fetchPagedViews([SIGNED_POOL_KEYS, TOKEN_PRICES_USD])) as [string[], Record<string, number>]
       // Convert token prices from contract units to USD (divide by PRICE_PRECISION)
       const tokenPrices: Record<string, number> = Object.fromEntries(
         Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
@@ -195,9 +193,7 @@ export const queryProcedures = {
       const feeBasisPoints = Math.round(parseFloat(feeStr || '0') * 10)
 
       // Get all pools (including unsigned) to find matching pool for direct URL access
-      const batchResponse = await fetchFromPoolManager(['get_all_pools()', 'get_all_token_prices_in_usd()'])
-      const poolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
-      const rawTokenPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      const [poolKeys, rawTokenPrices] = (await fetchPagedViews([POOL_KEYS, TOKEN_PRICES_USD])) as [string[], Record<string, number>]
       const tokenPrices: Record<string, number> = Object.fromEntries(
         Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
       )
@@ -329,8 +325,7 @@ export const queryProcedures = {
   // Get user positions with detailed profit information
   getUserPositionsDetailed: procedure.input(z.object({ address: z.string() })).query(async ({ input }) => {
     try {
-      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
-      const positionsArrays = response.calls[`get_user_positions("${input.address}")`].value
+      const positionsArrays = await fetchPagedView(userPositions(input.address))
 
       if (!positionsArrays) {
         return []

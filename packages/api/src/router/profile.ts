@@ -10,6 +10,7 @@ import {
   type UserPosition,
   type UserInfo
 } from '../utils/namedTupleParsers'
+import { TOKEN_PRICES_USD, fetchPagedView, userPositions } from './pool/pagedViews'
 
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -166,15 +167,13 @@ export const profileRouter = createTRPCRouter({
         return []
       }
 
-      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
-      const positionsArrays = response.calls[`get_user_positions("${input.address}")`].value || {}
+      const positionsArrays = await fetchPagedView(userPositions(input.address))
 
       // Parse the user positions object (contains NamedTuple arrays for each pool)
       const positions = parseUserPositions(positionsArrays)
 
       // Get token prices for USD values
-      const pricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-      const tokenPrices = pricesResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      const tokenPrices = await fetchPagedView(TOKEN_PRICES_USD)
 
       const positionPromises = []
       for (const [poolKey, position] of Object.entries(positions)) {
@@ -243,15 +242,13 @@ export const profileRouter = createTRPCRouter({
         }
       }
 
-      const response = await fetchFromPoolManager([`get_user_positions("${input.address}")`])
-      const positionsArrays = response.calls[`get_user_positions("${input.address}")`].value || {}
+      const positionsArrays = await fetchPagedView(userPositions(input.address))
 
       // Parse the user positions object (contains NamedTuple arrays for each pool)
       const positions = parseUserPositions(positionsArrays)
 
       // Get token prices for USD values
-      const pricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-      const tokenPrices = pricesResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      const tokenPrices = await fetchPagedView(TOKEN_PRICES_USD)
 
       const positionPromises = []
 
@@ -316,11 +313,9 @@ export const profileRouter = createTRPCRouter({
         const [tokenA, tokenB] = input.poolKey.split('/')
 
         // Batch contract calls + token metadata in parallel
-        const [batchResponse, token0Info, token1Info] = await Promise.all([
-          fetchFromPoolManager([
-            `user_info("${input.address}", "${input.poolKey}")`,
-            'get_all_token_prices_in_usd()',
-          ]),
+        const [batchResponse, tokenPrices, token0Info, token1Info] = await Promise.all([
+          fetchFromPoolManager([`user_info("${input.address}", "${input.poolKey}")`]),
+          fetchPagedView(TOKEN_PRICES_USD),
           fetchTokenInfo(tokenA || ''),
           fetchTokenInfo(tokenB || ''),
         ])
@@ -331,7 +326,6 @@ export const profileRouter = createTRPCRouter({
         }
 
         const userInfo = parseUserInfo(userInfoArray)
-        const tokenPrices = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
 
         const token0Amount = userInfo.token0Amount || 0
         const token1Amount = userInfo.token1Amount || 0

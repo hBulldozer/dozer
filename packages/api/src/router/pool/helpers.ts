@@ -2,6 +2,7 @@ import { fetchNodeData, NodeUnavailableError } from '../../helpers/fetchFunction
 export { NodeUnavailableError }
 import { formatPrice } from '../constants'
 import { parsePoolApiInfo } from '../../utils/namedTupleParsers'
+import { TOKEN_PRICES_USD, fetchPagedView } from './pagedViews'
 
 // Get the Pool Manager Contract ID from environment
 export const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -357,9 +358,7 @@ export async function calculate24hVolume(poolKey: string): Promise<{ volume24h: 
       return { volume24h: 0, volume24hUSD: 0 }
     }
 
-    const tokenPricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-    const rawTokenPrices: Record<string, number> =
-      tokenPricesResponse.calls['get_all_token_prices_in_usd()'].value || {}
+    const rawTokenPrices: Record<string, number> = await fetchPagedView(TOKEN_PRICES_USD)
     const tokenPrices: Record<string, number> = Object.fromEntries(
       Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
     )

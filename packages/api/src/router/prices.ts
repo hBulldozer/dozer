@@ -5,6 +5,7 @@ import { fetchNodeData } from '../helpers/fetchFunction'
 import { createTRPCRouter, procedure } from '../trpc'
 import { PRICE_PRECISION, formatPrice } from './constants'
 import { fetchFromPoolManager } from './pool/helpers'
+import { POOL_KEYS, TOKEN_PRICES_HTR, TOKEN_PRICES_USD, fetchPagedView, fetchPagedViews } from './pool/pagedViews'
 
 /**
  * Derive spot prices for tokens that don't appear in the signed pool graph
@@ -302,9 +303,7 @@ export const pricesRouter = createTRPCRouter({
   }),
   all: procedure.query(async () => {
     try {
-      const batchResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()', 'get_all_pools()'])
-      const rawPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
-      const allPoolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
+      const [rawPrices, allPoolKeys] = (await fetchPagedViews([TOKEN_PRICES_USD, POOL_KEYS])) as [Record<string, number>, string[]]
       // formatPrice divides by PRICE_PRECISION (100_000_000)
       return addSpotPriceFallbacks(rawPrices, PRICE_PRECISION, allPoolKeys)
     } catch {
@@ -485,9 +484,7 @@ export const pricesRouter = createTRPCRouter({
   // Get all token prices in USD
   allUSD: procedure.query(async () => {
     try {
-      const batchResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()', 'get_all_pools()'])
-      const rawPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_usd()'].value || {}
-      const allPoolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
+      const [rawPrices, allPoolKeys] = (await fetchPagedViews([TOKEN_PRICES_USD, POOL_KEYS])) as [Record<string, number>, string[]]
       return addSpotPriceFallbacks(rawPrices, 100_000_000, allPoolKeys)
     } catch {
       return {}
@@ -497,9 +494,7 @@ export const pricesRouter = createTRPCRouter({
   // Get all token prices in HTR (with spot-price fallback for unsigned-pool tokens)
   allHTR: procedure.query(async () => {
     try {
-      const batchResponse = await fetchFromPoolManager(['get_all_token_prices_in_htr()', 'get_all_pools()'])
-      const rawPrices: Record<string, number> = batchResponse.calls['get_all_token_prices_in_htr()'].value || {}
-      const allPoolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
+      const [rawPrices, allPoolKeys] = (await fetchPagedViews([TOKEN_PRICES_HTR, POOL_KEYS])) as [Record<string, number>, string[]]
       // For HTR denomination: HTR price of token = reserve_htr / reserve_token
       // The denominator is the same PRICE_PRECISION (100_000_000)
       return addSpotPriceFallbacks(rawPrices, 100_000_000, allPoolKeys)
@@ -838,12 +833,10 @@ export const pricesRouter = createTRPCRouter({
   marketSummary: procedure.query(async ({ ctx }) => {
     try {
       // Get all prices in USD
-      const usdResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-      const usdPrices = usdResponse.calls['get_all_token_prices_in_usd()'].value || {}
+      const usdPrices = await fetchPagedView(TOKEN_PRICES_USD)
 
       // Get all prices in HTR
-      const htrResponse = await fetchFromPoolManager(['get_all_token_prices_in_htr()'])
-      const htrPrices = htrResponse.calls['get_all_token_prices_in_htr()'].value || {}
+      const htrPrices = await fetchPagedView(TOKEN_PRICES_HTR)
 
       // Calculate some basic market stats
       const tokenCount = Object.keys(usdPrices).length
