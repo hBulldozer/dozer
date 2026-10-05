@@ -126,6 +126,35 @@ export interface FetchNodeOptions {
 const LOCAL_NODE_COOLDOWN_MS = 60_000
 let localNodeDownUntil = 0
 
+// A local node that is up but still syncing answers with stale state (old balances, pools and
+// blocks). Its /health endpoint reports sync status, so skip it until it reports healthy.
+const LOCAL_HEALTH_TTL_MS = 30_000
+const LOCAL_HEALTH_TIMEOUT_MS = 3_000
+let localHealth: { checkedAt: number; healthy: Promise<boolean> } | null = null
+
+function localNodeHealthy(headers: HeadersInit): Promise<boolean> {
+  if (localHealth && Date.now() - localHealth.checkedAt < LOCAL_HEALTH_TTL_MS) {
+    return localHealth.healthy
+  }
+  const healthy = (async () => {
+    try {
+      const response = await fetchWithTimeout(
+        `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}health`,
+        LOCAL_HEALTH_TIMEOUT_MS,
+        headers
+      )
+      // Nodes (or proxies) without the health endpoint: nothing to judge by, keep using the node
+      if (response.status === 404) return true
+      const body = await response.json().catch(() => null)
+      return response.ok && body?.status === 'pass'
+    } catch {
+      return false
+    }
+  })()
+  localHealth = { checkedAt: Date.now(), healthy }
+  return healthy
+}
+
 function sameOrigin(a?: string, b?: string): boolean {
   if (!a || !b) return false
   try {
@@ -156,8 +185,11 @@ export async function fetchNodeData(
       : {}
 
     try {
-      // Try local node first if configured, unless it failed moments ago
-      if (process.env.NEXT_PUBLIC_LOCAL_NODE_URL && Date.now() < localNodeDownUntil) {
+      // Try local node first if configured, unless it failed moments ago or is not synced
+      if (
+        process.env.NEXT_PUBLIC_LOCAL_NODE_URL &&
+        (Date.now() < localNodeDownUntil || !(await localNodeHealthy(localHeaders)))
+      ) {
         if (options?.skipPublicFallback) throw new NodeUnavailableError()
       } else if (process.env.NEXT_PUBLIC_LOCAL_NODE_URL) {
         try {
