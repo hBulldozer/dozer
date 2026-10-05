@@ -9,20 +9,21 @@ import { NanoContract } from '../nanocontract'
 import { NCAction, NCArgs } from '../nanocontract/types'
 import { IHathorRpc, SendNanoContractRpcRequestCustom } from '../types'
 
+// Calls on the existing pool manager send no blueprint id: the wallet then resolves the contract's
+// current blueprint from the node. A configured id goes stale when the contract is upgraded
+// (in-place blueprint change), and the wallet would validate the call against the old blueprint
+// or reject it ("Invalid blueprint ID").
+const RESOLVE_BLUEPRINT_FROM_CONTRACT = null as unknown as string
+
 export class PoolManager extends NanoContract {
   private readonly poolManagerContractId: string
-  private readonly poolManagerBlueprintId: string
 
-  public constructor(poolManagerContractId?: string, poolManagerBlueprintId?: string) {
+  public constructor(poolManagerContractId?: string) {
     super(poolManagerContractId || process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID || 'fake')
     this.poolManagerContractId = poolManagerContractId || process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID || ''
-    this.poolManagerBlueprintId = poolManagerBlueprintId || process.env.NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID || ''
 
     if (!this.poolManagerContractId || this.poolManagerContractId === 'fake') {
       console.warn('PoolManager: NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID environment variable not set')
-    }
-    if (!this.poolManagerBlueprintId) {
-      console.warn('PoolManager: NEXT_PUBLIC_POOL_MANAGER_BLUEPRINT_ID environment variable not set')
     }
   }
 
@@ -109,7 +110,7 @@ export class PoolManager extends NanoContract {
     const args = isSingleHop ? [fee, deadline] : [path, deadline]
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       method,
-      this.poolManagerBlueprintId,
+      RESOLVE_BLUEPRINT_FROM_CONTRACT,
       [
         // @ts-ignore
         {
@@ -178,7 +179,7 @@ export class PoolManager extends NanoContract {
 
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       method,
-      this.poolManagerBlueprintId,
+      RESOLVE_BLUEPRINT_FROM_CONTRACT,
       [
         // @ts-ignore
         {
@@ -230,7 +231,7 @@ export class PoolManager extends NanoContract {
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'add_liquidity',
-      this.poolManagerBlueprintId,
+      RESOLVE_BLUEPRINT_FROM_CONTRACT,
       [
         // @ts-ignore
         {
@@ -282,7 +283,7 @@ export class PoolManager extends NanoContract {
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'remove_liquidity',
-      this.poolManagerBlueprintId,
+      RESOLVE_BLUEPRINT_FROM_CONTRACT,
       [
         // @ts-ignore
         {
@@ -336,7 +337,7 @@ export class PoolManager extends NanoContract {
   ): Promise<SendNanoContractTxResponse> {
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'add_liquidity_single_token',
-      this.poolManagerBlueprintId,
+      RESOLVE_BLUEPRINT_FROM_CONTRACT,
       [
         // @ts-ignore
         {
@@ -381,7 +382,7 @@ export class PoolManager extends NanoContract {
 
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'remove_liquidity_single_token',
-      this.poolManagerBlueprintId,
+      RESOLVE_BLUEPRINT_FROM_CONTRACT,
       [
         // @ts-ignore
         {
@@ -452,7 +453,7 @@ export class PoolManager extends NanoContract {
 
     const ncTxRpcReq: SendNanoContractRpcRequest = sendNanoContractTxRpcRequest(
       'withdraw_cashback',
-      this.poolManagerBlueprintId,
+      RESOLVE_BLUEPRINT_FROM_CONTRACT,
       actions,
       [poolKey],
       true,
