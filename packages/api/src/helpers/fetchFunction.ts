@@ -122,6 +122,19 @@ export interface FetchNodeOptions {
   skipPublicFallback?: boolean
 }
 
+// After the local node fails, go straight to the public node for this long (per server instance)
+const LOCAL_NODE_COOLDOWN_MS = 60_000
+let localNodeDownUntil = 0
+
+function sameOrigin(a?: string, b?: string): boolean {
+  if (!a || !b) return false
+  try {
+    return new URL(a).origin === new URL(b).origin
+  } catch {
+    return false
+  }
+}
+
 export async function fetchNodeData(
   endpoint: string,
   queryParams: string[],
@@ -133,19 +146,26 @@ export async function fetchNodeData(
 
   // Use request queue to prevent overwhelming the node with concurrent requests
   return requestQueue.add(async () => {
-    // Prepare headers with API key if available (server-side only)
-    const headers: HeadersInit = {}
+    // The API key belongs to our node: never send it to a third-party public node
+    const localHeaders: HeadersInit = {}
     if (process.env.NODE_API_KEY) {
-      headers['X-API-Key'] = process.env.NODE_API_KEY
+      localHeaders['X-API-Key'] = process.env.NODE_API_KEY
     }
+    const publicHeaders = sameOrigin(process.env.NEXT_PUBLIC_PUBLIC_NODE_URL, process.env.NEXT_PUBLIC_LOCAL_NODE_URL)
+      ? localHeaders
+      : {}
 
     try {
-      // Try local node first if configured
-      if (process.env.NEXT_PUBLIC_LOCAL_NODE_URL) {
+      // Try local node first if configured, unless it failed moments ago
+      if (process.env.NEXT_PUBLIC_LOCAL_NODE_URL && Date.now() < localNodeDownUntil) {
+        if (options?.skipPublicFallback) throw new NodeUnavailableError()
+      } else if (process.env.NEXT_PUBLIC_LOCAL_NODE_URL) {
         try {
           const localNodeUrl = `${process.env.NEXT_PUBLIC_LOCAL_NODE_URL}${endpoint}?${queryParams.join('&')}`
-          return await fetchWithRetry(localNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)
+          return await fetchWithRetry(localNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, localHeaders)
         } catch (error) {
+          // A hung or syncing node would otherwise cost every request a full timeout
+          localNodeDownUntil = Date.now() + LOCAL_NODE_COOLDOWN_MS
           if (options?.skipPublicFallback) {
             // Caller has opted out of public fallback (e.g. full chart data where the public
             // node won't have our nginx-cached historical state). Signal the caller so it
@@ -159,7 +179,7 @@ export async function fetchNodeData(
       // Try public node as fallback or primary
       if (process.env.NEXT_PUBLIC_PUBLIC_NODE_URL) {
         const publicNodeUrl = `${process.env.NEXT_PUBLIC_PUBLIC_NODE_URL}${endpoint}?${queryParams.join('&')}`
-        return await fetchWithRetry(publicNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, headers)
+        return await fetchWithRetry(publicNodeUrl, MAX_RETRIES, INITIAL_TIMEOUT, publicHeaders)
       }
 
       throw new Error('No node URL configured (NEXT_PUBLIC_LOCAL_NODE_URL or NEXT_PUBLIC_PUBLIC_NODE_URL)')
