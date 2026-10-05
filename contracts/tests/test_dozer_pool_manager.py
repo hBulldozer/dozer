@@ -2913,6 +2913,52 @@ class DozerPoolManagerBlueprintTestCase(BlueprintTestCase):
         self.assertEqual(result.amount_out, amount_out)
         self._check_balance()
 
+    def test_exact_output_quote_is_enough_to_execute(self):
+        """find_best_swap_path_exact_output quotes the same amount_in that the swap requires.
+
+        The quote used to floor each hop while execution (get_amount_in) rounds up, so on small
+        or uneven pools depositing exactly the quoted amount failed with "Amount in is too low"
+        (seen on testnet: 0.68 quoted vs 0.76 required for a 0.10 output). Reserves here mirror
+        that case.
+        """
+        pool_ab, _ = self._create_pool(
+            self.token_a, self.token_b, fee=10, reserve_a=138_209_547, reserve_b=20_467_114
+        )
+        pool_bc, _ = self._create_pool(
+            self.token_b, self.token_c, fee=10, reserve_a=10_081, reserve_b=9_929
+        )
+        self._sign_pool(self.token_a, self.token_b, 10)
+        self._sign_pool(self.token_b, self.token_c, 10)
+
+        amount_out = 10
+        quote = self.runner.call_view_method(
+            self.nc_id, "find_best_swap_path_exact_output", amount_out, self.token_a, self.token_c, 3
+        )
+        # The search walks back from the output token, so the path comes output -> input
+        self.assertEqual(quote.path, f"{pool_bc},{pool_ab}")
+
+        middle_needed = self.runner.call_view_method(
+            self.nc_id, "get_amount_in", amount_out, 10_081, 9_929, 10, 1000
+        )
+        required = self.runner.call_view_method(
+            self.nc_id, "get_amount_in", middle_needed, 138_209_547, 20_467_114, 10, 1000
+        )
+        self.assertEqual(quote.amount_in, required)
+
+        # Depositing exactly the quoted amount executes, with no change left over
+        deadline = self.get_current_timestamp() + 365 * 24 * 60 * 60
+        context = self._prepare_swap_context(self.token_a, quote.amount_in, self.token_c, amount_out)
+        result = self.runner.call_public_method(
+            self.nc_id,
+            "swap_tokens_for_exact_tokens_through_path",
+            context,
+            f"{pool_ab},{pool_bc}",
+            deadline,
+        )
+        self.assertEqual(result.amount_out, amount_out)
+        self.assertEqual(result.amount_in, quote.amount_in)
+        self._check_balance()
+
     def test_swap_exact_out_3hop_inner_boundary_needs_no_second_check(self):
         """3-hop exact-output: a discontinuity at the hop2->hop3 boundary is
         unconstructible, so no second continuity check is needed.
