@@ -449,9 +449,12 @@ export async function fetchTokenInfo(tokenUuid: string): Promise<{ symbol: strin
     const endpoint = 'thin_wallet/token'
     const queryParams = [`id=${tokenUuid}`]
     const response = await fetchNodeData(endpoint, queryParams)
+    if (!response?.symbol) {
+      throw new Error(`No token info in node response${response?.message ? `: ${response.message}` : ''}`)
+    }
 
     const tokenInfo = {
-      symbol: response.symbol || tokenUuid.substring(0, 8).toUpperCase(),
+      symbol: response.symbol,
       name: response.name || `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
     }
 
@@ -460,13 +463,12 @@ export async function fetchTokenInfo(tokenUuid: string): Promise<{ symbol: strin
     return tokenInfo
   } catch (error) {
     console.error(`Error fetching token info for ${tokenUuid}:`, error)
-    // Fallback to shortened UUID
-    const fallback = {
+    // Fallback to shortened UUID; not cached, so the next request retries the node
+    // (a cached placeholder would stick for the life of the server instance)
+    return {
       symbol: tokenUuid.substring(0, 8).toUpperCase(),
       name: `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
     }
-    tokenInfoCache.set(tokenUuid, fallback)
-    return fallback
   }
 }
 
