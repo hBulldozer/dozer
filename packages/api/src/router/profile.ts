@@ -15,6 +15,48 @@ import { TOKEN_PRICES_USD, fetchPagedView, userPositions } from './pool/pagedVie
 // Get the Pool Manager Contract ID from environment
 const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
 
+type HistoryIO = { token: string; value: number; decoded?: { address?: string } }
+
+/**
+ * Same shape as thin_wallet/address_balance
+ * ({ success, total_transactions, tokens_data: { [uid]: { name, symbol, received, spent } } }),
+ * computed from the address history: outputs paid to the address minus inputs spent from it.
+ */
+async function getAddressBalanceFromHistory(address: string) {
+  const tokens: Record<string, { received: number; spent: number }> = {}
+  const add = (token: string, field: 'received' | 'spent', value: number) => {
+    tokens[token] ??= { received: 0, spent: 0 }
+    tokens[token][field] += value
+  }
+  let totalTransactions = 0
+  let hash: string | null = null
+  for (let page = 0; page < 50; page++) {
+    const params = [`addresses[]=${address}`, ...(hash ? [`hash=${hash}`] : [])]
+    const response = await fetchNodeData('thin_wallet/address_history', params)
+    for (const tx of response.history ?? []) {
+      if (tx.is_voided) continue
+      totalTransactions++
+      for (const output of (tx.outputs ?? []) as HistoryIO[]) {
+        if (output.decoded?.address === address) add(output.token, 'received', output.value)
+      }
+      for (const txInput of (tx.inputs ?? []) as HistoryIO[]) {
+        if (txInput.decoded?.address === address) add(txInput.token, 'spent', txInput.value)
+      }
+    }
+    if (!response.has_more || !response.first_hash) break
+    hash = response.first_hash
+  }
+
+  const tokensData: Record<string, { name: string; symbol: string; received: number; spent: number }> = {}
+  await Promise.all(
+    Object.entries(tokens).map(async ([uid, amounts]) => {
+      const info = await fetchTokenInfo(uid)
+      tokensData[uid] = { ...info, ...amounts }
+    })
+  )
+  return { success: true, total_transactions: totalTransactions, tokens_data: tokensData }
+}
+
 // Helper function to parse JSON string responses from _str methods
 function parseJsonResponse(jsonString: string): any {
   try {
@@ -101,9 +143,13 @@ export const profileRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const endpoint = 'thin_wallet/address_balance'
-      const response = await fetchNodeData(endpoint, [`address=${input.address}`])
-      return response
+      try {
+        return await fetchNodeData('thin_wallet/address_balance', [`address=${input.address}`])
+      } catch (error) {
+        // Public nodes block address_balance (403); rebuild it from the address history
+        console.warn('address_balance unavailable, computing balance from history:', error)
+        return await getAddressBalanceFromHistory(input.address)
+      }
     }),
   poolInfo: procedure
     .input(
