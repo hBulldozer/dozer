@@ -57,6 +57,15 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
       keepPreviousData: true, // Keep the previous data while loading new data
     }
   )
+  const thothName = client.getThoth.primaryName.useQuery(
+    { address },
+    {
+      enabled: Boolean(address),
+      staleTime: 60_000,
+      refetchOnWindowFocus: true,
+    }
+  )
+  const thothNameValue = thothName.data?.name ?? null
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { setBalance } = useAccount()
 
@@ -216,6 +225,8 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
             api_client={client}
             chainId={chainId}
             address={address}
+            name={thothNameValue}
+            isNameSuccess={thothName.isSuccess}
             setView={setView}
             refreshBalance={refreshBalance}
             isRefreshing={isRefreshing || isLoading}
@@ -266,7 +277,9 @@ export const Profile: FC<ProfileProps> = ({ client }) => {
                 }}
               >
                 <JazzIcon diameter={20} address={address} />
-                {shortenAddress(address)}{' '}
+                <span className="truncate max-w-[140px] sm:max-w-[180px]">
+                  {thothNameValue ?? shortenAddress(address)}
+                </span>{' '}
                 {(isLoading || isRefreshing) && <Loader className="w-4 h-4 mr-1 text-stone-400" />}
                 <ChevronDownIcon
                   width={20}

@@ -132,7 +132,7 @@ const LOCAL_HEALTH_TTL_MS = 30_000
 const LOCAL_HEALTH_TIMEOUT_MS = 3_000
 let localHealth: { checkedAt: number; healthy: Promise<boolean> } | null = null
 
-function localNodeHealthy(headers: HeadersInit): Promise<boolean> {
+export function localNodeHealthy(headers: HeadersInit): Promise<boolean> {
   if (localHealth && Date.now() - localHealth.checkedAt < LOCAL_HEALTH_TTL_MS) {
     return localHealth.healthy
   }
@@ -155,7 +155,7 @@ function localNodeHealthy(headers: HeadersInit): Promise<boolean> {
   return healthy
 }
 
-function sameOrigin(a?: string, b?: string): boolean {
+export function sameOrigin(a?: string, b?: string): boolean {
   if (!a || !b) return false
   try {
     return new URL(a).origin === new URL(b).origin

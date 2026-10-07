@@ -8,6 +8,7 @@ interface TokenTradingHistorySectionProps {
   pricesUSD?: Record<string, number>
   loading?: boolean
   error?: string
+  names?: Record<string, string | null>
 }
 
 export const TokenTradingHistorySection: React.FC<TokenTradingHistorySectionProps> = ({
@@ -17,6 +18,7 @@ export const TokenTradingHistorySection: React.FC<TokenTradingHistorySectionProp
   pricesUSD = {},
   loading = false,
   error,
+  names,
 }) => {
   return (
     <div className="flex flex-col gap-4">
@@ -27,6 +29,7 @@ export const TokenTradingHistorySection: React.FC<TokenTradingHistorySectionProp
         pricesUSD={pricesUSD}
         loading={loading}
         error={error}
+        names={names}
       />
     </div>
   )
