@@ -1462,13 +1462,15 @@ class DozerPoolManager(Blueprint):
     def get_all_token_prices_in_htr(self) -> dict[str, Amount]:
         result = {}
         result[HATHOR_TOKEN_UID.hex()] = Amount(100000000)
-        unique_tokens = set()
+        unique_tokens = []
         for pool_key in self.all_pools:
             pool = self.pools[pool_key]
             token_a = pool.token_a
             token_b = pool.token_b
-            unique_tokens.add(token_a)
-            unique_tokens.add(token_b)
+            if token_a not in unique_tokens:
+                unique_tokens.append(token_a)
+            if token_b not in unique_tokens:
+                unique_tokens.append(token_b)
         for token in unique_tokens:
             if token != HATHOR_TOKEN_UID:
                 price = self.get_token_price_in_htr(token)
@@ -1543,13 +1545,15 @@ class DozerPoolManager(Blueprint):
             usd_token = pool.token_b
         else:
             usd_token = pool.token_a
-        unique_tokens = set()
+        unique_tokens = []
         for pool_key_iter in self.all_pools:
             pool_iter = self.pools[pool_key_iter]
             token_a = pool_iter.token_a
             token_b = pool_iter.token_b
-            unique_tokens.add(token_a)
-            unique_tokens.add(token_b)
+            if token_a not in unique_tokens:
+                unique_tokens.append(token_a)
+            if token_b not in unique_tokens:
+                unique_tokens.append(token_b)
         for token in unique_tokens:
             if token == usd_token:
                 result[token.hex()] = Amount(100000000)
@@ -1624,12 +1628,14 @@ class DozerPoolManager(Blueprint):
         if skip > end:
             skip = end
         return (skip, end)
-    def _page_unique_tokens(self, start: int, end: int) -> set[TokenUid]:
-        unique_tokens = set()
+    def _page_unique_tokens(self, start: int, end: int) -> list[TokenUid]:
+        unique_tokens = []
         for i in range(start, end):
             pool = self.pools[self.all_pools[i]]
-            unique_tokens.add(pool.token_a)
-            unique_tokens.add(pool.token_b)
+            if pool.token_a not in unique_tokens:
+                unique_tokens.append(pool.token_a)
+            if pool.token_b not in unique_tokens:
+                unique_tokens.append(pool.token_b)
         return unique_tokens
     @view
     def get_pool_count(self) -> int:
@@ -1827,10 +1833,10 @@ class DozerPoolManager(Blueprint):
     def _dijkstra_shortest_path(self, graph: dict[TokenUid, dict[TokenUid, tuple[Amount, str, Amount]]], start: TokenUid, end: TokenUid, amount_in: Amount, max_hops: int) -> dict[str, str | list[Amount] | int]:
         distances = {}
         previous = {}
-        unvisited = set()
+        unvisited = []
         for token in graph.keys():
             distances[token] = (0, 0)
-            unvisited.add(token)
+            unvisited.append(token)
         distances[start] = (amount_in, 0)
         while unvisited:
             current = None
@@ -1988,10 +1994,10 @@ class DozerPoolManager(Blueprint):
     def _dijkstra_reverse_shortest_path(self, graph: dict[TokenUid, dict[TokenUid, tuple[Amount, str, Amount]]], start_token: TokenUid, end_token: TokenUid, amount_out: Amount, max_hops: int) -> dict[str, str | list[Amount] | int]:
         distances = {}
         previous = {}
-        unvisited = set()
+        unvisited = []
         for token in graph.keys():
             distances[token] = (Amount(2 ** 256 - 1), 0)
-            unvisited.add(token)
+            unvisited.append(token)
         distances[start_token] = (amount_out, 0)
         while unvisited:
             current = None

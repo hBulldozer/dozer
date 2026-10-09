@@ -653,6 +653,23 @@ class TestDozerPoolManagerPagination(BlueprintTestCase):
                         # the same token must get the same price whichever page it shows up in
                         assert merged.setdefault(token, price) == price
                 assert merged == full
+        # Tokens come out in pool order (first appearance in all_pools), not in set order, so
+        # every node returns the same ordering
+        norm = lambda k: k.hex() if isinstance(k, (bytes, bytearray)) else str(k)
+        pool_order: list = []
+        for pool_key in self.view('get_pools_page', 0, 100):
+            for token in pool_key.split('/')[:2]:
+                if token not in pool_order:
+                    pool_order.append(token)
+        for method, args in (
+            ('get_all_token_prices_in_htr', ()),
+            ('get_all_token_prices_in_usd', ()),
+            ('get_token_prices_in_htr_page', (0, 100)),
+            ('get_token_prices_in_usd_page', (0, 100)),
+        ):
+            keys = [norm(k) for k in self.view(method, *args)]
+            assert keys == [t for t in pool_order if t in keys], method
+
         assert self.view('get_token_prices_in_usd_page', 1000, 10) == {}
         # without an HTR-USD pool the USD page is empty
         other_id = self.gen_random_contract_id()
