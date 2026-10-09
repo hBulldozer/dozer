@@ -3983,13 +3983,15 @@ class DozerPoolManager(Blueprint):
         result[HATHOR_TOKEN_UID.hex()] = Amount(100_000000)  # HTR itself has a price of 1 in HTR
         
         # Get all unique tokens from all pools
-        unique_tokens = set()
+        unique_tokens = []
         for pool_key in self.all_pools:
             pool = self.pools[pool_key]
             token_a = pool.token_a
             token_b = pool.token_b
-            unique_tokens.add(token_a)
-            unique_tokens.add(token_b)
+            if token_a not in unique_tokens:
+                unique_tokens.append(token_a)
+            if token_b not in unique_tokens:
+                unique_tokens.append(token_b)
         
         # Calculate price for each token (except HTR)
         for token in unique_tokens:
@@ -4145,13 +4147,15 @@ class DozerPoolManager(Blueprint):
             usd_token = pool.token_a
         
         # Get all unique tokens from all pools
-        unique_tokens = set()
+        unique_tokens = []
         for pool_key_iter in self.all_pools:
             pool_iter = self.pools[pool_key_iter]
             token_a = pool_iter.token_a
             token_b = pool_iter.token_b
-            unique_tokens.add(token_a)
-            unique_tokens.add(token_b)
+            if token_a not in unique_tokens:
+                unique_tokens.append(token_a)
+            if token_b not in unique_tokens:
+                unique_tokens.append(token_b)
         
         # Calculate USD price for each token
         for token in unique_tokens:
@@ -4330,13 +4334,18 @@ class DozerPoolManager(Blueprint):
             skip = end
         return (skip, end)
 
-    def _page_unique_tokens(self, start: int, end: int) -> set[TokenUid]:
-        """Unique tokens of the pools in the window [start, end) of all_pools."""
-        unique_tokens = set()
+    def _page_unique_tokens(self, start: int, end: int) -> list[TokenUid]:
+        """Unique tokens of the pools in the window [start, end) of all_pools, in pool order.
+
+        A list, not a set: callers iterate it, and set iteration order is not deterministic.
+        """
+        unique_tokens = []
         for i in range(start, end):
             pool = self.pools[self.all_pools[i]]
-            unique_tokens.add(pool.token_a)
-            unique_tokens.add(pool.token_b)
+            if pool.token_a not in unique_tokens:
+                unique_tokens.append(pool.token_a)
+            if pool.token_b not in unique_tokens:
+                unique_tokens.append(pool.token_b)
         return unique_tokens
 
     @view
@@ -4896,12 +4905,12 @@ class DozerPoolManager(Blueprint):
         # distances[token] = (max_output_amount, hops_count)
         distances = {}
         previous = {}
-        unvisited = set()
+        unvisited = []
 
         # Initialize all tokens
         for token in graph.keys():
             distances[token] = (0, 0)  # (amount, hops)
-            unvisited.add(token)
+            unvisited.append(token)
 
         # Set start token distance to input amount
         distances[start] = (amount_in, 0)
@@ -4913,7 +4922,7 @@ class DozerPoolManager(Blueprint):
 
             for token in unvisited:
                 amount, hops = distances[token]
-                # Break ties by token uid so the chosen path does not depend on set order
+                # Break ties by token uid so the chosen path does not depend on iteration order
                 if amount > max_amount or (
                     amount == max_amount and current is not None and token < current
                 ):
@@ -5299,12 +5308,12 @@ class DozerPoolManager(Blueprint):
         # distances[token] = (min_amount_of_token_needed, hops)
         distances = {}
         previous = {}
-        unvisited = set()
+        unvisited = []
 
         # Initialize all tokens with a very large number for infinity
         for token in graph.keys():
             distances[token] = (Amount(2**256 - 1), 0)
-            unvisited.add(token)
+            unvisited.append(token)
 
         # We want to obtain `amount_out` of `start_token`.
         distances[start_token] = (amount_out, 0)
@@ -5316,7 +5325,7 @@ class DozerPoolManager(Blueprint):
 
             for token in unvisited:
                 amount, _ = distances[token]
-                # Break ties by token uid so the chosen path does not depend on set order
+                # Break ties by token uid so the chosen path does not depend on iteration order
                 if amount < min_amount or (
                     amount == min_amount and current is not None and token < current
                 ):
