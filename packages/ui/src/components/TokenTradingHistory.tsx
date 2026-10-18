@@ -51,8 +51,9 @@ const TotalValueCell: React.FC<{ row: TokenTradingTransaction }> = ({ row }) => 
   </div>
 )
 
-const AccountCell: React.FC<{ row: TokenTradingTransaction }> = ({ row }) => {
+const AccountCell: React.FC<{ row: TokenTradingTransaction; names?: Record<string, string | null> }> = ({ row, names }) => {
   const address = row.account
+  const name = names?.[address]
   const explorerUrls = getExplorerUrls()
   const accountUrl = explorerUrls.getAccountUrl(address)
 
@@ -61,17 +62,18 @@ const AccountCell: React.FC<{ row: TokenTradingTransaction }> = ({ row }) => {
       href={accountUrl}
       target="_blank"
       rel="noopener noreferrer"
+      title={address}
       className="text-blue-400 hover:text-blue-300 transition-colors"
     >
-      <Typography variant="sm" className="font-mono">
-        {truncateAddress(address)}
+      <Typography variant="sm" className={name ? 'truncate max-w-[10rem] inline-block align-bottom' : 'font-mono'}>
+        {name ?? truncateAddress(address)}
       </Typography>
     </a>
   )
 }
 
 // Column definitions
-const createColumns = (): ColumnDef<TokenTradingTransaction, unknown>[] => [
+const createColumns = (names?: Record<string, string | null>): ColumnDef<TokenTradingTransaction, unknown>[] => [
   {
     id: 'time',
     header: 'Time',
@@ -118,7 +120,7 @@ const createColumns = (): ColumnDef<TokenTradingTransaction, unknown>[] => [
     id: 'account',
     header: 'Account',
     accessorFn: (row) => row.account,
-    cell: (props) => <AccountCell row={props.row.original} />,
+    cell: (props) => <AccountCell row={props.row.original} names={names} />,
     size: 100,
     meta: {
       className: 'hidden md:table-cell',
@@ -134,6 +136,7 @@ export interface TokenTradingHistoryProps {
   pricesUSD?: Record<string, number>
   loading?: boolean
   error?: string
+  names?: Record<string, string | null>
 }
 
 export const TokenTradingHistory: React.FC<TokenTradingHistoryProps> = ({
@@ -143,13 +146,14 @@ export const TokenTradingHistory: React.FC<TokenTradingHistoryProps> = ({
   pricesUSD = {},
   loading = false,
   error,
+  names,
 }) => {
   // Transform raw transactions to token trading format
   const tokenTradingTransactions = React.useMemo(() => {
     return transformTokenTradingTransactions(transactions, tokenUuid, tokenSymbol, pricesUSD)
   }, [transactions, tokenUuid, tokenSymbol, pricesUSD])
 
-  const columns = React.useMemo(() => createColumns(), [])
+  const columns = React.useMemo(() => createColumns(names), [names])
 
   const table = useReactTable({
     data: tokenTradingTransactions,
@@ -277,7 +281,7 @@ export const TokenTradingHistory: React.FC<TokenTradingHistoryProps> = ({
                     <TotalValueCell row={transaction} />
                   </td>
                   <td className="px-3 py-3 hidden md:table-cell">
-                    <AccountCell row={transaction} />
+                    <AccountCell row={transaction} names={names} />
                   </td>
                 </tr>
               ))

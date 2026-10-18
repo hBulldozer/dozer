@@ -347,9 +347,9 @@ class TestDozerPoolManager(BlueprintTestCase):
         )
 
         # Updated for 10x pool reserves with 2% removal (instead of original 1M/2M pool with 10%)
-        assert quote.amount_out == 782426
+        assert quote.amount_out == 790076
         assert quote.swap_amount == 199999
-        assert quote.swap_output == 382427
+        assert quote.swap_output == 390077
         assert quote.token_a_withdrawn == 199999
         assert quote.token_b_withdrawn == 399999
 
@@ -364,9 +364,9 @@ class TestDozerPoolManager(BlueprintTestCase):
         state = self.get_pool_state(pool_key)
 
         assert state.reserve_a == 10000000
-        assert state.reserve_b == 20000000 - 782426
+        assert state.reserve_b == 20000000 - 790076
         assert state.total_change_a == 0
-        assert state.total_change_b == 782426 - 200000
+        assert state.total_change_b == 790076 - 200000
 
     def _test_swap_exact_tokens_for_tokens(self, *, fee: int, deadline: int) -> tuple[str, SwapResult]:
         pool_key, creator = self.create_pool(

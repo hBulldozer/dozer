@@ -2,6 +2,7 @@ import { fetchNodeData, NodeUnavailableError } from '../../helpers/fetchFunction
 export { NodeUnavailableError }
 import { formatPrice } from '../constants'
 import { parsePoolApiInfo } from '../../utils/namedTupleParsers'
+import { TOKEN_PRICES_USD, fetchPagedView } from './pagedViews'
 
 // Get the Pool Manager Contract ID from environment
 export const NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID = process.env.NEXT_PUBLIC_POOL_MANAGER_CONTRACT_ID
@@ -357,9 +358,7 @@ export async function calculate24hVolume(poolKey: string): Promise<{ volume24h: 
       return { volume24h: 0, volume24hUSD: 0 }
     }
 
-    const tokenPricesResponse = await fetchFromPoolManager(['get_all_token_prices_in_usd()'])
-    const rawTokenPrices: Record<string, number> =
-      tokenPricesResponse.calls['get_all_token_prices_in_usd()'].value || {}
+    const rawTokenPrices: Record<string, number> = await fetchPagedView(TOKEN_PRICES_USD)
     const tokenPrices: Record<string, number> = Object.fromEntries(
       Object.entries(rawTokenPrices).map(([k, v]) => [k, formatPrice(v as number)])
     )
@@ -450,9 +449,12 @@ export async function fetchTokenInfo(tokenUuid: string): Promise<{ symbol: strin
     const endpoint = 'thin_wallet/token'
     const queryParams = [`id=${tokenUuid}`]
     const response = await fetchNodeData(endpoint, queryParams)
+    if (!response?.symbol) {
+      throw new Error(`No token info in node response${response?.message ? `: ${response.message}` : ''}`)
+    }
 
     const tokenInfo = {
-      symbol: response.symbol || tokenUuid.substring(0, 8).toUpperCase(),
+      symbol: response.symbol,
       name: response.name || `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
     }
 
@@ -461,13 +463,12 @@ export async function fetchTokenInfo(tokenUuid: string): Promise<{ symbol: strin
     return tokenInfo
   } catch (error) {
     console.error(`Error fetching token info for ${tokenUuid}:`, error)
-    // Fallback to shortened UUID
-    const fallback = {
+    // Fallback to shortened UUID; not cached, so the next request retries the node
+    // (a cached placeholder would stick for the life of the server instance)
+    return {
       symbol: tokenUuid.substring(0, 8).toUpperCase(),
       name: `Token ${tokenUuid.substring(0, 8).toUpperCase()}`,
     }
-    tokenInfoCache.set(tokenUuid, fallback)
-    return fallback
   }
 }
 

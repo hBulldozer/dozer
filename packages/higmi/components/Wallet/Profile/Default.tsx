@@ -24,6 +24,7 @@ import { Dispatch, FC, SetStateAction, useCallback, useEffect, useRef, useState 
 import { ProfileView } from './Profile'
 import { TokenBalance, useAccount, useNetwork } from '@dozer/zustand'
 import { shortenAddress } from './Utils'
+import { THOTH_URL } from '../../../config/thoth'
 import chains, { ChainId } from '@dozer/chain'
 
 import { client, toToken } from '@dozer/api'
@@ -35,6 +36,8 @@ import { WalletConnectionService } from '../../../services/walletConnectionServi
 interface DefaultProps {
   chainId: ChainId
   address: string
+  name?: string | null
+  isNameSuccess?: boolean
   setView: Dispatch<SetStateAction<ProfileView>>
   api_client: typeof client
   refreshBalance: () => Promise<void>
@@ -51,6 +54,8 @@ interface BalanceProps {
 export const Default: FC<DefaultProps> = ({
   chainId,
   address,
+  name,
+  isNameSuccess = false,
   setView,
   api_client,
   refreshBalance,
@@ -267,10 +272,48 @@ export const Default: FC<DefaultProps> = ({
     <>
       <div className="flex flex-col gap-8 p-4">
         <div className="flex justify-between gap-3">
-          <Typography variant="sm" weight={600} className="flex items-center gap-1.5 text-stone-50">
-            <JazzIcon diameter={16} address={address} />
-            {shortenAddress(address)}
-          </Typography>
+          <div className="flex items-start gap-1.5 min-w-0">
+            <div className="mt-0.5 shrink-0">
+              <JazzIcon diameter={16} address={address} />
+            </div>
+            <div className="flex flex-col min-w-0">
+              {name ? (
+                <>
+                  <Typography variant="sm" weight={600} className="flex items-center gap-1 text-stone-50 min-w-0">
+                    <span className="truncate max-w-[150px]">{name}</span>
+                    <a
+                      href={`${THOTH_URL}/domain/${name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 text-stone-400 hover:text-stone-50"
+                      title="View on thoth.id"
+                    >
+                      <ArrowTopRightOnSquareIcon width={14} height={14} />
+                    </a>
+                  </Typography>
+                  <Typography variant="xs" className="text-stone-400">
+                    {shortenAddress(address)}
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Typography variant="sm" weight={600} className="text-stone-50">
+                    {shortenAddress(address)}
+                  </Typography>
+                  {isNameSuccess && (
+                    <a
+                      href={`${THOTH_URL}/search`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-stone-400 hover:text-stone-50 underline"
+                    >
+                      Claim your .htr name ↗
+                    </a>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
           <div className="flex gap-3">
             <BuyCrypto address={address}>
               {(buyUrl) => (

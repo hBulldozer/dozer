@@ -10,6 +10,7 @@ import { pricesRouter } from './router/prices'
 import { profileRouter } from './router/profile'
 import { rewardsRouter } from './router/rewards'
 import { statsRouter } from './router/stats'
+import { thothRouter } from './router/thoth'
 import { tokenRouter } from './router/token'
 import { createTRPCRouter } from './trpc'
 
@@ -27,6 +28,7 @@ export const appRouter = createTRPCRouter({
   getOasis: oasisRouter,
   getStats: statsRouter,
   getDozerTools: dozerToolsRouter,
+  getThoth: thothRouter,
 })
 
 // export type definition of API

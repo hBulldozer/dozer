@@ -9,6 +9,7 @@ import {
   parseQuoteRemoveSingleTokenResult,
 } from '../../utils/namedTupleParsers'
 import { fetchFromPoolManager, getTokenSymbol } from './helpers'
+import { POOL_KEYS, fetchPagedView } from './pagedViews'
 
 // ─── AMM helpers for unsigned-pool direct quotes ───────────────────────────
 // fee_denom = 1000 in the contract (fee expressed as basis points e.g. 8 = 0.8%)
@@ -43,8 +44,7 @@ function ammPriceImpact(amountIn: number, amountOut: number, reserveIn: number, 
  * (in either order). Returns keys sorted by fee ascending (cheapest first).
  */
 async function findPoolsForPair(tokenIn: string, tokenOut: string): Promise<string[]> {
-  const response = await fetchFromPoolManager(['get_all_pools()'])
-  const allKeys: string[] = response.calls['get_all_pools()'].value || []
+  const allKeys: string[] = await fetchPagedView(POOL_KEYS)
   return allKeys
     .filter((key) => {
       const [a, b] = key.split('/')
@@ -258,8 +258,7 @@ export const quoteProcedures = {
           const feeBasisPoints = Math.round(feeValue * 10)
 
           // Get all pools (including unsigned) to find the matching one for direct URL access
-          const batchResponse = await fetchFromPoolManager(['get_all_pools()'])
-          const poolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
+          const poolKeys: string[] = await fetchPagedView(POOL_KEYS)
 
           let matchingPoolKey: string | null = null
           for (const key of poolKeys) {
@@ -346,8 +345,7 @@ export const quoteProcedures = {
           const feeBasisPoints = Math.round(feeValue * 10)
 
           // Get all pools (including unsigned) to find the matching one for direct URL access
-          const batchResponse = await fetchFromPoolManager(['get_all_pools()'])
-          const poolKeys: string[] = batchResponse.calls['get_all_pools()'].value || []
+          const poolKeys: string[] = await fetchPagedView(POOL_KEYS)
 
           let matchingPoolKey: string | null = null
           for (const key of poolKeys) {

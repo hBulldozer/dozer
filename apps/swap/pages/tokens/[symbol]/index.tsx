@@ -8,12 +8,13 @@ import {
   Currency,
   Chip,
   TokenTradingHistorySection,
+  transformTokenTradingTransactions,
   AvailablePoolsWidget,
 } from '@dozer/ui'
 import { formatUSD } from '@dozer/format'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { useRouter } from 'next/router'
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Layout } from 'components/Layout'
 import { generateSSGHelper } from '@dozer/api/src/helpers/ssgHelper'
 import { api } from '../../../utils/api'
@@ -130,6 +131,23 @@ const Token = () => {
       staleTime: 30000,
       refetchOnWindowFocus: false,
     }
+  )
+
+  // Resolve thoth.id names for the accounts shown in the trading history (first 10 rows)
+  const historyAddresses = useMemo(() => {
+    if (!tokenData || !transactionData?.transactions) return []
+    const rows = transformTokenTradingTransactions(
+      transactionData.transactions,
+      tokenData.uuid,
+      tokenData.symbol,
+      prices
+    ).slice(0, 10)
+    return Array.from(new Set(rows.map((row) => row.account).filter(Boolean))).sort()
+  }, [tokenData, transactionData, prices])
+
+  const { data: thothNames } = api.getThoth.primaryNames.useQuery(
+    { addresses: historyAddresses },
+    { enabled: historyAddresses.length > 0, staleTime: 60_000 }
   )
 
   const isLoading = isLoadingToken || isLoadingPrices
@@ -253,6 +271,7 @@ const Token = () => {
               pricesUSD={prices}
               loading={isLoadingTransactions}
               error={transactionError?.message}
+              names={thothNames}
             />
           </div>
           <div className="flex-col order-2 hidden gap-4 lg:flex">

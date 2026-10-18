@@ -61,6 +61,7 @@ export {
 export { TokenTradingHistory, type TokenTradingHistoryProps } from './src/components/TokenTradingHistory'
 
 export { TokenTradingHistorySection } from './src/components/TokenTradingHistorySection'
+export { transformTokenTradingTransactions } from './src/utils/tokenTradingUtils'
 
 export { AvailablePoolsWidget } from './src/components/AvailablePoolsWidget'
 export {

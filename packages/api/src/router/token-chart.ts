@@ -5,6 +5,7 @@ import { CHART_BATCH_DELAY_MS, CHART_MAX_STATE_REQUESTS_PER_BATCH, generateCandl
 import { parsePoolApiInfo } from '../utils/namedTupleParsers'
 import { formatPrice } from './constants'
 import { fetchFromPoolManager, NodeUnavailableError } from './pool/helpers'
+import { POOL_KEYS, fetchPagedView } from './pool/pagedViews'
 
 export interface TokenChartPoint {
   time: number
@@ -135,8 +136,7 @@ export const tokenChartProcedures = {
       // are included. Signed pools are preferred for historical accuracy, but for the
       // current "live" candle we fall back to spot price from reserves when the router
       // returns 0 for an unsigned-pool token.
-      const allPoolsResponse = await fetchFromPoolManager(['get_all_pools()'])
-      const allPoolKeys: string[] = allPoolsResponse.calls['get_all_pools()']?.value || []
+      const allPoolKeys: string[] = await fetchPagedView(POOL_KEYS)
       const tokenPoolKeys = allPoolKeys.filter((k) => {
         const [a, b] = k.split('/')
         return a === input.tokenUuid || b === input.tokenUuid

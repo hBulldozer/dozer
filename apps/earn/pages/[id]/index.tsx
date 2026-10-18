@@ -175,6 +175,17 @@ const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pai
   // Transform filtered transactions to simple format
   const simpleTransactions = transformTransactions(poolSpecificTransactions, prices, poolKey)
 
+  // Resolve thoth.id names for the accounts shown in the history (first 10 rows)
+  const historyAddresses = useMemo(
+    () => Array.from(new Set(simpleTransactions.slice(0, 10).map((tx) => tx.account).filter(Boolean))).sort(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [transactionData, pricesData, poolKey]
+  )
+  const { data: thothNames } = api.getThoth.primaryNames.useQuery(
+    { addresses: historyAddresses },
+    { enabled: historyAddresses.length > 0, staleTime: 60_000 }
+  )
+
   return (
     <SimplePoolTransactionHistory
       poolKey={poolKey}
@@ -184,6 +195,7 @@ const PoolTransactionHistorySection = ({ poolKey, pair }: { poolKey: string; pai
       onRefresh={handleRefresh}
       token0Symbol={pair.token0.symbol}
       token1Symbol={pair.token1.symbol}
+      names={thothNames}
     />
   )
 }
